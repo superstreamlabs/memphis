@@ -6,7 +6,7 @@ unique_Id = UUID.randomUUID().toString()
 node {
   try{
     stage('SCM checkout') {
-        git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+        git credentialsId: 'main-github', url: gitURL, branch: env.BRANCH_NAME
     }
     stage('Build docker image') {
         sh "docker build -t ${dockerImagesRepo}/${imageName} ."
