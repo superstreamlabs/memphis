@@ -1,0 +1,46 @@
+apiVersion: /v1
+kind: Service
+metadata:
+  name: hub-api-gw
+  namespace: hub
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  selector:
+    app: hub-api-gw
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-api-gw
+  namespace: hub
+  labels:
+    app: hub-api-gw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hub-api-gw
+  template:
+    metadata:
+      name: hub-api-gw
+      labels:
+        app: hub-api-gw
+    spec:
+      containers:
+        - name: hub-api-gw
+          image: 221323242847.dkr.ecr.eu-central-1.amazonaws.com/hub-api-gw:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENVIRONMENT
+              value: "staging"
+            - name: PORT
+              value: "3000"
+            - name: JWT_SECRET
+              value: "35c7b3eb969db065bfa3c66b38e4323e8f73113f3965dfb55c6bc585dcb0ba62bd399e2588fdc8f709ae0b63fb24be32590f134506ca1d7a4314339f11b8045a"
+            - name: JWT_REFRESH_SECRET
+              value: "35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk"
