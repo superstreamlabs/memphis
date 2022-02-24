@@ -17,7 +17,7 @@ node {
         	DOCKER_HUB_CREDS = credentials('docker-hub')
       	}
 	steps {
-	        sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p """${DOCKER_HUB_CREDS_PSW}"""
+	        sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p """${DOCKER_HUB_CREDS_PSW}""""
         	sh "docker tag ${dockerImagesRepo}/${imageName} ${dockerImagesRepo}/${imageName}:${unique_Id}"
 	        sh "docker push ${dockerImagesRepo}/${imageName}:${unique_Id}"
 	        sh "docker push ${dockerImagesRepo}/${imageName}:latest"
