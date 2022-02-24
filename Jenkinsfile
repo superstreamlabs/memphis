@@ -16,7 +16,7 @@ node {
 
     stage('Push docker image') {
 	withCredentials([usernameColonPassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
-		sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+		sh "docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW"
 	        sh "docker tag ${dockerImagesRepo}/${imageName} ${dockerImagesRepo}/${imageName}:${unique_Id}"
 		sh "docker push ${dockerImagesRepo}/${imageName}:${unique_Id}"
 		sh "docker push ${dockerImagesRepo}/${imageName}:latest"
