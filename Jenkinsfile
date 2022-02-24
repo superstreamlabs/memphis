@@ -1,12 +1,13 @@
 def dockerImagesRepo = "strechinc"
 def imageName = "strech-server"
 def gitURL = "git@github.com:STRECH-LTD/strech-server.git"
+def gitBranch = beta
 unique_Id = UUID.randomUUID().toString()
 
 node {
   try{
     stage('SCM checkout') {
-        git credentialsId: 'main-github', url: gitURL, branch: beta
+        git credentialsId: 'main-github', url: gitURL, branch: gitBranch
     }
     stage('Build docker image') {
         sh "docker build -t ${dockerImagesRepo}/${imageName} ."
