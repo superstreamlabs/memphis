@@ -34,7 +34,7 @@ node {
 
   } catch (e) {
       currentBuild.result = "FAILED"
-      notifyFailed()
+//      notifyFailed()
       throw e
   }
 }
