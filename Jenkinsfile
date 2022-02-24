@@ -3,6 +3,7 @@ def imageName = "strech-server"
 def gitURL = "git@github.com:STRECH-LTD/strech-server.git"
 def gitBranch = "beta"
 unique_Id = UUID.randomUUID().toString()
+def DOCKER_HUB_CREDS = credentials('docker-hub')
 
 node {
   try{
@@ -14,7 +15,6 @@ node {
     }
 
     stage('Push docker image') {
-       	DOCKER_HUB_CREDS = credentials('docker-hub')
 	sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
         sh "docker tag ${dockerImagesRepo}/${imageName} ${dockerImagesRepo}/${imageName}:${unique_Id}"
 	sh "docker push ${dockerImagesRepo}/${imageName}:${unique_Id}"
