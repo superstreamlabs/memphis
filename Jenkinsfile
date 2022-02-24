@@ -1,7 +1,7 @@
 def dockerImagesRepo = "strechinc"
 def imageName = "strech-server"
 def gitURL = "git@github.com:STRECH-LTD/strech-server.git"
-def gitBranch = beta
+def gitBranch = "beta"
 unique_Id = UUID.randomUUID().toString()
 
 node {
