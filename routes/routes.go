@@ -3,6 +3,8 @@ package routes
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"strech-server/utils"
+	// "strech-server/middlewares"
 )
 
 func InitializeHttpRoutes() *gin.Engine {
@@ -17,8 +19,10 @@ func InitializeHttpRoutes() *gin.Engine {
 		AllowWebSockets:  true,
 		AllowFiles:       true,
 	}))
+	// router.Use(middlewares.Json)
 
-	InitializeXXXRoutes(router)
+	utils.InitializeValidations()
+	InitializeUserMgmtRoutes(router)
 	router.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",

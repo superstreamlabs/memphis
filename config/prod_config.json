@@ -1,7 +1,7 @@
 {
     "PORT": "5555",
     "LOGGER": "STDOUT",
-    "MONGO_URL": "my-mongo-mongodb-headless.mongo.svc.cluster.local:27017",
-    "MONGO_USER": "engine_user",
-    "DB_NAME": "config"
+    "MONGO_URL": "mongodb://my-mongo-mongodb-headless.mongo.svc.cluster.local:27017",
+    "MONGO_USER": "root",
+    "DB_NAME": "maindb"
 }
