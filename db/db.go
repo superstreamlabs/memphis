@@ -12,25 +12,31 @@ import (
 var configuration = config.GetConfig()
 
 const (
-	dbOperationTimeout = 5
+	dbOperationTimeout = 20
 )
 
 func getConnection() (*mongo.Client, context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(configuration.MONGO_URL))
+	auth :=  options.Credential{
+		Username: configuration.MONGO_USER,
+		Password: configuration.MONGO_PASS,
+	}
+	clientOptions := options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout*time.Second)
+
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		logger.Error("Failed to create Mongo DB client: " + err.Error())
-		panic("Failed to create Mongo DB client: " + err.Error())
+		// panic("Failed to create Mongo DB client: " + err.Error())
 	}
 
 	err = client.Ping(ctx, nil)
-	if err != nil {
+		if err != nil {
 		logger.Error("Failed to create Mongo DB client: " + err.Error())
-		panic("Failed to create Mongo DB client: " + err.Error())
+		// panic("Failed to create Mongo DB client: " + err.Error())
 	}
-	logger.Info("Connected to MongoDB")
+	logger.Info("Connected to Mongo DB")
 
 	return client, ctx, cancel
 }
