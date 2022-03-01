@@ -25,10 +25,6 @@ node {
 	}
     }
     
-    //stage('Push image to kubernetes') {
-//	    sh "kubectl --kubeconfig=\"/var/lib/jenkins/.kube/strech-staging-kubeconfig.yaml\" apply -f \"Staging/k8s-template.yaml\" --record"
-  //    sh "kubectl --kubeconfig=\"/var/lib/jenkins/.kube/strech-staging-kubeconfig.yaml\" set image deployment/${imageName} ${imageName}=${dockerImagesRepo}/${imageName}:${unique_Id} -n hub"
-    //}
     notifySuccessful()
 
   } catch (e) {
