@@ -1,7 +1,7 @@
 apiVersion: /v1
 kind: Service
 metadata:
-  name: hub-api-gw
+  name: strech-server
   namespace: hub
 spec:
   type: ClusterIP
@@ -10,28 +10,28 @@ spec:
       port: 80
       targetPort: 3000
   selector:
-    app: hub-api-gw
+    app: strech-server
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hub-api-gw
+  name: strech-server
   namespace: hub
   labels:
-    app: hub-api-gw
+    app: strech-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hub-api-gw
+      app: strech-server
   template:
     metadata:
-      name: hub-api-gw
+      name: strech-server
       labels:
-        app: hub-api-gw
+        app: strech-server
     spec:
       containers:
-        - name: hub-api-gw
-          image: 221323242847.dkr.ecr.eu-central-1.amazonaws.com/hub-api-gw:latest
+        - name: strech-server
+          image: 221323242847.dkr.ecr.eu-central-1.amazonaws.com/strech-server:latest
           ports:
             - containerPort: 3000
