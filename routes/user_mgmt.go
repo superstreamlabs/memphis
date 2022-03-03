@@ -10,5 +10,7 @@ func InitializeUserMgmtRoutes(router *gin.Engine) {
 
 	// router.GET("/xxx", userMgmtHandler.GetAlbums)
 	// router.GET("/xxx/:id", userMgmtHandler.GetAlbumByID)
-	router.POST("/usermgmt/createUser", userMgmtHandler.CreateUser)
+	router.POST("/usermgmt/jwt/v1/accounts", userMgmtHandler.AuthenticateNats)
+	router.POST("/usermgmt/addUser", userMgmtHandler.AddUser)
+	router.POST("/usermgmt/createRootUser", userMgmtHandler.CreateRootUser)
 }
