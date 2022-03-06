@@ -8,8 +8,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "ENVIRONMENT": "dev",
-                "MONGO_PASS": "Mongo4life"
+                "ENVIRONMENT": "dev"
             }
         }
     ]

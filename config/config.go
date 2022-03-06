@@ -8,13 +8,17 @@ import (
 )
 
 type Configuration struct {
-	ENVIRONMENT string
-	PORT        string
-	LOGGER      string
-	MONGO_URL   string
-	MONGO_USER  string
-	MONGO_PASS  string
-	DB_NAME     string
+	ENVIRONMENT                    string
+	PORT                           string
+	LOGGER                         string
+	MONGO_URL                      string
+	MONGO_USER                     string
+	MONGO_PASS                     string
+	DB_NAME                        string
+	JWT_SECRET                     string
+	JWT_EXPIRES_IN_MINUTES         int
+	REFRESH_JWT_SECRET             string
+	REFRESH_JWT_EXPIRES_IN_MINUTES int
 }
 
 func GetConfig() Configuration {
