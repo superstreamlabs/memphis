@@ -4,7 +4,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"strech-server/utils"
-	// "strech-server/middlewares"
+	"strech-server/middlewares"
 )
 
 func InitializeHttpRoutes() *gin.Engine {
@@ -19,7 +19,7 @@ func InitializeHttpRoutes() *gin.Engine {
 		AllowWebSockets:  true,
 		AllowFiles:       true,
 	}))
-	// router.Use(middlewares.Json)
+	router.Use(middlewares.Authenticate)
 
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(router)

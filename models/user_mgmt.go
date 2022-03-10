@@ -1,38 +1,28 @@
 package models
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-	ID           primitive.ObjectID `json:"id" bson:"_id"`
-	Username     string             `json:"username" binding:"required,min=1,max=25" bson:"username"`
-	Password     string             `json:"password" binding:"required,min=6" bson:"password"`
-	HubUsername  string             `json:"hub_username" bson:"hub_username"`
-	HubPassword  string             `json:"hub_password" bson:"hub_password"`
-	UserType     string             `json:"user_type" binding:"required" bson:"user_type"`
-	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
+	Username        string             `json:"username" binding:"required,min=1,max=25" bson:"username"`
+	Password        string             `json:"password" binding:"required,min=6" bson:"password"`
+	HubUsername     string             `json:"hub_username" bson:"hub_username"`
+	HubPassword     string             `json:"hub_password" bson:"hub_password"`
+	UserType        string             `json:"user_type" binding:"required" bson:"user_type"`
+	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
+	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
+	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 }
 
-type RefreshToken struct {
+type Token struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id"`
-	UserId       primitive.ObjectID `json:"user_id" bson:"user_id"`
+	Username     string             `json:"username" bson:"username"`
+	JwtToken     string             `json:"jwt_token" bson:"jwt_token"`
 	RefreshToken string             `json:"refresh_token" bson:"refresh_token"`
-}
-
-func (u User) GetUserWithoutPassword() User {
-	user := User{
-		ID:           u.ID,
-		Username:     u.Username,
-		Password:     "",
-		HubUsername:  u.HubUsername,
-		HubPassword:  "",
-		UserType:     u.UserType,
-		CreationDate: u.CreationDate,
-	}
-
-	return user
 }
 
 type AddUserSchema struct {
@@ -41,6 +31,7 @@ type AddUserSchema struct {
 	HubUsername string `json:"hub_username"`
 	HubPassword string `json:"hub_password"`
 	UserType    string `json:"user_type" binding:"required"`
+	AvatarId    int    `json:"avatar_id" bson:"avatar_id"`
 }
 
 type CreateRootUserSchema struct {
@@ -48,6 +39,7 @@ type CreateRootUserSchema struct {
 	Password    string `json:"password" binding:"required,min=6"`
 	HubUsername string `json:"hub_username"`
 	HubPassword string `json:"hub_password"`
+	AvatarId    int    `json:"avatar_id" bson:"avatar_id"`
 }
 
 type AuthenticateNatsSchema struct {
@@ -58,4 +50,13 @@ type AuthenticateNatsSchema struct {
 type LoginSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type RemoveUserSchema struct {
+	Username string `json:"username" binding:"required"`
+}
+
+type EditHubCredsSchema struct {
+	HubUsername string `json:"hub_username"`
+	HubPassword string `json:"hub_password"`
 }
