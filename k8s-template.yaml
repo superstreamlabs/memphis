@@ -8,7 +8,7 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 3000
+      targetPort: 5555
   selector:
     app: strech-server
 ---
@@ -34,4 +34,4 @@ spec:
         - name: strech-server
           image: 221323242847.dkr.ecr.eu-central-1.amazonaws.com/strech-server-staging:latest
           ports:
-            - containerPort: 3000
+            - containerPort: 5555

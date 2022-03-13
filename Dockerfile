@@ -15,8 +15,8 @@ RUN go get -d -v .
 # Install the package
 RUN go install -v .
 
-# This container exposes port 8080 to the outside world
-EXPOSE 8080
+# This container exposes port 5555 to the outside world
+EXPOSE 5555
 
 # Run the executable
 CMD ["strech-server"]
