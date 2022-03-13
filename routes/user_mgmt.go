@@ -8,17 +8,18 @@ import (
 
 func InitializeUserMgmtRoutes(router *gin.Engine) {
 	userMgmtHandler := handlers.UserMgmtHandler{}
-
-	router.POST("/usermgmt/createRootUser", userMgmtHandler.CreateRootUser)
-	router.POST("/usermgmt/login", userMgmtHandler.Login)
-	router.POST("/usermgmt/refreshToken", userMgmtHandler.RefreshToken)
-	router.POST("/usermgmt/logout", userMgmtHandler.Logout)
-	router.POST("/usermgmt/jwt/v1/accounts", userMgmtHandler.AuthenticateNats)
-	router.POST("/usermgmt/addUser", userMgmtHandler.AddUser)
-	router.GET("/usermgmt/getAllUsers", userMgmtHandler.GetAllUsers)
-	router.DELETE("/usermgmt/removeUser", userMgmtHandler.RemoveUser)
-	router.DELETE("/usermgmt/removeMyUser", userMgmtHandler.RemoveMyUser)
-	router.PUT("/usermgmt/editHubCreds", userMgmtHandler.EditHubCreds)
-	// router.POST("/usermgmt/uploadCompanyLogo", userMgmtHandler.UploadCompanyLogo)
-
+	userMgmtRoutes := router.Group("/usermgmt")
+	userMgmtRoutes.POST("/createRootUser", userMgmtHandler.CreateRootUser)
+	userMgmtRoutes.POST("/login", userMgmtHandler.Login)
+	userMgmtRoutes.POST("/refreshToken", userMgmtHandler.RefreshToken)
+	userMgmtRoutes.POST("/logout", userMgmtHandler.Logout)
+	userMgmtRoutes.POST("/jwt/v1/accounts", userMgmtHandler.AuthenticateNats)
+	userMgmtRoutes.POST("/addUser", userMgmtHandler.AddUser)
+	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
+	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)
+	userMgmtRoutes.DELETE("/removeMyUser", userMgmtHandler.RemoveMyUser)
+	userMgmtRoutes.PUT("/editHubCreds", userMgmtHandler.EditHubCreds)
+	userMgmtRoutes.PUT("/editCompanyLogo", userMgmtHandler.EditCompanyLogo)
+	userMgmtRoutes.DELETE("/removeCompanyLogo", userMgmtHandler.RemoveCompanyLogo)
+	userMgmtRoutes.GET("/getCompanyLogo", userMgmtHandler.GetCompanyLogo)
 }

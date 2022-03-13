@@ -2,7 +2,13 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"io/ioutil"
+	"mime/multipart"
+
+	"os"
+	"path/filepath"
 	"regexp"
 	"strech-server/config"
 	"strech-server/db"
@@ -117,10 +123,48 @@ func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	return user.(models.User)
 }
 
+func imageToBase64(imagePath string) (string, error) {
+	bytes, err := ioutil.ReadFile(imagePath)
+	if err != nil {
+		return "", err
+	}
+
+	fileExt := filepath.Ext(imagePath)
+	var base64Encoding string
+
+	switch fileExt {
+	case ".jpeg":
+		base64Encoding += "data:image/jpeg;base64,"
+	case ".png":
+		base64Encoding += "data:image/png;base64,"
+	case ".jpg":
+		base64Encoding += "data:image/jpg;base64,"
+	}
+
+	base64Encoding += base64.StdEncoding.EncodeToString(bytes)
+	return base64Encoding, nil
+}
+
+func getCompanyLogoPath() (string, error) {
+	files, err := ioutil.ReadDir("/tmp/strech")
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range files {
+		fileName := file.Name()
+		if strings.HasPrefix(fileName, "company_logo") {
+			return "/tmp/strech/" + fileName, nil
+		}
+	}
+
+	return "", nil
+}
+
 // TODO
 func (umh UserMgmtHandler) CreateRootUser(c *gin.Context) {
 	var body models.CreateRootUserSchema
-	ok := utils.Validate(c, &body)
+	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
@@ -188,7 +232,7 @@ func (umh UserMgmtHandler) CreateRootUser(c *gin.Context) {
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
 	var body models.LoginSchema
-	ok := utils.Validate(c, &body)
+	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
@@ -304,7 +348,7 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 
 func (umh UserMgmtHandler) AuthenticateNats(c *gin.Context) {
 	var body models.AuthenticateNatsSchema
-	ok := utils.Validate(c, &body)
+	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
@@ -327,7 +371,7 @@ func (umh UserMgmtHandler) AuthenticateNats(c *gin.Context) {
 // TODO
 func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var body models.AddUserSchema
-	ok := utils.Validate(c, &body)
+	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
@@ -427,7 +471,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	var body models.RemoveUserSchema
-	ok := utils.Validate(c, &body)
+	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
@@ -477,7 +521,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 	var body models.EditHubCredsSchema
-	ok := utils.Validate(c, &body)
+	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
@@ -505,4 +549,75 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 	})
+}
+
+func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
+	var file multipart.FileHeader
+	ok := utils.Validate(c, nil, true, &file)
+	if !ok {
+		return
+	}
+
+	directoryPath := "/tmp/strech"
+	if _, err := os.Stat(directoryPath); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(directoryPath, os.ModePerm)
+		if err != nil {
+			logger.Error("EditCompanyLogo error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	fileName := "company_logo" + filepath.Ext(file.Filename)
+	saveAtPath := "/tmp/strech/" + fileName
+	if err := c.SaveUploadedFile(&file, saveAtPath); err != nil {
+		logger.Error("EditCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	base64Encoding, err := imageToBase64(saveAtPath)
+	if err != nil {
+		logger.Error("EditCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{"image": base64Encoding})
+}
+
+func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
+	path, err := getCompanyLogoPath()
+	if err != nil {
+		logger.Error("RemoveCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = os.Remove(path)
+	if err != nil {
+		logger.Error("RemoveCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
+	path, err := getCompanyLogoPath()
+	if err != nil {
+		logger.Error("GetCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	base64Encoding, err := imageToBase64(path)
+	if err != nil {
+		logger.Error("GetCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{"image": base64Encoding})
 }
