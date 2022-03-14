@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strech-server/config"
 	"strech-server/db"
 	"strech-server/logger"
 	"strech-server/models"
@@ -27,9 +26,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var usersCollection *mongo.Collection = db.GetCollection(db.Client, "users")
 var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
-var configuration = config.GetConfig()
 
 type UserMgmtHandler struct{}
 
@@ -116,11 +113,6 @@ func createTokens(user models.User) (string, string, error) {
 	}
 
 	return token, refreshToken, nil
-}
-
-func getUserDetailsFromMiddleware(c *gin.Context) models.User {
-	user, _ := c.Get("user")
-	return user.(models.User)
 }
 
 func imageToBase64(imagePath string) (string, error) {
@@ -466,7 +458,11 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(200, users)
+	if len(users) == 0 {
+		c.IndentedJSON(200, []string{})
+	} else {
+		c.IndentedJSON(200, users)
+	}
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
