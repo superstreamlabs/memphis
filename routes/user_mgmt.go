@@ -14,6 +14,7 @@ func InitializeUserMgmtRoutes(router *gin.Engine) {
 	userMgmtRoutes.POST("/refreshToken", userMgmtHandler.RefreshToken)
 	userMgmtRoutes.POST("/logout", userMgmtHandler.Logout)
 	userMgmtRoutes.POST("/jwt/v1/accounts", userMgmtHandler.AuthenticateNats)
+	userMgmtRoutes.GET("/jwt/v1/accounts", userMgmtHandler.AuthenticateNatsSTATUS)
 	userMgmtRoutes.POST("/addUser", userMgmtHandler.AddUser)
 	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
 	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)

@@ -339,7 +339,21 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (umh UserMgmtHandler) AuthenticateNatsSTATUS(c *gin.Context) {
+	fmt.Println("AuthenticateNatsSTATUS")
+	var body interface{}
+	err := c.ShouldBindJSON(body)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println(body)
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
 func (umh UserMgmtHandler) AuthenticateNats(c *gin.Context) {
+	fmt.Println("AuthenticateNats")
 	var body interface{}
 	err := c.ShouldBindJSON(body)
 	if err != nil {
