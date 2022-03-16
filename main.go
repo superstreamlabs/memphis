@@ -11,6 +11,7 @@ import (
 func main() {
 	configuration := config.GetConfig()
 	logger.Info("Environment: " + configuration.ENVIRONMENT)
+	logger.Info("idan asulin")
 
 	router := routes.InitializeHttpRoutes()
 	socketioServer := socketio.InitializeSocketio(router)
