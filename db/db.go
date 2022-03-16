@@ -16,7 +16,7 @@ const (
 )
 
 func getConnection() (*mongo.Client, context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 	defer cancel()
 
 	auth :=  options.Credential{
