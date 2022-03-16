@@ -20,7 +20,6 @@ import (
 
 var noNeedAuthRoutes = []string{
 	"/usermgmt/createrootuser",
-	"/usermgmt/jwt/v1/accounts",
 	"/usermgmt/login",
 	"/usermgmt/refreshtoken",
 	"/status",
@@ -32,6 +31,10 @@ var configuration = config.GetConfig()
 var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
 
 func isAuthNeeded(path string) bool {
+	if strings.HasPrefix(path, "/usermgmt/jwt/v1/accounts") {
+		return false
+	}
+	
 	for _, route := range noNeedAuthRoutes {
 		if route == path {
 			return false

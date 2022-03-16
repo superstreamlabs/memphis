@@ -3,16 +3,12 @@ package main
 import (
 	"strech-server/config"
 	"strech-server/db"
-	"strech-server/logger"
 	"strech-server/routes"
 	"strech-server/socketio"
 )
 
 func main() {
 	configuration := config.GetConfig()
-	logger.Info("Environment: " + configuration.ENVIRONMENT)
-	logger.Info("idan asulin")
-
 	router := routes.InitializeHttpRoutes()
 	socketioServer := socketio.InitializeSocketio(router)
 

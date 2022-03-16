@@ -339,34 +339,9 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) AuthenticateNatsSTATUS(c *gin.Context) {
-	fmt.Println("AuthenticateNatsSTATUS")
-	var body interface{}
-	err := c.ShouldBindJSON(body)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println(body)
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
-func (umh UserMgmtHandler) AuthenticateNats(c *gin.Context) {
-	fmt.Println("AuthenticateNats")
-	var body interface{}
-	err := c.ShouldBindJSON(body)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println(body)
-	}
-	// var body models.AuthenticateNatsSchema
-	// ok := utils.Validate(c, &body, false, nil)
-	// if !ok {
-	// 	return
-	// }
-
+func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
+	publicKey := c.Param("publicKey")
+	fmt.Println(publicKey)
 	// authenticated, user, err := authenticateUser(body.Username, body.Password)
 	// if err != nil {
 	// 	logger.Error("AuthenticateNats error: " + err.Error())
