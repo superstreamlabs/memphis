@@ -341,18 +341,20 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 
 func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	publicKey := c.Param("publicKey")
-	fmt.Println(publicKey)
-	// authenticated, user, err := authenticateUser(body.Username, body.Password)
-	// if err != nil {
-	// 	logger.Error("AuthenticateNats error: " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 	return
-	// }
+	if publicKey != "" {
+		fmt.Println(publicKey)
+		// authenticated, user, err := authenticateUser(body.Username, body.Password)
+		// if err != nil {
+		// 	logger.Error("AuthenticateNats error: " + err.Error())
+		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 	return
+		// }
 
-	// if !authenticated || user.UserType == "management" {
-	// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	// 	return
-	// }
+		// if !authenticated || user.UserType == "management" {
+		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		// 	return
+		// }
+	}
 
 	c.IndentedJSON(200, gin.H{})
 }
