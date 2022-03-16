@@ -1,9 +1,9 @@
 {
     "PORT": "5555",
     "LOGGER": "STDOUT",
-    "MONGO_URL": "mongodb://my-mongo-mongodb-headless.mongo.svc.cluster.local:27017",
-    "MONGO_USER": "root",
-    "MONGO_PASS": "Mongo4life",
+    "MONGO_URL": "mongodb://mongo.strech.svc.cluster.local/maindb?retryWrites=true&w=majority",
+    "MONGO_USER": "memphis",
+    "MONGO_PASS": "memph1smong0",
     "DB_NAME": "maindb",
     "JWT_SECRET": "35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk",
     "JWT_EXPIRES_IN_MINUTES": 15,

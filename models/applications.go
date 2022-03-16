@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Box struct {
+type Application struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id"`
 	Name          string             `json:"name" binding:"required,min=2,max=25" bson:"name"`
 	Description   string             `json:"description" bson:"description"`
@@ -14,17 +14,17 @@ type Box struct {
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 }
 
-type CreateBoxSchema struct {
+type CreateApplicationSchema struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-type RemoveBoxSchema struct {
-	BoxId primitive.ObjectID `json:"box_id"`
+type RemoveApplicationSchema struct {
+	ApplicationId primitive.ObjectID `json:"application_id"`
 }
 
-type EditBoxSchema struct {
-	BoxId       primitive.ObjectID `json:"box_id"`
-	Name        string             `json:"box_name"`
-	Description string             `json:"box_description"`
+type EditApplicationSchema struct {
+	ApplicationId       primitive.ObjectID `json:"application_id"`
+	Name        string             `json:"application_name"`
+	Description string             `json:"application_description"`
 }

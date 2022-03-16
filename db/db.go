@@ -20,6 +20,7 @@ func getConnection() (*mongo.Client, context.Context, context.CancelFunc) {
 	defer cancel()
 
 	auth :=  options.Credential{
+		AuthSource: configuration.DB_NAME,
 		Username: configuration.MONGO_USER,
 		Password: configuration.MONGO_PASS,
 	}

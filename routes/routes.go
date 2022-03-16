@@ -23,7 +23,8 @@ func InitializeHttpRoutes() *gin.Engine {
 
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(router)
-	InitializeBoxesRoutes(router)
+	InitializeApplicationsRoutes(router)
+	InitializeFactoriesRoutes(router)
 	router.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",
