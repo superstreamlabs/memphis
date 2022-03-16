@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 
@@ -339,23 +340,30 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) AuthenticateNats(c *gin.Context) {
-	var body models.AuthenticateNatsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	authenticated, user, err := authenticateUser(body.Username, body.Password)
+	var body interface{}
+	err := c.ShouldBindJSON(body)
 	if err != nil {
-		logger.Error("AuthenticateNats error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println(body)
 	}
+	// var body models.AuthenticateNatsSchema
+	// ok := utils.Validate(c, &body, false, nil)
+	// if !ok {
+	// 	return
+	// }
 
-	if !authenticated || user.UserType == "management" {
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
+	// authenticated, user, err := authenticateUser(body.Username, body.Password)
+	// if err != nil {
+	// 	logger.Error("AuthenticateNats error: " + err.Error())
+	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	// 	return
+	// }
+
+	// if !authenticated || user.UserType == "management" {
+	// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	// 	return
+	// }
 
 	c.IndentedJSON(200, gin.H{})
 }
