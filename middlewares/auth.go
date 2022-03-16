@@ -31,7 +31,7 @@ var configuration = config.GetConfig()
 var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
 
 func isAuthNeeded(path string) bool {
-	if strings.HasPrefix(path, "/usermgmt/jwt/v1/accounts") {
+	if strings.HasPrefix(path, "/usermgmt/nats/authenticate") {
 		return false
 	}
 	

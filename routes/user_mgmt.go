@@ -9,8 +9,8 @@ import (
 func InitializeUserMgmtRoutes(router *gin.Engine) {
 	userMgmtHandler := handlers.UserMgmtHandler{}
 	userMgmtRoutes := router.Group("/usermgmt")
-	userMgmtRoutes.GET("/jwt/v1/accounts", userMgmtHandler.AuthenticateNatsUser)
-	userMgmtRoutes.GET("/jwt/v1/accounts/:publicKey", userMgmtHandler.AuthenticateNatsUser)
+	userMgmtRoutes.GET("/nats/authenticate", userMgmtHandler.AuthenticateNatsUser)
+	userMgmtRoutes.GET("/nats/authenticate/:publicKey", userMgmtHandler.AuthenticateNatsUser)
 	userMgmtRoutes.POST("/createRootUser", userMgmtHandler.CreateRootUser)
 	userMgmtRoutes.POST("/login", userMgmtHandler.Login)
 	userMgmtRoutes.POST("/refreshToken", userMgmtHandler.RefreshToken)
