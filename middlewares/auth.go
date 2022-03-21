@@ -25,7 +25,7 @@ var noNeedAuthRoutes = []string{
 	"/api-gw/status",
 }
 
-var refreshTokenRoute string = "/usermgmt/refreshtoken"
+var refreshTokenRoute string = "/api-gw/usermgmt/refreshtoken"
 
 var configuration = config.GetConfig()
 var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
