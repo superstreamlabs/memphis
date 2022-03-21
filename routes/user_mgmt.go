@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeUserMgmtRoutes(router *gin.Engine) {
+func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtHandler := handlers.UserMgmtHandler{}
 	userMgmtRoutes := router.Group("/usermgmt")
 	userMgmtRoutes.GET("/nats/authenticate", userMgmtHandler.AuthenticateNatsUser)

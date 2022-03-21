@@ -1,30 +1,44 @@
 package models
 
-// import (
-// 	"time"
+import (
+	"time"
 
-// 	"go.mongodb.org/mongo-driver/bson/primitive"
-// )
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
-// type Box struct {
-// 	ID            primitive.ObjectID `json:"id" bson:"_id"`
-// 	Name          string             `json:"name" binding:"required,min=2,max=25" bson:"name"`
-// 	Description   string             `json:"description" bson:"description"`
-// 	CreatedByUSer string             `json:"created_by_user" binding:"required" bson:"created_by_user"`
-// 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-// }
+type Factory struct {
+	ID            primitive.ObjectID `json:"id" bson:"_id"`
+	Name          string             `json:"name" bson:"name"`
+	ApplicationId string             `json:"application_id" bson:"application_id"`
+	
+	// RetentionType
+	// RetentionValue
+	// MaxThroughputType
+	// MaxThroughputValue
 
-// type CreateBoxSchema struct {
-// 	Name        string `json:"name"`
-// 	Description string `json:"description"`
-// }
+	// Publishers
+	// Consumers
+	// Functions
 
-// type RemoveBoxSchema struct {
-// 	BoxId primitive.ObjectID `json:"box_id"`
-// }
+	CreatedByUSer string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate  time.Time          `json:"last_update" bson:"last_update"`
+}
 
-// type EditBoxSchema struct {
-// 	BoxId       primitive.ObjectID `json:"box_id"`
-// 	Name        string             `json:"box_name"`
-// 	Description string             `json:"box_description"`
-// }
+type GetFactoryByIdSchema struct {
+	FactoryId        string `json:"factory_id" binding:"required"`
+}
+
+type GetApplicationFactoriesSchema struct {
+	ApplicationId primitive.ObjectID `json:"application_id" binding:"required"`
+}
+
+type CreateFactorySchema struct {
+	BoxId       primitive.ObjectID `json:"box_id" binding:"required"`
+	Name        string             `json:"box_name"`
+	Description string             `json:"box_description"`
+}
+
+type RemoveFactorySchema struct {
+	FactoryId        string `json:"factory_id" binding:"required"`
+}

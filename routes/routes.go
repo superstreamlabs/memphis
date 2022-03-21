@@ -19,13 +19,14 @@ func InitializeHttpRoutes() *gin.Engine {
 		AllowWebSockets:  true,
 		AllowFiles:       true,
 	}))
-	router.Use(middlewares.Authenticate)
+	mainRouter := router.Group("/api-gw")
+	mainRouter.Use(middlewares.Authenticate)
 
 	utils.InitializeValidations()
-	InitializeUserMgmtRoutes(router)
-	InitializeApplicationsRoutes(router)
-	InitializeFactoriesRoutes(router)
-	router.GET("/status", func(c *gin.Context) {
+	InitializeUserMgmtRoutes(mainRouter)
+	InitializeApplicationsRoutes(mainRouter)
+	InitializeFactoriesRoutes(mainRouter)
+	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",
 		})

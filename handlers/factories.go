@@ -3,38 +3,49 @@ package handlers
 import (
 	// "context"
 	// "strech-server/logger"
-	// "strech-server/models"
-	// // "strech-server/utils"
+	"strech-server/models"
+	"strech-server/utils"
 	// // "strings"
 	// // "time"
 
-	// "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 	// "go.mongodb.org/mongo-driver/bson"
 	// "go.mongodb.org/mongo-driver/bson/primitive"
 	// "go.mongodb.org/mongo-driver/mongo"
 )
 
-// type FactoriesHandler struct{}
+type FactoriesHandler struct{}
 
-// func (umh FactoriesHandler) GetBoxFactories(c *gin.Context) {
-// 	var boxes []models.Box
+func (umh FactoriesHandler) GetFactoryById(c *gin.Context) {
+	var body models.GetFactoryByIdSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
 
-// 	cursor, err := boxesCollection.Find(context.TODO(), bson.M{})
-// 	if err != nil {
-// 		logger.Error("GetAllBoxes error: " + err.Error())
-// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-// 		return
-// 	}
+	// user := getUserDetailsFromMiddleware(c)
+}
 
-// 	if err = cursor.All(context.TODO(), &boxes); err != nil {
-// 		logger.Error("GetAllBoxes error: " + err.Error())
-// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-// 		return
-// 	}
+func (umh FactoriesHandler) GetApplicationFactories(c *gin.Context) {
+	var body models.GetApplicationFactoriesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+}
 
-// 	if len(boxes) == 0 {
-// 		c.IndentedJSON(200, []string{})
-// 	} else {
-// 		c.IndentedJSON(200, boxes)
-// 	}
-// }
+func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
+	var body models.CreateFactorySchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+}
+
+func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
+	var body models.RemoveFactorySchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+}

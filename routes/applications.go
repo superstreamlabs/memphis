@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeApplicationsRoutes(router *gin.Engine) {
+func InitializeApplicationsRoutes(router *gin.RouterGroup) {
 	applicationsHandler := handlers.ApplicationsHandler{}
-	userMgmtRoutes := router.Group("/application")
+	userMgmtRoutes := router.Group("/applications")
 	userMgmtRoutes.POST("/createApplication", applicationsHandler.CreateApplication)
 	userMgmtRoutes.GET("/getAllApplications", applicationsHandler.GetAllApplications)
 	userMgmtRoutes.DELETE("/removeApplication", applicationsHandler.RemoveApplication)

@@ -19,10 +19,10 @@ import (
 )
 
 var noNeedAuthRoutes = []string{
-	"/usermgmt/createrootuser",
-	"/usermgmt/login",
-	"/usermgmt/refreshtoken",
-	"/status",
+	"/api-gw/usermgmt/createrootuser",
+	"/api-gw/usermgmt/login",
+	"/api-gw/usermgmt/refreshtoken",
+	"/api-gw/status",
 }
 
 var refreshTokenRoute string = "/usermgmt/refreshtoken"
