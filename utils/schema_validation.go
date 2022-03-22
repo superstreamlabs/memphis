@@ -45,7 +45,13 @@ func InitializeValidations() {
 }
 
 func validateSchema(c *gin.Context, schema interface{}, containFile bool, file *multipart.FileHeader) (validator.ValidationErrors, bool) {
-	if containFile {
+	if c.Request.Method == "GET" {
+		if err := c.ShouldBind(schema); err != nil {
+			if verr, ok := err.(validator.ValidationErrors); ok {
+				return verr, true
+			}
+		}
+	} else if containFile {
 		uploadedFile, err := c.FormFile("file")
 		if err != nil {
 			logger.Error("validateSchema error: " + err.Error())
@@ -65,6 +71,7 @@ func validateSchema(c *gin.Context, schema interface{}, containFile bool, file *
 		if verr, ok := err.(validator.ValidationErrors); ok {
 			return verr, true
 		}
+
 		c.AbortWithStatusJSON(400, gin.H{"message": "Body params have to be in JSON format"})
 		return nil, true
 	}

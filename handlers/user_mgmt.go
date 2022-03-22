@@ -154,7 +154,7 @@ func getCompanyLogoPath() (string, error) {
 	return "", nil
 }
 
-// TODO
+// TODO - should happen on service load
 func (umh UserMgmtHandler) CreateRootUser(c *gin.Context) {
 	var body models.CreateRootUserSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -401,6 +401,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 
 	// trying to login with the given hub creds if needed and see if they are valid
+	
+	avatarId := 1
+	if body.AvatarId == 0 {
+		avatarId = body.AvatarId
+	}
 
 	newUser := models.User{
 		ID:              primitive.NewObjectID(),
@@ -411,7 +416,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		UserType:        userType,
 		CreationDate:    time.Now(),
 		AlreadyLoggedIn: false,
-		AvatarId:        body.AvatarId,
+		AvatarId:        avatarId,
 	}
 
 	_, err = usersCollection.InsertOne(context.TODO(), newUser)
@@ -471,20 +476,33 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
+	username := strings.ToLower(body.Username)
+
 	user := getUserDetailsFromMiddleware(c)
-	if user.Username == body.Username {
-		c.AbortWithStatusJSON(400, gin.H{"message": "You can't remove yourself"})
+	if user.Username == username {
+		c.AbortWithStatusJSON(400, gin.H{"message": "You can't remove your own user"})
 		return
 	}
 
-	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": body.Username})
+	exist, err := isUserExist(username)
+	if err != nil {
+		logger.Error("RemoveUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		c.AbortWithStatusJSON(400, gin.H{"message": "A user with this username is not exist"})
+		return
+	}
+
+	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	_, err = tokensCollection.DeleteOne(context.TODO(), bson.M{"username": body.Username})
+	_, err = tokensCollection.DeleteOne(context.TODO(), bson.M{"username": username})
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -514,6 +532,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+// TODO
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 	var body models.EditHubCredsSchema
 	ok := utils.Validate(c, &body, false, nil)

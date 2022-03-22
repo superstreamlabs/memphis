@@ -38,7 +38,7 @@ func (umh ApplicationsHandler) CreateApplication(c *gin.Context) {
 	newApplication := models.Application{
 		ID:            primitive.NewObjectID(),
 		Name:          applicationName,
-		Description:   body.Description,
+		Description:   strings.ToLower(body.Description),
 		CreatedByUSer: user.Username,
 		CreationDate:  time.Now(),
 	}
@@ -89,7 +89,19 @@ func (umh ApplicationsHandler) RemoveApplication(c *gin.Context) {
 		return
 	}
 
-	_, err := applicationsCollection.DeleteOne(context.TODO(), bson.M{"_id": body.ApplicationId})
+	applicationName := strings.ToLower(body.ApplicationName)
+	exist, err := isApplicationExist(applicationName)
+	if err != nil {
+		logger.Error("RemoveApplication error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		c.AbortWithStatusJSON(400, gin.H{"message": "An application with that name is not exist"})
+		return
+	}
+
+	_, err = applicationsCollection.DeleteOne(context.TODO(), bson.M{"name": applicationName})
 	if err != nil {
 		logger.Error("RemoveApplication error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -106,19 +118,38 @@ func (umh ApplicationsHandler) EditApplication(c *gin.Context) {
 		return
 	}
 
-	applicationName := strings.ToLower(body.Name)
-	_, err := applicationsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": body.ApplicationId},
-		bson.M{"$set": bson.M{"name": applicationName, "description": body.Description}},
-	)
+	applicationName := strings.ToLower(body.ApplicationName)
+	exist, err := isApplicationExist(applicationName)
+	if err != nil {
+		logger.Error("EditApplication error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		c.AbortWithStatusJSON(400, gin.H{"message": "An application with that name is not exist"})
+		return
+	}
+
+	var application models.Application
+	err = applicationsCollection.FindOne(context.TODO(), bson.M{"name": applicationName}).Decode(&application)
 	if err != nil {
 		logger.Error("EditApplication error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	var application models.Application
-	err = applicationsCollection.FindOne(context.TODO(), bson.M{"_id": body.ApplicationId}).Decode(&application)
+	if body.NewName != "" {
+		application.Name = strings.ToLower(body.NewName)
+	}
+
+	if body.NewDescription != "" {
+		application.Description = strings.ToLower(body.NewDescription)
+	}
+
+	_, err = applicationsCollection.UpdateOne(context.TODO(),
+		bson.M{"name": applicationName},
+		bson.M{"$set": bson.M{"name": application.Name, "description": application.Description}},
+	)
 	if err != nil {
 		logger.Error("EditApplication error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

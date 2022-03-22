@@ -20,11 +20,11 @@ type CreateApplicationSchema struct {
 }
 
 type RemoveApplicationSchema struct {
-	ApplicationId primitive.ObjectID `json:"application_id"  binding:"required"`
+	ApplicationName string `json:"application_name"  binding:"required"`
 }
 
 type EditApplicationSchema struct {
-	ApplicationId primitive.ObjectID `json:"application_id"  binding:"required"`
-	Name          string             `json:"application_name"`
-	Description   string             `json:"application_description"`
+	ApplicationName string `json:"application_name"  binding:"required"`
+	NewName         string `json:"application_new_name"`
+	NewDescription  string `json:"application_new_description"`
 }
