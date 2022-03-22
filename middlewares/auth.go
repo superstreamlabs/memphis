@@ -156,11 +156,11 @@ func Authenticate(c *gin.Context) {
 		exist, err := isRefreshTokenExist(user.Username, tokenString)
 		if err != nil {
 			logger.Error("Authenticate error: " + err.Error())
-			c.IndentedJSON(500, gin.H{"message": "Server error"})
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		if !exist {
-			c.IndentedJSON(401, gin.H{"message": "Unauthorized"})
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
