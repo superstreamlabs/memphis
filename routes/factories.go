@@ -9,8 +9,8 @@ import (
 func InitializeFactoriesRoutes(router *gin.RouterGroup) {
 	factoriesHandler := handlers.FactoriesHandler{}
 	factoriesRoutes := router.Group("/factories")
-	factoriesRoutes.GET("/getFactoryById", factoriesHandler.GetFactoryById)
-	factoriesRoutes.GET("/getApplicationFactories", factoriesHandler.GetApplicationFactories)
 	factoriesRoutes.POST("/createFactory", factoriesHandler.CreateFactory)
+	factoriesRoutes.GET("/getAllFactories", factoriesHandler.GetAllFactories)
 	factoriesRoutes.DELETE("/removeFactory", factoriesHandler.RemoveFactory)
+	factoriesRoutes.PUT("/editFactory", factoriesHandler.EditFactory)
 }

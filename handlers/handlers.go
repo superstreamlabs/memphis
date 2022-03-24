@@ -12,8 +12,8 @@ import (
 )
 
 var usersCollection *mongo.Collection = db.GetCollection(db.Client, "users")
-var applicationsCollection *mongo.Collection = db.GetCollection(db.Client, "applications")
 var factoriesCollection *mongo.Collection = db.GetCollection(db.Client, "factories")
+var stationsCollection *mongo.Collection = db.GetCollection(db.Client, "stations")
 var configuration = config.GetConfig()
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
@@ -21,10 +21,10 @@ func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	return user.(models.User)
 }
 
-func isApplicationExist(applicationName string) (bool, error) {
-	filter := bson.M{"name": applicationName}
-	var application models.Application
-	err := applicationsCollection.FindOne(context.TODO(), filter).Decode(&application)
+func isFactoryExist(factoryName string) (bool, error) {
+	filter := bson.M{"name": factoryName}
+	var factory models.Factory
+	err := factoriesCollection.FindOne(context.TODO(), filter).Decode(&factory)
 	if err == mongo.ErrNoDocuments {
 		return false, nil
 	} else if err != nil {

@@ -9,36 +9,22 @@ import (
 type Factory struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id"`
 	Name          string             `json:"name" bson:"name"`
-	ApplicationId string             `json:"application_id" bson:"application_id"`
-	
-	// RetentionType
-	// RetentionValue
-	// MaxThroughputType
-	// MaxThroughputValue
-
-	// Publishers
-	// Consumers
-	// Functions
-
+	Description   string             `json:"description" bson:"description"`
 	CreatedByUSer string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate  time.Time          `json:"last_update" bson:"last_update"`
-}
-
-type GetFactoryByIdSchema struct {
-	FactoryId        string `json:"factory_id" binding:"required"`
-}
-
-type GetApplicationFactoriesSchema struct {
-	ApplicationId primitive.ObjectID `json:"application_id" binding:"required"`
 }
 
 type CreateFactorySchema struct {
-	BoxId       primitive.ObjectID `json:"box_id" binding:"required"`
-	Name        string             `json:"box_name"`
-	Description string             `json:"box_description"`
+	Name        string `json:"name" binding:"required,min=1,max=25"`
+	Description string `json:"description"`
 }
 
 type RemoveFactorySchema struct {
-	FactoryId        string `json:"factory_id" binding:"required"`
+	FactoryName string `json:"factory_name"  binding:"required"`
+}
+
+type EditFactorySchema struct {
+	FactoryName    string `json:"factory_name"  binding:"required"`
+	NewName        string `json:"factory_new_name"`
+	NewDescription string `json:"factory_new_description"`
 }
