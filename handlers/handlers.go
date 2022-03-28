@@ -21,14 +21,26 @@ func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	return user.(models.User)
 }
 
-func isFactoryExist(factoryName string) (bool, error) {
+func isFactoryExist(factoryName string) (bool, models.Factory, error) {
 	filter := bson.M{"name": factoryName}
 	var factory models.Factory
 	err := factoriesCollection.FindOne(context.TODO(), filter).Decode(&factory)
 	if err == mongo.ErrNoDocuments {
-		return false, nil
+		return false, factory, nil
 	} else if err != nil {
-		return false, err
+		return false, factory, err
 	}
-	return true, nil
+	return true, factory, nil
+}
+
+func isStationExist(stationName string) (bool, models.Station, error) {
+	filter := bson.M{"name": stationName}
+	var station models.Station
+	err := stationsCollection.FindOne(context.TODO(), filter).Decode(&station)
+	if err == mongo.ErrNoDocuments {
+		return false, station, nil
+	} else if err != nil {
+		return false, station, err
+	}
+	return true, station, nil
 }

@@ -19,6 +19,10 @@ type CreateFactorySchema struct {
 	Description string `json:"description"`
 }
 
+type GetFactorySchema struct {
+	FactoryName string `form:"factory_name" json:"factory_name"  binding:"required"`
+}
+
 type RemoveFactorySchema struct {
 	FactoryName string `json:"factory_name"  binding:"required"`
 }

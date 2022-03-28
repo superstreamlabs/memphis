@@ -81,12 +81,38 @@ func validateUserType(userType string) error {
 	return nil
 }
 
+// TODO
+func validateHubCreds(hubUsername string, hubPassword string) error {
+	// check against hub api
+	return nil
+}
+
+func updateUserResources(username string) error {
+	_, err := factoriesCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": username},
+		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = stationsCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": username},
+		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func validateUsername(username string) error {
 	re := regexp.MustCompile("^[a-z0-9_.]*$")
 
 	validName := re.MatchString(username)
 	if !validName {
-		return errors.New("username has to include only letters, numbers and _")
+		return errors.New("username has to include only letters/numbers/./_ ")
 	}
 	return nil
 }
@@ -359,7 +385,6 @@ func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-// TODO
 func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var body models.AddUserSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -400,11 +425,16 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	// trying to login with the given hub creds if needed and see if they are valid
-	
 	avatarId := 1
 	if body.AvatarId == 0 {
 		avatarId = body.AvatarId
+	}
+
+	err = validateHubCreds(body.HubUsername, body.HubPassword)
+	if err != nil {
+		logger.Error("CreateUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
 	}
 
 	newUser := models.User{
@@ -477,7 +507,6 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 
 	username := strings.ToLower(body.Username)
-
 	user := getUserDetailsFromMiddleware(c)
 	if user.Username == username {
 		c.AbortWithStatusJSON(400, gin.H{"message": "You can't remove your own user"})
@@ -491,7 +520,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "A user with this username is not exist"})
+		c.AbortWithStatusJSON(400, gin.H{"message": "User does not exist"})
 		return
 	}
 
@@ -506,6 +535,13 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = updateUserResources(username)
+	if err != nil {
+		logger.Error("RemoveUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -529,10 +565,16 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
+	err = updateUserResources(user.Username)
+	if err != nil {
+		logger.Error("RemoveMyUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
 	c.IndentedJSON(200, gin.H{})
 }
 
-// TODO
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 	var body models.EditHubCredsSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -540,8 +582,15 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 		return
 	}
 
+	err := validateHubCreds(body.HubUsername, body.HubPassword)
+	if err != nil {
+		logger.Error("EditHubCreds error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
 	user := getUserDetailsFromMiddleware(c)
-	_, err := usersCollection.UpdateOne(context.TODO(),
+	_, err = usersCollection.UpdateOne(context.TODO(),
 		bson.M{"username": user.Username},
 		bson.M{"$set": bson.M{"hub_username": body.HubUsername, "hub_password": body.HubPassword}},
 	)
@@ -550,8 +599,6 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	// try to login with the given hub creds
 
 	c.IndentedJSON(200, gin.H{
 		"id":                user.ID,

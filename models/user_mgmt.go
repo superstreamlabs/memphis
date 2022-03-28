@@ -57,6 +57,6 @@ type RemoveUserSchema struct {
 }
 
 type EditHubCredsSchema struct {
-	HubUsername string `json:"hub_username"`
-	HubPassword string `json:"hub_password"`
+	HubUsername string `json:"hub_username" binding:"required"`
+	HubPassword string `json:"hub_password" binding:"required"`
 }
