@@ -31,16 +31,16 @@ var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
 
 type UserMgmtHandler struct{}
 
-func isUserExist(username string) (bool, error) {
+func isUserExist(username string) (bool, models.User, error) {
 	filter := bson.M{"username": username}
 	var user models.User
 	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return false, nil
+		return false, user, nil
 	} else if err != nil {
-		return false, err
+		return false, user, err
 	}
-	return true, nil
+	return true, user, nil
 }
 
 func isRootUserExist() (bool, error) {
@@ -393,7 +393,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	username := strings.ToLower(body.Username)
-	exist, err := isUserExist(username)
+	exist, _, err := isUserExist(username)
 	if err != nil {
 		logger.Error("CreateUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -513,7 +513,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	exist, err := isUserExist(username)
+	exist, userToRemove, err := isUserExist(username)
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -521,6 +521,10 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 	if !exist {
 		c.AbortWithStatusJSON(400, gin.H{"message": "User does not exist"})
+		return
+	}
+	if userToRemove.UserType == "root" {
+		c.AbortWithStatusJSON(400, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 
@@ -550,6 +554,11 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	user := getUserDetailsFromMiddleware(c)
+
+	if user.UserType == "root" {
+		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
+		return
+	}
 
 	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
 	if err != nil {
