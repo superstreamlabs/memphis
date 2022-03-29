@@ -57,11 +57,8 @@ func validateReplicas(replicas int64) error {
 	return nil
 }
 
-// TODO
-func removeResources(stationName string) error {
-	// remove nats resources
-	// remove producers & consumers
-	// remove functions/connectors pods
+// TODO remove the station resources - streams, functions, connectors, producers, consumers
+func removeStationResources(stationName string) error {
 	return nil
 }
 
@@ -205,7 +202,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	err = removeResources(stationName)
+	err = removeStationResources(stationName)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

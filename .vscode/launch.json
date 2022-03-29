@@ -8,7 +8,8 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "ENVIRONMENT": "dev"
+                "ENVIRONMENT": "dev",
+                "ROOT_PASSWORD": "123456"
             }
         }
     ]

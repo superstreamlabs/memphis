@@ -1,6 +1,5 @@
 {
     "PORT": "5555",
-    "LOGGER": "STDOUT",
     "MONGO_URL": "mongodb://mongo.strech.svc.cluster.local/maindb?retryWrites=true&w=majority",
     "MONGO_USER": "memphis",
     "MONGO_PASS": "memph1smong0",

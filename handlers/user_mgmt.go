@@ -81,12 +81,12 @@ func validateUserType(userType string) error {
 	return nil
 }
 
-// TODO
+// TODO check against hub api
 func validateHubCreds(hubUsername string, hubPassword string) error {
-	// check against hub api
 	return nil
 }
 
+// TODO terminate all user connections
 func updateUserResources(username string) error {
 	_, err := factoriesCollection.UpdateMany(context.TODO(),
 		bson.M{"created_by_user": username},
@@ -164,6 +164,7 @@ func imageToBase64(imagePath string) (string, error) {
 	return base64Encoding, nil
 }
 
+// TODO get file from pv and not from the container 
 func getCompanyLogoPath() (string, error) {
 	files, err := ioutil.ReadDir("/tmp/strech")
 	if err != nil {
@@ -180,73 +181,40 @@ func getCompanyLogoPath() (string, error) {
 	return "", nil
 }
 
-// TODO - should happen on service load
-func (umh UserMgmtHandler) CreateRootUser(c *gin.Context) {
-	var body models.CreateRootUserSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
+func CreateRootUserOnFirstSystemLoad() error {
 	exist, err := isRootUserExist()
 	if err != nil {
-		logger.Error("CreateRootUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return err
 	}
-	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "This account already has root user"})
-		return
-	}
+	if !exist {
+		username := "root"
+		password := configuration.ROOT_PASSWORD
 
-	username := strings.ToLower(body.Username)
-	usernameError := validateUsername(username)
-	if usernameError != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": usernameError.Error()})
-		return
-	}
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		hashedPwdString := string(hashedPwd)
 
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
-	if err != nil {
-		logger.Error("CreateUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	hashedPwdString := string(hashedPwd)
+		newUser := models.User{
+			ID:              primitive.NewObjectID(),
+			Username:        username,
+			Password:        hashedPwdString,
+			HubUsername:     "",
+			HubPassword:     "",
+			UserType:        "root",
+			CreationDate:    time.Now(),
+			AlreadyLoggedIn: false,
+			AvatarId:        1,
+		}
 
-	// trying to login with the given hub creds if needed and see if they are valid
-
-	newUser := models.User{
-		ID:              primitive.NewObjectID(),
-		Username:        username,
-		Password:        hashedPwdString,
-		HubUsername:     body.HubUsername,
-		HubPassword:     body.HubPassword,
-		UserType:        "root",
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
-		AvatarId:        body.AvatarId,
+		_, err = usersCollection.InsertOne(context.TODO(), newUser)
+		if err != nil {
+			return err
+		}
 	}
 
-	_, err = usersCollection.InsertOne(context.TODO(), newUser)
-	if err != nil {
-		logger.Error("CreateUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	// login the user
-
-	c.IndentedJSON(200, gin.H{
-		"id":                newUser.ID,
-		"username":          username,
-		"hub_username":      body.HubUsername,
-		"hub_password":      body.HubPassword,
-		"user_type":         "root",
-		"creation_date":     newUser.CreationDate,
-		"already_logged_in": false,
-		"avatar_id":         body.AvatarId,
-	})
+	return nil
 }
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
@@ -365,6 +333,7 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+// TODO see if we need this
 func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	publicKey := c.Param("publicKey")
 	if publicKey != "" {
@@ -621,6 +590,7 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 	})
 }
 
+// TODO save file on pv and not on the container 
 func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 	var file multipart.FileHeader
 	ok := utils.Validate(c, nil, true, &file)

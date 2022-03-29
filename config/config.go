@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/tkanos/gonfig"
 	"os"
@@ -10,7 +9,6 @@ import (
 type Configuration struct {
 	ENVIRONMENT                    string
 	PORT                           string
-	LOGGER                         string
 	MONGO_URL                      string
 	MONGO_USER                     string
 	MONGO_PASS                     string
@@ -19,6 +17,7 @@ type Configuration struct {
 	JWT_EXPIRES_IN_MINUTES         int
 	REFRESH_JWT_SECRET             string
 	REFRESH_JWT_EXPIRES_IN_MINUTES int
+	ROOT_PASSWORD                  string
 }
 
 func GetConfig() Configuration {
@@ -31,8 +30,7 @@ func GetConfig() Configuration {
 		gin.SetMode(gin.DebugMode)
 	}
 	configuration := Configuration{}
-	fileName := fmt.Sprintf("./config/%s_config.json", env)
-	gonfig.GetConf(fileName, &configuration)
+	gonfig.GetConf("./config/config.json", &configuration)
 
 	return configuration
 }

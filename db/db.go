@@ -29,13 +29,13 @@ func getConnection() (*mongo.Client, context.Context, context.CancelFunc) {
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		logger.Error("Failed to create Mongo DB client: " + err.Error())
-		// panic("Failed to create Mongo DB client: " + err.Error())
+		panic("Failed to create Mongo DB client: " + err.Error())
 	}
 
 	err = client.Ping(ctx, nil)
 		if err != nil {
 		logger.Error("Failed to create Mongo DB client: " + err.Error())
-		// panic("Failed to create Mongo DB client: " + err.Error())
+		panic("Failed to create Mongo DB client: " + err.Error())
 	}
 	logger.Info("Connected to Mongo DB")
 

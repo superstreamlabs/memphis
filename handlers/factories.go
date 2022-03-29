@@ -28,7 +28,7 @@ func validateFactoryName(factoryName string) error {
 	return nil
 }
 
-// TODO remove the stations resources
+// TODO remove the stations resources - streams, functions, connectors, producers, consumers
 func removeStations(factoryId primitive.ObjectID) error {
 	_, err := stationsCollection.DeleteMany(context.TODO(), bson.M{"factory_id": factoryId})
 	if err != nil {
