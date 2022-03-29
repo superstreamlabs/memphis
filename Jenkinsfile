@@ -5,7 +5,7 @@ def gitURL = "git@github.com:STRECH-LTD/strech-server.git"
 def gitBranch = "staging"
 def repoUrlPrefix = "221323242847.dkr.ecr.eu-central-1.amazonaws.com"
 unique_Id = UUID.randomUUID().toString()
-def namespace = "strech"
+def namespace = "memphis"
 
 node {
   try{
