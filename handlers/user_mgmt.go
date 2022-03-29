@@ -27,7 +27,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
+var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 
 type UserMgmtHandler struct{}
 

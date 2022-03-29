@@ -20,6 +20,6 @@ func main() {
 	socketioServer := socketio.InitializeSocketio(router)
 
 	defer socketioServer.Close()
-	defer db.Close(db.Client, db.Ctx, db.Cancel)
+	defer db.Close()
 	router.Run(":" + configuration.PORT)
 }

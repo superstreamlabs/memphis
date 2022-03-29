@@ -28,13 +28,13 @@ var noNeedAuthRoutes = []string{
 var refreshTokenRoute string = "/api-gw/usermgmt/refreshtoken"
 
 var configuration = config.GetConfig()
-var tokensCollection *mongo.Collection = db.GetCollection(db.Client, "tokens")
+var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 
 func isAuthNeeded(path string) bool {
 	if strings.HasPrefix(path, "/usermgmt/nats/authenticate") {
 		return false
 	}
-	
+
 	for _, route := range noNeedAuthRoutes {
 		if route == path {
 			return false

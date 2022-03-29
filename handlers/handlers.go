@@ -11,9 +11,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = db.GetCollection(db.Client, "users")
-var factoriesCollection *mongo.Collection = db.GetCollection(db.Client, "factories")
-var stationsCollection *mongo.Collection = db.GetCollection(db.Client, "stations")
+var usersCollection *mongo.Collection = db.GetCollection("users")
+var factoriesCollection *mongo.Collection = db.GetCollection("factories")
+var stationsCollection *mongo.Collection = db.GetCollection("stations")
 var configuration = config.GetConfig()
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {

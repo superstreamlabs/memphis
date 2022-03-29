@@ -34,6 +34,22 @@ func removeStations(factoryId primitive.ObjectID) error {
 	if err != nil {
 		return err
 	}
+
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factoryId})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return err
+	}
+
+	// for _, station := range stations {
+	// 	streamName := station.Name
+
+	// }
+
 	return nil
 }
 

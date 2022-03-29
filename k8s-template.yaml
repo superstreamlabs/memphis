@@ -38,3 +38,7 @@ spec:
           env:
           - name: ROOT_PASSWORD
             value: "123456"
+          - name: BROKER_INTERNAL_USER
+            value: "memphis"
+          - name: BROKER_INTERNAL_PASSWORD
+            value: "memphis"

@@ -9,7 +9,9 @@
             "program": "${workspaceFolder}/main.go",
             "env": {
                 "ENVIRONMENT": "dev",
-                "ROOT_PASSWORD": "123456"
+                "ROOT_PASSWORD": "123456",
+                "BROKER_INTERNAL_USER": "memphis",
+                "BROKER_INTERNAL_PASSWORD": "memphis",
             }
         }
     ]
