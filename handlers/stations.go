@@ -83,6 +83,29 @@ func (umh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
+func (umh StationsHandler) GetAllStations(c *gin.Context) {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{})
+	
+	if err != nil {
+		logger.Error("GetAllStations error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		logger.Error("GetAllStations error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if len(stations) == 0 {
+		c.IndentedJSON(200, []models.Station{})
+	} else {
+		c.IndentedJSON(200, stations)
+	}
+}
+
 // TODO create stream in nats
 func (umh StationsHandler) CreateStation(c *gin.Context) {
 	var body models.CreateStationSchema

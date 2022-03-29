@@ -461,8 +461,8 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		return
 	}
 
-	if len(users) == 0 {
-		c.IndentedJSON(200, []string{})
+	if len(users) != 0 {
+		c.IndentedJSON(200, []models.User{})
 	} else {
 		c.IndentedJSON(200, users)
 	}
