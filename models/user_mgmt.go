@@ -60,3 +60,7 @@ type EditHubCredsSchema struct {
 	HubUsername string `json:"hub_username" binding:"required"`
 	HubPassword string `json:"hub_password" binding:"required"`
 }
+
+type EditAvatarSchema struct {
+	AvatarId int `json:"avatar_id" binding:"required"`
+}

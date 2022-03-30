@@ -164,7 +164,7 @@ func imageToBase64(imagePath string) (string, error) {
 	return base64Encoding, nil
 }
 
-// TODO get file from pv and not from the container 
+// TODO get file from pv and not from the container
 func getCompanyLogoPath() (string, error) {
 	files, err := ioutil.ReadDir("/tmp/strech")
 	if err != nil {
@@ -395,7 +395,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 
 	avatarId := 1
-	if body.AvatarId == 0 {
+	if body.AvatarId > 0 {
 		avatarId = body.AvatarId
 	}
 
@@ -590,7 +590,42 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 	})
 }
 
-// TODO save file on pv and not on the container 
+func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
+	var body models.EditAvatarSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	avatarId := 1
+	if body.AvatarId > 0 {
+		avatarId = body.AvatarId
+	}
+
+	user := getUserDetailsFromMiddleware(c)
+	_, err := usersCollection.UpdateOne(context.TODO(),
+		bson.M{"username": user.Username},
+		bson.M{"$set": bson.M{"avatar_id": avatarId}},
+	)
+	if err != nil {
+		logger.Error("EditAvatar error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{
+		"id":                user.ID,
+		"username":          user.Username,
+		"hub_username":      user.HubUsername,
+		"hub_password":      user.HubPassword,
+		"user_type":         user.UserType,
+		"creation_date":     user.CreationDate,
+		"already_logged_in": user.AlreadyLoggedIn,
+		"avatar_id":         avatarId,
+	})
+}
+
+// TODO save file on pv and not on the container
 func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 	var file multipart.FileHeader
 	ok := utils.Validate(c, nil, true, &file)
