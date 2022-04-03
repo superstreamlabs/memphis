@@ -198,9 +198,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 	
-	logger.Info("password: " + configuration.ROOT_PASSWORD)
-	if !exist {
-		username := "root"
+	if exist {
 		password := configuration.ROOT_PASSWORD
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
@@ -211,7 +209,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 
 		newUser := models.User{
 			ID:              primitive.NewObjectID(),
-			Username:        username,
+			Username:        "root",
 			Password:        hashedPwdString,
 			HubUsername:     "",
 			HubPassword:     "",
