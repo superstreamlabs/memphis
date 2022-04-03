@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strech-server/broker"
 	"strech-server/config"
 	"strech-server/db"
 	"strech-server/handlers"
@@ -21,5 +22,6 @@ func main() {
 
 	defer socketioServer.Close()
 	defer db.Close()
+	defer broker.Close()
 	router.Run(":" + configuration.PORT)
 }
