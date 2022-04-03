@@ -198,7 +198,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 	
-	if exist {
+	if !exist {
 		password := configuration.ROOT_PASSWORD
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
