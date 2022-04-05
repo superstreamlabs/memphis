@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strech-server/broker"
-	"strech-server/db"
 	"strech-server/logger"
 	"strech-server/models"
 	"strech-server/utils"
@@ -27,8 +26,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 
 type UserMgmtHandler struct{}
 
@@ -175,29 +172,12 @@ func imageToBase64(imagePath string) (string, error) {
 	return base64Encoding, nil
 }
 
-// TODO get file from pv and not from the container
-func getCompanyLogoPath() (string, error) {
-	files, err := ioutil.ReadDir("/tmp/strech")
-	if err != nil {
-		return "", err
-	}
-
-	for _, file := range files {
-		fileName := file.Name()
-		if strings.HasPrefix(fileName, "company_logo") {
-			return "/tmp/strech/" + fileName, nil
-		}
-	}
-
-	return "", nil
-}
-
 func CreateRootUserOnFirstSystemLoad() error {
 	exist, err := isRootUserExist()
 	if err != nil {
 		return err
 	}
-	
+
 	if !exist {
 		password := configuration.ROOT_PASSWORD
 
@@ -344,7 +324,7 @@ func (umh UserMgmtHandler) Logout(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-// TODO see if we need this
+// TODO
 func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	publicKey := c.Param("publicKey")
 	if publicKey != "" {
@@ -629,7 +609,6 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	})
 }
 
-// TODO save file on pv and not on the container
 func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 	var file multipart.FileHeader
 	ok := utils.Validate(c, nil, true, &file)
@@ -637,25 +616,29 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 		return
 	}
 
-	directoryPath := "/tmp/strech"
-	if _, err := os.Stat(directoryPath); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir(directoryPath, os.ModePerm)
-		if err != nil {
-			logger.Error("EditCompanyLogo error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
-
 	fileName := "company_logo" + filepath.Ext(file.Filename)
-	saveAtPath := "/tmp/strech/" + fileName
-	if err := c.SaveUploadedFile(&file, saveAtPath); err != nil {
+	if err := c.SaveUploadedFile(&file, fileName); err != nil {
 		logger.Error("EditCompanyLogo error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	base64Encoding, err := imageToBase64(saveAtPath)
+	base64Encoding, err := imageToBase64(fileName)
+	if err != nil {
+		logger.Error("EditCompanyLogo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	_ = os.Remove(fileName)
+
+	newImage := models.Image{
+		ID:    primitive.NewObjectID(),
+		Name:  "company_logo",
+		Image: base64Encoding,
+	}
+
+	_, err = imagesCollection.InsertOne(context.TODO(), newImage)
 	if err != nil {
 		logger.Error("EditCompanyLogo error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -666,14 +649,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
-	path, err := getCompanyLogoPath()
-	if err != nil {
-		logger.Error("RemoveCompanyLogo error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	err = os.Remove(path)
+	_, err := imagesCollection.DeleteOne(context.TODO(), bson.M{"name": "company_logo"})
 	if err != nil {
 		logger.Error("RemoveCompanyLogo error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -684,19 +660,16 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
-	path, err := getCompanyLogoPath()
-	if err != nil {
+	var image models.Image
+	err := imagesCollection.FindOne(context.TODO(), bson.M{"name": "company_logo"}).Decode(&image)
+	if err == mongo.ErrNoDocuments {
+		c.IndentedJSON(200, gin.H{"image": ""})
+		return
+	} else if err != nil {
 		logger.Error("GetCompanyLogo error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	base64Encoding, err := imageToBase64(path)
-	if err != nil {
-		logger.Error("GetCompanyLogo error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{"image": base64Encoding})
+	c.IndentedJSON(200, gin.H{"image": image.Image})
 }

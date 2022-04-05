@@ -25,6 +25,12 @@ type Token struct {
 	RefreshToken string             `json:"refresh_token" bson:"refresh_token"`
 }
 
+type Image struct {
+	ID    primitive.ObjectID `json:"id" bson:"_id"`
+	Name  string             `json:"name" bson:"name"`
+	Image string             `json:"image" bson:"image"`
+}
+
 type AddUserSchema struct {
 	Username    string `json:"username" binding:"required,min=1,max=25"`
 	Password    string `json:"password" binding:"required,min=6"`

@@ -55,7 +55,7 @@ func validateSchema(c *gin.Context, schema interface{}, containFile bool, file *
 		uploadedFile, err := c.FormFile("file")
 		if err != nil {
 			logger.Error("validateSchema error: " + err.Error())
-			c.AbortWithStatusJSON(400, gin.H{"message": "An error occured while uploading your file"})
+			c.AbortWithStatusJSON(400, gin.H{"message": "Could not complete uploading your file, please check your file"})
 			return nil, true
 		}
 
