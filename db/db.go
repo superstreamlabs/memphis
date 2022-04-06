@@ -15,7 +15,7 @@ const (
 	dbOperationTimeout = 20
 )
 
-func InitializeDbConnection() (*mongo.Client, context.Context, context.CancelFunc) {
+func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
 	auth := options.Credential{
@@ -56,4 +56,4 @@ func Close() {
 	}()
 }
 
-var Client, Ctx, Cancel = InitializeDbConnection()
+var Client, Ctx, Cancel = initializeDbConnection()

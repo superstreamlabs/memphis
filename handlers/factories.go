@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strech-server/broker"
 	"strech-server/logger"
 	"strech-server/models"
 	"strech-server/utils"
@@ -28,13 +29,8 @@ func validateFactoryName(factoryName string) error {
 	return nil
 }
 
-// TODO remove the stations resources - streams, functions, connectors, producers, consumers
+// TODO remove the stations resources - functions, connectors, producers, consumers
 func removeStations(factoryId primitive.ObjectID) error {
-	_, err := stationsCollection.DeleteMany(context.TODO(), bson.M{"factory_id": factoryId})
-	if err != nil {
-		return err
-	}
-
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factoryId})
 	if err != nil {
@@ -45,10 +41,18 @@ func removeStations(factoryId primitive.ObjectID) error {
 		return err
 	}
 
-	// for _, station := range stations {
-	// 	streamName := station.Name
+	for _, station := range stations {
+		streamName := station.Name
+		err = broker.RemoveStream(streamName)
+		if err != nil {
+			return err
+		}
+	}
 
-	// }
+	_, err = stationsCollection.DeleteMany(context.TODO(), bson.M{"factory_id": factoryId})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strech-server/broker"
 	"strech-server/logger"
 	"strech-server/models"
 	"strech-server/utils"
@@ -52,8 +53,13 @@ func validateReplicas(replicas int64) error {
 	return nil
 }
 
-// TODO remove the station resources - streams, functions, connectors, producers, consumers
+// TODO remove the station resources - functions, connectors, producers, consumers
 func removeStationResources(stationName string) error {
+	err := broker.RemoveStream(stationName)
+	if err != nil {
+		return err
+	}
+	
 	return nil
 }
 
@@ -123,7 +129,6 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 	}
 }
 
-// TODO create stream in nats
 func (umh StationsHandler) CreateStation(c *gin.Context) {
 	var body models.CreateStationSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -211,14 +216,18 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		Functions:       []models.Function{},
 	}
 
+	err = broker.CreateStream(newStation)
+	if err != nil {
+		c.AbortWithStatusJSON(400, gin.H{"message": "Server error"})
+		return
+	}
+
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
 	if err != nil {
 		logger.Error("CreateStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	// create stream in nats
 
 	c.IndentedJSON(200, newStation)
 }

@@ -19,8 +19,8 @@ type Configuration struct {
 	REFRESH_JWT_EXPIRES_IN_MINUTES int
 	ROOT_PASSWORD                  string
 	BROKER_URL                     string
-	BROKER_INTERNAL_USER           string
-	BROKER_INTERNAL_PASSWORD       string
+	BROKER_ADMIN_JWT               string
+	BROKER_ADMIN_NKEY              string
 }
 
 func GetConfig() Configuration {

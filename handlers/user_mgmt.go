@@ -397,7 +397,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	err = broker.AddUser()
+	err = broker.AddUser(username)
 	if err != nil {
 		logger.Error("CreateUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
