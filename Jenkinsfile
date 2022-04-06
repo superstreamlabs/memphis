@@ -1,4 +1,4 @@
-def dockerImagesRepo = "strechinc"
+def dockerImagesRepo = "memphisdev"
 def imageName = "strech-server-beta"
 def gitURL = "git@github.com:Memphis-Dev-Inc/strech-server.git"
 def gitBranch = "beta"
