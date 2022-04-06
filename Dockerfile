@@ -1,7 +1,7 @@
 FROM golang:rc-alpine3.15
 
 # Set the Current Working Directory inside the container
-WORKDIR $GOPATH/src/strech-server
+WORKDIR $GOPATH/src/memphis-server
 
 # Copy everything from the current directory to the PWD (Present Working Directory) inside the container
 COPY . .
@@ -19,4 +19,4 @@ RUN go install -v .
 EXPOSE 5555
 
 # Run the executable
-CMD ["strech-server"]
+CMD ["memphis-server"]
