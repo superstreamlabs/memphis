@@ -3,8 +3,8 @@ package routes
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"strech-server/utils"
-	"strech-server/middlewares"
+	"memphis-server/utils"
+	"memphis-server/middlewares"
 )
 
 func InitializeHttpRoutes() *gin.Engine {

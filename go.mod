@@ -1,4 +1,4 @@
-module strech-server
+module memphis-server
 
 go 1.17
 

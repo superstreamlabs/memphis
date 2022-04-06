@@ -1,13 +1,13 @@
 package main
 
 import (
-	"strech-server/broker"
-	"strech-server/config"
-	"strech-server/db"
-	"strech-server/handlers"
-	"strech-server/logger"
-	"strech-server/routes"
-	"strech-server/socketio"
+	"memphis-server/broker"
+	"memphis-server/config"
+	"memphis-server/db"
+	"memphis-server/handlers"
+	"memphis-server/logger"
+	"memphis-server/routes"
+	"memphis-server/socketio"
 )
 
 func main() {
