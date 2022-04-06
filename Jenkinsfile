@@ -1,6 +1,6 @@
 def dockerImagesRepo = "strechinc"
 def imageName = "strech-server-beta"
-def gitURL = "git@github.com:STRECH-LTD/strech-server.git"
+def gitURL = "git@github.com:Memphis-Dev-Inc/strech-server.git"
 def gitBranch = "beta"
 unique_Id = UUID.randomUUID().toString()
 def DOCKER_HUB_CREDS = credentials('docker-hub')
