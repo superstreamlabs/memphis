@@ -6,15 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"mime/multipart"
-
-	"os"
-	"path/filepath"
-	"regexp"
 	"memphis-server/broker"
 	"memphis-server/logger"
 	"memphis-server/models"
 	"memphis-server/utils"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -253,12 +252,8 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		)
 	}
 
-	domain := ".strech.io"
-	secure := true
-	if configuration.ENVIRONMENT == "dev" {
-		domain = "localhost"
-		secure = false
-	}
+	domain := ""
+	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":               token,
@@ -293,12 +288,8 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	domain := ".strech.io"
+	domain := ""
 	secure := true
-	if configuration.ENVIRONMENT == "dev" {
-		domain = "localhost"
-		secure = false
-	}
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":               token,
