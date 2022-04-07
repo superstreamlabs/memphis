@@ -1,7 +1,7 @@
 package socketio
 
 import (
-	"strech-server/logger"
+	"memphis-server/logger"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 )

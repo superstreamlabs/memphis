@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 	"path/filepath"
 	"reflect"
-	"strech-server/logger"
+	"memphis-server/logger"
 	"strings"
 
 	"github.com/gin-gonic/gin"

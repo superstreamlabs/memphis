@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"context"
-	"strech-server/config"
-	"strech-server/db"
-	"strech-server/models"
+	"memphis-server/config"
+	"memphis-server/db"
+	"memphis-server/models"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"

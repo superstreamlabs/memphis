@@ -1,9 +1,9 @@
 package broker
 
 import (
-	"strech-server/config"
-	"strech-server/logger"
-	"strech-server/models"
+	"memphis-server/config"
+	"memphis-server/logger"
+	"memphis-server/models"
 	"time"
 
 	"github.com/nats-io/nats.go"

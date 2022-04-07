@@ -4,8 +4,8 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strech-server/config"
-	"strech-server/logger"
+	"memphis-server/config"
+	"memphis-server/logger"
 	"time"
 )
 

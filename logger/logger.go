@@ -2,7 +2,7 @@ package logger
 
 import (
 	"log"
-	"strech-server/config"
+	"memphis-server/config"
 )
 
 var logger = log.Default()

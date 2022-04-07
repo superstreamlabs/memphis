@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"strech-server/handlers"
+	"memphis-server/handlers"
 
 	"github.com/gin-gonic/gin"
 )
