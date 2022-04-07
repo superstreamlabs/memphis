@@ -78,7 +78,10 @@ func RemoveUser(username string) error {
 }
 
 func CreateStream(station models.Station) error {
-
+	// js.AddStream(&nats.StreamConfig{
+	// 	Name:     "ORDERS",
+	// 	Subjects: []string{"ORDERS.*"},
+	// })
 	return nil
 }
 
@@ -87,11 +90,15 @@ func CreateProducer() error {
 }
 
 func CreateConsumer() error {
+	// js.AddConsumer("ORDERS", &nats.ConsumerConfig{
+	// 	Durable: "MONITOR",
+	// })
+
 	return nil
 }
 
 func RemoveStream(stationName string) error {
-
+	// js.DeleteStream("ORDERS")
 	return nil
 }
 
@@ -100,11 +107,12 @@ func RemoveProducer() error {
 }
 
 func RemoveConsumer() error {
+	// js.DeleteConsumer("ORDERS", "MONITOR")
 	return nil
 }
 
 func Close() {
-	broker.Close()
+	// broker.Close()
 }
 
-var broker, js = initializeBrokerConnection()
+// var broker, js = initializeBrokerConnection()
