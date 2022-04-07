@@ -19,7 +19,6 @@ import (
 )
 
 var noNeedAuthRoutes = []string{
-	"/api-gw/usermgmt/createrootuser",
 	"/api-gw/usermgmt/login",
 	"/api-gw/usermgmt/refreshtoken",
 	"/api-gw/status",
