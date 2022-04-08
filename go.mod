@@ -1,4 +1,4 @@
-module memphis-server
+module memphis-control-plane
 
 go 1.17
 

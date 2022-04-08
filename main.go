@@ -1,13 +1,13 @@
 package main
 
 import (
-	"memphis-server/broker"
-	"memphis-server/config"
-	"memphis-server/db"
-	"memphis-server/handlers"
-	"memphis-server/logger"
-	"memphis-server/routes"
-	"memphis-server/socketio"
+	"memphis-control-plane/broker"
+	"memphis-control-plane/config"
+	"memphis-control-plane/db"
+	"memphis-control-plane/handlers"
+	"memphis-control-plane/logger"
+	"memphis-control-plane/routes"
+	"memphis-control-plane/socketio"
 )
 
 func main() {

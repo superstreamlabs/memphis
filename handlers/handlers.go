@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"context"
-	"memphis-server/config"
-	"memphis-server/db"
-	"memphis-server/models"
+	"memphis-control-plane/config"
+	"memphis-control-plane/db"
+	"memphis-control-plane/models"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"

@@ -3,11 +3,11 @@ package handlers
 import (
 	"context"
 	"errors"
+	"memphis-control-plane/broker"
+	"memphis-control-plane/logger"
+	"memphis-control-plane/models"
+	"memphis-control-plane/utils"
 	"regexp"
-	"memphis-server/broker"
-	"memphis-server/logger"
-	"memphis-server/models"
-	"memphis-server/utils"
 	"strings"
 	"time"
 

@@ -2,11 +2,12 @@ package db
 
 import (
 	"context"
+	"memphis-control-plane/config"
+	"memphis-control-plane/logger"
+	"time"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"memphis-server/config"
-	"memphis-server/logger"
-	"time"
 )
 
 var configuration = config.GetConfig()

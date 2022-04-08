@@ -2,10 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"memphis-control-plane/logger"
 	"mime/multipart"
 	"path/filepath"
 	"reflect"
-	"memphis-server/logger"
 	"strings"
 
 	"github.com/gin-gonic/gin"

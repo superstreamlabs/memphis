@@ -1,9 +1,9 @@
 package broker
 
 import (
-	"memphis-server/config"
-	"memphis-server/logger"
-	"memphis-server/models"
+	"memphis-control-plane/config"
+	"memphis-control-plane/logger"
+	"memphis-control-plane/models"
 	"time"
 
 	"github.com/nats-io/nats.go"

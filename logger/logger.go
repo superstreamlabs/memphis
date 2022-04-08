@@ -2,7 +2,7 @@ package logger
 
 import (
 	"log"
-	"memphis-server/config"
+	"memphis-control-plane/config"
 )
 
 var logger = log.Default()

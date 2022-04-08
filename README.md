@@ -1,1 +1,1 @@
-# memphis-server
+# memphis-control-plane

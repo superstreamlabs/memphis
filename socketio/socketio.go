@@ -1,7 +1,8 @@
 package socketio
 
 import (
-	"memphis-server/logger"
+	"memphis-control-plane/logger"
+
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 )
