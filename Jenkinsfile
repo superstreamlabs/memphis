@@ -1,5 +1,5 @@
-def imageName = "strech-server-staging"
-def containerName = "strech-server"
+def imageName = "memphis-server-staging"
+def containerName = "memphis-server"
 def gitURL = "git@github.com:Memphis-OS/memphis-server.git"
 def gitBranch = "staging"
 def repoUrlPrefix = "221323242847.dkr.ecr.eu-central-1.amazonaws.com"
