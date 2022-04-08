@@ -1,7 +1,7 @@
 apiVersion: /v1
 kind: Service
 metadata:
-  name: strech-server
+  name: memphis-server
   namespace: memphis
 spec:
   type: ClusterIP
@@ -10,25 +10,25 @@ spec:
       port: 80
       targetPort: 5555
   selector:
-    app: strech-server
+    app: memphis-server
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: strech-server
+  name: memphis-server
   namespace: memphis
   labels:
-    app: strech-server
+    app: memphis-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: strech-server
+      app: memphis-server
   template:
     metadata:
-      name: strech-server
+      name: memphis-server
       labels:
-        app: strech-server
+        app: memphis-server
     spec:
       containers:
         - name: memphis-server
