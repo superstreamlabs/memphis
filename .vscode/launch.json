@@ -10,7 +10,7 @@
             "env": {
                 "ENVIRONMENT": "dev",
                 "ROOT_PASSWORD": "123456",
-                "BROKER_JWT": "memphismemphis"
+                "BROKER_JWT": "test"
             }
         }
     ]

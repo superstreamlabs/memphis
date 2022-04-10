@@ -39,4 +39,4 @@ spec:
           - name: ROOT_PASSWORD
             value: "123456"
           - name: BROKER_JWT
-            value: "memphismemphis"
+            value: "test"
