@@ -8,7 +8,8 @@ import (
 
 type Configuration struct {
 	ENVIRONMENT                    string
-	PORT                           string
+	HTTP_PORT                      string
+	TCP_PORT                       string
 	MONGO_URL                      string
 	MONGO_USER                     string
 	MONGO_PASS                     string
@@ -19,8 +20,7 @@ type Configuration struct {
 	REFRESH_JWT_EXPIRES_IN_MINUTES int
 	ROOT_PASSWORD                  string
 	BROKER_URL                     string
-	BROKER_ADMIN_JWT               string
-	BROKER_ADMIN_NKEY              string
+	BROKER_JWT                     string
 }
 
 func GetConfig() Configuration {

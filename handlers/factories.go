@@ -87,7 +87,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,
 		Description:   strings.ToLower(body.Description),
-		CreatedByUSer: user.Username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 	}
 
@@ -102,7 +102,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 		"id":              newFactory.ID,
 		"name":            newFactory.Name,
 		"description":     newFactory.Description,
-		"created_by_user": newFactory.CreatedByUSer,
+		"created_by_user": newFactory.CreatedByUser,
 		"creation_date":   newFactory.CreationDate,
 	})
 }
@@ -143,7 +143,7 @@ func (umh FactoriesHandler) GetFactory(c *gin.Context) {
 		"id":              factory.ID,
 		"name":            factory.Name,
 		"description":     factory.Description,
-		"created_by_user": factory.CreatedByUSer,
+		"created_by_user": factory.CreatedByUser,
 		"creation_date":   factory.CreationDate,
 		"stations":        stations,
 	})
@@ -154,7 +154,7 @@ func (umh FactoriesHandler) GetAllFactories(c *gin.Context) {
 		ID            primitive.ObjectID `json:"id" bson:"_id"`
 		Name          string             `json:"name" bson:"name"`
 		Description   string             `json:"description" bson:"description"`
-		CreatedByUSer string             `json:"created_by_user" bson:"created_by_user"`
+		CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 		CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 		UserAvatarId  int                `json:"user_avatar_id" bson:"user_avatar_id"`
 	}

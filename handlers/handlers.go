@@ -16,6 +16,9 @@ var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 var imagesCollection *mongo.Collection = db.GetCollection("images")
 var factoriesCollection *mongo.Collection = db.GetCollection("factories")
 var stationsCollection *mongo.Collection = db.GetCollection("stations")
+var connectionsCollection *mongo.Collection = db.GetCollection("connections")
+var producersCollection *mongo.Collection = db.GetCollection("producers")
+var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 var configuration = config.GetConfig()
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {

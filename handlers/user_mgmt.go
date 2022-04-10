@@ -80,32 +80,37 @@ func validateUserType(userType string) error {
 
 // TODO check against hub api
 func validateHubCreds(hubUsername string, hubPassword string) error {
+	if hubUsername != "" && hubPassword != "" {
+		// TODO
+	}
 	return nil
 }
 
 // TODO terminate all user connections
-func updateUserResources(username string) error {
-	err := broker.RemoveUser(username)
-	if err != nil {
-		return err
+func updateUserResources(user models.User) error {
+	if user.UserType == "application" {
+		err := broker.RemoveUser(user.Username)
+		if err != nil {
+			return err
+		}
 	}
 
-	_, err = tokensCollection.DeleteOne(context.TODO(), bson.M{"username": username})
+	_, err := tokensCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
 	if err != nil {
 		return err
 	}
 
 	_, err = factoriesCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
 	)
 	if err != nil {
 		return err
 	}
 
 	_, err = stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
 	)
 	if err != nil {
 		return err
@@ -368,17 +373,26 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
-	if err != nil {
-		logger.Error("CreateUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	hashedPwdString := string(hashedPwd)
+	var hashedPwdString string
+	var avatarId int
+	if userType == "management" {
+		if body.Password == "" {
+			c.AbortWithStatusJSON(400, gin.H{"message": "Password was not provided"})
+			return
+		}
 
-	avatarId := 1
-	if body.AvatarId > 0 {
-		avatarId = body.AvatarId
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
+		if err != nil {
+			logger.Error("CreateUser error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		hashedPwdString = string(hashedPwd)
+
+		avatarId = 1
+		if body.AvatarId > 0 {
+			avatarId = body.AvatarId
+		}
 	}
 
 	err = validateHubCreds(body.HubUsername, body.HubPassword)
@@ -388,11 +402,13 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	err = broker.AddUser(username)
-	if err != nil {
-		logger.Error("CreateUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
+	if userType == "application" {
+		err = broker.AddUser(username)
+		if err != nil {
+			logger.Error("CreateUser error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			return
+		}
 	}
 
 	newUser := models.User{
@@ -493,7 +509,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	err = updateUserResources(username)
+	err = updateUserResources(userToRemove)
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -518,7 +534,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	err = updateUserResources(user.Username)
+	err = updateUserResources(user)
 	if err != nil {
 		logger.Error("RemoveMyUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})

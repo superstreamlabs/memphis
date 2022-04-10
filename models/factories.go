@@ -10,7 +10,7 @@ type Factory struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id"`
 	Name          string             `json:"name" bson:"name"`
 	Description   string             `json:"description" bson:"description"`
-	CreatedByUSer string             `json:"created_by_user" bson:"created_by_user"`
+	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 }
 

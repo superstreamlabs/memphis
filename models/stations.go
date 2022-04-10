@@ -28,7 +28,7 @@ type Station struct {
 	Replicas        int64              `json:"replicas" bson:"replicas"`
 	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
 	DedupWindowInMs int64              `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-	CreatedByUSer   string             `json:"created_by_user" bson:"created_by_user"`
+	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`

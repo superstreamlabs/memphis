@@ -45,8 +45,9 @@ func userCredentials(userJWT string, userKeySeed string) nats.Option {
 func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 	nc, err := nats.Connect(
 		configuration.BROKER_URL,
-		userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
-		nats.RetryOnFailedConnect(true),
+		// nats.UserCredentials("admin3.creds"),
+		// userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
+		nats.Token(configuration.BROKER_JWT),
 		nats.MaxReconnects(10),
 		nats.ReconnectWait(5*time.Second),
 		nats.Timeout(10*time.Second),
@@ -78,10 +79,13 @@ func RemoveUser(username string) error {
 }
 
 func CreateStream(station models.Station) error {
-	// js.AddStream(&nats.StreamConfig{
+	// x, err := js.AddStream(&nats.StreamConfig{
 	// 	Name:     "ORDERS",
 	// 	Subjects: []string{"ORDERS.*"},
-	// })
+	// }, nats.MaxWait(15*time.Second))
+	// if err != nil || x == nil {
+	// 	logger.Error("Failed to create connection with the broker: " + err.Error())
+	// }
 	return nil
 }
 
@@ -98,7 +102,10 @@ func CreateConsumer() error {
 }
 
 func RemoveStream(stationName string) error {
-	// js.DeleteStream("ORDERS")
+	// err := js.DeleteStream("ORDERS")
+	// if err != nil {
+	// 	logger.Error("Failed to create connection with the broker: " + err.Error())
+	// }
 	return nil
 }
 
@@ -112,7 +119,7 @@ func RemoveConsumer() error {
 }
 
 func Close() {
-	// broker.Close()
+	broker.Close()
 }
 
-// var broker, js = initializeBrokerConnection()
+var broker, js = initializeBrokerConnection()

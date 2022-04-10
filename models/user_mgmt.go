@@ -33,19 +33,11 @@ type Image struct {
 
 type AddUserSchema struct {
 	Username    string `json:"username" binding:"required,min=1,max=25"`
-	Password    string `json:"password" binding:"required,min=6"`
+	Password    string `json:"password"`
 	HubUsername string `json:"hub_username"`
 	HubPassword string `json:"hub_password"`
 	UserType    string `json:"user_type" binding:"required"`
-	AvatarId    int    `json:"avatar_id" bson:"avatar_id"`
-}
-
-type CreateRootUserSchema struct {
-	Username    string `json:"username" binding:"required,min=1,max=25"`
-	Password    string `json:"password" binding:"required,min=6"`
-	HubUsername string `json:"hub_username"`
-	HubPassword string `json:"hub_password"`
-	AvatarId    int    `json:"avatar_id" bson:"avatar_id"`
+	AvatarId    int    `json:"avatar_id"`
 }
 
 type AuthenticateNatsSchema struct {

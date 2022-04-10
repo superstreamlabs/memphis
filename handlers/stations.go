@@ -95,7 +95,7 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 		Replicas        int64              `json:"replicas" bson:"replicas"`
 		DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
 		DedupWindowInMs int64              `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-		CreatedByUSer   string             `json:"created_by_user" bson:"created_by_user"`
+		CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
 		CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 		LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 		Functions       []models.Function  `json:"functions" bson:"functions"`
@@ -210,7 +210,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		Replicas:        body.Replicas,
 		DedupEnabled:    body.DedupEnabled,
 		DedupWindowInMs: body.DedupWindowInMs,
-		CreatedByUSer:   user.Username,
+		CreatedByUser:   user.Username,
 		CreationDate:    time.Now(),
 		LastUpdate:      time.Now(),
 		Functions:       []models.Function{},

@@ -27,6 +27,8 @@ func InitializeHttpRoutes() *gin.Engine {
 	InitializeUserMgmtRoutes(mainRouter)
 	InitializeFactoriesRoutes(mainRouter)
 	InitializeStationsRoutes(mainRouter)
+	InitializeProducersRoutes(mainRouter)
+	InitializeConsumersRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",
