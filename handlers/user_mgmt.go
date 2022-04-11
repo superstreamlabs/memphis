@@ -402,8 +402,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	var brokerConnectionCreds string
 	if userType == "application" {
-		err = broker.AddUser(username)
+		brokerConnectionCreds, err = broker.AddUser(username)
 		if err != nil {
 			logger.Error("CreateUser error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -431,14 +432,15 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"id":                newUser.ID,
-		"username":          username,
-		"hub_username":      body.HubUsername,
-		"hub_password":      body.HubPassword,
-		"user_type":         userType,
-		"creation_date":     newUser.CreationDate,
-		"already_logged_in": false,
-		"avatar_id":         body.AvatarId,
+		"id":                    newUser.ID,
+		"username":              username,
+		"hub_username":          body.HubUsername,
+		"hub_password":          body.HubPassword,
+		"user_type":             userType,
+		"creation_date":         newUser.CreationDate,
+		"already_logged_in":     false,
+		"avatar_id":             body.AvatarId,
+		"broker_connection_creds": brokerConnectionCreds,
 	})
 }
 

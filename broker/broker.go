@@ -70,8 +70,8 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 	return nc, js
 }
 
-func AddUser(username string) error {
-	return nil
+func AddUser(username string) (string, error) {
+	return configuration.BROKER_JWT, nil
 }
 
 func RemoveUser(username string) error {

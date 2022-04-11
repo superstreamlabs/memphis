@@ -16,6 +16,20 @@ func handleNewClient(connection net.Conn) {
 		if err != nil {
 			connection.Write([]byte("Memphis protocol error"))
 		} else {
+			// on connect
+			// get username
+			// get nats jwt
+			// create connection id
+			// create connection in the db if connection id not already exist
+
+			// on create producer
+			// get connection id
+			// create producer in db
+
+			// when connection lost
+			// remove connection + producers + consumers of the same connection id
+
+
 			message := string(buf)
 			message = message[:strings.IndexByte(message, '\n')]
 			if message == "STOP" {
