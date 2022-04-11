@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"encoding/base64"
 	"memphis-control-plane/config"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
@@ -43,11 +44,13 @@ func userCredentials(userJWT string, userKeySeed string) nats.Option {
 }
 
 func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
+	token, _ := base64.StdEncoding.DecodeString(configuration.CONNECTION_TOKEN)
+
 	nc, err := nats.Connect(
 		configuration.BROKER_URL,
 		// nats.UserCredentials("admin3.creds"),
 		// userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
-		nats.Token(configuration.CONNECTION_TOKEN),
+		nats.Token(string(token)),
 		nats.MaxReconnects(10),
 		nats.ReconnectWait(5*time.Second),
 		nats.Timeout(10*time.Second),
@@ -71,7 +74,8 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 }
 
 func AddUser(username string) (string, error) {
-	return configuration.CONNECTION_TOKEN, nil
+	token, _ := base64.StdEncoding.DecodeString(configuration.CONNECTION_TOKEN)
+	return string(token), nil
 }
 
 func RemoveUser(username string) error {

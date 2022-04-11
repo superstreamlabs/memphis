@@ -24,13 +24,15 @@ var connectionsHandler handlers.ConnectionsHandler
 var producersHandler handlers.ProducersHandler
 var consumersHandler handlers.ConsumersHandler
 
-func handleConnectMessage(connection net.Conn) {
+func handleConnectMessage(connection net.Conn) primitive.ObjectID {
+	var connectionId primitive.ObjectID
 	d := json.NewDecoder(connection)
 	var message tcpMessage
 	err := d.Decode(&message)
 	if err != nil || message.Operation != "connect" {
 		connection.Write([]byte("Memphis protocol error"))
 		connection.Close()
+		return connectionId
 	} else {
 		username := strings.ToLower(message.Username)
 		exist, user, err := handlers.IsUserExist(username)
@@ -38,14 +40,17 @@ func handleConnectMessage(connection net.Conn) {
 			logger.Error("handleConnectMessage: " + err.Error())
 			connection.Write([]byte("Server error: " + err.Error()))
 			connection.Close()
+			return connectionId
 		}
 		if !exist {
 			connection.Write([]byte("User is not exist"))
 			connection.Close()
+			return connectionId
 		}
 		if user.UserType != "application" {
 			connection.Write([]byte("You have to connect with application type user"))
 			connection.Close()
+			return connectionId
 		}
 
 		connectionId := message.ConnectionId
@@ -54,6 +59,7 @@ func handleConnectMessage(connection net.Conn) {
 			logger.Error("handleConnectMessage: " + err.Error())
 			connection.Write([]byte("Server error: " + err.Error()))
 			connection.Close()
+			return connectionId
 		}
 
 		err = broker.ValidateUserCreds(message.Jwt)
@@ -61,6 +67,7 @@ func handleConnectMessage(connection net.Conn) {
 			logger.Error("handleConnectMessage: " + err.Error())
 			connection.Write([]byte("Server error: " + err.Error()))
 			connection.Close()
+			return connectionId
 		}
 
 		if exist {
@@ -69,18 +76,21 @@ func handleConnectMessage(connection net.Conn) {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))
 				connection.Close()
+				return connectionId
 			}
 			err = producersHandler.ReliveProducers(connectionId)
 			if err != nil {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))
 				connection.Close()
+				return connectionId
 			}
 			err = consumersHandler.ReliveConsumers(connectionId)
 			if err != nil {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))
 				connection.Close()
+				return connectionId
 			}
 		} else {
 			connectionId, err = connectionsHandler.CreateConnection(username)
@@ -88,10 +98,12 @@ func handleConnectMessage(connection net.Conn) {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))
 				connection.Close()
+				return connectionId
 			}
 		}
 
 		connection.Write([]byte(connectionId.String()))
+		return connectionId
 	}
 }
 
@@ -105,30 +117,51 @@ func handleCreateConsumerMessage() {
 
 func handleNewClient(connection net.Conn) {
 	logger.Info("A new client connection has been established: " + connection.RemoteAddr().String())
-	handleConnectMessage(connection)
+	connectionId := handleConnectMessage(connection)
+	if !connectionId.IsZero() {
+	acceptMessagesLoop:
+		for {
+			d := json.NewDecoder(connection)
+			var message tcpMessage
+			err := d.Decode(&message)
+			if err != nil {
+				connection.Write([]byte("Memphis protocol error"))
 
-acceptMessagesLoop:
-	for {
-		d := json.NewDecoder(connection)
-		var message tcpMessage
-		err := d.Decode(&message)
-		if err != nil {
-			connection.Write([]byte("Memphis protocol error"))
-			// set connection + producers + consumers is active to false
-			break
-		}
-		switch message.Operation {
-		case "CreateProducer":
-			logger.Info("CreateProducer")
-			handleCreateProducerMessage()
-			// create producer in db
-			break
-		case "CreateConsumer":
-			handleCreateConsumerMessage()
-			break
-		default:
-			connection.Write([]byte("Memphis protocol error"))
-			break acceptMessagesLoop
+				// only on connection lost
+				err = connectionsHandler.RemoveConnection(connectionId)
+				if err != nil {
+					connection.Write([]byte("Server error: " + err.Error()))
+					connection.Close()
+					break
+				}
+				err = producersHandler.RemoveProducers(connectionId)
+				if err != nil {
+					connection.Write([]byte("Server error: " + err.Error()))
+					connection.Close()
+					break
+				}
+				err = consumersHandler.RemoveConsumers(connectionId)
+				if err != nil {
+					connection.Write([]byte("Server error: " + err.Error()))
+					connection.Close()
+					break
+				}
+
+				break
+			}
+			switch message.Operation {
+			case "CreateProducer":
+				// producersHandler.CreateProducer()
+				handleCreateProducerMessage()
+				// create producer in db
+				break
+			case "CreateConsumer":
+				handleCreateConsumerMessage()
+				break
+			default:
+				connection.Write([]byte("Memphis protocol error"))
+				break acceptMessagesLoop
+			}
 		}
 	}
 	connection.Close()

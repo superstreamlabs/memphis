@@ -209,6 +209,19 @@ func (umh ConsumersHandler) RemoveConsumer(consumerId primitive.ObjectID) error 
 	return nil
 }
 
+func (umh ConsumersHandler) RemoveConsumers(connectionId primitive.ObjectID) error {
+	_, err := consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"connection_id": connectionId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
+	if err != nil {
+		logger.Error("RemoveConsumers error: " + err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func (umh ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {
 	_, err := consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},

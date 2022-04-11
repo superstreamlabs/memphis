@@ -209,6 +209,19 @@ func (umh ProducersHandler) RemoveProducer(producerId primitive.ObjectID) error 
 	return nil
 }
 
+func (umh ProducersHandler) RemoveProducers(connectionId primitive.ObjectID) error {
+	_, err := producersCollection.UpdateOne(context.TODO(),
+		bson.M{"connection_id": connectionId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
+	if err != nil {
+		logger.Error("RemoveProducers error: " + err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func (umh ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
