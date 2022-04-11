@@ -120,11 +120,11 @@ acceptMessagesLoop:
 		switch message.Operation {
 		case "CreateProducer":
 			logger.Info("CreateProducer")
-			handleCreateProducerMessage(connection)
+			handleCreateProducerMessage()
 			// create producer in db
 			break
 		case "CreateConsumer":
-			handleCreateConsumerMessage(connection)
+			handleCreateConsumerMessage()
 			break
 		default:
 			connection.Write([]byte("Memphis protocol error"))
