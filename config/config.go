@@ -1,9 +1,11 @@
 package config
 
 import (
+	"encoding/base64"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/tkanos/gonfig"
-	"os"
 )
 
 type Configuration struct {
@@ -24,6 +26,9 @@ type Configuration struct {
 }
 
 func GetConfig() Configuration {
+	configuration := Configuration{}
+	gonfig.GetConf("./config/config.json", &configuration)
+
 	env := os.Getenv("ENVIRONMENT")
 	if env == "" {
 		env = "prod"
@@ -31,9 +36,9 @@ func GetConfig() Configuration {
 	} else {
 		os.Setenv("GIN_MODE", "debug")
 		gin.SetMode(gin.DebugMode)
+		token, _ := base64.StdEncoding.DecodeString(configuration.CONNECTION_TOKEN)
+		configuration.CONNECTION_TOKEN = string(token)
 	}
-	configuration := Configuration{}
-	gonfig.GetConf("./config/config.json", &configuration)
 
 	return configuration
 }
