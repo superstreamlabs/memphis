@@ -11,4 +11,5 @@ func InitializeConsumersRoutes(router *gin.RouterGroup) {
 	consumersRoutes := router.Group("/consumers")
 	consumersRoutes.GET("/getAllConsumers", consumersHandler.GetAllConsumers)
 	consumersRoutes.GET("/getAllConsumersByStation", consumersHandler.GetAllConsumersByStation)
+	consumersRoutes.POST("/createConsumer", consumersHandler.CreateConsumer)
 }

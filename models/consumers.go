@@ -21,3 +21,10 @@ type Consumer struct {
 type GetAllConsumersByStationSchema struct {
 	StationName string `form:"station_name" binding:"required" bson:"station_name"`
 }
+
+type CreateConsumerSchema struct {
+	Name         string `json:"name" binding:"required"`
+	StationName  string `json:"station_name" binding:"required"`
+	ConnectionId string `json:"connection_id" binding:"required"`
+	ConsumerType string `json:"consumer_type" binding:"required"`
+}

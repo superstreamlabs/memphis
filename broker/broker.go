@@ -1,9 +1,11 @@
 package broker
 
 import (
+	"errors"
 	"memphis-control-plane/config"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
+	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -11,6 +13,12 @@ import (
 )
 
 var configuration = config.GetConfig()
+
+func getErrorWithoutNats(err error) error {
+	message := strings.ToLower(err.Error())
+	message = strings.Replace(message, "nats", "mmphis-broker", -1)
+	return errors.New(message)
+}
 
 func handleDisconnectEvent(con *nats.Conn, err error) {
 	logger.Error("Broker has disconnected: " + err.Error())
@@ -127,12 +135,12 @@ func ValidateUserCreds(token string) error {
 	)
 
 	if err != nil {
-		return err
+		return getErrorWithoutNats(err)
 	}
 
 	_, err = nc.JetStream()
 	if err != nil {
-		return err
+		return getErrorWithoutNats(err)
 	}
 
 	nc.Close()

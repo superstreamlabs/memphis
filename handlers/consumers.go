@@ -6,6 +6,7 @@ import (
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -43,42 +44,57 @@ func validateConsumerType(consumerType string) error {
 	return nil
 }
 
-func (umh ConsumersHandler) CreateConsumer(name string, stationName string, factoryName string, connectionId primitive.ObjectID, consumerType string, username string) error {
+func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
+	var body models.CreateConsumerSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	name := strings.ToLower(body.Name)
 	err := validateConsumerName(name)
 	if err != nil {
-		return err
+		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		return
 	}
 
+	consumerType := strings.ToLower(body.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		return err
+		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		return
 	}
 
-	exist, _, err := IsConnectionExist(connectionId)
+	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
+	if err != nil {
+		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id is not valid"})
+		return
+	}
+	exist, connection, err := IsConnectionExist(connectionId)
 	if err != nil {
 		logger.Error("CreateConsumer error: " + err.Error())
-		return err
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 	if !exist {
-		return errors.New("Connection id was not found")
+		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id was not found"})
+		return
+	}
+	if !connection.IsActive {
+		c.AbortWithStatusJSON(400, gin.H{"message": "Connection is not active"})
+		return
 	}
 
-	exist, _, err = IsUserExist(username)
-	if err != nil {
-		logger.Error("CreateConsumer error: " + err.Error())
-		return err
-	}
-	if !exist {
-		return errors.New("User was not found")
-	}
-
+	stationName := strings.ToLower(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		logger.Error("CreateConsumer error: " + err.Error())
-		return err
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 	if !exist {
-		return errors.New("Station was not found")
+		c.AbortWithStatusJSON(400, gin.H{"message": "Station was not found"})
+		return
 	}
 
 	consumerId := primitive.NewObjectID()
@@ -89,7 +105,7 @@ func (umh ConsumersHandler) CreateConsumer(name string, stationName string, fact
 		FactoryId:     station.FactoryId,
 		Type:          consumerType,
 		ConnectionId:  connectionId,
-		CreatedByUser: username,
+		CreatedByUser: connection.CreatedByUser,
 		IsActive:      true,
 		CreationDate:  time.Now(),
 	}
@@ -97,9 +113,13 @@ func (umh ConsumersHandler) CreateConsumer(name string, stationName string, fact
 	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
 	if err != nil {
 		logger.Error("CreateConsumer error: " + err.Error())
-		return err
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
-	return nil
+
+	c.IndentedJSON(200, gin.H{
+		"consumer_id": consumerId,
+	})
 }
 
 func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {

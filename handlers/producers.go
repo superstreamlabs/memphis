@@ -6,6 +6,7 @@ import (
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -43,42 +44,57 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (umh ProducersHandler) CreateProducer(name string, stationName string, connectionId primitive.ObjectID, producerType string, username string) error {
+func (umh ProducersHandler) CreateProducer(c *gin.Context) {
+	var body models.CreateProducerSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	name := strings.ToLower(body.Name)
 	err := validateProducerName(name)
 	if err != nil {
-		return err
+		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		return
 	}
 
+	producerType := strings.ToLower(body.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		return err
+		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		return
 	}
 
-	exist, _, err := IsConnectionExist(connectionId)
+	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
+	if err != nil {
+		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id is not valid"})
+		return
+	}
+	exist, connection, err := IsConnectionExist(connectionId)
 	if err != nil {
 		logger.Error("CreateProducer error: " + err.Error())
-		return err
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 	if !exist {
-		return errors.New("Connection id was not found")
+		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id was not found"})
+		return
+	}
+	if !connection.IsActive {
+		c.AbortWithStatusJSON(400, gin.H{"message": "Connection is not active"})
+		return
 	}
 
-	exist, _, err = IsUserExist(username)
-	if err != nil {
-		logger.Error("CreateProducer error: " + err.Error())
-		return err
-	}
-	if !exist {
-		return errors.New("User was not found")
-	}
-
+	stationName := strings.ToLower(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		logger.Error("CreateProducer error: " + err.Error())
-		return err
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 	if !exist {
-		return errors.New("Station was not found")
+		c.AbortWithStatusJSON(400, gin.H{"message": "Station was not found"})
+		return
 	}
 
 	producerId := primitive.NewObjectID()
@@ -89,7 +105,7 @@ func (umh ProducersHandler) CreateProducer(name string, stationName string, conn
 		FactoryId:     station.FactoryId,
 		Type:          producerType,
 		ConnectionId:  connectionId,
-		CreatedByUser: username,
+		CreatedByUser: connection.CreatedByUser,
 		IsActive:      true,
 		CreationDate:  time.Now(),
 	}
@@ -97,9 +113,13 @@ func (umh ProducersHandler) CreateProducer(name string, stationName string, conn
 	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
 	if err != nil {
 		logger.Error("CreateProducer error: " + err.Error())
-		return err
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
-	return nil
+
+	c.IndentedJSON(200, gin.H{
+		"producer_id": producerId,
+	})
 }
 
 func (umh ProducersHandler) GetAllProducers(c *gin.Context) {

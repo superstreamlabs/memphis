@@ -5,6 +5,7 @@ import (
 	"errors"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,6 +17,7 @@ type ConnectionsHandler struct{}
 func (umh ConnectionsHandler) CreateConnection(username string) (primitive.ObjectID, error) {
 	connectionId := primitive.NewObjectID()
 
+	username = strings.ToLower(username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
 		logger.Error("CreateProducer error: " + err.Error())

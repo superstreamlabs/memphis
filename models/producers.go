@@ -21,3 +21,10 @@ type Producer struct {
 type GetAllProducersByStationSchema struct {
 	StationName string `form:"station_name" binding:"required" bson:"station_name"`
 }
+
+type CreateProducerSchema struct {
+	Name         string             `json:"name" binding:"required"`
+	StationName  string             `json:"station_name" binding:"required"`
+	ConnectionId string `json:"connection_id" binding:"required"`
+	ProducerType string             `json:"producer_type" binding:"required"`
+}
