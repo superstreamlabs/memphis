@@ -28,18 +28,6 @@ import (
 
 type UserMgmtHandler struct{}
 
-func isUserExist(username string) (bool, models.User, error) {
-	filter := bson.M{"username": username}
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, user, nil
-	} else if err != nil {
-		return false, user, err
-	}
-	return true, user, nil
-}
-
 func isRootUserExist() (bool, error) {
 	filter := bson.M{"user_type": "root"}
 	var user models.User
@@ -325,17 +313,6 @@ func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	publicKey := c.Param("publicKey")
 	if publicKey != "" {
 		fmt.Println(publicKey)
-		// authenticated, user, err := authenticateUser(body.Username, body.Password)
-		// if err != nil {
-		// 	logger.Error("AuthenticateNats error: " + err.Error())
-		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 	return
-		// }
-
-		// if !authenticated || user.UserType == "management" {
-		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		// 	return
-		// }
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -349,7 +326,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	username := strings.ToLower(body.Username)
-	exist, _, err := isUserExist(username)
+	exist, _, err := IsUserExist(username)
 	if err != nil {
 		logger.Error("CreateUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -432,14 +409,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"id":                    newUser.ID,
-		"username":              username,
-		"hub_username":          body.HubUsername,
-		"hub_password":          body.HubPassword,
-		"user_type":             userType,
-		"creation_date":         newUser.CreationDate,
-		"already_logged_in":     false,
-		"avatar_id":             body.AvatarId,
+		"id":                      newUser.ID,
+		"username":                username,
+		"hub_username":            body.HubUsername,
+		"hub_password":            body.HubPassword,
+		"user_type":               userType,
+		"creation_date":           newUser.CreationDate,
+		"already_logged_in":       false,
+		"avatar_id":               body.AvatarId,
 		"broker_connection_creds": brokerConnectionCreds,
 	})
 }
@@ -489,7 +466,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	exist, userToRemove, err := isUserExist(username)
+	exist, userToRemove, err := IsUserExist(username)
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

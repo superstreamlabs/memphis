@@ -20,7 +20,7 @@ type Configuration struct {
 	REFRESH_JWT_EXPIRES_IN_MINUTES int
 	ROOT_PASSWORD                  string
 	BROKER_URL                     string
-	BROKER_JWT                     string
+	CONNECTION_TOKEN               string
 }
 
 func GetConfig() Configuration {

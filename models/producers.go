@@ -14,6 +14,7 @@ type Producer struct {
 	Type          string             `json:"type" bson:"type"`
 	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
+	IsActive      bool               `json:"is_active" bson:"is_active"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 }
 

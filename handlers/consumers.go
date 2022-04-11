@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
@@ -26,19 +27,74 @@ type extendedConsumer struct {
 	FactoryName   string             `json:"factory_name" bson:"factory_name"`
 }
 
-func (umh ConsumersHandler) CreateConsumer(name string, stationId primitive.ObjectID, connectionId primitive.ObjectID, consumerType string, username string) error {
+// TODO
+func validateConsumerName(name string) error {
+	if name == "" {
+		return errors.New("Consumer name is not valid")
+	}
+
+	return nil
+}
+
+func validateConsumerType(consumerType string) error {
+	if consumerType != "application" && consumerType != "connector" {
+		return errors.New("Consumer type has to be one of the following application/connector")
+	}
+	return nil
+}
+
+func (umh ConsumersHandler) CreateConsumer(name string, stationName string, factoryName string, connectionId primitive.ObjectID, consumerType string, username string) error {
+	err := validateConsumerName(name)
+	if err != nil {
+		return err
+	}
+
+	err = validateConsumerType(consumerType)
+	if err != nil {
+		return err
+	}
+
+	exist, _, err := IsConnectionExist(connectionId)
+	if err != nil {
+		logger.Error("CreateConsumer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("Connection id was not found")
+	}
+
+	exist, _, err = IsUserExist(username)
+	if err != nil {
+		logger.Error("CreateConsumer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("User was not found")
+	}
+
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		logger.Error("CreateConsumer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("Station was not found")
+	}
+
 	consumerId := primitive.NewObjectID()
 	newConsumer := models.Consumer{
 		ID:            consumerId,
 		Name:          name,
-		StationId:     stationId,
+		StationId:     station.ID,
+		FactoryId:     station.FactoryId,
 		Type:          consumerType,
 		ConnectionId:  connectionId,
 		CreatedByUser: username,
+		IsActive:      true,
 		CreationDate:  time.Now(),
 	}
 
-	_, err := consumersCollection.InsertOne(context.TODO(), newConsumer)
+	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
 	if err != nil {
 		logger.Error("CreateConsumer error: " + err.Error())
 		return err
@@ -82,8 +138,8 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 	if !ok {
 		return
 	}
-	
-	exist, station, err := isStationExist(body.StationName)
+
+	exist, station, err := IsStationExist(body.StationName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -92,10 +148,10 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
 		return
 	}
-	
+
 	var consumers []extendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}} }},
+		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
@@ -141,9 +197,25 @@ func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.O
 }
 
 func (umh ConsumersHandler) RemoveConsumer(consumerId primitive.ObjectID) error {
-	_, err := consumersCollection.DeleteOne(context.TODO(), bson.M{"_id": consumerId})
+	_, err := consumersCollection.UpdateOne(context.TODO(),
+		bson.M{"_id": consumerId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
 	if err != nil {
 		logger.Error("RemoveConsumer error: " + err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (umh ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {
+	_, err := consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"connection_id": connectionId},
+		bson.M{"$set": bson.M{"is_active": true}},
+	)
+	if err != nil {
+		logger.Error("ReliveConsumers error: " + err.Error())
 		return err
 	}
 

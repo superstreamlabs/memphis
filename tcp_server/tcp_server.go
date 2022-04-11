@@ -1,41 +1,134 @@
 package tcp_server
 
 import (
+	"encoding/json"
+	"memphis-control-plane/broker"
 	"memphis-control-plane/config"
+	"memphis-control-plane/handlers"
 	"memphis-control-plane/logger"
 	"net"
 	"strings"
 	"sync"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+type tcpMessage struct {
+	Operation    string             `json:"operation"`
+	Username     string             `json:"username"`
+	Jwt          string             `json:"jwt"`
+	ConnectionId primitive.ObjectID `json:"connection_id"`
+}
+
+var connectionsHandler handlers.ConnectionsHandler
+var producersHandler handlers.ProducersHandler
+var consumersHandler handlers.ConsumersHandler
+
+func handleConnectMessage(connection net.Conn) {
+	d := json.NewDecoder(connection)
+	var message tcpMessage
+	err := d.Decode(&message)
+	if err != nil || message.Operation != "connect" {
+		connection.Write([]byte("Memphis protocol error"))
+		connection.Close()
+	} else {
+		username := strings.ToLower(message.Username)
+		exist, user, err := handlers.IsUserExist(username)
+		if err != nil {
+			logger.Error("handleConnectMessage: " + err.Error())
+			connection.Write([]byte("Server error: " + err.Error()))
+			connection.Close()
+		}
+		if !exist {
+			connection.Write([]byte("User is not exist"))
+			connection.Close()
+		}
+		if user.UserType != "application" {
+			connection.Write([]byte("You have to connect with application type user"))
+			connection.Close()
+		}
+
+		connectionId := message.ConnectionId
+		exist, _, err = handlers.IsConnectionExist(connectionId)
+		if err != nil {
+			logger.Error("handleConnectMessage: " + err.Error())
+			connection.Write([]byte("Server error: " + err.Error()))
+			connection.Close()
+		}
+
+		err = broker.ValidateUserCreds(message.Jwt)
+		if err != nil {
+			logger.Error("handleConnectMessage: " + err.Error())
+			connection.Write([]byte("Server error: " + err.Error()))
+			connection.Close()
+		}
+
+		if exist {
+			err = connectionsHandler.ReliveConnection(connectionId)
+			if err != nil {
+				logger.Error("handleConnectMessage: " + err.Error())
+				connection.Write([]byte("Server error: " + err.Error()))
+				connection.Close()
+			}
+			err = producersHandler.ReliveProducers(connectionId)
+			if err != nil {
+				logger.Error("handleConnectMessage: " + err.Error())
+				connection.Write([]byte("Server error: " + err.Error()))
+				connection.Close()
+			}
+			err = consumersHandler.ReliveConsumers(connectionId)
+			if err != nil {
+				logger.Error("handleConnectMessage: " + err.Error())
+				connection.Write([]byte("Server error: " + err.Error()))
+				connection.Close()
+			}
+		} else {
+			connectionId, err = connectionsHandler.CreateConnection(username)
+			if err != nil {
+				logger.Error("handleConnectMessage: " + err.Error())
+				connection.Write([]byte("Server error: " + err.Error()))
+				connection.Close()
+			}
+		}
+
+		connection.Write([]byte(connectionId.String()))
+	}
+}
+
+func handleCreateProducerMessage() {
+
+}
+
+func handleCreateConsumerMessage() {
+
+}
 
 func handleNewClient(connection net.Conn) {
 	logger.Info("A new client connection has been established: " + connection.RemoteAddr().String())
+	handleConnectMessage(connection)
+
+acceptMessagesLoop:
 	for {
-		buf := make([]byte, 1024)
-		_, err := connection.Read(buf)
+		d := json.NewDecoder(connection)
+		var message tcpMessage
+		err := d.Decode(&message)
 		if err != nil {
 			connection.Write([]byte("Memphis protocol error"))
-		} else {
-			// on connect
-			// get username
-			// get nats jwt
-			// create connection id
-			// create connection in the db if connection id not already exist
-
-			// on create producer
-			// get connection id
+			// set connection + producers + consumers is active to false
+			break
+		}
+		switch message.Operation {
+		case "CreateProducer":
+			logger.Info("CreateProducer")
+			handleCreateProducerMessage(connection)
 			// create producer in db
-
-			// when connection lost
-			// remove connection + producers + consumers of the same connection id
-
-
-			message := string(buf)
-			message = message[:strings.IndexByte(message, '\n')]
-			if message == "STOP" {
-				break
-			}
-			connection.Write([]byte("Ok"))
+			break
+		case "CreateConsumer":
+			handleCreateConsumerMessage(connection)
+			break
+		default:
+			connection.Write([]byte("Memphis protocol error"))
+			break acceptMessagesLoop
 		}
 	}
 	connection.Close()

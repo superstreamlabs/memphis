@@ -143,7 +143,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := isStationExist(stationName)
+	exist, _, err := IsStationExist(stationName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -154,7 +154,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	factortyName := strings.ToLower(body.FactoryName)
-	exist, factory, err := isFactoryExist(factortyName)
+	exist, factory, err := IsFactoryExist(factortyName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -240,7 +240,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 	}
 
 	stationName := strings.ToLower(body.StationName)
-	exist, _, err := isStationExist(stationName)
+	exist, _, err := IsStationExist(stationName)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

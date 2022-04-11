@@ -47,7 +47,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		configuration.BROKER_URL,
 		// nats.UserCredentials("admin3.creds"),
 		// userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
-		nats.Token(configuration.BROKER_JWT),
+		nats.Token(configuration.CONNECTION_TOKEN),
 		nats.MaxReconnects(10),
 		nats.ReconnectWait(5*time.Second),
 		nats.Timeout(10*time.Second),
@@ -71,7 +71,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 }
 
 func AddUser(username string) (string, error) {
-	return configuration.BROKER_JWT, nil
+	return configuration.CONNECTION_TOKEN, nil
 }
 
 func RemoveUser(username string) error {
@@ -115,6 +115,27 @@ func RemoveProducer() error {
 
 func RemoveConsumer() error {
 	// js.DeleteConsumer("ORDERS", "MONITOR")
+	return nil
+}
+
+func ValidateUserCreds(token string) error {
+	nc, err := nats.Connect(
+		configuration.BROKER_URL,
+		// nats.UserCredentials("admin3.creds"),
+		// userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
+		nats.Token(token),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = nc.JetStream()
+	if err != nil {
+		return err
+	}
+
+	nc.Close()
 	return nil
 }
 

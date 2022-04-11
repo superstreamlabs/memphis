@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -26,7 +27,19 @@ func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	return user.(models.User)
 }
 
-func isFactoryExist(factoryName string) (bool, models.Factory, error) {
+func IsUserExist(username string) (bool, models.User, error) {
+	filter := bson.M{"username": username}
+	var user models.User
+	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		return false, user, nil
+	} else if err != nil {
+		return false, user, err
+	}
+	return true, user, nil
+}
+
+func IsFactoryExist(factoryName string) (bool, models.Factory, error) {
 	filter := bson.M{"name": factoryName}
 	var factory models.Factory
 	err := factoriesCollection.FindOne(context.TODO(), filter).Decode(&factory)
@@ -38,7 +51,7 @@ func isFactoryExist(factoryName string) (bool, models.Factory, error) {
 	return true, factory, nil
 }
 
-func isStationExist(stationName string) (bool, models.Station, error) {
+func IsStationExist(stationName string) (bool, models.Station, error) {
 	filter := bson.M{"name": stationName}
 	var station models.Station
 	err := stationsCollection.FindOne(context.TODO(), filter).Decode(&station)
@@ -48,4 +61,16 @@ func isStationExist(stationName string) (bool, models.Station, error) {
 		return false, station, err
 	}
 	return true, station, nil
+}
+
+func IsConnectionExist(connectionId primitive.ObjectID) (bool, models.Connection, error) {
+	filter := bson.M{"_id": connectionId}
+	var connection models.Connection
+	err := connectionsCollection.FindOne(context.TODO(), filter).Decode(&connection)
+	if err == mongo.ErrNoDocuments {
+		return false, connection, nil
+	} else if err != nil {
+		return false, connection, err
+	}
+	return true, connection, nil
 }

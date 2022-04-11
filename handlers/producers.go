@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
@@ -26,19 +27,74 @@ type extendedProducer struct {
 	FactoryName   string             `json:"factory_name" bson:"factory_name"`
 }
 
-func (umh ProducersHandler) CreateProducer(name string, stationId primitive.ObjectID, connectionId primitive.ObjectID, producerType string, username string) error {
+// TODO
+func validateProducerName(name string) error {
+	if name == "" {
+		return errors.New("Producer name is not valid")
+	}
+
+	return nil
+}
+
+func validateProducerType(producerType string) error {
+	if producerType != "application" && producerType != "connector" {
+		return errors.New("Consumer type has to be one of the following application/connector")
+	}
+	return nil
+}
+
+func (umh ProducersHandler) CreateProducer(name string, stationName string, connectionId primitive.ObjectID, producerType string, username string) error {
+	err := validateProducerName(name)
+	if err != nil {
+		return err
+	}
+
+	err = validateProducerType(producerType)
+	if err != nil {
+		return err
+	}
+
+	exist, _, err := IsConnectionExist(connectionId)
+	if err != nil {
+		logger.Error("CreateProducer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("Connection id was not found")
+	}
+
+	exist, _, err = IsUserExist(username)
+	if err != nil {
+		logger.Error("CreateProducer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("User was not found")
+	}
+
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		logger.Error("CreateProducer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("Station was not found")
+	}
+
 	producerId := primitive.NewObjectID()
 	newProducer := models.Producer{
 		ID:            producerId,
 		Name:          name,
-		StationId:     stationId,
+		StationId:     station.ID,
+		FactoryId:     station.FactoryId,
 		Type:          producerType,
 		ConnectionId:  connectionId,
 		CreatedByUser: username,
+		IsActive:      true,
 		CreationDate:  time.Now(),
 	}
 
-	_, err := producersCollection.InsertOne(context.TODO(), newProducer)
+	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
 	if err != nil {
 		logger.Error("CreateProducer error: " + err.Error())
 		return err
@@ -83,7 +139,7 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := isStationExist(body.StationName)
+	exist, station, err := IsStationExist(body.StationName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -92,10 +148,10 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
 		return
 	}
-	
+
 	var producers []extendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}} }},
+		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
@@ -141,9 +197,25 @@ func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.O
 }
 
 func (umh ProducersHandler) RemoveProducer(producerId primitive.ObjectID) error {
-	_, err := producersCollection.DeleteOne(context.TODO(), bson.M{"_id": producerId})
+	_, err := producersCollection.UpdateOne(context.TODO(),
+		bson.M{"_id": producerId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
 	if err != nil {
 		logger.Error("RemoveProducer error: " + err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (umh ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
+	_, err := producersCollection.UpdateMany(context.TODO(),
+		bson.M{"connection_id": connectionId},
+		bson.M{"$set": bson.M{"is_active": true}},
+	)
+	if err != nil {
+		logger.Error("ReliveProducers error: " + err.Error())
 		return err
 	}
 

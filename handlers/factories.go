@@ -71,7 +71,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := isFactoryExist(factoryName)
+	exist, _, err := IsFactoryExist(factoryName)
 	if err != nil {
 		logger.Error("CreateFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -194,7 +194,7 @@ func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	}
 
 	factoryName := strings.ToLower(body.FactoryName)
-	exist, factory, err := isFactoryExist(factoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		logger.Error("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -230,7 +230,7 @@ func (umh FactoriesHandler) EditFactory(c *gin.Context) {
 	}
 
 	factoryName := strings.ToLower(body.FactoryName)
-	exist, _, err := isFactoryExist(factoryName)
+	exist, _, err := IsFactoryExist(factoryName)
 	if err != nil {
 		logger.Error("EditFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
