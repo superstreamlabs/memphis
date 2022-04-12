@@ -23,6 +23,7 @@ type Configuration struct {
 	ROOT_PASSWORD                  string
 	BROKER_URL                     string
 	CONNECTION_TOKEN               string
+	MAX_MESSAGE_SIZE_MB            int
 }
 
 func GetConfig() Configuration {

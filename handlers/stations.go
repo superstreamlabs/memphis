@@ -45,7 +45,7 @@ func validateStorageType(storageType string) error {
 	return nil
 }
 
-func validateReplicas(replicas int64) error {
+func validateReplicas(replicas int) error {
 	if replicas > 5 {
 		return errors.New("max replicas in a cluster is 5")
 	}
@@ -53,9 +53,19 @@ func validateReplicas(replicas int64) error {
 	return nil
 }
 
-// TODO remove the station resources - functions, connectors, producers, consumers
-func removeStationResources(stationName string) error {
-	err := broker.RemoveStream(stationName)
+// TODO remove the station resources - functions, connectors
+func removeStationResources(station models.Station) error {
+	err := broker.RemoveStream(station.Name)
+	if err != nil {
+		return err
+	}
+
+	_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+	if err != nil {
+		return err
+	}
+
+	_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
 	if err != nil {
 		return err
 	}
@@ -90,11 +100,11 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 		Name            string             `json:"name" bson:"name"`
 		FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
 		RetentionType   string             `json:"retention_type" bson:"retention_type"`
-		RetentionValue  int64              `json:"retention_value" bson:"retention_value"`
+		RetentionValue  int                `json:"retention_value" bson:"retention_value"`
 		StorageType     string             `json:"storage_type" bson:"storage_type"`
-		Replicas        int64              `json:"replicas" bson:"replicas"`
+		Replicas        int                `json:"replicas" bson:"replicas"`
 		DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-		DedupWindowInMs int64              `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
+		DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
 		CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
 		CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 		LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
@@ -218,7 +228,8 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = broker.CreateStream(newStation)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Server error"})
+		logger.Error("CreateStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -240,7 +251,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 	}
 
 	stationName := strings.ToLower(body.StationName)
-	exist, _, err := IsStationExist(stationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -251,7 +262,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	err = removeStationResources(stationName)
+	err = removeStationResources(station)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

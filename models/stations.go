@@ -23,11 +23,11 @@ type Station struct {
 	Name            string             `json:"name" bson:"name"`
 	FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
 	RetentionType   string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue  int64              `json:"retention_value" bson:"retention_value"`
+	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
 	StorageType     string             `json:"storage_type" bson:"storage_type"`
-	Replicas        int64              `json:"replicas" bson:"replicas"`
+	Replicas        int                `json:"replicas" bson:"replicas"`
 	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-	DedupWindowInMs int64              `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
+	DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
 	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
@@ -42,11 +42,11 @@ type CreateStationSchema struct {
 	Name            string `json:"name" binding:"required,min=1,max=32"`
 	FactoryName     string `json:"factory_name" binding:"required"`
 	RetentionType   string `json:"retention_type"`
-	RetentionValue  int64  `json:"retention_value"`
-	Replicas        int64  `json:"replicas"`
+	RetentionValue  int    `json:"retention_value"`
+	Replicas        int    `json:"replicas"`
 	StorageType     string `json:"storage_type"`
 	DedupEnabled    bool   `json:"dedup_enabled"`
-	DedupWindowInMs int64  `json:"dedup_window_in_ms"`
+	DedupWindowInMs int    `json:"dedup_window_in_ms" binding:"min=0"`
 }
 
 type RemoveStationSchema struct {

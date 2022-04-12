@@ -74,7 +74,6 @@ func validateHubCreds(hubUsername string, hubPassword string) error {
 	return nil
 }
 
-// TODO terminate all user connections
 func updateUserResources(user models.User) error {
 	if user.UserType == "application" {
 		err := broker.RemoveUser(user.Username)
@@ -99,6 +98,30 @@ func updateUserResources(user models.User) error {
 	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{"created_by_user": user.Username},
 		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = connectionsCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = producersCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
 	)
 	if err != nil {
 		return err
@@ -481,17 +504,17 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
-	if err != nil {
-		logger.Error("RemoveUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	err = updateUserResources(userToRemove)
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
+	if err != nil {
+		logger.Error("RemoveUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -506,17 +529,17 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
-	if err != nil {
-		logger.Error("RemoveMyUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	err = updateUserResources(user)
+	err := updateUserResources(user)
 	if err != nil {
 		logger.Error("RemoveMyUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
+	if err != nil {
+		logger.Error("RemoveMyUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 

@@ -29,7 +29,7 @@ func validateFactoryName(factoryName string) error {
 	return nil
 }
 
-// TODO remove the stations resources - functions, connectors, producers, consumers
+// TODO remove the stations resources - functions, connectors
 func removeStations(factoryId primitive.ObjectID) error {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factoryId})
@@ -42,8 +42,17 @@ func removeStations(factoryId primitive.ObjectID) error {
 	}
 
 	for _, station := range stations {
-		streamName := station.Name
-		err = broker.RemoveStream(streamName)
+		err = broker.RemoveStream(station.Name)
+		if err != nil {
+			return err
+		}
+
+		_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+		if err != nil {
+			return err
+		}
+
+		_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
 		if err != nil {
 			return err
 		}

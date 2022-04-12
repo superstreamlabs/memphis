@@ -74,3 +74,15 @@ func IsConnectionExist(connectionId primitive.ObjectID) (bool, models.Connection
 	}
 	return true, connection, nil
 }
+
+func IsConsumerExist(consumerName string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
+	filter := bson.M{"name": consumerName, "station_id": stationId, "is_active": true}
+	var consumer models.Consumer
+	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
+	if err == mongo.ErrNoDocuments {
+		return false, consumer, nil
+	} else if err != nil {
+		return false, consumer, err
+	}
+	return true, consumer, nil
+}
