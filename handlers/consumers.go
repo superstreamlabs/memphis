@@ -125,6 +125,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	var consumers []extendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
@@ -171,7 +172,7 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 
 	var consumers []extendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
+		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},

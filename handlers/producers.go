@@ -125,6 +125,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 func (umh ProducersHandler) GetAllProducers(c *gin.Context) {
 	var producers []extendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
@@ -171,7 +172,7 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 
 	var producers []extendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
+		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
