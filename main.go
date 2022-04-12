@@ -1,21 +1,30 @@
 package main
 
 import (
-	"strech-server/config"
-	"strech-server/db"
-	"strech-server/logger"
-	"strech-server/routes"
-	"strech-server/socketio"
+	"memphis-control-plane/broker"
+	"memphis-control-plane/db"
+	"memphis-control-plane/handlers"
+	"memphis-control-plane/http_server"
+	"memphis-control-plane/logger"
+	"memphis-control-plane/tcp_server"
+	"sync"
 )
 
 func main() {
-	configuration := config.GetConfig()
-	logger.Info("Environment: " + configuration.ENVIRONMENT)
+	err := handlers.CreateRootUserOnFirstSystemLoad()
+	if err != nil {
+		logger.Error("Failed to create root user: " + err.Error())
+		panic("Failed to create root user: " + err.Error())
+	}
 
-	router := routes.InitializeHttpRoutes()
-	socketioServer := socketio.InitializeSocketio(router)
+	defer db.Close()
+	defer broker.Close()
 
-	defer socketioServer.Close()
-	defer db.Close(db.Client, db.Ctx, db.Cancel)
-	router.Run(":" + configuration.PORT)
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+
+	go tcp_server.InitializeTcpServer(wg)
+	go http_server.InitializeHttpServer(wg)
+
+	wg.Wait()
 }

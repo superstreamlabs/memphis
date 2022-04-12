@@ -1,2 +1,2 @@
 ### Maintainers
-  - Idan Asulin <idan@strech.io> [@idanasulinStrech](https://github.com/idanasulinStrech)
+  - Idan Asulin <idan@memphis.dev> [@idanasulinmemphis](https://github.com/idanasulinmemphis)

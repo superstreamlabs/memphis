@@ -1,4 +1,4 @@
-# Strech Contributor Covenant Code of Conduct
+# Memphis Contributor Covenant Code of Conduct
 
 ## Our Pledge
 

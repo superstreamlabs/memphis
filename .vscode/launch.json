@@ -9,7 +9,8 @@
             "program": "${workspaceFolder}/main.go",
             "env": {
                 "ENVIRONMENT": "dev",
-                "MONGO_PASS": "Mongo4life"
+                "ROOT_PASSWORD": "123456",
+                "CONNECTION_TOKEN": "aWg2c1NBUEVtWFkySDRiTktramQ="
             }
         }
     ]
