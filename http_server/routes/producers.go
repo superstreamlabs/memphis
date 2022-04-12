@@ -12,4 +12,5 @@ func InitializeProducersRoutes(router *gin.RouterGroup) {
 	producersRoutes.GET("/getAllProducers", producersHandler.GetAllProducers)
 	producersRoutes.GET("/getAllProducersByStation", producersHandler.GetAllProducersByStation)
 	producersRoutes.POST("/createProducer", producersHandler.CreateProducer)
+	producersRoutes.DELETE("/destroyProducer", producersHandler.DestroyProducer)
 }

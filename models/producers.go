@@ -23,8 +23,13 @@ type GetAllProducersByStationSchema struct {
 }
 
 type CreateProducerSchema struct {
-	Name         string             `json:"name" binding:"required"`
-	StationName  string             `json:"station_name" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	StationName  string `json:"station_name" binding:"required"`
 	ConnectionId string `json:"connection_id" binding:"required"`
-	ProducerType string             `json:"producer_type" binding:"required"`
+	ProducerType string `json:"producer_type" binding:"required"`
+}
+
+type DestroyProducerSchema struct {
+	Name        string `json:"name" binding:"required"`
+	StationName string `json:"station_name" binding:"required"`
 }

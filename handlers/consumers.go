@@ -85,7 +85,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 
-	consumerGroup := body.ConsumersGroup
+	consumerGroup :=  strings.ToLower(body.ConsumersGroup)
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
 		if err != nil {

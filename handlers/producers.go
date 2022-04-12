@@ -6,6 +6,7 @@ import (
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,18 +29,19 @@ type extendedProducer struct {
 	FactoryName   string             `json:"factory_name" bson:"factory_name"`
 }
 
-// TODO
 func validateProducerName(name string) error {
-	if name == "" {
-		return errors.New("Producer name is not valid")
-	}
+	re := regexp.MustCompile("^[a-z_]*$")
 
+	validName := re.MatchString(name)
+	if !validName {
+		return errors.New("Producer name has to include only letters and _")
+	}
 	return nil
 }
 
 func validateProducerType(producerType string) error {
 	if producerType != "application" && producerType != "connector" {
-		return errors.New("Consumer type has to be one of the following application/connector")
+		return errors.New("Producer type has to be one of the following application/connector")
 	}
 	return nil
 }
@@ -198,6 +200,36 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 	} else {
 		c.IndentedJSON(200, producers)
 	}
+}
+
+func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
+	var body models.DestroyProducerSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName := strings.ToLower(body.StationName)
+	name := strings.ToLower(body.Name)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		logger.Error("DestroyProducer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	var producer models.Producer
+	err = producersCollection.FindOneAndDelete(context.TODO(), bson.M{"name": name, "station_id": station.ID}).Decode(&producer)
+	if err != nil {
+		logger.Error("DestroyProducer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if err == mongo.ErrNoDocuments {
+		c.AbortWithStatusJSON(400, gin.H{"message": "A producer with the given details was not found"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }
 
 func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.ObjectID) ([]models.Producer, error) {
