@@ -219,7 +219,7 @@ func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumer_group", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
 	})
 
@@ -289,6 +289,69 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 	}
 }
 
+func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
+	var body models.DestroyConsumerSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName := strings.ToLower(body.StationName)
+	name := strings.ToLower(body.Name)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	var consumer models.Consumer
+	err = consumersCollection.FindOneAndDelete(context.TODO(), bson.M{"name": name, "station_id": station.ID}).Decode(&consumer)
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if err == mongo.ErrNoDocuments {
+		c.AbortWithStatusJSON(400, gin.H{"message": "A consumer with the given details was not found"})
+		return
+	}
+
+	if consumer.ConsumersGroup == "" {
+		err = broker.RemoveConsumer(stationName, name)
+		if err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	} else { // ensure not part of an active consumer group
+		var consumers []models.Consumer
+
+		cursor, err := consumersCollection.Find(context.TODO(), bson.M{"consumer_group": consumer.ConsumersGroup, "is_active": true})
+		if err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if err = cursor.All(context.TODO(), &consumers); err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if len(consumers) == 0 { // no other active members in this group
+			err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
+			if err != nil {
+				logger.Error("DestroyConsumer error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
 func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.ObjectID) ([]models.Consumer, error) {
 	var consumers []models.Consumer
 
@@ -327,11 +390,6 @@ func (umh ConsumersHandler) RemoveConsumers(connectionId primitive.ObjectID) err
 		logger.Error("RemoveConsumers error: " + err.Error())
 		return err
 	}
-
-	// for every consumer
-	// if it has consumer group - check whether there is an active consumer with the same group
-	// if no - remove consumer in nats with the group name
-	// if no consumer group then remove the consumer in nats
 
 	return nil
 }

@@ -30,3 +30,8 @@ type CreateConsumerSchema struct {
 	ConsumerType   string `json:"consumer_type" binding:"required"`
 	ConsumersGroup string `json:"consumers_group"`
 }
+
+type DestroyConsumerSchema struct {
+	Name           string `json:"name" binding:"required"`
+	StationName    string `json:"station_name" binding:"required"`
+}
