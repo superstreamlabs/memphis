@@ -1,7 +1,8 @@
-def dockerImagesRepo = "memphisdev"
-def imageName = "memphis-control-plane-beta"
+def dockerImagesRepo = "memphisos"
+def imageName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
 def gitBranch = "beta"
+def versionTag = "0.1.0-beta"
 unique_Id = UUID.randomUUID().toString()
 def DOCKER_HUB_CREDS = credentials('docker-hub')
 
@@ -10,21 +11,17 @@ node {
     stage('SCM checkout') {
         git credentialsId: 'main-github', url: gitURL, branch: gitBranch
     }
-    stage('Build docker image') {
-        sh "docker build -t ${dockerImagesRepo}/${imageName} ."
-    }
 
-    stage('Push docker image') {
+    stage('Login to docker hub') {
 	withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
 		sh "docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW"
-	        sh "docker tag ${dockerImagesRepo}/${imageName} ${dockerImagesRepo}/${imageName}:${unique_Id}"
-		sh "docker push ${dockerImagesRepo}/${imageName}:${unique_Id}"
-		sh "docker push ${dockerImagesRepo}/${imageName}:latest"
-		sh "docker image rm ${dockerImagesRepo}/${imageName}:latest"
-		sh "docker image rm ${dockerImagesRepo}/${imageName}:${unique_Id}"
 	}
     }
-    
+
+    stage('Build and push docker image') {
+	sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:${versionTag} --platform linux/amd64,linux/arm/v7,linux/arm64 .
+    }
+
     notifySuccessful()
 
   } catch (e) {
