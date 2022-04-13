@@ -356,20 +356,20 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "A user with this username is already exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
 		return
 	}
 
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": userTypeError.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": usernameError.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 
@@ -377,7 +377,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			c.AbortWithStatusJSON(400, gin.H{"message": "Password was not provided"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
@@ -485,7 +485,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user := getUserDetailsFromMiddleware(c)
 	if user.Username == username {
-		c.AbortWithStatusJSON(400, gin.H{"message": "You can't remove your own user"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can't remove your own user"})
 		return
 	}
 
@@ -496,11 +496,11 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "User does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
-		c.AbortWithStatusJSON(400, gin.H{"message": "You can not remove the root user"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 

@@ -81,7 +81,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateName(name)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -89,7 +89,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	}
@@ -97,13 +97,13 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	consumerType := strings.ToLower(body.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id is not valid"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
 	exist, connection, err := IsConnectionExist(connectionId)
@@ -113,11 +113,11 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection is not active"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
 
@@ -129,7 +129,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station was not found"})
 		return
 	}
 
@@ -140,7 +140,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Consumer name has to be unique in a station level"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Consumer name has to be unique in a station level"})
 		return
 	}
 
@@ -153,7 +153,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 			return
 		}
 		if exist {
-			c.AbortWithStatusJSON(400, gin.H{"message": "You can not give your consumer group the same name like another active consumer on the same station"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer group the same name like another active consumer on the same station"})
 			return
 		}
 
@@ -171,7 +171,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 			return
 		}
 		if exist {
-			c.AbortWithStatusJSON(400, gin.H{"message": "You can not give your consumer the same name like another active consumer group name on the same station"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer the same name like another active consumer group name on the same station"})
 			return
 		}
 	}
@@ -255,7 +255,7 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
@@ -312,7 +312,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		return
 	}
 	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(400, gin.H{"message": "A consumer with the given details was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A consumer with the given details was not found"})
 		return
 	}
 

@@ -149,7 +149,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -159,7 +159,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station with the same name is already exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
 
@@ -170,7 +170,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Factory name does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory name does not exist"})
 		return
 	}
 
@@ -179,7 +179,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -192,7 +192,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -202,7 +202,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -258,7 +258,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 

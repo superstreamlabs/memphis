@@ -56,20 +56,20 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateProducerName(name)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	producerType := strings.ToLower(body.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id is not valid"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
 	exist, connection, err := IsConnectionExist(connectionId)
@@ -79,11 +79,11 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection is not active"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
 
@@ -95,7 +95,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station was not found"})
 		return
 	}
 
@@ -168,7 +168,7 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
@@ -225,7 +225,7 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 		return
 	}
 	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(400, gin.H{"message": "A producer with the given details was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A producer with the given details was not found"})
 		return
 	}
 

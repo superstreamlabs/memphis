@@ -76,7 +76,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.Name)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -87,7 +87,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Factory with that name is already exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name is already exist"})
 		return
 	}
 
@@ -210,7 +210,7 @@ func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Factory does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	}
 
@@ -246,7 +246,7 @@ func (umh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Factory with that name does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name does not exist"})
 		return
 	}
 

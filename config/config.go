@@ -24,6 +24,7 @@ type Configuration struct {
 	BROKER_URL                     string
 	CONNECTION_TOKEN               string
 	MAX_MESSAGE_SIZE_MB            int
+	SHOWABLE_ERROR_STATUS_CODE     int
 }
 
 func GetConfig() Configuration {
