@@ -74,7 +74,6 @@ func validateHubCreds(hubUsername string, hubPassword string) error {
 	return nil
 }
 
-// TODO terminate all user connections
 func updateUserResources(user models.User) error {
 	if user.UserType == "application" {
 		err := broker.RemoveUser(user.Username)
@@ -99,6 +98,30 @@ func updateUserResources(user models.User) error {
 	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{"created_by_user": user.Username},
 		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = connectionsCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = producersCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
 	)
 	if err != nil {
 		return err
@@ -333,20 +356,20 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "A user with this username is already exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
 		return
 	}
 
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": userTypeError.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": usernameError.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 
@@ -354,7 +377,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			c.AbortWithStatusJSON(400, gin.H{"message": "Password was not provided"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
@@ -462,7 +485,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user := getUserDetailsFromMiddleware(c)
 	if user.Username == username {
-		c.AbortWithStatusJSON(400, gin.H{"message": "You can't remove your own user"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can't remove your own user"})
 		return
 	}
 
@@ -473,18 +496,11 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "User does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
-		c.AbortWithStatusJSON(400, gin.H{"message": "You can not remove the root user"})
-		return
-	}
-
-	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
-	if err != nil {
-		logger.Error("RemoveUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 
@@ -492,6 +508,13 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	if err != nil {
 		logger.Error("RemoveUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
+	if err != nil {
+		logger.Error("RemoveUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -506,17 +529,17 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
-	if err != nil {
-		logger.Error("RemoveMyUser error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	err = updateUserResources(user)
+	err := updateUserResources(user)
 	if err != nil {
 		logger.Error("RemoveMyUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
+	if err != nil {
+		logger.Error("RemoveMyUser error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 

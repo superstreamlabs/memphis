@@ -3,9 +3,11 @@ package handlers
 import (
 	"context"
 	"errors"
+	"memphis-control-plane/broker"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,12 +30,13 @@ type extendedConsumer struct {
 	FactoryName   string             `json:"factory_name" bson:"factory_name"`
 }
 
-// TODO
-func validateConsumerName(name string) error {
-	if name == "" {
-		return errors.New("Consumer name is not valid")
-	}
+func validateName(name string) error {
+	re := regexp.MustCompile("^[a-z_]*$")
 
+	validName := re.MatchString(name)
+	if !validName {
+		return errors.New("Consumer name/consumer group has to include only letters and _")
+	}
 	return nil
 }
 
@@ -44,6 +47,30 @@ func validateConsumerType(consumerType string) error {
 	return nil
 }
 
+func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, error) {
+	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_active": true}
+	var consumer models.Consumer
+	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, error) {
+	filter := bson.M{"name": consumerGroup, "consumers_group": "", "station_id": stationId, "is_active": true}
+	var consumer models.Consumer
+	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	var body models.CreateConsumerSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -52,22 +79,31 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	}
 
 	name := strings.ToLower(body.Name)
-	err := validateConsumerName(name)
+	err := validateName(name)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
+	}
+
+	consumerGroup :=  strings.ToLower(body.ConsumersGroup)
+	if consumerGroup != "" {
+		err = validateName(consumerGroup)
+		if err != nil {
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
 	}
 
 	consumerType := strings.ToLower(body.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id is not valid"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
 	exist, connection, err := IsConnectionExist(connectionId)
@@ -77,11 +113,11 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection id was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Connection is not active"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
 
@@ -93,21 +129,74 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station was not found"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station was not found"})
 		return
+	}
+
+	exist, _, err = IsConsumerExist(name, station.ID)
+	if err != nil {
+		logger.Error("CreateConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if exist {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Consumer name has to be unique in a station level"})
+		return
+	}
+
+	var consumerGroupExist bool
+	if consumerGroup != "" {
+		exist, err = isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup, station.ID)
+		if err != nil {
+			logger.Error("CreateConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if exist {
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer group the same name like another active consumer on the same station"})
+			return
+		}
+
+		consumerGroupExist, err = isConsumerGroupExist(consumerGroup, station.ID)
+		if err != nil {
+			logger.Error("CreateConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	} else {
+		exist, err = isConsumerGroupExist(name, station.ID)
+		if err != nil {
+			logger.Error("CreateConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if exist {
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer the same name like another active consumer group name on the same station"})
+			return
+		}
 	}
 
 	consumerId := primitive.NewObjectID()
 	newConsumer := models.Consumer{
-		ID:            consumerId,
-		Name:          name,
-		StationId:     station.ID,
-		FactoryId:     station.FactoryId,
-		Type:          consumerType,
-		ConnectionId:  connectionId,
-		CreatedByUser: connection.CreatedByUser,
-		IsActive:      true,
-		CreationDate:  time.Now(),
+		ID:             consumerId,
+		Name:           name,
+		StationId:      station.ID,
+		FactoryId:      station.FactoryId,
+		Type:           consumerType,
+		ConnectionId:   connectionId,
+		CreatedByUser:  connection.CreatedByUser,
+		ConsumersGroup: consumerGroup,
+		IsActive:       true,
+		CreationDate:   time.Now(),
+	}
+
+	if consumerGroup == "" || !consumerGroupExist {
+		broker.CreateConsumer(newConsumer, station)
+		if err != nil {
+			logger.Error("CreateConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
@@ -130,7 +219,7 @@ func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumer_group", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
 	})
 
@@ -166,7 +255,7 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
@@ -200,6 +289,69 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 	}
 }
 
+func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
+	var body models.DestroyConsumerSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName := strings.ToLower(body.StationName)
+	name := strings.ToLower(body.Name)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	var consumer models.Consumer
+	err = consumersCollection.FindOneAndDelete(context.TODO(), bson.M{"name": name, "station_id": station.ID}).Decode(&consumer)
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if err == mongo.ErrNoDocuments {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A consumer with the given details was not found"})
+		return
+	}
+
+	if consumer.ConsumersGroup == "" {
+		err = broker.RemoveConsumer(stationName, name)
+		if err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	} else { // ensure not part of an active consumer group
+		var consumers []models.Consumer
+
+		cursor, err := consumersCollection.Find(context.TODO(), bson.M{"consumer_group": consumer.ConsumersGroup, "is_active": true})
+		if err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if err = cursor.All(context.TODO(), &consumers); err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if len(consumers) == 0 { // no other active members in this group
+			err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
+			if err != nil {
+				logger.Error("DestroyConsumer error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
 func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.ObjectID) ([]models.Consumer, error) {
 	var consumers []models.Consumer
 
@@ -217,25 +369,24 @@ func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.O
 	return consumers, nil
 }
 
-func (umh ConsumersHandler) RemoveConsumer(consumerId primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": consumerId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		logger.Error("RemoveConsumer error: " + err.Error())
-		return err
-	}
-
-	return nil
-}
-
 func (umh ConsumersHandler) RemoveConsumers(connectionId primitive.ObjectID) error {
 	_, err := consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
+		logger.Error("RemoveConsumers error: " + err.Error())
+		return err
+	}
+
+	var consumers []models.Consumer
+	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId})
+	if err != nil {
+		logger.Error("RemoveConsumers error: " + err.Error())
+		return err
+	}
+
+	if err = cursor.All(context.TODO(), &consumers); err != nil {
 		logger.Error("RemoveConsumers error: " + err.Error())
 		return err
 	}

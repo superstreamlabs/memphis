@@ -20,7 +20,7 @@ func InitializeHttpRoutes() *gin.Engine {
 		AllowWebSockets:  true,
 		AllowFiles:       true,
 	}))
-	mainRouter := router.Group("/api-gw")
+	mainRouter := router.Group("/api")
 	mainRouter.Use(middlewares.Authenticate)
 
 	utils.InitializeValidations()

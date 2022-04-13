@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"memphis-control-plane/config"
 	"memphis-control-plane/logger"
 	"mime/multipart"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 )
+
+var configuration = config.GetConfig()
 
 type ValidationError struct {
 	Field  string `json:"field"`
@@ -55,13 +58,13 @@ func validateSchema(c *gin.Context, schema interface{}, containFile bool, file *
 		uploadedFile, err := c.FormFile("file")
 		if err != nil {
 			logger.Error("validateSchema error: " + err.Error())
-			c.AbortWithStatusJSON(400, gin.H{"message": "Could not complete uploading your file, please check your file"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not complete uploading your file, please check your file"})
 			return nil, true
 		}
 
 		fileExt := filepath.Ext(uploadedFile.Filename)
 		if fileExt != ".png" && fileExt != ".jpg" && fileExt != ".jpeg" {
-			c.AbortWithStatusJSON(400, gin.H{"message": "You can upload only png,jpg or jpeg file formats"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can upload only png,jpg or jpeg file formats"})
 			return nil, true
 		}
 

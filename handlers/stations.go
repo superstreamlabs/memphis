@@ -45,7 +45,7 @@ func validateStorageType(storageType string) error {
 	return nil
 }
 
-func validateReplicas(replicas int64) error {
+func validateReplicas(replicas int) error {
 	if replicas > 5 {
 		return errors.New("max replicas in a cluster is 5")
 	}
@@ -53,9 +53,19 @@ func validateReplicas(replicas int64) error {
 	return nil
 }
 
-// TODO remove the station resources - functions, connectors, producers, consumers
-func removeStationResources(stationName string) error {
-	err := broker.RemoveStream(stationName)
+// TODO remove the station resources - functions, connectors
+func removeStationResources(station models.Station) error {
+	err := broker.RemoveStream(station.Name)
+	if err != nil {
+		return err
+	}
+
+	_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+	if err != nil {
+		return err
+	}
+
+	_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
 	if err != nil {
 		return err
 	}
@@ -90,11 +100,11 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 		Name            string             `json:"name" bson:"name"`
 		FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
 		RetentionType   string             `json:"retention_type" bson:"retention_type"`
-		RetentionValue  int64              `json:"retention_value" bson:"retention_value"`
+		RetentionValue  int                `json:"retention_value" bson:"retention_value"`
 		StorageType     string             `json:"storage_type" bson:"storage_type"`
-		Replicas        int64              `json:"replicas" bson:"replicas"`
+		Replicas        int                `json:"replicas" bson:"replicas"`
 		DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-		DedupWindowInMs int64              `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
+		DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
 		CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
 		CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 		LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
@@ -106,7 +116,7 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"factory_id", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"factory", 0}}}},
 	})
 
@@ -139,7 +149,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -149,7 +159,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station with the same name is already exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
 
@@ -160,7 +170,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Factory name does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory name does not exist"})
 		return
 	}
 
@@ -169,7 +179,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -182,7 +192,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -192,7 +202,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -218,7 +228,8 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = broker.CreateStream(newStation)
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Server error"})
+		logger.Error("CreateStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -240,18 +251,18 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 	}
 
 	stationName := strings.ToLower(body.StationName)
-	exist, _, err := IsStationExist(stationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(400, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
-	err = removeStationResources(stationName)
+	err = removeStationResources(station)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

@@ -19,18 +19,18 @@ import (
 )
 
 var noNeedAuthRoutes = []string{
-	"/api-gw/usermgmt/login",
-	"/api-gw/usermgmt/refreshtoken",
-	"/api-gw/status",
+	"/api/usermgmt/login",
+	"/api/usermgmt/refreshtoken",
+	"/api/status",
 }
 
-var refreshTokenRoute string = "/api-gw/usermgmt/refreshtoken"
+var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
 
 var configuration = config.GetConfig()
 var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 
 func isAuthNeeded(path string) bool {
-	if strings.HasPrefix(path, "/api-gw/usermgmt/nats/authenticate") {
+	if strings.HasPrefix(path, "/api/usermgmt/nats/authenticate") {
 		return false
 	}
 

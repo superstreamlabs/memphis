@@ -40,6 +40,14 @@ var producersHandler handlers.ProducersHandler
 var consumersHandler handlers.ConsumersHandler
 
 func createAccessToken(user models.User) (string, error) {
+	exist, _, err := handlers.IsUserExist(user.Username)
+	if err != nil {
+		return "", err
+	}
+	if(!exist) {
+
+	}
+
 	atClaims := jwt.MapClaims{}
 	atClaims["user_id"] = user.ID.Hex()
 	atClaims["username"] = user.Username
