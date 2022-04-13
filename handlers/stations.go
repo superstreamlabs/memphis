@@ -116,7 +116,7 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"factory_id", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"factory", 0}}}},
 	})
 
