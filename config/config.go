@@ -25,11 +25,16 @@ type Configuration struct {
 	CONNECTION_TOKEN               string
 	MAX_MESSAGE_SIZE_MB            int
 	SHOWABLE_ERROR_STATUS_CODE     int
+	DOCKER_ENV                     string
 }
 
 func GetConfig() Configuration {
 	configuration := Configuration{}
-	gonfig.GetConf("./config/config.json", &configuration)
+	if os.Getenv("DOCKER_ENV") != "" {
+		gonfig.GetConf("./config/docker-config.json", &configuration)
+	} else {
+		gonfig.GetConf("./config/config.json", &configuration)
+	}
 
 	env := os.Getenv("ENVIRONMENT")
 	if env == "" {
