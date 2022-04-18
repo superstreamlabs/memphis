@@ -8,19 +8,23 @@
 - An in-line data processing in any programming language
 - Out-of-the-box deep observability of every component 
 
+# Install Memphis on K8S
 
-# Installation
+# Install Memphis on your laptop with Docker Compose
 
 
 # documentation
 
 - [Official documentation](https://docs.memphis.dev)
 
+# Currently available SDKs 
+
+- [Node.js](https://github.com/Memphis-OS/memphis.js)
 
 # Contact 
-
-- [Twitter](https://https://twitter.com/MemphisPlatform): Follow us on Twitter!
+- [Slack](https://bit.ly/37eXzGo): Join our Slack Channel!
 - [Discord](https://discord.gg/WZpysvAeTf): Join our Discord Server!
+- [Twitter](https://https://twitter.com/MemphisPlatform): Follow us on Twitter!
 - [Medium](https://medium.com/memphis-dev): Follow our Medium page!
 - [Youtube](https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg): Subscribe our youtube channel!
 
@@ -28,6 +32,3 @@
 # Contribution guidelines
 
 - [contributing guide]()
-
-
-
