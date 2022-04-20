@@ -31,7 +31,6 @@ node {
 	sh "kubectl --kubeconfig=\"/var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml\" set image deployment/${containerName} ${containerName}=${repoUrlPrefix}/${imageName}:${unique_Id} -n ${namespace}"
     }
 
-
     notifySuccessful()
 
   } catch (e) {
