@@ -1,8 +1,7 @@
 def dockerImagesRepo = "memphisos"
 def imageName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
-def gitBranch = "beta"
-def versionTag = "0.1.0-beta"
+def gitBranch = "master"
 unique_Id = UUID.randomUUID().toString()
 def DOCKER_HUB_CREDS = credentials('docker-hub')
 
@@ -19,7 +18,7 @@ node {
     }
 
     stage('Build docker image') {
-	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:${versionTag} --platform linux/amd64,linux/arm/v7,linux/arm64 ."
+	sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm/v7,linux/arm64 ."
     }
     
     notifySuccessful()
