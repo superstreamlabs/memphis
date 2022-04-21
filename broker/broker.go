@@ -57,7 +57,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		// userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
 		nats.Token(configuration.CONNECTION_TOKEN),
 		nats.RetryOnFailedConnect(true),
-		nats.MaxReconnects(1),
+		nats.MaxReconnects(10),
 		nats.ReconnectWait(5*time.Second),
 		nats.Timeout(10*time.Second),
 		nats.PingInterval(5*time.Second),
