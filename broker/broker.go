@@ -16,7 +16,7 @@ var configuration = config.GetConfig()
 
 func getErrorWithoutNats(err error) error {
 	message := strings.ToLower(err.Error())
-	message = strings.Replace(message, "nats", "mmphis-broker", -1)
+	message = strings.Replace(message, "nats", "memphis-broker", -1)
 	return errors.New(message)
 }
 
