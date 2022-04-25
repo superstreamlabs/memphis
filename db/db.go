@@ -19,12 +19,17 @@ const (
 func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
-	auth := options.Credential{
-		AuthSource: configuration.DB_NAME,
-		Username:   configuration.MONGO_USER,
-		Password:   configuration.MONGO_PASS,
+	var clientOptions *options.ClientOptions
+	if configuration.DOCKER_ENV != "" {
+		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
+	} else {
+		auth := options.Credential{
+			AuthSource: configuration.DB_NAME,
+			Username:   configuration.MONGO_USER,
+			Password:   configuration.MONGO_PASS,
+		}
+		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
 	}
-	clientOptions := options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
