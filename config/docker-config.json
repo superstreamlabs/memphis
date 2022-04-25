@@ -2,8 +2,6 @@
     "HTTP_PORT": "5555",
     "TCP_PORT": "8877",
     "MONGO_URL": "mongodb://memphis-mongo-1:27017/maindb?retryWrites=true&w=majority",
-    "MONGO_USER": "memphis",
-    "MONGO_PASS": "memph1smong0",
     "DB_NAME": "maindb",
     "JWT_SECRET": "35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk",
     "JWT_EXPIRES_IN_MINUTES": 15,
