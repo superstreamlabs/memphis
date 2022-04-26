@@ -220,6 +220,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 	}
 
+	logger.Info("Root user has been created")
 	return nil
 }
 
@@ -431,6 +432,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	logger.Info("User " + username + " has been created")
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
@@ -518,6 +520,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
+	logger.Info("User " + username + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -543,6 +546,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
+	logger.Info("User " + user.Username + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 

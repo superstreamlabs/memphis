@@ -107,6 +107,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Factory " + factoryName + " has been created")
 	c.IndentedJSON(200, gin.H{
 		"id":              newFactory.ID,
 		"name":            newFactory.Name,
@@ -228,6 +229,7 @@ func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Factory " + factoryName + " has been created")
 	c.IndentedJSON(200, gin.H{})
 }
 

@@ -240,6 +240,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Station " + stationName + " has been created")
 	c.IndentedJSON(200, newStation)
 }
 
@@ -276,5 +277,6 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Station " + stationName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
