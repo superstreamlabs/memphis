@@ -119,6 +119,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Producer " + name + " has been created")
 	c.IndentedJSON(200, gin.H{
 		"producer_id": producerId,
 	})
@@ -229,6 +230,7 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Producer " + name + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -247,19 +249,6 @@ func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.O
 	}
 
 	return producers, nil
-}
-
-func (umh ProducersHandler) RemoveProducer(producerId primitive.ObjectID) error {
-	_, err := producersCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": producerId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		logger.Error("RemoveProducer error: " + err.Error())
-		return err
-	}
-
-	return nil
 }
 
 func (umh ProducersHandler) RemoveProducers(connectionId primitive.ObjectID) error {

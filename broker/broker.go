@@ -25,7 +25,7 @@ func handleDisconnectEvent(con *nats.Conn, err error) {
 }
 
 func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
-	logger.Error("Broker has experiences an error: " + err.Error())
+	logger.Error("Broker has experienced an error: " + err.Error())
 }
 
 func sigHandler(nonce []byte, seed string) ([]byte, error) {
@@ -76,6 +76,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		panic("Failed to create connection with the broker: " + err.Error())
 	}
 
+	logger.Info("Established connection with the broker")
 	return nc, js
 }
 

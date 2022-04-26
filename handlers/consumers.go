@@ -206,6 +206,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 
+	logger.Info("Consumer " + name + " has been created")
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
@@ -349,6 +350,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		}
 	}
 
+	logger.Info("Consumer " + name + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
