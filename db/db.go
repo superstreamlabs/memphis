@@ -43,6 +43,7 @@ func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFun
 		panic("Failed to create Mongo DB client: " + err.Error())
 	}
 
+	logger.Info("Established connection with the DB")
 	return client, ctx, cancel
 }
 

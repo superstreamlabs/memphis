@@ -37,15 +37,11 @@ func GetConfig() Configuration {
 	}
 
 	env := os.Getenv("ENVIRONMENT")
-	if env == "" {
-		env = "prod"
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		os.Setenv("GIN_MODE", "debug")
-		gin.SetMode(gin.DebugMode)
+	if env == "dev" {
 		token, _ := base64.StdEncoding.DecodeString(configuration.CONNECTION_TOKEN)
 		configuration.CONNECTION_TOKEN = string(token)
 	}
 
+	gin.SetMode(gin.ReleaseMode)
 	return configuration
 }
