@@ -86,3 +86,15 @@ func IsConsumerExist(consumerName string, stationId primitive.ObjectID) (bool, m
 	}
 	return true, consumer, nil
 }
+
+func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, models.Producer, error) {
+	filter := bson.M{"name": producerName, "station_id": stationId, "is_active": true}
+	var producer models.Producer
+	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err == mongo.ErrNoDocuments {
+		return false, producer, nil
+	} else if err != nil {
+		return false, producer, err
+	}
+	return true, producer, nil
+}
