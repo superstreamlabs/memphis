@@ -218,9 +218,10 @@ func CreateRootUserOnFirstSystemLoad() error {
 		if err != nil {
 			return err
 		}
+
+		logger.Info("Root user has been created")
 	}
 
-	logger.Info("Root user has been created")
 	return nil
 }
 

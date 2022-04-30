@@ -42,41 +42,13 @@ func (umh ConnectionsHandler) CreateConnection(username string) (primitive.Objec
 	return connectionId, nil
 }
 
-func (umh ConnectionsHandler) GetConnection(connectionId primitive.ObjectID) (models.Connection, error) {
-	var connection models.Connection
-	err := connectionsCollection.FindOne(context.TODO(), bson.M{"_id": connectionId}).Decode(&connection)
-	if err != nil {
-		logger.Error("GetConnection error: " + err.Error())
-		return connection, err
-	}
-
-	return connection, nil
-}
-
-func (umh ConnectionsHandler) GetAllConnections() ([]models.Connection, error) {
-	var connections []models.Connection
-
-	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{})
-	if err != nil {
-		logger.Error("GetAllConnections error: " + err.Error())
-		return connections, err
-	}
-
-	if err = cursor.All(context.TODO(), &connections); err != nil {
-		logger.Error("GetAllConnections error: " + err.Error())
-		return connections, err
-	}
-
-	return connections, nil
-}
-
-func (umh ConnectionsHandler) RemoveConnection(connectionId primitive.ObjectID) error {
+func (umh ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		logger.Error("RemoveConnection error: " + err.Error())
+		logger.Error("KillConnection error: " + err.Error())
 		return err
 	}
 
@@ -90,6 +62,19 @@ func (umh ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) 
 	)
 	if err != nil {
 		logger.Error("ReliveConnection error: " + err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (umh ConnectionsHandler) UpdatePingTime(connectionId primitive.ObjectID) error {
+	_, err := connectionsCollection.UpdateOne(context.TODO(),
+		bson.M{"_id": connectionId},
+		bson.M{"$set": bson.M{"last_ping": time.Now()}},
+	)
+	if err != nil {
+		logger.Error("UpdatePingTime error: " + err.Error())
 		return err
 	}
 

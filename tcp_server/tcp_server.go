@@ -26,12 +26,14 @@ type tcpMessage struct {
 	BrokerCreds       string             `json:"broker_creds"`
 	ConnectionId      primitive.ObjectID `json:"connection_id"`
 	ResendAccessToken bool               `json:"resend_access_token"`
+	Ping              bool               `json:"ping"`
 }
 
 type tcpResponseMessage struct {
 	ConnectionId   primitive.ObjectID `json:"connection_id"`
 	AccessToken    string             `json:"access_token"`
 	AccessTokenExp int                `json:"access_token_exp"`
+	PingInterval   int                `json:"ping_interval"`
 }
 
 var configuration = config.GetConfig()
@@ -44,7 +46,7 @@ func createAccessToken(user models.User) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if(!exist) {
+	if !exist {
 
 	}
 
@@ -164,6 +166,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			ConnectionId:   connectionId,
 			AccessToken:    accessToken,
 			AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+			PingInterval: configuration.PING_INTERVAL,
 		}
 		bytesResponse, _ := json.Marshal(response)
 		connection.Write(bytesResponse)
@@ -171,16 +174,16 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 	}
 }
 
-func removeConnectionResources(connectionId primitive.ObjectID) error {
-	err := connectionsHandler.RemoveConnection(connectionId)
+func killConnectionResources(connectionId primitive.ObjectID) error {
+	err := connectionsHandler.KillConnection(connectionId)
 	if err != nil {
 		return err
 	}
-	err = producersHandler.RemoveProducers(connectionId)
+	err = producersHandler.KillProducers(connectionId)
 	if err != nil {
 		return err
 	}
-	err = consumersHandler.RemoveConsumers(connectionId)
+	err = consumersHandler.KillConsumers(connectionId)
 	if err != nil {
 		return err
 	}
@@ -197,7 +200,7 @@ func handleNewClient(connection net.Conn) {
 			var message tcpMessage
 			err := d.Decode(&message)
 			if err != nil {
-				err = removeConnectionResources(connectionId)
+				err = killConnectionResources(connectionId)
 				if err != nil {
 					logger.Error("handleNewClient error: " + err.Error())
 				}
@@ -215,6 +218,17 @@ func handleNewClient(connection net.Conn) {
 					ConnectionId:   connectionId,
 					AccessToken:    accessToken,
 					AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+				}
+				bytesResponse, _ := json.Marshal(response)
+				connection.Write(bytesResponse)
+			} else if message.Ping {
+				err = connectionsHandler.UpdatePingTime(connectionId)
+				if err != nil {
+					logger.Error("handleNewClient error: " + err.Error())
+				}
+				response := tcpResponseMessage{
+					ConnectionId: connectionId,
+					PingInterval: configuration.PING_INTERVAL,
 				}
 				bytesResponse, _ := json.Marshal(response)
 				connection.Write(bytesResponse)
