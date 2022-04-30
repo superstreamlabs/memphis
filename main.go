@@ -7,6 +7,7 @@ import (
 	"memphis-control-plane/http_server"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/tcp_server"
+	"memphis-control-plane/utils"
 	"os"
 	"sync"
 )
@@ -22,10 +23,11 @@ func main() {
 	defer broker.Close()
 
 	wg := new(sync.WaitGroup)
-	wg.Add(2)
+	wg.Add(3)
 
 	go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(wg)
+	go utils.KillZombieConnections(wg)
 
 	env := os.Getenv("ENVIRONMENT")
 	if env == "" && os.Getenv("DOCKER_ENV") != "" {
@@ -33,8 +35,7 @@ func main() {
 	} else if env == "" && os.Getenv("DOCKER_ENV") == "" {
 		env = "K8S"
 	}
-
+	
 	logger.Info("Memphis control plane is up and running, ENV: " + env)
-
 	wg.Wait()
 }

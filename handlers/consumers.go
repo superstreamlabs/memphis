@@ -85,7 +85,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 
-	consumerGroup :=  strings.ToLower(body.ConsumersGroup)
+	consumerGroup := strings.ToLower(body.ConsumersGroup)
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
 		if err != nil {
@@ -305,8 +305,12 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
 	var consumer models.Consumer
-	err = consumersCollection.FindOneAndDelete(context.TODO(), bson.M{"name": name, "station_id": station.ID}).Decode(&consumer)
+	err = consumersCollection.FindOneAndUpdate(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID, "is_active": true},
+		bson.M{"$set": bson.M{"is_active": false}},
+	).Decode(&consumer)
 	if err != nil {
 		logger.Error("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -371,25 +375,13 @@ func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.O
 	return consumers, nil
 }
 
-func (umh ConsumersHandler) RemoveConsumers(connectionId primitive.ObjectID) error {
+func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
 	_, err := consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		logger.Error("RemoveConsumers error: " + err.Error())
-		return err
-	}
-
-	var consumers []models.Consumer
-	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId})
-	if err != nil {
-		logger.Error("RemoveConsumers error: " + err.Error())
-		return err
-	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		logger.Error("RemoveConsumers error: " + err.Error())
+		logger.Error("KillConsumers error: " + err.Error())
 		return err
 	}
 

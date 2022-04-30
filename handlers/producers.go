@@ -99,6 +99,17 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 
+	exist, _, err = IsProducerExist(name, station.ID)
+	if err != nil {
+		logger.Error("CreateProducer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if exist {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Producer name has to be unique in a station level"})
+		return
+	}
+
 	producerId := primitive.NewObjectID()
 	newProducer := models.Producer{
 		ID:            producerId,
@@ -218,8 +229,12 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
 	var producer models.Producer
-	err = producersCollection.FindOneAndDelete(context.TODO(), bson.M{"name": name, "station_id": station.ID}).Decode(&producer)
+	err = producersCollection.FindOneAndUpdate(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID, "is_active": true},
+		bson.M{"$set": bson.M{"is_active": false}},
+	).Decode(&producer)
 	if err != nil {
 		logger.Error("DestroyProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -251,13 +266,13 @@ func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.O
 	return producers, nil
 }
 
-func (umh ProducersHandler) RemoveProducers(connectionId primitive.ObjectID) error {
+func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
 	_, err := producersCollection.UpdateOne(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		logger.Error("RemoveProducers error: " + err.Error())
+		logger.Error("KillProducers error: " + err.Error())
 		return err
 	}
 

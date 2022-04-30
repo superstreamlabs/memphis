@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/base64"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +25,7 @@ type Configuration struct {
 	MAX_MESSAGE_SIZE_MB            int
 	SHOWABLE_ERROR_STATUS_CODE     int
 	DOCKER_ENV                     string
+	PING_INTERVAL                  int
 }
 
 func GetConfig() Configuration {
@@ -34,12 +34,6 @@ func GetConfig() Configuration {
 		gonfig.GetConf("./config/docker-config.json", &configuration)
 	} else {
 		gonfig.GetConf("./config/config.json", &configuration)
-	}
-
-	env := os.Getenv("ENVIRONMENT")
-	if env == "dev" {
-		token, _ := base64.StdEncoding.DecodeString(configuration.CONNECTION_TOKEN)
-		configuration.CONNECTION_TOKEN = string(token)
 	}
 
 	gin.SetMode(gin.ReleaseMode)
