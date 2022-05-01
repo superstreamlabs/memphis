@@ -25,7 +25,7 @@ type Configuration struct {
 	MAX_MESSAGE_SIZE_MB            int
 	SHOWABLE_ERROR_STATUS_CODE     int
 	DOCKER_ENV                     string
-	PING_INTERVAL                  int
+	PING_INTERVAL_MS                  int
 }
 
 func GetConfig() Configuration {
