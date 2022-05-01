@@ -7,7 +7,7 @@ import (
 	"memphis-control-plane/http_server"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/tcp_server"
-	"memphis-control-plane/utils"
+	// "memphis-control-plane/utils"
 	"os"
 	"sync"
 )
@@ -27,7 +27,7 @@ func main() {
 
 	go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(wg)
-	go utils.KillZombieConnections(wg)
+	// go utils.KillZombieConnections(wg)
 
 	env := os.Getenv("ENVIRONMENT")
 	if env == "" && os.Getenv("DOCKER_ENV") != "" {
