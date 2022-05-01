@@ -18,7 +18,7 @@ var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 
 func killRelevantConnections() ([]models.Connection, error) {
-	timeWithoutPing := primitive.NewDateTimeFromTime(time.Now().Add(time.Duration(-configuration.PING_INTERVAL-5000) * time.Millisecond))
+	timeWithoutPing := primitive.NewDateTimeFromTime(time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond))
 
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": timeWithoutPing}})

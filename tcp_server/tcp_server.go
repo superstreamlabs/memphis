@@ -33,7 +33,7 @@ type tcpResponseMessage struct {
 	ConnectionId   primitive.ObjectID `json:"connection_id"`
 	AccessToken    string             `json:"access_token"`
 	AccessTokenExp int                `json:"access_token_exp"`
-	PingInterval   int                `json:"ping_interval"`
+	PingInterval   int                `json:"ping_interval_ms"`
 }
 
 var configuration = config.GetConfig()
@@ -166,7 +166,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			ConnectionId:   connectionId,
 			AccessToken:    accessToken,
 			AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-			PingInterval: configuration.PING_INTERVAL,
+			PingInterval: configuration.PING_INTERVAL_MS,
 		}
 		bytesResponse, _ := json.Marshal(response)
 		connection.Write(bytesResponse)
@@ -228,7 +228,7 @@ func handleNewClient(connection net.Conn) {
 				}
 				response := tcpResponseMessage{
 					ConnectionId: connectionId,
-					PingInterval: configuration.PING_INTERVAL,
+					PingInterval: configuration.PING_INTERVAL_MS,
 				}
 				bytesResponse, _ := json.Marshal(response)
 				connection.Write(bytesResponse)
