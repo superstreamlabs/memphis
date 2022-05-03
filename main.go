@@ -45,11 +45,11 @@ func main() {
 	env := os.Getenv("ENVIRONMENT")
 	if env == "" && os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		logger.Info("\n**********\n\nDashboard: http://localhost:9000\nControl-plane: localhost (For CLI and SDK connections)\nBroker: localhost:7766\n\n**********")
+		logger.Info("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost, Open ports: 80 (For CLI), 6666 (For SDK connections), 7766 (brokerPort - For SDK connections)\n\n**********")
 	} else if env == "" && os.Getenv("DOCKER_ENV") == "" {
 		env = "K8S"
 	}
-	
+
 	logger.Info("Memphis control plane is up and running, ENV: " + env)
 	wg.Wait()
 }
