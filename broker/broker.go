@@ -26,6 +26,8 @@ import (
 )
 
 var configuration = config.GetConfig()
+var connectionChannel = make(chan bool)
+var connected = false
 
 func getErrorWithoutNats(err error) error {
 	message := strings.ToLower(err.Error())
@@ -39,6 +41,19 @@ func handleDisconnectEvent(con *nats.Conn, err error) {
 
 func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
 	logger.Error("Broker has experienced an error: " + err.Error())
+}
+
+func handleReconnect(con *nats.Conn) {
+	if connected {
+		logger.Error("Reconnected to the broker")
+	}
+	connectionChannel <- true
+}
+
+func handleClosed(con *nats.Conn) {
+	if !connected {
+		connectionChannel <- false
+	}
 }
 
 func sigHandler(nonce []byte, seed string) ([]byte, error) {
@@ -76,7 +91,17 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		nats.PingInterval(5*time.Second),
 		nats.DisconnectErrHandler(handleDisconnectEvent),
 		nats.ErrorHandler(handleAsyncErrors),
+		nats.ReconnectHandler(handleReconnect),
+		nats.ClosedHandler(handleClosed),
 	)
+
+	if !nc.IsConnected() {
+		isConnected := <-connectionChannel
+		if !isConnected {
+			logger.Error("Failed to create connection with the broker")
+			panic("Failed to create connection with the broker")
+		}
+	}
 
 	if err != nil {
 		logger.Error("Failed to create connection with the broker: " + err.Error())
@@ -89,6 +114,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		panic("Failed to create connection with the broker: " + err.Error())
 	}
 
+	connected = true
 	logger.Info("Established connection with the broker")
 	return nc, js
 }
