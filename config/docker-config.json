@@ -1,6 +1,6 @@
 {
     "HTTP_PORT": "5555",
-    "TCP_PORT": "8877",
+    "TCP_PORT": "6666",
     "MONGO_URL": "mongodb://memphis-mongo-1:27017/maindb?retryWrites=true&w=majority",
     "DB_NAME": "maindb",
     "JWT_SECRET": "35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk",
