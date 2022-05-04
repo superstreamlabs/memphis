@@ -45,7 +45,7 @@ func main() {
 	env := os.Getenv("ENVIRONMENT")
 	if env == "" && os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		logger.Info("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost, Open ports: 80 (For CLI), 6666 (For SDK connections), 7766 (brokerPort - For SDK connections)\n\n**********")
+		logger.Info("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\n\n**********")
 	} else if env == "" && os.Getenv("DOCKER_ENV") == "" {
 		env = "K8S"
 	}
