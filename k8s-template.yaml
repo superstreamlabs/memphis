@@ -13,7 +13,7 @@ spec:
     - protocol: TCP
       name: client-conn
       port: 6666
-      targetPort: 8877
+      targetPort: 6666
   selector:
     app: memphis-control-plane
 ---
@@ -41,7 +41,7 @@ spec:
           ports:
             - containerPort: 5555
               name: main-traffic
-            - containerPort: 8877
+            - containerPort: 6666
               name: client-conn
           env:
           - name: ROOT_PASSWORD
