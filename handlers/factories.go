@@ -162,6 +162,13 @@ func (umh FactoriesHandler) GetFactory(c *gin.Context) {
 		return
 	}
 
+	_, user, err := IsUserExist(factory.CreatedByUser)
+	if err != nil {
+		logger.Error("GetFactory error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	c.IndentedJSON(200, gin.H{
 		"id":              factory.ID,
 		"name":            factory.Name,
@@ -169,6 +176,7 @@ func (umh FactoriesHandler) GetFactory(c *gin.Context) {
 		"created_by_user": factory.CreatedByUser,
 		"creation_date":   factory.CreationDate,
 		"stations":        stations,
+		"user_avatar_id":  user.AvatarId,
 	})
 }
 
