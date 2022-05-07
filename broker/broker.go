@@ -44,7 +44,6 @@ func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
 }
 
 func handleReconnect(con *nats.Conn) {
-	logger.Info("Reconnecting")
 	if connected {
 		logger.Error("Reconnected to the broker")
 	}
@@ -52,8 +51,8 @@ func handleReconnect(con *nats.Conn) {
 }
 
 func handleClosed(con *nats.Conn) {
-	logger.Info("All reconnect attempts were failed")
 	if !connected {
+		logger.Info("All reconnect attempts with the broker were failed")
 		connectionChannel <- false
 	}
 }
