@@ -86,7 +86,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		// nats.UserCredentials("admin3.creds"),
 		// userCredentials(configuration.BROKER_ADMIN_JWT, configuration.BROKER_ADMIN_NKEY),
 		nats.Token(configuration.CONNECTION_TOKEN),
-		nats.RetryOnFailedConnect(true),
+		// nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(10),
 		nats.ReconnectWait(5*time.Second),
 		nats.Timeout(10*time.Second),
@@ -102,7 +102,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		if err != nil {
 			logger.Info("Error: " + err.Error())
 		}
-		
+
 		isConnected := <-connectionChannel
 		if !isConnected {
 			logger.Error("Failed to create connection with the broker")
