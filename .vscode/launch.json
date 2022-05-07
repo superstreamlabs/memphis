@@ -10,7 +10,8 @@
             "env": {
                 "ENVIRONMENT": "dev",
                 "ROOT_PASSWORD": "123456",
-                "CONNECTION_TOKEN": "QdDBejVZQQYbO51xLQOs"
+                "CONNECTION_TOKEN": "QdDBejVZQQYbO51xLQOs",
+                "TCP_PORT": "9999"
             }
         }
     ]

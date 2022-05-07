@@ -44,6 +44,7 @@ func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
 }
 
 func handleReconnect(con *nats.Conn) {
+	logger.Info("Reconnecting")
 	if connected {
 		logger.Error("Reconnected to the broker")
 	}
@@ -51,6 +52,7 @@ func handleReconnect(con *nats.Conn) {
 }
 
 func handleClosed(con *nats.Conn) {
+	logger.Info("All reconnect attempts were failed")
 	if !connected {
 		connectionChannel <- false
 	}
@@ -96,6 +98,7 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 	)
 
 	if !nc.IsConnected() {
+		logger.Info("Broker not connected starting reconnect attempts")
 		isConnected := <-connectionChannel
 		if !isConnected {
 			logger.Error("Failed to create connection with the broker")
