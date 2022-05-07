@@ -97,18 +97,13 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 		nats.ClosedHandler(handleClosed),
 	)
 
-	if !nc.IsConnected() {
-		logger.Info("Broker not connected starting reconnect attempts: " + configuration.CONNECTION_TOKEN)
-		if err != nil {
-			logger.Info("Error: " + err.Error())
-		}
-
-		isConnected := <-connectionChannel
-		if !isConnected {
-			logger.Error("Failed to create connection with the broker")
-			panic("Failed to create connection with the broker")
-		}
-	}
+	// if !nc.IsConnected() {
+	// 	isConnected := <-connectionChannel
+	// 	if !isConnected {
+	// 		logger.Error("Failed to create connection with the broker")
+	// 		panic("Failed to create connection with the broker")
+	// 	}
+	// }
 
 	if err != nil {
 		logger.Error("Failed to create connection with the broker: " + err.Error())
