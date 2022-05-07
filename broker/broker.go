@@ -52,6 +52,7 @@ func handleReconnect(con *nats.Conn) {
 
 func handleClosed(con *nats.Conn) {
 	if !connected {
+		logger.Info("All reconnect attempts with the broker were failed")
 		connectionChannel <- false
 	}
 }
