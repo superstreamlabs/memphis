@@ -81,8 +81,8 @@ func userCredentials(userJWT string, userKeySeed string) nats.Option {
 }
 
 func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
-	logger.Info(configuration.BROKER_URL)
-	
+	logger.Info(configuration.BROKER_URL + " " + configuration.CONNECTION_TOKEN)
+
 	nc, err := nats.Connect(
 		configuration.BROKER_URL,
 		// nats.UserCredentials("admin3.creds"),
