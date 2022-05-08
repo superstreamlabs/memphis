@@ -114,7 +114,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			return primitive.ObjectID{}, models.User{}
 		}
 		if user.UserType != "application" {
-			connection.Write([]byte("You have to connect with application type user"))
+			connection.Write([]byte("Please use a user of type Application and not Management"))
 			connection.Close()
 			return primitive.ObjectID{}, models.User{}
 		}
