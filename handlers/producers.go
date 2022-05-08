@@ -108,8 +108,12 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station was not found"})
-		return
+		err = CreateDefaultStation(stationName, connection.CreatedByUser)
+		if err != nil {
+			logger.Error("CreateProducer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	exist, _, err = IsProducerExist(name, station.ID)
