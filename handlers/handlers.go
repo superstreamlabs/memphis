@@ -15,9 +15,11 @@ package handlers
 
 import (
 	"context"
+	"memphis-control-plane/broker"
 	"memphis-control-plane/config"
 	"memphis-control-plane/db"
 	"memphis-control-plane/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -110,4 +112,58 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 		return false, producer, err
 	}
 	return true, producer, nil
+}
+
+func CreateDefaultStation(stationName string, username string) error {
+	// create default factory
+	var factoryId primitive.ObjectID
+	exist, factory, err := IsFactoryExist("melvis")
+	if err != nil {
+		return err
+	}
+	if !exist {
+		factoryId = primitive.NewObjectID()
+		newFactory := models.Factory{
+			ID:            factoryId,
+			Name:          "melvis",
+			Description:   "",
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+		}
+
+		_, err := factoriesCollection.InsertOne(context.TODO(), newFactory)
+		if err != nil {
+			return err
+		}
+	} else {
+		factoryId = factory.ID
+	}
+
+	newStation := models.Station{
+		ID:              primitive.NewObjectID(),
+		Name:            stationName,
+		FactoryId:       factoryId,
+		RetentionType:   "message_age_sec",
+		RetentionValue:  604800,
+		StorageType:     "file",
+		Replicas:        1,
+		DedupEnabled:    false,
+		DedupWindowInMs: 0,
+		CreatedByUser:   username,
+		CreationDate:    time.Now(),
+		LastUpdate:      time.Now(),
+		Functions:       []models.Function{},
+	}
+
+	err = broker.CreateStream(newStation)
+	if err != nil {
+		return err
+	}
+
+	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
