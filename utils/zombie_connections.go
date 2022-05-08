@@ -15,7 +15,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"memphis-control-plane/db"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
@@ -34,8 +33,6 @@ var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 func killRelevantConnections() ([]models.Connection, error) {
 	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
 
-	fmt.Println("lastAllowedTime: ", lastAllowedTime)
-
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$gt": lastAllowedTime}})
 	if err != nil {
@@ -47,8 +44,6 @@ func killRelevantConnections() ([]models.Connection, error) {
 		logger.Error("killRelevantConnections error: " + err.Error())
 		return connections, err
 	}
-
-	fmt.Println(connections)
 
 	_, err = connectionsCollection.UpdateMany(context.TODO(),
 		bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}},
