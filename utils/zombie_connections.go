@@ -32,12 +32,12 @@ var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 
 func killRelevantConnections() ([]models.Connection, error) {
-	timeWithoutPing := primitive.NewDateTimeFromTime(time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond))
+	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
 
-	fmt.Println("timeWithoutPing: ", timeWithoutPing)
+	fmt.Println("lastAllowedTime: ", lastAllowedTime)
 
 	var connections []models.Connection
-	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": timeWithoutPing}})
+	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}})
 	if err != nil {
 		logger.Error("killRelevantConnections error: " + err.Error())
 		return connections, err
@@ -51,7 +51,7 @@ func killRelevantConnections() ([]models.Connection, error) {
 	fmt.Println(connections)
 
 	_, err = connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"is_active": true, "last_ping": bson.M{"$lt": timeWithoutPing}},
+		bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
