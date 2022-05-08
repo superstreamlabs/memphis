@@ -36,8 +36,8 @@ func killRelevantConnections() ([]models.Connection, error) {
 
 	fmt.Println("lastAllowedTime: ", lastAllowedTime)
 
-	var connections []models.Connection
-	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}})
+	var connections []models.Connection // "is_active": true, 
+	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"last_ping": bson.M{"$lt": lastAllowedTime}})
 	if err != nil {
 		logger.Error("killRelevantConnections error: " + err.Error())
 		return connections, err
