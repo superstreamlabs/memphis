@@ -241,8 +241,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = broker.CreateStream(newStation)
 	if err != nil {
-		logger.Error("CreateStation error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
