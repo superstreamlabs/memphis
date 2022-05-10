@@ -200,11 +200,16 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 		consumerName = consumer.Name
 	}
 
+	var maxAckTimeMs int64
+	if consumer.MaxAckTimeMs <= 0 {
+		maxAckTimeMs = 30000 // 30 sec
+	}
+
 	_, err := js.AddConsumer(station.Name, &nats.ConsumerConfig{
 		Durable:       consumerName,
 		DeliverPolicy: nats.DeliverAllPolicy,
 		AckPolicy:     nats.AckExplicitPolicy,
-		AckWait:       time.Duration(30*1000*1000) * time.Nanosecond, // 30 sec
+		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
 		MaxDeliver:    10,
 		FilterSubject: station.Name + ".final",
 		ReplayPolicy:  nats.ReplayInstantPolicy,

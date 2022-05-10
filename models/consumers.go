@@ -27,6 +27,7 @@ type Consumer struct {
 	Type           string             `json:"type" bson:"type"`
 	ConnectionId   primitive.ObjectID `json:"connection_id" bson:"connection_id"`
 	ConsumersGroup string             `json:"consumers_group" bson:"consumers_group"`
+	MaxAckTimeMs   int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
 	CreatedByUser  string             `json:"created_by_user" bson:"created_by_user"`
 	IsActive       bool               `json:"is_active" bson:"is_active"`
 	CreationDate   time.Time          `json:"creation_date" bson:"creation_date"`
@@ -42,9 +43,10 @@ type CreateConsumerSchema struct {
 	ConnectionId   string `json:"connection_id" binding:"required"`
 	ConsumerType   string `json:"consumer_type" binding:"required"`
 	ConsumersGroup string `json:"consumers_group"`
+	MaxAckTimeMs   int64  `json:"max_ack_time_ms"`
 }
 
 type DestroyConsumerSchema struct {
-	Name           string `json:"name" binding:"required"`
-	StationName    string `json:"station_name" binding:"required"`
+	Name        string `json:"name" binding:"required"`
+	StationName string `json:"station_name" binding:"required"`
 }
