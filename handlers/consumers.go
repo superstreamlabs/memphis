@@ -203,6 +203,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		ConnectionId:   connectionId,
 		CreatedByUser:  connection.CreatedByUser,
 		ConsumersGroup: consumerGroup,
+		MaxAckTimeMs:   body.MaxAckTimeMs,
 		IsActive:       true,
 		CreationDate:   time.Now(),
 	}
