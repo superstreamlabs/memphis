@@ -136,18 +136,18 @@ func CreateStream(station models.Station) error {
 		maxMsgs = -1
 	}
 
-	var maxByes int
+	var maxBytes int
 	if station.RetentionType == "bytes" && station.RetentionValue > 0 {
-		maxByes = station.RetentionValue
+		maxBytes = station.RetentionValue
 	} else {
-		maxByes = -1
+		maxBytes = -1
 	}
 
 	var maxAge time.Duration
 	if station.RetentionType == "message_age_sec" && station.RetentionValue > 0 {
 		maxAge = time.Duration(station.RetentionValue) * time.Second
 	} else {
-		maxAge = time.Duration(-1)
+		maxAge = time.Duration(0)
 	}
 
 	var storage nats.StorageType
@@ -161,7 +161,7 @@ func CreateStream(station models.Station) error {
 	if station.DedupEnabled {
 		dedupWindow = time.Duration(station.DedupWindowInMs*1000) * time.Nanosecond
 	} else {
-		dedupWindow = time.Duration(0)
+		dedupWindow = time.Duration(1) * time.Nanosecond // can not be 0
 	}
 
 	_, err := js.AddStream(&nats.StreamConfig{
@@ -170,7 +170,7 @@ func CreateStream(station models.Station) error {
 		Retention:         nats.LimitsPolicy,
 		MaxConsumers:      -1,
 		MaxMsgs:           int64(maxMsgs),
-		MaxBytes:          int64(maxByes),
+		MaxBytes:          int64(maxBytes),
 		Discard:           nats.DiscardOld,
 		MaxAge:            maxAge,
 		MaxMsgsPerSubject: -1,
