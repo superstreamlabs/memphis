@@ -9,9 +9,12 @@
             "program": "${workspaceFolder}/main.go",
             "env": {
                 "ENVIRONMENT": "dev",
-                "ROOT_PASSWORD": "123456",
-                "CONNECTION_TOKEN": "QdDBejVZQQYbO51xLQOs",
-                "TCP_PORT": "9999"
+                "ROOT_PASSWORD": "memphis",
+                "CONNECTION_TOKEN": "bxVS9G0NvyWqPJ47FeaL",
+                "TCP_PORT": "9999",
+                "HTTP_PORT": "9090",
+                "ANALYTICS": "false",
+                "ANALYTICS_TOKEN": "iBLZrq7AYBXrfpS/1iuVV0/4kngpA/XaUN1v1B5ldJkgCL1PZGo2/TjSMDdkKqj6/b0rGX+oRWWfdispPdF05bsQtoAW+mnd7lRDK4Ph"
             }
         }
     ]

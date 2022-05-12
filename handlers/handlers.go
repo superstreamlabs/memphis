@@ -35,6 +35,7 @@ var stationsCollection *mongo.Collection = db.GetCollection("stations")
 var connectionsCollection *mongo.Collection = db.GetCollection("connections")
 var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
+var systemKeysCollection *mongo.Collection = db.GetCollection("system_keys")
 var configuration = config.GetConfig()
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
@@ -166,4 +167,19 @@ func CreateDefaultStation(stationName string, username string) error {
 	}
 
 	return nil
+}
+
+func shouldSendAnalytics() (bool, error) {
+	filter := bson.M{"key": "analytics"}
+	var systemKey models.SystemKey
+	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	if err != nil {
+		return false, err
+	}
+
+	if systemKey.Value == "true" {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
