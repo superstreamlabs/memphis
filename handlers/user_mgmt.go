@@ -267,6 +267,13 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
+
+		 logger.Info("deploymentId: " + deploymentId)
+		 if configuration.ANALYTICS {
+			logger.Info("analytics: true")
+		} else {
+			logger.Info("analytics: false")	
+		}
 	}
 
 	return nil
@@ -276,6 +283,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	var event trace.Span
 	if shouldSendAnalytics {
+		logger.Info("analytics sent")
 		event = analytics.StartEvent("login")
 	}
 
@@ -338,6 +346,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	})
 
 	if shouldSendAnalytics {
+		logger.Info("analytics end")
 		event.End()
 	}
 }
