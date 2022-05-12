@@ -14,6 +14,7 @@
 package main
 
 import (
+	"memphis-control-plane/analytics"
 	"memphis-control-plane/broker"
 	"memphis-control-plane/db"
 	"memphis-control-plane/handlers"
@@ -27,13 +28,14 @@ import (
 
 func main() {
 	err := handlers.CreateRootUserOnFirstSystemLoad()
-	if err != nil {
-		logger.Error("Failed to create root user: " + err.Error())
-		panic("Failed to create root user: " + err.Error())
-	}
+	handleError("Failed to create root user:", err)
+
+	err = analytics.InitializeAnalytics()
+	handleError("Failed to initialize analytics:", err)
 
 	defer db.Close()
 	defer broker.Close()
+	defer analytics.Close()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(3)
@@ -52,4 +54,11 @@ func main() {
 
 	logger.Info("Memphis control plane is up and running, ENV: " + env)
 	wg.Wait()
+}
+
+func handleError(message string, err error) {
+	if err != nil {
+		logger.Error(message + " " + err.Error())
+		panic(message + " " + err.Error())
+	}
 }

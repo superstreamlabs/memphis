@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"memphis-control-plane/analytics"
 	"memphis-control-plane/broker"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
@@ -36,6 +37,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -215,6 +217,38 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 		hashedPwdString := string(hashedPwd)
 
+		deploymentId := primitive.NewObjectID().Hex()
+		deploymentKey := models.SystemKey{
+			ID:    primitive.NewObjectID(),
+			Key:   "deployment_id",
+			Value: deploymentId,
+		}
+
+		_, err = systemKeysCollection.InsertOne(context.TODO(), deploymentKey)
+		if err != nil {
+			return err
+		}
+
+		var analyticsKey models.SystemKey
+		if configuration.ANALYTICS {
+			analyticsKey = models.SystemKey{
+				ID:    primitive.NewObjectID(),
+				Key:   "analytics",
+				Value: "true",
+			}
+		} else {
+			analyticsKey = models.SystemKey{
+				ID:    primitive.NewObjectID(),
+				Key:   "analytics",
+				Value: "false",
+			}
+		}
+
+		_, err = systemKeysCollection.InsertOne(context.TODO(), analyticsKey)
+		if err != nil {
+			return err
+		}
+
 		newUser := models.User{
 			ID:              primitive.NewObjectID(),
 			Username:        "root",
@@ -239,6 +273,12 @@ func CreateRootUserOnFirstSystemLoad() error {
 }
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	var event trace.Span
+	if shouldSendAnalytics {
+		event = analytics.StartEvent("login")
+	}
+
 	var body models.LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -296,6 +336,10 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 	})
+
+	if shouldSendAnalytics {
+		event.End()
+	}
 }
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
@@ -699,4 +743,29 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{"image": image.Image})
+}
+
+func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
+	var body models.EditAnalyticsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	flag := "false"
+	if body.SendAnalytics {
+		flag = "true"
+	}
+
+	_, err := systemKeysCollection.UpdateOne(context.TODO(),
+		bson.M{"key": "analytics"},
+		bson.M{"$set": bson.M{"value": flag}},
+	)
+	if err != nil {
+		logger.Error("EditAnalytics error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }

@@ -75,3 +75,7 @@ type EditHubCredsSchema struct {
 type EditAvatarSchema struct {
 	AvatarId int `json:"avatar_id" binding:"required"`
 }
+
+type EditAnalyticsSchema struct {
+	SendAnalytics bool `json:"send_analytics"`
+}
