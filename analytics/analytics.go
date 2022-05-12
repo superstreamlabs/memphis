@@ -4,6 +4,7 @@ import (
 	"context"
 	"memphis-control-plane/config"
 	"memphis-control-plane/db"
+	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 
 	"github.com/lightstep/otel-launcher-go/launcher"
@@ -46,6 +47,7 @@ func InitializeAnalytics() error {
 			launcher.WithServiceName("memphis-"+deploymentId.Value),
 			launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
 		)
+		logger.Info("Analytics initialized")
 	}
 
 	return nil
