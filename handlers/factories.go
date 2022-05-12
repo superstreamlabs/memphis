@@ -262,7 +262,7 @@ func (umh FactoriesHandler) EditFactory(c *gin.Context) {
 	}
 
 	factoryName := strings.ToLower(body.FactoryName)
-	exist, _, err := IsFactoryExist(factoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		logger.Error("EditFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -273,16 +273,20 @@ func (umh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 
-	var factory models.Factory
-	err = factoriesCollection.FindOne(context.TODO(), bson.M{"name": factoryName}).Decode(&factory)
+	newName := strings.ToLower(body.NewName)
+	exist, _, err = IsFactoryExist(newName)
 	if err != nil {
 		logger.Error("EditFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	if exist {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name already exist"})
+		return
+	}
 
 	if body.NewName != "" {
-		factory.Name = strings.ToLower(body.NewName)
+		factory.Name = newName
 	}
 
 	if body.NewDescription != "" {
