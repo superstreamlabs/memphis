@@ -45,6 +45,7 @@ func (umh ConnectionsHandler) CreateConnection(username string) (primitive.Objec
 		CreatedByUser: username,
 		IsActive:      true,
 		CreationDate:  time.Now(),
+		LastPing:      time.Now(),
 	}
 
 	_, err = connectionsCollection.InsertOne(context.TODO(), newConnection)
