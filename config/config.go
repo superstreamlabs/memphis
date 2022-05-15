@@ -39,7 +39,7 @@ type Configuration struct {
 	SHOWABLE_ERROR_STATUS_CODE     int
 	DOCKER_ENV                     string
 	PING_INTERVAL_MS               int
-	ANALYTICS                      bool
+	ANALYTICS                      string
 	ANALYTICS_TOKEN                string
 }
 
