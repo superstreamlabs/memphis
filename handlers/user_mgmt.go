@@ -230,7 +230,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		var analyticsKey models.SystemKey
-		if configuration.ANALYTICS {
+		if configuration.ANALYTICS == "true" {
 			analyticsKey = models.SystemKey{
 				ID:    primitive.NewObjectID(),
 				Key:   "analytics",
@@ -267,9 +267,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
-		logger.Info(os.Getenv("ANALYTICS"))
 
-		if configuration.ANALYTICS {
+		if configuration.ANALYTICS == "true" {
 			logger.Info("analytics: true")
 		} else {
 			logger.Info("analytics: false")	
