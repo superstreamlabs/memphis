@@ -13,7 +13,7 @@
                 "CONNECTION_TOKEN": "8Po5HN5hgixTlK3O2tbz",
                 "TCP_PORT": "9999",
                 "HTTP_PORT": "9090",
-                "ANALYTICS": "false",
+                "ANALYTICS": "true1",
                 "ANALYTICS_TOKEN": "iBLZrq7AYBXrfpS/1iuVV0/4kngpA/XaUN1v1B5ldJkgCL1PZGo2/TjSMDdkKqj6/b0rGX+oRWWfdispPdF05bsQtoAW+mnd7lRDK4Ph"
             }
         }
