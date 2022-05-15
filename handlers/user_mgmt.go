@@ -267,6 +267,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
+		logger.Info(os.Getenv("ANALYTICS"))
 
 		if configuration.ANALYTICS == "true" {
 			logger.Info("analytics: true")
