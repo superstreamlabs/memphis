@@ -267,12 +267,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
-
-		if configuration.ANALYTICS == "true" {
-			logger.Info("analytics: true")
-		} else {
-			logger.Info("analytics: false")	
-		}
 	}
 
 	return nil
@@ -282,7 +276,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	var event trace.Span
 	if shouldSendAnalytics {
-		logger.Info("analytics sent")
 		event = analytics.StartEvent("login")
 	}
 
@@ -345,7 +338,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	})
 
 	if shouldSendAnalytics {
-		logger.Info("analytics end")
 		event.End()
 	}
 }
@@ -776,4 +768,17 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (umh UserMgmtHandler) GetAnalytics(c *gin.Context) {
+	
+	var systemKey models.SystemKey
+	err := systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+	if err != nil {
+		logger.Error("GetAnalytics error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{"send_analytics": systemKey.Value})
 }
