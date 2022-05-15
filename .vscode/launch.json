@@ -10,7 +10,7 @@
             "env": {
                 "ENVIRONMENT": "dev",
                 "ROOT_PASSWORD": "memphis",
-                "CONNECTION_TOKEN": "bxVS9G0NvyWqPJ47FeaL",
+                "CONNECTION_TOKEN": "8Po5HN5hgixTlK3O2tbz",
                 "TCP_PORT": "9999",
                 "HTTP_PORT": "9090",
                 "ANALYTICS": "false",

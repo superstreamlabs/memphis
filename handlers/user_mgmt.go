@@ -267,9 +267,9 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
+		logger.Info(os.Getenv("ANALYTICS"))
 
-		 logger.Info("deploymentId: " + deploymentId)
-		 if configuration.ANALYTICS {
+		if configuration.ANALYTICS {
 			logger.Info("analytics: true")
 		} else {
 			logger.Info("analytics: false")	
