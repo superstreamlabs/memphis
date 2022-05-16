@@ -16,6 +16,7 @@ package tcp_server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"memphis-control-plane/broker"
 	"memphis-control-plane/config"
 	"memphis-control-plane/db"
@@ -60,7 +61,7 @@ func createAccessToken(user models.User) (string, error) {
 		return "", err
 	}
 	if !exist {
-
+		return "", errors.New("user is not exist")
 	}
 
 	atClaims := jwt.MapClaims{}
