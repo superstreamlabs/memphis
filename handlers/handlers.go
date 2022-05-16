@@ -115,12 +115,14 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(stationName string, username string) error {
+func CreateDefaultStation(stationName string, username string) (models.Station, error) {
+	var newStation models.Station
+	
 	// create default factory
 	var factoryId primitive.ObjectID
 	exist, factory, err := IsFactoryExist("melvis")
 	if err != nil {
-		return err
+		return newStation, err
 	}
 	if !exist {
 		factoryId = primitive.NewObjectID()
@@ -134,13 +136,13 @@ func CreateDefaultStation(stationName string, username string) error {
 
 		_, err := factoriesCollection.InsertOne(context.TODO(), newFactory)
 		if err != nil {
-			return err
+			return newStation, err
 		}
 	} else {
 		factoryId = factory.ID
 	}
 
-	newStation := models.Station{
+	newStation = models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
 		FactoryId:       factoryId,
@@ -158,15 +160,15 @@ func CreateDefaultStation(stationName string, username string) error {
 
 	err = broker.CreateStream(newStation)
 	if err != nil {
-		return err
+		return newStation, err
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
 	if err != nil {
-		return err
+		return newStation, err
 	}
 
-	return nil
+	return newStation, nil
 }
 
 func shouldSendAnalytics() (bool, error) {
