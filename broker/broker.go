@@ -195,7 +195,7 @@ func CreateProducer() error {
 func CreateConsumer(consumer models.Consumer, station models.Station) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
-		consumerName = consumer.ConsumersGroup + "_group"
+		consumerName = consumer.ConsumersGroup
 	} else {
 		consumerName = consumer.Name
 	}
