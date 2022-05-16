@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -297,6 +298,15 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 
+	var systemKey models.SystemKey
+	err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+	if err != nil {
+		logger.Error("Login error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+
 	token, refreshToken, err := createTokens(user)
 	if err != nil {
 		logger.Error("Login error: " + err.Error())
@@ -335,6 +345,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
+		"send_analytics":    sendAnalytics,
 	})
 
 	if shouldSendAnalytics {
@@ -344,6 +355,17 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user := getUserDetailsFromMiddleware(c)
+	
+	var systemKey models.SystemKey
+	err := systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+	if err != nil {
+		logger.Error("RefreshToken error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+
+	
 	token, refreshToken, err := createTokens(user)
 	if err != nil {
 		logger.Error("RefreshToken error: " + err.Error())
@@ -375,6 +397,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
+		"send_analytics":    sendAnalytics,
 	})
 }
 
@@ -768,17 +791,4 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
-}
-
-func (umh UserMgmtHandler) GetAnalytics(c *gin.Context) {
-	
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
-	if err != nil {
-		logger.Error("GetAnalytics error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{"send_analytics": systemKey.Value})
 }
