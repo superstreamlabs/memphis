@@ -108,7 +108,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		err = CreateDefaultStation(stationName, connection.CreatedByUser)
+		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
 		if err != nil {
 			logger.Error("CreateProducer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
