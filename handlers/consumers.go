@@ -238,7 +238,7 @@ func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumer_group", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
 	})
 
@@ -329,13 +329,13 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		bson.M{"name": name, "station_id": station.ID, "is_active": true},
 		bson.M{"$set": bson.M{"is_active": false}},
 	).Decode(&consumer)
+	if err == mongo.ErrNoDocuments {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A consumer with the given details was not found"})
+		return
+	}
 	if err != nil {
 		logger.Error("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A consumer with the given details was not found"})
 		return
 	}
 
@@ -349,7 +349,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	} else { // ensure not part of an active consumer group
 		var consumers []models.Consumer
 
-		cursor, err := consumersCollection.Find(context.TODO(), bson.M{"consumer_group": consumer.ConsumersGroup, "is_active": true})
+		cursor, err := consumersCollection.Find(context.TODO(), bson.M{"consumers_group": consumer.ConsumersGroup, "is_active": true})
 		if err != nil {
 			logger.Error("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
