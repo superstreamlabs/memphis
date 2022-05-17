@@ -56,17 +56,18 @@ var producersHandler handlers.ProducersHandler
 var consumersHandler handlers.ConsumersHandler
 
 func createAccessToken(user models.User) (string, error) {
-	exist, _, err := handlers.IsUserExist(user.Username)
+	username := strings.ToLower(user.Username)
+	exist, _, err := handlers.IsUserExist(username)
 	if err != nil {
 		return "", err
 	}
 	if !exist {
-		return "", errors.New("user is not exist")
+		return "", errors.New("user does not exist")
 	}
 
 	atClaims := jwt.MapClaims{}
 	atClaims["user_id"] = user.ID.Hex()
-	atClaims["username"] = user.Username
+	atClaims["username"] = username
 	atClaims["user_type"] = user.UserType
 	atClaims["creation_date"] = user.CreationDate
 	atClaims["already_logged_in"] = user.AlreadyLoggedIn
@@ -81,7 +82,7 @@ func createAccessToken(user models.User) (string, error) {
 	var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 	opts := options.Update().SetUpsert(true)
 	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
+		bson.M{"username": username},
 		bson.M{"$set": bson.M{"jwt_token": token}},
 		opts,
 	)
