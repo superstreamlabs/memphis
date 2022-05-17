@@ -210,8 +210,13 @@ func CreateRootUserOnFirstSystemLoad() error {
 	}
 
 	if !exist {
-		password := configuration.ROOT_PASSWORD
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		var event trace.Span
+		if shouldSendAnalytics {
+			event = analytics.StartEvent("installation")
+		}
 
+		password := configuration.ROOT_PASSWORD
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 		if err != nil {
 			return err
@@ -268,6 +273,9 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
+		if shouldSendAnalytics {
+			event.End()
+		}
 	}
 
 	return nil
@@ -355,7 +363,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user := getUserDetailsFromMiddleware(c)
-	
+
 	var systemKey models.SystemKey
 	err := systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
 	if err != nil {
@@ -365,7 +373,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
-	
 	token, refreshToken, err := createTokens(user)
 	if err != nil {
 		logger.Error("RefreshToken error: " + err.Error())
