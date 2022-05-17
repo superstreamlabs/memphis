@@ -228,7 +228,7 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 func RemoveStream(streamName string) error {
 	err := js.DeleteStream(streamName)
 	if err != nil {
-		return err
+		return getErrorWithoutNats(err)
 	}
 
 	return nil
@@ -242,7 +242,7 @@ func RemoveProducer() error {
 func RemoveConsumer(streamName string, consumerName string) error {
 	err := js.DeleteConsumer(streamName, consumerName)
 	if err != nil {
-		return err
+		return getErrorWithoutNats(err)
 	}
 
 	return nil
