@@ -24,13 +24,13 @@ node {
       sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} --platform linux/amd64,linux/arm64 ."
     }
 
-    stage('Tests - Docker compose install') {
-      sh "docker-compose -f /var/lib/jenkins/tests/docker-compose-files/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
+    stage('Tests - Install/upgrade Memphis cli') {
+      sh "sudo npm uninstall memphis-dev-cli"
+      sh "sudo npm i memphis-dev-cli -g"
     }
 
-    stage('Tests - Install/upgrade Memphis cli') {
-      sh "npm uninstall memphis-dev-cli"
-      sh "sudo npm i memphis-dev-cli -g"
+    stage('Tests - Docker compose install') {
+      sh "docker-compose -f /var/lib/jenkins/tests/docker-compose-files/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over docker') {
