@@ -208,7 +208,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
-	if exist {
+	if !exist {
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
 			analytics.IncrementInstallationsCounter()
