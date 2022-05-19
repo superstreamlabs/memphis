@@ -35,10 +35,8 @@ node {
 
     stage('Tests - Run e2e tests over docker') {
       sh "git clone git@github.com:Memphis-OS/memphis-e2e-tests.git"
-      sh "cd memphis-e2e-tests"
-      sh "npm install"
-      sh "node index.js docker"
-      sh "cd ../"
+      sh "npm install --prefix ./memphis-e2e-tests"
+      sh "node ./memphis-e2e-tests/index.js docker"
     }
 
     stage('Tests - Remove Docker compose') {
@@ -52,10 +50,8 @@ node {
     }
 
     stage('Tests - Run e2e tests over helm/k8s') {
-      sh "cd memphis-e2e-tests"
-      sh "npm install"
-      sh "node index.js k8s"
-      sh "cd ../"
+      sh "npm install --prefix ./memphis-e2e-tests"
+      sh "node ./memphis-e2e-tests/index.js k8s"
     }
 
     stage('Tests - Uninstall helm') {
