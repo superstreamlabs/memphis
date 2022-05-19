@@ -38,7 +38,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -209,11 +208,10 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
-	if !exist {
+	if exist {
 		shouldSendAnalytics, _ := shouldSendAnalytics()
-		var event trace.Span
 		if shouldSendAnalytics {
-			event = analytics.StartEvent("installation")
+			analytics.IncrementInstallationsCounter()
 		}
 
 		password := configuration.ROOT_PASSWORD
@@ -273,21 +271,12 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
-		if shouldSendAnalytics {
-			event.End()
-		}
 	}
 
 	return nil
 }
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	var event trace.Span
-	if shouldSendAnalytics {
-		event = analytics.StartEvent("login")
-	}
-
 	var body models.LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -341,6 +330,11 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		)
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementLoginsCounter()
+	}
+	
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -355,10 +349,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    sendAnalytics,
 	})
-
-	if shouldSendAnalytics {
-		event.End()
-	}
 }
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
