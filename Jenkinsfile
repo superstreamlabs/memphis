@@ -1,8 +1,8 @@
-def dockerImagesRepo = "memphisos"
-def imageName = "memphis-control-plane"
+def imageName = "memphis-control-plane-staging"
+def containerName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
-def gitBranch = "beta"
-def versionTag = "0.1.0-beta"
+def gitBranch = "staging"
+def repoUrlPrefix = "221323242847.dkr.ecr.eu-central-1.amazonaws.com"
 unique_Id = UUID.randomUUID().toString()
 def namespace = "memphis"
 def test_suffix = "test"
