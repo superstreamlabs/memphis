@@ -9,12 +9,16 @@ import (
 	"github.com/lightstep/otel-launcher-go/launcher"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/global"
 )
 
 var configuration = config.GetConfig()
 var ls launcher.Launcher
+var loginsCounter metric.Int64Counter
+var installationsCounter metric.Int64Counter
+var deploymentId string
 
 func getSystemKey(key string) (models.SystemKey, error) {
 	systemKeysCollection := db.GetCollection("system_keys")
@@ -31,10 +35,11 @@ func getSystemKey(key string) (models.SystemKey, error) {
 }
 
 func InitializeAnalytics() error {
-	deploymentId, err := getSystemKey("deployment_id")
+	deployment, err := getSystemKey("deployment_id")
 	if err != nil {
 		return err
 	}
+	deploymentId = deployment.Value
 
 	analytics, err := getSystemKey("analytics")
 	if err != nil {
@@ -43,18 +48,33 @@ func InitializeAnalytics() error {
 
 	if analytics.Value == "true" {
 		ls = launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName("memphis-"+deploymentId.Value),
+			launcher.WithServiceName("memphis"),
 			launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
 		)
 	}
 
+	var Meter = global.GetMeterProvider().Meter("memphis")
+	installationsCounter, err = Meter.NewInt64Counter(
+		"Installations",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of installations of Memphis"),
+	)
+
+	loginsCounter, err = Meter.NewInt64Counter(
+		"Logins",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of logins to Memphis"),
+	)
+
 	return nil
 }
 
-func StartEvent(eventName string) trace.Span {
-	tracer := otel.Tracer("example")
-	_, span := tracer.Start(context.TODO(), eventName)
-	return span
+func IncrementInstallationsCounter() {
+	installationsCounter.Add(context.TODO(), 1)
+}
+
+func IncrementLoginsCounter() {
+	loginsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
 }
 
 func Close() {
