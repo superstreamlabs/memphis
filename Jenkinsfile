@@ -1,8 +1,8 @@
-def imageName = "memphis-control-plane-staging"
-def containerName = "memphis-control-plane"
+def dockerImagesRepo = "memphisos"
+def imageName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
-def gitBranch = "staging"
-def repoUrlPrefix = "221323242847.dkr.ecr.eu-central-1.amazonaws.com"
+def gitBranch = "beta"
+def versionTag = "0.1.0-beta"
 unique_Id = UUID.randomUUID().toString()
 def namespace = "memphis"
 def test_suffix = "test"
@@ -12,7 +12,6 @@ node {
     stage('SCM checkout') {
         git credentialsId: 'main-github', url: gitURL, branch: gitBranch
     }
-
     stage('Login to ECR') {
       sh "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${repoUrlPrefix}"
     }
@@ -87,6 +86,10 @@ node {
       sh 'helm install my-emphis memphis-k8s/helm/memphis --set analytics="false" --create-namespace --namespace memphis'
     }
 
+    stage('Build docker image') {
+	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:${versionTag} --platform linux/amd64,linux/arm/v7,linux/arm64 ."
+    }
+    
     notifySuccessful()
 
   } catch (e) {
