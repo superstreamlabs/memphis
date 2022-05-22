@@ -2,7 +2,7 @@ def imageName = "memphis-control-plane-staging"
 def containerName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
 def gitBranch = "staging"
-def repoUrlPrefix = "221323242847.dkr.ecr.eu-central-1.amazonaws.com"
+def repoUrlPrefix = "memphisos"
 unique_Id = UUID.randomUUID().toString()
 def namespace = "memphis"
 def test_suffix = "test"
@@ -12,12 +12,11 @@ node {
     stage('SCM checkout') {
         git credentialsId: 'main-github', url: gitURL, branch: gitBranch
     }
-    stage('Login to ECR') {
-      sh "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${repoUrlPrefix}"
-    }
-
-    stage('Create ECR Repo') {
-      sh "aws ecr describe-repositories --repository-names ${imageName}-${test_suffix} --region eu-central-1 || aws ecr create-repository --repository-name ${imageName}-${test_suffix} --region eu-central-1 && aws ecr put-lifecycle-policy --repository-name ${imageName}-${test_suffix} --region eu-central-1 --lifecycle-policy-text 'file:///var/lib/jenkins/utils/ecr-lifecycle-policy.json'"
+	  
+    stage('Login to dockerhub') {
+	withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
+		sh "docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW"
+	}
     }
 	  
     stage('Build and push docker image to ECR') {
