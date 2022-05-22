@@ -34,6 +34,7 @@ node {
     }
 
     stage('Tests - Run e2e tests over docker') {
+      sh "rm -rf memphis-e2e-tests"
       sh "git clone git@github.com:Memphis-OS/memphis-e2e-tests.git"
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js docker"
