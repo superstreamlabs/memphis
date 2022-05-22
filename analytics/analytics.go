@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightstep/otel-launcher-go/launcher"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -15,20 +16,18 @@ import (
 )
 
 var configuration = config.GetConfig()
+var systemKeysCollection = db.GetCollection("system_keys")
 var ls launcher.Launcher
 var loginsCounter metric.Int64Counter
 var installationsCounter metric.Int64Counter
 var deploymentId string
+var analyticsFlag string
 
 func getSystemKey(key string) (models.SystemKey, error) {
-	systemKeysCollection := db.GetCollection("system_keys")
-
 	filter := bson.M{"key": key}
 	var systemKey models.SystemKey
 	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err == mongo.ErrNoDocuments {
-		return systemKey, nil
-	} else if err != nil {
+	if err != nil {
 		return systemKey, err
 	}
 	return systemKey, nil
@@ -36,36 +35,72 @@ func getSystemKey(key string) (models.SystemKey, error) {
 
 func InitializeAnalytics() error {
 	deployment, err := getSystemKey("deployment_id")
-	if err != nil {
+	if err == mongo.ErrNoDocuments {
+		deploymentId := primitive.NewObjectID().Hex()
+		deploymentKey := models.SystemKey{
+			ID:    primitive.NewObjectID(),
+			Key:   "deployment_id",
+			Value: deploymentId,
+		}
+
+		_, err = systemKeysCollection.InsertOne(context.TODO(), deploymentKey)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
+	} else {
+		deploymentId = deployment.Value
 	}
-	deploymentId = deployment.Value
 
 	analytics, err := getSystemKey("analytics")
-	if err != nil {
+	if err == mongo.ErrNoDocuments {
+		var analyticsKey models.SystemKey
+		if configuration.ANALYTICS == "true" {
+			analyticsKey = models.SystemKey{
+				ID:    primitive.NewObjectID(),
+				Key:   "analytics",
+				Value: "true",
+			}
+		} else {
+			analyticsKey = models.SystemKey{
+				ID:    primitive.NewObjectID(),
+				Key:   "analytics",
+				Value: "false",
+			}
+		}
+
+		_, err = systemKeysCollection.InsertOne(context.TODO(), analyticsKey)
+		if err != nil {
+			return err
+		}
+		analyticsFlag = configuration.ANALYTICS
+	} else if err != nil {
 		return err
+	} else {
+		analyticsFlag = analytics.Value
 	}
 
-	if analytics.Value == "true" {
+	if analyticsFlag == "true" {
 		ls = launcher.ConfigureOpentelemetry(
 			launcher.WithServiceName("memphis"),
 			launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
 		)
+
+		var Meter = global.GetMeterProvider().Meter("memphis")
+		installationsCounter, err = Meter.NewInt64Counter(
+			"Installations",
+			metric.WithUnit("0"),
+			metric.WithDescription("Counting the number of installations of Memphis"),
+		)
+	
+		loginsCounter, err = Meter.NewInt64Counter(
+			"Logins",
+			metric.WithUnit("0"),
+			metric.WithDescription("Counting the number of logins to Memphis"),
+		)	
 	}
-
-	var Meter = global.GetMeterProvider().Meter("memphis")
-	installationsCounter, err = Meter.NewInt64Counter(
-		"Installations",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of installations of Memphis"),
-	)
-
-	loginsCounter, err = Meter.NewInt64Counter(
-		"Logins",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of logins to Memphis"),
-	)
-
+	
 	return nil
 }
 
