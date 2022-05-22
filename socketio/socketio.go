@@ -15,6 +15,7 @@ package socketio
 
 import (
 	"memphis-control-plane/logger"
+	"memphis-control-plane/middlewares"
 
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
@@ -29,35 +30,25 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	server := socketio.NewServer(nil)
 
 	server.OnConnect("/", func(s socketio.Conn) error {
-		s.SetContext("")
-		logger.Info("A new socket created " + s.ID())
+		// authenticate
+		a := myResponse{Field1: "test", Field2: 5}
+		s.Join("connected_clients")
+		server.BroadcastToRoom("", "connected_clients", "data", a)
 		return nil
 	})
 
-	server.OnEvent("/endpoint", "msg", func(s socketio.Conn, msg string) string {
-		s.SetContext(msg)
-		a := myResponse{Field1: "Idan Asulin", Field2: 4}
-		s.Emit("msg_1", a)
-		return "recv " + msg
-	})
-
 	server.OnError("/", func(s socketio.Conn, e error) {
-		logger.Error("An error occured " + e.Error())
+		logger.Error("An error occured during a socket connection" + e.Error())
 	})
 
-	message := make(chan string)
 	go func() {
 		if err := server.Serve(); err != nil {
 			logger.Error("socketio listen error " + err.Error())
 		}
-		message <- "ping"
 	}()
 
-	// msg := <- message
-	// fmt.Println(msg)
-
-	router.GET("/socket.io/*any", gin.WrapH(server))
-	router.POST("/socket.io/*any", gin.WrapH(server))
-
+	socketIoRouter := router.Group("/api/socket.io")
+	socketIoRouter.Use(middlewares.Authenticate)
+	socketIoRouter.GET("/*any", gin.WrapH(server))
 	return server
 }
