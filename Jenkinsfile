@@ -20,7 +20,8 @@ node {
     }
 	  
     stage('Create memphis namespace in Kubernetes'){
-      sh "kubectl create ns memphis"
+      sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
+      //sh "sleep 40"
     }
 
     stage('Build and push docker image to Docker Hub') {
@@ -51,7 +52,14 @@ node {
       sh "rm -rf memphis-k8s"
       sh "git clone --branch tests git@github.com:Memphis-OS/memphis-k8s.git"
       sh 'helm install memphis-tests memphis-k8s/helm/memphis --set analytics="false",teston="cp" --create-namespace --namespace memphis'
-      sh 'sleep 30'
+      sh 'sleep 40'
+    }
+
+    stage('Open port forwarding to memphis service') {
+      sh 'nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis &'
+      sh 'sleep 5'
+      sh 'nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis &'
+      sh 'sleep 5'
     }
 
     stage('Tests - Run e2e tests over kubernetes') {
@@ -61,18 +69,14 @@ node {
 
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis -n memphis"
-      sh "kubectl delete ns memphis"
+      sh "kubectl delete ns memphis &"
     }
 
     stage('Tests - Remove e2e-tests') {
       sh "rm -rf memphis-e2e-tests"
     }
 
-    stage('Create Staging ECR Repo') {
-      sh "aws ecr describe-repositories --repository-names ${imageName} --region eu-central-1 || aws ecr create-repository --repository-name ${imageName} --region eu-central-1 && aws ecr put-lifecycle-policy --repository-name ${imageName} --region eu-central-1 --lifecycle-policy-text 'file:///var/lib/jenkins/utils/ecr-lifecycle-policy.json'"
-    }
-	  
-    stage('Build and push docker image to ECR') {
+    stage('Build and push image to Docker Hub') {
       sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
     }
 
@@ -80,11 +84,11 @@ node {
       sh "helm uninstall my-memphis --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml -n memphis"
       sh "rm -rf memphis-k8s"
       sh "git clone --branch staging git@github.com:Memphis-OS/memphis-k8s.git"
-      sh 'helm install my-emphis memphis-k8s/helm/memphis --set analytics="false" --create-namespace --namespace memphis'
+      sh 'helm install my-memphis memphis-k8s/helm/memphis --set analytics="false" --create-namespace --namespace memphis'
     }
 
-    stage('Build docker image') {
-	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:${versionTag} --platform linux/amd64,linux/arm/v7,linux/arm64 ."
+    stage('Build docker image and push with latest tag') {
+	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm64 ."
     }
     
     notifySuccessful()
