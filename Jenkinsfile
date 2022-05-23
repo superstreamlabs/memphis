@@ -82,9 +82,7 @@ node {
 
     stage('Push to staging'){
       sh "helm uninstall my-memphis --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml -n memphis"
-      sh "rm -rf memphis-k8s"
-      sh "git clone --branch staging git@github.com:Memphis-OS/memphis-k8s.git"
-      sh 'helm install my-memphis memphis-k8s/helm/memphis --set analytics="false" --create-namespace --namespace memphis'
+      sh 'helm install my-memphis memphis-k8s/helm/memphis --set analytics="false" --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml --create-namespace --namespace memphis'
     }
 
     /*stage('Build docker image and push with latest tag') {
