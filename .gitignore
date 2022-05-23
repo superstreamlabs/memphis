@@ -2,6 +2,9 @@
 *.o
 *.a
 *.so
+*2.go
+* 2
+* 2*
 
 # Folders
 _obj
