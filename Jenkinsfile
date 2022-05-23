@@ -56,9 +56,9 @@ node {
     }
 
     stage('Open port forwarding to memphis service') {
-      sh 'nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis &'
-      sh 'sleep 5'
       sh 'nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis &'
+      sh 'sleep 5'
+      sh 'nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis &'
       sh 'sleep 5'
     }
 
