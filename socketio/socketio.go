@@ -69,10 +69,10 @@ func getMainOverviewData() (mainOverviewData, error) {
 	}, nil
 }
 
-func getStationOverviewData(stationName string) stationOverviewData {
+func getStationOverviewData(stationName string) (stationOverviewData, error) {
 	return stationOverviewData{
 		Field1: "station_overview data " + stationName,
-	}
+	}, nil
 }
 
 func InitializeSocketio(router *gin.Engine) *socketio.Server {
@@ -83,6 +83,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	})
 
 	server.OnEvent("/", "register_main_overview_data", func(s socketio.Conn, msg string) {
+		s.LeaveAll()
 		data, err := getMainOverviewData()
 		if err != nil {
 			logger.Error("Error while trying to get main overview data " + err.Error())
@@ -92,20 +93,20 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		}
 	})
 
-	server.OnEvent("/", "deregister_main_overview_data", func(s socketio.Conn, msg string) {
-		s.Leave("main_overview_sockets_group")
+	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) {
+		s.LeaveAll()
 	})
 
 	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) {
 		stationName = strings.ToLower(stationName)
-		data := getStationOverviewData(stationName)
-		s.Emit("station_overview_data_"+stationName, data)
-		s.Join("station_sockets_group_" + stationName)
-	})
-
-	server.OnEvent("/", "deregister_station_overview_data", func(s socketio.Conn, stationName string) {
-		stationName = strings.ToLower(stationName)
-		s.Leave("station_sockets_group_" + stationName)
+		s.LeaveAll()
+		data, err := getStationOverviewData(stationName)
+		if err != nil {
+			logger.Error("Error while trying to get station overview data " + err.Error())
+		} else {
+			s.Emit("station_overview_group_"+stationName, data)
+			s.Join("station_overview_group_"+stationName)
+		}
 	})
 
 	server.OnError("/", func(s socketio.Conn, e error) {
@@ -120,11 +121,26 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	go func() {
 		for range time.Tick(time.Second * 10) {
-			data, err := getMainOverviewData()
-			if err != nil {
-				logger.Error("Error while trying to get main overview data " + err.Error())
-			} else {
-				server.BroadcastToRoom("", "main_overview_sockets_group", "main_overview_data", data)
+			if server.RoomLen("/", "main_overview_sockets_group") > 0 {
+				data, err := getMainOverviewData()
+				if err != nil {
+					logger.Error("Error while trying to get main overview data " + err.Error())
+				} else {
+					server.BroadcastToRoom("/", "main_overview_sockets_group", "main_overview_data", data)
+				}
+			}
+
+			rooms := server.Rooms("/")
+			for _, room := range rooms {
+				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("", room) > 0 {
+					stationName := strings.Split(room, "station_overview_group_")[1]
+					data, err := getStationOverviewData(stationName)
+					if err != nil {
+						logger.Error("Error while trying to get station overview data " + err.Error())
+					} else {
+						server.BroadcastToRoom("/", room, "station_overview_data", data)
+					}
+				}
 			}
 		}
 	}()

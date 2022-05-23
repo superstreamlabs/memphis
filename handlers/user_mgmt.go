@@ -353,9 +353,15 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user := getUserDetailsFromMiddleware(c)
+	_, user, err := IsUserExist(user.Username)
+	if err != nil {
+		logger.Error("RefreshToken error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+	err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
 	if err != nil {
 		logger.Error("RefreshToken error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
