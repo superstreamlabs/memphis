@@ -68,7 +68,7 @@ node {
     }
 
     stage('Tests - Uninstall helm') {
-      sh "helm uninstall memphis -n memphis"
+      sh "helm uninstall memphis-tests -n memphis"
       sh "kubectl delete ns memphis &"
     }
 
