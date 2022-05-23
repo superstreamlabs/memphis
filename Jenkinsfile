@@ -87,9 +87,9 @@ node {
       sh 'helm install my-memphis memphis-k8s/helm/memphis --set analytics="false" --create-namespace --namespace memphis'
     }
 
-    stage('Build docker image and push with latest tag') {
+    /*stage('Build docker image and push with latest tag') {
 	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm64 ."
-    }
+    }*/
     
     notifySuccessful()
 
