@@ -148,5 +148,6 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	socketIoRouter := router.Group("/api/socket.io")
 	socketIoRouter.Use(middlewares.Authenticate)
 	socketIoRouter.GET("/*any", gin.WrapH(server))
+	socketIoRouter.POST("/*any", gin.WrapH(server))
 	return server
 }
