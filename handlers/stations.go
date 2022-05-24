@@ -164,6 +164,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -174,6 +175,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("Station with the same name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
@@ -185,6 +187,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Factory name does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory name does not exist"})
 		return
 	}
@@ -194,6 +197,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -207,6 +211,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -217,6 +222,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -243,6 +249,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = broker.CreateStream(newStation)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -284,6 +291,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}

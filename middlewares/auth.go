@@ -128,8 +128,15 @@ func Authenticate(c *gin.Context) {
 	path := strings.ToLower(c.Request.URL.Path)
 	needToAuthenticate := isAuthNeeded(path)
 	if needToAuthenticate {
-		tokenString, err := extractToken(c.GetHeader("authorization"))
-		if err != nil {
+		var tokenString string
+		var err error
+		if strings.Contains(path, "socket.io") {
+			tokenString = c.Request.URL.Query().Get("authorization")
+		} else {
+			tokenString, err = extractToken(c.GetHeader("authorization"))
+		}
+		
+		if err != nil || tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
