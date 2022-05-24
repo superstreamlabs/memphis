@@ -50,7 +50,7 @@ node {
 
     stage('Tests - Install memphis with helm') {
       sh "rm -rf memphis-k8s"
-      sh "git clone --branch tests git@github.com:Memphis-OS/memphis-k8s.git"
+      sh "git clone --branch staging git@github.com:Memphis-OS/memphis-k8s.git"
       sh 'helm install memphis-tests memphis-k8s/helm/memphis --set analytics="false",teston="cp" --create-namespace --namespace memphis'
       sh 'sleep 40'
     }
