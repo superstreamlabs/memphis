@@ -441,6 +441,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("A user with this username is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
 		return
 	}
@@ -448,12 +449,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
+		logger.Warn(userTypeError.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
+		logger.Warn(usernameError.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
@@ -462,6 +465,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
+			logger.Warn("Password was not provided")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
@@ -571,6 +575,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user := getUserDetailsFromMiddleware(c)
 	if user.Username == username {
+		logger.Warn("You can't remove your own user")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can't remove your own user"})
 		return
 	}
@@ -582,10 +587,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("User does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
+		logger.Warn("You can not remove the root user")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
