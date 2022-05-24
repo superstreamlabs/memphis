@@ -16,6 +16,7 @@ package socketio
 import (
 	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
+	"memphis-control-plane/models"
 	"net/http"
 	"strings"
 	"time"
@@ -44,13 +45,17 @@ type mainOverviewData struct {
 }
 
 type stationOverviewData struct {
-	Field1 string `json:"field1"`
+	Producers     []models.Producer `json:"producers"`
+	Consumers     []models.Consumer `json:"consumers"`
+	TotalMessages int               `json:"total_messages"`
+	AvgMsgSize    int               `json:"average_message_size"`
+	// AuditLogs     []stations        `json:"audit_logs"`
 }
 
 func getMainOverviewData() (mainOverviewData, error) {
-	// getTotalMessages
-	// getTotalStations
-	// getStationsInfo
+	// getTotalMessages - 
+	// getTotalStations - 
+	// getStationsInfo - 
 	systemComponents := []sysyemComponent{
 		{PodName: "MongoDB", DesiredPods: 2, ActualPods: 2},
 		{PodName: "Memphis Broker", DesiredPods: 9, ActualPods: 3},
@@ -72,12 +77,26 @@ func getMainOverviewData() (mainOverviewData, error) {
 }
 
 func getStationOverviewData(stationName string) (stationOverviewData, error) {
+	// get producers -
+	// get consumers -
+	// get total messages -
+	// get avg msg size -
+	// get audit logs
+	// get messages
+
+	var producers []models.Producer
+	var consumers []models.Consumer
+	// var auditLogs []models.AuditLog
 	return stationOverviewData{
-		Field1: "station_overview data " + stationName,
+		Producers:     producers,
+		Consumers:     consumers,
+		TotalMessages: 400,
+		AvgMsgSize:    100,
+		// AuditLogs: auditLogs,
 	}, nil
 }
 
-func GinMiddleware() gin.HandlerFunc {
+func ginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
@@ -165,9 +184,9 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	socketIoRouter := router.Group("/api/socket.io")
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://*", "https://*"},
+		AllowOrigins: []string{"http://localhost:3000", "http://*", "https://*"},
 	}))
-	socketIoRouter.Use(GinMiddleware())
+	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
 
 	socketIoRouter.GET("/*any", gin.WrapH(server))
