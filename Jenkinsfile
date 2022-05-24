@@ -3,9 +3,9 @@ def containerName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
 def gitBranch = "staging"
 def repoUrlPrefix = "memphisos"
-
 unique_Id = UUID.randomUUID().toString()
-def DOCKER_HUB_CREDS = credentials('docker-hub')
+def namespace = "memphis"
+def test_suffix = "test"
 
 node {
   try{
