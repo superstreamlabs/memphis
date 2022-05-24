@@ -25,18 +25,18 @@ import (
 	"memphis-control-plane/utils"
 )
 
-type AuditsHandler struct{}
+type AuditlogsHandler struct{}
 
 
 func CreateAuditLogs(auditLogs []interface{}){
-	_, err := auditsCollection.InsertMany(context.TODO(), auditLogs)
+	_, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
 	if err != nil {
 		logger.Error("CreateAuditLogs error: " + err.Error())
 		return
 	}
 }
 
-func (ah AuditsHandler) GetAllAuditsByStation(c *gin.Context) {
+func (ah AuditlogsHandler) GetAllAuditLogsByStation(c *gin.Context) {
 	var body models.GetAllAuditLogsByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok{
@@ -54,15 +54,15 @@ func (ah AuditsHandler) GetAllAuditsByStation(c *gin.Context) {
 	}
 
 	var auditLogs []models.AuditLog
-	cursor, err := auditsCollection.Find(context.TODO(), bson.M{"station_name": station.Name, "creation_date": bson.M{
+	cursor, err := auditLogsCollection.Find(context.TODO(), bson.M{"station_name": station.Name, "creation_date": bson.M{
 		"$gte": (time.Now().AddDate(0, 0, -30)),
 	},})
 	if err != nil {
-		logger.Warn("GetAllAuditsByStation error: " + err.Error())
+		logger.Warn("GetAllAuditLogsByStation error: " + err.Error())
 	}
 
 	if err = cursor.All(context.TODO(), &auditLogs); err != nil {
-		logger.Warn("GetAllAuditsByStation error: " + err.Error())
+		logger.Warn("GetAllAuditLogsByStation error: " + err.Error())
 	}
 
 	if len(auditLogs) == 0 {
@@ -72,10 +72,10 @@ func (ah AuditsHandler) GetAllAuditsByStation(c *gin.Context) {
 	}
 }
 
-func RemoveAllAuditsByStation(stationName string) {
-	_, err := auditsCollection.DeleteMany(context.TODO(), bson.M{"station_name": stationName})
+func RemoveAllAuditLogsByStation(stationName string) {
+	_, err := auditLogsCollection.DeleteMany(context.TODO(), bson.M{"station_name": stationName})
 	if err != nil {
-		logger.Warn("RemoveAllAuditsByStation error: " + err.Error())
+		logger.Warn("RemoveAllAuditLogsByStation error: " + err.Error())
 		return
 	}
 }

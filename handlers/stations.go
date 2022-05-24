@@ -83,7 +83,7 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
-	RemoveAllAuditsByStation(station.Name)
+	RemoveAllAuditLogsByStation(station.Name)
 
 	return nil
 }

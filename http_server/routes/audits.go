@@ -20,7 +20,7 @@ import (
 )
 
 func InitializeAuditsRoutes(router *gin.RouterGroup) {
-	auditsHandler := handlers.AuditsHandler{}
+	AuditlogsHandler := handlers.AuditlogsHandler{}
 	auditsRoutes := router.Group("/audits")
-	auditsRoutes.GET("/getAllAuditsByStation", auditsHandler.GetAllAuditsByStation)
+	auditsRoutes.GET("/getAllAuditLogsByStation", AuditlogsHandler.GetAllAuditLogsByStation)
 }
