@@ -230,8 +230,8 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	}
 	message := "Consumer " + name + " has been created"
 	logger.Info(message)
-	var audits []interface{}
-	newAudit := models.Audit{
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
 		ID:              primitive.NewObjectID(),
 		StationName:     stationName,
 		Message:       	 message,
@@ -239,8 +239,8 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		CreationDate:    time.Now(),
 		UserType: 		 user.UserType,
 	}
-	audits = append(audits, newAudit)
-	CreateAudits(audits)
+	auditLogs = append(auditLogs, newAuditLog)
+	CreateAuditLogs(auditLogs)
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
@@ -395,8 +395,8 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 
 	message := "Consumer " + name + " has been deleted"
 	logger.Info(message)
-	var audits []interface{}
-	newAudit := models.Audit{
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
 		ID:              primitive.NewObjectID(),
 		StationName:     stationName,
 		Message:       	 message,
@@ -404,8 +404,8 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		CreationDate:    time.Now(),
 		UserType: 		 user.UserType,
 	}
-	audits = append(audits, newAudit)
-	CreateAudits(audits)
+	auditLogs = append(auditLogs, newAuditLog)
+	CreateAuditLogs(auditLogs)
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -471,11 +471,11 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 		return err
 	}
 	var message string
-	var audits []interface{}
-	var newAudit models.Audit
+	var auditLogs []interface{}
+	var newAuditLog models.AuditLog
 	for _,consumer := range consumers{
 		message = "Consumer" + consumer.Name + "disconnected"
-		newAudit = models.Audit{
+		newAuditLog = models.AuditLog{
 			ID:              primitive.NewObjectID(),
 			StationName:     station.Name,
 			Message:       	 message,
@@ -483,9 +483,9 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 			CreationDate:    time.Now(),
 			UserType: 		 user.UserType,
 		}
-		audits = append(audits, newAudit)
+		auditLogs = append(auditLogs, newAuditLog)
 	}
-	CreateAudits(audits)
+	CreateAuditLogs(auditLogs)
 	return nil
 }
 

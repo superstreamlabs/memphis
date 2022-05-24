@@ -255,8 +255,8 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	}
 	message := "Station " + stationName + " has been created"
 	logger.Info(message)
-	var audits []interface{}
-	newAudit := models.Audit{
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
 		ID:              primitive.NewObjectID(),
 		StationName:     stationName,
 		Message:       	 message,
@@ -264,8 +264,8 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		CreationDate:    time.Now(),
 		UserType: 		 user.UserType,
 	}
-	audits = append(audits, newAudit)
-	CreateAudits(audits)
+	auditLogs = append(auditLogs, newAuditLog)
+	CreateAuditLogs(auditLogs)
 	c.IndentedJSON(200, newStation)
 }
 

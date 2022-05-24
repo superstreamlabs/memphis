@@ -28,16 +28,16 @@ import (
 type AuditsHandler struct{}
 
 
-func CreateAudits(audits []interface{}){
-	_, err := auditsCollection.InsertMany(context.TODO(), audits)
+func CreateAuditLogs(auditLogs []interface{}){
+	_, err := auditsCollection.InsertMany(context.TODO(), auditLogs)
 	if err != nil {
-		logger.Error("CreateAudits error: " + err.Error())
+		logger.Error("CreateAuditLogs error: " + err.Error())
 		return
 	}
 }
 
 func (ah AuditsHandler) GetAllAuditsByStation(c *gin.Context) {
-	var body models.GetAllAuditsByStationSchema
+	var body models.GetAllAuditLogsByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok{
 		return
@@ -53,7 +53,7 @@ func (ah AuditsHandler) GetAllAuditsByStation(c *gin.Context) {
 		return
 	}
 
-	var audits []models.Audit
+	var auditLogs []models.AuditLog
 	cursor, err := auditsCollection.Find(context.TODO(), bson.M{"station_name": station.Name, "creation_date": bson.M{
 		"$gte": (time.Now().AddDate(0, 0, -30)),
 	},})
@@ -61,14 +61,14 @@ func (ah AuditsHandler) GetAllAuditsByStation(c *gin.Context) {
 		logger.Warn("GetAllAuditsByStation error: " + err.Error())
 	}
 
-	if err = cursor.All(context.TODO(), &audits); err != nil {
+	if err = cursor.All(context.TODO(), &auditLogs); err != nil {
 		logger.Warn("GetAllAuditsByStation error: " + err.Error())
 	}
 
-	if len(audits) == 0 {
+	if len(auditLogs) == 0 {
 		c.IndentedJSON(200, []string{})
 	} else {
-		c.IndentedJSON(200, audits)
+		c.IndentedJSON(200, auditLogs)
 	}
 }
 

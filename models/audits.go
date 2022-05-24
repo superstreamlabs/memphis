@@ -20,7 +20,7 @@ import (
 )
 
 
-type Audit struct {
+type AuditLog struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	StationName     string             `json:"station_name" bson:"station_name"`
 	Message         string             `json:"message" bson:"message"`
@@ -29,6 +29,6 @@ type Audit struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 }
 
-type GetAllAuditsByStationSchema struct {
+type GetAllAuditLogsByStationSchema struct {
 	StationName string `form:"station_name" binding:"required"`
 }
