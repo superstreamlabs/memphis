@@ -1,7 +1,9 @@
-def dockerImagesRepo = "memphisos"
-def imageName = "memphis-control-plane"
+def imageName = "memphis-control-plane-staging"
+def containerName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
-def gitBranch = "master"
+def gitBranch = "staging"
+def repoUrlPrefix = "memphisos"
+
 unique_Id = UUID.randomUUID().toString()
 def DOCKER_HUB_CREDS = credentials('docker-hub')
 
@@ -10,16 +12,82 @@ node {
     stage('SCM checkout') {
         git credentialsId: 'main-github', url: gitURL, branch: gitBranch
     }
-
-    stage('Push docker image') {
-	withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
-		sh "docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW"
-	}
+	  
+    stage('Login to Docker Hub') {
+	    withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
+		  sh "docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW"
+	    }
+    }
+	  
+    stage('Create memphis namespace in Kubernetes'){
+      sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
+      //sh "sleep 40"
     }
 
-    stage('Build docker image') {
-	sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm/v7,linux/arm64 ."
+    stage('Build and push docker image to Docker Hub') {
+      sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} --platform linux/amd64,linux/arm64 ."
     }
+
+    stage('Tests - Install/upgrade Memphis cli') {
+      sh "sudo npm uninstall memphis-dev-cli"
+      sh "sudo npm i memphis-dev-cli -g"
+    }
+
+    stage('Tests - Docker compose install') {
+      sh "docker-compose -f /var/lib/jenkins/tests/docker-compose-files/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
+    }
+
+    stage('Tests - Run e2e tests over Docker') {
+      sh "rm -rf memphis-e2e-tests"
+      sh "git clone git@github.com:Memphis-OS/memphis-e2e-tests.git"
+      sh "npm install --prefix ./memphis-e2e-tests"
+      sh "node ./memphis-e2e-tests/index.js docker"
+    }
+
+    stage('Tests - Remove Docker compose') {
+      sh "docker-compose -f /var/lib/jenkins/tests/docker-compose-files/docker-compose-dev-memphis-control-plane.yml -p memphis down"
+    }
+
+    stage('Tests - Install memphis with helm') {
+      sh "rm -rf memphis-k8s"
+      sh "git clone --branch staging git@github.com:Memphis-OS/memphis-k8s.git"
+      sh 'helm install memphis-tests memphis-k8s/helm/memphis --set analytics="false",teston="cp" --create-namespace --namespace memphis'
+      sh 'sleep 40'
+    }
+
+    stage('Open port forwarding to memphis service') {
+      sh 'nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis &'
+      sh 'sleep 5'
+      sh 'nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis &'
+      sh 'sleep 5'
+    }
+
+    stage('Tests - Run e2e tests over kubernetes') {
+      sh "npm install --prefix ./memphis-e2e-tests"
+      sh "node ./memphis-e2e-tests/index.js kubernetes"
+    }
+
+    stage('Tests - Uninstall helm') {
+      sh "helm uninstall memphis-tests -n memphis"
+      sh "kubectl delete ns memphis &"
+    }
+
+    stage('Tests - Remove e2e-tests') {
+      sh "rm -rf memphis-e2e-tests"
+    }
+
+    stage('Build and push image to Docker Hub') {
+      sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+    }
+
+    stage('Push to staging'){
+      sh "helm uninstall my-memphis --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml -n memphis"
+      sh 'helm install my-memphis memphis-k8s/helm/memphis --set analytics="false" --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml --create-namespace --namespace memphis'
+    }
+
+    /*stage('Build docker image and push with latest tag') {
+	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm64 ."
+    }*/
     
     notifySuccessful()
 
