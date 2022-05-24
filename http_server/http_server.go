@@ -25,7 +25,7 @@ func InitializeHttpServer(wg *sync.WaitGroup) {
 
 	httpServer := routes.InitializeHttpRoutes()
 	socketioServer := socketio.InitializeSocketio(httpServer)
-	
+
 	defer socketioServer.Close()
 	defer wg.Done()
 

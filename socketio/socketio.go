@@ -16,9 +16,11 @@ package socketio
 import (
 	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
+	"net/http"
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 )
@@ -75,6 +77,21 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 	}, nil
 }
 
+func GinMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, Content-Length, X-CSRF-Token, Token, session, Origin, Host, Connection, Accept-Encoding, Accept-Language, X-Requested-With")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Request.Header.Del("Origin")
+		c.Next()
+	}
+}
+
 func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	server := socketio.NewServer(nil)
 
@@ -82,7 +99,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return nil
 	})
 
-	server.OnEvent("/", "register_main_overview_data", func(s socketio.Conn, msg string) {
+	server.OnEvent("/", "register_main_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		data, err := getMainOverviewData()
 		if err != nil {
@@ -91,33 +108,34 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 			s.Emit("main_overview_data", data)
 			s.Join("main_overview_sockets_group")
 		}
+
+		return "recv " + msg
 	})
 
-	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) {
+	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
+		return "recv " + msg
 	})
 
-	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) {
+	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
 		stationName = strings.ToLower(stationName)
 		s.LeaveAll()
 		data, err := getStationOverviewData(stationName)
 		if err != nil {
 			logger.Error("Error while trying to get station overview data " + err.Error())
 		} else {
-			s.Emit("station_overview_group_"+stationName, data)
-			s.Join("station_overview_group_"+stationName)
+			s.Emit("station_overview_data", data)
+			s.Join("station_overview_group_" + stationName)
 		}
+
+		return "recv " + stationName
 	})
 
 	server.OnError("/", func(s socketio.Conn, e error) {
 		logger.Error("An error occured during a socket connection" + e.Error())
 	})
 
-	go func() {
-		if err := server.Serve(); err != nil {
-			logger.Error("socketio listen error " + err.Error())
-		}
-	}()
+	go server.Serve()
 
 	go func() {
 		for range time.Tick(time.Second * 10) {
@@ -146,7 +164,12 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	}()
 
 	socketIoRouter := router.Group("/api/socket.io")
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://*", "https://*"},
+	}))
+	socketIoRouter.Use(GinMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
+
 	socketIoRouter.GET("/*any", gin.WrapH(server))
 	socketIoRouter.POST("/*any", gin.WrapH(server))
 	return server
