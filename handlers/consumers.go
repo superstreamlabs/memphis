@@ -223,8 +223,24 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	logger.Info("Consumer " + name + " has been created")
+	var user models.User
+	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
+	if err != nil {
+		logger.Error("CreateProducer error: " + err.Error())
+	}
+	message := "Consumer " + name + " has been created"
+	logger.Info(message)
+	var audits []interface{}
+	newAudit := models.Audit{
+		ID:              primitive.NewObjectID(),
+		StationName:     stationName,
+		Message:       	 message,
+		CreatedByUser:   user.Username,
+		CreationDate:    time.Now(),
+		UserType: 		 user.UserType,
+	}
+	audits = append(audits, newAudit)
+	CreateAudits(audits)
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
@@ -338,7 +354,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
+	
 	if consumer.ConsumersGroup == "" {
 		err = broker.RemoveConsumer(stationName, name)
 		if err != nil {
@@ -371,8 +387,25 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 			}
 		}
 	}
+	var user models.User
+	err = usersCollection.FindOne(context.TODO(), bson.M{"username": consumer.CreatedByUser}).Decode(&user)
+	if err != nil {
+		logger.Error("DestroyProducer error: " + err.Error())
+	}
 
-	logger.Info("Consumer " + name + " has been deleted")
+	message := "Consumer " + name + " has been deleted"
+	logger.Info(message)
+	var audits []interface{}
+	newAudit := models.Audit{
+		ID:              primitive.NewObjectID(),
+		StationName:     stationName,
+		Message:       	 message,
+		CreatedByUser:   user.Username,
+		CreationDate:    time.Now(),
+		UserType: 		 user.UserType,
+	}
+	audits = append(audits, newAudit)
+	CreateAudits(audits)
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -394,7 +427,30 @@ func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.O
 }
 
 func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
+	exist, connection, err := IsConnectionExist(connectionId)
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	if !exist {
+		logger.Error("KillConsumers error: connection does not exist")
+		return errors.New("KillConsumers error: connection does not exist")
+	}
+	if !connection.IsActive {
+		logger.Error("KillConsumers error: connection is not active")
+		return errors.New("KillConsumers error: connection is not active")
+	}
+	var consumers []models.Consumer
+	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	if err = cursor.All(context.TODO(), &consumers); err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	_, err = consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
@@ -402,7 +458,34 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 		logger.Error("KillConsumers error: " + err.Error())
 		return err
 	}
-
+	var user models.User
+	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	var station models.Station
+	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	var message string
+	var audits []interface{}
+	var newAudit models.Audit
+	for _,consumer := range consumers{
+		message = "Consumer" + consumer.Name + "disconnected"
+		newAudit = models.Audit{
+			ID:              primitive.NewObjectID(),
+			StationName:     station.Name,
+			Message:       	 message,
+			CreatedByUser:   user.Username,
+			CreationDate:    time.Now(),
+			UserType: 		 user.UserType,
+		}
+		audits = append(audits, newAudit)
+	}
+	CreateAudits(audits)
 	return nil
 }
 

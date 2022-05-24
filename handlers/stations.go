@@ -83,6 +83,8 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
+	RemoveAllAuditsByStation(station.Name)
+
 	return nil
 }
 
@@ -251,8 +253,19 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	logger.Info("Station " + stationName + " has been created")
+	message := "Station " + stationName + " has been created"
+	logger.Info(message)
+	var audits []interface{}
+	newAudit := models.Audit{
+		ID:              primitive.NewObjectID(),
+		StationName:     stationName,
+		Message:       	 message,
+		CreatedByUser:   user.Username,
+		CreationDate:    time.Now(),
+		UserType: 		 user.UserType,
+	}
+	audits = append(audits, newAudit)
+	CreateAudits(audits)
 	c.IndentedJSON(200, newStation)
 }
 
