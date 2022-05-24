@@ -77,6 +77,7 @@ func validateSchema(c *gin.Context, schema interface{}, containFile bool, file *
 
 		fileExt := filepath.Ext(uploadedFile.Filename)
 		if fileExt != ".png" && fileExt != ".jpg" && fileExt != ".jpeg" {
+			logger.Warn("You can upload only png,jpg or jpeg file formats")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can upload only png,jpg or jpeg file formats"})
 			return nil, true
 		}
