@@ -95,7 +95,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	err := validateName(name)
 	if err != nil {
 		logger.Warn(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message ": err.Error()})
 		return
 	}
 
@@ -150,7 +150,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if !exist {
 		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
 		if err != nil {
-			logger.Error("CreateProducer error: " + err.Error())
+			logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -232,8 +232,23 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	logger.Info("Consumer " + name + " has been created")
+	user := getUserDetailsFromMiddleware(c)
+	message := "Consumer " + name + " has been created"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:              primitive.NewObjectID(),
+		StationName:     stationName,
+		Message:       	 message,
+		CreatedByUser:   user.Username,
+		CreationDate:    time.Now(),
+		UserType: 		 user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateConsumer error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
@@ -349,7 +364,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
+	
 	if consumer.ConsumersGroup == "" {
 		err = broker.RemoveConsumer(stationName, name)
 		if err != nil {
@@ -382,8 +397,23 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 			}
 		}
 	}
-
-	logger.Info("Consumer " + name + " has been deleted")
+	user := getUserDetailsFromMiddleware(c)
+	message := "Consumer " + name + " has been deleted"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:              primitive.NewObjectID(),
+		StationName:     stationName,
+		Message:       	 message,
+		CreatedByUser:   user.Username,
+		CreationDate:    time.Now(),
+		UserType: 		 user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("DestroyConsumer error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -405,7 +435,30 @@ func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.O
 }
 
 func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
+	exist, connection, err := IsConnectionExist(connectionId)
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	if !exist {
+		logger.Error("KillConsumers error: connection does not exist")
+		return errors.New("KillConsumers error: connection does not exist")
+	}
+	if !connection.IsActive {
+		logger.Error("KillConsumers error: connection is not active")
+		return errors.New("KillConsumers error: connection is not active")
+	}
+	var consumers []models.Consumer
+	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	if err = cursor.All(context.TODO(), &consumers); err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	_, err = consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
@@ -413,7 +466,37 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 		logger.Error("KillConsumers error: " + err.Error())
 		return err
 	}
-
+	var user models.User
+	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	var station models.Station
+	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
+	if err != nil {
+		logger.Error("KillConsumers error: " + err.Error())
+		return err
+	}
+	var message string
+	var auditLogs []interface{}
+	var newAuditLog models.AuditLog
+	for _,consumer := range consumers{
+		message = "Consumer" + consumer.Name + "disconnected"
+		newAuditLog = models.AuditLog{
+			ID:              primitive.NewObjectID(),
+			StationName:     station.Name,
+			Message:       	 message,
+			CreatedByUser:   user.Username,
+			CreationDate:    time.Now(),
+			UserType: 		 user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+	}
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("KillConsumers error: " + err.Error())
+	}
 	return nil
 }
 

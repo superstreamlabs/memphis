@@ -256,8 +256,8 @@ func handleNewClient(connection net.Conn) {
 func InitializeTcpServer(wg *sync.WaitGroup) {
 	tcpServer, err := net.Listen("tcp4", ":"+configuration.TCP_PORT)
 	if err != nil {
-		logger.Error("Failed initializing the TCP server" + err.Error())
-		panic("Failed initializing the TCP server" + err.Error())
+		logger.Error("Failed initializing the TCP server " + err.Error())
+		panic("Failed initializing the TCP server " + err.Error())
 	}
 	defer tcpServer.Close()
 	defer wg.Done()
