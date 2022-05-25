@@ -95,7 +95,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	err := validateName(name)
 	if err != nil {
 		logger.Warn(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message ": err.Error()})
 		return
 	}
 
@@ -150,7 +150,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if !exist {
 		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
 		if err != nil {
-			logger.Error("CreateProducer error: " + err.Error())
+			logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -232,11 +232,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	var user models.User
-	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
-	if err != nil {
-		logger.Error("CreateProducer error: " + err.Error())
-	}
+	user := getUserDetailsFromMiddleware(c)
 	message := "Consumer " + name + " has been created"
 	logger.Info(message)
 	var auditLogs []interface{}
@@ -251,7 +247,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("CreateConsumer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
@@ -401,12 +397,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 			}
 		}
 	}
-	var user models.User
-	err = usersCollection.FindOne(context.TODO(), bson.M{"username": consumer.CreatedByUser}).Decode(&user)
-	if err != nil {
-		logger.Error("DestroyProducer error: " + err.Error())
-	}
-
+	user := getUserDetailsFromMiddleware(c)
 	message := "Consumer " + name + " has been deleted"
 	logger.Info(message)
 	var auditLogs []interface{}
@@ -421,7 +412,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("DestroyConsumer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -504,7 +495,7 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 	}
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("KillConsumers error: " + err.Error())
 	}
 	return nil
 }

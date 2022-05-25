@@ -168,7 +168,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("CreateProducer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{
 		"producer_id": producerId,
@@ -300,7 +300,7 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("DestroyProducer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -384,7 +384,7 @@ func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error
 	}
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("KillProducers error: " + err.Error())
 	}
 	return nil
 }

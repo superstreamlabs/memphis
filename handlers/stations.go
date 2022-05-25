@@ -85,7 +85,7 @@ func removeStationResources(station models.Station) error {
 
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
-		logger.Warn("RemoveAllAuditLogsByStation error: " + err.Error())
+		logger.Warn("removeStationResources error: " + err.Error())
 	}
 
 	return nil
@@ -277,7 +277,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		logger.Warn("CreateAuditLogs error: " + err.Error())
+		logger.Warn("CreateStation error: " + err.Error())
 	}
 	c.IndentedJSON(200, newStation)
 }
