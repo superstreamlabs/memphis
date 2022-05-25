@@ -23,12 +23,18 @@ var configuration = config.GetConfig()
 
 func Info(logMessage string) {
 	logger.Print("[INFO] " + logMessage)
+	// TODO send via socket
+	// TODO  store in DB
 }
 
 func Warn(logMessage string) {
 	logger.Print("[WARNING] " + logMessage)
+	// TODO send via socket
+	// TODO store in DB
 }
 
 func Error(logMessage string) {
 	logger.Print("[ERROR] " + logMessage)
+	// TODO send via socket
+	// TODO store in DB
 }
