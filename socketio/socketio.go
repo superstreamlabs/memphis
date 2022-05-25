@@ -14,6 +14,8 @@
 package socketio
 
 import (
+	"errors"
+	"memphis-control-plane/handlers"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
 	"memphis-control-plane/models"
@@ -25,6 +27,10 @@ import (
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 )
+
+var producersHandler = handlers.ProducersHandler{}
+var consumersHandler = handlers.ConsumersHandler{}
+var auditLogsHandler = handlers.AuditLogsHandler{}
 
 type sysyemComponent struct {
 	PodName     string `json:"pod_name"`
@@ -45,17 +51,17 @@ type mainOverviewData struct {
 }
 
 type stationOverviewData struct {
-	Producers     []models.Producer `json:"producers"`
-	Consumers     []models.Consumer `json:"consumers"`
-	TotalMessages int               `json:"total_messages"`
-	AvgMsgSize    int               `json:"average_message_size"`
-	// AuditLogs     []stations        `json:"audit_logs"`
+	Producers     []models.ExtendedProducer `json:"producers"`
+	Consumers     []models.ExtendedConsumer `json:"consumers"`
+	TotalMessages int                       `json:"total_messages"`
+	AvgMsgSize    int                       `json:"average_message_size"`
+	AuditLogs     []models.AuditLog         `json:"audit_logs"`
 }
 
 func getMainOverviewData() (mainOverviewData, error) {
-	// getTotalMessages - 
-	// getTotalStations - 
-	// getStationsInfo - 
+	// getTotalMessages -
+	// getTotalStations -
+	// getStationsInfo -
 	systemComponents := []sysyemComponent{
 		{PodName: "MongoDB", DesiredPods: 2, ActualPods: 2},
 		{PodName: "Memphis Broker", DesiredPods: 9, ActualPods: 3},
@@ -77,22 +83,40 @@ func getMainOverviewData() (mainOverviewData, error) {
 }
 
 func getStationOverviewData(stationName string) (stationOverviewData, error) {
-	// get producers -
-	// get consumers -
+	stationName = strings.ToLower(stationName)
+	exist, station, err := handlers.IsStationExist(stationName)
+	if err != nil {
+		return stationOverviewData{}, err
+	}
+	if !exist {
+		logger.Warn("Station " + stationName + " does not exist")
+		return stationOverviewData{}, errors.New("Station does not exist")
+	}
+	
+	
+	producers, err := producersHandler.GetProducersByStation(station)
+	if err != nil {
+		logger.Error("getStationOverviewData error: " + err.Error())
+	}
+	consumers, err := consumersHandler.GetConsumersByStation(station)
+	if err != nil {
+		logger.Error("getStationOverviewData error: " + err.Error())
+	}
+	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
+	if err != nil {
+		logger.Error("getStationOverviewData error: " + err.Error())
+	}
+
 	// get total messages -
 	// get avg msg size -
-	// get audit logs
 	// get messages
 
-	var producers []models.Producer
-	var consumers []models.Consumer
-	// var auditLogs []models.AuditLog
 	return stationOverviewData{
 		Producers:     producers,
 		Consumers:     consumers,
 		TotalMessages: 400,
 		AvgMsgSize:    100,
-		// AuditLogs: auditLogs,
+		AuditLogs:     auditLogs,
 	}, nil
 }
 
@@ -137,7 +161,6 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	})
 
 	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
-		stationName = strings.ToLower(stationName)
 		s.LeaveAll()
 		data, err := getStationOverviewData(stationName)
 		if err != nil {
@@ -161,7 +184,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 			if server.RoomLen("/", "main_overview_sockets_group") > 0 {
 				data, err := getMainOverviewData()
 				if err != nil {
-					logger.Error("Error while trying to get main overview data " + err.Error())
+					logger.Error("Error while trying to get main overview data - " + err.Error())
 				} else {
 					server.BroadcastToRoom("/", "main_overview_sockets_group", "main_overview_data", data)
 				}
@@ -173,7 +196,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 					stationName := strings.Split(room, "station_overview_group_")[1]
 					data, err := getStationOverviewData(stationName)
 					if err != nil {
-						logger.Error("Error while trying to get station overview data " + err.Error())
+						logger.Error("Error while trying to get station overview data - " + err.Error())
 					} else {
 						server.BroadcastToRoom("/", room, "station_overview_data", data)
 					}

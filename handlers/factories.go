@@ -79,7 +79,7 @@ func removeStations(factoryId primitive.ObjectID) error {
 	return nil
 }
 
-func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
+func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	var body models.CreateFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -132,7 +132,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 	})
 }
 
-func (umh FactoriesHandler) GetFactory(c *gin.Context) {
+func (fh FactoriesHandler) GetFactory(c *gin.Context) {
 	var body models.GetFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -182,7 +182,7 @@ func (umh FactoriesHandler) GetFactory(c *gin.Context) {
 	})
 }
 
-func (umh FactoriesHandler) GetAllFactories(c *gin.Context) {
+func (fh FactoriesHandler) GetAllFactories(c *gin.Context) {
 	type extendedFactory struct {
 		ID            primitive.ObjectID `json:"id" bson:"_id"`
 		Name          string             `json:"name" bson:"name"`
@@ -219,7 +219,7 @@ func (umh FactoriesHandler) GetAllFactories(c *gin.Context) {
 	}
 }
 
-func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
+func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	var body models.RemoveFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -257,7 +257,7 @@ func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh FactoriesHandler) EditFactory(c *gin.Context) {
+func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 	var body models.EditFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

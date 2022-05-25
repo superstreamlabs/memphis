@@ -91,7 +91,7 @@ func removeStationResources(station models.Station) error {
 	return nil
 }
 
-func (umh StationsHandler) GetStation(c *gin.Context) {
+func (sh StationsHandler) GetStation(c *gin.Context) {
 	var body models.GetStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -112,7 +112,7 @@ func (umh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
-func (umh StationsHandler) GetAllStations(c *gin.Context) {
+func (sh StationsHandler) GetAllStations(c *gin.Context) {
 	type extendedStation struct {
 		ID              primitive.ObjectID `json:"id" bson:"_id"`
 		Name            string             `json:"name" bson:"name"`
@@ -157,7 +157,7 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 	}
 }
 
-func (umh StationsHandler) CreateStation(c *gin.Context) {
+func (sh StationsHandler) CreateStation(c *gin.Context) {
 	var body models.CreateStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -282,7 +282,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	c.IndentedJSON(200, newStation)
 }
 
-func (umh StationsHandler) RemoveStation(c *gin.Context) {
+func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

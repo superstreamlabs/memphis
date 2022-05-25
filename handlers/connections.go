@@ -27,7 +27,7 @@ import (
 
 type ConnectionsHandler struct{}
 
-func (umh ConnectionsHandler) CreateConnection(username string) (primitive.ObjectID, error) {
+func (ch ConnectionsHandler) CreateConnection(username string) (primitive.ObjectID, error) {
 	connectionId := primitive.NewObjectID()
 
 	username = strings.ToLower(username)
@@ -56,7 +56,7 @@ func (umh ConnectionsHandler) CreateConnection(username string) (primitive.Objec
 	return connectionId, nil
 }
 
-func (umh ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) error {
+func (ch ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
@@ -69,7 +69,7 @@ func (umh ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) er
 	return nil
 }
 
-func (umh ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) error {
+func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": true}},
@@ -82,7 +82,7 @@ func (umh ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) 
 	return nil
 }
 
-func (umh ConnectionsHandler) UpdatePingTime(connectionId primitive.ObjectID) error {
+func (ch ConnectionsHandler) UpdatePingTime(connectionId primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
 		bson.M{"$set": bson.M{"last_ping": time.Now()}},

@@ -31,17 +31,6 @@ import (
 
 type ProducersHandler struct{}
 
-type extendedProducer struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	StationName   string             `json:"station_name" bson:"station_name"`
-	FactoryName   string             `json:"factory_name" bson:"factory_name"`
-}
-
 func validateProducerName(name string) error {
 	re := regexp.MustCompile("^[a-z_]*$")
 
@@ -59,7 +48,7 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (umh ProducersHandler) CreateProducer(c *gin.Context) {
+func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	var body models.CreateProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -175,8 +164,8 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 	})
 }
 
-func (umh ProducersHandler) GetAllProducers(c *gin.Context) {
-	var producers []extendedProducer
+func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
+	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -206,7 +195,35 @@ func (umh ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, error) { // for socket io endpoint
+	var producers []models.ExtendedProducer
+	
+	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+	})
+
+	if err != nil {
+		return producers, err
+	}
+
+	if err = cursor.All(context.TODO(), &producers); err != nil {
+		return producers, err
+	}
+
+	if len(producers) == 0 {
+		producers = []models.ExtendedProducer{}
+	}
+
+	return producers, nil
+}
+
+func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint
 	var body models.GetAllProducersByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -224,7 +241,7 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 		return
 	}
 
-	var producers []extendedProducer
+	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -254,7 +271,7 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 	}
 }
 
-func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
+func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	var body models.DestroyProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -305,7 +322,7 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
+func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
 	var producers []models.Producer
 	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
@@ -352,7 +369,7 @@ func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error
 	return nil
 }
 
-func (umh ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
+func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": true}},

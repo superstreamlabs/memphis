@@ -15,20 +15,14 @@ package handlers
 
 import (
 	"context"
-	"time"
-
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-
-	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
-	"memphis-control-plane/utils"
+	"time"
 )
 
-type AuditlogsHandler struct{}
+type AuditLogsHandler struct{}
 
-
-func CreateAuditLogs(auditLogs []interface{}) error{
+func CreateAuditLogs(auditLogs []interface{}) error {
 	_, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
 	if err != nil {
 		return err
@@ -36,43 +30,28 @@ func CreateAuditLogs(auditLogs []interface{}) error{
 	return nil
 }
 
-func (ah AuditlogsHandler) GetAllAuditLogsByStation(c *gin.Context) {
-	var body models.GetAllAuditLogsByStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok{
-		return
-	}
-
-	exist, station, err := IsStationExist(body.StationName)
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
-		return
-	}
-
+func (ah AuditLogsHandler) GetAuditLogsByStation(station models.Station) ([]models.AuditLog, error) {
 	var auditLogs []models.AuditLog
+
 	cursor, err := auditLogsCollection.Find(context.TODO(), bson.M{"station_name": station.Name, "creation_date": bson.M{
 		"$gte": (time.Now().AddDate(0, 0, -30)),
-	},})
+	}})
 	if err != nil {
-		logger.Warn("GetAllAuditLogsByStation error: " + err.Error())
+		return auditLogs, err
 	}
 
 	if err = cursor.All(context.TODO(), &auditLogs); err != nil {
-		logger.Warn("GetAllAuditLogsByStation error: " + err.Error())
+		return auditLogs, err
 	}
 
 	if len(auditLogs) == 0 {
-		c.IndentedJSON(200, []string{})
-	} else {
-		c.IndentedJSON(200, auditLogs)
+		auditLogs = []models.AuditLog{}
 	}
+
+	return auditLogs, nil
 }
 
-func RemoveAllAuditLogsByStation(stationName string) error{
+func RemoveAllAuditLogsByStation(stationName string) error {
 	_, err := auditLogsCollection.DeleteMany(context.TODO(), bson.M{"station_name": stationName})
 	if err != nil {
 		return err
