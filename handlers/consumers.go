@@ -417,23 +417,6 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.ObjectID) ([]models.Consumer, error) {
-	var consumers []models.Consumer
-
-	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId})
-	if err != nil {
-		logger.Error("GetAllConsumersByConnection error: " + err.Error())
-		return consumers, err
-	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		logger.Error("GetAllConsumersByConnection error: " + err.Error())
-		return consumers, err
-	}
-
-	return consumers, nil
-}
-
 func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
 	exist, connection, err := IsConnectionExist(connectionId)
 	if err != nil {

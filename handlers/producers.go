@@ -305,23 +305,6 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.ObjectID) ([]models.Producer, error) {
-	var producers []models.Producer
-
-	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId})
-	if err != nil {
-		logger.Error("GetAllProducersByConnection error: " + err.Error())
-		return producers, err
-	}
-
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		logger.Error("GetAllProducersByConnection error: " + err.Error())
-		return producers, err
-	}
-
-	return producers, nil
-}
-
 func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
 	var producers []models.Producer
 	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
