@@ -158,12 +158,12 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 	logger.Info(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:              primitive.NewObjectID(),
-		StationName:     stationName,
-		Message:       	 message,
-		CreatedByUser:   user.Username,
-		CreationDate:    time.Now(),
-		UserType: 		 user.UserType,
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -290,12 +290,12 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 	logger.Info(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:              primitive.NewObjectID(),
-		StationName:     stationName,
-		Message:       	 message,
-		CreatedByUser:   user.Username,
-		CreationDate:    time.Now(),
-		UserType: 		 user.UserType,
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -323,30 +323,21 @@ func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.O
 }
 
 func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
-	exist, connection, err := IsConnectionExist(connectionId)
-	if err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
-	}
-	if !exist {
-		logger.Error("KillProducers error: connection does not exist")
-		return errors.New("KillProducers error: connection does not exist")
-	}
-	if !connection.IsActive {
-		logger.Error("KillProducers error: connection is not active")
-		return errors.New("KillProducers error: connection is not active")
-	}
 	var producers []models.Producer
 	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
+		logger.Warn("KillProducers error: " + err.Error())
+	}
+	if err = cursor.All(context.TODO(), &producers); err != nil {
+		logger.Warn("KillProducers error: " + err.Error())
 	}
 
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
+	var station models.Station
+	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
+	if err != nil {
+		logger.Warn("KillProducers error: " + err.Error())
 	}
+
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
@@ -355,30 +346,19 @@ func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error
 		logger.Error("KillProducers error: " + err.Error())
 		return err
 	}
-	var user models.User
-	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
-	if err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
-	}
-	var station models.Station
-	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
-	if err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
-	}
+
 	var message string
 	var auditLogs []interface{}
 	var newAuditLog models.AuditLog
-	for _,producer := range producers{
+	for _, producer := range producers {
 		message = "Producer " + producer.Name + " disconnected"
 		newAuditLog = models.AuditLog{
-			ID:              primitive.NewObjectID(),
-			StationName:     station.Name,
-			Message:       	 message,
-			CreatedByUser:   user.Username,
-			CreationDate:    time.Now(),
-			UserType: 		 user.UserType,
+			ID:            primitive.NewObjectID(),
+			StationName:   station.Name,
+			Message:       message,
+			CreatedByUser: producers[0].CreatedByUser,
+			CreationDate:  time.Now(),
+			UserType:      "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 	}
