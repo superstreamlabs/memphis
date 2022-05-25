@@ -152,11 +152,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	var user models.User
-	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
-	if err != nil {
-		logger.Error("CreateProducer error: " + err.Error())
-	}
+	user := getUserDetailsFromMiddleware(c)
 
 	message := "Producer " + name + " has been created"
 	logger.Info(message)
@@ -170,7 +166,10 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		UserType: 		 user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
-	CreateAuditLogs(auditLogs)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateAuditLogs error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{
 		"producer_id": producerId,
 	})
@@ -299,7 +298,10 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 		UserType: 		 user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
-	CreateAuditLogs(auditLogs)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateAuditLogs error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -369,7 +371,7 @@ func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error
 	var auditLogs []interface{}
 	var newAuditLog models.AuditLog
 	for _,producer := range producers{
-		message = "Producer" + producer.Name + "disconnected"
+		message = "Producer " + producer.Name + " disconnected"
 		newAuditLog = models.AuditLog{
 			ID:              primitive.NewObjectID(),
 			StationName:     station.Name,
@@ -380,7 +382,10 @@ func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 	}
-	CreateAuditLogs(auditLogs)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateAuditLogs error: " + err.Error())
+	}
 	return nil
 }
 

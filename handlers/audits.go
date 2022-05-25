@@ -28,12 +28,12 @@ import (
 type AuditlogsHandler struct{}
 
 
-func CreateAuditLogs(auditLogs []interface{}){
+func CreateAuditLogs(auditLogs []interface{}) error{
 	_, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
 	if err != nil {
-		logger.Error("CreateAuditLogs error: " + err.Error())
-		return
+		return err
 	}
+	return nil
 }
 
 func (ah AuditlogsHandler) GetAllAuditLogsByStation(c *gin.Context) {
@@ -72,10 +72,10 @@ func (ah AuditlogsHandler) GetAllAuditLogsByStation(c *gin.Context) {
 	}
 }
 
-func RemoveAllAuditLogsByStation(stationName string) {
+func RemoveAllAuditLogsByStation(stationName string) error{
 	_, err := auditLogsCollection.DeleteMany(context.TODO(), bson.M{"station_name": stationName})
 	if err != nil {
-		logger.Warn("RemoveAllAuditLogsByStation error: " + err.Error())
-		return
+		return err
 	}
+	return nil
 }

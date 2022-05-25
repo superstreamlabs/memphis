@@ -249,7 +249,10 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		UserType: 		 user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
-	CreateAuditLogs(auditLogs)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateAuditLogs error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
@@ -416,7 +419,10 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		UserType: 		 user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
-	CreateAuditLogs(auditLogs)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateAuditLogs error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -496,7 +502,10 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 	}
-	CreateAuditLogs(auditLogs)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateAuditLogs error: " + err.Error())
+	}
 	return nil
 }
 
