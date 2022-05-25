@@ -418,45 +418,24 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 }
 
 func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
-	exist, connection, err := IsConnectionExist(connectionId)
-	if err != nil {
-		logger.Error("KillConsumers error: " + err.Error())
-		return err
-	}
-	if !exist {
-		logger.Error("KillConsumers error: connection does not exist")
-		return errors.New("KillConsumers error: connection does not exist")
-	}
-	if !connection.IsActive {
-		logger.Error("KillConsumers error: connection is not active")
-		return errors.New("KillConsumers error: connection is not active")
-	}
 	var consumers []models.Consumer
 	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		logger.Error("KillConsumers error: " + err.Error())
-		return err
+		logger.Warn("KillConsumers error: " + err.Error())
 	}
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		logger.Error("KillConsumers error: " + err.Error())
-		return err
+		logger.Warn("KillConsumers error: " + err.Error())
+	}
+	
+	var station models.Station
+	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
+	if err != nil {
+		logger.Warn("KillConsumers error: " + err.Error())
 	}
 	_, err = consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
-	if err != nil {
-		logger.Error("KillConsumers error: " + err.Error())
-		return err
-	}
-	var user models.User
-	err = usersCollection.FindOne(context.TODO(), bson.M{"username": connection.CreatedByUser}).Decode(&user)
-	if err != nil {
-		logger.Error("KillConsumers error: " + err.Error())
-		return err
-	}
-	var station models.Station
-	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
 	if err != nil {
 		logger.Error("KillConsumers error: " + err.Error())
 		return err
@@ -470,9 +449,9 @@ func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error
 			ID:              primitive.NewObjectID(),
 			StationName:     station.Name,
 			Message:       	 message,
-			CreatedByUser:   user.Username,
+			CreatedByUser:   consumers[0].CreatedByUser,
 			CreationDate:    time.Now(),
-			UserType: 		 user.UserType,
+			UserType: 		 "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 	}
