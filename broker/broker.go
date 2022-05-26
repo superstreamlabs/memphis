@@ -234,6 +234,15 @@ func RemoveStream(streamName string) error {
 	return nil
 }
 
+func GetTotalMessagesInStation(station models.Station) (int, error) {
+	streamInfo, err := js.StreamInfo(station.Name)
+	if err != nil {
+		return 0, getErrorWithoutNats(err)
+	}
+
+	return int(streamInfo.State.Msgs), nil
+}
+
 func RemoveProducer() error {
 	// nothing to remove
 	return nil
