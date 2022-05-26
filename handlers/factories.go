@@ -253,7 +253,7 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 
-	logger.Info("Factory " + factoryName + " has been created")
+	logger.Info("Factory " + factoryName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 

@@ -197,7 +197,7 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 
 func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, error) { // for socket io endpoint
 	var producers []models.ExtendedProducer
-	
+
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -324,6 +324,8 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 
 func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
 	var producers []models.Producer
+	var station models.Station
+
 	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
 		logger.Warn("KillProducers error: " + err.Error())
@@ -332,40 +334,42 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 		logger.Warn("KillProducers error: " + err.Error())
 	}
 
-	var station models.Station
-	err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
-	if err != nil {
-		logger.Warn("KillProducers error: " + err.Error())
-	}
-
-	_, err = producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
-	}
-
-	var message string
-	var auditLogs []interface{}
-	var newAuditLog models.AuditLog
-	for _, producer := range producers {
-		message = "Producer " + producer.Name + " disconnected"
-		newAuditLog = models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   station.Name,
-			Message:       message,
-			CreatedByUser: producers[0].CreatedByUser,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+	if len(producers) > 0 {
+		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
+		if err != nil {
+			logger.Warn("KillProducers error: " + err.Error())
 		}
-		auditLogs = append(auditLogs, newAuditLog)
+
+		_, err = producersCollection.UpdateMany(context.TODO(),
+			bson.M{"connection_id": connectionId},
+			bson.M{"$set": bson.M{"is_active": false}},
+		)
+		if err != nil {
+			logger.Error("KillProducers error: " + err.Error())
+			return err
+		}
+
+		var message string
+		var auditLogs []interface{}
+		var newAuditLog models.AuditLog
+		for _, producer := range producers {
+			message = "Producer " + producer.Name + " disconnected"
+			newAuditLog = models.AuditLog{
+				ID:            primitive.NewObjectID(),
+				StationName:   station.Name,
+				Message:       message,
+				CreatedByUser: producers[0].CreatedByUser,
+				CreationDate:  time.Now(),
+				UserType:      "application",
+			}
+			auditLogs = append(auditLogs, newAuditLog)
+		}
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			logger.Warn("KillProducers error: " + err.Error())
+		}
 	}
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		logger.Warn("KillProducers error: " + err.Error())
-	}
+	
 	return nil
 }
 
