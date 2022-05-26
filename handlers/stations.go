@@ -267,12 +267,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	logger.Info(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:              primitive.NewObjectID(),
-		StationName:     stationName,
-		Message:       	 message,
-		CreatedByUser:   user.Username,
-		CreationDate:    time.Now(),
-		UserType: 		 user.UserType,
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -318,4 +318,9 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 	logger.Info("Station " + stationName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
+	totalMessages, err := broker.GetTotalMessagesInStation(station)
+	return totalMessages, err
 }

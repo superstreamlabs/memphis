@@ -353,7 +353,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
 		for _, producer := range producers {
-			message = "Producer " + producer.Name + " disconnected"
+			message = "Producer " + producer.Name + " has been disconnected"
 			newAuditLog = models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   station.Name,

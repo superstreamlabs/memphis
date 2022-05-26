@@ -463,7 +463,7 @@ func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error 
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
 		for _, consumer := range consumers {
-			message = "Consumer" + consumer.Name + "disconnected"
+			message = "Consumer " + consumer.Name + " has been disconnected"
 			newAuditLog = models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   station.Name,

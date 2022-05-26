@@ -31,6 +31,7 @@ import (
 var producersHandler = handlers.ProducersHandler{}
 var consumersHandler = handlers.ConsumersHandler{}
 var auditLogsHandler = handlers.AuditLogsHandler{}
+var stationsHandler = handlers.StationsHandler{}
 
 type sysyemComponent struct {
 	PodName     string `json:"pod_name"`
@@ -92,8 +93,7 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 		logger.Warn("Station " + stationName + " does not exist")
 		return stationOverviewData{}, errors.New("Station does not exist")
 	}
-	
-	
+
 	producers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		logger.Error("getStationOverviewData error: " + err.Error())
@@ -106,16 +106,19 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 	if err != nil {
 		logger.Error("getStationOverviewData error: " + err.Error())
 	}
+	totalMessages, err := stationsHandler.GetTotalMessages(station)
+	if err != nil {
+		logger.Error("getStationOverviewData error: " + err.Error())
+	}
 
-	// get total messages -
 	// get avg msg size -
 	// get messages
 
 	return stationOverviewData{
 		Producers:     producers,
 		Consumers:     consumers,
-		TotalMessages: 400,
-		AvgMsgSize:    100,
+		TotalMessages: totalMessages,
+		AvgMsgSize:    0,
 		AuditLogs:     auditLogs,
 	}, nil
 }
@@ -180,7 +183,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	go server.Serve()
 
 	go func() {
-		for range time.Tick(time.Second * 10) {
+		for range time.Tick(time.Second * 5) {
 			if server.RoomLen("/", "main_overview_sockets_group") > 0 {
 				data, err := getMainOverviewData()
 				if err != nil {
