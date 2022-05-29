@@ -324,3 +324,8 @@ func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) 
 	totalMessages, err := broker.GetTotalMessagesInStation(station)
 	return totalMessages, err
 }
+
+func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
+	avgMsgSize, err := broker.GetAvgMsgSizeInStation(station)
+	return avgMsgSize, err
+}

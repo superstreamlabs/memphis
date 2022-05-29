@@ -27,6 +27,15 @@ type Factory struct {
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 }
 
+type ExtendedFactory struct {
+	ID            primitive.ObjectID `json:"id" bson:"_id"`
+	Name          string             `json:"name" bson:"name"`
+	Description   string             `json:"description" bson:"description"`
+	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	UserAvatarId  int                `json:"user_avatar_id" bson:"user_avatar_id"`
+}
+
 type CreateFactorySchema struct {
 	Name        string `json:"name" binding:"required,min=1,max=25"`
 	Description string `json:"description"`

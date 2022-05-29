@@ -243,6 +243,20 @@ func GetTotalMessagesInStation(station models.Station) (int, error) {
 	return int(streamInfo.State.Msgs), nil
 }
 
+func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
+	memphisExtraBytesPerMessage := 106
+	streamInfo, err := js.StreamInfo(station.Name)
+	if err != nil {
+		return 0, getErrorWithoutNats(err)
+	}
+
+	if streamInfo.State.Bytes == 0 {
+		return 0, nil
+	}
+
+	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs) - int64(memphisExtraBytesPerMessage), nil
+}
+
 func RemoveProducer() error {
 	// nothing to remove
 	return nil
