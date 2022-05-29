@@ -26,12 +26,14 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var producersHandler = handlers.ProducersHandler{}
 var consumersHandler = handlers.ConsumersHandler{}
 var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
+var factoriesHandler = handlers.FactoriesHandler{}
 
 type sysyemComponent struct {
 	PodName     string `json:"pod_name"`
@@ -55,8 +57,18 @@ type stationOverviewData struct {
 	Producers     []models.ExtendedProducer `json:"producers"`
 	Consumers     []models.ExtendedConsumer `json:"consumers"`
 	TotalMessages int                       `json:"total_messages"`
-	AvgMsgSize    int                       `json:"average_message_size"`
+	AvgMsgSize    int64                     `json:"average_message_size"`
 	AuditLogs     []models.AuditLog         `json:"audit_logs"`
+}
+
+type factoryOverviewData struct {
+	ID            primitive.ObjectID `json:"id"`
+	Name          string             `json:"name"`
+	Description   string             `json:"description"`
+	CreatedByUser string             `json:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date"`
+	Stations      []models.Station   `json:"stations"`
+	UserAvatarId  int                `json:"user_avatar_id"`
 }
 
 func getMainOverviewData() (mainOverviewData, error) {
@@ -83,6 +95,25 @@ func getMainOverviewData() (mainOverviewData, error) {
 	}, nil
 }
 
+func getFactoriesOverviewData() ([]models.ExtendedFactory, error) {
+	factories, err := factoriesHandler.GetAllFactoriesDetails()
+	if err != nil {
+		return factories, err
+	}
+
+	return factories, nil
+}
+
+func getFactoryOverviewData(factoryName string) (map[string]interface{}, error) {
+	factoryName = strings.ToLower(factoryName)
+	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
+	if err != nil {
+		return factory, err
+	}
+
+	return factory, nil
+}
+
 func getStationOverviewData(stationName string) (stationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := handlers.IsStationExist(stationName)
@@ -90,25 +121,28 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 		return stationOverviewData{}, err
 	}
 	if !exist {
-		logger.Warn("Station " + stationName + " does not exist")
 		return stationOverviewData{}, errors.New("Station does not exist")
 	}
 
 	producers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, nil
 	}
 	consumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, nil
 	}
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, nil
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, nil
+	}
+	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
+	if err != nil {
+		return stationOverviewData{}, nil
 	}
 
 	// get avg msg size -
@@ -118,7 +152,7 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 		Producers:     producers,
 		Consumers:     consumers,
 		TotalMessages: totalMessages,
-		AvgMsgSize:    0,
+		AvgMsgSize:    avgMsgSize,
 		AuditLogs:     auditLogs,
 	}, nil
 }
@@ -158,9 +192,30 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
-	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {
+	server.OnEvent("/", "register_factories_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
+		data, err := getFactoriesOverviewData()
+		if err != nil {
+			logger.Error("Error while trying to get factories overview data " + err.Error())
+		} else {
+			s.Emit("factories_overview_data", data)
+			s.Join("factories_overview_sockets_group")
+		}
+
 		return "recv " + msg
+	})
+
+	server.OnEvent("/", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
+		s.LeaveAll()
+		data, err := getFactoryOverviewData(factoryName)
+		if err != nil {
+			logger.Error("Error while trying to get factory overview data " + err.Error())
+		} else {
+			s.Emit("factory_overview_data", data)
+			s.Join("factory_overview_group_" + factoryName)
+		}
+
+		return "recv " + factoryName
 	})
 
 	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
@@ -174,6 +229,11 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		}
 
 		return "recv " + stationName
+	})
+
+	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		return "recv " + msg
 	})
 
 	server.OnError("/", func(s socketio.Conn, e error) {
@@ -193,6 +253,15 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 				}
 			}
 
+			if server.RoomLen("/", "factories_overview_sockets_group") > 0 {
+				data, err := getFactoriesOverviewData()
+				if err != nil {
+					logger.Error("Error while trying to get factories overview data - " + err.Error())
+				} else {
+					server.BroadcastToRoom("/", "factories_overview_sockets_group", "factories_overview_data", data)
+				}
+			}
+
 			rooms := server.Rooms("/")
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("", room) > 0 {
@@ -202,6 +271,16 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 						logger.Error("Error while trying to get station overview data - " + err.Error())
 					} else {
 						server.BroadcastToRoom("/", room, "station_overview_data", data)
+					}
+				}
+
+				if strings.HasPrefix(room, "factory_overview_group_") && server.RoomLen("", room) > 0 {
+					factoryName := strings.Split(room, "factory_overview_group_")[1]
+					data, err := getFactoryOverviewData(factoryName)
+					if err != nil {
+						logger.Error("Error while trying to get factory overview data - " + err.Error())
+					} else {
+						server.BroadcastToRoom("/", room, "factory_overview_data", data)
 					}
 				}
 			}
