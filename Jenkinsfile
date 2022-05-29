@@ -38,7 +38,9 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Docker compose install') {
-      sh "docker-compose -f /var/lib/jenkins/tests/docker-compose-files/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
+      sh "rm -rf memphis-infra"
+      sh "git clone git@github.com:Memphis-OS/memphis-infra.git"
+      sh "docker-compose -f ./memphis-infra/staging/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -49,7 +51,7 @@ node {
     }
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f /var/lib/jenkins/tests/docker-compose-files/docker-compose-dev-memphis-control-plane.yml -p memphis down"
+      sh "docker-compose -f ./memphis-infra/staging/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
     }
 
     ////////////////////////////////////////
@@ -57,9 +59,7 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "rm -rf memphis-k8s"
-      sh "git clone --branch staging git@github.com:Memphis-OS/memphis-k8s.git"
-      sh "helm install memphis-tests memphis-k8s/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      sh "helm install memphis-tests memphis-infra/staging/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
       sh 'sleep 40'
     }
 
@@ -80,7 +80,8 @@ node {
       sh "kubectl delete ns memphis-$unique_id &"
     }
 
-    stage('Tests - Remove e2e-tests') {
+    stage('Tests - Remove used directories') {
+      sh "rm -rf memphis-infra"
       sh "rm -rf memphis-e2e-tests"
     }
 
