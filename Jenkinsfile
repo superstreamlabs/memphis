@@ -72,7 +72,7 @@ node {
 
     stage('Tests - Run e2e tests over kubernetes') {
       sh "npm install --prefix ./memphis-e2e-tests"
-      sh "node ./memphis-e2e-tests/index.js kubernetes"
+      sh "node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id"
     }
 
     stage('Tests - Uninstall helm') {
@@ -90,6 +90,7 @@ node {
     }
 
     stage('Push to staging'){
+      sh "git clone --branch staging git@github.com:Memphis-OS/memphis-k8s.git"
       sh "helm uninstall my-memphis --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml -n memphis"
       sh 'helm install my-memphis memphis-k8s/helm/memphis --set analytics="false" --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml --create-namespace --namespace memphis'
     }
