@@ -115,8 +115,8 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			connection.Close()
 			return primitive.ObjectID{}, models.User{}
 		}
-		if user.UserType != "application" {
-			connection.Write([]byte("Please use a user of type Application and not Management"))
+		if user.UserType != "root" && user.UserType != "application" {
+			connection.Write([]byte("Please use a user of type Root/Application and not Management"))
 			connection.Close()
 			return primitive.ObjectID{}, models.User{}
 		}
