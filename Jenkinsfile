@@ -81,7 +81,6 @@ node {
     }
 
     stage('Tests - Remove used directories') {
-      sh "rm -rf memphis-infra"
       sh "rm -rf memphis-e2e-tests"
     }
 
@@ -92,6 +91,7 @@ node {
     stage('Push to staging'){
       sh "helm uninstall my-memphis --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml -n memphis"
       sh 'helm install my-memphis memphis-infra/staging/kubernetes/helm/memphis --set analytics="false" --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml --create-namespace --namespace memphis'
+      sh "rm -rf memphis-infra"
     }
 
     /*stage('Build docker image and push with latest tag') {
