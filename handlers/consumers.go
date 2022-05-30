@@ -14,13 +14,14 @@
 package handlers
 
 import (
+	"context"
+	"errors"
+
 	"memphis-control-plane/broker"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
 
-	"context"
-	"errors"
 	"regexp"
 	"strings"
 	"time"

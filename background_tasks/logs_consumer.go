@@ -32,34 +32,34 @@ import (
 var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 func ConsumeLogs(wg *sync.WaitGroup) {
-	sub, err := broker.CreateSubscriber("$memphis_sys_logs", "subLog")
+	defer wg.Done()
+
+	sub, err := broker.CreatePullSubscriber("$memphis_sys_logs", "logs_consumers")
 	if err != nil {
 		logger.Error("Failed creating log subscriber: " + err.Error())
 	}
 
-	defer wg.Done()
-
 	for range time.Tick(time.Second * 10) {
 		msgs, err := sub.Fetch(1000, nats.MaxWait(10*time.Second))
-		if err != nil {
-			if !strings.Contains(err.Error(), "timeout"){
+		// when subscriber done waiting and got no messages, we ignore timeout error 
+		if err != nil && !strings.Contains(err.Error(), "timeout") { 
 				logger.Error("Error fetching logs: " + err.Error())
-			}
 		}
 		
 		if len(msgs) > 0 {
-			msgLogs := make([]interface{}, len(msgs))
+			logsForDB := make([]interface{}, len(msgs))
 			logsForSocket := make([]models.Log, len(msgs))
 			var singleLog models.Log
 			for index, msg := range msgs{
 				err := json.Unmarshal(msg.Data, &singleLog)
 				if err != nil {
 					logger.Error("Error converting logs: " + err.Error())
+				} else{
+					logsForDB[index] = singleLog
+					logsForSocket[index] = singleLog
 				}
-				msgLogs[index] = singleLog
-				logsForSocket[index] = singleLog
 			}
-			_, err = sysLogsCollection.InsertMany(context.TODO(), msgLogs)
+			_, err = sysLogsCollection.InsertMany(context.TODO(), logsForDB)
 			if err != nil {
 				logger.Error("Error inserting logs to DB: " + err.Error())
 			}

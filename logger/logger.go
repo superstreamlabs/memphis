@@ -15,23 +15,27 @@ package logger
 
 import (
 	"memphis-control-plane/broker"
-	"memphis-control-plane/config"
+	"memphis-control-plane/models"
+	"time"
 
 	"log"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var configuration = config.GetConfig()
-var connectionChannel = make(chan bool)
-var connected = false
 var logger = log.Default()
-
 
 
 func Info(logMessage string) {
 	logger.Print("[INFO] " + logMessage)
-	// TODO send via socket
-	// TODO  store in DB
-	err := broker.PublishLogToStream("$memphis_sys_logs", logMessage, "info", "control-plane")
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: logMessage,
+		Type: "info",
+		CreationDate: time.Now(),
+		Component: "control-plane",
+	}
+	err := broker.PublishMessageToStream("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
 		logger.Print("[ERROR] Error saving logs: " + logMessage)
 	}
@@ -39,9 +43,14 @@ func Info(logMessage string) {
 
 func Warn(logMessage string) {
 	logger.Print("[WARNING] " + logMessage)
-	// TODO send via socket
-	// TODO store in DB
-	err := broker.PublishLogToStream("$memphis_sys_logs", logMessage, "warn", "control-plane")
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: logMessage,
+		Type: "warn",
+		CreationDate: time.Now(),
+		Component: "control-plane",
+	}
+	err := broker.PublishMessageToStream("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
 		logger.Print("[ERROR] Error saving logs: " + logMessage)
 	}
@@ -49,16 +58,21 @@ func Warn(logMessage string) {
 
 func Error(logMessage string) {
 	logger.Print("[ERROR] " + logMessage)
-	// TODO send via socket
-	// TODO store in DB
-	err := broker.PublishLogToStream("$memphis_sys_logs", logMessage, "error", "control-plane")
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: logMessage,
+		Type: "error",
+		CreationDate: time.Now(),
+		Component: "control-plane",
+	}
+	err := broker.PublishMessageToStream("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
 		logger.Print("[ERROR] Error saving logs: " + logMessage)
 	}
 }
 
 func InitializeLogger() error{
-	err := broker.CreateInternalStream("sys_logs", []string{"$memphis_sys_logs"})
+	err := broker.CreateInternalStream("sys_logs")
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,6 @@ package broker
 
 import (
 	"memphis-control-plane/config"
-	"memphis-control-plane/db"
 	"memphis-control-plane/models"
 
 	"errors"
@@ -25,15 +24,12 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var configuration = config.GetConfig()
 var connectionChannel = make(chan bool)
 var connected = false
 var logger = log.Default()
-var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 func getErrorWithoutNats(err error) error {
 	message := strings.ToLower(err.Error())
@@ -284,11 +280,11 @@ func ValidateUserCreds(token string) error {
 	return nil
 }
 
-func CreateInternalStream(name string, subjects []string) error {
+func CreateInternalStream(name string) error {
 	dedupWindow := time.Duration(1) * time.Nanosecond
 	_, err := js.AddStream(&nats.StreamConfig{
 		Name: "$memphis_" + name,
-		Subjects: subjects,
+		Subjects: []string{"$memphis_" + name},
 		Retention: nats.WorkQueuePolicy,
 		MaxConsumers: -1,
 		Storage: nats.FileStorage,
@@ -296,54 +292,21 @@ func CreateInternalStream(name string, subjects []string) error {
 		NoAck: false,
 		Duplicates: dedupWindow,
 	}, nats.MaxWait(10*time.Second))
-	if err != nil {
-		if !strings.Contains(err.Error(), "invalid bucket name"){
-			return getErrorWithoutNats(err)
-		} else{
-			return err
-		}
+	if err != nil && !strings.Contains(err.Error(), "stream name already in use"){
+		return getErrorWithoutNats(err)
 	}
 	return nil
 }
 
-func CreateLogStream() error {
-	dedupWindow := time.Duration(1) * time.Nanosecond
-	_, err := js.AddStream(&nats.StreamConfig{
-		Name: "$memphis_sys_logs",
-		Subjects: []string{"$memphis_sys_logs"},
-		Retention: nats.WorkQueuePolicy,
-		MaxConsumers: -1,
-		Storage: nats.FileStorage,
-		Replicas: 1,
-		NoAck: false,
-		Duplicates: dedupWindow,
-	}, nats.MaxWait(10*time.Second))
-	if err != nil {
-		if !strings.Contains(err.Error(), "invalid bucket name"){
-			return getErrorWithoutNats(err)
-		} else{
-			return err
-		}
-	}
-	return nil
-}
-
-func PublishLogToStream(stream string, msg string, logType string, component string) error {
-	log := models.Log{
-		ID: primitive.NewObjectID(),
-		Log: msg,
-		Type: logType,
-		CreationDate: time.Now(),
-		Component: component,
-	}
-	_, err := js.Publish(stream, models.Log.ToBytes(log))
+func PublishMessageToStream(subject string, msg []byte) error {
+	_, err := js.Publish(subject, msg)
 	if err != nil {
 		return getErrorWithoutNats(err)
 	}
 	return nil
 }
 
-func CreateSubscriber(stream string, durable string) (*nats.Subscription, error) {
+func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, error) {
 	sub, err := js.PullSubscribe(stream, durable)
 	if err != nil {
 		return sub, getErrorWithoutNats(err)

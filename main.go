@@ -34,7 +34,7 @@ func main() {
 	handleError("Failed to create root user: ", err)
 
 	err = logger.InitializeLogger()
-	handleError("Failed initializing logger", err)
+	handleError("Failed initializing logger: ", err)
 
 	defer db.Close()
 	defer broker.Close()
