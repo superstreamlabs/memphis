@@ -44,11 +44,11 @@ func main() {
 	go http_server.InitializeHttpServer(wg)
 	go utils.KillZombieConnections(wg)
 
-	env := os.Getenv("ENVIRONMENT")
-	if env == "" && os.Getenv("DOCKER_ENV") != "" {
+	var env string
+	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
 		logger.Info("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
-	} else if env == "" && os.Getenv("DOCKER_ENV") == "" {
+	} else {
 		env = "K8S"
 	}
 

@@ -34,17 +34,12 @@ var consumersHandler = handlers.ConsumersHandler{}
 var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
 var factoriesHandler = handlers.FactoriesHandler{}
-
-type sysyemComponent struct {
-	PodName     string `json:"pod_name"`
-	DesiredPods int    `json:"desired_pods"`
-	ActualPods  int    `json:"actual_pods"`
-}
+var monitoringHandler = handlers.MonitoringHandler{}
 
 type mainOverviewData struct {
 	TotalStations    int               `json:"total_stations"`
 	TotalMessages    int               `json:"total_messages"`
-	SystemComponents []sysyemComponent `json:"system_components"`
+	SystemComponents []models.SystemComponent `json:"system_components"`
 	Stations         []models.ExtendedStation        `json:"stations"`
 }
 
@@ -75,11 +70,9 @@ func getMainOverviewData() (mainOverviewData, error) {
 	if err != nil {
 		return mainOverviewData{}, err
 	}
-	
-	systemComponents := []sysyemComponent{
-		{PodName: "MongoDB", DesiredPods: 2, ActualPods: 2},
-		{PodName: "Memphis Broker", DesiredPods: 9, ActualPods: 3},
-		{PodName: "Memphis UI", DesiredPods: 2, ActualPods: 1},
+	systemComponents, err := monitoringHandler.GetSystemComponents()
+	if err != nil {
+		return mainOverviewData{}, err
 	}
 
 	return mainOverviewData{

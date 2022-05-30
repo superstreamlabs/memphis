@@ -8,7 +8,6 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "ENVIRONMENT": "dev",
                 "DOCKER_ENV": "true",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
                 "BROKER_URL": "localhost:7766",
