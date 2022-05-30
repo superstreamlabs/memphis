@@ -243,8 +243,19 @@ func GetTotalMessagesInStation(station models.Station) (int, error) {
 	return int(streamInfo.State.Msgs), nil
 }
 
+func GetTotalMessagesAcrossAllStations() (int, error) {
+	messagesCounter := 0
+	for streamInfo := range js.StreamsInfo(nats.MaxWait(15 * time.Second)) {
+		if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
+			messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
+		}
+	}
+
+	return messagesCounter, nil
+}
+
 func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
-	memphisExtraBytesPerMessage := 106
+	memphisExtraBytesPerMessage := 116
 	streamInfo, err := js.StreamInfo(station.Name)
 	if err != nil {
 		return 0, getErrorWithoutNats(err)
@@ -254,7 +265,7 @@ func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, nil
 	}
 
-	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs) - int64(memphisExtraBytesPerMessage), nil
+	return int64(streamInfo.State.Bytes/streamInfo.State.Msgs) - int64(memphisExtraBytesPerMessage), nil
 }
 
 func RemoveProducer() error {

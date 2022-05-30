@@ -41,16 +41,11 @@ type sysyemComponent struct {
 	ActualPods  int    `json:"actual_pods"`
 }
 
-type stations struct {
-	StationName string `json:"station_name"`
-	FactoryName string `json:"factory_name"`
-}
-
 type mainOverviewData struct {
 	TotalStations    int               `json:"total_stations"`
 	TotalMessages    int               `json:"total_messages"`
 	SystemComponents []sysyemComponent `json:"system_components"`
-	Stations         []stations        `json:"stations"`
+	Stations         []models.ExtendedStation        `json:"stations"`
 }
 
 type stationOverviewData struct {
@@ -72,24 +67,24 @@ type factoryOverviewData struct {
 }
 
 func getMainOverviewData() (mainOverviewData, error) {
-	// getTotalMessages -
-	// getTotalStations -
-	// getStationsInfo -
+	stations, err := stationsHandler.GetAllStationsDetails()
+	if err != nil {
+		return mainOverviewData{}, nil
+	}
+	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
+	if err != nil {
+		return mainOverviewData{}, err
+	}
+	
 	systemComponents := []sysyemComponent{
 		{PodName: "MongoDB", DesiredPods: 2, ActualPods: 2},
 		{PodName: "Memphis Broker", DesiredPods: 9, ActualPods: 3},
 		{PodName: "Memphis UI", DesiredPods: 2, ActualPods: 1},
 	}
 
-	stations := []stations{
-		{StationName: "station_1", FactoryName: "factory_1"},
-		{StationName: "station_2", FactoryName: "factory_2"},
-		{StationName: "station_3", FactoryName: "factory_3"},
-	}
-
 	return mainOverviewData{
-		TotalStations:    13,
-		TotalMessages:    12000,
+		TotalStations:    len(stations),
+		TotalMessages:    totalMessages,
 		SystemComponents: systemComponents,
 		Stations:         stations,
 	}, nil
@@ -126,26 +121,25 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 
 	producers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
-		return stationOverviewData{}, nil
+		return stationOverviewData{}, err
 	}
 	consumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
-		return stationOverviewData{}, nil
+		return stationOverviewData{}, err
 	}
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
-		return stationOverviewData{}, nil
+		return stationOverviewData{}, err
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station)
 	if err != nil {
-		return stationOverviewData{}, nil
+		return stationOverviewData{}, err
 	}
 	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
 	if err != nil {
-		return stationOverviewData{}, nil
+		return stationOverviewData{}, err
 	}
 
-	// get avg msg size -
 	// get messages
 
 	return stationOverviewData{

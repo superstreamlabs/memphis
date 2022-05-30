@@ -112,25 +112,8 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
-func (sh StationsHandler) GetAllStations(c *gin.Context) {
-	type extendedStation struct {
-		ID              primitive.ObjectID `json:"id" bson:"_id"`
-		Name            string             `json:"name" bson:"name"`
-		FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
-		RetentionType   string             `json:"retention_type" bson:"retention_type"`
-		RetentionValue  int                `json:"retention_value" bson:"retention_value"`
-		StorageType     string             `json:"storage_type" bson:"storage_type"`
-		Replicas        int                `json:"replicas" bson:"replicas"`
-		DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-		DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-		CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-		CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-		LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
-		Functions       []models.Function  `json:"functions" bson:"functions"`
-		FactoryName     string             `json:"factory_name" bson:"factory_name"`
-	}
-
-	var stations []extendedStation
+func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
+	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
@@ -139,22 +122,29 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 	})
 
 	if err != nil {
-		logger.Error("GetAllStations error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return stations, err
 	}
 
 	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return stations, err
+	}
+
+	if len(stations) == 0 {
+		return []models.ExtendedStation{}, nil
+	} else {
+		return stations, nil
+	}
+}
+
+func (sh StationsHandler) GetAllStations(c *gin.Context) {
+	stations, err := sh.GetAllStationsDetails()
+	if err != nil {
 		logger.Error("GetAllStations error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if len(stations) == 0 {
-		c.IndentedJSON(200, []models.Station{})
-	} else {
-		c.IndentedJSON(200, stations)
-	}
+	c.IndentedJSON(200, stations)
 }
 
 func (sh StationsHandler) CreateStation(c *gin.Context) {
@@ -322,6 +312,11 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
 	totalMessages, err := broker.GetTotalMessagesInStation(station)
+	return totalMessages, err
+}
+
+func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
+	totalMessages, err := broker.GetTotalMessagesAcrossAllStations()
 	return totalMessages, err
 }
 
