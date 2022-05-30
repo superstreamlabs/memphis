@@ -14,27 +14,53 @@
 package logger
 
 import (
-	"log"
+	"memphis-control-plane/broker"
 	"memphis-control-plane/config"
+
+	"log"
 )
 
-var logger = log.Default()
 var configuration = config.GetConfig()
+var connectionChannel = make(chan bool)
+var connected = false
+var logger = log.Default()
+
+
 
 func Info(logMessage string) {
 	logger.Print("[INFO] " + logMessage)
 	// TODO send via socket
 	// TODO  store in DB
+	err := broker.PublishLogToStream("$memphis_sys_logs", logMessage, "info", "control-plane")
+	if err != nil {
+		logger.Print("[ERROR] Error saving logs: " + logMessage)
+	}
 }
 
 func Warn(logMessage string) {
 	logger.Print("[WARNING] " + logMessage)
 	// TODO send via socket
 	// TODO store in DB
+	err := broker.PublishLogToStream("$memphis_sys_logs", logMessage, "warn", "control-plane")
+	if err != nil {
+		logger.Print("[ERROR] Error saving logs: " + logMessage)
+	}
 }
 
 func Error(logMessage string) {
 	logger.Print("[ERROR] " + logMessage)
 	// TODO send via socket
 	// TODO store in DB
+	err := broker.PublishLogToStream("$memphis_sys_logs", logMessage, "error", "control-plane")
+	if err != nil {
+		logger.Print("[ERROR] Error saving logs: " + logMessage)
+	}
+}
+
+func InitializeLogger() error{
+	err := broker.CreateInternalStream("sys_logs", []string{"$memphis_sys_logs"})
+	if err != nil {
+		return err
+	}
+	return nil
 }

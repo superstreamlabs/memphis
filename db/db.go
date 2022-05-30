@@ -14,9 +14,10 @@
 package db
 
 import (
-	"context"
 	"memphis-control-plane/config"
-	"memphis-control-plane/logger"
+
+	"context"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,6 +25,7 @@ import (
 )
 
 var configuration = config.GetConfig()
+var logger = log.Default()
 
 const (
 	dbOperationTimeout = 20
@@ -46,17 +48,17 @@ func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFun
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		logger.Error("Failed to create Mongodb client: " + err.Error())
+		logger.Print("[Error] Failed to create Mongodb client: " + err.Error())
 		panic("Failed to create Mongodb client: " + err.Error())
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		logger.Error("Failed to create Mongo DB client: " + err.Error())
+		logger.Print("[Error] Failed to create Mongo DB client: " + err.Error())
 		panic("Failed to create Mongo DB client: " + err.Error())
 	}
 
-	logger.Info("Established connection with the DB")
+	logger.Print("[INFO] Established connection with the DB")
 	return client, ctx, cancel
 }
 
@@ -69,7 +71,7 @@ func Close() {
 	defer Cancel()
 	defer func() {
 		if err := Client.Disconnect(Ctx); err != nil {
-			logger.Error("Failed to close Mongodb client: " + err.Error())
+			logger.Print("[Error] Failed to close Mongodb client: " + err.Error())
 			panic("Failed to close Mongodb client: " + err.Error())
 		}
 	}()

@@ -14,11 +14,14 @@
 package socketio
 
 import (
-	"errors"
+	"log"
+	"memphis-control-plane/db"
 	"memphis-control-plane/handlers"
-	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
 	"memphis-control-plane/models"
+
+	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -26,12 +29,18 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var logger = log.Default()
+var server = socketio.NewServer(nil)
 
 var producersHandler = handlers.ProducersHandler{}
 var consumersHandler = handlers.ConsumersHandler{}
 var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
+var systemLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 type sysyemComponent struct {
 	PodName     string `json:"pod_name"`
@@ -90,25 +99,25 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 		return stationOverviewData{}, err
 	}
 	if !exist {
-		logger.Warn("Station " + stationName + " does not exist")
+		logger.Print("[WARN] Station " + stationName + " does not exist")
 		return stationOverviewData{}, errors.New("Station does not exist")
 	}
 
 	producers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		logger.Print("[Error] getStationOverviewData error: " + err.Error())
 	}
 	consumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		logger.Print("[Error] getStationOverviewData error: " + err.Error())
 	}
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		logger.Print("[Error] getStationOverviewData error: " + err.Error())
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		logger.Print("[Error] getStationOverviewData error: " + err.Error())
 	}
 
 	// get avg msg size -
@@ -138,8 +147,28 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
+func getLogs() ([]models.Log, error){
+	var logs []models.Log
+
+	cursor, err := systemLogsCollection.Find(context.TODO(), bson.M{"creation_date": bson.M{"$gte": (time.Now().AddDate(0, 0, -1))}})
+	if err != nil {
+		return logs, err
+	}
+
+	if err = cursor.All(context.TODO(), &logs); err != nil {
+		return logs,err
+	}
+
+	return logs, nil
+}
+
+func SendLogs(logs []models.Log){
+	if server.RoomLen("/", "system_logs_group") > 0 {
+		server.BroadcastToRoom("/", "system_logs_group", "system_logs_data", logs)
+	}
+}
+
 func InitializeSocketio(router *gin.Engine) *socketio.Server {
-	server := socketio.NewServer(nil)
 
 	server.OnConnect("/", func(s socketio.Conn) error {
 		return nil
@@ -149,7 +178,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		s.LeaveAll()
 		data, err := getMainOverviewData()
 		if err != nil {
-			logger.Error("Error while trying to get main overview data " + err.Error())
+			logger.Print("[Error] Error while trying to get main overview data " + err.Error())
 		} else {
 			s.Emit("main_overview_data", data)
 			s.Join("main_overview_sockets_group")
@@ -167,7 +196,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		s.LeaveAll()
 		data, err := getStationOverviewData(stationName)
 		if err != nil {
-			logger.Error("Error while trying to get station overview data " + err.Error())
+			logger.Print("[Error] Error while trying to get station overview data " + err.Error())
 		} else {
 			s.Emit("station_overview_data", data)
 			s.Join("station_overview_group_" + stationName)
@@ -176,8 +205,21 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + stationName
 	})
 
+	server.OnEvent("/", "register_system_logs_data", func (s socketio.Conn) string  {
+		s.LeaveAll()
+		logs, err := getLogs()
+		if err != nil {
+			logger.Print("[Error] Failed to fetch logs")
+		} else {
+			s.Emit("system_logs_data", logs)
+			s.Join("system_logs_group")
+		}
+
+		return "recv logs"
+	})
+
 	server.OnError("/", func(s socketio.Conn, e error) {
-		logger.Error("An error occured during a socket connection " + e.Error())
+		logger.Print("[Error] An error occured during a socket connection " + e.Error())
 	})
 
 	go server.Serve()
@@ -187,7 +229,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 			if server.RoomLen("/", "main_overview_sockets_group") > 0 {
 				data, err := getMainOverviewData()
 				if err != nil {
-					logger.Error("Error while trying to get main overview data - " + err.Error())
+					logger.Print("[Error] Error while trying to get main overview data - " + err.Error())
 				} else {
 					server.BroadcastToRoom("/", "main_overview_sockets_group", "main_overview_data", data)
 				}
@@ -199,7 +241,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 					stationName := strings.Split(room, "station_overview_group_")[1]
 					data, err := getStationOverviewData(stationName)
 					if err != nil {
-						logger.Error("Error while trying to get station overview data - " + err.Error())
+						logger.Print("[Error] Error while trying to get station overview data - " + err.Error())
 					} else {
 						server.BroadcastToRoom("/", room, "station_overview_data", data)
 					}

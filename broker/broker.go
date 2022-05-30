@@ -14,20 +14,26 @@
 package broker
 
 import (
-	"errors"
 	"memphis-control-plane/config"
-	"memphis-control-plane/logger"
+	"memphis-control-plane/db"
 	"memphis-control-plane/models"
+
+	"errors"
+	"log"
 	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var configuration = config.GetConfig()
 var connectionChannel = make(chan bool)
 var connected = false
+var logger = log.Default()
+var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 func getErrorWithoutNats(err error) error {
 	message := strings.ToLower(err.Error())
@@ -36,23 +42,23 @@ func getErrorWithoutNats(err error) error {
 }
 
 func handleDisconnectEvent(con *nats.Conn, err error) {
-	logger.Error("Broker has disconnected: " + err.Error())
+	logger.Print("[Error] Broker has disconnected: " + err.Error())
 }
 
 func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
-	logger.Error("Broker has experienced an error: " + err.Error())
+	logger.Print("[Error] Broker has experienced an error: " + err.Error())
 }
 
 func handleReconnect(con *nats.Conn) {
 	if connected {
-		logger.Error("Reconnected to the broker")
+		logger.Print("[INFO] Reconnected to the broker")
 	}
 	connectionChannel <- true
 }
 
 func handleClosed(con *nats.Conn) {
 	if !connected {
-		logger.Info("All reconnect attempts with the broker were failed")
+		logger.Print("[INFO] All reconnect attempts with the broker were failed")
 		connectionChannel <- false
 	}
 }
@@ -99,24 +105,24 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 	if !nc.IsConnected() {
 		isConnected := <-connectionChannel
 		if !isConnected {
-			logger.Error("Failed to create connection with the broker")
+			logger.Print("[Error] Failed to create connection with the broker")
 			panic("Failed to create connection with the broker")
 		}
 	}
 
 	if err != nil {
-		logger.Error("Failed to create connection with the broker: " + err.Error())
+		logger.Print("[Error] Failed to create connection with the broker: " + err.Error())
 		panic("Failed to create connection with the broker: " + err.Error())
 	}
 
 	js, err := nc.JetStream()
 	if err != nil {
-		logger.Error("Failed to create connection with the broker: " + err.Error())
+		logger.Print("[Error] Failed to create connection with the broker: " + err.Error())
 		panic("Failed to create connection with the broker: " + err.Error())
 	}
 
 	connected = true
-	logger.Info("Established connection with the broker")
+	logger.Print("[INFO] Established connection with the broker")
 	return nc, js
 }
 
@@ -177,7 +183,7 @@ func CreateStream(station models.Station) error {
 		MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024,
 		Storage:           storage,
 		Replicas:          station.Replicas,
-		NoAck:             false,
+		NoAck:             false, 
 		Duplicates:        dedupWindow,
 	}, nats.MaxWait(15*time.Second))
 	if err != nil {
@@ -276,6 +282,73 @@ func ValidateUserCreds(token string) error {
 
 	nc.Close()
 	return nil
+}
+
+func CreateInternalStream(name string, subjects []string) error {
+	dedupWindow := time.Duration(1) * time.Nanosecond
+	_, err := js.AddStream(&nats.StreamConfig{
+		Name: "$memphis_" + name,
+		Subjects: subjects,
+		Retention: nats.WorkQueuePolicy,
+		MaxConsumers: -1,
+		Storage: nats.FileStorage,
+		Replicas: 1,
+		NoAck: false,
+		Duplicates: dedupWindow,
+	}, nats.MaxWait(10*time.Second))
+	if err != nil {
+		if !strings.Contains(err.Error(), "invalid bucket name"){
+			return getErrorWithoutNats(err)
+		} else{
+			return err
+		}
+	}
+	return nil
+}
+
+func CreateLogStream() error {
+	dedupWindow := time.Duration(1) * time.Nanosecond
+	_, err := js.AddStream(&nats.StreamConfig{
+		Name: "$memphis_sys_logs",
+		Subjects: []string{"$memphis_sys_logs"},
+		Retention: nats.WorkQueuePolicy,
+		MaxConsumers: -1,
+		Storage: nats.FileStorage,
+		Replicas: 1,
+		NoAck: false,
+		Duplicates: dedupWindow,
+	}, nats.MaxWait(10*time.Second))
+	if err != nil {
+		if !strings.Contains(err.Error(), "invalid bucket name"){
+			return getErrorWithoutNats(err)
+		} else{
+			return err
+		}
+	}
+	return nil
+}
+
+func PublishLogToStream(stream string, msg string, logType string, component string) error {
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: msg,
+		Type: logType,
+		CreationDate: time.Now(),
+		Component: component,
+	}
+	_, err := js.Publish(stream, models.Log.ToBytes(log))
+	if err != nil {
+		return getErrorWithoutNats(err)
+	}
+	return nil
+}
+
+func CreateSubscriber(stream string, durable string) (*nats.Subscription, error) {
+	sub, err := js.PullSubscribe(stream, durable)
+	if err != nil {
+		return sub, getErrorWithoutNats(err)
+	}
+	return sub, nil
 }
 
 func Close() {
