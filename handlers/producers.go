@@ -349,6 +349,11 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 			return err
 		}
 
+		userType := "application"
+		if producers[0].CreatedByUser == "root" {
+			userType = "root"
+		}
+
 		var message string
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
@@ -360,7 +365,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 				Message:       message,
 				CreatedByUser: producers[0].CreatedByUser,
 				CreationDate:  time.Now(),
-				UserType:      "application",
+				UserType:      userType,
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 		}
