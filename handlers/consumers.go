@@ -461,6 +461,12 @@ func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error 
 			logger.Error("KillConsumers error: " + err.Error())
 			return err
 		}
+
+		userType := "application"
+		if consumers[0].CreatedByUser == "root" {
+			userType = "root"
+		}
+
 		var message string
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
@@ -472,7 +478,7 @@ func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error 
 				Message:       message,
 				CreatedByUser: consumers[0].CreatedByUser,
 				CreationDate:  time.Now(),
-				UserType:      "application",
+				UserType:      userType,
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 		}

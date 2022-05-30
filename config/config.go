@@ -21,7 +21,6 @@ import (
 )
 
 type Configuration struct {
-	ENVIRONMENT                    string
 	HTTP_PORT                      string
 	TCP_PORT                       string
 	MONGO_URL                      string

@@ -27,6 +27,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var server = socketio.NewServer(nil)
@@ -35,55 +36,73 @@ var producersHandler = handlers.ProducersHandler{}
 var consumersHandler = handlers.ConsumersHandler{}
 var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
-
-type sysyemComponent struct {
-	PodName     string `json:"pod_name"`
-	DesiredPods int    `json:"desired_pods"`
-	ActualPods  int    `json:"actual_pods"`
-}
-
-type stations struct {
-	StationName string `json:"station_name"`
-	FactoryName string `json:"factory_name"`
-}
+var factoriesHandler = handlers.FactoriesHandler{}
+var monitoringHandler = handlers.MonitoringHandler{}
 
 type mainOverviewData struct {
 	TotalStations    int               `json:"total_stations"`
 	TotalMessages    int               `json:"total_messages"`
-	SystemComponents []sysyemComponent `json:"system_components"`
-	Stations         []stations        `json:"stations"`
+	SystemComponents []models.SystemComponent `json:"system_components"`
+	Stations         []models.ExtendedStation        `json:"stations"`
 }
 
 type stationOverviewData struct {
 	Producers     []models.ExtendedProducer `json:"producers"`
 	Consumers     []models.ExtendedConsumer `json:"consumers"`
 	TotalMessages int                       `json:"total_messages"`
-	AvgMsgSize    int                       `json:"average_message_size"`
+	AvgMsgSize    int64                     `json:"average_message_size"`
 	AuditLogs     []models.AuditLog         `json:"audit_logs"`
 }
 
-func getMainOverviewData() (mainOverviewData, error) {
-	// getTotalMessages -
-	// getTotalStations -
-	// getStationsInfo -
-	systemComponents := []sysyemComponent{
-		{PodName: "MongoDB", DesiredPods: 2, ActualPods: 2},
-		{PodName: "Memphis Broker", DesiredPods: 9, ActualPods: 3},
-		{PodName: "Memphis UI", DesiredPods: 2, ActualPods: 1},
-	}
+type factoryOverviewData struct {
+	ID            primitive.ObjectID `json:"id"`
+	Name          string             `json:"name"`
+	Description   string             `json:"description"`
+	CreatedByUser string             `json:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date"`
+	Stations      []models.Station   `json:"stations"`
+	UserAvatarId  int                `json:"user_avatar_id"`
+}
 
-	stations := []stations{
-		{StationName: "station_1", FactoryName: "factory_1"},
-		{StationName: "station_2", FactoryName: "factory_2"},
-		{StationName: "station_3", FactoryName: "factory_3"},
+func getMainOverviewData() (mainOverviewData, error) {
+	stations, err := stationsHandler.GetAllStationsDetails()
+	if err != nil {
+		return mainOverviewData{}, nil
+	}
+	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
+	if err != nil {
+		return mainOverviewData{}, err
+	}
+	systemComponents, err := monitoringHandler.GetSystemComponents()
+	if err != nil {
+		return mainOverviewData{}, err
 	}
 
 	return mainOverviewData{
-		TotalStations:    13,
-		TotalMessages:    12000,
+		TotalStations:    len(stations),
+		TotalMessages:    totalMessages,
 		SystemComponents: systemComponents,
 		Stations:         stations,
 	}, nil
+}
+
+func getFactoriesOverviewData() ([]models.ExtendedFactory, error) {
+	factories, err := factoriesHandler.GetAllFactoriesDetails()
+	if err != nil {
+		return factories, err
+	}
+
+	return factories, nil
+}
+
+func getFactoryOverviewData(factoryName string) (map[string]interface{}, error) {
+	factoryName = strings.ToLower(factoryName)
+	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
+	if err != nil {
+		return factory, err
+	}
+
+	return factory, nil
 }
 
 func getStationOverviewData(stationName string) (stationOverviewData, error) {
@@ -93,35 +112,37 @@ func getStationOverviewData(stationName string) (stationOverviewData, error) {
 		return stationOverviewData{}, err
 	}
 	if !exist {
-		logger.Warn("Station " + stationName + " does not exist")
 		return stationOverviewData{}, errors.New("Station does not exist")
 	}
 
 	producers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, err
 	}
 	consumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, err
 	}
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, err
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station)
 	if err != nil {
-		logger.Error("getStationOverviewData error: " + err.Error())
+		return stationOverviewData{}, err
+	}
+	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
+	if err != nil {
+		return stationOverviewData{}, err
 	}
 
-	// get avg msg size -
 	// get messages
 
 	return stationOverviewData{
 		Producers:     producers,
 		Consumers:     consumers,
 		TotalMessages: totalMessages,
-		AvgMsgSize:    0,
+		AvgMsgSize:    avgMsgSize,
 		AuditLogs:     auditLogs,
 	}, nil
 }
@@ -166,9 +187,30 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
-	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {
+	server.OnEvent("/", "register_factories_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
+		data, err := getFactoriesOverviewData()
+		if err != nil {
+			logger.Error("Error while trying to get factories overview data " + err.Error())
+		} else {
+			s.Emit("factories_overview_data", data)
+			s.Join("factories_overview_sockets_group")
+		}
+
 		return "recv " + msg
+	})
+
+	server.OnEvent("/", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
+		s.LeaveAll()
+		data, err := getFactoryOverviewData(factoryName)
+		if err != nil {
+			logger.Error("Error while trying to get factory overview data " + err.Error())
+		} else {
+			s.Emit("factory_overview_data", data)
+			s.Join("factory_overview_group_" + factoryName)
+		}
+
+		return "recv " + factoryName
 	})
 
 	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
@@ -198,6 +240,11 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
+	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		return "recv " + msg
+	})
+
 	server.OnError("/", func(s socketio.Conn, e error) {
 		logger.Error("An error occured during a socket connection " + e.Error())
 	})
@@ -215,6 +262,15 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 				}
 			}
 
+			if server.RoomLen("/", "factories_overview_sockets_group") > 0 {
+				data, err := getFactoriesOverviewData()
+				if err != nil {
+					logger.Error("Error while trying to get factories overview data - " + err.Error())
+				} else {
+					server.BroadcastToRoom("/", "factories_overview_sockets_group", "factories_overview_data", data)
+				}
+			}
+
 			rooms := server.Rooms("/")
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("", room) > 0 {
@@ -226,13 +282,23 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 						server.BroadcastToRoom("/", room, "station_overview_data", data)
 					}
 				}
+
+				if strings.HasPrefix(room, "factory_overview_group_") && server.RoomLen("", room) > 0 {
+					factoryName := strings.Split(room, "factory_overview_group_")[1]
+					data, err := getFactoryOverviewData(factoryName)
+					if err != nil {
+						logger.Error("Error while trying to get factory overview data - " + err.Error())
+					} else {
+						server.BroadcastToRoom("/", room, "factory_overview_data", data)
+					}
+				}
 			}
 		}
 	}()
 
 	socketIoRouter := router.Group("/api/socket.io")
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:3000", "http://*", "https://*"},
+		AllowOrigins: []string{"http://localhost:9000", "http://*", "https://*"},
 	}))
 	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
