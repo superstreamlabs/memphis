@@ -147,10 +147,10 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func getLogs() ([]models.Log, error){
+func getLogs(hours int) ([]models.Log, error){
 	var logs []models.Log
 
-	cursor, err := systemLogsCollection.Find(context.TODO(), bson.M{"creation_date": bson.M{"$gte": (time.Now().AddDate(0, 0, -1))}})
+	cursor, err := systemLogsCollection.Find(context.TODO(), bson.M{"creation_date": bson.M{"$gte": (time.Now().Add(-(time.Hour * time.Duration(hours))))}})
 	if err != nil {
 		return logs, err
 	}
@@ -207,7 +207,8 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/", "register_system_logs_data", func (s socketio.Conn) string  {
 		s.LeaveAll()
-		logs, err := getLogs()
+		hours := 24
+		logs, err := getLogs(hours)
 		if err != nil {
 			logger.Print("[Error] Failed to fetch logs")
 		} else {
