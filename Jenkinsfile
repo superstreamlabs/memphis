@@ -63,7 +63,7 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "helm install memphis-tests memphis-infra/${versionTag}/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      sh "helm install memphis-tests memphis-infra/${versionTag}/kubernetes/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
       sh 'sleep 40'
     }
 
