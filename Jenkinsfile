@@ -82,6 +82,7 @@ node {
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
       sh "kubectl delete ns memphis-$unique_id &"
+      sh "lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh"
     }
 
     stage('Tests - Remove used directories') {
@@ -123,16 +124,12 @@ node {
 
  } catch (e) {
       currentBuild.result = "FAILED"
-      cleanKubernetesResources()
+      sh "helm uninstall memphis-tests -n memphis-$unique_id"
+      sh "kubectl delete ns memphis-$unique_id &"
       cleanWs()
       notifyFailed()
       throw e
   }
-}
-
-def cleanKubernetesResources() {
-    sh "helm uninstall memphis-tests -n memphis-$unique_id"
-    sh "kubectl delete ns memphis-$unique_id &"
 }
 
 def notifySuccessful() {
