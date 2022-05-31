@@ -14,11 +14,12 @@
 package socketio
 
 import (
-	"errors"
 	"memphis-control-plane/handlers"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
 	"memphis-control-plane/models"
+
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -28,6 +29,8 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var server = socketio.NewServer(nil)
 
 var producersHandler = handlers.ProducersHandler{}
 var consumersHandler = handlers.ConsumersHandler{}
@@ -159,8 +162,13 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
+func SendLogs(logs []models.Log){
+	if server.RoomLen("/", "system_logs_group") > 0 {
+		server.BroadcastToRoom("/", "system_logs_group", "system_logs_data", logs)
+	}
+}
+
 func InitializeSocketio(router *gin.Engine) *socketio.Server {
-	server := socketio.NewServer(nil)
 
 	server.OnConnect("/", func(s socketio.Conn) error {
 		return nil
@@ -216,6 +224,20 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		}
 
 		return "recv " + stationName
+	})
+
+	server.OnEvent("/", "register_system_logs_data", func (s socketio.Conn, msg string) string  {
+		s.LeaveAll()
+		hours := 24
+		logs, err := handlers.GetLogs(hours)
+		if err != nil {
+			logger.Error("Failed to fetch logs")
+		} else {
+			s.Emit("system_logs_data", logs)
+			s.Join("system_logs_group")
+		}
+
+		return "recv " + msg
 	})
 
 	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {

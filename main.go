@@ -15,34 +15,38 @@ package main
 
 import (
 	"memphis-control-plane/analytics"
+	"memphis-control-plane/background_tasks"
 	"memphis-control-plane/broker"
 	"memphis-control-plane/db"
 	"memphis-control-plane/handlers"
 	"memphis-control-plane/http_server"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/tcp_server"
-	"memphis-control-plane/utils"
 	"os"
 	"sync"
 )
 
 func main() {
 	err := analytics.InitializeAnalytics()
-	handleError("Failed to initialize analytics:", err)
+	handleError("Failed to initialize analytics: ", err)
 
 	err = handlers.CreateRootUserOnFirstSystemLoad()
-	handleError("Failed to create root user:", err)
+	handleError("Failed to create root user: ", err)
+
+	err = logger.InitializeLogger()
+	handleError("Failed initializing logger: ", err)
 
 	defer db.Close()
 	defer broker.Close()
 	defer analytics.Close()
 
 	wg := new(sync.WaitGroup)
-	wg.Add(3)
+	wg.Add(4)
 
+	go background_tasks.ConsumeLogs(wg)
 	go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(wg)
-	go utils.KillZombieConnections(wg)
+	go background_tasks.KillZombieConnections(wg)
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

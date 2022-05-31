@@ -14,27 +14,67 @@
 package logger
 
 import (
+	"memphis-control-plane/broker"
+	"memphis-control-plane/models"
+	"time"
+
 	"log"
-	"memphis-control-plane/config"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var logger = log.Default()
-var configuration = config.GetConfig()
+
 
 func Info(logMessage string) {
 	logger.Print("[INFO] " + logMessage)
-	// TODO send via socket
-	// TODO  store in DB
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: logMessage,
+		Type: "info",
+		CreationDate: time.Now(),
+		Component: "control-plane",
+	}
+	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
+	if err != nil {
+		logger.Print("[ERROR] Error saving logs: " + logMessage)
+	}
 }
 
 func Warn(logMessage string) {
 	logger.Print("[WARNING] " + logMessage)
-	// TODO send via socket
-	// TODO store in DB
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: logMessage,
+		Type: "warn",
+		CreationDate: time.Now(),
+		Component: "control-plane",
+	}
+	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
+	if err != nil {
+		logger.Print("[ERROR] Error saving logs: " + logMessage)
+	}
 }
 
 func Error(logMessage string) {
 	logger.Print("[ERROR] " + logMessage)
-	// TODO send via socket
-	// TODO store in DB
+	log := models.Log{
+		ID: primitive.NewObjectID(),
+		Log: logMessage,
+		Type: "error",
+		CreationDate: time.Now(),
+		Component: "control-plane",
+	}
+	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
+	if err != nil {
+		logger.Print("[ERROR] Error saving logs: " + logMessage)
+	}
+}
+
+func InitializeLogger() error{
+	err := broker.CreateInternalStream("sys_logs")
+	if err != nil {
+		return err
+	}
+	return nil
 }

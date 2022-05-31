@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package background_tasks
 
 import (
 	"context"
+	"memphis-control-plane/config"
 	"memphis-control-plane/db"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
@@ -25,6 +26,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var configuration = config.GetConfig()
 
 var connectionsCollection *mongo.Collection = db.GetCollection("connections")
 var producersCollection *mongo.Collection = db.GetCollection("producers")
