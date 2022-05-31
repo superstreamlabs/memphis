@@ -21,14 +21,16 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var systemLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 func GetLogs(hours int) ([]models.Log, error){
 	var logs []models.Log
-
-	cursor, err := systemLogsCollection.Find(context.TODO(), bson.M{"creation_date": bson.M{"$gte": (time.Now().Add(-(time.Hour * time.Duration(hours))))}})
+	filter := bson.M{"creation_date": bson.M{"$gte": (time.Now().Add(-(time.Hour * time.Duration(hours))))}}
+	opts := options.Find().SetSort(bson.D{{"creation_date", -1}})
+	cursor, err := systemLogsCollection.Find(context.TODO(), filter, opts)
 	if err != nil {
 		return logs, err
 	}
