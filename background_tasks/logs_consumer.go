@@ -41,30 +41,33 @@ func ConsumeLogs(wg *sync.WaitGroup) {
 
 	for range time.Tick(time.Second * 10) {
 		msgs, err := sub.Fetch(1000, nats.MaxWait(10*time.Second))
-		// when subscriber done waiting and got no messages, we ignore timeout error 
-		if err != nil && !strings.Contains(err.Error(), "timeout") { 
-				logger.Error("Error fetching logs: " + err.Error())
+
+		if err != nil && !strings.Contains(err.Error(), "timeout") { // when subscriber done waiting and got no messages, we ignore timeout error
+			logger.Error("Error fetching logs: " + err.Error())
 		}
-		
+
 		if len(msgs) > 0 {
 			logsForDB := make([]interface{}, len(msgs))
 			logsForSocket := make([]models.Log, len(msgs))
 			var singleLog models.Log
-			for index, msg := range msgs{
+
+			for index, msg := range msgs {
 				err := json.Unmarshal(msg.Data, &singleLog)
 				if err != nil {
 					logger.Error("Error converting logs: " + err.Error())
-				} else{
+				} else {
 					logsForDB[index] = singleLog
 					logsForSocket[index] = singleLog
 				}
 			}
+
 			_, err = sysLogsCollection.InsertMany(context.TODO(), logsForDB)
 			if err != nil {
 				logger.Error("Error inserting logs to DB: " + err.Error())
 			}
+
 			socketio.SendLogs(logsForSocket)
-			for _, msg := range msgs{
+			for _, msg := range msgs {
 				msg.Ack()
 			}
 		}

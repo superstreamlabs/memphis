@@ -26,7 +26,7 @@ import (
 
 var systemLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
-func GetLogs(hours int) ([]models.Log, error){
+func GetLogs(hours int) ([]models.Log, error) {
 	var logs []models.Log
 	filter := bson.M{"creation_date": bson.M{"$gte": (time.Now().Add(-(time.Hour * time.Duration(hours))))}}
 	opts := options.Find().SetSort(bson.D{{"creation_date", -1}})
@@ -36,7 +36,7 @@ func GetLogs(hours int) ([]models.Log, error){
 	}
 
 	if err = cursor.All(context.TODO(), &logs); err != nil {
-		return logs,err
+		return logs, err
 	}
 
 	return logs, nil

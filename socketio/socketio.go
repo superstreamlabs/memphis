@@ -40,10 +40,10 @@ var factoriesHandler = handlers.FactoriesHandler{}
 var monitoringHandler = handlers.MonitoringHandler{}
 
 type mainOverviewData struct {
-	TotalStations    int               `json:"total_stations"`
-	TotalMessages    int               `json:"total_messages"`
+	TotalStations    int                      `json:"total_stations"`
+	TotalMessages    int                      `json:"total_messages"`
 	SystemComponents []models.SystemComponent `json:"system_components"`
-	Stations         []models.ExtendedStation        `json:"stations"`
+	Stations         []models.ExtendedStation `json:"stations"`
 }
 
 type stationOverviewData struct {
@@ -162,7 +162,7 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func SendLogs(logs []models.Log){
+func SendLogs(logs []models.Log) {
 	if server.RoomLen("/", "system_logs_group") > 0 {
 		server.BroadcastToRoom("/", "system_logs_group", "system_logs_data", logs)
 	}
@@ -226,7 +226,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + stationName
 	})
 
-	server.OnEvent("/", "register_system_logs_data", func (s socketio.Conn, msg string) string  {
+	server.OnEvent("/", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		hours := 24
 		logs, err := handlers.GetLogs(hours)

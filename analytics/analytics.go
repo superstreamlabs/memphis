@@ -106,14 +106,14 @@ func InitializeAnalytics() error {
 			metric.WithUnit("0"),
 			metric.WithDescription("Counting the number of installations of Memphis"),
 		)
-	
+
 		loginsCounter, err = Meter.NewInt64Counter(
 			"Logins",
 			metric.WithUnit("0"),
 			metric.WithDescription("Counting the number of logins to Memphis"),
-		)	
+		)
 	}
-	
+
 	return nil
 }
 

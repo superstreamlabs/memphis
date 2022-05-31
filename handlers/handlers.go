@@ -118,7 +118,7 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 
 func CreateDefaultStation(stationName string, username string) (models.Station, error) {
 	var newStation models.Station
-	
+
 	// create default factory
 	var factoryId primitive.ObjectID
 	exist, factory, err := IsFactoryExist("melvis")

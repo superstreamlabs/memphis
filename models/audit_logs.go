@@ -19,14 +19,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-
 type AuditLog struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	StationName     string             `json:"station_name" bson:"station_name"`
-	Message         string             `json:"message" bson:"message"`
-	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-	UserType        string             `json:"user_type" bson:"user_type"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
+	ID            primitive.ObjectID `json:"id" bson:"_id"`
+	StationName   string             `json:"station_name" bson:"station_name"`
+	Message       string             `json:"message" bson:"message"`
+	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
+	UserType      string             `json:"user_type" bson:"user_type"`
+	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 }
 
 type GetAllAuditLogsByStationSchema struct {

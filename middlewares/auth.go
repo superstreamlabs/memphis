@@ -137,7 +137,7 @@ func Authenticate(c *gin.Context) {
 		} else {
 			tokenString, err = extractToken(c.GetHeader("authorization"))
 		}
-		
+
 		if err != nil || tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return

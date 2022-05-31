@@ -25,54 +25,54 @@ import (
 
 var logger = log.Default()
 
-
 func Info(logMessage string) {
 	logger.Print("[INFO] " + logMessage)
+
 	log := models.Log{
-		ID: primitive.NewObjectID(),
-		Log: logMessage,
-		Type: "info",
+		ID:           primitive.NewObjectID(),
+		Log:          logMessage,
+		Type:         "info",
 		CreationDate: time.Now(),
-		Component: "control-plane",
+		Component:    "control-plane",
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
-		logger.Print("[ERROR] Error saving logs: " + logMessage)
+		logger.Print("[ERROR] Error publishing logs: " + logMessage)
 	}
 }
 
 func Warn(logMessage string) {
 	logger.Print("[WARNING] " + logMessage)
 	log := models.Log{
-		ID: primitive.NewObjectID(),
-		Log: logMessage,
-		Type: "warn",
+		ID:           primitive.NewObjectID(),
+		Log:          logMessage,
+		Type:         "warn",
 		CreationDate: time.Now(),
-		Component: "control-plane",
+		Component:    "control-plane",
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
-		logger.Print("[ERROR] Error saving logs: " + logMessage)
+		logger.Print("[ERROR] Error publishing logs: " + logMessage)
 	}
 }
 
 func Error(logMessage string) {
 	logger.Print("[ERROR] " + logMessage)
 	log := models.Log{
-		ID: primitive.NewObjectID(),
-		Log: logMessage,
-		Type: "error",
+		ID:           primitive.NewObjectID(),
+		Log:          logMessage,
+		Type:         "error",
 		CreationDate: time.Now(),
-		Component: "control-plane",
+		Component:    "control-plane",
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
-		logger.Print("[ERROR] Error saving logs: " + logMessage)
+		logger.Print("[ERROR] Error publishing logs: " + logMessage)
 	}
 }
 
-func InitializeLogger() error{
-	err := broker.CreateInternalStream("sys_logs")
+func InitializeLogger() error {
+	err := broker.CreateInternalStream("$memphis_sys_logs")
 	if err != nil {
 		return err
 	}

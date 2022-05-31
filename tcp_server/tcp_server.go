@@ -181,7 +181,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			ConnectionId:   connectionId,
 			AccessToken:    accessToken,
 			AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-			PingInterval: configuration.PING_INTERVAL_MS,
+			PingInterval:   configuration.PING_INTERVAL_MS,
 		}
 		bytesResponse, _ := json.Marshal(response)
 		connection.Write(bytesResponse)

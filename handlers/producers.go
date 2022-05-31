@@ -374,7 +374,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 			logger.Warn("KillProducers error: " + err.Error())
 		}
 	}
-	
+
 	return nil
 }
 

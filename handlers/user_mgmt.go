@@ -334,7 +334,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if shouldSendAnalytics {
 		analytics.IncrementLoginsCounter()
 	}
-	
+
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)

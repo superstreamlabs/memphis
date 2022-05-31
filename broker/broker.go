@@ -179,7 +179,7 @@ func CreateStream(station models.Station) error {
 		MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024,
 		Storage:           storage,
 		Replicas:          station.Replicas,
-		NoAck:             false, 
+		NoAck:             false,
 		Duplicates:        dedupWindow,
 	}, nats.MaxWait(15*time.Second))
 	if err != nil {
@@ -308,16 +308,16 @@ func ValidateUserCreds(token string) error {
 func CreateInternalStream(name string) error {
 	dedupWindow := time.Duration(1) * time.Nanosecond
 	_, err := js.AddStream(&nats.StreamConfig{
-		Name: "$memphis_" + name,
-		Subjects: []string{"$memphis_" + name},
-		Retention: nats.WorkQueuePolicy,
+		Name:         name,
+		Subjects:     []string{name},
+		Retention:    nats.WorkQueuePolicy,
 		MaxConsumers: -1,
-		Storage: nats.FileStorage,
-		Replicas: 1,
-		NoAck: false,
-		Duplicates: dedupWindow,
+		Storage:      nats.FileStorage,
+		Replicas:     1,
+		NoAck:        false,
+		Duplicates:   dedupWindow,
 	}, nats.MaxWait(10*time.Second))
-	if err != nil && !strings.Contains(err.Error(), "stream name already in use"){
+	if err != nil && !strings.Contains(err.Error(), "stream name already in use") { // create only if not exist
 		return getErrorWithoutNats(err)
 	}
 	return nil

@@ -26,7 +26,7 @@ type Log struct {
 	Log          string             `json:"log" bson:"log"`
 	Type         string             `json:"type" bson:"type"`
 	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
-	Component	 string				`json:"component" bson:"component"`
+	Component    string             `json:"component" bson:"component"`
 }
 
 func (log Log) ToBytes() []byte {

@@ -27,14 +27,14 @@ import (
 )
 
 func main() {
-	err := analytics.InitializeAnalytics()
-	handleError("Failed to initialize analytics: ", err)
+	err := logger.InitializeLogger()
+	handleError("Failed initializing logger: ", err)
+
+	err = analytics.InitializeAnalytics()
+	handleError("Failed initializing analytics: ", err)
 
 	err = handlers.CreateRootUserOnFirstSystemLoad()
 	handleError("Failed to create root user: ", err)
-
-	err = logger.InitializeLogger()
-	handleError("Failed initializing logger: ", err)
 
 	defer db.Close()
 	defer broker.Close()
