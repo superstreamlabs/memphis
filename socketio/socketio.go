@@ -96,23 +96,29 @@ func getFactoriesOverviewData() ([]models.ExtendedFactory, error) {
 	return factories, nil
 }
 
-func getFactoryOverviewData(factoryName string) (map[string]interface{}, error) {
+func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]interface{}, error) {
 	factoryName = strings.ToLower(factoryName)
 	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
 	if err != nil {
+		if s != nil && err.Error() == "mongo: no documents in result"  {
+			s.Emit("error", "Factory does not exist")
+		}
 		return factory, err
 	}
 
 	return factory, nil
 }
 
-func getStationOverviewData(stationName string) (stationOverviewData, error) {
+func getStationOverviewData(stationName string, s socketio.Conn) (stationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := handlers.IsStationExist(stationName)
 	if err != nil {
 		return stationOverviewData{}, err
 	}
 	if !exist {
+		if s != nil {
+			s.Emit("error", "Station does not exist")
+		}
 		return stationOverviewData{}, errors.New("Station does not exist")
 	}
 
@@ -203,7 +209,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
 		s.LeaveAll()
-		data, err := getFactoryOverviewData(factoryName)
+		data, err := getFactoryOverviewData(factoryName, s)
 		if err != nil {
 			logger.Error("Error while trying to get factory overview data " + err.Error())
 		} else {
@@ -216,7 +222,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
 		s.LeaveAll()
-		data, err := getStationOverviewData(stationName)
+		data, err := getStationOverviewData(stationName, s)
 		if err != nil {
 			logger.Error("Error while trying to get station overview data " + err.Error())
 		} else {
@@ -276,7 +282,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("", room) > 0 {
 					stationName := strings.Split(room, "station_overview_group_")[1]
-					data, err := getStationOverviewData(stationName)
+					data, err := getStationOverviewData(stationName, nil)
 					if err != nil {
 						logger.Error("Error while trying to get station overview data - " + err.Error())
 					} else {
@@ -286,7 +292,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 				if strings.HasPrefix(room, "factory_overview_group_") && server.RoomLen("", room) > 0 {
 					factoryName := strings.Split(room, "factory_overview_group_")[1]
-					data, err := getFactoryOverviewData(factoryName)
+					data, err := getFactoryOverviewData(factoryName, nil)
 					if err != nil {
 						logger.Error("Error while trying to get factory overview data - " + err.Error())
 					} else {
