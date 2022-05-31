@@ -14,27 +14,78 @@
 package handlers
 
 import (
-	"io/ioutil"
+  "io/ioutil"
+	"context"
+	"fmt"
+	"memphis-control-plane/broker"
+	"memphis-control-plane/db"
 	"memphis-control-plane/models"
-
-	"github.com/gin-gonic/gin"
-
-	"memphis-control-plane/logger"
+  "memphis-control-plane/logger"
+	"net/http"
+  "github.com/gin-gonic/gin"
 )
 
 type MonitoringHandler struct{}
 
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
+	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" {
-		// localhost:9000 UI
-		// localhost: 5555 control plane
-		// localhost: 7766 broker
-		// localhost:27017 mongo
+		resp, err := http.Get("http://localhost:9000")
+		fmt.Print((resp))
+		if err != nil {
+			components = append(components, models.SystemComponent{
+				Component:   "UI",
+				DesiredPods: 1,
+				ActualPods:  0,
+			})
+		} else {
+			components = append(components, models.SystemComponent{
+				Component:   "UI",
+				DesiredPods: 1,
+				ActualPods:  1,
+			})
+		}
+
+		if broker.IsConnectionAlive() {
+			components = append(components, models.SystemComponent{
+				Component:   "broker",
+				DesiredPods: 1,
+				ActualPods:  1,
+			})
+		} else {
+			components = append(components, models.SystemComponent{
+				Component:   "broker",
+				DesiredPods: 1,
+				ActualPods:  0,
+			})
+		}
+
+		err = db.Client.Ping(context.TODO(), nil)
+		if err != nil {
+			components = append(components, models.SystemComponent{
+				Component:   "application-db",
+				DesiredPods: 1,
+				ActualPods:  0,
+			})
+		} else {
+			components = append(components, models.SystemComponent{
+				Component:   "application-db",
+				DesiredPods: 1,
+				ActualPods:  1,
+			})
+		}
+
+		components = append(components, models.SystemComponent{
+			Component:   "control-plane",
+			DesiredPods: 1,
+			ActualPods:  1,
+		})
 	} else {
+		// k8s implementation
 
 	}
 
-	return []models.SystemComponent{}, nil
+	return components, nil
 }
 
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {

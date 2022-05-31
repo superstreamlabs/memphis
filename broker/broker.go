@@ -38,7 +38,9 @@ func getErrorWithoutNats(err error) error {
 }
 
 func handleDisconnectEvent(con *nats.Conn, err error) {
-	logger.Print("[Error] Broker has disconnected: " + err.Error())
+	if err != nil {
+		logger.Print("[Error] Broker has disconnected: " + err.Error())
+	}
 }
 
 func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
@@ -337,6 +339,10 @@ func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, er
 		return sub, getErrorWithoutNats(err)
 	}
 	return sub, nil
+}
+
+func IsConnectionAlive() bool {
+	return broker.IsConnected()
 }
 
 func Close() {
