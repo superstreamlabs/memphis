@@ -298,7 +298,7 @@ func CreateInternalStream(name string) error {
 	return nil
 }
 
-func PublishMessageToStream(subject string, msg []byte) error {
+func PublishMessageToSubject(subject string, msg []byte) error {
 	_, err := js.Publish(subject, msg)
 	if err != nil {
 		return getErrorWithoutNats(err)

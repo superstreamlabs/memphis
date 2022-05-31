@@ -35,7 +35,7 @@ func Info(logMessage string) {
 		CreationDate: time.Now(),
 		Component: "control-plane",
 	}
-	err := broker.PublishMessageToStream("$memphis_sys_logs", log.ToBytes())
+	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
 		logger.Print("[ERROR] Error saving logs: " + logMessage)
 	}
@@ -50,7 +50,7 @@ func Warn(logMessage string) {
 		CreationDate: time.Now(),
 		Component: "control-plane",
 	}
-	err := broker.PublishMessageToStream("$memphis_sys_logs", log.ToBytes())
+	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
 		logger.Print("[ERROR] Error saving logs: " + logMessage)
 	}
@@ -65,7 +65,7 @@ func Error(logMessage string) {
 		CreationDate: time.Now(),
 		Component: "control-plane",
 	}
-	err := broker.PublishMessageToStream("$memphis_sys_logs", log.ToBytes())
+	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
 		logger.Print("[ERROR] Error saving logs: " + logMessage)
 	}

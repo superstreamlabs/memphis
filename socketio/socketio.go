@@ -14,7 +14,6 @@
 package socketio
 
 import (
-	"memphis-control-plane/db"
 	"memphis-control-plane/handlers"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
@@ -28,7 +27,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var server = socketio.NewServer(nil)
@@ -37,7 +35,6 @@ var producersHandler = handlers.ProducersHandler{}
 var consumersHandler = handlers.ConsumersHandler{}
 var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
-var systemLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 type sysyemComponent struct {
 	PodName     string `json:"pod_name"`
