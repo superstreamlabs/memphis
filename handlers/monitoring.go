@@ -14,7 +14,12 @@
 package handlers
 
 import (
+	"io/ioutil"
 	"memphis-control-plane/models"
+
+	"github.com/gin-gonic/gin"
+
+	"memphis-control-plane/logger"
 )
 
 type MonitoringHandler struct{}
@@ -30,4 +35,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 	}
 
 	return []models.SystemComponent{}, nil
+}
+
+func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
+	body, err := ioutil.ReadFile("version.conf")
+	if err != nil {
+		logger.Error("GetClusterInfo error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, string(body))
 }
