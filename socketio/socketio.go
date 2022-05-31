@@ -38,6 +38,7 @@ var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
 var factoriesHandler = handlers.FactoriesHandler{}
 var monitoringHandler = handlers.MonitoringHandler{}
+var sysLogsHandler = handlers.SysLogsHandler{}
 
 type mainOverviewData struct {
 	TotalStations    int                      `json:"total_stations"`
@@ -162,7 +163,7 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func SendLogs(logs []models.Log) {
+func SendSysLogs(logs []models.SysLog) {
 	if server.RoomLen("/", "system_logs_group") > 0 {
 		server.BroadcastToRoom("/", "system_logs_group", "system_logs_data", logs)
 	}
@@ -229,9 +230,9 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	server.OnEvent("/", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		hours := 24
-		logs, err := handlers.GetLogs(hours)
+		logs, err := sysLogsHandler.GetSysLogs(hours)
 		if err != nil {
-			logger.Error("Failed to fetch logs")
+			logger.Error("Failed to fetch sys logs")
 		} else {
 			s.Emit("system_logs_data", logs)
 			s.Join("system_logs_group")

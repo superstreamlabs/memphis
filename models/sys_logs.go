@@ -21,7 +21,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Log struct {
+type SysLog struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id"`
 	Log          string             `json:"log" bson:"log"`
 	Type         string             `json:"type" bson:"type"`
@@ -29,8 +29,8 @@ type Log struct {
 	Component    string             `json:"component" bson:"component"`
 }
 
-func (log Log) ToBytes() []byte {
+func (sl SysLog) ToBytes() []byte {
 	bytesLog := new(bytes.Buffer)
-	json.NewEncoder(bytesLog).Encode(log)
+	json.NewEncoder(bytesLog).Encode(sl)
 	return bytesLog.Bytes()
 }

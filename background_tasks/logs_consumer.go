@@ -14,10 +14,9 @@
 package background_tasks
 
 import (
-	"context"
 	"encoding/json"
 	"memphis-control-plane/broker"
-	"memphis-control-plane/db"
+	"memphis-control-plane/handlers"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/socketio"
@@ -26,47 +25,46 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
+var sysLogsHandler = handlers.SysLogsHandler{}
 
-func ConsumeLogs(wg *sync.WaitGroup) {
+func ConsumeSysLogs(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	sub, err := broker.CreatePullSubscriber("$memphis_sys_logs", "logs_consumers")
+	sub, err := broker.CreatePullSubscriber("$memphis_sys_logs", "$memphis_sys_logs_consumers")
 	if err != nil {
-		logger.Error("Failed creating log subscriber: " + err.Error())
+		panic("Failed creating sys log subscriber: " + err.Error())
 	}
 
-	for range time.Tick(time.Second * 10) {
+	for range time.Tick(time.Second * 5) {
 		msgs, err := sub.Fetch(1000, nats.MaxWait(10*time.Second))
 
 		if err != nil && !strings.Contains(err.Error(), "timeout") { // when subscriber done waiting and got no messages, we ignore timeout error
-			logger.Error("Error fetching logs: " + err.Error())
+			logger.Error("Error fetching sys logs: " + err.Error())
 		}
 
 		if len(msgs) > 0 {
 			logsForDB := make([]interface{}, len(msgs))
-			logsForSocket := make([]models.Log, len(msgs))
-			var singleLog models.Log
+			logsForSocket := make([]models.SysLog, len(msgs))
+			var singleLog models.SysLog
 
 			for index, msg := range msgs {
 				err := json.Unmarshal(msg.Data, &singleLog)
 				if err != nil {
-					logger.Error("Error converting logs: " + err.Error())
+					logger.Error("Error converting sys logs: " + err.Error())
 				} else {
 					logsForDB[index] = singleLog
 					logsForSocket[index] = singleLog
 				}
 			}
 
-			_, err = sysLogsCollection.InsertMany(context.TODO(), logsForDB)
+			err = sysLogsHandler.InsertLogs(logsForDB)
 			if err != nil {
-				logger.Error("Error inserting logs to DB: " + err.Error())
+				logger.Error("Error inserting sys logs to DB: " + err.Error())
 			}
 
-			socketio.SendLogs(logsForSocket)
+			socketio.SendSysLogs(logsForSocket)
 			for _, msg := range msgs {
 				msg.Ack()
 			}

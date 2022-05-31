@@ -28,7 +28,7 @@ var logger = log.Default()
 func Info(logMessage string) {
 	logger.Print("[INFO] " + logMessage)
 
-	log := models.Log{
+	log := models.SysLog{
 		ID:           primitive.NewObjectID(),
 		Log:          logMessage,
 		Type:         "info",
@@ -37,13 +37,13 @@ func Info(logMessage string) {
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
-		logger.Print("[ERROR] Error publishing logs: " + logMessage)
+		logger.Print("[ERROR] Error publishing sys logs: " + logMessage)
 	}
 }
 
 func Warn(logMessage string) {
 	logger.Print("[WARNING] " + logMessage)
-	log := models.Log{
+	log := models.SysLog{
 		ID:           primitive.NewObjectID(),
 		Log:          logMessage,
 		Type:         "warn",
@@ -52,13 +52,13 @@ func Warn(logMessage string) {
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
-		logger.Print("[ERROR] Error publishing logs: " + logMessage)
+		logger.Print("[ERROR] Error publishing sys logs: " + logMessage)
 	}
 }
 
 func Error(logMessage string) {
 	logger.Print("[ERROR] " + logMessage)
-	log := models.Log{
+	log := models.SysLog{
 		ID:           primitive.NewObjectID(),
 		Log:          logMessage,
 		Type:         "error",
@@ -67,7 +67,7 @@ func Error(logMessage string) {
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
-		logger.Print("[ERROR] Error publishing logs: " + logMessage)
+		logger.Print("[ERROR] Error publishing sys logs: " + logMessage)
 	}
 }
 

@@ -24,13 +24,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var systemLogsCollection *mongo.Collection = db.GetCollection("system_logs")
+var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
-func GetLogs(hours int) ([]models.Log, error) {
-	var logs []models.Log
+type SysLogsHandler struct{}
+
+func (lh SysLogsHandler) GetSysLogs(hours int) ([]models.SysLog, error) {
+	var logs []models.SysLog
 	filter := bson.M{"creation_date": bson.M{"$gte": (time.Now().Add(-(time.Hour * time.Duration(hours))))}}
 	opts := options.Find().SetSort(bson.D{{"creation_date", -1}})
-	cursor, err := systemLogsCollection.Find(context.TODO(), filter, opts)
+	cursor, err := sysLogsCollection.Find(context.TODO(), filter, opts)
 	if err != nil {
 		return logs, err
 	}
@@ -40,4 +42,13 @@ func GetLogs(hours int) ([]models.Log, error) {
 	}
 
 	return logs, nil
+}
+
+func (lh SysLogsHandler) InsertLogs(logs []interface{}) error {
+	_, err := sysLogsCollection.InsertMany(context.TODO(), logs)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
