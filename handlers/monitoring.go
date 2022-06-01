@@ -95,5 +95,5 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	c.IndentedJSON(200, string(body))
+	c.IndentedJSON(200, gin.H{"version": string(body)})
 }
