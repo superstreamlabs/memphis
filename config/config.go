@@ -21,6 +21,7 @@ import (
 )
 
 type Configuration struct {
+	DEV_ENV                        string
 	HTTP_PORT                      string
 	TCP_PORT                       string
 	MONGO_URL                      string
@@ -40,6 +41,7 @@ type Configuration struct {
 	PING_INTERVAL_MS               int
 	ANALYTICS                      string
 	ANALYTICS_TOKEN                string
+	K8S_NAMESPACE                  string
 }
 
 func GetConfig() Configuration {

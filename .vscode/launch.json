@@ -8,13 +8,15 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
+                "DEV_ENV": "true",
                 "DOCKER_ENV": "true",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
                 "BROKER_URL": "localhost:7766",
                 "ROOT_PASSWORD": "memphis",
                 "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",
-                "ANALYTICS_TOKEN": "UICQP3RXYsnDp9ACDmsYxRD+bvOl2X79ATb3o2BzrDaeWLX4wBBH2O/eK7ebYNs9H4G8Hdk38TFzej6bguxh3QZl0N4IvJhtKAbxoK4H"
+                "ANALYTICS_TOKEN": "UICQP3RXYsnDp9ACDmsYxRD+bvOl2X79ATb3o2BzrDaeWLX4wBBH2O/eK7ebYNs9H4G8Hdk38TFzej6bguxh3QZl0N4IvJhtKAbxoK4H",
+                "K8S_NAMESPACE": "memphis"
             }
         }
     ]

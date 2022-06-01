@@ -14,6 +14,7 @@
 package routes
 
 import (
+	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
 	"memphis-control-plane/utils"
 
@@ -21,8 +22,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type loggerWriter struct {
+}
+
+func (lw loggerWriter) Write(p []byte) (int, error) {
+	logger.Info(string(p))
+	return len(p), nil
+}
+
 func InitializeHttpRoutes() *gin.Engine {
+	gin.DefaultWriter = loggerWriter{}
 	router := gin.Default()
+
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:9000", "http://*", "https://*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
