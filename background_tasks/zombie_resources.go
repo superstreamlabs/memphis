@@ -94,7 +94,6 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 }
 
 func KillZombieResources(wg *sync.WaitGroup) {
-	// configuration.LOGS_RETENTION_DAYS
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
 		if err != nil {
@@ -115,7 +114,7 @@ func KillZombieResources(wg *sync.WaitGroup) {
 				logger.Error("KillZombieResources error: " + err.Error())
 			}
 		}
-		retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_DAYS)
+		retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 		if err != nil {
 			logger.Error("KillZombieResources error: " + err.Error())
 		}
