@@ -170,18 +170,18 @@ func ginMiddleware() gin.HandlerFunc {
 }
 
 func SendSysLogs(logs []models.SysLog) {
-	if server.RoomLen("/", "system_logs_group") > 0 {
-		server.BroadcastToRoom("/", "system_logs_group", "system_logs_data", logs)
+	if server.RoomLen("/api", "system_logs_group") > 0 {
+		server.BroadcastToRoom("/api", "system_logs_group", "system_logs_data", logs)
 	}
 }
 
 func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
-	server.OnConnect("/", func(s socketio.Conn) error {
+	server.OnConnect("/api", func(s socketio.Conn) error {
 		return nil
 	})
 
-	server.OnEvent("/", "register_main_overview_data", func(s socketio.Conn, msg string) string {
+	server.OnEvent("/api", "register_main_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		data, err := getMainOverviewData()
 		if err != nil {
@@ -194,7 +194,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
-	server.OnEvent("/", "register_factories_overview_data", func(s socketio.Conn, msg string) string {
+	server.OnEvent("/api", "register_factories_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		data, err := getFactoriesOverviewData()
 		if err != nil {
@@ -207,7 +207,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
-	server.OnEvent("/", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
+	server.OnEvent("/api", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
 		s.LeaveAll()
 		data, err := getFactoryOverviewData(factoryName, s)
 		if err != nil {
@@ -220,7 +220,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + factoryName
 	})
 
-	server.OnEvent("/", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
+	server.OnEvent("/api", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
 		s.LeaveAll()
 		data, err := getStationOverviewData(stationName, s)
 		if err != nil {
@@ -233,7 +233,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + stationName
 	})
 
-	server.OnEvent("/", "register_system_logs_data", func(s socketio.Conn, msg string) string {
+	server.OnEvent("/api", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		hours := 24
 		logs, err := sysLogsHandler.GetSysLogs(hours)
@@ -247,7 +247,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
-	server.OnEvent("/", "deregister", func(s socketio.Conn, msg string) string {
+	server.OnEvent("/api", "deregister", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		return "recv " + msg
 	})
@@ -260,43 +260,43 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	go func() {
 		for range time.Tick(time.Second * 5) {
-			if server.RoomLen("/", "main_overview_sockets_group") > 0 {
+			if server.RoomLen("/api", "main_overview_sockets_group") > 0 {
 				data, err := getMainOverviewData()
 				if err != nil {
 					logger.Error("Error while trying to get main overview data - " + err.Error())
 				} else {
-					server.BroadcastToRoom("/", "main_overview_sockets_group", "main_overview_data", data)
+					server.BroadcastToRoom("/api", "main_overview_sockets_group", "main_overview_data", data)
 				}
 			}
 
-			if server.RoomLen("/", "factories_overview_sockets_group") > 0 {
+			if server.RoomLen("/api", "factories_overview_sockets_group") > 0 {
 				data, err := getFactoriesOverviewData()
 				if err != nil {
 					logger.Error("Error while trying to get factories overview data - " + err.Error())
 				} else {
-					server.BroadcastToRoom("/", "factories_overview_sockets_group", "factories_overview_data", data)
+					server.BroadcastToRoom("/api", "factories_overview_sockets_group", "factories_overview_data", data)
 				}
 			}
 
-			rooms := server.Rooms("/")
+			rooms := server.Rooms("/api")
 			for _, room := range rooms {
-				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("", room) > 0 {
+				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("/api", room) > 0 {
 					stationName := strings.Split(room, "station_overview_group_")[1]
 					data, err := getStationOverviewData(stationName, nil)
 					if err != nil {
 						logger.Error("Error while trying to get station overview data - " + err.Error())
 					} else {
-						server.BroadcastToRoom("/", room, "station_overview_data", data)
+						server.BroadcastToRoom("/api", room, "station_overview_data", data)
 					}
 				}
 
-				if strings.HasPrefix(room, "factory_overview_group_") && server.RoomLen("", room) > 0 {
+				if strings.HasPrefix(room, "factory_overview_group_") && server.RoomLen("/api", room) > 0 {
 					factoryName := strings.Split(room, "factory_overview_group_")[1]
 					data, err := getFactoryOverviewData(factoryName, nil)
 					if err != nil {
 						logger.Error("Error while trying to get factory overview data - " + err.Error())
 					} else {
-						server.BroadcastToRoom("/", room, "factory_overview_data", data)
+						server.BroadcastToRoom("/api", room, "factory_overview_data", data)
 					}
 				}
 			}
@@ -305,7 +305,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	socketIoRouter := router.Group("/api/socket.io")
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:9000", "http://*", "https://*"},
+		AllowOrigins: []string{"http://localhost:9000", "http://0.0.0.0", "https://0.0.0.0", "http://*", "https://*"},
 	}))
 	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)

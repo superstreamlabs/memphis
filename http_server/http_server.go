@@ -29,5 +29,5 @@ func InitializeHttpServer(wg *sync.WaitGroup) {
 	defer socketioServer.Close()
 	defer wg.Done()
 
-	httpServer.Run(":" + configuration.HTTP_PORT)
+	httpServer.Run("0.0.0.0:" + configuration.HTTP_PORT)
 }
