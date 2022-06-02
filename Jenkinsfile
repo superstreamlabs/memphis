@@ -2,7 +2,7 @@ def repoUrlPrefix = "memphisos"
 def imageName = "memphis-control-plane"
 def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
 def gitBranch = "master"
-def versionTag = "master"
+def branchTag = "master"
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
 def namespace = "memphis"
 def test_suffix = "test"
@@ -11,10 +11,11 @@ def test_suffix = "test"
 
 
 node {
+  git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+  def versionTag = readFile "./version.conf"
+	
+	
   try{
-    stage('SCM checkout') {
-        git credentialsId: 'main-github', url: gitURL, branch: gitBranch
-    }
 
     stage('Login to Docker Hub') {
 	    withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
@@ -28,7 +29,7 @@ node {
     }
 
     stage('Build and push docker image to Docker Hub') {
-	    sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${versionTag}-${test_suffix} ."
+	    sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${branchTag}-${test_suffix} ."
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
@@ -44,7 +45,7 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-infra"
       sh "git clone git@github.com:Memphis-OS/memphis-infra.git"
-      sh "docker-compose -f ./memphis-infra/${versionTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
     }
 /*
     stage('Tests - Run e2e tests over Docker') {
@@ -55,7 +56,7 @@ node {
     }*/
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-infra/${versionTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
+      sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
     }
 
     ////////////////////////////////////////
@@ -63,7 +64,7 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "helm install memphis-tests memphis-infra/${versionTag}/kubernetes/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      sh "helm install memphis-tests memphis-infra/${branchTag}/kubernetes/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
       sh 'sleep 40'
     }
 
@@ -97,7 +98,7 @@ node {
     ////////////////////////////////////////
 /*
     stage('Build and push image to Docker Hub') {
-      sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+      sh "docker buildx build --push ---tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
     }*/
 
     ////////////////////////////////////////
