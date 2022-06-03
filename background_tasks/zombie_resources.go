@@ -93,6 +93,21 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 	return nil
 }
 
+func removeOldLogs() error {
+	retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
+	if err != nil {
+		return err
+	}
+	retentionDaysToHours := 24 * retentionToInt
+	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(retentionDaysToHours))))}}
+	_, err = sysLogsCollection.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func KillZombieResources(wg *sync.WaitGroup) {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
@@ -114,17 +129,10 @@ func KillZombieResources(wg *sync.WaitGroup) {
 				logger.Error("KillZombieResources error: " + err.Error())
 			}
 		}
-		retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
+		err = removeOldLogs()
 		if err != nil {
 			logger.Error("KillZombieResources error: " + err.Error())
 		}
-		retentionDaysToHours := 24 * retentionToInt
-		filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(retentionDaysToHours))))}}
-		_, err = sysLogsCollection.DeleteMany(context.TODO(), filter)
-		if err != nil {
-			logger.Error("KillZombieResources error: " + err.Error())
-		}
-
 	}
 
 	defer wg.Done()
