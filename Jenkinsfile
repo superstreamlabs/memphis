@@ -47,13 +47,13 @@ node {
       sh "git clone git@github.com:Memphis-OS/memphis-infra.git"
       sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
     }
-/*
+
     stage('Tests - Run e2e tests over Docker') {
       sh "rm -rf memphis-e2e-tests"
       sh "git clone git@github.com:Memphis-OS/memphis-e2e-tests.git"
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js docker"
-    }*/
+    }
 
     stage('Tests - Remove Docker compose') {
       sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
@@ -75,11 +75,11 @@ node {
       sh "sleep 5"
     }
 
-/*
+
     stage('Tests - Run e2e tests over kubernetes') {
       //sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id"
-    }*/
+    }
 
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
@@ -96,10 +96,10 @@ node {
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
     ////////////////////////////////////////
-/*
+
     stage('Build and push image to Docker Hub') {
       sh "docker buildx build --push ---tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
-    }*/
+    }
 
     ////////////////////////////////////////
     ////////////Test Public Repo////////////
@@ -108,7 +108,7 @@ node {
     ////////////////////////////////////////
     //////////// Docker-Compose ////////////
     ////////////////////////////////////////
-/*
+
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
       sh "git clone git@github.com:Memphis-OS/memphis-docker.git"
@@ -158,7 +158,7 @@ node {
     stage('Tests - Remove used directories') {
       sh "rm -rf memphis-k8s"
       sh "rm -rf memphis-e2e-tests"
-    }*/
+    }
 	  
 	  
 	  
