@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -83,10 +83,15 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
+	err = RemoveAllAuditLogsByStation(station.Name)
+	if err != nil {
+		logger.Warn("removeStationResources error: " + err.Error())
+	}
+
 	return nil
 }
 
-func (umh StationsHandler) GetStation(c *gin.Context) {
+func (sh StationsHandler) GetStation(c *gin.Context) {
 	var body models.GetStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -107,25 +112,8 @@ func (umh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
-func (umh StationsHandler) GetAllStations(c *gin.Context) {
-	type extendedStation struct {
-		ID              primitive.ObjectID `json:"id" bson:"_id"`
-		Name            string             `json:"name" bson:"name"`
-		FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
-		RetentionType   string             `json:"retention_type" bson:"retention_type"`
-		RetentionValue  int                `json:"retention_value" bson:"retention_value"`
-		StorageType     string             `json:"storage_type" bson:"storage_type"`
-		Replicas        int                `json:"replicas" bson:"replicas"`
-		DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-		DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-		CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-		CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-		LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
-		Functions       []models.Function  `json:"functions" bson:"functions"`
-		FactoryName     string             `json:"factory_name" bson:"factory_name"`
-	}
-
-	var stations []extendedStation
+func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
+	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
@@ -134,25 +122,32 @@ func (umh StationsHandler) GetAllStations(c *gin.Context) {
 	})
 
 	if err != nil {
-		logger.Error("GetAllStations error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return stations, err
 	}
 
 	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return stations, err
+	}
+
+	if len(stations) == 0 {
+		return []models.ExtendedStation{}, nil
+	} else {
+		return stations, nil
+	}
+}
+
+func (sh StationsHandler) GetAllStations(c *gin.Context) {
+	stations, err := sh.GetAllStationsDetails()
+	if err != nil {
 		logger.Error("GetAllStations error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if len(stations) == 0 {
-		c.IndentedJSON(200, []models.Station{})
-	} else {
-		c.IndentedJSON(200, stations)
-	}
+	c.IndentedJSON(200, stations)
 }
 
-func (umh StationsHandler) CreateStation(c *gin.Context) {
+func (sh StationsHandler) CreateStation(c *gin.Context) {
 	var body models.CreateStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -162,6 +157,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -172,6 +168,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("Station with the same name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
@@ -183,6 +180,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Factory name does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory name does not exist"})
 		return
 	}
@@ -192,6 +190,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -205,6 +204,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -215,6 +215,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -241,6 +242,7 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = broker.CreateStream(newStation)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -251,12 +253,26 @@ func (umh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	logger.Info("Station " + stationName + " has been created")
+	message := "Station " + stationName + " has been created"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateStation error: " + err.Error())
+	}
 	c.IndentedJSON(200, newStation)
 }
 
-func (umh StationsHandler) RemoveStation(c *gin.Context) {
+func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -271,6 +287,7 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -291,4 +308,19 @@ func (umh StationsHandler) RemoveStation(c *gin.Context) {
 
 	logger.Info("Station " + stationName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
+	totalMessages, err := broker.GetTotalMessagesInStation(station)
+	return totalMessages, err
+}
+
+func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
+	totalMessages, err := broker.GetTotalMessagesAcrossAllStations()
+	return totalMessages, err
+}
+
+func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
+	avgMsgSize, err := broker.GetAvgMsgSizeInStation(station)
+	return avgMsgSize, err
 }

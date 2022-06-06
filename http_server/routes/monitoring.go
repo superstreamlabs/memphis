@@ -11,18 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package models
+package routes
 
 import (
-	"time"
+	"memphis-control-plane/handlers"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/gin-gonic/gin"
 )
 
-type Connection struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	LastPing      time.Time          `json:"last_ping" bson:"last_ping"`
+func InitializeMonitoringRoutes(router *gin.RouterGroup) {
+	monitoringHandler := handlers.MonitoringHandler{}
+	monitoringRoutes := router.Group("/monitoring")
+	monitoringRoutes.GET("/getClusterInfo", monitoringHandler.GetClusterInfo)
 }

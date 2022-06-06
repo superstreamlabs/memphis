@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -115,8 +115,8 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			connection.Close()
 			return primitive.ObjectID{}, models.User{}
 		}
-		if user.UserType != "application" {
-			connection.Write([]byte("Please use a user of type Application and not Management"))
+		if user.UserType != "root" && user.UserType != "application" {
+			connection.Write([]byte("Please use a user of type Root/Application and not Management"))
 			connection.Close()
 			return primitive.ObjectID{}, models.User{}
 		}
@@ -181,7 +181,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			ConnectionId:   connectionId,
 			AccessToken:    accessToken,
 			AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-			PingInterval: configuration.PING_INTERVAL_MS,
+			PingInterval:   configuration.PING_INTERVAL_MS,
 		}
 		bytesResponse, _ := json.Marshal(response)
 		connection.Write(bytesResponse)
@@ -256,8 +256,8 @@ func handleNewClient(connection net.Conn) {
 func InitializeTcpServer(wg *sync.WaitGroup) {
 	tcpServer, err := net.Listen("tcp4", ":"+configuration.TCP_PORT)
 	if err != nil {
-		logger.Error("Failed initializing the TCP server" + err.Error())
-		panic("Failed initializing the TCP server" + err.Error())
+		logger.Error("Failed initializing the TCP server " + err.Error())
+		panic("Failed initializing the TCP server " + err.Error())
 	}
 	defer tcpServer.Close()
 	defer wg.Done()

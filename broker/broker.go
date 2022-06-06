@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -14,10 +14,11 @@
 package broker
 
 import (
-	"errors"
 	"memphis-control-plane/config"
-	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
+
+	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 var configuration = config.GetConfig()
 var connectionChannel = make(chan bool)
 var connected = false
+var logger = log.Default()
 
 func getErrorWithoutNats(err error) error {
 	message := strings.ToLower(err.Error())
@@ -36,23 +38,25 @@ func getErrorWithoutNats(err error) error {
 }
 
 func handleDisconnectEvent(con *nats.Conn, err error) {
-	logger.Error("Broker has disconnected: " + err.Error())
+	if err != nil {
+		logger.Print("[Error] Broker has disconnected: " + err.Error())
+	}
 }
 
 func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
-	logger.Error("Broker has experienced an error: " + err.Error())
+	logger.Print("[Error] Broker has experienced an error: " + err.Error())
 }
 
 func handleReconnect(con *nats.Conn) {
 	if connected {
-		logger.Error("Reconnected to the broker")
+		logger.Print("[INFO] Reconnected to the broker")
 	}
 	connectionChannel <- true
 }
 
 func handleClosed(con *nats.Conn) {
 	if !connected {
-		logger.Info("All reconnect attempts with the broker were failed")
+		logger.Print("[INFO] All reconnect attempts with the broker were failed")
 		connectionChannel <- false
 	}
 }
@@ -99,24 +103,24 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 	if !nc.IsConnected() {
 		isConnected := <-connectionChannel
 		if !isConnected {
-			logger.Error("Failed to create connection with the broker")
+			logger.Print("[Error] Failed to create connection with the broker")
 			panic("Failed to create connection with the broker")
 		}
 	}
 
 	if err != nil {
-		logger.Error("Failed to create connection with the broker: " + err.Error())
+		logger.Print("[Error] Failed to create connection with the broker: " + err.Error())
 		panic("Failed to create connection with the broker: " + err.Error())
 	}
 
 	js, err := nc.JetStream()
 	if err != nil {
-		logger.Error("Failed to create connection with the broker: " + err.Error())
+		logger.Print("[Error] Failed to create connection with the broker: " + err.Error())
 		panic("Failed to create connection with the broker: " + err.Error())
 	}
 
 	connected = true
-	logger.Info("Established connection with the broker")
+	logger.Print("[INFO] Established connection with the broker")
 	return nc, js
 }
 
@@ -234,6 +238,40 @@ func RemoveStream(streamName string) error {
 	return nil
 }
 
+func GetTotalMessagesInStation(station models.Station) (int, error) {
+	streamInfo, err := js.StreamInfo(station.Name)
+	if err != nil {
+		return 0, getErrorWithoutNats(err)
+	}
+
+	return int(streamInfo.State.Msgs), nil
+}
+
+func GetTotalMessagesAcrossAllStations() (int, error) {
+	messagesCounter := 0
+	for streamInfo := range js.StreamsInfo(nats.MaxWait(15 * time.Second)) {
+		if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
+			messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
+		}
+	}
+
+	return messagesCounter, nil
+}
+
+func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
+	memphisExtraBytesPerMessage := 116
+	streamInfo, err := js.StreamInfo(station.Name)
+	if err != nil {
+		return 0, getErrorWithoutNats(err)
+	}
+
+	if streamInfo.State.Bytes == 0 {
+		return 0, nil
+	}
+
+	return int64(streamInfo.State.Bytes/streamInfo.State.Msgs) - int64(memphisExtraBytesPerMessage), nil
+}
+
 func RemoveProducer() error {
 	// nothing to remove
 	return nil
@@ -267,6 +305,44 @@ func ValidateUserCreds(token string) error {
 
 	nc.Close()
 	return nil
+}
+
+func CreateInternalStream(name string) error {
+	dedupWindow := time.Duration(1) * time.Nanosecond
+	_, err := js.AddStream(&nats.StreamConfig{
+		Name:         name,
+		Subjects:     []string{name},
+		Retention:    nats.WorkQueuePolicy,
+		MaxConsumers: -1,
+		Storage:      nats.FileStorage,
+		Replicas:     1,
+		NoAck:        false,
+		Duplicates:   dedupWindow,
+	}, nats.MaxWait(10*time.Second))
+	if err != nil && !strings.Contains(err.Error(), "stream name already in use") { // create only if not exist
+		return getErrorWithoutNats(err)
+	}
+	return nil
+}
+
+func PublishMessageToSubject(subject string, msg []byte) error {
+	_, err := js.Publish(subject, msg)
+	if err != nil {
+		return getErrorWithoutNats(err)
+	}
+	return nil
+}
+
+func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, error) {
+	sub, err := js.PullSubscribe(stream, durable)
+	if err != nil {
+		return sub, getErrorWithoutNats(err)
+	}
+	return sub, nil
+}
+
+func IsConnectionAlive() bool {
+	return broker.IsConnected()
 }
 
 func Close() {

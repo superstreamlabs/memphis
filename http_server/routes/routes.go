@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -14,6 +14,7 @@
 package routes
 
 import (
+	"memphis-control-plane/logger"
 	"memphis-control-plane/middlewares"
 	"memphis-control-plane/utils"
 
@@ -21,10 +22,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type loggerWriter struct {
+}
+
+func (lw loggerWriter) Write(p []byte) (int, error) {
+	logger.Info(string(p))
+	return len(p), nil
+}
+
 func InitializeHttpRoutes() *gin.Engine {
+	gin.DefaultWriter = loggerWriter{}
 	router := gin.Default()
+
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://*", "https://*"},
+		AllowOrigins:     []string{"http://localhost:9000", "http://*", "https://*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -42,6 +53,7 @@ func InitializeHttpRoutes() *gin.Engine {
 	InitializeStationsRoutes(mainRouter)
 	InitializeProducersRoutes(mainRouter)
 	InitializeConsumersRoutes(mainRouter)
+	InitializeMonitoringRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",

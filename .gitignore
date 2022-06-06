@@ -2,13 +2,13 @@
 *.o
 *.a
 *.so
+* 2*
 
 # Folders
 _obj
 _test
 
 # Configuration Files
-*.conf
 *.cfg
 
 # Architecture specific extensions/prefixes
@@ -49,3 +49,6 @@ coverage.out
 
 # Cross compiled binaries
 pkg
+
+# debug
+__debug_bin

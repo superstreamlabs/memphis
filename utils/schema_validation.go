@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -15,8 +15,10 @@ package utils
 
 import (
 	"fmt"
+
 	"memphis-control-plane/config"
 	"memphis-control-plane/logger"
+
 	"mime/multipart"
 	"path/filepath"
 	"reflect"
@@ -77,6 +79,7 @@ func validateSchema(c *gin.Context, schema interface{}, containFile bool, file *
 
 		fileExt := filepath.Ext(uploadedFile.Filename)
 		if fileExt != ".png" && fileExt != ".jpg" && fileExt != ".jpeg" {
+			logger.Warn("You can upload only png,jpg or jpeg file formats")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can upload only png,jpg or jpeg file formats"})
 			return nil, true
 		}

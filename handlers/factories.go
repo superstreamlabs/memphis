@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -79,7 +79,7 @@ func removeStations(factoryId primitive.ObjectID) error {
 	return nil
 }
 
-func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
+func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	var body models.CreateFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -89,6 +89,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.Name)
 	err := validateFactoryName(factoryName)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -100,6 +101,7 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("Factory with that name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name is already exist"})
 		return
 	}
@@ -130,15 +132,48 @@ func (umh FactoriesHandler) CreateFactory(c *gin.Context) {
 	})
 }
 
-func (umh FactoriesHandler) GetFactory(c *gin.Context) {
+func (fh FactoriesHandler) GetFactoryDetails(factoryName string) (map[string]interface{}, error) {
+	var factory models.Factory
+	err := factoriesCollection.FindOne(context.TODO(), bson.M{"name": factoryName}).Decode(&factory)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	stations := make([]models.Station, 0)
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factory.ID})
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	_, user, err := IsUserExist(factory.CreatedByUser)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	return map[string]interface{}{
+		"id":              factory.ID,
+		"name":            factory.Name,
+		"description":     factory.Description,
+		"created_by_user": factory.CreatedByUser,
+		"creation_date":   factory.CreationDate,
+		"stations":        stations,
+		"user_avatar_id":  user.AvatarId,
+	}, nil
+}
+
+func (fh FactoriesHandler) GetFactory(c *gin.Context) {
 	var body models.GetFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
+	factoryName := strings.ToLower(body.FactoryName)
 
-	var factory models.Factory
-	err := factoriesCollection.FindOne(context.TODO(), bson.M{"name": body.FactoryName}).Decode(&factory)
+	factory, err := fh.GetFactoryDetails(factoryName)
 	if err == mongo.ErrNoDocuments {
 		c.AbortWithStatusJSON(404, gin.H{"message": "Factory does not exist"})
 		return
@@ -148,49 +183,11 @@ func (umh FactoriesHandler) GetFactory(c *gin.Context) {
 		return
 	}
 
-	stations := make([]models.Station, 0)
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factory.ID})
-	if err != nil {
-		logger.Error("GetFactory error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
-		logger.Error("GetFactory error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	_, user, err := IsUserExist(factory.CreatedByUser)
-	if err != nil {
-		logger.Error("GetFactory error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{
-		"id":              factory.ID,
-		"name":            factory.Name,
-		"description":     factory.Description,
-		"created_by_user": factory.CreatedByUser,
-		"creation_date":   factory.CreationDate,
-		"stations":        stations,
-		"user_avatar_id":  user.AvatarId,
-	})
+	c.IndentedJSON(200, factory)
 }
 
-func (umh FactoriesHandler) GetAllFactories(c *gin.Context) {
-	type extendedFactory struct {
-		ID            primitive.ObjectID `json:"id" bson:"_id"`
-		Name          string             `json:"name" bson:"name"`
-		Description   string             `json:"description" bson:"description"`
-		CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-		CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-		UserAvatarId  int                `json:"user_avatar_id" bson:"user_avatar_id"`
-	}
-
-	var factories []extendedFactory
+func (fh FactoriesHandler) GetAllFactoriesDetails() ([]models.ExtendedFactory, error) {
+	var factories []models.ExtendedFactory
 	cursor, err := factoriesCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "user"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$user"}, {"preserveNullAndEmptyArrays", true}}}},
@@ -199,25 +196,32 @@ func (umh FactoriesHandler) GetAllFactories(c *gin.Context) {
 	})
 
 	if err != nil {
-		logger.Error("GetAllFactories error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return factories, err
 	}
 
 	if err = cursor.All(context.TODO(), &factories); err != nil {
+		return factories, err
+	}
+
+	if len(factories) == 0 {
+		return []models.ExtendedFactory{}, nil
+	}
+
+	return factories, nil
+}
+
+func (fh FactoriesHandler) GetAllFactories(c *gin.Context) {
+	factories, err := fh.GetAllFactoriesDetails()
+	if err != nil {
 		logger.Error("GetAllFactories error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if len(factories) == 0 {
-		c.IndentedJSON(200, []string{})
-	} else {
-		c.IndentedJSON(200, factories)
-	}
+	c.IndentedJSON(200, factories)
 }
 
-func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
+func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	var body models.RemoveFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -232,6 +236,7 @@ func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Factory does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	}
@@ -250,11 +255,11 @@ func (umh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 
-	logger.Info("Factory " + factoryName + " has been created")
+	logger.Info("Factory " + factoryName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh FactoriesHandler) EditFactory(c *gin.Context) {
+func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 	var body models.EditFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -269,6 +274,7 @@ func (umh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Factory with that name does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name does not exist"})
 		return
 	}
@@ -281,6 +287,7 @@ func (umh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("Factory with that name already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name already exist"})
 		return
 	}
