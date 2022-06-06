@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -16,10 +16,12 @@ package handlers
 import (
 	"context"
 	"errors"
+
 	"memphis-control-plane/broker"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
 	"memphis-control-plane/utils"
+
 	"regexp"
 	"strings"
 	"time"
@@ -31,17 +33,6 @@ import (
 )
 
 type ConsumersHandler struct{}
-
-type extendedConsumer struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	StationName   string             `json:"station_name" bson:"station_name"`
-	FactoryName   string             `json:"factory_name" bson:"factory_name"`
-}
 
 func validateName(name string) error {
 	re := regexp.MustCompile("^[a-z_]*$")
@@ -84,7 +75,7 @@ func isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup string, stationI
 	return true, nil
 }
 
-func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
+func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	var body models.CreateConsumerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -94,7 +85,8 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateName(name)
 	if err != nil {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		logger.Warn(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message ": err.Error()})
 		return
 	}
 
@@ -102,6 +94,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
 		if err != nil {
+			logger.Warn(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -110,12 +103,14 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	consumerType := strings.ToLower(body.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
+		logger.Warn("Connection id is not valid")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
@@ -126,10 +121,12 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Connection id was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
+		logger.Warn("Connection is not active")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
@@ -144,7 +141,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if !exist {
 		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
 		if err != nil {
-			logger.Error("CreateProducer error: " + err.Error())
+			logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -157,6 +154,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("Consumer name has to be unique in a station level")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Consumer name has to be unique in a station level"})
 		return
 	}
@@ -170,6 +168,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 			return
 		}
 		if exist {
+			logger.Warn("You can not give your consumer group the same name like another active consumer on the same station")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer group the same name like another active consumer on the same station"})
 			return
 		}
@@ -188,6 +187,7 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 			return
 		}
 		if exist {
+			logger.Warn("You can not give your consumer the same name like another active consumer group name on the same station")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer the same name like another active consumer group name on the same station"})
 			return
 		}
@@ -223,15 +223,30 @@ func (umh ConsumersHandler) CreateConsumer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	logger.Info("Consumer " + name + " has been created")
+	user := getUserDetailsFromMiddleware(c)
+	message := "Consumer " + name + " has been created"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateConsumer error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
 }
 
-func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {
-	var consumers []extendedConsumer
+func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
+	var consumers []models.ExtendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -261,7 +276,35 @@ func (umh ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
+func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]models.ExtendedConsumer, error) { // for socket io endpoint
+	var consumers []models.ExtendedConsumer
+
+	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+	})
+
+	if err != nil {
+		return consumers, err
+	}
+
+	if err = cursor.All(context.TODO(), &consumers); err != nil {
+		return consumers, err
+	}
+
+	if len(consumers) == 0 {
+		consumers = []models.ExtendedConsumer{}
+	}
+
+	return consumers, nil
+}
+
+func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint
 	var body models.GetAllConsumersByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -274,11 +317,12 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
-	var consumers []extendedConsumer
+	var consumers []models.ExtendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -308,7 +352,7 @@ func (umh ConsumersHandler) GetAllConsumersByStation(c *gin.Context) {
 	}
 }
 
-func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
+func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	var body models.DestroyConsumerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -330,6 +374,7 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		bson.M{"$set": bson.M{"is_active": false}},
 	).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
+		logger.Warn("A consumer with the given details was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A consumer with the given details was not found"})
 		return
 	}
@@ -371,42 +416,82 @@ func (umh ConsumersHandler) DestroyConsumer(c *gin.Context) {
 			}
 		}
 	}
-
-	logger.Info("Consumer " + name + " has been deleted")
+	user := getUserDetailsFromMiddleware(c)
+	message := "Consumer " + name + " has been deleted"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("DestroyConsumer error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh ConsumersHandler) GetAllConsumersByConnection(connectionId primitive.ObjectID) ([]models.Consumer, error) {
+func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
 	var consumers []models.Consumer
+	var station models.Station
 
-	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId})
+	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		logger.Error("GetAllConsumersByConnection error: " + err.Error())
-		return consumers, err
+		logger.Warn("KillConsumers error: " + err.Error())
 	}
-
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		logger.Error("GetAllConsumersByConnection error: " + err.Error())
-		return consumers, err
+		logger.Warn("KillConsumers error: " + err.Error())
 	}
 
-	return consumers, nil
-}
+	if len(consumers) > 0 {
+		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
+		if err != nil {
+			logger.Warn("KillConsumers error: " + err.Error())
+		}
+		_, err = consumersCollection.UpdateMany(context.TODO(),
+			bson.M{"connection_id": connectionId},
+			bson.M{"$set": bson.M{"is_active": false}},
+		)
+		if err != nil {
+			logger.Error("KillConsumers error: " + err.Error())
+			return err
+		}
 
-func (umh ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		logger.Error("KillConsumers error: " + err.Error())
-		return err
+		userType := "application"
+		if consumers[0].CreatedByUser == "root" {
+			userType = "root"
+		}
+
+		var message string
+		var auditLogs []interface{}
+		var newAuditLog models.AuditLog
+		for _, consumer := range consumers {
+			message = "Consumer " + consumer.Name + " has been disconnected"
+			newAuditLog = models.AuditLog{
+				ID:            primitive.NewObjectID(),
+				StationName:   station.Name,
+				Message:       message,
+				CreatedByUser: consumers[0].CreatedByUser,
+				CreationDate:  time.Now(),
+				UserType:      userType,
+			}
+			auditLogs = append(auditLogs, newAuditLog)
+		}
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			logger.Warn("KillConsumers error: " + err.Error())
+		}
 	}
 
 	return nil
 }
 
-func (umh ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {
+func (ch ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {
 	_, err := consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": true}},

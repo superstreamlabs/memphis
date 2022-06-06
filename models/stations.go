@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -45,6 +45,23 @@ type Station struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
+}
+
+type ExtendedStation struct {
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
+	Name            string             `json:"name" bson:"name"`
+	FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
+	RetentionType   string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
+	StorageType     string             `json:"storage_type" bson:"storage_type"`
+	Replicas        int                `json:"replicas" bson:"replicas"`
+	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
+	DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
+	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
+	Functions       []Function         `json:"functions" bson:"functions"`
+	FactoryName     string             `json:"factory_name" bson:"factory_name"`
 }
 
 type GetStationSchema struct {

@@ -1,23 +1,25 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package background_tasks
 
 import (
 	"context"
+	"memphis-control-plane/config"
 	"memphis-control-plane/db"
 	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
+	"strconv"
 	"sync"
 	"time"
 
@@ -26,9 +28,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+var configuration = config.GetConfig()
+
 var connectionsCollection *mongo.Collection = db.GetCollection("connections")
 var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
+var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 func killRelevantConnections() ([]models.Connection, error) {
 	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
@@ -88,11 +93,26 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 	return nil
 }
 
-func KillZombieConnections(wg *sync.WaitGroup) {
+func removeOldLogs() error {
+	retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
+	if err != nil {
+		return err
+	}
+	retentionDaysToHours := 24 * retentionToInt
+	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(retentionDaysToHours))))}}
+	_, err = sysLogsCollection.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func KillZombieResources(wg *sync.WaitGroup) {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
 		if err != nil {
-			logger.Error("KillZombieConnections error: " + err.Error())
+			logger.Error("KillZombieResources error: " + err.Error())
 		} else if len(connections) > 0 {
 			var connectionIds []primitive.ObjectID
 			for _, con := range connections {
@@ -101,13 +121,17 @@ func KillZombieConnections(wg *sync.WaitGroup) {
 
 			err = killProducersByConnections(connectionIds)
 			if err != nil {
-				logger.Error("KillZombieConnections error: " + err.Error())
+				logger.Error("KillZombieResources error: " + err.Error())
 			}
 
 			err = killConsumersByConnections(connectionIds)
 			if err != nil {
-				logger.Error("KillZombieConnections error: " + err.Error())
+				logger.Error("KillZombieResources error: " + err.Error())
 			}
+		}
+		err = removeOldLogs()
+		if err != nil {
+			logger.Error("KillZombieResources error: " + err.Error())
 		}
 	}
 

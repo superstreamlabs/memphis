@@ -19,10 +19,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Connection struct {
+type AuditLog struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id"`
+	StationName   string             `json:"station_name" bson:"station_name"`
+	Message       string             `json:"message" bson:"message"`
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
+	UserType      string             `json:"user_type" bson:"user_type"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	LastPing      time.Time          `json:"last_ping" bson:"last_ping"`
+}
+
+type GetAllAuditLogsByStationSchema struct {
+	StationName string `form:"station_name" binding:"required"`
 }

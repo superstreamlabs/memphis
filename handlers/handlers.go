@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -36,6 +36,7 @@ var connectionsCollection *mongo.Collection = db.GetCollection("connections")
 var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 var systemKeysCollection *mongo.Collection = db.GetCollection("system_keys")
+var auditLogsCollection *mongo.Collection = db.GetCollection("audit_logs")
 var configuration = config.GetConfig()
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
@@ -117,7 +118,7 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 
 func CreateDefaultStation(stationName string, username string) (models.Station, error) {
 	var newStation models.Station
-	
+
 	// create default factory
 	var factoryId primitive.ObjectID
 	exist, factory, err := IsFactoryExist("melvis")

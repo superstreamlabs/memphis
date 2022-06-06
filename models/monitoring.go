@@ -13,16 +13,8 @@
 
 package models
 
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
-type Connection struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	LastPing      time.Time          `json:"last_ping" bson:"last_ping"`
+type SystemComponent struct {
+	Component   string `json:"component"`
+	DesiredPods int    `json:"desired_pods"`
+	ActualPods  int    `json:"actual_pods"`
 }

@@ -1,12 +1,12 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the GNU General Public License v3.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.gnu.org/licenses/gpl-3.0.en.html
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an “AS IS” BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -31,17 +31,6 @@ import (
 
 type ProducersHandler struct{}
 
-type extendedProducer struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	StationName   string             `json:"station_name" bson:"station_name"`
-	FactoryName   string             `json:"factory_name" bson:"factory_name"`
-}
-
 func validateProducerName(name string) error {
 	re := regexp.MustCompile("^[a-z_]*$")
 
@@ -59,7 +48,7 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (umh ProducersHandler) CreateProducer(c *gin.Context) {
+func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	var body models.CreateProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -69,6 +58,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateProducerName(name)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -76,12 +66,14 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 	producerType := strings.ToLower(body.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
+		logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
+		logger.Warn("Connection id is not valid")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
@@ -92,10 +84,12 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Connection id was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
+		logger.Warn("Connection is not active")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
@@ -123,6 +117,7 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if exist {
+		logger.Warn("Producer name has to be unique in a station level")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Producer name has to be unique in a station level"})
 		return
 	}
@@ -146,15 +141,31 @@ func (umh ProducersHandler) CreateProducer(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	user := getUserDetailsFromMiddleware(c)
 
-	logger.Info("Producer " + name + " has been created")
+	message := "Producer " + name + " has been created"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("CreateProducer error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{
 		"producer_id": producerId,
 	})
 }
 
-func (umh ProducersHandler) GetAllProducers(c *gin.Context) {
-	var producers []extendedProducer
+func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
+	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -184,7 +195,35 @@ func (umh ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, error) { // for socket io endpoint
+	var producers []models.ExtendedProducer
+
+	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+	})
+
+	if err != nil {
+		return producers, err
+	}
+
+	if err = cursor.All(context.TODO(), &producers); err != nil {
+		return producers, err
+	}
+
+	if len(producers) == 0 {
+		producers = []models.ExtendedProducer{}
+	}
+
+	return producers, nil
+}
+
+func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint
 	var body models.GetAllProducersByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -197,11 +236,12 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
+		logger.Warn("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
-	var producers []extendedProducer
+	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
@@ -231,7 +271,7 @@ func (umh ProducersHandler) GetAllProducersByStation(c *gin.Context) {
 	}
 }
 
-func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
+func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	var body models.DestroyProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -258,45 +298,87 @@ func (umh ProducersHandler) DestroyProducer(c *gin.Context) {
 		return
 	}
 	if err == mongo.ErrNoDocuments {
+		logger.Warn("A producer with the given details was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A producer with the given details was not found"})
 		return
 	}
-
-	logger.Info("Producer " + name + " has been deleted")
+	user := getUserDetailsFromMiddleware(c)
+	message := "Producer " + name + " has been deleted"
+	logger.Info(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		logger.Warn("DestroyProducer error: " + err.Error())
+	}
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh ProducersHandler) GetAllProducersByConnection(connectionId primitive.ObjectID) ([]models.Producer, error) {
+func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
 	var producers []models.Producer
+	var station models.Station
 
-	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId})
+	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		logger.Error("GetAllProducersByConnection error: " + err.Error())
-		return producers, err
+		logger.Warn("KillProducers error: " + err.Error())
 	}
-
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		logger.Error("GetAllProducersByConnection error: " + err.Error())
-		return producers, err
+		logger.Warn("KillProducers error: " + err.Error())
 	}
 
-	return producers, nil
-}
+	if len(producers) > 0 {
+		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
+		if err != nil {
+			logger.Warn("KillProducers error: " + err.Error())
+		}
 
-func (umh ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
-	_, err := producersCollection.UpdateOne(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		logger.Error("KillProducers error: " + err.Error())
-		return err
+		_, err = producersCollection.UpdateMany(context.TODO(),
+			bson.M{"connection_id": connectionId},
+			bson.M{"$set": bson.M{"is_active": false}},
+		)
+		if err != nil {
+			logger.Error("KillProducers error: " + err.Error())
+			return err
+		}
+
+		userType := "application"
+		if producers[0].CreatedByUser == "root" {
+			userType = "root"
+		}
+
+		var message string
+		var auditLogs []interface{}
+		var newAuditLog models.AuditLog
+		for _, producer := range producers {
+			message = "Producer " + producer.Name + " has been disconnected"
+			newAuditLog = models.AuditLog{
+				ID:            primitive.NewObjectID(),
+				StationName:   station.Name,
+				Message:       message,
+				CreatedByUser: producers[0].CreatedByUser,
+				CreationDate:  time.Now(),
+				UserType:      userType,
+			}
+			auditLogs = append(auditLogs, newAuditLog)
+		}
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			logger.Warn("KillProducers error: " + err.Error())
+		}
 	}
 
 	return nil
 }
 
-func (umh ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
+func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": true}},
