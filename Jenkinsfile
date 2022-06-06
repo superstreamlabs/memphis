@@ -57,6 +57,7 @@ node {
 
     stage('Tests - Remove Docker compose') {
       sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
+      sh "docker volume prune -f"
     }
 
     ////////////////////////////////////////
@@ -98,7 +99,7 @@ node {
     ////////////////////////////////////////
 
     stage('Build and push image to Docker Hub') {
-      sh "docker buildx build --push ---tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+      sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
     }
 
     ////////////////////////////////////////
