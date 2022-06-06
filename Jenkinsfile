@@ -1,31 +1,35 @@
-def imageName = "memphis-control-plane-staging"
-def containerName = "memphis-control-plane"
-def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
-def gitBranch = "staging"
 def repoUrlPrefix = "memphisos"
+def imageName = "memphis-control-plane"
+def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
+def gitBranch = "beta"
+def branchTag = "beta"
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
 def namespace = "memphis"
 def test_suffix = "test"
+//def DOCKER_HUB_CREDS = credentials('docker-hub')
+
+
 
 node {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
-  def versionTag = readFile "./version.conf"
-  
+  def versionTag = readFile "./version.conf"	
+	
   try{
-	  
+
+
     stage('Login to Docker Hub') {
 	    withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_CREDS_USR', passwordVariable: 'DOCKER_HUB_CREDS_PSW')]) {
 		  sh 'docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW'
 	    }
     }
-	  
+
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
       //sh "sleep 40"
     }
 
     stage('Build and push docker image to Docker Hub') {
-      sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
+	    sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${branchTag}-${test_suffix} ."
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
@@ -33,6 +37,7 @@ node {
       sh "sudo npm i memphis-dev-cli -g"
     }
 
+    
     ////////////////////////////////////////
     //////////// Docker-Compose ////////////
     ////////////////////////////////////////
@@ -40,7 +45,7 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-infra"
       sh "git clone git@github.com:Memphis-OS/memphis-infra.git"
-      sh "docker-compose -f ./memphis-infra/staging/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-infra/beta/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -51,7 +56,7 @@ node {
     }
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-infra/staging/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
+      sh "docker-compose -f ./memphis-infra/beta/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
     }
 
     ////////////////////////////////////////
@@ -59,7 +64,7 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "helm install memphis-tests memphis-infra/staging/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      sh "helm install memphis-tests memphis-infra/beta/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
       sh 'sleep 40'
     }
 
@@ -71,36 +76,54 @@ node {
     }
 
     stage('Tests - Run e2e tests over kubernetes') {
-      sh "npm install --prefix ./memphis-e2e-tests"
+      //sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id"
     }
 
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
       sh "kubectl delete ns memphis-$unique_id &"
+      sh "lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh"
     }
 
     stage('Tests - Remove used directories') {
+      sh "rm -rf memphis-infra"
+      //sh "rm -rf memphis-e2e-tests"
+    }
+
+
+    ////////////////////////////////////////
+    ////////////  Build & Push  ////////////
+    ////////////////////////////////////////
+
+    stage('Build and push image to Docker Hub') {
+      sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
+    }
+
+    ////////////////////////////////////////
+    //////////// Test BETA Repo ////////////
+    ////////////////////////////////////////
+
+    stage('Tests - Docker compose install') {
+      sh "rm -rf memphis-docker"
+      sh "git clone git@github.com:Memphis-OS/memphis-docker.git"
+      sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis up -d"
+    }
+
+    stage('Tests - Run e2e tests over Docker') {
+      //sh "npm install --prefix ./memphis-e2e-tests"
+      sh "node ./memphis-e2e-tests/index.js docker"
+    }
+
+    stage('Tests - Remove Docker compose') {
+      sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis down"
+      sh "rm -rf memphis-docker"
       sh "rm -rf memphis-e2e-tests"
     }
 
-    stage('Build and push image to Docker Hub') {
-      sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
-    }
-
-    stage('Push to staging'){
-      sh "helm uninstall my-memphis --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml -n memphis"
-      sh 'helm install my-memphis memphis-infra/staging/kubernetes/helm/memphis --set analytics="false" --kubeconfig /var/lib/jenkins/.kube/memphis-staging-kubeconfig.yaml --create-namespace --namespace memphis'
-      sh "rm -rf memphis-infra"
-    }
-
-    /*stage('Build docker image and push with latest tag') {
-	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm64 ."
-    }*/
-    
     notifySuccessful()
-	  
-  } catch (e) {
+
+ } catch (e) {
       currentBuild.result = "FAILED"
       sh "kubectl delete ns memphis-$unique_id &"
       cleanWs()
