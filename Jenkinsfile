@@ -25,6 +25,7 @@ node {
 
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
+      sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
       //sh "sleep 40"
     }
 
@@ -131,7 +132,6 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
       sh "rm -rf memphis-k8s"
       sh "git clone git@github.com:Memphis-OS/memphis-k8s.git"
       sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false' --create-namespace --namespace memphis"
