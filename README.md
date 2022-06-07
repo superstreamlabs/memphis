@@ -45,7 +45,6 @@ docker compose -f docker-compose.yml -p memphis up
 [An event-driven demo app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
 # High-Level Architecture
-![]( "Architecture")
 <img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/Architecture.png">
 
 # Local access
@@ -82,7 +81,7 @@ Read more on https://memphis.dev/docs
 
 ## Ask a question about Memphis{dev} or related
 
-You can ask questions, and participate in discussions about Amplication-related topics in the Amplication Discord channel.
+You can ask questions, and participate in discussions about Memphis{dev}-related topics in the Memphis Discord channel.
 
 <a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg" /></a>
 
@@ -93,7 +92,19 @@ If you see an error message or run into an issue, please [create bug report](htt
 
 ## Submit a feature request
 
-If you have an idea, or you're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request&template=feature_request.md&title=).
+If you have an idea, or you're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
 
 If a similar feature request already exists, don't forget to leave a "+1".
 If you add some more information such as your thoughts and vision about the feature, your comments will be embraced warmly :)
+
+# Contributing
+
+Memphis{dev} is an open-source project.<br>
+We are committed to a fully transparent development process and appreciate highly any contributions.<br>
+Whether you are helping us fix bugs, proposing new features, improving our documentation or spreading the word - <br>we would love to have you as part of the Memphis{dev} community.
+
+Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./code_of_conduct.md).
+
+# Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
