@@ -52,7 +52,7 @@ node {
 
     stage('Tests - Remove Docker compose') {
       sh "docker-compose -f ./memphis-infra/staging/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
-      sh "docker system prune -f"
+      sh "docker volume prune -f"
     }
 
     ////////////////////////////////////////
