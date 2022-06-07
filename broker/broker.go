@@ -293,7 +293,6 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 		metadata, _ := msg.Metadata()
 		messages = append(messages, models.Message{
 			Message:      string(msg.Data),
-			Size:         int64(len(msg.Data)),
 			ProducedBy:   msg.Header.Get("producedBy"),
 			CreationDate: metadata.Timestamp,
 		})

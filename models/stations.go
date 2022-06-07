@@ -33,7 +33,6 @@ type Function struct {
 
 type Message struct {
 	Message      string    `json:"message"`
-	Size         int64     `json:"size"`
 	ProducedBy   string    `json:"produced_by"`
 	CreationDate time.Time `json:"creation_date"`
 }
