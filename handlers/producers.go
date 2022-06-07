@@ -16,6 +16,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"memphis-broker/analytics"
 	"memphis-broker/logger"
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -159,6 +160,12 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	if err != nil {
 		logger.Warn("CreateProducer error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementProducersCounter()
+	}
+
 	c.IndentedJSON(200, gin.H{
 		"producer_id": producerId,
 	})

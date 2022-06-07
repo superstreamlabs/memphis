@@ -16,6 +16,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"memphis-broker/analytics"
 	"memphis-broker/broker"
 	"memphis-broker/logger"
 	"memphis-broker/models"
@@ -269,6 +270,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if err != nil {
 		logger.Warn("CreateStation error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementStationsCounter()
+	}
+
 	c.IndentedJSON(200, newStation)
 }
 

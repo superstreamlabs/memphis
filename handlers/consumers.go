@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 
+	"memphis-broker/analytics"
 	"memphis-broker/broker"
 	"memphis-broker/logger"
 	"memphis-broker/models"
@@ -240,6 +241,12 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if err != nil {
 		logger.Warn("CreateConsumer error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementConsumersCounter()
+	}
+
 	c.IndentedJSON(200, gin.H{
 		"consumer_id": consumerId,
 	})
