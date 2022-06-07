@@ -17,10 +17,10 @@ import (
 	"context"
 	"errors"
 
-	"memphis-control-plane/broker"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/utils"
+	"memphis-broker/broker"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/utils"
 
 	"regexp"
 	"strings"

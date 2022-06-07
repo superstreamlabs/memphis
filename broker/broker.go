@@ -14,8 +14,8 @@
 package broker
 
 import (
-	"memphis-control-plane/config"
-	"memphis-control-plane/models"
+	"memphis-broker/config"
+	"memphis-broker/models"
 
 	"errors"
 	"log"

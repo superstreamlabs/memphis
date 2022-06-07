@@ -14,9 +14,9 @@
 package routes
 
 import (
-	"memphis-control-plane/logger"
-	"memphis-control-plane/middlewares"
-	"memphis-control-plane/utils"
+	"memphis-broker/logger"
+	"memphis-broker/middlewares"
+	"memphis-broker/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

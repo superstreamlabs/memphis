@@ -16,8 +16,8 @@ package utils
 import (
 	"fmt"
 
-	"memphis-control-plane/config"
-	"memphis-control-plane/logger"
+	"memphis-broker/config"
+	"memphis-broker/logger"
 
 	"mime/multipart"
 	"path/filepath"

@@ -14,7 +14,7 @@
 package db
 
 import (
-	"memphis-control-plane/config"
+	"memphis-broker/config"
 
 	"context"
 	"log"

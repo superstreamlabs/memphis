@@ -14,10 +14,10 @@
 package socketio
 
 import (
-	"memphis-control-plane/handlers"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/middlewares"
-	"memphis-control-plane/models"
+	"memphis-broker/handlers"
+	"memphis-broker/logger"
+	"memphis-broker/middlewares"
+	"memphis-broker/models"
 
 	"errors"
 	"net/http"
@@ -100,7 +100,7 @@ func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]int
 	factoryName = strings.ToLower(factoryName)
 	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
 	if err != nil {
-		if s != nil && err.Error() == "mongo: no documents in result"  {
+		if s != nil && err.Error() == "mongo: no documents in result" {
 			s.Emit("error", "Factory does not exist")
 		}
 		return factory, err

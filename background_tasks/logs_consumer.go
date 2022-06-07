@@ -15,11 +15,11 @@ package background_tasks
 
 import (
 	"encoding/json"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/handlers"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/socketio"
+	"memphis-broker/broker"
+	"memphis-broker/handlers"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/socketio"
 	"strings"
 	"sync"
 	"time"

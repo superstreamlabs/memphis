@@ -14,8 +14,8 @@
 package logger
 
 import (
-	"memphis-control-plane/broker"
-	"memphis-control-plane/models"
+	"memphis-broker/broker"
+	"memphis-broker/models"
 	"time"
 
 	"log"

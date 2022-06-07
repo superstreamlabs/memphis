@@ -16,9 +16,9 @@ package handlers
 import (
 	"context"
 	"errors"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/utils"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/utils"
 	"regexp"
 	"strings"
 	"time"

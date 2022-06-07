@@ -15,9 +15,9 @@ package analytics
 
 import (
 	"context"
-	"memphis-control-plane/config"
-	"memphis-control-plane/db"
-	"memphis-control-plane/models"
+	"memphis-broker/config"
+	"memphis-broker/db"
+	"memphis-broker/models"
 
 	"github.com/lightstep/otel-launcher-go/launcher"
 	"go.mongodb.org/mongo-driver/bson"

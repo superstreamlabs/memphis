@@ -14,14 +14,14 @@
 package main
 
 import (
-	"memphis-control-plane/analytics"
-	"memphis-control-plane/background_tasks"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/db"
-	"memphis-control-plane/handlers"
-	"memphis-control-plane/http_server"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/tcp_server"
+	"memphis-broker/analytics"
+	"memphis-broker/background_tasks"
+	"memphis-broker/broker"
+	"memphis-broker/db"
+	"memphis-broker/handlers"
+	"memphis-broker/http_server"
+	"memphis-broker/logger"
+	"memphis-broker/tcp_server"
 	"os"
 	"sync"
 )
@@ -56,7 +56,7 @@ func main() {
 		env = "K8S"
 	}
 
-	logger.Info("Memphis control plane is up and running, ENV: " + env)
+	logger.Info("Memphis broker is up and running, ENV: " + env)
 	wg.Wait()
 }
 

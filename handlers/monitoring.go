@@ -16,15 +16,16 @@ package handlers
 import (
 	"context"
 	"flag"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/db"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
+	"memphis-broker/broker"
+	"memphis-broker/db"
+	"memphis-broker/logger"
+	"memphis-broker/models"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
