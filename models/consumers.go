@@ -34,14 +34,15 @@ type Consumer struct {
 }
 
 type ExtendedConsumer struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	StationName   string             `json:"station_name" bson:"station_name"`
-	FactoryName   string             `json:"factory_name" bson:"factory_name"`
+	ID             primitive.ObjectID `json:"id" bson:"_id"`
+	Name           string             `json:"name" bson:"name"`
+	ConsumersGroup string             `json:"consumers_group"`
+	Type           string             `json:"type" bson:"type"`
+	ConnectionId   primitive.ObjectID `json:"connection_id" bson:"connection_id"`
+	CreatedByUser  string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate   time.Time          `json:"creation_date" bson:"creation_date"`
+	StationName    string             `json:"station_name" bson:"station_name"`
+	FactoryName    string             `json:"factory_name" bson:"factory_name"`
 }
 
 type GetAllConsumersByStationSchema struct {

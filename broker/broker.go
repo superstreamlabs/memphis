@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 )
@@ -259,7 +260,6 @@ func GetTotalMessagesAcrossAllStations() (int, error) {
 }
 
 func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
-	memphisExtraBytesPerMessage := 116
 	streamInfo, err := js.StreamInfo(station.Name)
 	if err != nil {
 		return 0, getErrorWithoutNats(err)
@@ -269,7 +269,43 @@ func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, nil
 	}
 
-	return int64(streamInfo.State.Bytes/streamInfo.State.Msgs) - int64(memphisExtraBytesPerMessage), nil
+	return int64(streamInfo.State.Bytes/streamInfo.State.Msgs), nil
+}
+
+func GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
+	streamInfo, err := js.StreamInfo(station.Name)
+	if err != nil {
+		return []models.Message{}, getErrorWithoutNats(err)
+	}
+	totalMessages := streamInfo.State.Msgs
+
+	var startSequence uint64 = 1
+	if totalMessages > uint64(messagesToFetch) {
+		startSequence = totalMessages - uint64(messagesToFetch) + 1
+	}
+
+	uid, _ := uuid.NewV4()
+	durableName := "$memphis_fetch_messages_consumer" + uid.String()
+	sub, err := js.PullSubscribe(station.Name+".final", durableName, nats.StartSequence(startSequence))
+	msgs, _ := sub.Fetch(messagesToFetch, nats.MaxWait(3*time.Second))
+	var messages []models.Message
+	for _, msg := range msgs {
+		metadata, _ := msg.Metadata()
+		messages = append(messages, models.Message{
+			Message:      string(msg.Data),
+			Size:         int64(len(msg.Data)),
+			ProducedBy:   msg.Header.Get("producedBy"),
+			CreationDate: metadata.Timestamp,
+		})
+		msg.Ack()
+	}
+
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old
+		messages[i], messages[j] = messages[j], messages[i]
+	}
+
+	js.DeleteConsumer(station.Name, durableName)
+	return messages, nil
 }
 
 func RemoveProducer() error {

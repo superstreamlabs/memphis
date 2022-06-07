@@ -73,7 +73,11 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		_, err := http.Get("http://localhost:9000")
+		uiAddress := "http://ui"
+		if configuration.DEV_ENV != "" {
+			uiAddress = "http://localhost:9000"
+		}
+		_, err := http.Get(uiAddress)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "ui",

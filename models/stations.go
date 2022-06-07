@@ -31,6 +31,13 @@ type Function struct {
 	FunctionParams []FunctionParam    `json:"function_params" bson:"function_params"`
 }
 
+type Message struct {
+	Message      string    `json:"message"`
+	Size         int64     `json:"size"`
+	ProducedBy   string    `json:"produced_by"`
+	CreationDate time.Time `json:"creation_date"`
+}
+
 type Station struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
