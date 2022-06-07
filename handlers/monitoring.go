@@ -118,7 +118,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		components = append(components, models.SystemComponent{
-			Component:   "control-plane",
+			Component:   "broker",
 			DesiredPods: 1,
 			ActualPods:  1,
 		})
