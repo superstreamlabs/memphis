@@ -30,7 +30,7 @@
 - Ready-to-use connectors and analysis functions
 
 # Getting Started
-[Installation Videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
+[Watch this installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 Helm for Kubernetes
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ && \
