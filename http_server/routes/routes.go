@@ -14,9 +14,9 @@
 package routes
 
 import (
-	"memphis-control-plane/logger"
-	"memphis-control-plane/middlewares"
-	"memphis-control-plane/utils"
+	"memphis-broker/logger"
+	"memphis-broker/middlewares"
+	"memphis-broker/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -54,6 +54,7 @@ func InitializeHttpRoutes() *gin.Engine {
 	InitializeProducersRoutes(mainRouter)
 	InitializeConsumersRoutes(mainRouter)
 	InitializeMonitoringRoutes(mainRouter)
+	InitializeSysLogsRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",

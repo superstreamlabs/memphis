@@ -15,9 +15,9 @@ package analytics
 
 import (
 	"context"
-	"memphis-control-plane/config"
-	"memphis-control-plane/db"
-	"memphis-control-plane/models"
+	"memphis-broker/config"
+	"memphis-broker/db"
+	"memphis-broker/models"
 
 	"github.com/lightstep/otel-launcher-go/launcher"
 	"go.mongodb.org/mongo-driver/bson"
@@ -33,6 +33,9 @@ var systemKeysCollection = db.GetCollection("system_keys")
 var ls launcher.Launcher
 var loginsCounter metric.Int64Counter
 var installationsCounter metric.Int64Counter
+var stationsCounter metric.Int64Counter
+var producersCounter metric.Int64Counter
+var consumersCounter metric.Int64Counter
 var deploymentId string
 var analyticsFlag string
 
@@ -112,6 +115,24 @@ func InitializeAnalytics() error {
 			metric.WithUnit("0"),
 			metric.WithDescription("Counting the number of logins to Memphis"),
 		)
+
+		stationsCounter, err = Meter.NewInt64Counter(
+			"Stations",
+			metric.WithUnit("0"),
+			metric.WithDescription("Counting the number of stations"),
+		)
+
+		producersCounter, err = Meter.NewInt64Counter(
+			"Producers",
+			metric.WithUnit("0"),
+			metric.WithDescription("Counting the number of producers"),
+		)
+
+		consumersCounter, err = Meter.NewInt64Counter(
+			"Consumers",
+			metric.WithUnit("0"),
+			metric.WithDescription("Counting the number of consumers"),
+		)
 	}
 
 	return nil
@@ -123,6 +144,18 @@ func IncrementInstallationsCounter() {
 
 func IncrementLoginsCounter() {
 	loginsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+}
+
+func IncrementStationsCounter() {
+	stationsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+}
+
+func IncrementProducersCounter() {
+	producersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+}
+
+func IncrementConsumersCounter() {
+	consumersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
 }
 
 func Close() {

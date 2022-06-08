@@ -15,11 +15,11 @@ package background_tasks
 
 import (
 	"encoding/json"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/handlers"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/socketio"
+	"memphis-broker/broker"
+	"memphis-broker/handlers"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/socketio"
 	"strings"
 	"sync"
 	"time"
@@ -37,7 +37,7 @@ func ConsumeSysLogs(wg *sync.WaitGroup) {
 		panic("Failed creating sys log subscriber: " + err.Error())
 	}
 
-	for range time.Tick(time.Second * 5) {
+	for range time.Tick(time.Second * 30) {
 		msgs, err := sub.Fetch(1000, nats.MaxWait(10*time.Second))
 
 		if err != nil && !strings.Contains(err.Error(), "timeout") { // when subscriber done waiting and got no messages, we ignore timeout error

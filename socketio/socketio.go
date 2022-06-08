@@ -14,10 +14,10 @@
 package socketio
 
 import (
-	"memphis-control-plane/handlers"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/middlewares"
-	"memphis-control-plane/models"
+	"memphis-broker/handlers"
+	"memphis-broker/logger"
+	"memphis-broker/middlewares"
+	"memphis-broker/models"
 
 	"errors"
 	"net/http"
@@ -53,6 +53,7 @@ type stationOverviewData struct {
 	TotalMessages int                       `json:"total_messages"`
 	AvgMsgSize    int64                     `json:"average_message_size"`
 	AuditLogs     []models.AuditLog         `json:"audit_logs"`
+	Messages      []models.Message          `json:"messages"`
 }
 
 type factoryOverviewData struct {
@@ -100,7 +101,7 @@ func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]int
 	factoryName = strings.ToLower(factoryName)
 	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
 	if err != nil {
-		if s != nil && err.Error() == "mongo: no documents in result"  {
+		if s != nil && err.Error() == "mongo: no documents in result" {
 			s.Emit("error", "Factory does not exist")
 		}
 		return factory, err
@@ -143,7 +144,11 @@ func getStationOverviewData(stationName string, s socketio.Conn) (stationOvervie
 		return stationOverviewData{}, err
 	}
 
-	// get messages
+	messagesToFetch := 50
+	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
+	if err != nil {
+		return stationOverviewData{}, err
+	}
 
 	return stationOverviewData{
 		Producers:     producers,
@@ -151,6 +156,7 @@ func getStationOverviewData(stationName string, s socketio.Conn) (stationOvervie
 		TotalMessages: totalMessages,
 		AvgMsgSize:    avgMsgSize,
 		AuditLogs:     auditLogs,
+		Messages:      messages,
 	}, nil
 }
 
@@ -235,14 +241,13 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/api", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		hours := 24
-		logs, err := sysLogsHandler.GetSysLogs(hours)
-		if err != nil {
-			logger.Error("Failed to fetch sys logs")
-		} else {
-			s.Emit("system_logs_data", logs)
-			s.Join("system_logs_group")
-		}
+		// hours := 24
+		// logs, err := sysLogsHandler.GetSysLogs(hours)
+		// if err != nil {
+		// 	logger.Error("Failed to fetch sys logs")
+		// } else {
+		s.Emit("system_logs_data")
+		s.Join("system_logs_group")
 
 		return "recv " + msg
 	})

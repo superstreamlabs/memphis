@@ -14,8 +14,8 @@
 package handlers
 
 import (
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
+	"memphis-broker/logger"
+	"memphis-broker/models"
 
 	"context"
 	"errors"

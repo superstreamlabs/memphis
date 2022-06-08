@@ -29,6 +29,10 @@ type SysLog struct {
 	Component    string             `json:"component" bson:"component"`
 }
 
+type GetSysLogsSchema struct {
+	Hours string `form:"hours" json:"hours"  binding:"required"`
+}
+
 func (sl SysLog) ToBytes() []byte {
 	bytesLog := new(bytes.Buffer)
 	json.NewEncoder(bytesLog).Encode(sl)
