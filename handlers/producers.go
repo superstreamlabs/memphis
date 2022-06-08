@@ -16,9 +16,10 @@ package handlers
 import (
 	"context"
 	"errors"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/utils"
+	"memphis-broker/analytics"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/utils"
 	"regexp"
 	"strings"
 	"time"
@@ -159,6 +160,12 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	if err != nil {
 		logger.Warn("CreateProducer error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementProducersCounter()
+	}
+
 	c.IndentedJSON(200, gin.H{
 		"producer_id": producerId,
 	})

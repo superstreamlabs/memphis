@@ -16,7 +16,7 @@ package handlers
 import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
-	"memphis-control-plane/models"
+	"memphis-broker/models"
 	"time"
 )
 

@@ -16,10 +16,11 @@ package handlers
 import (
 	"context"
 	"errors"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/utils"
+	"memphis-broker/analytics"
+	"memphis-broker/broker"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/utils"
 	"regexp"
 	"strings"
 	"time"
@@ -269,6 +270,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if err != nil {
 		logger.Warn("CreateStation error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementStationsCounter()
+	}
+
 	c.IndentedJSON(200, newStation)
 }
 
@@ -323,4 +330,13 @@ func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
 func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
 	avgMsgSize, err := broker.GetAvgMsgSizeInStation(station)
 	return avgMsgSize, err
+}
+
+func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
+	messages, err := broker.GetMessages(station, messagesToFetch)
+	if err != nil {
+		return []models.Message{}, err
+	}
+
+	return messages, nil
 }

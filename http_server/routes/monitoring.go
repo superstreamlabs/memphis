@@ -14,7 +14,7 @@
 package routes
 
 import (
-	"memphis-control-plane/handlers"
+	"memphis-broker/handlers"
 
 	"github.com/gin-gonic/gin"
 )

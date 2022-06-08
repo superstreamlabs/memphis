@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 
-	"memphis-control-plane/config"
-	"memphis-control-plane/db"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
+	"memphis-broker/config"
+	"memphis-broker/db"
+	"memphis-broker/logger"
+	"memphis-broker/models"
 
 	"strings"
 	"time"
