@@ -17,6 +17,7 @@ import (
 	"memphis-broker/logger"
 	"memphis-broker/middlewares"
 	"memphis-broker/utils"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,12 @@ type loggerWriter struct {
 }
 
 func (lw loggerWriter) Write(p []byte) (int, error) {
-	logger.Info(string(p))
+	log := string(p)
+	splitted := strings.Split(log, "| ")
+	statusCode := strings.Trim(splitted[1], " ")
+	if statusCode != "200" &&  statusCode != "204" {
+		logger.Error(log)
+	}
 	return len(p), nil
 }
 
