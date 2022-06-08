@@ -1,6 +1,6 @@
 def repoUrlPrefix = "memphisos"
-def imageName = "memphis-control-plane"
-def gitURL = "git@github.com:Memphis-OS/memphis-control-plane.git"
+def imageName = "memphis-broker"
+def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
 def gitBranch = "master"
 def branchTag = "master"
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
@@ -45,19 +45,19 @@ node {
 
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-infra"
-      sh "git clone git@github.com:Memphis-OS/memphis-infra.git"
-      sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis up -d"
+      sh "git clone git@github.com:Memphisdev/memphis-infra.git"
+      sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
       sh "rm -rf memphis-e2e-tests"
-      sh "git clone git@github.com:Memphis-OS/memphis-e2e-tests.git"
+      sh "git clone git@github.com:Memphisdev/memphis-e2e-tests.git"
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js docker"
     }
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-control-plane.yml -p memphis down"
+      sh "docker-compose -f ./memphis-infra/${branchTag}/docker/docker-compose-dev-memphis-broker.yml -p memphis down"
       sh "docker volume prune -f"
     }
 
@@ -113,7 +113,7 @@ node {
 
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
-      sh "git clone git@github.com:Memphis-OS/memphis-docker.git"
+      sh "git clone git@github.com:Memphisdev/memphis-docker.git"
       sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis up -d"
     }
 
@@ -133,7 +133,7 @@ node {
 
     stage('Tests - Install memphis with helm') {
       sh "rm -rf memphis-k8s"
-      sh "git clone git@github.com:Memphis-OS/memphis-k8s.git"
+      sh "git clone git@github.com:Memphisdev/memphis-k8s.git"
       sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false' --create-namespace --namespace memphis"
       sh 'sleep 40'
     }
