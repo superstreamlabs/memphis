@@ -208,18 +208,18 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
+	password := configuration.ROOT_PASSWORD
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	hashedPwdString := string(hashedPwd)
+
 	if !exist {
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
 			analytics.IncrementInstallationsCounter()
 		}
-
-		password := configuration.ROOT_PASSWORD
-		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-		if err != nil {
-			return err
-		}
-		hashedPwdString := string(hashedPwd)
 
 		deploymentId := primitive.NewObjectID().Hex()
 		deploymentKey := models.SystemKey{
@@ -271,6 +271,14 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		logger.Info("Root user has been created")
+	} else {
+		_, err = usersCollection.UpdateOne(context.TODO(),
+			bson.M{"username": "root"},
+			bson.M{"$set": bson.M{"password": hashedPwdString}},
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
