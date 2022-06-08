@@ -2,6 +2,7 @@
   <a href="https://memphis.dev" target="_blank">
     <img alt="memphis.dev-logo" height="70" alt="memphis.dev Logo" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color+logo.svg">
   </a>
+![This is an image](https://myoctocat.com/assets/images/base-octocat.svg)
  </p>
  <p align="center">
   <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
