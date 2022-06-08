@@ -15,10 +15,10 @@ package handlers
 
 import (
 	"context"
-	"memphis-control-plane/db"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
-	"memphis-control-plane/utils"
+	"memphis-broker/db"
+	"memphis-broker/logger"
+	"memphis-broker/models"
+	"memphis-broker/utils"
 	"strconv"
 	"time"
 
