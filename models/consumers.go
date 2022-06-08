@@ -36,7 +36,7 @@ type Consumer struct {
 type ExtendedConsumer struct {
 	ID             primitive.ObjectID `json:"id" bson:"_id"`
 	Name           string             `json:"name" bson:"name"`
-	ConsumersGroup string             `json:"consumers_group"`
+	ConsumersGroup string             `json:"consumers_group" bson:"consumers_group"`
 	Type           string             `json:"type" bson:"type"`
 	ConnectionId   primitive.ObjectID `json:"connection_id" bson:"connection_id"`
 	CreatedByUser  string             `json:"created_by_user" bson:"created_by_user"`

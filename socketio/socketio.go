@@ -77,7 +77,7 @@ func getMainOverviewData() (mainOverviewData, error) {
 	}
 	systemComponents, err := monitoringHandler.GetSystemComponents()
 	if err != nil {
-		logger.Error("GetSystemComponents error" + err.Error())
+		logger.Error("GetSystemComponents error: " + err.Error())
 	}
 
 	return mainOverviewData{
