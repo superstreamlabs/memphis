@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://memphis.dev" target="_blank">
-    <img alt="memphis.dev-logo" height="70" alt="memphis.dev Logo" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color+logo.svg">
+    <img alt="memphis.dev-logo" height="70" alt="memphis.dev Logo" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color-white+logo+github.png">
   </a>
  </p>
  <p align="center">

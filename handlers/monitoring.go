@@ -56,14 +56,17 @@ func clientSetConfig() error {
 		}
 	} else {
 		// in cluster config
+		logger.Info("Initialize client set for k8s environment - in-cluster configuration")
 		config, err = rest.InClusterConfig()
 		if err != nil {
+			logger.Error("InClusterConfig error: " + err.Error())
 			return err
 		}
 	}
 
 	clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
+		logger.Error("NewForConfig error: " + err.Error())
 		return err
 	}
 
@@ -128,6 +131,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		})
 	} else { // k8s env
 		if clientset == nil {
+			logger.Info("Initialize client set for k8s environment")
 			err := clientSetConfig()
 			if err != nil {
 				return components, err
