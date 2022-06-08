@@ -16,8 +16,13 @@ package handlers
 import (
 	"context"
 	"memphis-control-plane/db"
+	"memphis-control-plane/logger"
 	"memphis-control-plane/models"
+	"memphis-control-plane/utils"
+	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,20 +33,32 @@ var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
 
 type SysLogsHandler struct{}
 
-func (lh SysLogsHandler) GetSysLogs(hours int) ([]models.SysLog, error) {
+func (lh SysLogsHandler) GetSysLogs(c *gin.Context) {
+	var body models.GetSysLogsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	hours, err := strconv.Atoi(body.Hours)
+	if err != nil {
+		return
+	}
 	var logs []models.SysLog
 	filter := bson.M{"creation_date": bson.M{"$gte": (time.Now().Add(-(time.Hour * time.Duration(hours))))}}
 	opts := options.Find().SetSort(bson.D{{"creation_date", -1}})
 	cursor, err := sysLogsCollection.Find(context.TODO(), filter, opts)
 	if err != nil {
-		return logs, err
+		logger.Error("GetSysLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	if err = cursor.All(context.TODO(), &logs); err != nil {
-		return logs, err
+		logger.Error("GetSysLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
-
-	return logs, nil
+	c.IndentedJSON(200, gin.H{"logs": logs})
 }
 
 func (lh SysLogsHandler) InsertLogs(logs []interface{}) error {

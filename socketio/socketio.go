@@ -100,7 +100,7 @@ func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]int
 	factoryName = strings.ToLower(factoryName)
 	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
 	if err != nil {
-		if s != nil && err.Error() == "mongo: no documents in result"  {
+		if s != nil && err.Error() == "mongo: no documents in result" {
 			s.Emit("error", "Factory does not exist")
 		}
 		return factory, err
@@ -235,14 +235,13 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/api", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		hours := 24
-		logs, err := sysLogsHandler.GetSysLogs(hours)
-		if err != nil {
-			logger.Error("Failed to fetch sys logs")
-		} else {
-			s.Emit("system_logs_data", logs)
-			s.Join("system_logs_group")
-		}
+		// hours := 24
+		// logs, err := sysLogsHandler.GetSysLogs(hours)
+		// if err != nil {
+		// 	logger.Error("Failed to fetch sys logs")
+		// } else {
+		s.Emit("system_logs_data")
+		s.Join("system_logs_group")
 
 		return "recv " + msg
 	})
