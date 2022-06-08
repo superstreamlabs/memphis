@@ -42,7 +42,7 @@ curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker
 docker compose -f docker-compose.yml -p memphis up
 ```
 
-[An event-driven demo app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
+[Connect your 1st app here](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
 # High-Level Architecture
 <img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/Architecture.png">
