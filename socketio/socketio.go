@@ -241,11 +241,6 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/api", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		// hours := 24
-		// logs, err := sysLogsHandler.GetSysLogs(hours)
-		// if err != nil {
-		// 	logger.Error("Failed to fetch sys logs")
-		// } else {
 		s.Emit("system_logs_data")
 		s.Join("system_logs_group")
 
