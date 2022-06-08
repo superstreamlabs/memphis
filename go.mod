@@ -1,4 +1,4 @@
-module memphis-control-plane
+module memphis-broker
 
 go 1.18
 

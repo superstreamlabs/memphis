@@ -14,9 +14,9 @@
 package http_server
 
 import (
-	"memphis-control-plane/config"
-	"memphis-control-plane/http_server/routes"
-	"memphis-control-plane/socketio"
+	"memphis-broker/config"
+	"memphis-broker/http_server/routes"
+	"memphis-broker/socketio"
 	"sync"
 )
 

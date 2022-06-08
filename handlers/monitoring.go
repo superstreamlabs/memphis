@@ -17,10 +17,10 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/db"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/models"
+	"memphis-broker/broker"
+	"memphis-broker/db"
+	"memphis-broker/logger"
+	"memphis-broker/models"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -73,7 +73,11 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		_, err := http.Get("http://localhost:9000")
+		uiAddress := "http://ui"
+		if configuration.DEV_ENV != "" {
+			uiAddress = "http://localhost:9000"
+		}
+		_, err := http.Get(uiAddress)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "ui",
@@ -118,7 +122,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		components = append(components, models.SystemComponent{
-			Component:   "control-plane",
+			Component:   "broker",
 			DesiredPods: 1,
 			ActualPods:  1,
 		})

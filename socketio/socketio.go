@@ -14,10 +14,10 @@
 package socketio
 
 import (
-	"memphis-control-plane/handlers"
-	"memphis-control-plane/logger"
-	"memphis-control-plane/middlewares"
-	"memphis-control-plane/models"
+	"memphis-broker/handlers"
+	"memphis-broker/logger"
+	"memphis-broker/middlewares"
+	"memphis-broker/models"
 
 	"errors"
 	"net/http"
@@ -53,6 +53,7 @@ type stationOverviewData struct {
 	TotalMessages int                       `json:"total_messages"`
 	AvgMsgSize    int64                     `json:"average_message_size"`
 	AuditLogs     []models.AuditLog         `json:"audit_logs"`
+	Messages      []models.Message          `json:"messages"`
 }
 
 type factoryOverviewData struct {
@@ -143,7 +144,11 @@ func getStationOverviewData(stationName string, s socketio.Conn) (stationOvervie
 		return stationOverviewData{}, err
 	}
 
-	// get messages
+	messagesToFetch := 50
+	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
+	if err != nil {
+		return stationOverviewData{}, err
+	}
 
 	return stationOverviewData{
 		Producers:     producers,
@@ -151,6 +156,7 @@ func getStationOverviewData(stationName string, s socketio.Conn) (stationOvervie
 		TotalMessages: totalMessages,
 		AvgMsgSize:    avgMsgSize,
 		AuditLogs:     auditLogs,
+		Messages:      messages,
 	}, nil
 }
 

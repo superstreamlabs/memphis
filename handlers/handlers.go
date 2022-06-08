@@ -15,10 +15,10 @@ package handlers
 
 import (
 	"context"
-	"memphis-control-plane/broker"
-	"memphis-control-plane/config"
-	"memphis-control-plane/db"
-	"memphis-control-plane/models"
+	"memphis-broker/broker"
+	"memphis-broker/config"
+	"memphis-broker/db"
+	"memphis-broker/models"
 	"time"
 
 	"github.com/gin-gonic/gin"

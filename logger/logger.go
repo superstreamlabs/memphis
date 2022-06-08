@@ -14,8 +14,8 @@
 package logger
 
 import (
-	"memphis-control-plane/broker"
-	"memphis-control-plane/models"
+	"memphis-broker/broker"
+	"memphis-broker/models"
 	"time"
 
 	"log"
@@ -33,7 +33,7 @@ func Info(logMessage string) {
 		Log:          logMessage,
 		Type:         "info",
 		CreationDate: time.Now(),
-		Component:    "control-plane",
+		Component:    "broker",
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
@@ -48,7 +48,7 @@ func Warn(logMessage string) {
 		Log:          logMessage,
 		Type:         "warn",
 		CreationDate: time.Now(),
-		Component:    "control-plane",
+		Component:    "broker",
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
@@ -63,7 +63,7 @@ func Error(logMessage string) {
 		Log:          logMessage,
 		Type:         "error",
 		CreationDate: time.Now(),
-		Component:    "control-plane",
+		Component:    "broker",
 	}
 	err := broker.PublishMessageToSubject("$memphis_sys_logs", log.ToBytes())
 	if err != nil {
