@@ -30,11 +30,12 @@ Message broker is the answer. It allows you to build an architecture that suppor
 Give memphis{dev} a spin before.
 
 ## ✨ Features
-**Current v0.2.1**
-- Fully optimized message broker in under 3 minutes
-- Easy-to-use UI, CLI, and SDKs
-- Data-level observability
-- Runs on your Docker or Kubernetes
+
+- 🚀 Fully optimized message broker in under 3 minutes
+- 💻 Easy-to-use UI, CLI, and SDKs
+- 📺 Data-level observability
+- 🐳☸Runs on your Docker or Kubernetes
+- 👨‍💻 Community driven
 
 **Coming soon v0.2.5-0.3.0**
 - Embedded schema registry using dbt
