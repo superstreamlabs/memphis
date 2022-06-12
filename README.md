@@ -44,8 +44,8 @@ Give memphis{dev} a spin before.
 - Inline processing
 - Ready-to-use connectors and analysis functions
 
-## Getting Started
-[Watch this installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
+## 🚀 Getting Started
+[Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 Helm for Kubernetes
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ && \
@@ -56,7 +56,7 @@ Docker Compose
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
 docker compose -f docker-compose.yml -p memphis up
 ```
-[Video: Connect your 1st app](https://www.youtube.com/watch?v=-5YmxYRQsdw)<br>
+[![Connect your first app](https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg)](https://www.youtube.com/watch?v=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br>
 [Tutorial: Build an event-driven food delivery app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
 ## High-Level Architecture
