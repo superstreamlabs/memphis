@@ -1,18 +1,16 @@
 <div align="center">
   
-  <a href="https://memphis.dev">
-    <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color+logo+-+white+2.png#gh-dark-mode-only" />
-  </a>
+  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/staging/logo-white.png?raw=true#gh-dark-mode-only)
   
 </div>
 
 <div align="center">
   
-  <a href="https://memphis.dev">
-    <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color+logo+github.png#gh-light-mode-only" />
-  </a>
+  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/staging/logo-black.png?raw=true#gh-light-mode-only)
   
 </div>
+
+<h1 align="center">Probably, The Easiest Message Broker In The World</h1>
  
  <p align="center">
   <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
@@ -22,23 +20,26 @@
   <a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a> <a href=""><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/LICENSE"><img src="https://img.shields.io/github/license/memphisdev/memphis-broker?color=ffc633" alt="License"></a> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"> <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-### Probably the easiest message broker in the world.
+**[Memphis{dev}](https://memphis.dev)** is a modern replacement for Apache Kafka.<br>A message broker for developers made out of devs' struggles develop around message brokers.<br>Enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
 
-## Why
+## ⭐️ Why
+Building an event-driven application is HARD.<br>
+As a developer, you need to build a dedicated pipeline per data source,<br>change the schema, individual analysis, enrich the data with other sources, it crashes, adapt to different rate limits, constantly change APIs, and scale for better performance 🥵 .<br>
+**It takes time that you don't have.**<br><br>
+Message broker is the answer. It allows you to build an architecture that supports such a pattern,<br>but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
+Give memphis{dev} a spin before.
 
-**[Memphis{dev}](https://memphis.dev)** is a modern replacement for Apache Kafka.<br>A message broker for developers made out of devs' struggles with using message brokers,<br>building complex data/event-driven apps, and troubleshooting them.<br><br>Allowing developers to achieve all other message brokers' benefits in a fraction of the time.<br>
-
-## Features
-**Current**
+## ✨ Features
+**Current v0.2.1**
 - Fully optimized message broker in under 3 minutes
 - Easy-to-use UI, CLI, and SDKs
 - Data-level observability
 - Runs on your Docker or Kubernetes
 
-**Coming soon**
+**Coming soon v0.2.5-0.3.0**
 - Embedded schema registry using dbt
 - Message Journey - Real-time messages tracing
-- More SDKs
+- More SDKs (GoLang, Python, Kafka compatible)
 - Inline processing
 - Ready-to-use connectors and analysis functions
 
