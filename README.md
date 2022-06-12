@@ -1,8 +1,19 @@
-<p align="center">
-  <a href="https://memphis.dev" target="_blank">
-    <img alt="memphis.dev-logo" height="70" alt="memphis.dev Logo" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color-white+logo+github.png">
+<div align="center">
+  
+  <a href="https://memphis.dev">
+    <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color+logo+-+white+2.png#gh-dark-mode-only" />
   </a>
- </p>
+  
+</div>
+
+<div align="center">
+  
+  <a href="https://memphis.dev">
+    <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/color+logo+github.png#gh-light-mode-only" />
+  </a>
+  
+</div>
+ 
  <p align="center">
   <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
 </p>
@@ -13,9 +24,11 @@
 
 ### Probably the easiest message broker in the world.
 
+## Why
+
 **[Memphis{dev}](https://memphis.dev)** is a modern replacement for Apache Kafka.<br>A message broker for developers made out of devs' struggles with using message brokers,<br>building complex data/event-driven apps, and troubleshooting them.<br><br>Allowing developers to achieve all other message brokers' benefits in a fraction of the time.<br>
 
-# Features
+## Features
 **Current**
 - Fully optimized message broker in under 3 minutes
 - Easy-to-use UI, CLI, and SDKs
@@ -29,7 +42,7 @@
 - Inline processing
 - Ready-to-use connectors and analysis functions
 
-# Getting Started
+## Getting Started
 [Watch this installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 Helm for Kubernetes
 ```shell
@@ -44,10 +57,10 @@ docker compose -f docker-compose.yml -p memphis up
 [Video: Connect your 1st app](https://www.youtube.com/watch?v=-5YmxYRQsdw)<br>
 [Tutorial: Build an event-driven food delivery app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
-# High-Level Architecture
+## High-Level Architecture
 <img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/Architecture.png">
 
-# Local access
+## Local access
 ### Via Kubernetes
 ```shell
 To access Memphis UI from localhost, run the below commands:
@@ -67,7 +80,7 @@ Dashboard - http://localhost:9000<br>
 Broker - localhost:7766<br>
 Control-Plane - localhost:5555/6666<br>
 
-# Beta
+## Beta
 Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing,<br>
 Schema registry, and inline processing, as well as making more SDKs and supporting materials.
 
@@ -77,27 +90,27 @@ How does it affect you? Well... mostly it doesn't.<br>
 But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
 Read more on https://memphis.dev/docs
 
-# Support
+## Support
 
-## Ask a question about Memphis{dev} or related
+### Ask a question about Memphis{dev} or related
 
 You can ask questions, and participate in discussions about Memphis{dev}-related topics in the Memphis Discord channel.
 
 <a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg" /></a>
 
-## Create a bug report
+### Create a bug report
 
 If you see an error message or run into an issue, please [create bug report](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20bug&template=bug_report.md&title=). This effort is valued and it will help all Memphis{dev} users.
 
 
-## Submit a feature request
+### Submit a feature request
 
 If you have an idea, or you're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
 
 If a similar feature request already exists, don't forget to leave a "+1".
 If you add some more information such as your thoughts and vision about the feature, your comments will be embraced warmly :)
 
-# Contributing
+## Contributing
 
 Memphis{dev} is an open-source project.<br>
 We are committed to a fully transparent development process and appreciate highly any contributions.<br>
@@ -105,7 +118,7 @@ Whether you are helping us fix bugs, proposing new features, improving our docum
 
 Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./code_of_conduct.md).
 
-# Contributors ✨
+## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):<br><br>
 <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
