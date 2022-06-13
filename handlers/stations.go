@@ -74,12 +74,18 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
-	_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+	_, err = producersCollection.UpdateMany(context.TODO(),
+		bson.M{"station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
 	if err != nil {
 		return err
 	}
 
-	_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
 	if err != nil {
 		return err
 	}
@@ -323,7 +329,10 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.DeleteOne(context.TODO(), bson.M{"name": stationName})
+	_, err = stationsCollection.UpdateOne(context.TODO(),
+		bson.M{"name": stationName},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

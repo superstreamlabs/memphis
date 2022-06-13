@@ -51,6 +51,7 @@ type Station struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
+	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
 type ExtendedStation struct {

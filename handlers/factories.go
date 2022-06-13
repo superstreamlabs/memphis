@@ -60,18 +60,27 @@ func removeStations(factoryId primitive.ObjectID) error {
 			return err
 		}
 
-		_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+		_, err = producersCollection.UpdateMany(context.TODO(),
+			bson.M{"station_id": station.ID},
+			bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+		)
 		if err != nil {
 			return err
 		}
 
-		_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+		_, err = consumersCollection.UpdateMany(context.TODO(),
+			bson.M{"station_id": station.ID},
+			bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+		)
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = stationsCollection.DeleteMany(context.TODO(), bson.M{"factory_id": factoryId})
+	_, err = stationsCollection.UpdateMany(context.TODO(),
+		bson.M{"factory_id": factoryId},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
 	if err != nil {
 		return err
 	}
@@ -248,7 +257,10 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 
-	_, err = factoriesCollection.DeleteOne(context.TODO(), bson.M{"name": factoryName})
+	_, err = factoriesCollection.UpdateOne(context.TODO(),
+		bson.M{"name": factoryName},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
 	if err != nil {
 		logger.Error("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
