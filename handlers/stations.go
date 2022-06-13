@@ -174,16 +174,34 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	factortyName := strings.ToLower(body.FactoryName)
-	exist, factory, err := IsFactoryExist(factortyName)
+	user := getUserDetailsFromMiddleware(c)
+	factoryName := strings.ToLower(body.FactoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !exist {
-		logger.Warn("Factory name does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory name does not exist"})
-		return
+	if !exist { // create this factory
+		err := validateFactoryName(factoryName)
+		if err != nil {
+			logger.Warn(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+
+		factory = models.Factory{
+			ID:            primitive.NewObjectID(),
+			Name:          factoryName,
+			Description:   "",
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+		}
+		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
+		if err != nil {
+			logger.Error("CreateStation error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	var retentionType string
@@ -224,7 +242,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.Replicas = 1
 	}
 
-	user := getUserDetailsFromMiddleware(c)
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
