@@ -364,5 +364,9 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 		return []models.Message{}, err
 	}
 
-	return messages, nil
+	if len(messages) == 0 {
+		return []models.Message{}, nil
+	} else {
+		return messages, nil
+	}
 }

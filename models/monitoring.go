@@ -18,3 +18,23 @@ type SystemComponent struct {
 	DesiredPods int    `json:"desired_pods"`
 	ActualPods  int    `json:"actual_pods"`
 }
+
+type MainOverviewData struct {
+	TotalStations    int               `json:"total_stations"`
+	TotalMessages    int               `json:"total_messages"`
+	SystemComponents []SystemComponent `json:"system_components"`
+	Stations         []ExtendedStation `json:"stations"`
+}
+
+type StationOverviewData struct {
+	Producers     []ExtendedProducer `json:"producers"`
+	Consumers     []ExtendedConsumer `json:"consumers"`
+	TotalMessages int                `json:"total_messages"`
+	AvgMsgSize    int64              `json:"average_message_size"`
+	AuditLogs     []AuditLog         `json:"audit_logs"`
+	Messages      []Message          `json:"messages"`
+}
+
+type GetStationOverviewDataSchema struct {
+	StationName string `form:"station_name" json:"station_name"  binding:"required"`
+}

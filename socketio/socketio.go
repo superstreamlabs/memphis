@@ -27,7 +27,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var server = socketio.NewServer(nil)
@@ -40,47 +39,21 @@ var factoriesHandler = handlers.FactoriesHandler{}
 var monitoringHandler = handlers.MonitoringHandler{}
 var sysLogsHandler = handlers.SysLogsHandler{}
 
-type mainOverviewData struct {
-	TotalStations    int                      `json:"total_stations"`
-	TotalMessages    int                      `json:"total_messages"`
-	SystemComponents []models.SystemComponent `json:"system_components"`
-	Stations         []models.ExtendedStation `json:"stations"`
-}
-
-type stationOverviewData struct {
-	Producers     []models.ExtendedProducer `json:"producers"`
-	Consumers     []models.ExtendedConsumer `json:"consumers"`
-	TotalMessages int                       `json:"total_messages"`
-	AvgMsgSize    int64                     `json:"average_message_size"`
-	AuditLogs     []models.AuditLog         `json:"audit_logs"`
-	Messages      []models.Message          `json:"messages"`
-}
-
-type factoryOverviewData struct {
-	ID            primitive.ObjectID `json:"id"`
-	Name          string             `json:"name"`
-	Description   string             `json:"description"`
-	CreatedByUser string             `json:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date"`
-	Stations      []models.Station   `json:"stations"`
-	UserAvatarId  int                `json:"user_avatar_id"`
-}
-
-func getMainOverviewData() (mainOverviewData, error) {
+func getMainOverviewData() (models.MainOverviewData, error) {
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
-		return mainOverviewData{}, nil
+		return models.MainOverviewData{}, nil
 	}
 	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
 	if err != nil {
-		return mainOverviewData{}, err
+		return models.MainOverviewData{}, err
 	}
 	systemComponents, err := monitoringHandler.GetSystemComponents()
 	if err != nil {
 		logger.Error("GetSystemComponents error: " + err.Error())
 	}
 
-	return mainOverviewData{
+	return models.MainOverviewData{
 		TotalStations:    len(stations),
 		TotalMessages:    totalMessages,
 		SystemComponents: systemComponents,
@@ -110,47 +83,47 @@ func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]int
 	return factory, nil
 }
 
-func getStationOverviewData(stationName string, s socketio.Conn) (stationOverviewData, error) {
+func getStationOverviewData(stationName string, s socketio.Conn) (models.StationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := handlers.IsStationExist(stationName)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 	if !exist {
 		if s != nil {
 			s.Emit("error", "Station does not exist")
 		}
-		return stationOverviewData{}, errors.New("Station does not exist")
+		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
 	producers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 	consumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 
 	messagesToFetch := 50
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
-		return stationOverviewData{}, err
+		return models.StationOverviewData{}, err
 	}
 
-	return stationOverviewData{
+	return models.StationOverviewData{
 		Producers:     producers,
 		Consumers:     consumers,
 		TotalMessages: totalMessages,
@@ -189,59 +162,34 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	server.OnEvent("/api", "register_main_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		data, err := getMainOverviewData()
-		if err != nil {
-			logger.Error("Error while trying to get main overview data " + err.Error())
-		} else {
-			s.Emit("main_overview_data", data)
-			s.Join("main_overview_sockets_group")
-		}
+		s.Join("main_overview_sockets_group")
 
 		return "recv " + msg
 	})
 
 	server.OnEvent("/api", "register_factories_overview_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		data, err := getFactoriesOverviewData()
-		if err != nil {
-			logger.Error("Error while trying to get factories overview data " + err.Error())
-		} else {
-			s.Emit("factories_overview_data", data)
-			s.Join("factories_overview_sockets_group")
-		}
+		s.Join("factories_overview_sockets_group")
 
 		return "recv " + msg
 	})
 
 	server.OnEvent("/api", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
 		s.LeaveAll()
-		data, err := getFactoryOverviewData(factoryName, s)
-		if err != nil {
-			logger.Error("Error while trying to get factory overview data " + err.Error())
-		} else {
-			s.Emit("factory_overview_data", data)
-			s.Join("factory_overview_group_" + factoryName)
-		}
+		s.Join("factory_overview_group_" + factoryName)
 
 		return "recv " + factoryName
 	})
 
 	server.OnEvent("/api", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
 		s.LeaveAll()
-		data, err := getStationOverviewData(stationName, s)
-		if err != nil {
-			logger.Error("Error while trying to get station overview data " + err.Error())
-		} else {
-			s.Emit("station_overview_data", data)
-			s.Join("station_overview_group_" + stationName)
-		}
+		s.Join("station_overview_group_" + stationName)
 
 		return "recv " + stationName
 	})
 
 	server.OnEvent("/api", "register_system_logs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		s.Emit("system_logs_data")
 		s.Join("system_logs_group")
 
 		return "recv " + msg
