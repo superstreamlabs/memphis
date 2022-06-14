@@ -287,3 +287,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	c.IndentedJSON(200, response)
 }
+
+// TODO
+func (mh MonitoringHandler) WriteSysLog(c *gin.Context) {
+
+	// logger.Info("")
+	c.IndentedJSON(200, gin.H{})
+}
