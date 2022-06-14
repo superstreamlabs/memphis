@@ -106,9 +106,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	}
 
 	var station models.Station
-	err := stationsCollection.FindOne(context.TODO(), bson.M{"name": body.StationName}).Decode(&station)
+	err := stationsCollection.FindOne(context.TODO(), bson.M{"name": body.StationName, "is_deleted": false}).Decode(&station)
 	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	} else if err != nil {
 		logger.Error("GetStationById error: " + err.Error())
@@ -122,6 +122,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"is_deleted", false}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"factory_id", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"factory_name", "$factory.name"}}}},
@@ -201,6 +202,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			Description:   "",
 			CreatedByUser: user.Username,
 			CreationDate:  time.Now(),
+			IsDeleted:     false,
 		}
 		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
 		if err != nil {
@@ -262,6 +264,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		CreationDate:    time.Now(),
 		LastUpdate:      time.Now(),
 		Functions:       []models.Function{},
+		IsDeleted:       false,
 	}
 
 	err = broker.CreateStream(newStation)
@@ -330,7 +333,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	}
 
 	_, err = stationsCollection.UpdateOne(context.TODO(),
-		bson.M{"name": stationName},
+		bson.M{"name": stationName, "is_deleted": false},
 		bson.M{"$set": bson.M{"is_deleted": true}},
 	)
 	if err != nil {
