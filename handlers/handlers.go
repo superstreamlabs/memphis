@@ -57,7 +57,13 @@ func IsUserExist(username string) (bool, models.User, error) {
 }
 
 func IsFactoryExist(factoryName string) (bool, models.Factory, error) {
-	filter := bson.M{"name": factoryName, "is_deleted": false}
+	filter := bson.M{
+		"name": factoryName,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	}
 	var factory models.Factory
 	err := factoriesCollection.FindOne(context.TODO(), filter).Decode(&factory)
 	if err == mongo.ErrNoDocuments {
@@ -69,7 +75,13 @@ func IsFactoryExist(factoryName string) (bool, models.Factory, error) {
 }
 
 func IsStationExist(stationName string) (bool, models.Station, error) {
-	filter := bson.M{"name": stationName, "is_deleted": false}
+	filter := bson.M{
+		"name": stationName,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	}
 	var station models.Station
 	err := stationsCollection.FindOne(context.TODO(), filter).Decode(&station)
 	if err == mongo.ErrNoDocuments {
