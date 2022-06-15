@@ -33,23 +33,28 @@ git clone https://github.com/{your-GitHub-username}/memphis-<component>.git
 
 ## Step 4: Start a dev environment
 
-[An event-driven demo app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
-
 ### For the broker
 https://github.com/memphisdev/memphis-broker
 
-Install GO, and then -
+Run the following docker-compose, it will start a local Memphis environment without the Broker
+```
+curl -s https://memphisdev.github.io/memphis-docker/docker-compose-dev-broker.yaml -o docker-compose.yaml && \
+docker compose -f docker-compose.yaml -p memphis up
+```
 
+Run locally via VS code debugger
+
+Install GO, and then -
 ```
-go get -d -v . && \
-go install -v . && \
-memphis-broker
+go get -d -v .
+go install -v .
 ```
+and then click F5 in order to start the debugger
 
 ### For the UI
 https://github.com/memphisdev/memphis-ui
 
-Run the following docker-compose, it will start a local broker
+Run the following docker-compose, it will start a local Memphis environment without the UI
 ```
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose-dev-ui.yaml -o docker-compose.yaml && \
 docker compose -f docker-compose.yaml -p memphis up
@@ -66,8 +71,7 @@ npm start
 **Server-side**
 - [Go](https://go.dev/) (Broker / SDK)
 - [Python](https://www.python.org/) (SDK)
-- [Node.JS](https://nodejs.org/) (SDK)
-- [Jest](https://docs.nestjs.com/fundamentals/testing) (UI)
+- [Node.JS](https://nodejs.org/) (CLI / SDK)
 
 **Client-side**
 - [React](https://reactjs.org/docs/getting-started.html) (UI)
@@ -79,10 +83,10 @@ npm start
 
 ## Step 5: Create a branch
 
-Create a new branch for your fix.
+Create a new branch (from staging branch) for your fix.
 
 ```jsx
-git checkout -b branch-name-here
+git checkout -b branch-name-here staging
 ```
 
 ## Step 6: Make your changes
@@ -115,7 +119,7 @@ git push origin branch-name-here
 
 ## Step 10: Create Pull Request
 
-In GitHub, do the following to submit a pull request to the upstream repository:
+In GitHub, do the following to submit a pull request to the upstream repository (staging branch):
 
 1.  Give the pull request a title and a short description of the changes made. Include also the issue or bug number associated with your change. Explain the changes that you made, any issues you think exist with the pull request you made, and any questions you have for the maintainer.
 
