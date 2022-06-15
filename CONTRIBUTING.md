@@ -4,83 +4,80 @@ We would ❤️ it if you contributed to the project and helped make Memphis{dev
 We will make sure that contributing to Memphis{dev} is easy, enjoyable, and educational for anyone and everyone.<br>
 All contributions are welcome, including features, issues, documentation, guides, and more.
 
-## Got a question?
+Our beloved contributors also recieve occasional Memphis Swag Pack and publications where every Memphis is!
 
-You can ask questions, consult with more experienced Memphis{dev} users, and discuss Memphis-related topics in the our [Discord channel](https://discord.gg/WZpysvAeTf).
+![contribution tweet](https://user-images.githubusercontent.com/70286779/173819239-3611bbb2-3f7d-41a2-ad37-2e966b91403c.jpg)
 
-## Found a bug?
+<hr>
+<div align="center">
 
-If you find a bug in the source code, you can help us by [submitting an issue](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20bug) to our GitHub Repository.<br>
-Even better, you can submit a Pull Request with a fix.
+  <h1>Process</h1>
+  
+![contribution guidelinues](https://user-images.githubusercontent.com/70286779/173803841-1c77d8d9-d378-4632-872d-c782ce61f2a3.png)
 
-## Missing a feature?
+</div>
 
-You can request a new feature by [submitting an issue](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request) to our GitHub Repository.
+## Step 1: Choose a task
 
-If you'd like to implement a new feature, it's always good to be in touch with us before you invest time and effort, since not all features can be supported.
+[Open tasks table](https://github.com/orgs/memphisdev/projects/1)
 
-- For a Major Feature, first open an issue and outline your proposal. This will let us coordinate efforts, prevent duplication of work, and help you craft the change so that it's successfully integrated into the project.
-- Small Features can be crafted and directly [submitted as a Pull Request](#submit-pr).
-
-## What do you need to know to help?
-
-If you want to help out with a code contribution, our project uses the following stack:
-
-### Server-side
-
-- [Node.JS](https://nodejs.org/)
-- [Go](https://go.dev/)
-- [Python](https://www.python.org/)
-- [Jest](https://docs.nestjs.com/fundamentals/testing) (for testing)
-
-### Client-side
-
-- [React](https://reactjs.org/docs/getting-started.html) (For the UI)
-
-### Scripting
-
-- [Helm](https://helm.sh/)
-- [Docker](https://docker.com)
-- [Bash](https://www.gnu.org/software/bash/)
-
-If you don't feel ready to make a code contribution yet, no problem! You can also check out the [documentation issues](https://github.com/memphisdev/memphis-broker/labels/type%3A%20docs).
-
-# <a name="submit-pr"></a> How do I make a code contribution?
-
-Are you new to open source contribution? Wondering how contributions work in our project? Here's a quick rundown.
-
-Find an issue that you're interested in addressing, or a feature that you'd like to add.
-You can use [this view](https://github.com/memphisdev/memphis-broker/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) which helps new contributors find easy gateways into our project.
-
-## Step 1: Make a fork
+## Step 2: Make a fork
 
 Fork the Memphis-broker repository to your GitHub organization. This means that you'll have a copy of the repository under _your-GitHub-username/repository-name_.
 
-## Step 2: Clone the repository to your local machine
+## Step 3: Clone the repository to your local machine
 
 ```
-git clone https://github.com/{your-GitHub-username}/memphis-broker.git
+git clone https://github.com/{your-GitHub-username}/memphis-<component>.git
 ```
 
-## Step 3: Prepare the development environment
-
-Set up and run the development environment on your local machine:
-
-[Installation Videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
-Helm for Kubernetes
-```shell
-helm repo add memphis https://k8s.memphis.dev/charts/ && \
-helm install my-memphis memphis/memphis --create-namespace --namespace memphis
-```
-Docker Compose
-```shell
-curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
-docker compose -f docker-compose.yml -p memphis up
-```
+## Step 4: Start a dev environment
 
 [An event-driven demo app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
-## Step 4: Create a branch
+### For the broker
+https://github.com/memphisdev/memphis-broker
+
+Install GO, and then -
+
+```
+go get -d -v . && \
+go install -v . && \
+memphis-broker
+```
+
+### For the UI
+https://github.com/memphisdev/memphis-ui
+
+Run the following docker-compose, it will start a local broker
+```
+curl -s https://memphisdev.github.io/memphis-docker/docker-compose-dev-ui.yaml -o docker-compose.yaml && \
+docker compose -f docker-compose.yaml -p memphis up
+```
+
+Inside the cloned directory
+```
+npm install
+npm start
+```
+
+### Tech stack
+
+**Server-side**
+- [Go](https://go.dev/) (Broker / SDK)
+- [Python](https://www.python.org/) (SDK)
+- [Node.JS](https://nodejs.org/) (SDK)
+- [Jest](https://docs.nestjs.com/fundamentals/testing) (UI)
+
+**Client-side**
+- [React](https://reactjs.org/docs/getting-started.html) (UI)
+
+**Scripting**
+- [Helm](https://helm.sh/) (Deployment)
+- [Docker](https://docker.com) (Deployment)
+- [Bash](https://www.gnu.org/software/bash/) (Deployment)
+
+## Step 5: Create a branch
 
 Create a new branch for your fix.
 
@@ -88,11 +85,11 @@ Create a new branch for your fix.
 git checkout -b branch-name-here
 ```
 
-## Step 5: Make your changes
+## Step 6: Make your changes
 
 Update the code with your bug fix or new feature.
 
-## Step 6: Add the changes that are ready to be committed
+## Step 7: Add the changes that are ready to be committed
 
 Stage the changes that are ready to be committed:
 
@@ -100,7 +97,7 @@ Stage the changes that are ready to be committed:
 git add .
 ```
 
-## Step 7: Commit the changes (Git)
+## Step 8: Commit the changes (Git)
 
 Commit the changes with a short message. (See below for more details on how we structure our commit messages)
 
@@ -108,7 +105,7 @@ Commit the changes with a short message. (See below for more details on how we s
 git commit -m "<type>(<package>): <subject>"
 ```
 
-## Step 8: Push the changes to the remote repository
+## Step 9: Push the changes to the remote repository
 
 Push the changes to the remote repository using:
 
@@ -116,7 +113,7 @@ Push the changes to the remote repository using:
 git push origin branch-name-here
 ```
 
-## Step 9: Create Pull Request
+## Step 10: Create Pull Request
 
 In GitHub, do the following to submit a pull request to the upstream repository:
 
@@ -143,6 +140,24 @@ Example
 ```
 fix(server): missing entity on init
 ```
+
+## Got a question?
+
+You can ask questions, consult with more experienced Memphis{dev} users, and discuss Memphis-related topics in the our [Discord channel](https://discord.gg/WZpysvAeTf).
+
+## Found a bug?
+
+If you find a bug in the source code, you can help us by [submitting an issue](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20bug) to our GitHub Repository.<br>
+Even better, you can submit a Pull Request with a fix.
+
+## Missing a feature?
+
+You can request a new feature by [submitting an issue](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request) to our GitHub Repository.
+
+If you'd like to implement a new feature, it's always good to be in touch with us before you invest time and effort, since not all features can be supported.
+
+- For a Major Feature, first open an issue and outline your proposal. This will let us coordinate efforts, prevent duplication of work, and help you craft the change so that it's successfully integrated into the project.
+- Small Features can be crafted and directly [submitted as a Pull Request](#submit-pr).
 
 ### Types:
 
