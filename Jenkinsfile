@@ -24,8 +24,11 @@ node {
     }
 
     stage('Create memphis namespace in Kubernetes'){
+      sh "kubectl config use-context minikube"
       sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
-      //sh "sleep 40"
+      sh "aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml ."
+      sh "kubectl apply -f regcred.yaml -n memphis-$unique_id"
+      sh "kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}' -n memphis-$unique_id"
     }
 
     stage('Build and push docker image to Docker Hub') {
@@ -44,13 +47,17 @@ node {
 
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-infra"
-      sh "git clone git@github.com:Memphisdev/memphis-infra.git"
+      dir ('memphis-infra'){
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: 'master'
+      }
       sh "docker-compose -f ./memphis-infra/beta/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
       sh "rm -rf memphis-e2e-tests"
-      sh "git clone git@github.com:Memphisdev/memphis-e2e-tests.git"
+      dir ('memphis-e2e-tests'){
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-e2e-tests.git', branch: 'master'
+      }
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js docker"
     }
@@ -107,7 +114,9 @@ node {
 
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
-      sh "git clone git@github.com:Memphisdev/memphis-docker.git"
+      dir ('memphis-docker'){
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'master'
+      }
       sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis up -d"
     }
 
