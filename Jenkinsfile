@@ -73,14 +73,12 @@ node {
 
     stage('Tests - Install memphis with helm') {
       sh "helm install memphis-tests memphis-infra/beta/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
-      sh 'sleep 40'
+      sh 'sleep 60'
     }
 
     stage('Open port forwarding to memphis service') {
       sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis-$unique_id &"
-      sh "sleep 5"
       sh "nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis-$unique_id &"
-      sh "sleep 5"
     }
 
     stage('Tests - Run e2e tests over kubernetes') {
@@ -91,7 +89,6 @@ node {
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
       sh "kubectl delete ns memphis-$unique_id &"
-      sh "lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh"
     }
 
     stage('Tests - Remove used directories') {
@@ -105,6 +102,7 @@ node {
     ////////////////////////////////////////
 
     stage('Build and push image to Docker Hub') {
+      sh "docker buildx use builder"
       sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
     }
 
