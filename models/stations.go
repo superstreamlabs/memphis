@@ -35,6 +35,7 @@ type Message struct {
 	Message      string    `json:"message"`
 	ProducedBy   string    `json:"produced_by"`
 	CreationDate time.Time `json:"creation_date"`
+	Size         int       `json:"size"`
 }
 
 type Station struct {
