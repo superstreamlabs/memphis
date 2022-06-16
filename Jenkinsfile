@@ -100,11 +100,11 @@ node {
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
     ////////////////////////////////////////
-
+/*
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
-    }
+    }*/
 
     ////////////////////////////////////////
     ////////////Test Public Repo////////////
