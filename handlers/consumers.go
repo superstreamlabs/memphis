@@ -87,7 +87,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	err := validateName(name)
 	if err != nil {
 		logger.Warn(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message ": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
