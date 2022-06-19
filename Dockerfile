@@ -1,22 +1,16 @@
-FROM golang:rc-alpine3.15
+FROM golang:1.18-alpine3.15 as build
 
-# Set the Current Working Directory inside the container
 WORKDIR $GOPATH/src/memphis-broker
-
-# Copy everything from the current directory to the PWD (Present Working Directory) inside the container
 COPY . .
+RUN CGO_ENABLED=0 go build -ldflags="-w" -a -o /memphis-broker
 
-# Install GIT
-RUN apk add git
+FROM alpine:3.15
+ENV GOPATH="/go/src"
+WORKDIR /run
+COPY --from=build $GOPATH/memphis-broker/config/* config/
+COPY --from=build $GOPATH/memphis-broker/version.conf .
+COPY --from=build /memphis-broker memphis-broker
 
-# Download all the dependencies
-RUN go get -d -v .
-
-# Install the package
-RUN go install -v .
-
-# This container exposes port 5555 to the outside world
 EXPOSE 5555
 
-# Run the executable
-CMD ["memphis-broker"]
+CMD ["/run/memphis-broker"]

@@ -31,6 +31,7 @@ type Consumer struct {
 	CreatedByUser  string             `json:"created_by_user" bson:"created_by_user"`
 	IsActive       bool               `json:"is_active" bson:"is_active"`
 	CreationDate   time.Time          `json:"creation_date" bson:"creation_date"`
+	IsDeleted      bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
 type ExtendedConsumer struct {
@@ -43,6 +44,8 @@ type ExtendedConsumer struct {
 	CreationDate   time.Time          `json:"creation_date" bson:"creation_date"`
 	StationName    string             `json:"station_name" bson:"station_name"`
 	FactoryName    string             `json:"factory_name" bson:"factory_name"`
+	IsActive       bool               `json:"is_active" bson:"is_active"`
+	IsDeleted      bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
 type GetAllConsumersByStationSchema struct {

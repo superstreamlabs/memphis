@@ -74,12 +74,18 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
-	_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+	_, err = producersCollection.UpdateMany(context.TODO(),
+		bson.M{"station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
 	if err != nil {
 		return err
 	}
 
-	_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
 	if err != nil {
 		return err
 	}
@@ -100,9 +106,15 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	}
 
 	var station models.Station
-	err := stationsCollection.FindOne(context.TODO(), bson.M{"name": body.StationName}).Decode(&station)
+	err := stationsCollection.FindOne(context.TODO(), bson.M{
+		"name": body.StationName,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	}).Decode(&station)
 	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	} else if err != nil {
 		logger.Error("GetStationById error: " + err.Error())
@@ -116,6 +128,10 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"$or", []interface{}{
+			bson.D{{"is_deleted", false}},
+			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
+		}}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"factory_id", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"factory_name", "$factory.name"}}}},
@@ -174,16 +190,35 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	factortyName := strings.ToLower(body.FactoryName)
-	exist, factory, err := IsFactoryExist(factortyName)
+	user := getUserDetailsFromMiddleware(c)
+	factoryName := strings.ToLower(body.FactoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !exist {
-		logger.Warn("Factory name does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory name does not exist"})
-		return
+	if !exist { // create this factory
+		err := validateFactoryName(factoryName)
+		if err != nil {
+			logger.Warn(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+
+		factory = models.Factory{
+			ID:            primitive.NewObjectID(),
+			Name:          factoryName,
+			Description:   "",
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			IsDeleted:     false,
+		}
+		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
+		if err != nil {
+			logger.Error("CreateStation error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	var retentionType string
@@ -224,7 +259,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.Replicas = 1
 	}
 
-	user := getUserDetailsFromMiddleware(c)
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
@@ -239,6 +273,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		CreationDate:    time.Now(),
 		LastUpdate:      time.Now(),
 		Functions:       []models.Function{},
+		IsDeleted:       false,
 	}
 
 	err = broker.CreateStream(newStation)
@@ -306,7 +341,16 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.DeleteOne(context.TODO(), bson.M{"name": stationName})
+	_, err = stationsCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": stationName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
 	if err != nil {
 		logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -338,5 +382,9 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 		return []models.Message{}, err
 	}
 
-	return messages, nil
+	if len(messages) == 0 {
+		return []models.Message{}, nil
+	} else {
+		return messages, nil
+	}
 }

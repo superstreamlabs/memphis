@@ -21,6 +21,7 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/logger"
 	"memphis-broker/models"
+	"memphis-broker/utils"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -37,6 +38,10 @@ import (
 type MonitoringHandler struct{}
 
 var clientset *kubernetes.Clientset
+var stationsHandler = StationsHandler{}
+var producersHandler = ProducersHandler{}
+var consumersHandler = ConsumersHandler{}
+var auditLogsHandler = AuditLogsHandler{}
 
 func clientSetConfig() error {
 	var config *rest.Config
@@ -172,11 +177,124 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 }
 
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
-	body, err := ioutil.ReadFile("version.conf")
+	fileContent, err := ioutil.ReadFile("version.conf")
 	if err != nil {
 		logger.Error("GetClusterInfo error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	c.IndentedJSON(200, gin.H{"version": string(body)})
+	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
+}
+
+func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
+	stationsHandler := StationsHandler{}
+	stations, err := stationsHandler.GetAllStationsDetails()
+	if err != nil {
+		logger.Error("GetMainOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
+	if err != nil {
+		logger.Error("GetMainOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	systemComponents, err := mh.GetSystemComponents()
+	if err != nil {
+		logger.Error("GetMainOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	response := models.MainOverviewData{
+		TotalStations:    len(stations),
+		TotalMessages:    totalMessages,
+		SystemComponents: systemComponents,
+		Stations:         stations,
+	}
+
+	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
+	var body models.GetStationOverviewDataSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName := strings.ToLower(body.StationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		logger.Warn("Station does not exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		return
+	}
+
+	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	totalMessages, err := stationsHandler.GetTotalMessages(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	messagesToFetch := 50
+	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	response := models.StationOverviewData{
+		ActiveProducers:    activeProducers,
+		KilledProducers:    killedProducers,
+		DestroyedProducers: destroyedProducers,
+		ActiveConsumers:    activeConsumers,
+		KilledConsumers:    killedConsumers,
+		DestroyedConsumers: destroyedConsumers,
+		TotalMessages:      totalMessages,
+		AvgMsgSize:         avgMsgSize,
+		AuditLogs:          auditLogs,
+		Messages:           messages,
+	}
+
+	c.IndentedJSON(200, response)
+}
+
+// TODO
+func (mh MonitoringHandler) WriteSysLog(c *gin.Context) {
+
+	// logger.Info("")
+	c.IndentedJSON(200, gin.H{})
 }

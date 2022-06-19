@@ -134,6 +134,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 		CreatedByUser: connection.CreatedByUser,
 		IsActive:      true,
 		CreationDate:  time.Now(),
+		IsDeleted:     false,
 	}
 
 	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
@@ -174,12 +175,12 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"is_active", true}}}},
+		bson.D{{"$match", bson.D{}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
 	})
 
@@ -202,32 +203,54 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, error) { // for socket io endpoint
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
 	var producers []models.ExtendedProducer
 
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
+		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
 	})
 
 	if err != nil {
-		return producers, err
+		return producers, producers, producers, err
 	}
 
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		return producers, err
+		return producers, producers, producers, err
 	}
 
-	if len(producers) == 0 {
-		producers = []models.ExtendedProducer{}
+	var activeProducers []models.ExtendedProducer
+	var killedProducers []models.ExtendedProducer
+	var destroyedProducers []models.ExtendedProducer
+
+	for _, producer := range producers {
+		if producer.IsActive {
+			activeProducers = append(activeProducers, producer)
+		} else if !producer.IsDeleted && !producer.IsActive {
+			killedProducers = append(killedProducers, producer)
+		} else if producer.IsDeleted {
+			destroyedProducers = append(destroyedProducers, producer)
+		}
 	}
 
-	return producers, nil
+	if len(activeProducers) == 0 {
+		activeProducers = []models.ExtendedProducer{}
+	}
+
+	if len(killedProducers) == 0 {
+		killedProducers = []models.ExtendedProducer{}
+	}
+
+	if len(destroyedProducers) == 0 {
+		destroyedProducers = []models.ExtendedProducer{}
+	}
+
+	return activeProducers, killedProducers, destroyedProducers, nil
 }
 
 func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint
@@ -250,12 +273,12 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 
 	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}, {"is_active", true}}}},
+		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
 	})
 
@@ -297,7 +320,7 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	var producer models.Producer
 	err = producersCollection.FindOneAndUpdate(context.TODO(),
 		bson.M{"name": name, "station_id": station.ID, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false}},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	).Decode(&producer)
 	if err != nil {
 		logger.Error("DestroyProducer error: " + err.Error())
@@ -387,7 +410,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 
 func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
+		bson.M{"connection_id": connectionId, "is_deleted": false},
 		bson.M{"$set": bson.M{"is_active": true}},
 	)
 	if err != nil {
