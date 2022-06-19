@@ -25,6 +25,7 @@ type Factory struct {
 	Description   string             `json:"description" bson:"description"`
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
 type ExtendedFactory struct {

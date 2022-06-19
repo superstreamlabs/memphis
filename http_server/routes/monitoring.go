@@ -23,4 +23,7 @@ func InitializeMonitoringRoutes(router *gin.RouterGroup) {
 	monitoringHandler := handlers.MonitoringHandler{}
 	monitoringRoutes := router.Group("/monitoring")
 	monitoringRoutes.GET("/getClusterInfo", monitoringHandler.GetClusterInfo)
+	monitoringRoutes.GET("/getMainOverviewData", monitoringHandler.GetMainOverviewData)
+	monitoringRoutes.GET("/getStationOverviewData", monitoringHandler.GetStationOverviewData)
+	monitoringRoutes.GET("/writeSysLog", monitoringHandler.WriteSysLog)
 }

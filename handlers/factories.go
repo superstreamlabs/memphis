@@ -45,7 +45,13 @@ func validateFactoryName(factoryName string) error {
 // TODO remove the stations resources - functions, connectors
 func removeStations(factoryId primitive.ObjectID) error {
 	var stations []models.Station
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factoryId})
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
+		"factory_id": factoryId,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	})
 	if err != nil {
 		return err
 	}
@@ -60,18 +66,33 @@ func removeStations(factoryId primitive.ObjectID) error {
 			return err
 		}
 
-		_, err = producersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+		_, err = producersCollection.UpdateMany(context.TODO(),
+			bson.M{"station_id": station.ID},
+			bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+		)
 		if err != nil {
 			return err
 		}
 
-		_, err = consumersCollection.DeleteMany(context.TODO(), bson.M{"station_id": station.ID})
+		_, err = consumersCollection.UpdateMany(context.TODO(),
+			bson.M{"station_id": station.ID},
+			bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+		)
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = stationsCollection.DeleteMany(context.TODO(), bson.M{"factory_id": factoryId})
+	_, err = stationsCollection.UpdateMany(context.TODO(),
+		bson.M{
+			"factory_id": factoryId,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
 	if err != nil {
 		return err
 	}
@@ -113,6 +134,7 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 		Description:   strings.ToLower(body.Description),
 		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
+		IsDeleted:     false,
 	}
 
 	_, err = factoriesCollection.InsertOne(context.TODO(), newFactory)
@@ -134,13 +156,25 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 
 func (fh FactoriesHandler) GetFactoryDetails(factoryName string) (map[string]interface{}, error) {
 	var factory models.Factory
-	err := factoriesCollection.FindOne(context.TODO(), bson.M{"name": factoryName}).Decode(&factory)
+	err := factoriesCollection.FindOne(context.TODO(), bson.M{
+		"name": factoryName,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	}).Decode(&factory)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
 
 	stations := make([]models.Station, 0)
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"factory_id": factory.ID})
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
+		"factory_id": factory.ID,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	})
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
@@ -175,7 +209,7 @@ func (fh FactoriesHandler) GetFactory(c *gin.Context) {
 
 	factory, err := fh.GetFactoryDetails(factoryName)
 	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(404, gin.H{"message": "Factory does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	} else if err != nil {
 		logger.Error("GetFactory error: " + err.Error())
@@ -189,6 +223,10 @@ func (fh FactoriesHandler) GetFactory(c *gin.Context) {
 func (fh FactoriesHandler) GetAllFactoriesDetails() ([]models.ExtendedFactory, error) {
 	var factories []models.ExtendedFactory
 	cursor, err := factoriesCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"$or", []interface{}{
+			bson.D{{"is_deleted", false}},
+			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
+		}}}}},
 		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "user"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$user"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"description", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"user_avatar_id", "$user.avatar_id"}}}},
@@ -248,7 +286,16 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 
-	_, err = factoriesCollection.DeleteOne(context.TODO(), bson.M{"name": factoryName})
+	_, err = factoriesCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": factoryName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
 	if err != nil {
 		logger.Error("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -301,7 +348,13 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 	}
 
 	_, err = factoriesCollection.UpdateOne(context.TODO(),
-		bson.M{"name": factoryName},
+		bson.M{
+			"name": factoryName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
 		bson.M{"$set": bson.M{"name": factory.Name, "description": factory.Description}},
 	)
 	if err != nil {

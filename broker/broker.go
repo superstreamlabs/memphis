@@ -295,6 +295,7 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 			Message:      string(msg.Data),
 			ProducedBy:   msg.Header.Get("producedBy"),
 			CreationDate: metadata.Timestamp,
+			Size: len(msg.Subject) + len(msg.Reply) + len(msg.Data) + len(msg.Header),
 		})
 		msg.Ack()
 	}

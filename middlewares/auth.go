@@ -36,6 +36,7 @@ import (
 var noNeedAuthRoutes = []string{
 	"/api/usermgmt/login",
 	"/api/usermgmt/refreshtoken",
+	"/api/monitoring/writesyslog",
 	"/api/status",
 }
 

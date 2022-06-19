@@ -808,5 +808,9 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		return
 	}
 
+	if !body.SendAnalytics {
+		analytics.IncrementDisableAnalyticsCounter()
+	}
+
 	c.IndentedJSON(200, gin.H{})
 }

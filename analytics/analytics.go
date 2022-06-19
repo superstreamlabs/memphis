@@ -36,6 +36,7 @@ var installationsCounter metric.Int64Counter
 var stationsCounter metric.Int64Counter
 var producersCounter metric.Int64Counter
 var consumersCounter metric.Int64Counter
+var disableAnalyticsCounter metric.Int64Counter
 var deploymentId string
 var analyticsFlag string
 
@@ -133,6 +134,12 @@ func InitializeAnalytics() error {
 			metric.WithUnit("0"),
 			metric.WithDescription("Counting the number of consumers"),
 		)
+
+		disableAnalyticsCounter, err = Meter.NewInt64Counter(
+			"DisableAnalytics",
+			metric.WithUnit("0"),
+			metric.WithDescription("Counting the number of disable analytics events"),
+		)
 	}
 
 	return nil
@@ -156,6 +163,10 @@ func IncrementProducersCounter() {
 
 func IncrementConsumersCounter() {
 	consumersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+}
+
+func IncrementDisableAnalyticsCounter() {
+	disableAnalyticsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
 }
 
 func Close() {
