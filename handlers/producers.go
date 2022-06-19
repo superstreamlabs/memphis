@@ -203,7 +203,7 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, error) { // for socket io endpoint
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
 	var producers []models.ExtendedProducer
 
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
@@ -217,18 +217,40 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	})
 
 	if err != nil {
-		return producers, err
+		return producers, producers, producers, err
 	}
 
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		return producers, err
+		return producers, producers, producers, err
 	}
 
-	if len(producers) == 0 {
-		producers = []models.ExtendedProducer{}
+	var activeProducers []models.ExtendedProducer
+	var killedProducers []models.ExtendedProducer
+	var destroyedProducers []models.ExtendedProducer
+
+	for _, producer := range producers {
+		if producer.IsActive {
+			activeProducers = append(activeProducers, producer)
+		} else if !producer.IsDeleted && !producer.IsActive {
+			killedProducers = append(killedProducers, producer)
+		} else if producer.IsDeleted {
+			destroyedProducers = append(destroyedProducers, producer)
+		}
 	}
 
-	return producers, nil
+	if len(activeProducers) == 0 {
+		activeProducers = []models.ExtendedProducer{}
+	}
+
+	if len(killedProducers) == 0 {
+		killedProducers = []models.ExtendedProducer{}
+	}
+
+	if len(destroyedProducers) == 0 {
+		destroyedProducers = []models.ExtendedProducer{}
+	}
+
+	return activeProducers, killedProducers, destroyedProducers, nil
 }
 
 func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint

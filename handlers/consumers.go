@@ -284,7 +284,7 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]models.ExtendedConsumer, error) { // for socket io endpoint
+func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]models.ExtendedConsumer, []models.ExtendedConsumer, []models.ExtendedConsumer, error) { // for socket io endpoint
 	var consumers []models.ExtendedConsumer
 
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
@@ -298,18 +298,44 @@ func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]mode
 	})
 
 	if err != nil {
-		return consumers, err
+		return consumers, consumers, consumers, err
 	}
 
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		return consumers, err
+		return consumers, consumers, consumers, err
 	}
 
 	if len(consumers) == 0 {
 		consumers = []models.ExtendedConsumer{}
 	}
 
-	return consumers, nil
+	var activeConsumers []models.ExtendedConsumer
+	var killedConsumers []models.ExtendedConsumer
+	var destroyedConsumers []models.ExtendedConsumer
+
+	for _, consumer := range consumers {
+		if consumer.IsActive {
+			activeConsumers = append(activeConsumers, consumer)
+		} else if !consumer.IsDeleted && !consumer.IsActive {
+			killedConsumers = append(killedConsumers, consumer)
+		} else if consumer.IsDeleted {
+			destroyedConsumers = append(destroyedConsumers, consumer)
+		}
+	}
+
+	if len(activeConsumers) == 0 {
+		activeConsumers = []models.ExtendedConsumer{}
+	}
+
+	if len(killedConsumers) == 0 {
+		killedConsumers = []models.ExtendedConsumer{}
+	}
+
+	if len(destroyedConsumers) == 0 {
+		destroyedConsumers = []models.ExtendedConsumer{}
+	}
+
+	return activeConsumers, killedConsumers, destroyedConsumers, nil
 }
 
 func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint

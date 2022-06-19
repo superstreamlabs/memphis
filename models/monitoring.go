@@ -27,12 +27,16 @@ type MainOverviewData struct {
 }
 
 type StationOverviewData struct {
-	Producers     []ExtendedProducer `json:"producers"`
-	Consumers     []ExtendedConsumer `json:"consumers"`
-	TotalMessages int                `json:"total_messages"`
-	AvgMsgSize    int64              `json:"average_message_size"`
-	AuditLogs     []AuditLog         `json:"audit_logs"`
-	Messages      []Message          `json:"messages"`
+	ActiveProducers    []ExtendedProducer `json:"active_producers"`
+	KilledProducers    []ExtendedProducer `json:"killed_producers"`
+	DestroyedProducers []ExtendedProducer `json:"destroyed_producers"`
+	ActiveConsumers    []ExtendedConsumer `json:"active_consumers"`
+	KilledConsumers    []ExtendedConsumer `json:"killed_consumers"`
+	DestroyedConsumers []ExtendedConsumer `json:"destroyed_consumers"`
+	TotalMessages      int                `json:"total_messages"`
+	AvgMsgSize         int64              `json:"average_message_size"`
+	AuditLogs          []AuditLog         `json:"audit_logs"`
+	Messages           []Message          `json:"messages"`
 }
 
 type GetStationOverviewDataSchema struct {

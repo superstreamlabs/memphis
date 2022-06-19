@@ -237,13 +237,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	producers, err := producersHandler.GetProducersByStation(station)
+	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	consumers, err := consumersHandler.GetConsumersByStation(station)
+	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -277,12 +277,16 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	response := models.StationOverviewData{
-		Producers:     producers,
-		Consumers:     consumers,
-		TotalMessages: totalMessages,
-		AvgMsgSize:    avgMsgSize,
-		AuditLogs:     auditLogs,
-		Messages:      messages,
+		ActiveProducers:    activeProducers,
+		KilledProducers:    killedProducers,
+		DestroyedProducers: destroyedProducers,
+		ActiveConsumers:    activeConsumers,
+		KilledConsumers:    killedConsumers,
+		DestroyedConsumers: destroyedConsumers,
+		TotalMessages:      totalMessages,
+		AvgMsgSize:         avgMsgSize,
+		AuditLogs:          auditLogs,
+		Messages:           messages,
 	}
 
 	c.IndentedJSON(200, response)

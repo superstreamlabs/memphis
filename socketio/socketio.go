@@ -96,11 +96,11 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
-	producers, err := producersHandler.GetProducersByStation(station)
+	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	consumers, err := consumersHandler.GetConsumersByStation(station)
+	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -124,12 +124,16 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 	}
 
 	return models.StationOverviewData{
-		Producers:     producers,
-		Consumers:     consumers,
-		TotalMessages: totalMessages,
-		AvgMsgSize:    avgMsgSize,
-		AuditLogs:     auditLogs,
-		Messages:      messages,
+		ActiveProducers:    activeProducers,
+		KilledProducers:    killedProducers,
+		DestroyedProducers: destroyedProducers,
+		ActiveConsumers:    activeConsumers,
+		KilledConsumers:    killedConsumers,
+		DestroyedConsumers: destroyedConsumers,
+		TotalMessages:      totalMessages,
+		AvgMsgSize:         avgMsgSize,
+		AuditLogs:          auditLogs,
+		Messages:           messages,
 	}, nil
 }
 
