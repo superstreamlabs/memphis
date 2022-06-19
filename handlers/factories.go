@@ -81,6 +81,11 @@ func removeStations(factoryId primitive.ObjectID) error {
 		if err != nil {
 			return err
 		}
+
+		err = RemoveAllAuditLogsByStation(station.Name)
+		if err != nil {
+			logger.Warn("removeStations error: " + err.Error())
+		}
 	}
 
 	_, err = stationsCollection.UpdateMany(context.TODO(),

@@ -146,6 +146,29 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+
+		user := getUserDetailsFromMiddleware(c)
+		message := "Station " + stationName + " has been created"
+		logger.Info(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			logger.Warn("CreateProducer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.IncrementStationsCounter()
+		}
 	}
 
 	exist, _, err = IsConsumerExist(name, station.ID)
