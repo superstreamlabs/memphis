@@ -12,7 +12,7 @@
 
 <div align="center">
 <h1>Probably The Easiest Message Broker In The World</h1>
-<a target="_blank" href="https://twitter.com/intent/tweet?text=Probably%20The%20Easiest%20Message%20Broker%20In%20The%20World!%0A#Memphis{dev}%20https://github.com/memphisdev/memphis-broker"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a> 
+<a target="_blank" href="https://twitter.com/intent/tweet?text=Probably+The+Easiest+Message+Broker+In+The+World%21+%0D%0A%23Memphis%7Bdev%7D+https%3A%2F%2Fgithub.com%2Fmemphisdev%2Fmemphis-broker"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a> 
 </div>
  
  <p align="center">
