@@ -46,7 +46,7 @@ node {
       dir ('memphis-infra'){
         git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch
       }
-      sh "docker-compose -f ./memphis-infra/staging/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -68,7 +68,7 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "helm install memphis-tests memphis-infra/staging/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      sh "helm install memphis-tests memphis-infra/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
     }
 
     stage('Open port forwarding to memphis service') {
