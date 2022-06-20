@@ -37,7 +37,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -97,12 +96,7 @@ func updateUserResources(user models.User) error {
 		}
 	}
 
-	_, err := tokensCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
-	if err != nil {
-		return err
-	}
-
-	_, err = factoriesCollection.UpdateMany(context.TODO(),
+	_, err := factoriesCollection.UpdateMany(context.TODO(),
 		bson.M{"created_by_user": user.Username},
 		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
 	)
@@ -319,18 +313,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 
-	opts := options.Update().SetUpsert(true)
-	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"jwt_token": token, "refresh_token": refreshToken}},
-		opts,
-	)
-	if err != nil {
-		logger.Error("Login error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	if !user.AlreadyLoggedIn {
 		usersCollection.UpdateOne(context.TODO(),
 			bson.M{"_id": user.ID},
@@ -384,18 +366,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	opts := options.Update().SetUpsert(true)
-	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"jwt_token": token, "refresh_token": refreshToken}},
-		opts,
-	)
-	if err != nil {
-		logger.Error("RefreshToken error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	domain := ""
 	secure := true
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -410,18 +380,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    sendAnalytics,
 	})
-}
-
-func (umh UserMgmtHandler) Logout(c *gin.Context) {
-	user := getUserDetailsFromMiddleware(c)
-	_, err := tokensCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
-	if err != nil {
-		logger.Error("Logout error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{})
 }
 
 // TODO

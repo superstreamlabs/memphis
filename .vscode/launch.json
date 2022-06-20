@@ -17,7 +17,9 @@
                 "ANALYTICS": "false",
                 "ANALYTICS_TOKEN": "UICQP3RXYsnDp9ACDmsYxRD+bvOl2X79ATb3o2BzrDaeWLX4wBBH2O/eK7ebYNs9H4G8Hdk38TFzej6bguxh3QZl0N4IvJhtKAbxoK4H",
                 "K8S_NAMESPACE": "memphis",
-                "LOGS_RETENTION_IN_DAYS": "30"
+                "LOGS_RETENTION_IN_DAYS": "30",
+                "JWT_SECRET": "35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk",
+                "REFRESH_JWT_SECRET": "35c7b3eb969db065bfa3c66b38e4323e8f73113f3965dfb55c6bc585dcb0ba62bd399e2588fdc8f709ae0b63fb24be32590f134506ca1d7a4314339f11b8045a"
             }
         }
     ]

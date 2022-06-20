@@ -14,12 +14,10 @@
 package tcp_server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"memphis-broker/broker"
 	"memphis-broker/config"
-	"memphis-broker/db"
 	"memphis-broker/handlers"
 	"memphis-broker/logger"
 	"memphis-broker/models"
@@ -29,10 +27,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type tcpMessage struct {
@@ -75,17 +70,6 @@ func createAccessToken(user models.User) (string, error) {
 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
-	if err != nil {
-		return "", err
-	}
-
-	var tokensCollection *mongo.Collection = db.GetCollection("tokens")
-	opts := options.Update().SetUpsert(true)
-	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"jwt_token": token}},
-		opts,
-	)
 	if err != nil {
 		return "", err
 	}
@@ -160,7 +144,8 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 				return primitive.ObjectID{}, models.User{}
 			}
 		} else {
-			connectionId, err = connectionsHandler.CreateConnection(username)
+			clientAddress := connection.RemoteAddr()
+			connectionId, err = connectionsHandler.CreateConnection(username, clientAddress.String())
 			if err != nil {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))

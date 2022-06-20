@@ -31,13 +31,6 @@ type User struct {
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 }
 
-type Token struct {
-	ID           primitive.ObjectID `json:"id" bson:"_id"`
-	Username     string             `json:"username" bson:"username"`
-	JwtToken     string             `json:"jwt_token" bson:"jwt_token"`
-	RefreshToken string             `json:"refresh_token" bson:"refresh_token"`
-}
-
 type Image struct {
 	ID    primitive.ObjectID `json:"id" bson:"_id"`
 	Name  string             `json:"name" bson:"name"`

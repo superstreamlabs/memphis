@@ -28,7 +28,6 @@ import (
 )
 
 var usersCollection *mongo.Collection = db.GetCollection("users")
-var tokensCollection *mongo.Collection = db.GetCollection("tokens")
 var imagesCollection *mongo.Collection = db.GetCollection("images")
 var factoriesCollection *mongo.Collection = db.GetCollection("factories")
 var stationsCollection *mongo.Collection = db.GetCollection("stations")
