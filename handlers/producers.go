@@ -33,7 +33,11 @@ import (
 type ProducersHandler struct{}
 
 func validateProducerName(name string) error {
-	re := regexp.MustCompile("^[a-z_]*$")
+	if len(name) > 32 {
+		return errors.New("Producer name should be under 32 characters")
+	}
+	
+	re := regexp.MustCompile("^[a-z0-9_]*$")
 
 	validName := re.MatchString(name)
 	if !validName {

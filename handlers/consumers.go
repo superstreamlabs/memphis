@@ -36,7 +36,11 @@ import (
 type ConsumersHandler struct{}
 
 func validateName(name string) error {
-	re := regexp.MustCompile("^[a-z_]*$")
+	if len(name) > 32 {
+		return errors.New("Consumer name/consumer group should be under 32 characters")
+	}
+
+	re := regexp.MustCompile("^[a-z0-9_]*$")
 
 	validName := re.MatchString(name)
 	if !validName {

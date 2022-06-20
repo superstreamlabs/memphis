@@ -34,6 +34,10 @@ import (
 type StationsHandler struct{}
 
 func validateStationName(stationName string) error {
+	if len(stationName) > 32 {
+		return errors.New("station name should be under 32 characters")
+	}
+
 	re := regexp.MustCompile("^[a-z0-9_]*$")
 
 	validName := re.MatchString(stationName)
