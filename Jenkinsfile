@@ -44,8 +44,7 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-infra"
       dir ('memphis-infra'){
-        //git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch //memphis-infra branch is the same as the main repo
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: 'staging'
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch //memphis-infra branch is the same as the main repo
       }
       sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
