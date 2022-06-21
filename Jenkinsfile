@@ -99,10 +99,7 @@ node {
     }*/
 
     stage('Push to staging'){
-      when {
-	branch "staging"
-      }
-      steps {
+      if (env.BRANCH_NAME ==~ /(staging-tests-vb)/) {
 	sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
         sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
         sh 'helm install my-memphis memphis-infra/kubernetes/helm/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
@@ -110,9 +107,6 @@ node {
       }
     }
 
-    /*stage('Build docker image and push with latest tag') {
-	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm64 ."
-    }*/
     
     notifySuccessful()
 	  
