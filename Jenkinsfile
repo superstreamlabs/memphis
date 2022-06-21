@@ -1,14 +1,13 @@
-def imageName = "memphis-broker-staging"
-def containerName = "memphis-broker"
+def gitBranch = env.BRANCH_NAME
+def imageName = "memphis-broker-${env.BRANCH_NAME}"
 def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
-def gitBranch = "staging"
 def repoUrlPrefix = "memphisos"
-String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
-def namespace = "memphis"
 def test_suffix = "test"
 
+String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
+
 node {
-  git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+  git credentialsId: 'main-github', url: gitURL
   def versionTag = readFile "./version.conf"
   
   try{
@@ -44,7 +43,7 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-infra"
       dir ('memphis-infra'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch //memphis-infra branch is the same as the main repo
       }
       sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
@@ -91,22 +90,21 @@ node {
     stage('Tests - Remove used directories') {
       sh "rm -rf memphis-e2e-tests"
     }
-
+/*
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
-    }
+    }*/
 
     stage('Push to staging'){
-      sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
-      sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
-      sh 'helm install my-memphis memphis-infra/kubernetes/helm/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
-      sh "rm -rf memphis-infra"
+      if (env.BRANCH_NAME ==~ /(staging)/) {
+	sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
+        sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
+        sh 'helm install my-memphis memphis-infra/kubernetes/helm/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
+        sh "rm -rf memphis-infra"
+      }
     }
 
-    /*stage('Build docker image and push with latest tag') {
-	    sh "docker buildx build --push -t ${dockerImagesRepo}/${imageName}:latest --platform linux/amd64,linux/arm64 ."
-    }*/
     
     notifySuccessful()
 	  
