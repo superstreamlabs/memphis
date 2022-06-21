@@ -8,7 +8,8 @@ def namespace = "memphis"
 def test_suffix = "test"
 
 node {
- // git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+  //git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+  git credentialsId: 'main-github', url: gitURL
   def versionTag = readFile "./version.conf"
   
   try{
