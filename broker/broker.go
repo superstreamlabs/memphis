@@ -179,7 +179,7 @@ func CreateStream(station models.Station) error {
 		Discard:           nats.DiscardOld,
 		MaxAge:            maxAge,
 		MaxMsgsPerSubject: -1,
-		MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024,
+		MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:           storage,
 		Replicas:          station.Replicas,
 		NoAck:             false,
