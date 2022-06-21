@@ -1,14 +1,14 @@
 def imageName = "memphis-broker-staging"
 def containerName = "memphis-broker"
 def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
-def gitBranch = "staging"
+def gitBranch = env.BRANCH_NAME
 def repoUrlPrefix = "memphisos"
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
 def namespace = "memphis"
 def test_suffix = "test"
 
 node {
-  git credentialsId: 'main-github', url: gitURL, branch: gitBranch
+ // git credentialsId: 'main-github', url: gitURL, branch: gitBranch
   def versionTag = readFile "./version.conf"
   
   try{
@@ -18,7 +18,7 @@ node {
 		  sh 'docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW'
 	    }
     }
-	  
+/*	  
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl config use-context minikube"
       sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
