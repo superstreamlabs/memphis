@@ -90,11 +90,22 @@ node {
     stage('Tests - Remove used directories') {
       sh "rm -rf memphis-e2e-tests"
     }
+	  
+    ////////////////////////////////////////
+    ////////////  Build & Push  ////////////
+    ////////////////////////////////////////
+
 /*
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
     }*/
+	  
+	  
+    ///////////////////////////////////////
+    //////////////  STAGING  //////////////
+    ///////////////////////////////////////
+
 
     stage('Push to staging'){
       if (env.BRANCH_NAME ==~ /(staging)/) {
@@ -105,6 +116,28 @@ node {
       }
     }
 
+    /////////////////////////////////////////////
+    //////////////  BETA & MASTER  //////////////
+    /////////////////////////////////////////////
+    if (env.BRANCH_NAME ==~ /(beta|master)/) {  
+      stage('Tests - Docker compose install') {
+        sh "rm -rf memphis-docker"
+        dir ('memphis-docker'){
+          git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'master'
+        }
+        if (env.BRANCH_NAME ==~ /(beta)/) {
+          sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis up -d"
+        }
+        else {
+          sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis up -d"
+        }
+      }
+    
+
+      stage('Tests - Run e2e tests over Docker') {
+        sh "node ./memphis-e2e-tests/index.js docker"
+      }
+    }
     
     notifySuccessful()
 	  
