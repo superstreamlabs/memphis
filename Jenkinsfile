@@ -1,14 +1,12 @@
-def imageName = "memphis-broker-staging"
-def containerName = "memphis-broker"
-def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
 def gitBranch = env.BRANCH_NAME
+def imageName = "memphis-broker-${env.BRANCH_NAME}"
+def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
 def repoUrlPrefix = "memphisos"
-String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
-def namespace = "memphis"
 def test_suffix = "test"
 
+String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
+
 node {
-  //git credentialsId: 'main-github', url: gitURL, branch: gitBranch
   git credentialsId: 'main-github', url: gitURL
   def versionTag = readFile "./version.conf"
   
@@ -19,7 +17,7 @@ node {
 		  sh 'docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW'
 	    }
     }
-/*	  
+	  
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl config use-context minikube"
       sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
@@ -30,6 +28,7 @@ node {
     }
 
     stage('Build and push docker image to Docker Hub') {
+      //sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
       sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
     }
 
@@ -37,7 +36,7 @@ node {
       sh "sudo npm uninstall memphis-dev-cli"
       sh "sudo npm i memphis-dev-cli -g"
     }
-
+/*
     ////////////////////////////////////////
     //////////// Docker-Compose ////////////
     ////////////////////////////////////////
