@@ -28,8 +28,7 @@ node {
     }
 
     stage('Build and push docker image to Docker Hub') {
-      //sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
-      sh "docker buildx build -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
+      sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
