@@ -40,6 +40,7 @@ type tcpMessage struct {
 
 type tcpResponseMessage struct {
 	ConnectionId   primitive.ObjectID `json:"connection_id"`
+	ClientAddress  string             `json:"client_address"`
 	AccessToken    string             `json:"access_token"`
 	AccessTokenExp int                `json:"access_token_exp"`
 	PingInterval   int                `json:"ping_interval_ms"`
@@ -121,6 +122,9 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			return primitive.ObjectID{}, models.User{}
 		}
 
+		clientAddress := connection.RemoteAddr()
+		clientAddressString := clientAddress.String()
+		clientAddressString = strings.Split(clientAddressString, ":")[0]
 		if exist {
 			err = connectionsHandler.ReliveConnection(connectionId)
 			if err != nil {
@@ -144,8 +148,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 				return primitive.ObjectID{}, models.User{}
 			}
 		} else {
-			clientAddress := connection.RemoteAddr()
-			connectionId, err = connectionsHandler.CreateConnection(username, clientAddress.String())
+			connectionId, err = connectionsHandler.CreateConnection(username, clientAddressString)
 			if err != nil {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))
@@ -164,6 +167,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 
 		response := tcpResponseMessage{
 			ConnectionId:   connectionId,
+			ClientAddress:  clientAddressString,
 			AccessToken:    accessToken,
 			AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 			PingInterval:   configuration.PING_INTERVAL_MS,
