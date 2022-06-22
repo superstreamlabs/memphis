@@ -158,7 +158,6 @@ node {
 	
 			if (env.BRANCH_NAME ==~ /(beta)/) {
           sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis down"
-      		sh "rm -rf memphis-e2e-tests"
         }
         else {
           sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis down"
@@ -170,7 +169,7 @@ node {
     //////////////   K8S   ///////////////
     //////////////////////////////////////
 	  
-	stage('Tests - Install memphis with helm') {
+	  	stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
        	 git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
