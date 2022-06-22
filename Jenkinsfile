@@ -158,7 +158,6 @@ node {
 	
 			if (env.BRANCH_NAME ==~ /(beta)/) {
           sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis down"
-      		sh "rm -rf memphis-e2e-tests"
         }
         else {
           sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis down"
