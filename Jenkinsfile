@@ -1,5 +1,5 @@
 def gitBranch = env.BRANCH_NAME
-def imageName = "memphis-broker-${env.BRANCH_NAME}"
+def imageName = "memphis-broker"
 def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
 def repoUrlPrefix = "memphisos"
 def test_suffix = "test"
@@ -28,7 +28,7 @@ node {
     }
 
     stage('Build and push docker image to Docker Hub') {
-      sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${test_suffix} ."
+			sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${gitBranch}-${test_suffix} ."
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
@@ -102,10 +102,14 @@ node {
       sh "docker buildx use builder"
       if (env.BRANCH_NAME ==~ /(beta)/) {
       	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
-	    }
-			else
-			{
-      	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+			}
+			else{
+				if (env.BRANCH_NAME ==~ /(staging)/) {
+					sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+				}
+				else{
+					sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+				}
 		  }
 		}
 	  
@@ -114,9 +118,8 @@ node {
     //////////////  STAGING  //////////////
     ///////////////////////////////////////
 
-
-    stage('Push to staging'){
-      if (env.BRANCH_NAME ==~ /(staging)/) {
+		if (env.BRANCH_NAME ==~ /(staging)/) {
+    	stage('Push to staging'){
 	      sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
         sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
         sh 'helm install my-memphis memphis-infra/kubernetes/helm/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
@@ -126,6 +129,10 @@ node {
 
     /////////////////////////////////////////////
     //////////////  BETA & MASTER  //////////////
+    /////////////////////////////////////////////
+		
+    /////////////////////////////////////////////
+    //////////////  Docker Tests  ///////////////
     /////////////////////////////////////////////
     if (env.BRANCH_NAME ==~ /(beta|master)/) {  
       stage('Tests - Docker compose install') {
@@ -158,13 +165,11 @@ node {
         }
       sh "rm -rf memphis-docker"
       }    
-    }
 	  
     //////////////////////////////////////
-    //////////////  MASTER  //////////////
+    //////////////   K8S   ///////////////
     //////////////////////////////////////
 	  
-    if (env.BRANCH_NAME ==~ /(master)/) { 
 	  	stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
