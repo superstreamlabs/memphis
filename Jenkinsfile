@@ -7,7 +7,7 @@ def test_suffix = "test"
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
 
 node {
-  git credentialsId: 'main-github', url: gitURL
+  git credentialsId: 'main-github', url: gitURL, branch: gitBranch
   def versionTag = readFile "./version.conf"
   
   try{
