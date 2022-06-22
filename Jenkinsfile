@@ -98,7 +98,13 @@ node {
 /*
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
-      sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+      if (env.BRANCH_NAME ==~ /(beta)/) {
+      	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
+			}
+			else
+			{
+      	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+		  }
     }*/
 	  
 	  
@@ -109,7 +115,7 @@ node {
 
     stage('Push to staging'){
       if (env.BRANCH_NAME ==~ /(staging)/) {
-	sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
+	      sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
         sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
         sh 'helm install my-memphis memphis-infra/kubernetes/helm/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
         sh "rm -rf memphis-infra"
@@ -137,8 +143,57 @@ node {
       stage('Tests - Run e2e tests over Docker') {
         sh "node ./memphis-e2e-tests/index.js docker"
       }
-    }
     
+     
+      stage('Tests - Remove Docker compose') {
+	
+			if (env.BRANCH_NAME ==~ /(beta)/) {
+          sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis down"
+        }
+        else {
+          sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis down"
+        }
+      sh "rm -rf memphis-docker"
+      }    
+    }
+	  
+    //////////////////////////////////////
+    //////////////  MASTER  //////////////
+    //////////////////////////////////////
+	  
+    if (env.BRANCH_NAME ==~ /(master)/) { 
+	  	stage('Tests - Install memphis with helm') {
+      	sh "rm -rf memphis-k8s"
+      	dir ('memphis-k8s'){
+       	 git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'master'
+      	}
+      	sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false' --create-namespace --namespace memphis"
+    	}
+
+   	 stage('Open port forwarding to memphis service') {
+   	   sh(script: """until kubectl get pods --selector=app=memphis-ui -o=jsonpath="{.items[*].status.phase}" -n memphis | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
+   	   sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis&"
+   	   sh "nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis &"
+   	 }
+
+
+   	 stage('Tests - Run e2e tests over kubernetes') {
+   	   sh "node ./memphis-e2e-tests/index.js kubernetes memphis"
+   	 }
+
+     stage('Tests - Uninstall helm') {
+       sh "helm uninstall memphis-tests -n memphis"
+       sh "kubectl delete ns memphis &"
+       sh(script: """/usr/sbin/lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
+    }
+
+     stage('Tests - Remove used directories') {
+       sh "rm -rf memphis-k8s"
+       sh "rm -rf memphis-e2e-tests"
+		 }
+		}
+	  
+	  
     notifySuccessful()
 	  
   } catch (e) {
