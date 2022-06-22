@@ -144,7 +144,7 @@ node {
           sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis up -d"
         }
         else {
-          sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis up -d"
+          sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis up -d"
         }
       }
     
@@ -160,7 +160,7 @@ node {
           sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis down"
         }
         else {
-          sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis down"
+          sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis down"
         }
       sh "rm -rf memphis-docker"
       }    
