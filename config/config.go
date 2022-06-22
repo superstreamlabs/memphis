@@ -43,6 +43,7 @@ type Configuration struct {
 	ANALYTICS_TOKEN                string
 	K8S_NAMESPACE                  string
 	LOGS_RETENTION_IN_DAYS         string
+	GOOGLE_CLIENT_ID               string
 }
 
 func GetConfig() Configuration {
