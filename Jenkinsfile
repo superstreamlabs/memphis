@@ -86,26 +86,28 @@ node {
       sh "kubectl delete ns memphis-$unique_id &"
       sh(script: """/usr/sbin/lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
     }
-
-    stage('Tests - Remove used directories') {
-      sh "rm -rf memphis-e2e-tests"
-    }
+		
+		if (env.BRANCH_NAME ==~ /(staging)/) {
+    	stage('Tests - Remove used directories') {
+      	sh "rm -rf memphis-e2e-tests"
+    	}
+		}
 	  
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
     ////////////////////////////////////////
 
-/*
+
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       if (env.BRANCH_NAME ==~ /(beta)/) {
       	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
-			}
+	    }
 			else
 			{
       	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
 		  }
-    }*/
+		}
 	  
 	  
     ///////////////////////////////////////
@@ -149,6 +151,7 @@ node {
 	
 			if (env.BRANCH_NAME ==~ /(beta)/) {
           sh "docker-compose -f ./memphis-docker/docker-compose-beta.yml -p memphis down"
+      		sh "rm -rf memphis-e2e-tests"
         }
         else {
           sh "docker-compose -f ./memphis-docker/docker-compose.yml -p memphis down"
