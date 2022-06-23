@@ -29,7 +29,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type SandboxHandler struct{}
@@ -82,23 +81,6 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// authenticated, user, err := authenticateUser(claims.Email, claims.FirstName+"."+claims.LastName)
-	// if err != nil {
-	// 	logger.Error("Login error: " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 	return
-	// }
-	// if !authenticated {
-	// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	// 	return
-	// }
-
-	opts := options.Update().SetUpsert(true)
-	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"jwt_token": token, "refresh_token": refreshToken}},
-		opts,
-	)
 	if err != nil {
 		logger.Error("Login error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
