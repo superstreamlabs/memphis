@@ -149,16 +149,33 @@ func validateUsername(username string) error {
 	return nil
 }
 
-func createTokens(user models.User) (string, string, error) {
+type userToTokens interface {
+	models.User | models.SandboxUser
+}
+
+func CreateTokens[U userToTokens](user U) (string, string, error) {
 	atClaims := jwt.MapClaims{}
-	atClaims["user_id"] = user.ID.Hex()
-	atClaims["username"] = user.Username
-	atClaims["user_type"] = user.UserType
-	atClaims["creation_date"] = user.CreationDate
-	atClaims["already_logged_in"] = user.AlreadyLoggedIn
-	atClaims["avatar_id"] = user.AvatarId
-	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	var at *jwt.Token
+	switch u := any(user).(type) {
+	case models.User:
+		atClaims["user_id"] = u.ID.Hex()
+		atClaims["username"] = u.Username
+		atClaims["user_type"] = u.UserType
+		atClaims["creation_date"] = u.CreationDate
+		atClaims["already_logged_in"] = u.AlreadyLoggedIn
+		atClaims["avatar_id"] = u.AvatarId
+		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	case models.SandboxUser:
+		atClaims["user_id"] = u.ID.Hex()
+		atClaims["username"] = u.Username
+		atClaims["user_type"] = u.UserType
+		atClaims["creation_date"] = u.CreationDate
+		atClaims["already_logged_in"] = u.AlreadyLoggedIn
+		atClaims["avatar_id"] = u.AvatarId
+		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
 	if err != nil {
 		return "", "", err
@@ -306,7 +323,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
-	token, refreshToken, err := createTokens(user)
+	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
 		logger.Error("Login error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -359,7 +376,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
-	token, refreshToken, err := createTokens(user)
+	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
 		logger.Error("RefreshToken error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

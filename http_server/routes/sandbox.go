@@ -19,7 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeSendboxRoutes(router *gin.RouterGroup) {
+func InitializeSandboxRoutes(router *gin.RouterGroup) {
 	sandboxHandler := handlers.SandboxHandler{}
 	sandboxRoutes := router.Group("/sandbox")
 	sandboxRoutes.POST("/login", sandboxHandler.Login)

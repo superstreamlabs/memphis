@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"memphis-broker/db"
 	"memphis-broker/logger"
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -29,9 +30,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type SandboxHandler struct{}
+
+type googleClaims struct {
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	FirstName     string `json:"given_name"`
+	LastName      string `json:"family_name"`
+	jwt.StandardClaims
+}
+
+var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users")
 
 func (sbh SandboxHandler) Login(c *gin.Context) {
 	var body models.SandboxLoginSchema
@@ -40,24 +52,26 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		return
 	}
 	google_token := body.Google_token
-	claims, err := ValidateGoogleJWT(google_token)
+	claims, err := validateGoogleJWT(google_token)
 	if err != nil {
-		logger.Error("ValidateGoogleJWT: " + err.Error())
+		logger.Error("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, user, err := IsUserExist(claims.Email)
+	exist, user, err := isSandboxUserExist(claims.Email)
 	if err != nil {
-		logger.Error("IsUserExist: " + err.Error())
+		logger.Error("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if !exist {
-		user = models.User{
+		user = models.SandboxUser{
 			ID:              primitive.NewObjectID(),
 			Username:        claims.Email,
 			Password:        claims.FirstName + "." + claims.LastName,
+			FirstName:       claims.FirstName,
+			LastName:        claims.LastName,
 			HubUsername:     "",
 			HubPassword:     "",
 			UserType:        "management",
@@ -65,29 +79,23 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			AlreadyLoggedIn: false,
 			AvatarId:        1,
 		}
-		_, err = usersCollection.InsertOne(context.TODO(), user)
+		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
-			logger.Error("InsertOne: " + err.Error())
+			logger.Error("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 	}
 
-	token, refreshToken, err := createTokens(user)
+	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		logger.Error("createTokens: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err != nil {
-		logger.Error("Login error: " + err.Error())
+		logger.Error("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !user.AlreadyLoggedIn {
-		usersCollection.UpdateOne(context.TODO(),
+		sandboxUsersCollection.UpdateOne(context.TODO(),
 			bson.M{"_id": user.ID},
 			bson.M{"$set": bson.M{"already_logged_in": true}},
 		)
@@ -105,14 +113,6 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 	})
-}
-
-type GoogleClaims struct {
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	FirstName     string `json:"given_name"`
-	LastName      string `json:"family_name"`
-	jwt.StandardClaims
 }
 
 func getGooglePublicKey(keyID string) (string, error) {
@@ -137,8 +137,8 @@ func getGooglePublicKey(keyID string) (string, error) {
 	return key, nil
 }
 
-func ValidateGoogleJWT(tokenString string) (GoogleClaims, error) {
-	claimsStruct := GoogleClaims{}
+func validateGoogleJWT(tokenString string) (googleClaims, error) {
+	claimsStruct := googleClaims{}
 
 	token, err := jwt.ParseWithClaims(
 		tokenString,
@@ -156,25 +156,37 @@ func ValidateGoogleJWT(tokenString string) (GoogleClaims, error) {
 		},
 	)
 	if err != nil {
-		return GoogleClaims{}, err
+		return googleClaims{}, err
 	}
 
-	claims, ok := token.Claims.(*GoogleClaims)
+	claims, ok := token.Claims.(*googleClaims)
 	if !ok {
-		return GoogleClaims{}, errors.New("invalid Google JWT")
+		return googleClaims{}, errors.New("invalid Google JWT")
 	}
 
 	if claims.Issuer != "accounts.google.com" && claims.Issuer != "https://accounts.google.com" {
-		return GoogleClaims{}, errors.New("iss is invalid")
+		return googleClaims{}, errors.New("iss is invalid")
 	}
 
 	if claims.Audience != configuration.GOOGLE_CLIENT_ID {
-		return GoogleClaims{}, errors.New("aud is invalid")
+		return googleClaims{}, errors.New("aud is invalid")
 	}
 
 	if claims.ExpiresAt < time.Now().UTC().Unix() {
-		return GoogleClaims{}, errors.New("JWT is expired")
+		return googleClaims{}, errors.New("JWT is expired")
 	}
 
 	return *claims, nil
+}
+
+func isSandboxUserExist(username string) (bool, models.SandboxUser, error) {
+	filter := bson.M{"username": username}
+	var user models.SandboxUser
+	err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		return false, user, nil
+	} else if err != nil {
+		return false, user, err
+	}
+	return true, user, nil
 }
