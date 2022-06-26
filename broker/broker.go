@@ -212,12 +212,19 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 		maxAckTimeMs = consumer.MaxAckTimeMs
 	}
 
+	var MaxMsgDeliveries int
+	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
+		MaxMsgDeliveries = 10
+	} else {
+		MaxMsgDeliveries = consumer.MaxMsgDeliveries
+	}
+
 	_, err := js.AddConsumer(station.Name, &nats.ConsumerConfig{
 		Durable:       consumerName,
 		DeliverPolicy: nats.DeliverAllPolicy,
 		AckPolicy:     nats.AckExplicitPolicy,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-		MaxDeliver:    10,
+		MaxDeliver:    MaxMsgDeliveries,
 		FilterSubject: station.Name + ".final",
 		ReplayPolicy:  nats.ReplayInstantPolicy,
 		MaxAckPending: -1,
