@@ -31,6 +31,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"k8s.io/utils/strings/slices"
 )
 
 type ConsumersHandler struct{}
@@ -319,6 +320,7 @@ func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]mode
 
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
+		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
@@ -344,8 +346,14 @@ func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]mode
 	var activeConsumers []models.ExtendedConsumer
 	var killedConsumers []models.ExtendedConsumer
 	var destroyedConsumers []models.ExtendedConsumer
+	consumersNames := []string{}
 
 	for _, consumer := range consumers {
+		if slices.Contains(consumersNames, consumer.Name) {
+			continue
+		}
+
+		consumersNames = append(consumersNames, consumer.Name)
 		if consumer.IsActive {
 			activeConsumers = append(activeConsumers, consumer)
 		} else if !consumer.IsDeleted && !consumer.IsActive {
