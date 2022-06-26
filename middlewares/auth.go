@@ -33,6 +33,7 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/refreshtoken",
 	"/api/monitoring/writesyslog",
 	"/api/status",
+	"/api/sandbox/login",
 }
 
 var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
