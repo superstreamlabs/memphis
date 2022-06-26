@@ -32,7 +32,17 @@ As a developer, you need to build a dedicated pipeline per data source,<br>chang
 Message broker is the answer. It allows you to build an architecture that supports such a pattern,<br>but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
 Give memphis{dev} a spin before.
 
+## 👉 Use-cases
+- Async task management
+- Real-time streaming pipelines
+- Data ingestion
+- Async communication between services on k8s
+- Queuing
+- Multiple destinations to a single message
+
 ## ✨ Features
+
+**v0.2.2**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
@@ -40,12 +50,19 @@ Give memphis{dev} a spin before.
 - 🐳☸Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
 
-**Coming soon v0.2.5-0.3.0**
+**Coming soon v0.2.5-1.0.0**
 - Embedded schema registry using dbt
 - Message Journey - Real-time messages tracing
 - More SDKs (GoLang, Python, Kafka compatible)
 - Inline processing
 - Ready-to-use connectors and analysis functions
+
+## 📸 Screenshots
+Dashboard             |  Station overview|  CLI
+:-------------------------:|:-------------------------:|:-------------------------:
+<img src="https://user-images.githubusercontent.com/70286779/175805888-f08e2078-79e1-43f1-a841-1d7115bf15a8.png" alt="drawing" width="300"/>|<img src="https://user-images.githubusercontent.com/70286779/175805897-349dde51-427f-4c9b-95cd-12876a846f1a.png" alt="drawing" width="300"/>|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
+
+
 
 ## 🚀 Getting Started
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
