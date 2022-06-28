@@ -24,6 +24,7 @@
 </p>
 
 **[Memphis{dev}](https://memphis.dev)** is a message broker for developers made out of devs' struggles develop around message brokers.<br>Enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
+Focusing on automatic optimization, schema management, inline processing,  and troubleshooting abilities. All under the same hood.
 
 ## ⭐️ Why
 Building an event-driven application is HARD.<br>
