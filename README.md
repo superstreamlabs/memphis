@@ -27,10 +27,11 @@
 Focusing on automatic optimization, schema management, inline processing,  and troubleshooting abilities. All under the same hood.
 
 ## ⭐️ Why
-Building an event-driven application is HARD.<br>
-As a developer, you need to build a dedicated pipeline per data source,<br>change the schema, individual analysis, enrich the data with other sources, it crashes, adapt to different rate limits, constantly change APIs, and scale for better performance 🥵 .<br>
-**It takes time that you don't have.**<br><br>
-Message broker is the answer. It allows you to build an architecture that supports such a pattern,<br>but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
+Working with data streaming is HARD.<br>
+As a developer, you need to build a dedicated pipeline per data source,<br>change the schema, individual analysis, enrich the data with other sources, it constantly crashes, it requires adaptation to different rate limits, constantly change APIs, and scale for better performance 🥵 .<br>
+**It takes time and resources that you don't have.**<br><br>
+Message broker is the answer. In short - It's an event-store.<br>
+Message broker acts as the middleman and supports streaming architecture,<br>but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
 Give memphis{dev} a spin before.
 
 ## 👉 Use-cases
