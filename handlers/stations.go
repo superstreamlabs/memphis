@@ -319,8 +319,10 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
-	if configuration.SANDBOX_ENV == "true" {
-		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this function is not allowed"})
+	err := DenyForSandboxEnv()
+	if err != nil {
+		logger.Error("RemoveStation error: " + err.Error())
+		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
 		return
 	}
 	var body models.RemoveStationSchema
