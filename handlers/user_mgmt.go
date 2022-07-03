@@ -549,6 +549,10 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
+	if configuration.SANDBOX_ENV == "true" {
+		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this function is not allowed"})
+		return
+	}
 	var body models.RemoveUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -625,6 +629,10 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
+	if configuration.SANDBOX_ENV == "true" {
+		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this function is not allowed"})
+		return
+	}
 	var body models.EditHubCredsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -762,6 +770,10 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
+	if configuration.SANDBOX_ENV == "true" {
+		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this function is not allowed"})
+		return
+	}
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

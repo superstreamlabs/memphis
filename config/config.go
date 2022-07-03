@@ -44,6 +44,7 @@ type Configuration struct {
 	K8S_NAMESPACE                  string
 	LOGS_RETENTION_IN_DAYS         string
 	GOOGLE_CLIENT_ID               string
+	SANDBOX_ENV                    string
 }
 
 func GetConfig() Configuration {

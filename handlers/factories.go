@@ -265,6 +265,10 @@ func (fh FactoriesHandler) GetAllFactories(c *gin.Context) {
 }
 
 func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
+	if configuration.SANDBOX_ENV == "true" {
+		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this function is not allowed"})
+		return
+	}
 	var body models.RemoveFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -312,6 +316,10 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 }
 
 func (fh FactoriesHandler) EditFactory(c *gin.Context) {
+	if configuration.SANDBOX_ENV == "true" {
+		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this function is not allowed"})
+		return
+	}
 	var body models.EditFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
