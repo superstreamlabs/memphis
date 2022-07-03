@@ -549,10 +549,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
-	err := DenyForSandboxEnv()
-	if err != nil {
-		logger.Error("RemoveUser error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
+	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
 	var body models.RemoveUserSchema
@@ -631,10 +628,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
-	err := DenyForSandboxEnv()
-	if err != nil {
-		logger.Error("EditHubCreds error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
+	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
 	var body models.EditHubCredsSchema
@@ -774,10 +768,7 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	err := DenyForSandboxEnv()
-	if err != nil {
-		logger.Error("EditAnalytics error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
+	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
 	var body models.EditAnalyticsSchema

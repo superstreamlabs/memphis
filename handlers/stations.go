@@ -319,10 +319,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
-	err := DenyForSandboxEnv()
-	if err != nil {
-		logger.Error("RemoveStation error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
+	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
 	var body models.RemoveStationSchema

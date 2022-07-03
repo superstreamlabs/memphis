@@ -311,10 +311,10 @@ func getGithubData(accessToken string) (map[string]any, error) {
 	return data, nil
 }
 
-func DenyForSandboxEnv() error {
+func DenyForSandboxEnv(c *gin.Context) error {
 	if configuration.SANDBOX_ENV == "true" {
-		return errors.New("You are in a sandbox environment, this function is not allowed")
-	} else {
-		return nil
+		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
+		return errors.New("Sandbox environment")
 	}
+	return nil
 }

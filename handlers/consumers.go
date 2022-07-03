@@ -429,10 +429,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 }
 
 func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
-	err := DenyForSandboxEnv()
-	if err != nil {
-		logger.Error("DestroyConsumer error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
+	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
 

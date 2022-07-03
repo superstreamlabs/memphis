@@ -343,10 +343,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 }
 
 func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
-	err := DenyForSandboxEnv()
-	if err != nil {
-		logger.Error("DestroyProducer error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": err.Error()})
+	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
 	var body models.DestroyProducerSchema
