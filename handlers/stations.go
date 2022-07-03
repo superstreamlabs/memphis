@@ -319,6 +319,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

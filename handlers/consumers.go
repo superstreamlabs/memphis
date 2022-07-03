@@ -429,6 +429,10 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 }
 
 func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+
 	var body models.DestroyConsumerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

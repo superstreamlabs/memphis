@@ -343,6 +343,9 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 }
 
 func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.DestroyProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
