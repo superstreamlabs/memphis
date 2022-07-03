@@ -14,6 +14,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -24,6 +25,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -43,22 +45,71 @@ type googleClaims struct {
 	jwt.StandardClaims
 }
 
+type githubAccessTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	Scope       string `json:"scope"`
+}
+
 var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users")
 
 func (sbh SandboxHandler) Login(c *gin.Context) {
 	var body models.SandboxLoginSchema
+	var firstName string
+	var lastName string
+	var email string
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	google_token := body.Google_token
-	claims, err := validateGoogleJWT(google_token)
-	if err != nil {
-		logger.Error("Login(Sandbox) error: " + err.Error())
+	token := body.Token
+	loginType := body.LoginType
+	if loginType == "google" {
+		claims, err := validateGoogleJWT(token)
+		if err != nil {
+			logger.Error("Login(Sandbox) error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		firstName = claims.FirstName
+		lastName = claims.LastName
+		email = claims.Email
+	} else if loginType == "github" {
+		gitAccessToken, err := getGithubAccessToken(token)
+		if err != nil {
+			logger.Error("Login(Sandbox) error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		claims, err := getGithubData(gitAccessToken)
+		if err != nil {
+			logger.Error("Login(Sandbox) error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		email, _ = claims["email"].(string)
+		if email == "" {
+			temp, _ := claims["repos_url"].(string)
+			temp2 := strings.Split(temp, "https://api.github.com/users/")
+			temp3 := strings.Split(temp2[1], "/")
+			email = temp3[0]
+		}
+		fullName := strings.Split(claims["name"].(string), " ")
+		firstName = fullName[0]
+		lastName = fullName[1]
+	} else {
+		logger.Error("Wrong login type")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, user, err := isSandboxUserExist(claims.Email)
+
+	if email == "" {
+		logger.Error("Login(Sandbox) error: Wrong login credentials")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	exist, user, err := isSandboxUserExist(email)
 	if err != nil {
 		logger.Error("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -68,10 +119,10 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	if !exist {
 		user = models.SandboxUser{
 			ID:              primitive.NewObjectID(),
-			Username:        claims.Email,
+			Username:        email,
 			Password:        "",
-			FirstName:       claims.FirstName,
-			LastName:        claims.LastName,
+			FirstName:       firstName,
+			LastName:        lastName,
 			HubUsername:     "",
 			HubPassword:     "",
 			UserType:        "",
@@ -189,4 +240,73 @@ func isSandboxUserExist(username string) (bool, models.SandboxUser, error) {
 		return false, user, err
 	}
 	return true, user, nil
+}
+
+func getGithubAccessToken(code string) (string, error) {
+
+	requestBodyMap := map[string]string{
+		"client_id":     configuration.GITHUB_CLIENT_ID,
+		"client_secret": configuration.GITHUB_CLIENT_SECRET,
+		"code":          code,
+	}
+	requestJSON, _ := json.Marshal(requestBodyMap)
+
+	req, reqerr := http.NewRequest(
+		"POST",
+		"https://github.com/login/oauth/access_token",
+		bytes.NewBuffer(requestJSON),
+	)
+	if reqerr != nil {
+		return "", reqerr
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, resperr := http.DefaultClient.Do(req)
+	if resperr != nil {
+		return "", resperr
+	}
+
+	respbody, _ := ioutil.ReadAll(resp.Body)
+
+	type githubAccessTokenResponse struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+		Scope       string `json:"scope"`
+	}
+
+	var ghresp githubAccessTokenResponse
+	json.Unmarshal(respbody, &ghresp)
+
+	return ghresp.AccessToken, nil
+}
+
+func getGithubData(accessToken string) (map[string]any, error) {
+
+	req, reqerr := http.NewRequest(
+		"GET",
+		"https://api.github.com/user",
+		nil,
+	)
+	if reqerr != nil {
+		return nil, reqerr
+	}
+
+	authorizationHeaderValue := fmt.Sprintf("token %s", accessToken)
+	req.Header.Set("Authorization", authorizationHeaderValue)
+
+	resp, resperr := http.DefaultClient.Do(req)
+	if resperr != nil {
+		return nil, resperr
+	}
+
+	respbody, _ := ioutil.ReadAll(resp.Body)
+
+	data := make(map[string]any)
+	err := json.Unmarshal(respbody, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

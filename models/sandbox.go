@@ -33,5 +33,6 @@ type SandboxUser struct {
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 }
 type SandboxLoginSchema struct {
-	Google_token string `json: "google_token" binding:"required"`
+	LoginType string `json: "login_type" binding:"required"`
+	Token     string `json: "token" binding:"required"`
 }
