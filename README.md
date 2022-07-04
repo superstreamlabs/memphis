@@ -78,7 +78,7 @@ Docker Compose
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
 docker compose -f docker-compose.yml -p memphis up
 ```
-[![Connect your first app](https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg)](https://www.youtube.com/watch?v=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br>
+[![Connect your first app](https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg)](https://youtu.be/-5YmxYRQsdw)<br>
 [Tutorial: Build an event-driven food delivery app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
 ## High-Level Architecture
