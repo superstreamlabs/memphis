@@ -31,20 +31,6 @@ type User struct {
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 }
 
-type SandboxUser struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Username        string             `json:"username" bson:"username"`
-	FirstName       string             `json:"first_name" bson:"first_name"`
-	LastName        string             `json:"last_name" bson:"last_name"`
-	Password        string             `json:"password" bson:"password"`
-	HubUsername     string             `json:"hub_username" bson:"hub_username"`
-	HubPassword     string             `json:"hub_password" bson:"hub_password"`
-	UserType        string             `json:"user_type" bson:"user_type"`
-	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
-}
-
 type Image struct {
 	ID    primitive.ObjectID `json:"id" bson:"_id"`
 	Name  string             `json:"name" bson:"name"`
