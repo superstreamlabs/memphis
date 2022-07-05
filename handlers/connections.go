@@ -34,7 +34,7 @@ func (ch ConnectionsHandler) CreateConnection(username string, clientAddress str
 	username = strings.ToLower(username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
-		logger.Error("CreateProducer error: " + err.Error())
+		logger.Error("CreateConnection error: " + err.Error())
 		return connectionId, err
 	}
 	if !exist {

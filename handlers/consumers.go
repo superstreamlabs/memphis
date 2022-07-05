@@ -167,7 +167,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			logger.Warn("CreateProducer error: " + err.Error())
+			logger.Warn("CreateConsumer error: " + err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
