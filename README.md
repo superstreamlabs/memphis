@@ -39,9 +39,11 @@ Give memphis{dev} a spin before.
 - Async task management
 - Real-time streaming pipelines
 - Data ingestion
-- Async communication between services on k8s
+- Cloud Messaging
+  - Services (microservices, service mesh)
+  - Event/Data Streaming (observability, analytics, ML/AI)
 - Queuing
-- Multiple destinations to a single message
+- N:N communication patterns
 
 ## ✨ Features
 
