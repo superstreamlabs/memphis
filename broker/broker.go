@@ -317,6 +317,10 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 	return messages, nil
 }
 
+// func GetMessage(stationName string, messageSeq uint64) (*nats.Msg, error) {
+// 	msg, err := js.GetMsg(stationName, messageSeq)
+// }
+
 func RemoveProducer() error {
 	// nothing to remove
 	return nil
@@ -384,6 +388,10 @@ func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, er
 		return sub, getErrorWithoutNats(err)
 	}
 	return sub, nil
+}
+
+func QueueSubscribe(subject, queue_group_name string, cb func(msg *nats.Msg)) {
+	broker.QueueSubscribe(subject, queue_group_name, cb)
 }
 
 func IsConnectionAlive() bool {

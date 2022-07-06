@@ -57,16 +57,16 @@ func validateConsumerType(consumerType string) error {
 	return nil
 }
 
-func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, error) {
+func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
 	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_active": true}
 	var consumer models.Consumer
 	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
-		return false, nil
+		return false, models.Consumer{}, nil
 	} else if err != nil {
-		return false, err
+		return false, models.Consumer{}, err
 	}
-	return true, nil
+	return true, consumer,nil
 }
 
 func isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, error) {
@@ -189,6 +189,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	}
 
 	var consumerGroupExist bool
+	var consumerFromGroup models.Consumer
 	if consumerGroup != "" {
 		exist, err = isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup, station.ID)
 		if err != nil {
@@ -202,14 +203,14 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 			return
 		}
 
-		consumerGroupExist, err = isConsumerGroupExist(consumerGroup, station.ID)
+		consumerGroupExist, consumerFromGroup, err = isConsumerGroupExist(consumerGroup, station.ID)
 		if err != nil {
 			logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	} else {
-		exist, err = isConsumerGroupExist(name, station.ID)
+		exist, _, err = isConsumerGroupExist(name, station.ID)
 		if err != nil {
 			logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -220,6 +221,11 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer the same name like another active consumer group name on the same station"})
 			return
 		}
+	}
+
+	if consumerGroupExist {
+		body.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
+		body.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
 	}
 
 	consumerId := primitive.NewObjectID()
