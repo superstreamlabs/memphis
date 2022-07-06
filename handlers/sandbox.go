@@ -43,6 +43,7 @@ type googleClaims struct {
 	EmailVerified bool   `json:"email_verified"`
 	FirstName     string `json:"given_name"`
 	LastName      string `json:"family_name"`
+	Picture       string `json: "picture"`
 	jwt.StandardClaims
 }
 
@@ -64,10 +65,12 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	var firstName string
 	var lastName string
 	var email string
+	var profilePic string
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
+
 	token := body.Token
 	loginType := body.LoginType
 	if loginType == "google" {
@@ -86,6 +89,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		firstName = claims.FirstName
 		lastName = claims.LastName
 		email = claims.Email
+		profilePic = claims.Picture
 	} else if loginType == "github" {
 		gitAccessToken, err := getGithubAccessToken(token)
 		if err != nil {
@@ -109,15 +113,9 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		fullName := strings.Split(claims["name"].(string), " ")
 		firstName = fullName[0]
 		lastName = fullName[1]
-
+		profilePic = claims["avatar_url"].(string)
 	} else {
 		logger.Error("Wrong login type")
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if email == "" {
-		logger.Error("Login(Sandbox) error: Wrong login credentials")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -142,6 +140,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			CreationDate:    time.Now(),
 			AlreadyLoggedIn: false,
 			AvatarId:        1,
+			ProfilePic:      profilePic,
 		}
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
@@ -176,6 +175,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
+		"profile_pic":       profilePic,
 	})
 }
 
@@ -266,6 +266,7 @@ func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
 		EmailVerified: GoogleUserRes["verified_email"].(bool),
 		FirstName:     GoogleUserRes["given_name"].(string),
 		LastName:      GoogleUserRes["family_name"].(string),
+		Picture:       GoogleUserRes["picture"].(string),
 	}
 
 	return claims, nil
