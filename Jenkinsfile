@@ -42,8 +42,8 @@ node {
 
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
-      dir ('memphis-infra'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch //memphis-infra branch is the same as the main repo
+      dir ('memphis-docker'){
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'master'
       }
       sh "docker-compose -f ./memphis-docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
@@ -210,7 +210,7 @@ node {
 	  
   } catch (e) {
       currentBuild.result = "FAILED"
-      sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis down"
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-memphis-broker.yml -p memphis down"
       sh "kubectl delete ns memphis-$unique_id &"
       cleanWs()
       notifyFailed()
