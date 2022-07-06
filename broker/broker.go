@@ -164,9 +164,9 @@ func CreateStream(station models.Station) error {
 
 	var dedupWindow time.Duration
 	if station.DedupEnabled {
-		dedupWindow = time.Duration(station.DedupWindowInMs*1000) * time.Nanosecond
+		dedupWindow = time.Duration(station.DedupWindowInMs) * time.Millisecond
 	} else {
-		dedupWindow = time.Duration(1) * time.Nanosecond // can not be 0
+		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
 	}
 
 	_, err := js.AddStream(&nats.StreamConfig{
@@ -208,6 +208,15 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
 		maxAckTimeMs = 30000 // 30 sec
+	} else {
+		maxAckTimeMs = consumer.MaxAckTimeMs
+	}
+
+	var MaxMsgDeliveries int
+	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
+		MaxMsgDeliveries = 10
+	} else {
+		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
 
 	_, err := js.AddConsumer(station.Name, &nats.ConsumerConfig{
@@ -215,7 +224,7 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 		DeliverPolicy: nats.DeliverAllPolicy,
 		AckPolicy:     nats.AckExplicitPolicy,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-		MaxDeliver:    10,
+		MaxDeliver:    MaxMsgDeliveries,
 		FilterSubject: station.Name + ".final",
 		ReplayPolicy:  nats.ReplayInstantPolicy,
 		MaxAckPending: -1,
@@ -269,7 +278,7 @@ func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, nil
 	}
 
-	return int64(streamInfo.State.Bytes/streamInfo.State.Msgs), nil
+	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
 }
 
 func GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
@@ -295,7 +304,7 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 			Message:      string(msg.Data),
 			ProducedBy:   msg.Header.Get("producedBy"),
 			CreationDate: metadata.Timestamp,
-			Size: len(msg.Subject) + len(msg.Reply) + len(msg.Data) + len(msg.Header),
+			Size:         len(msg.Subject) + len(msg.Reply) + len(msg.Data) + len(msg.Header),
 		})
 		msg.Ack()
 	}
@@ -344,7 +353,7 @@ func ValidateUserCreds(token string) error {
 }
 
 func CreateInternalStream(name string) error {
-	dedupWindow := time.Duration(1) * time.Nanosecond
+	dedupWindow := time.Duration(100) * time.Millisecond
 	_, err := js.AddStream(&nats.StreamConfig{
 		Name:         name,
 		Subjects:     []string{name},

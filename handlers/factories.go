@@ -265,6 +265,9 @@ func (fh FactoriesHandler) GetAllFactories(c *gin.Context) {
 }
 
 func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.RemoveFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -312,6 +315,9 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 }
 
 func (fh FactoriesHandler) EditFactory(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.EditFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

@@ -28,6 +28,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"k8s.io/utils/strings/slices"
 )
 
 type ProducersHandler struct{}
@@ -36,7 +37,7 @@ func validateProducerName(name string) error {
 	if len(name) > 32 {
 		return errors.New("Producer name should be under 32 characters")
 	}
-	
+
 	re := regexp.MustCompile("^[a-z0-9_]*$")
 
 	validName := re.MatchString(name)
@@ -207,8 +208,10 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -235,12 +238,15 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
+		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -254,8 +260,14 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	var activeProducers []models.ExtendedProducer
 	var killedProducers []models.ExtendedProducer
 	var destroyedProducers []models.ExtendedProducer
+	producersNames := []string{}
 
 	for _, producer := range producers {
+		if slices.Contains(producersNames, producer.Name) {
+			continue
+		}
+
+		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
 			activeProducers = append(activeProducers, producer)
 		} else if !producer.IsDeleted && !producer.IsActive {
@@ -305,8 +317,10 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -329,6 +343,9 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 }
 
 func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.DestroyProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

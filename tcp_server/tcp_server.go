@@ -40,7 +40,6 @@ type tcpMessage struct {
 
 type tcpResponseMessage struct {
 	ConnectionId   primitive.ObjectID `json:"connection_id"`
-	ClientAddress  string             `json:"client_address"`
 	AccessToken    string             `json:"access_token"`
 	AccessTokenExp int                `json:"access_token_exp"`
 	PingInterval   int                `json:"ping_interval_ms"`
@@ -167,7 +166,6 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 
 		response := tcpResponseMessage{
 			ConnectionId:   connectionId,
-			ClientAddress:  clientAddressString,
 			AccessToken:    accessToken,
 			AccessTokenExp: configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 			PingInterval:   configuration.PING_INTERVAL_MS,

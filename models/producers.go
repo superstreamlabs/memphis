@@ -43,6 +43,7 @@ type ExtendedProducer struct {
 	FactoryName   string             `json:"factory_name" bson:"factory_name"`
 	IsActive      bool               `json:"is_active" bson:"is_active"`
 	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
+	ClientAddress string             `json:"client_address" bson:"client_address"`
 }
 
 type GetAllProducersByStationSchema struct {

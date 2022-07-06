@@ -549,6 +549,9 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.RemoveUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -625,6 +628,9 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.EditHubCredsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -762,6 +768,9 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

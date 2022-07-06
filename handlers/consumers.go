@@ -31,6 +31,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"k8s.io/utils/strings/slices"
 )
 
 type ConsumersHandler struct{}
@@ -166,7 +167,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			logger.Warn("CreateProducer error: " + err.Error())
+			logger.Warn("CreateConsumer error: " + err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -223,18 +224,19 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 
 	consumerId := primitive.NewObjectID()
 	newConsumer := models.Consumer{
-		ID:             consumerId,
-		Name:           name,
-		StationId:      station.ID,
-		FactoryId:      station.FactoryId,
-		Type:           consumerType,
-		ConnectionId:   connectionId,
-		CreatedByUser:  connection.CreatedByUser,
-		ConsumersGroup: consumerGroup,
-		MaxAckTimeMs:   body.MaxAckTimeMs,
-		IsActive:       true,
-		CreationDate:   time.Now(),
-		IsDeleted:      false,
+		ID:               consumerId,
+		Name:             name,
+		StationId:        station.ID,
+		FactoryId:        station.FactoryId,
+		Type:             consumerType,
+		ConnectionId:     connectionId,
+		CreatedByUser:    connection.CreatedByUser,
+		ConsumersGroup:   consumerGroup,
+		MaxAckTimeMs:     body.MaxAckTimeMs,
+		MaxMsgDeliveries: body.MaxMsgDeliveries,
+		IsActive:         true,
+		CreationDate:     time.Now(),
+		IsDeleted:        false,
 	}
 
 	if consumerGroup == "" || !consumerGroupExist {
@@ -288,8 +290,10 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -316,12 +320,15 @@ func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]mode
 
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
+		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"consumers_group", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -339,8 +346,14 @@ func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]mode
 	var activeConsumers []models.ExtendedConsumer
 	var killedConsumers []models.ExtendedConsumer
 	var destroyedConsumers []models.ExtendedConsumer
+	consumersNames := []string{}
 
 	for _, consumer := range consumers {
+		if slices.Contains(consumersNames, consumer.Name) {
+			continue
+		}
+
+		consumersNames = append(consumersNames, consumer.Name)
 		if consumer.IsActive {
 			activeConsumers = append(activeConsumers, consumer)
 		} else if !consumer.IsDeleted && !consumer.IsActive {
@@ -390,8 +403,10 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -414,6 +429,10 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 }
 
 func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+
 	var body models.DestroyConsumerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
