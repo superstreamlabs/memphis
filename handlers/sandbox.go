@@ -148,6 +148,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		logger.Info("New sandbox user was created: " + email)
 
 	}
 
@@ -163,6 +164,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			bson.M{"$set": bson.M{"already_logged_in": true}},
 		)
 	}
+	logger.Info("Sandbox user logged in: " + email)
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -180,18 +182,23 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 }
 
 func getGoogleAuthToken(code string) (*googleOauthToken, error) {
-	const rootURl = "https://oauth2.googleapis.com/token"
+	const googleTokenURl = "https://oauth2.googleapis.com/token"
 
 	values := url.Values{}
+	decodedValue, err := url.QueryUnescape(code)
+	if err != nil {
+		decodedValue = code
+	}
+
 	values.Add("grant_type", "authorization_code")
-	values.Add("code", code)
+	values.Add("code", decodedValue)
 	values.Add("client_id", configuration.GOOGLE_CLIENT_ID)
 	values.Add("client_secret", configuration.GOOGLE_CLIENT_SECRET)
 	values.Add("redirect_uri", configuration.SANDBOX_REDIRECT_URI)
 
 	query := values.Encode()
 
-	req, err := http.NewRequest("POST", rootURl, bytes.NewBufferString(query))
+	req, err := http.NewRequest("POST", googleTokenURl, bytes.NewBufferString(query))
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +237,8 @@ func getGoogleAuthToken(code string) (*googleOauthToken, error) {
 }
 
 func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
-	rootUrl := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=%s", gOauthToken.Access_token)
-	req, err := http.NewRequest("GET", rootUrl, nil)
+	googleTokenURl := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=%s", gOauthToken.Access_token)
+	req, err := http.NewRequest("GET", googleTokenURl, nil)
 	if err != nil {
 		return nil, err
 	}
