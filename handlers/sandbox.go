@@ -148,6 +148,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		logger.Info("New sandbox user was created: " + email)
 
 	}
 
@@ -163,6 +164,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			bson.M{"$set": bson.M{"already_logged_in": true}},
 		)
 	}
+	logger.Info("Sandbox user logged in: " + email)
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
