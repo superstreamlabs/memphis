@@ -119,8 +119,13 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	exist, user, err := isSandboxUserExist(email)
+	var username string
+	if strings.Contains(email, "@") {
+		username = email[:strings.IndexByte(email, '@')]
+	} else {
+		username = email
+	}
+	exist, user, err := isSandboxUserExist(username)
 	if err != nil {
 		logger.Error("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -130,7 +135,8 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	if !exist {
 		user = models.SandboxUser{
 			ID:              primitive.NewObjectID(),
-			Username:        email,
+			Username:        username,
+			Email:           email,
 			Password:        "",
 			FirstName:       firstName,
 			LastName:        lastName,
@@ -148,7 +154,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		logger.Info("New sandbox user was created: " + email)
+		logger.Info("New sandbox user was created: " + username)
 
 	}
 
@@ -164,7 +170,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			bson.M{"$set": bson.M{"already_logged_in": true}},
 		)
 	}
-	logger.Info("Sandbox user logged in: " + email)
+	logger.Info("Sandbox user logged in: " + username)
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
