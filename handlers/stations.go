@@ -94,6 +94,11 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
+	err = RemovePoisonMsgsByStation(station.Name)
+	if err != nil {
+		logger.Warn("removeStationResources error: " + err.Error())
+	}
+
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
 		logger.Warn("removeStationResources error: " + err.Error())
@@ -394,4 +399,60 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	} else {
 		return messages, nil
 	}
+}
+
+func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessage, error) {
+	messageId, _ := primitive.ObjectIDFromHex(poisonMsgId)
+	poisonMessage, err := GetPoisonMsgById(messageId)
+	if err != nil {
+		return poisonMessage, err
+	}
+
+	for i, _ := range poisonMessage.Cgs {
+		cgMembers, err := GetConsumerGroupMembers(poisonMessage.Cgs[i].CgName, poisonMessage.StationName)
+		if err != nil {
+			return poisonMessage, err
+		}
+
+		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.Cgs[i].CgName)
+		if err != nil {
+			return poisonMessage, err
+		}
+
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.Cgs[i].CgName)
+		if err != nil {
+			return poisonMessage, err
+		}
+
+		poisonMessage.Cgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		poisonMessage.Cgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+		poisonMessage.Cgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+		poisonMessage.Cgs[i].InProcessMessages = cgInfo.NumAckPending
+		poisonMessage.Cgs[i].TotalPoisonMessages = totalPoisonMsgs
+		poisonMessage.Cgs[i].CgMembers = cgMembers
+	}
+
+	return poisonMessage, nil
+}
+
+func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
+	var body models.GetPoisonMessageJourneySchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
+	if err == mongo.ErrNoDocuments {
+		logger.Warn("GetPoisonMessageJourney error: " + err.Error())
+		c.AbortWithStatusJSON(666, gin.H{"message": "Poison message does not exist"})
+		return
+	}
+	if err != nil {
+		logger.Error("GetPoisonMessageJourney error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, poisonMessage)
 }

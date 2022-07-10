@@ -82,6 +82,12 @@ func removeStations(factoryId primitive.ObjectID) error {
 			return err
 		}
 
+		err = RemovePoisonMsgsByStation(station.Name)
+		if err != nil {
+			logger.Warn("removeStations error: " + err.Error())
+		}
+
+
 		err = RemoveAllAuditLogsByStation(station.Name)
 		if err != nil {
 			logger.Warn("removeStations error: " + err.Error())

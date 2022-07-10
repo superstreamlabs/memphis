@@ -14,28 +14,12 @@
 package background_tasks
 
 import (
-	"encoding/json"
 	"memphis-broker/broker"
-	"memphis-broker/logger"
-
-	"github.com/nats-io/nats.go"
+	"memphis-broker/handlers"
 )
 
-func poisonMessageHandler(msg *nats.Msg) {
-	var message map[string]interface{}
-	err := json.Unmarshal(msg.Data, &message)
-	if err != nil {
-		logger.Error("Error while getting notified about a poison message: " + err.Error())
-	}
-
-	// stationName := message["stream"].(string)
-	// consumerName := message["consumer"].(string)
-	// messageSeq := message["stream_seq"].(float64)
-	// deliveriesCount := message["deliveries"].(float64)
-
-	// msg := broker.GetMessage()
-}
+var poisonMessagesHandler = handlers.PoisonMessagesHandler{}
 
 func ListenForPoisonMessages() {
-	broker.QueueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>", "$memphis_poison_messages_listeners_group", poisonMessageHandler)
+	broker.QueueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>", "$memphis_poison_messages_listeners_group", poisonMessagesHandler.HandleNewMessage)
 }

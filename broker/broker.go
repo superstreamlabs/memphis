@@ -163,7 +163,7 @@ func CreateStream(station models.Station) error {
 	}
 
 	var dedupWindow time.Duration
-	if station.DedupEnabled {
+	if station.DedupEnabled && station.DedupWindowInMs >= 100 {
 		dedupWindow = time.Duration(station.DedupWindowInMs) * time.Millisecond
 	} else {
 		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
@@ -239,6 +239,15 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 	return nil
 }
 
+func GetCgInfo(stationName, cgName string) (*nats.ConsumerInfo, error) {
+	info, err := js.ConsumerInfo(stationName, cgName)
+	if err != nil {
+		return nil, nil
+	}
+
+	return info, nil
+}
+
 func RemoveStream(streamName string) error {
 	err := js.DeleteStream(streamName)
 	if err != nil {
@@ -281,6 +290,14 @@ func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
 }
 
+func GetHeaderSizeInBytes(headers nats.Header) int {
+	bytes := 0
+	for i, s := range headers {
+		bytes += len(s[0]) + len(i)
+	}
+	return bytes
+}
+
 func GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
 	streamInfo, err := js.StreamInfo(station.Name)
 	if err != nil {
@@ -304,7 +321,7 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 			Message:      string(msg.Data),
 			ProducedBy:   msg.Header.Get("producedBy"),
 			CreationDate: metadata.Timestamp,
-			Size:         len(msg.Subject) + len(msg.Reply) + len(msg.Data) + len(msg.Header),
+			Size:         len(msg.Subject) + len(msg.Data) + GetHeaderSizeInBytes(msg.Header),
 		})
 		msg.Ack()
 	}
@@ -317,9 +334,14 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 	return messages, nil
 }
 
-// func GetMessage(stationName string, messageSeq uint64) (*nats.Msg, error) {
-// 	msg, err := js.GetMsg(stationName, messageSeq)
-// }
+func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, error) {
+	msg, err := js.GetMsg(stationName, messageSeq)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
+}
 
 func RemoveProducer() error {
 	// nothing to remove

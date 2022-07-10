@@ -42,6 +42,7 @@ var stationsHandler = StationsHandler{}
 var producersHandler = ProducersHandler{}
 var consumersHandler = ConsumersHandler{}
 var auditLogsHandler = AuditLogsHandler{}
+var poisonMsgsHandler = PoisonMessagesHandler{}
 
 func clientSetConfig() error {
 	var config *rest.Config
@@ -276,6 +277,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	response := models.StationOverviewData{
 		ActiveProducers:    activeProducers,
 		KilledProducers:    killedProducers,
@@ -287,6 +295,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		AvgMsgSize:         avgMsgSize,
 		AuditLogs:          auditLogs,
 		Messages:           messages,
+		PoisonMessages:     poisonMessages,
 	}
 
 	c.IndentedJSON(200, response)
