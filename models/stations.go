@@ -90,3 +90,7 @@ type CreateStationSchema struct {
 type RemoveStationSchema struct {
 	StationName string `json:"station_name" binding:"required"`
 }
+
+type GetPoisonMessageJourneySchema struct {
+	MessageId string `form:"message_id" json:"message_id" binding:"required"`
+}

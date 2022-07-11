@@ -36,6 +36,7 @@ var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 var systemKeysCollection *mongo.Collection = db.GetCollection("system_keys")
 var auditLogsCollection *mongo.Collection = db.GetCollection("audit_logs")
+var poisonMessagesCollection *mongo.Collection = db.GetCollection("poison_messages")
 var configuration = config.GetConfig()
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {

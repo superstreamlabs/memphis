@@ -11,20 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package routes
+package background_tasks
 
 import (
+	"memphis-broker/broker"
 	"memphis-broker/handlers"
-
-	"github.com/gin-gonic/gin"
 )
 
-func InitializeStationsRoutes(router *gin.RouterGroup) {
-	stationsHandler := handlers.StationsHandler{}
-	stationsRoutes := router.Group("/stations")
-	stationsRoutes.GET("/getStation", stationsHandler.GetStation)
-	stationsRoutes.GET("/getAllStations", stationsHandler.GetAllStations)
-	stationsRoutes.GET("/getPoisonMessageJourney", stationsHandler.GetPoisonMessageJourney)
-	stationsRoutes.POST("/createStation", stationsHandler.CreateStation)
-	stationsRoutes.DELETE("/removeStation", stationsHandler.RemoveStation)
+var poisonMessagesHandler = handlers.PoisonMessagesHandler{}
+
+func ListenForPoisonMessages() {
+	broker.QueueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>", "$memphis_poison_messages_listeners_group", poisonMessagesHandler.HandleNewMessage)
 }

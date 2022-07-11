@@ -57,28 +57,40 @@ func validateConsumerType(consumerType string) error {
 	return nil
 }
 
-func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, error) {
+func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
 	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_active": true}
 	var consumer models.Consumer
 	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
-		return false, nil
+		return false, models.Consumer{}, nil
 	} else if err != nil {
-		return false, err
+		return false, models.Consumer{}, err
 	}
-	return true, nil
+	return true, consumer, nil
 }
 
-func isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, error) {
-	filter := bson.M{"name": consumerGroup, "consumers_group": "", "station_id": stationId, "is_active": true}
-	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, nil
-	} else if err != nil {
-		return false, err
+func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.CgMember, error) {
+	var consumers []models.CgMember
+
+	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", station.ID}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
+	})
+
+	if err != nil {
+		logger.Error("GetConsumerGroupMembers error: " + err.Error())
+		return consumers, err
 	}
-	return true, nil
+
+	if err = cursor.All(context.TODO(), &consumers); err != nil {
+		logger.Error("GetConsumerGroupMembers error: " + err.Error())
+		return consumers, err
+	}
+
+	return consumers, nil
 }
 
 func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
@@ -104,6 +116,8 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
+	} else {
+		consumerGroup = name
 	}
 
 	consumerType := strings.ToLower(body.ConsumerType)
@@ -188,58 +202,34 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 
-	var consumerGroupExist bool
-	if consumerGroup != "" {
-		exist, err = isConsumersWithoutGroupAndNameLikeGroupExist(consumerGroup, station.ID)
-		if err != nil {
-			logger.Error("CreateConsumer error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if exist {
-			logger.Warn("You can not give your consumer group the same name like another active consumer on the same station")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer group the same name like another active consumer on the same station"})
-			return
-		}
-
-		consumerGroupExist, err = isConsumerGroupExist(consumerGroup, station.ID)
-		if err != nil {
-			logger.Error("CreateConsumer error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	} else {
-		exist, err = isConsumerGroupExist(name, station.ID)
-		if err != nil {
-			logger.Error("CreateConsumer error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if exist {
-			logger.Warn("You can not give your consumer the same name like another active consumer group name on the same station")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not give your consumer the same name like another active consumer group name on the same station"})
-			return
-		}
+	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
+	if err != nil {
+		logger.Error("CreateConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	consumerId := primitive.NewObjectID()
 	newConsumer := models.Consumer{
-		ID:               consumerId,
-		Name:             name,
-		StationId:        station.ID,
-		FactoryId:        station.FactoryId,
-		Type:             consumerType,
-		ConnectionId:     connectionId,
-		CreatedByUser:    connection.CreatedByUser,
-		ConsumersGroup:   consumerGroup,
-		MaxAckTimeMs:     body.MaxAckTimeMs,
-		MaxMsgDeliveries: body.MaxMsgDeliveries,
-		IsActive:         true,
-		CreationDate:     time.Now(),
-		IsDeleted:        false,
+		ID:             consumerId,
+		Name:           name,
+		StationId:      station.ID,
+		FactoryId:      station.FactoryId,
+		Type:           consumerType,
+		ConnectionId:   connectionId,
+		CreatedByUser:  connection.CreatedByUser,
+		ConsumersGroup: consumerGroup,
+		IsActive:       true,
+		CreationDate:   time.Now(),
+		IsDeleted:      false,
 	}
 
-	if consumerGroup == "" || !consumerGroupExist {
+	if consumerGroupExist {
+		newConsumer.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
+		newConsumer.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
+	} else {
+		newConsumer.MaxAckTimeMs = body.MaxAckTimeMs
+		newConsumer.MaxMsgDeliveries = body.MaxMsgDeliveries
 		broker.CreateConsumer(newConsumer, station)
 		if err != nil {
 			logger.Error("CreateConsumer error: " + err.Error())

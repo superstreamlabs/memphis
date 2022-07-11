@@ -49,6 +49,7 @@ type Configuration struct {
 	GITHUB_CLIENT_ID               string
 	GITHUB_CLIENT_SECRET           string
 	SANDBOX_REDIRECT_URI           string
+  POISON_MSGS_RETENTION_IN_HOURS int
 }
 
 func GetConfig() Configuration {

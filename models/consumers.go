@@ -70,3 +70,13 @@ type DestroyConsumerSchema struct {
 	Name        string `json:"name" binding:"required"`
 	StationName string `json:"station_name" binding:"required"`
 }
+
+type CgMember struct {
+	Name             string `json:"name" bson:"name"`
+	ClientAddress    string `json:"client_address" bson:"client_address"`
+	IsActive         bool   `json:"is_active" bson:"is_active"`
+	IsDeleted        bool   `json:"is_deleted" bson:"is_deleted"`
+	CreatedByUser    string `json:"created_by_user" bson:"created_by_user"`
+	MaxMsgDeliveries int    `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
+	MaxAckTimeMs     int64  `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
+}

@@ -94,6 +94,11 @@ func removeStationResources(station models.Station) error {
 		return err
 	}
 
+	err = RemovePoisonMsgsByStation(station.Name)
+	if err != nil {
+		logger.Warn("removeStationResources error: " + err.Error())
+	}
+
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
 		logger.Warn("removeStationResources error: " + err.Error())
@@ -394,4 +399,81 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	} else {
 		return messages, nil
 	}
+}
+
+func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessage, error) {
+	messageId, _ := primitive.ObjectIDFromHex(poisonMsgId)
+	poisonMessage, err := GetPoisonMsgById(messageId)
+	if err != nil {
+		return poisonMessage, err
+	}
+
+	exist, station, err := IsStationExist(poisonMessage.StationName)
+	if err != nil {
+		return poisonMessage, err
+	}
+	if !exist {
+		return poisonMessage, errors.New("Station does not exist")
+	}
+
+	filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
+	var producer models.Producer
+	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err == mongo.ErrNoDocuments {
+		return poisonMessage, errors.New("Producer does not exist")
+	} else if err != nil {
+		return poisonMessage, err
+	}
+
+	poisonMessage.Producer.CreatedByUser = producer.CreatedByUser
+	poisonMessage.Producer.IsActive = producer.IsActive
+	poisonMessage.Producer.IsDeleted = producer.IsDeleted
+
+	for i, _ := range poisonMessage.PoisonedCgs {
+		cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
+		if err != nil {
+			return poisonMessage, err
+		}
+
+		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
+		if err != nil {
+			return poisonMessage, err
+		}
+
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.PoisonedCgs[i].CgName)
+		if err != nil {
+			return poisonMessage, err
+		}
+
+		poisonMessage.PoisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		poisonMessage.PoisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+		poisonMessage.PoisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+		poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+		poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+		poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
+	}
+
+	return poisonMessage, nil
+}
+
+func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
+	var body models.GetPoisonMessageJourneySchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
+	if err == mongo.ErrNoDocuments {
+		logger.Warn("GetPoisonMessageJourney error: " + err.Error())
+		c.AbortWithStatusJSON(666, gin.H{"message": "Poison message does not exist"})
+		return
+	}
+	if err != nil {
+		logger.Error("GetPoisonMessageJourney error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, poisonMessage)
 }
