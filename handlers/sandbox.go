@@ -25,6 +25,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -42,7 +43,13 @@ type googleClaims struct {
 	EmailVerified bool   `json:"email_verified"`
 	FirstName     string `json:"given_name"`
 	LastName      string `json:"family_name"`
+	Picture       string `json: "picture"`
 	jwt.StandardClaims
+}
+
+type googleOauthToken struct {
+	Access_token string
+	Id_token     string
 }
 
 type githubAccessTokenResponse struct {
@@ -58,14 +65,22 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	var firstName string
 	var lastName string
 	var email string
+	var profilePic string
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
+
 	token := body.Token
 	loginType := body.LoginType
 	if loginType == "google" {
-		claims, err := validateGoogleJWT(token)
+		gOuth, err := getGoogleAuthToken(token)
+		if err != nil {
+			logger.Error("Login(Sandbox) error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		claims, err := GetGoogleUser(*gOuth)
 		if err != nil {
 			logger.Error("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -74,6 +89,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		firstName = claims.FirstName
 		lastName = claims.LastName
 		email = claims.Email
+		profilePic = claims.Picture
 	} else if loginType == "github" {
 		gitAccessToken, err := getGithubAccessToken(token)
 		if err != nil {
@@ -97,19 +113,19 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		fullName := strings.Split(claims["name"].(string), " ")
 		firstName = fullName[0]
 		lastName = fullName[1]
+		profilePic = claims["avatar_url"].(string)
 	} else {
 		logger.Error("Wrong login type")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	if email == "" {
-		logger.Error("Login(Sandbox) error: Wrong login credentials")
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	var username string
+	if strings.Contains(email, "@") {
+		username = email[:strings.IndexByte(email, '@')]
+	} else {
+		username = email
 	}
-
-	exist, user, err := isSandboxUserExist(email)
+	exist, user, err := isSandboxUserExist(username)
 	if err != nil {
 		logger.Error("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -119,7 +135,8 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	if !exist {
 		user = models.SandboxUser{
 			ID:              primitive.NewObjectID(),
-			Username:        email,
+			Username:        username,
+			Email:           email,
 			Password:        "",
 			FirstName:       firstName,
 			LastName:        lastName,
@@ -129,6 +146,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			CreationDate:    time.Now(),
 			AlreadyLoggedIn: false,
 			AvatarId:        1,
+			ProfilePic:      profilePic,
 		}
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
@@ -136,6 +154,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		logger.Info("New sandbox user was created: " + username)
 
 	}
 
@@ -151,6 +170,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			bson.M{"$set": bson.M{"already_logged_in": true}},
 		)
 	}
+	logger.Info("Sandbox user logged in: " + username)
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -163,71 +183,106 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
+		"profile_pic":       profilePic,
 	})
 }
 
-func getGooglePublicKey(keyID string) (string, error) {
-	resp, err := http.Get("https://www.googleapis.com/oauth2/v1/certs")
+func getGoogleAuthToken(code string) (*googleOauthToken, error) {
+	const googleTokenURl = "https://oauth2.googleapis.com/token"
+
+	values := url.Values{}
+	decodedValue, err := url.QueryUnescape(code)
 	if err != nil {
-		return "", err
-	}
-	dat, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
+		decodedValue = code
 	}
 
-	myResp := map[string]string{}
-	err = json.Unmarshal(dat, &myResp)
+	values.Add("grant_type", "authorization_code")
+	values.Add("code", decodedValue)
+	values.Add("client_id", configuration.GOOGLE_CLIENT_ID)
+	values.Add("client_secret", configuration.GOOGLE_CLIENT_SECRET)
+	values.Add("redirect_uri", configuration.SANDBOX_REDIRECT_URI)
+
+	query := values.Encode()
+
+	req, err := http.NewRequest("POST", googleTokenURl, bytes.NewBufferString(query))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	key, ok := myResp[keyID]
-	if !ok {
-		return "", errors.New("key not found")
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	client := http.Client{
+		Timeout: time.Second * 30,
 	}
-	return key, nil
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		return nil, errors.New("could not retrieve token")
+	}
+
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var GoogleOauthTokenRes map[string]interface{}
+
+	if err := json.Unmarshal(resBody, &GoogleOauthTokenRes); err != nil {
+		return nil, err
+	}
+
+	tokenBody := &googleOauthToken{
+		Access_token: GoogleOauthTokenRes["access_token"].(string),
+		Id_token:     GoogleOauthTokenRes["id_token"].(string),
+	}
+
+	return tokenBody, nil
 }
 
-func validateGoogleJWT(tokenString string) (googleClaims, error) {
-	claimsStruct := googleClaims{}
-
-	token, err := jwt.ParseWithClaims(
-		tokenString,
-		&claimsStruct,
-		func(token *jwt.Token) (interface{}, error) {
-			pem, err := getGooglePublicKey(fmt.Sprintf("%s", token.Header["kid"]))
-			if err != nil {
-				return nil, err
-			}
-			key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(pem))
-			if err != nil {
-				return nil, err
-			}
-			return key, nil
-		},
-	)
+func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
+	googleTokenURl := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=%s", gOauthToken.Access_token)
+	req, err := http.NewRequest("GET", googleTokenURl, nil)
 	if err != nil {
-		return googleClaims{}, err
+		return nil, err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", gOauthToken.Id_token))
+
+	client := http.Client{
+		Timeout: time.Second * 30,
 	}
 
-	claims, ok := token.Claims.(*googleClaims)
-	if !ok {
-		return googleClaims{}, errors.New("invalid Google JWT")
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
 	}
 
-	if claims.Issuer != "accounts.google.com" && claims.Issuer != "https://accounts.google.com" {
-		return googleClaims{}, errors.New("iss is invalid")
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("could not retrieve user")
 	}
 
-	if claims.Audience != configuration.GOOGLE_CLIENT_ID {
-		return googleClaims{}, errors.New("aud is invalid")
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
 	}
 
-	if claims.ExpiresAt < time.Now().UTC().Unix() {
-		return googleClaims{}, errors.New("JWT is expired")
+	var GoogleUserRes map[string]interface{}
+
+	if err := json.Unmarshal(resBody, &GoogleUserRes); err != nil {
+		return nil, err
 	}
 
-	return *claims, nil
+	claims := &googleClaims{
+		Email:         GoogleUserRes["email"].(string),
+		EmailVerified: GoogleUserRes["verified_email"].(bool),
+		FirstName:     GoogleUserRes["given_name"].(string),
+		LastName:      GoogleUserRes["family_name"].(string),
+		Picture:       GoogleUserRes["picture"].(string),
+	}
+
+	return claims, nil
 }
 
 func isSandboxUserExist(username string) (bool, models.SandboxUser, error) {
@@ -268,12 +323,6 @@ func getGithubAccessToken(code string) (string, error) {
 	}
 
 	respbody, _ := ioutil.ReadAll(resp.Body)
-
-	type githubAccessTokenResponse struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
-		Scope       string `json:"scope"`
-	}
 
 	var ghresp githubAccessTokenResponse
 	json.Unmarshal(respbody, &ghresp)
