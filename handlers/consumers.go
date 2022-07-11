@@ -69,15 +69,8 @@ func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (b
 	return true, consumer, nil
 }
 
-func GetConsumerGroupMembers(cgName string, stationName string) ([]models.CgMember, error) {
+func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.CgMember, error) {
 	var consumers []models.CgMember
-	exist, station, err := IsStationExist(stationName)
-	if err != nil {
-		return consumers, err
-	}
-	if !exist {
-		return consumers, errors.New("Station does not exist")
-	}
 
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", station.ID}}}},

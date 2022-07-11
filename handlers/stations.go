@@ -408,28 +408,49 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		return poisonMessage, err
 	}
 
-	for i, _ := range poisonMessage.Cgs {
-		cgMembers, err := GetConsumerGroupMembers(poisonMessage.Cgs[i].CgName, poisonMessage.StationName)
+	exist, station, err := IsStationExist(poisonMessage.StationName)
+	if err != nil {
+		return poisonMessage, err
+	}
+	if !exist {
+		return poisonMessage, errors.New("Station does not exist")
+	}
+
+	filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
+	var producer models.Producer
+	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err == mongo.ErrNoDocuments {
+		return poisonMessage, errors.New("Producer does not exist")
+	} else if err != nil {
+		return poisonMessage, err
+	}
+
+	poisonMessage.Producer.CreatedByUser = producer.CreatedByUser
+	poisonMessage.Producer.IsActive = producer.IsActive
+	poisonMessage.Producer.IsDeleted = producer.IsDeleted
+
+	for i, _ := range poisonMessage.PoisonedCgs {
+		cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
 		if err != nil {
 			return poisonMessage, err
 		}
 
-		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.Cgs[i].CgName)
+		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.Cgs[i].CgName)
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
 
-		poisonMessage.Cgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		poisonMessage.Cgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		poisonMessage.Cgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-		poisonMessage.Cgs[i].InProcessMessages = cgInfo.NumAckPending
-		poisonMessage.Cgs[i].TotalPoisonMessages = totalPoisonMsgs
-		poisonMessage.Cgs[i].CgMembers = cgMembers
+		poisonMessage.PoisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		poisonMessage.PoisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+		poisonMessage.PoisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+		poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+		poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+		poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
 	}
 
 	return poisonMessage, nil

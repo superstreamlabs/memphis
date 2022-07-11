@@ -53,13 +53,16 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 		logger.Error("Error while getting notified about a poison message: " + err.Error())
 	}
 
+	producer := models.ProducerDetails{
+		Name:          poisonMessageContent.Header["producedBy"][0],
+		ClientAddress: conn.ClientAddress,
+		ConnectionId:  connId,
+	}
+
 	messagePayload := models.MessagePayload{
-		ConnectionId:    connId,
-		ProducedBy:      poisonMessageContent.Header["producedBy"][0],
-		ProducerAddress: conn.ClientAddress,
-		TimeProduced:    poisonMessageContent.Time,
-		Size:            len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + broker.GetHeaderSizeInBytes(poisonMessageContent.Header),
-		Data:            string(poisonMessageContent.Data),
+		TimeSent: poisonMessageContent.Time,
+		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + broker.GetHeaderSizeInBytes(poisonMessageContent.Header),
+		Data:     string(poisonMessageContent.Data),
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
@@ -67,14 +70,14 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 		DeliveriesCount: int(deliveriesCount),
 	}
 	filter := bson.M{
-		"station_name":          stationName,
-		"message_seq":           int(messageSeq),
-		"message.produced_by":   poisonMessageContent.Header["producedBy"][0],
-		"message.time_produced": poisonMessageContent.Time,
+		"station_name":      stationName,
+		"message_seq":       int(messageSeq),
+		"producer.name":     poisonMessageContent.Header["producedBy"][0],
+		"message.time_sent": poisonMessageContent.Time,
 	}
 	update := bson.M{
-		"$push": bson.M{"cgs": poisonedCg},
-		"$set":  bson.M{"message": messagePayload},
+		"$push": bson.M{"poisoned_cgs": poisonedCg},
+		"$set":  bson.M{"message": messagePayload, "producer": producer},
 	}
 	opts := options.Update().SetUpsert(true)
 	_, err = poisonMessagesCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -131,7 +134,7 @@ func RemovePoisonMsgsByStation(stationName string) error {
 
 func GetTotalPoisonMsgsByCg(cgName string) (int, error) {
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
-		"cgs.cg_name": cgName,
+		"poisoned_cgs.cg_name": cgName,
 	})
 	if err != nil {
 		return -1, err

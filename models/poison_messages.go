@@ -6,13 +6,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type ProducerDetails struct {
+	Name          string             `json:"name" bson:"name"`
+	ClientAddress string             `json:"client_address" bson:"client_address"`
+	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
+	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
+	IsActive      bool               `json:"is_active" bson:"is_active"`
+	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
+}
+
 type MessagePayload struct {
-	ConnectionId    primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	ProducedBy      string             `json:"produced_by" bson:"produced_by"`
-	ProducerAddress string             `json:"producer_address" bson:"producer_address"`
-	TimeProduced    time.Time          `json:"time_produced" bson:"time_produced"`
-	Size            int                `json:"size" bson:"size"`
-	Data            string             `json:"data" bson:"data"`
+	TimeSent time.Time `json:"time_sent" bson:"time_sent"`
+	Size     int       `json:"size" bson:"size"`
+	Data     string    `json:"data" bson:"data"`
 }
 
 type PoisonedCg struct {
@@ -31,7 +37,8 @@ type PoisonMessage struct {
 	ID          primitive.ObjectID `json:"_id" bson:"_id"`
 	StationName string             `json:"station_name" bson:"station_name"`
 	MessageSeq  int                `json:"message_seq" bson:"message_seq"`
-	Cgs         []PoisonedCg       `json:"cgs" bson:"cgs"`
+	Producer    ProducerDetails    `json:"producer" bson:"producer"`
+	PoisonedCgs []PoisonedCg       `json:"poisoned_cgs" bson:"poisoned_cgs"`
 	Message     MessagePayload     `json:"message" bson:"message"`
 }
 
