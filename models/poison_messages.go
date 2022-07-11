@@ -34,12 +34,13 @@ type PoisonedCg struct {
 }
 
 type PoisonMessage struct {
-	ID          primitive.ObjectID `json:"_id" bson:"_id"`
-	StationName string             `json:"station_name" bson:"station_name"`
-	MessageSeq  int                `json:"message_seq" bson:"message_seq"`
-	Producer    ProducerDetails    `json:"producer" bson:"producer"`
-	PoisonedCgs []PoisonedCg       `json:"poisoned_cgs" bson:"poisoned_cgs"`
-	Message     MessagePayload     `json:"message" bson:"message"`
+	ID           primitive.ObjectID `json:"_id" bson:"_id"`
+	StationName  string             `json:"station_name" bson:"station_name"`
+	MessageSeq   int                `json:"message_seq" bson:"message_seq"`
+	Producer     ProducerDetails    `json:"producer" bson:"producer"`
+	PoisonedCgs  []PoisonedCg       `json:"poisoned_cgs" bson:"poisoned_cgs"`
+	Message      MessagePayload     `json:"message" bson:"message"`
+	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
 }
 
 type LightweightPoisonMessage struct {

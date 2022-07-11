@@ -77,7 +77,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	}
 	update := bson.M{
 		"$push": bson.M{"poisoned_cgs": poisonedCg},
-		"$set":  bson.M{"message": messagePayload, "producer": producer},
+		"$set":  bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
 	}
 	opts := options.Update().SetUpsert(true)
 	_, err = poisonMessagesCollection.UpdateOne(context.TODO(), filter, update, opts)

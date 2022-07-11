@@ -34,6 +34,7 @@ var connectionsCollection *mongo.Collection = db.GetCollection("connections")
 var producersCollection *mongo.Collection = db.GetCollection("producers")
 var consumersCollection *mongo.Collection = db.GetCollection("consumers")
 var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
+var poisonMessagesCollection *mongo.Collection = db.GetCollection("poison_messages")
 
 func killRelevantConnections() ([]models.Connection, error) {
 	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
@@ -108,6 +109,16 @@ func removeOldLogs() error {
 	return nil
 }
 
+func removeOldPoisonMsgs() error {
+	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(configuration.POISON_MSGS_RETENTION_IN_HOURS))))}}
+	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func KillZombieResources(wg *sync.WaitGroup) {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
@@ -129,7 +140,13 @@ func KillZombieResources(wg *sync.WaitGroup) {
 				logger.Error("KillZombieResources error: " + err.Error())
 			}
 		}
+
 		err = removeOldLogs()
+		if err != nil {
+			logger.Error("KillZombieResources error: " + err.Error())
+		}
+
+		err = removeOldPoisonMsgs()
 		if err != nil {
 			logger.Error("KillZombieResources error: " + err.Error())
 		}
