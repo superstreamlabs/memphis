@@ -31,6 +31,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/hanzoai/gochimp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -148,6 +149,26 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			AvatarId:        1,
 			ProfilePic:      profilePic,
 		}
+
+		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+
+		mailchimpListID := configuration.MAILCHIMP_LIST_ID
+
+		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+		if err != nil {
+			logger.Error("Login(Sandbox) error: " + err.Error())
+		}
+
+		mailchimpReq := &gochimp3.MemberRequest{
+			EmailAddress: email,
+			Status:       "subscribed",
+			Tags:         []string{"Sandbox"},
+		}
+
+		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
+			logger.Error("Login(Sandbox) error: " + err.Error())
+		}
+
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
 			logger.Error("Login(Sandbox) error: " + err.Error())
