@@ -321,7 +321,10 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.MessageD
 		}
 
 		metadata, _ := msg.Metadata()
-		data := (string(msg.Data))[0:100] // get the first chars for preview needs
+		data := (string(msg.Data))
+		if len(data) > 100 { // get the first chars for preview needs
+			data = data[0:100]
+		}
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(metadata.Sequence.Stream),
 			Data:         data,
