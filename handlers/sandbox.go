@@ -205,6 +205,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 		"profile_pic":       profilePic,
+		"env":               "K8S",
 	})
 }
 
