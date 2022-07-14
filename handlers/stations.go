@@ -584,6 +584,35 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	for i, cg := range poisonedCgs {
+		cgInfo, err := broker.GetCgInfo(stationName, cg.CgName)
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(cg.CgName)
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+		poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+		poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+		poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+	}
+
 	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
 	var producer models.Producer
 	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
