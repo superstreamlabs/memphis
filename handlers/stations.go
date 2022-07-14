@@ -555,7 +555,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	stationName := strings.ToLower(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if !exist {
-		logger.Error("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
