@@ -23,6 +23,7 @@ func InitializeStationsRoutes(router *gin.RouterGroup) {
 	stationsHandler := handlers.StationsHandler{}
 	stationsRoutes := router.Group("/stations")
 	stationsRoutes.GET("/getStation", stationsHandler.GetStation)
+	stationsRoutes.GET("/getMessageDetails", stationsHandler.GetMessageDetails)
 	stationsRoutes.GET("/getAllStations", stationsHandler.GetAllStations)
 	stationsRoutes.GET("/getPoisonMessageJourney", stationsHandler.GetPoisonMessageJourney)
 	stationsRoutes.POST("/createStation", stationsHandler.CreateStation)

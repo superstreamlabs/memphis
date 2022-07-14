@@ -225,7 +225,7 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 		AckPolicy:     nats.AckExplicitPolicy,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
 		MaxDeliver:    MaxMsgDeliveries,
-		FilterSubject: station.Name + ".final.>",
+		FilterSubject: station.Name + ".final",
 		ReplayPolicy:  nats.ReplayInstantPolicy,
 		MaxAckPending: -1,
 		HeadersOnly:   false,
@@ -321,9 +321,10 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.MessageD
 		}
 
 		metadata, _ := msg.Metadata()
+		data := (string(msg.Data))[0:100] // get the first chars for preview needs
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(metadata.Sequence.Stream),
-			Data:         string(msg.Data),
+			Data:         data,
 			ProducedBy:   msg.Header.Get("producedBy"),
 			ConnectionId: msg.Header.Get("connectionId"),
 			TimeSent:     metadata.Timestamp,

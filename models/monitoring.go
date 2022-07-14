@@ -27,17 +27,17 @@ type MainOverviewData struct {
 }
 
 type StationOverviewData struct {
-	ConnectedProducers    []ExtendedProducer         `json:"connected_producers"`
-	DisconnectedProducers []ExtendedProducer         `json:"disconnected_producers"`
-	DeletedProducers      []ExtendedProducer         `json:"deleted_producers"`
-	ConnectedCgs          []Cg                       `json:"connected_cgs"`
-	DisconnectedCgs       []Cg                       `json:"disconnected_cgs"`
-	DeletedCgs            []Cg                       `json:"deleted_cgs"`
-	TotalMessages         int                        `json:"total_messages"`
-	AvgMsgSize            int64                      `json:"average_message_size"`
-	AuditLogs             []AuditLog                 `json:"audit_logs"`
-	Messages              []Message                  `json:"messages"`
-	PoisonMessages        []PoisonMessage `json:"poison_messages"`
+	ConnectedProducers    []ExtendedProducer   `json:"connected_producers"`
+	DisconnectedProducers []ExtendedProducer   `json:"disconnected_producers"`
+	DeletedProducers      []ExtendedProducer   `json:"deleted_producers"`
+	ConnectedCgs          []Cg                 `json:"connected_cgs"`
+	DisconnectedCgs       []Cg                 `json:"disconnected_cgs"`
+	DeletedCgs            []Cg                 `json:"deleted_cgs"`
+	TotalMessages         int                  `json:"total_messages"`
+	AvgMsgSize            int64                `json:"average_message_size"`
+	AuditLogs             []AuditLog           `json:"audit_logs"`
+	Messages              []MessageDetails     `json:"messages"`
+	PoisonMessages        []LightPoisonMessage `json:"poison_messages"`
 }
 
 type GetStationOverviewDataSchema struct {

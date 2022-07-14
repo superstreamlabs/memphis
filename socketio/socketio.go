@@ -129,17 +129,6 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, err
 	}
 
-	for _, poisonMessage := range poisonMessages {
-		for i, _ := range poisonMessage.PoisonedCgs {
-			cgMembers, err := handlers.GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
-			if err != nil {
-				return models.StationOverviewData{}, err
-			}
-
-			poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
-		}
-	}
-
 	return models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,

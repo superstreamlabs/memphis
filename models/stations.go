@@ -111,3 +111,10 @@ type RemoveStationSchema struct {
 type GetPoisonMessageJourneySchema struct {
 	MessageId string `form:"message_id" json:"message_id" binding:"required"`
 }
+
+type GetMessageDetailsSchema struct {
+	IsPoisonMessage bool   `form:"is_poison_message" json:"is_poison_message"`
+	MessageId       string `form:"message_id" json:"message_id"`
+	MessageSeq      int    `form:"message_seq" json:"message_seq"`
+	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+}

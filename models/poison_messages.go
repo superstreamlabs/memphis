@@ -43,6 +43,11 @@ type PoisonMessage struct {
 	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
 }
 
+type LightPoisonMessage struct {
+	ID           primitive.ObjectID `json:"_id" bson:"_id"`
+	Message      MessagePayload     `json:"message" bson:"message"`
+}
+
 type LightweightPoisonMessage struct {
 	ID   primitive.ObjectID `json:"_id" bson:"_id"`
 	Data string             `json:"data" bson:"data"`

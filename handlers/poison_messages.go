@@ -103,8 +103,8 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.PoisonMessage, error) {
-	poisonMessages := make([]models.PoisonMessage, 0)
+func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightPoisonMessage, error) {
+	poisonMessages := make([]models.LightPoisonMessage, 0)
 	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{
 		"station_name": station.Name,
 	})

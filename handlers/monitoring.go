@@ -283,19 +283,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	
-	for _, poisonMessage := range poisonMessages {
-		for i, _ := range poisonMessage.PoisonedCgs {
-			cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
-			if err != nil {
-				logger.Error("GetStationOverviewData error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
-			poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
-		}
-	}
 
 	response := models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
