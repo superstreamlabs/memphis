@@ -236,18 +236,20 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
+	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
+
+	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
@@ -281,19 +283,32 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	
+	for _, poisonMessage := range poisonMessages {
+		for i, _ := range poisonMessage.PoisonedCgs {
+			cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
+			if err != nil {
+				logger.Error("GetStationOverviewData error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
+		}
+	}
 
 	response := models.StationOverviewData{
-		ActiveProducers:    activeProducers,
-		KilledProducers:    killedProducers,
-		DestroyedProducers: destroyedProducers,
-		ActiveConsumers:    activeConsumers,
-		KilledConsumers:    killedConsumers,
-		DestroyedConsumers: destroyedConsumers,
-		TotalMessages:      totalMessages,
-		AvgMsgSize:         avgMsgSize,
-		AuditLogs:          auditLogs,
-		Messages:           messages,
-		PoisonMessages:     poisonMessages,
+		ConnectedProducers:    connectedProducers,
+		DisconnectedProducers: disconnectedProducers,
+		DeletedProducers:      deletedProducers,
+		ConnectedCgs:          connectedCgs,
+		DisconnectedCgs:       disconnectedCgs,
+		DeletedCgs:            deletedCgs,
+		TotalMessages:         totalMessages,
+		AvgMsgSize:            avgMsgSize,
+		AuditLogs:             auditLogs,
+		Messages:              messages,
+		PoisonMessages:        poisonMessages,
 	}
 
 	c.IndentedJSON(200, response)

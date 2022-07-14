@@ -32,10 +32,19 @@ type Function struct {
 }
 
 type Message struct {
-	Message      string    `json:"message"`
-	ProducedBy   string    `json:"produced_by"`
-	CreationDate time.Time `json:"creation_date"`
-	Size         int       `json:"size"`
+	MessageSeq  int             `json:"message_seq" bson:"message_seq"`
+	Producer    ProducerDetails `json:"producer" bson:"producer"`
+	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs" bson:"poisoned_cgs"`
+	Message     MessagePayload  `json:"message" bson:"message"`
+}
+
+type MessageDetails struct {
+	MessageSeq   int       `json:"message_seq" bson:"message_seq"`
+	ProducedBy   string    `json:"produced_by" bson:"produced_by"`
+	Data         string    `json:"data" bson:"data"`
+	TimeSent     time.Time `json:"creation_date" bson:"creation_date"`
+	ConnectionId string    `json:"connection_id" bson:"connection_id"`
+	Size         int       `json:"size" bson:"size"`
 }
 
 type Station struct {
@@ -85,6 +94,14 @@ type CreateStationSchema struct {
 	StorageType     string `json:"storage_type"`
 	DedupEnabled    bool   `json:"dedup_enabled"`
 	DedupWindowInMs int    `json:"dedup_window_in_ms" binding:"min=0"`
+}
+
+type AckPoisonMessagesSchema struct {
+	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
+}
+
+type ResendPoisonMessagesSchema struct {
+	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
 }
 
 type RemoveStationSchema struct {

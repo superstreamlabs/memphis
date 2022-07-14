@@ -25,6 +25,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -35,6 +36,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	err := json.Unmarshal(msg.Data, &message)
 	if err != nil {
 		logger.Error("Error while getting notified about a poison message: " + err.Error())
+		return
 	}
 
 	stationName := message["stream"].(string)
@@ -45,16 +47,30 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	poisonMessageContent, err := broker.GetMessage(stationName, uint64(messageSeq))
 	if err != nil {
 		logger.Error("Error while getting notified about a poison message: " + err.Error())
+		return
 	}
 
-	connId, _ := primitive.ObjectIDFromHex(poisonMessageContent.Header["connectionId"][0])
+	connectionIdHeader := poisonMessageContent.Header.Get("connectionId")
+	producedByHeader := poisonMessageContent.Header.Get("producedBy")
+
+	if connectionIdHeader == "" || producedByHeader == "" {
+		logger.Error("Error while getting notified about a poison message: Missing mandatory message headers")
+		return
+	}
+
+	if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
+		return
+	}
+
+	connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	_, conn, err := IsConnectionExist(connId)
 	if err != nil {
 		logger.Error("Error while getting notified about a poison message: " + err.Error())
+		return
 	}
 
 	producer := models.ProducerDetails{
-		Name:          poisonMessageContent.Header["producedBy"][0],
+		Name:          producedByHeader,
 		ClientAddress: conn.ClientAddress,
 		ConnectionId:  connId,
 	}
@@ -72,7 +88,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	filter := bson.M{
 		"station_name":      stationName,
 		"message_seq":       int(messageSeq),
-		"producer.name":     poisonMessageContent.Header["producedBy"][0],
+		"producer.name":     producedByHeader,
 		"message.time_sent": poisonMessageContent.Time,
 	}
 	update := bson.M{
@@ -83,33 +99,24 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	_, err = poisonMessagesCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		logger.Error("Error while getting notified about a poison message: " + err.Error())
+		return
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightweightPoisonMessage, error) {
-	messages := []models.LightweightPoisonMessage{}
-
+func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.PoisonMessage, error) {
 	poisonMessages := make([]models.PoisonMessage, 0)
 	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{
 		"station_name": station.Name,
 	})
 	if err != nil {
-		return messages, err
+		return poisonMessages, err
 	}
 
 	if err = cursor.All(context.TODO(), &poisonMessages); err != nil {
-		return messages, err
+		return poisonMessages, err
 	}
 
-	for _, pm := range poisonMessages {
-		message := models.LightweightPoisonMessage{
-			ID:   pm.ID,
-			Data: pm.Message.Data,
-		}
-		messages = append(messages, message)
-	}
-
-	return messages, nil
+	return poisonMessages, nil
 }
 
 func GetPoisonMsgById(messageId primitive.ObjectID) (models.PoisonMessage, error) {
@@ -141,4 +148,22 @@ func GetTotalPoisonMsgsByCg(cgName string) (int, error) {
 	}
 
 	return int(count), nil
+}
+
+func GetPoisonedCgsByMessage(stationName string, message models.MessageDetails) ([]models.PoisonedCg, error) {
+	var poisonMessage models.PoisonMessage
+	err := poisonMessagesCollection.FindOne(context.TODO(), bson.M{
+		"station_name":      stationName,
+		"message_seq":       message.MessageSeq,
+		"producer.name":     message.ProducedBy,
+		"message.time_sent": message.TimeSent,
+	}).Decode(&poisonMessage)
+	if err == mongo.ErrNoDocuments {
+		return []models.PoisonedCg{}, nil
+	}
+	if err != nil {
+		return []models.PoisonedCg{}, err
+	}
+
+	return poisonMessage.PoisonedCgs, nil
 }

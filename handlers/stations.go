@@ -389,16 +389,59 @@ func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
 }
 
 func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
+	var msgs []models.Message
 	messages, err := broker.GetMessages(station, messagesToFetch)
 	if err != nil {
-		return []models.Message{}, err
+		return msgs, err
 	}
 
 	if len(messages) == 0 {
-		return []models.Message{}, nil
-	} else {
-		return messages, nil
+		return msgs, nil
 	}
+
+	for _, msgDetails := range messages {
+		connectionId, err := primitive.ObjectIDFromHex(msgDetails.ConnectionId)
+		if err != nil {
+			return msgs, err
+		}
+
+		poisonedCgs, err := GetPoisonedCgsByMessage(station.Name, msgDetails)
+
+		filter := bson.M{"name": msgDetails.ProducedBy, "station_id": station.ID, "connection_id": connectionId}
+		var producer models.Producer
+		err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+		if err != nil {
+			return msgs, err
+		}
+
+		connId, _ := primitive.ObjectIDFromHex(msgDetails.ConnectionId)
+		_, conn, err := IsConnectionExist(connId)
+		if err != nil {
+			return msgs, err
+		}
+
+		msg := models.Message{
+			MessageSeq: msgDetails.MessageSeq,
+			Message: models.MessagePayload{
+				TimeSent: msgDetails.TimeSent,
+				Size:     msgDetails.Size,
+				Data:     msgDetails.Data,
+			},
+			Producer: models.ProducerDetails{
+				Name:          msgDetails.ProducedBy,
+				ConnectionId:  connectionId,
+				ClientAddress: conn.ClientAddress,
+				CreatedByUser: producer.CreatedByUser,
+				IsActive:      producer.IsActive,
+				IsDeleted:     producer.IsDeleted,
+			},
+			PoisonedCgs: poisonedCgs,
+		}
+
+		msgs = append(msgs, msg)
+	}
+
+	return msgs, nil
 }
 
 func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessage, error) {
@@ -466,7 +509,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 	if err == mongo.ErrNoDocuments {
 		logger.Warn("GetPoisonMessageJourney error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": "Poison message does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 		return
 	}
 	if err != nil {
@@ -476,4 +519,59 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, poisonMessage)
+}
+
+func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
+	var body models.AckPoisonMessagesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
+	if err != nil {
+		logger.Error("AckPoisonMessage error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
+	var body models.ResendPoisonMessagesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	var msgs []models.PoisonMessage
+	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
+	if err != nil {
+		logger.Error("ResendPoisonMessages error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if err = cursor.All(context.TODO(), &msgs); err != nil {
+		logger.Error("ResendPoisonMessages error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	for _, msg := range msgs {
+		for _, cg := range msg.PoisonedCgs {
+			err := broker.ResendPoisonMessage(msg.StationName+".final.dlq_"+"_"+cg.CgName, []byte(msg.Message.Data))
+			logger.Error("ResendPoisonMessages error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	if err != nil {
+		logger.Error("ResendPoisonMessages error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }

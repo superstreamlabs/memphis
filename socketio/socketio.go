@@ -97,11 +97,11 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
-	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
+	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -129,18 +129,29 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, err
 	}
 
+	for _, poisonMessage := range poisonMessages {
+		for i, _ := range poisonMessage.PoisonedCgs {
+			cgMembers, err := handlers.GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
+			if err != nil {
+				return models.StationOverviewData{}, err
+			}
+
+			poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
+		}
+	}
+
 	return models.StationOverviewData{
-		ActiveProducers:    activeProducers,
-		KilledProducers:    killedProducers,
-		DestroyedProducers: destroyedProducers,
-		ActiveConsumers:    activeConsumers,
-		KilledConsumers:    killedConsumers,
-		DestroyedConsumers: destroyedConsumers,
-		TotalMessages:      totalMessages,
-		AvgMsgSize:         avgMsgSize,
-		AuditLogs:          auditLogs,
-		Messages:           messages,
-		PoisonMessages:     poisonMessages,
+		ConnectedProducers:    connectedProducers,
+		DisconnectedProducers: disconnectedProducers,
+		DeletedProducers:      deletedProducers,
+		ConnectedCgs:          connectedCgs,
+		DisconnectedCgs:       disconnectedCgs,
+		DeletedCgs:            deletedCgs,
+		TotalMessages:         totalMessages,
+		AvgMsgSize:            avgMsgSize,
+		AuditLogs:             auditLogs,
+		Messages:              messages,
+		PoisonMessages:        poisonMessages,
 	}, nil
 }
 

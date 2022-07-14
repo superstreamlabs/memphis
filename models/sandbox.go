@@ -32,9 +32,10 @@ type SandboxUser struct {
 	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
-	ProfilePic      string             `json: "profile_pic" bson: "profile_pic"`
+	ProfilePic      string             `json:"profile_pic" bson:"profile_pic"`
 }
+
 type SandboxLoginSchema struct {
-	LoginType string `json: "login_type" binding:"required"`
-	Token     string `json: "token" binding:"required"`
+	LoginType string `json:"login_type" binding:"required"`
+	Token     string `json:"token" binding:"required"`
 }

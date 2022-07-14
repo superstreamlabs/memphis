@@ -26,5 +26,7 @@ func InitializeStationsRoutes(router *gin.RouterGroup) {
 	stationsRoutes.GET("/getAllStations", stationsHandler.GetAllStations)
 	stationsRoutes.GET("/getPoisonMessageJourney", stationsHandler.GetPoisonMessageJourney)
 	stationsRoutes.POST("/createStation", stationsHandler.CreateStation)
+	stationsRoutes.POST("/resendPoisonMessages", stationsHandler.ResendPoisonMessages)
+	stationsRoutes.POST("/ackPoisonMessages", stationsHandler.AckPoisonMessages)
 	stationsRoutes.DELETE("/removeStation", stationsHandler.RemoveStation)
 }
