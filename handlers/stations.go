@@ -397,6 +397,25 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	return messages, nil
 }
 
+func getCgStatus(members []models.CgMember) (bool, bool) {
+	deletedCount := 0
+	for _, member := range members {
+		if member.IsActive {
+			return true, false
+		}
+
+		if member.IsDeleted {
+			deletedCount++
+		}
+	}
+
+	if len(members) == deletedCount {
+		return false, true
+	}
+
+	return false, false
+}
+
 func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessage, error) {
 	messageId, _ := primitive.ObjectIDFromHex(poisonMsgId)
 	poisonMessage, err := GetPoisonMsgById(messageId)
@@ -431,6 +450,8 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 			return poisonMessage, err
 		}
 
+		isActive, isDeleted := getCgStatus(cgMembers)
+
 		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
@@ -447,6 +468,8 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
 		poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
 		poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
+		poisonMessage.PoisonedCgs[i].IsActive = isActive
+		poisonMessage.PoisonedCgs[i].IsDeleted = isDeleted
 	}
 
 	return poisonMessage, nil
@@ -605,11 +628,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return
 		}
 
+		isActive, isDeleted := getCgStatus(cgMembers)
+
 		poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
 		poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 		poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
 		poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
 		poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+		poisonedCgs[i].IsActive = isActive
+		poisonedCgs[i].IsDeleted = isDeleted
 	}
 
 	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
