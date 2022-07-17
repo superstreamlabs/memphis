@@ -269,7 +269,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	messagesToFetch := 50
+	messagesToFetch := 1000
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())

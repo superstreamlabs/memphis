@@ -118,7 +118,7 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, err
 	}
 
-	messagesToFetch := 50
+	messagesToFetch := 1000
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		return models.StationOverviewData{}, err
