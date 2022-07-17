@@ -457,7 +457,7 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 			return poisonMessage, err
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.PoisonedCgs[i].CgName)
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
@@ -616,7 +616,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(cg.CgName)
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName, cg.CgName)
 		if err != nil {
 			logger.Error("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

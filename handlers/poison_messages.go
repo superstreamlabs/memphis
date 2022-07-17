@@ -139,8 +139,20 @@ func RemovePoisonMsgsByStation(stationName string) error {
 	return nil
 }
 
-func GetTotalPoisonMsgsByCg(cgName string) (int, error) {
+func RemovePoisonedCg(stationName, cgName string) error {
+	_, err := poisonMessagesCollection.UpdateMany(context.TODO(),
+		bson.M{"station_name": stationName},
+		bson.M{"$pull": bson.M{"poisoned_cgs": bson.M{"cg_name": cgName}}},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
+		"station_name":         stationName,
 		"poisoned_cgs.cg_name": cgName,
 	})
 	if err != nil {

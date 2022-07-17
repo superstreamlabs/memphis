@@ -58,7 +58,7 @@ func validateConsumerType(consumerType string) error {
 }
 
 func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_active": true}
+	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_deleted": false}
 	var consumer models.Consumer
 	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
@@ -382,21 +382,6 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 	var deletedCgs []models.Cg
 
 	for _, cg := range m {
-		if len(cg.ConnectedConsumers) > 0 {
-			connectedCgs = append(connectedCgs, *cg)
-			cg.IsActive = true
-			cg.IsDeleted = false
-		} else if len(cg.DisconnectedConsumers) > 0 {
-			disconnectedCgs = append(disconnectedCgs, *cg)
-			cg.IsActive = false
-			cg.IsDeleted = false
-		} else {
-			deletedCgs = append(deletedCgs, *cg)
-			cg.IsActive = false
-			cg.IsDeleted = true
-		}
-		
-		
 		if cg.IsDeleted {
 			cg.IsActive = false
 			cg.IsDeleted = true
@@ -406,7 +391,7 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 				return cgs, cgs, cgs, err
 			}
 
-			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(cg.Name)
+			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(station.Name, cg.Name)
 			if err != nil {
 				return cgs, cgs, cgs, err
 			}
@@ -414,6 +399,14 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 			cg.InProcessMessages = cgInfo.NumAckPending
 			cg.UnprocessedMessages = int(cgInfo.NumPending)
 			cg.PoisonMessages = totalPoisonMsgs
+		}
+
+		if len(cg.ConnectedConsumers) > 0 {
+			connectedCgs = append(connectedCgs, *cg)
+		} else if len(cg.DisconnectedConsumers) > 0 {
+			disconnectedCgs = append(disconnectedCgs, *cg)
+		} else {
+			deletedCgs = append(deletedCgs, *cg)
 		}
 	}
 
@@ -519,16 +512,33 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		return
 	}
 
-	// ensure not part of an active consumer group
-	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"consumers_group": consumer.ConsumersGroup, "is_deleted": false})
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
 	if err != nil {
 		logger.Error("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if count == 1 { // no other members in this group, 1 means the consumer to be deleted is the only one
+	// ensure not part of an active consumer group
+	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if count == 0 { // no other members in this group
 		err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
+		if err != nil {
+			logger.Error("DestroyConsumer error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			logger.Error("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
