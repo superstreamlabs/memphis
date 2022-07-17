@@ -342,6 +342,13 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		analytics.IncrementLoginsCounter()
 	}
 
+	var env string
+	if configuration.DOCKER_ENV != "" {
+		env = "docker"
+	} else {
+		env = "K8S"
+	}
+
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -355,6 +362,8 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    sendAnalytics,
+		"env":               env,
+		"namespace":         configuration.K8S_NAMESPACE,
 	})
 }
 
@@ -383,6 +392,13 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
+	var env string
+	if configuration.DOCKER_ENV != "" {
+		env = "docker"
+	} else {
+		env = "K8S"
+	}
+
 	domain := ""
 	secure := true
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -396,6 +412,8 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    sendAnalytics,
+		"env":               env,
+		"namespace":         configuration.K8S_NAMESPACE,
 	})
 }
 
