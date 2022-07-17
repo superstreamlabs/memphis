@@ -360,6 +360,8 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 				ConnectedConsumers:    []models.ExtendedConsumer{},
 				DisconnectedConsumers: []models.ExtendedConsumer{},
 				DeletedConsumers:      []models.ExtendedConsumer{},
+				IsActive:              consumer.IsActive,
+				IsDeleted:             consumer.IsDeleted,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {

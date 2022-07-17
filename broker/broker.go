@@ -360,7 +360,7 @@ func ResendPoisonMessage(subject string, data []byte) error {
 		Data:    data,
 	}
 
-	_, err := js.PublishMsg(natsMessage)
+	err := broker.PublishMsg(natsMessage)
 	if err != nil {
 		return err
 	}

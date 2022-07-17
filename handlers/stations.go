@@ -537,9 +537,11 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	for _, msg := range msgs {
 		for _, cg := range msg.PoisonedCgs {
 			err := broker.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
-			logger.Error("ResendPoisonMessages error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+			if err != nil {
+				logger.Error("ResendPoisonMessages error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 		}
 	}
 
