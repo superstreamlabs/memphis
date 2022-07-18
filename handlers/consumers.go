@@ -16,6 +16,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"memphis-broker/analytics"
 	"memphis-broker/broker"
@@ -362,6 +363,7 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 				DeletedConsumers:      []models.ExtendedConsumer{},
 				IsActive:              consumer.IsActive,
 				IsDeleted:             consumer.IsDeleted,
+				LastStatusChangeDate:  consumer.CreationDate,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -422,6 +424,16 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 		deletedCgs = []models.Cg{}
 	}
 
+	
+	sort.Slice(connectedCgs, func(i, j int) bool { 
+		return connectedCgs[i].LastStatusChangeDate.Before(connectedCgs[j].LastStatusChangeDate)
+	})
+	sort.Slice(disconnectedCgs, func(i, j int) bool { 
+		return disconnectedCgs[i].LastStatusChangeDate.Before(disconnectedCgs[j].LastStatusChangeDate)
+	})
+	sort.Slice(deletedCgs, func(i, j int) bool { 
+		return deletedCgs[i].LastStatusChangeDate.Before(deletedCgs[j].LastStatusChangeDate)
+	})
 	return connectedCgs, disconnectedCgs, deletedCgs, nil
 }
 

@@ -21,6 +21,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -289,6 +290,15 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		deletedProducers = []models.ExtendedProducer{}
 	}
 
+	sort.Slice(connectedProducers, func(i, j int) bool { 
+		return connectedProducers[i].CreationDate.Before(connectedProducers[j].CreationDate)
+	})
+	sort.Slice(disconnectedProducers, func(i, j int) bool { 
+		return disconnectedProducers[i].CreationDate.Before(disconnectedProducers[j].CreationDate)
+	})
+	sort.Slice(deletedProducers, func(i, j int) bool { 
+		return deletedProducers[i].CreationDate.Before(deletedProducers[j].CreationDate)
+	})
 	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }
 

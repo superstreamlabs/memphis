@@ -48,17 +48,18 @@ type ExtendedConsumer struct {
 }
 
 type Cg struct {
-	Name                 string             `json:"name" bson:"name"`
-	UnprocessedMessages  int                `json:"unprocessed_messages" bson:"unprocessed_messages"`
-	PoisonMessages       int                `json:"poison_messages" bson:"poison_messages"`
-	IsActive             bool               `json:"is_active" bson:"is_active"`
-	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
-	InProcessMessages    int                `json:"in_process_messages" bson:"in_process_messages"`
-	MaxAckTimeMs         int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	MaxMsgDeliveries     int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	ConnectedConsumers   []ExtendedConsumer `json:"connected_consumers" bson:"connected_consumers"`
+	Name                  string             `json:"name" bson:"name"`
+	UnprocessedMessages   int                `json:"unprocessed_messages" bson:"unprocessed_messages"`
+	PoisonMessages        int                `json:"poison_messages" bson:"poison_messages"`
+	IsActive              bool               `json:"is_active" bson:"is_active"`
+	IsDeleted             bool               `json:"is_deleted" bson:"is_deleted"`
+	InProcessMessages     int                `json:"in_process_messages" bson:"in_process_messages"`
+	MaxAckTimeMs          int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
+	MaxMsgDeliveries      int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
+	ConnectedConsumers    []ExtendedConsumer `json:"connected_consumers" bson:"connected_consumers"`
 	DisconnectedConsumers []ExtendedConsumer `json:"disconnected_consumers" bson:"disconnected_consumers"`
-	DeletedConsumers     []ExtendedConsumer `json:"deleted_consumers" bson:"deleted_consumers"`
+	DeletedConsumers      []ExtendedConsumer `json:"deleted_consumers" bson:"deleted_consumers"`
+	LastStatusChangeDate  time.Time          `json:"last_status_change_date" bson:"last_status_change_date"`
 }
 
 type GetAllConsumersByStationSchema struct {

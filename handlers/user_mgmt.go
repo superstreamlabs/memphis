@@ -227,11 +227,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			analytics.IncrementInstallationsCounter()
-		}
-
 		deploymentId := primitive.NewObjectID().Hex()
 		deploymentKey := models.SystemKey{
 			ID:    primitive.NewObjectID(),
@@ -251,6 +246,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 				Key:   "analytics",
 				Value: "true",
 			}
+			analytics.IncrementInstallationsCounter()
 		} else {
 			analyticsKey = models.SystemKey{
 				ID:    primitive.NewObjectID(),

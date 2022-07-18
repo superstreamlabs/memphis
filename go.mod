@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/googollee/go-socket.io v1.6.1
+	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
 	github.com/lightstep/otel-launcher-go v1.5.1
 	github.com/nats-io/nats.go v1.14.0
 	github.com/nats-io/nkeys v0.3.0
@@ -48,7 +49,6 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147 // indirect
 	github.com/imdario/mergo v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
