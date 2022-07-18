@@ -70,5 +70,4 @@ func ConsumeSysLogs(wg *sync.WaitGroup) {
 			}
 		}
 	}
-
 }

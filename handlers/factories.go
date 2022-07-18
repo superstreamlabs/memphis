@@ -81,6 +81,17 @@ func removeStations(factoryId primitive.ObjectID) error {
 		if err != nil {
 			return err
 		}
+
+		err = RemovePoisonMsgsByStation(station.Name)
+		if err != nil {
+			logger.Warn("removeStations error: " + err.Error())
+		}
+
+
+		err = RemoveAllAuditLogsByStation(station.Name)
+		if err != nil {
+			logger.Warn("removeStations error: " + err.Error())
+		}
 	}
 
 	_, err = stationsCollection.UpdateMany(context.TODO(),
@@ -260,6 +271,9 @@ func (fh FactoriesHandler) GetAllFactories(c *gin.Context) {
 }
 
 func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.RemoveFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -307,6 +321,9 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 }
 
 func (fh FactoriesHandler) EditFactory(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.EditFactorySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

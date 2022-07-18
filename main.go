@@ -47,6 +47,7 @@ func main() {
 	go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(wg)
 	go background_tasks.KillZombieResources(wg)
+	go background_tasks.ListenForPoisonMessages()
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

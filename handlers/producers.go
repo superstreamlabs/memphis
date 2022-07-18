@@ -21,6 +21,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -28,12 +29,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"k8s.io/utils/strings/slices"
 )
 
 type ProducersHandler struct{}
 
 func validateProducerName(name string) error {
-	re := regexp.MustCompile("^[a-z_]*$")
+	if len(name) > 32 {
+		return errors.New("Producer name should be under 32 characters")
+	}
+
+	re := regexp.MustCompile("^[a-z0-9_]*$")
 
 	validName := re.MatchString(name)
 	if !validName {
@@ -109,6 +115,29 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+
+		user := getUserDetailsFromMiddleware(c)
+		message := "Station " + stationName + " has been created"
+		logger.Info(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			logger.Warn("CreateProducer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.IncrementStationsCounter()
+		}
 	}
 
 	exist, _, err = IsProducerExist(name, station.ID)
@@ -180,8 +209,10 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -208,12 +239,15 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
+		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -224,33 +258,48 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		return producers, producers, producers, err
 	}
 
-	var activeProducers []models.ExtendedProducer
-	var killedProducers []models.ExtendedProducer
-	var destroyedProducers []models.ExtendedProducer
+	var connectedProducers []models.ExtendedProducer
+	var disconnectedProducers []models.ExtendedProducer
+	var deletedProducers []models.ExtendedProducer
+	producersNames := []string{}
 
 	for _, producer := range producers {
+		if slices.Contains(producersNames, producer.Name) {
+			continue
+		}
+
+		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
-			activeProducers = append(activeProducers, producer)
+			connectedProducers = append(connectedProducers, producer)
 		} else if !producer.IsDeleted && !producer.IsActive {
-			killedProducers = append(killedProducers, producer)
+			disconnectedProducers = append(disconnectedProducers, producer)
 		} else if producer.IsDeleted {
-			destroyedProducers = append(destroyedProducers, producer)
+			deletedProducers = append(deletedProducers, producer)
 		}
 	}
 
-	if len(activeProducers) == 0 {
-		activeProducers = []models.ExtendedProducer{}
+	if len(connectedProducers) == 0 {
+		connectedProducers = []models.ExtendedProducer{}
 	}
 
-	if len(killedProducers) == 0 {
-		killedProducers = []models.ExtendedProducer{}
+	if len(disconnectedProducers) == 0 {
+		disconnectedProducers = []models.ExtendedProducer{}
 	}
 
-	if len(destroyedProducers) == 0 {
-		destroyedProducers = []models.ExtendedProducer{}
+	if len(deletedProducers) == 0 {
+		deletedProducers = []models.ExtendedProducer{}
 	}
 
-	return activeProducers, killedProducers, destroyedProducers, nil
+	sort.Slice(connectedProducers, func(i, j int) bool { 
+		return connectedProducers[j].CreationDate.Before(connectedProducers[i].CreationDate)
+	})
+	sort.Slice(disconnectedProducers, func(i, j int) bool { 
+		return disconnectedProducers[j].CreationDate.Before(disconnectedProducers[i].CreationDate)
+	})
+	sort.Slice(deletedProducers, func(i, j int) bool { 
+		return deletedProducers[j].CreationDate.Before(deletedProducers[i].CreationDate)
+	})
+	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }
 
 func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint
@@ -278,8 +327,10 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}}}},
+		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -302,6 +353,9 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 }
 
 func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.DestroyProducerSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

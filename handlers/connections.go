@@ -28,13 +28,13 @@ import (
 
 type ConnectionsHandler struct{}
 
-func (ch ConnectionsHandler) CreateConnection(username string) (primitive.ObjectID, error) {
+func (ch ConnectionsHandler) CreateConnection(username string, clientAddress string) (primitive.ObjectID, error) {
 	connectionId := primitive.NewObjectID()
 
 	username = strings.ToLower(username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
-		logger.Error("CreateProducer error: " + err.Error())
+		logger.Error("CreateConnection error: " + err.Error())
 		return connectionId, err
 	}
 	if !exist {
@@ -47,6 +47,7 @@ func (ch ConnectionsHandler) CreateConnection(username string) (primitive.Object
 		IsActive:      true,
 		CreationDate:  time.Now(),
 		LastPing:      time.Now(),
+		ClientAddress: clientAddress,
 	}
 
 	_, err = connectionsCollection.InsertOne(context.TODO(), newConnection)

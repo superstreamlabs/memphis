@@ -42,6 +42,7 @@ var stationsHandler = StationsHandler{}
 var producersHandler = ProducersHandler{}
 var consumersHandler = ConsumersHandler{}
 var auditLogsHandler = AuditLogsHandler{}
+var poisonMsgsHandler = PoisonMessagesHandler{}
 
 func clientSetConfig() error {
 	var config *rest.Config
@@ -61,7 +62,6 @@ func clientSetConfig() error {
 		}
 	} else {
 		// in cluster config
-		logger.Info("Initialize client set for k8s environment - in-cluster configuration")
 		config, err = rest.InClusterConfig()
 		if err != nil {
 			logger.Error("InClusterConfig error: " + err.Error())
@@ -136,7 +136,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		})
 	} else { // k8s env
 		if clientset == nil {
-			logger.Info("Initialize client set for k8s environment")
 			err := clientSetConfig()
 			if err != nil {
 				return components, err
@@ -237,18 +236,20 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
+	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
+
+	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
@@ -268,7 +269,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	messagesToFetch := 50
+	messagesToFetch := 1000
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		logger.Error("GetStationOverviewData error: " + err.Error())
@@ -276,17 +277,25 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+	if err != nil {
+		logger.Error("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	response := models.StationOverviewData{
-		ActiveProducers:    activeProducers,
-		KilledProducers:    killedProducers,
-		DestroyedProducers: destroyedProducers,
-		ActiveConsumers:    activeConsumers,
-		KilledConsumers:    killedConsumers,
-		DestroyedConsumers: destroyedConsumers,
-		TotalMessages:      totalMessages,
-		AvgMsgSize:         avgMsgSize,
-		AuditLogs:          auditLogs,
-		Messages:           messages,
+		ConnectedProducers:    connectedProducers,
+		DisconnectedProducers: disconnectedProducers,
+		DeletedProducers:      deletedProducers,
+		ConnectedCgs:          connectedCgs,
+		DisconnectedCgs:       disconnectedCgs,
+		DeletedCgs:            deletedCgs,
+		TotalMessages:         totalMessages,
+		AvgMsgSize:            avgMsgSize,
+		AuditLogs:             auditLogs,
+		Messages:              messages,
+		PoisonMessages:        poisonMessages,
 	}
 
 	c.IndentedJSON(200, response)
