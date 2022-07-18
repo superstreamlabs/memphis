@@ -426,13 +426,13 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 
 	
 	sort.Slice(connectedCgs, func(i, j int) bool { 
-		return connectedCgs[i].LastStatusChangeDate.Before(connectedCgs[j].LastStatusChangeDate)
+		return connectedCgs[j].LastStatusChangeDate.Before(connectedCgs[i].LastStatusChangeDate)
 	})
 	sort.Slice(disconnectedCgs, func(i, j int) bool { 
-		return disconnectedCgs[i].LastStatusChangeDate.Before(disconnectedCgs[j].LastStatusChangeDate)
+		return disconnectedCgs[j].LastStatusChangeDate.Before(disconnectedCgs[i].LastStatusChangeDate)
 	})
 	sort.Slice(deletedCgs, func(i, j int) bool { 
-		return deletedCgs[i].LastStatusChangeDate.Before(deletedCgs[j].LastStatusChangeDate)
+		return deletedCgs[j].LastStatusChangeDate.Before(deletedCgs[i].LastStatusChangeDate)
 	})
 	return connectedCgs, disconnectedCgs, deletedCgs, nil
 }

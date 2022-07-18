@@ -105,9 +105,13 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 
 func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightPoisonMessage, error) {
 	poisonMessages := make([]models.LightPoisonMessage, 0)
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"creation_date": -1})
+	findOptions.SetLimit(1000) // fetch the last 1000
 	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{
 		"station_name": station.Name,
-	})
+	}, findOptions)
 	if err != nil {
 		return poisonMessages, err
 	}

@@ -291,13 +291,13 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	}
 
 	sort.Slice(connectedProducers, func(i, j int) bool { 
-		return connectedProducers[i].CreationDate.Before(connectedProducers[j].CreationDate)
+		return connectedProducers[j].CreationDate.Before(connectedProducers[i].CreationDate)
 	})
 	sort.Slice(disconnectedProducers, func(i, j int) bool { 
-		return disconnectedProducers[i].CreationDate.Before(disconnectedProducers[j].CreationDate)
+		return disconnectedProducers[j].CreationDate.Before(disconnectedProducers[i].CreationDate)
 	})
 	sort.Slice(deletedProducers, func(i, j int) bool { 
-		return deletedProducers[i].CreationDate.Before(deletedProducers[j].CreationDate)
+		return deletedProducers[j].CreationDate.Before(deletedProducers[i].CreationDate)
 	})
 	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }
