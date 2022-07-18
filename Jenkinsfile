@@ -91,7 +91,7 @@ node {
       sh "kubectl delete ns memphis-$unique_id &"
       sh(script: """/usr/sbin/lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
     }
-		
+
     if (env.BRANCH_NAME ==~ /(staging)/) {
       stage('Tests - Remove used directories') {
       	sh "rm -rf memphis-e2e-tests"
