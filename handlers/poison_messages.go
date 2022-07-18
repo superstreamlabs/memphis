@@ -120,6 +120,12 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 		return poisonMessages, err
 	}
 
+	for i, msg := range poisonMessages {
+		if len(msg.Message.Data) > 100 {
+			poisonMessages[i].Message.Data = msg.Message.Data[0:100]
+		}
+	}
+
 	return poisonMessages, nil
 }
 
