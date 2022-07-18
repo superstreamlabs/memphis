@@ -11,19 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package models
+package background_tasks
 
 import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"memphis-broker/broker"
+	"memphis-broker/handlers"
 )
 
-type Connection struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	LastPing      time.Time          `json:"last_ping" bson:"last_ping"`
-	ClientAddress string             `json:"client_address" bson:"client_address"`
+var poisonMessagesHandler = handlers.PoisonMessagesHandler{}
+
+func ListenForPoisonMessages() {
+	broker.QueueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>", "$memphis_poison_messages_listeners_group", poisonMessagesHandler.HandleNewMessage)
 }

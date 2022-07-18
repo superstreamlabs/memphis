@@ -41,11 +41,11 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Docker compose install') {
-      sh "rm -rf memphis-infra"
-      dir ('memphis-infra'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch //memphis-infra branch is the same as the main repo
+      sh "rm -rf memphis-docker"
+      dir ('memphis-docker'){
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
       }
-      sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -58,7 +58,7 @@ node {
     }
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis down"
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
       sh "docker volume prune -f"
     }
 
@@ -67,8 +67,13 @@ node {
     ////////////////////////////////////////
 
     stage('Tests - Install memphis with helm') {
-      sh "helm install memphis-tests memphis-infra/kubernetes/helm/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      	sh "rm -rf memphis-k8s"
+      	dir ('memphis-k8s'){
+       	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
+      	}
+      	sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
     }
+	  
 
     stage('Open port forwarding to memphis service') {
       sh(script: """until kubectl get pods --selector=app=memphis-ui -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
@@ -86,12 +91,12 @@ node {
       sh "kubectl delete ns memphis-$unique_id &"
       sh(script: """/usr/sbin/lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
     }
-		
-		if (env.BRANCH_NAME ==~ /(staging)/) {
-    	stage('Tests - Remove used directories') {
+
+    if (env.BRANCH_NAME ==~ /(staging)/) {
+      stage('Tests - Remove used directories') {
       	sh "rm -rf memphis-e2e-tests"
     	}
-		}
+    }
 	  
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
@@ -102,30 +107,30 @@ node {
       sh "docker buildx use builder"
       if (env.BRANCH_NAME ==~ /(beta)/) {
       	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
-			}
-			else{
-				if (env.BRANCH_NAME ==~ /(staging)/) {
-					sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch}:${versionTag} --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
-				}
-				else{
-					sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
-				}
-		  }
-		}
+      }
+	    else{
+		    if (env.BRANCH_NAME ==~ /(staging)/) {
+			    sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch}:${versionTag} --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
+		    }
+		    else{
+			    sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
+		    }	
+	    }
+    }
 	  
 	  
     ///////////////////////////////////////
     //////////////  STAGING  //////////////
     ///////////////////////////////////////
 
-		if (env.BRANCH_NAME ==~ /(staging)/) {
+      if (env.BRANCH_NAME ==~ /(staging)/) {
     	stage('Push to staging'){
-	      sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
-        sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
-        sh 'helm install my-memphis memphis-infra/kubernetes/helm/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
-        sh "rm -rf memphis-infra"
+	  sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
+          sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
+          sh 'helm install my-memphis memphis-k8s/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
+          sh "rm -rf memphis-k8s"
+	}
       }
-    }
 
     /////////////////////////////////////////////
     //////////////  BETA & MASTER  //////////////
@@ -169,7 +174,7 @@ node {
     //////////////   K8S   ///////////////
     //////////////////////////////////////
 	  
-	  	stage('Tests - Install memphis with helm') {
+      stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
        	 git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
@@ -205,7 +210,7 @@ node {
 	  
   } catch (e) {
       currentBuild.result = "FAILED"
-      sh "docker-compose -f ./memphis-infra/docker/docker-compose-dev-memphis-broker.yml -p memphis down"
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-memphis-broker.yml -p memphis down"
       sh "kubectl delete ns memphis-$unique_id &"
       cleanWs()
       notifyFailed()

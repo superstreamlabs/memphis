@@ -163,15 +163,15 @@ func CreateStream(station models.Station) error {
 	}
 
 	var dedupWindow time.Duration
-	if station.DedupEnabled {
-		dedupWindow = time.Duration(station.DedupWindowInMs*1000) * time.Nanosecond
+	if station.DedupEnabled && station.DedupWindowInMs >= 100 {
+		dedupWindow = time.Duration(station.DedupWindowInMs) * time.Millisecond
 	} else {
-		dedupWindow = time.Duration(1) * time.Nanosecond // can not be 0
+		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
 	}
 
 	_, err := js.AddStream(&nats.StreamConfig{
 		Name:              station.Name,
-		Subjects:          []string{station.Name + ".*"},
+		Subjects:          []string{station.Name + ".>"},
 		Retention:         nats.LimitsPolicy,
 		MaxConsumers:      -1,
 		MaxMsgs:           int64(maxMsgs),
@@ -179,7 +179,7 @@ func CreateStream(station models.Station) error {
 		Discard:           nats.DiscardOld,
 		MaxAge:            maxAge,
 		MaxMsgsPerSubject: -1,
-		MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024,
+		MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:           storage,
 		Replicas:          station.Replicas,
 		NoAck:             false,
@@ -208,6 +208,15 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
 		maxAckTimeMs = 30000 // 30 sec
+	} else {
+		maxAckTimeMs = consumer.MaxAckTimeMs
+	}
+
+	var MaxMsgDeliveries int
+	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
+		MaxMsgDeliveries = 10
+	} else {
+		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
 
 	_, err := js.AddConsumer(station.Name, &nats.ConsumerConfig{
@@ -215,7 +224,7 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 		DeliverPolicy: nats.DeliverAllPolicy,
 		AckPolicy:     nats.AckExplicitPolicy,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-		MaxDeliver:    10,
+		MaxDeliver:    MaxMsgDeliveries,
 		FilterSubject: station.Name + ".final",
 		ReplayPolicy:  nats.ReplayInstantPolicy,
 		MaxAckPending: -1,
@@ -228,6 +237,15 @@ func CreateConsumer(consumer models.Consumer, station models.Station) error {
 	}
 
 	return nil
+}
+
+func GetCgInfo(stationName, cgName string) (*nats.ConsumerInfo, error) {
+	info, err := js.ConsumerInfo(stationName, cgName)
+	if err != nil {
+		return nil, nil
+	}
+
+	return info, nil
 }
 
 func RemoveStream(streamName string) error {
@@ -269,13 +287,21 @@ func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, nil
 	}
 
-	return int64(streamInfo.State.Bytes/streamInfo.State.Msgs), nil
+	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
 }
 
-func GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
+func GetHeaderSizeInBytes(headers nats.Header) int {
+	bytes := 0
+	for i, s := range headers {
+		bytes += len(s[0]) + len(i)
+	}
+	return bytes
+}
+
+func GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
 	streamInfo, err := js.StreamInfo(station.Name)
 	if err != nil {
-		return []models.Message{}, getErrorWithoutNats(err)
+		return []models.MessageDetails{}, getErrorWithoutNats(err)
 	}
 	totalMessages := streamInfo.State.Msgs
 
@@ -288,14 +314,24 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 	durableName := "$memphis_fetch_messages_consumer" + uid.String()
 	sub, err := js.PullSubscribe(station.Name+".final", durableName, nats.StartSequence(startSequence))
 	msgs, _ := sub.Fetch(messagesToFetch, nats.MaxWait(3*time.Second))
-	var messages []models.Message
+	var messages []models.MessageDetails
 	for _, msg := range msgs {
+		if msg.Header.Get("producedBy") == "$memphis_dlq" { // skip poison messages which have been resent
+			continue
+		}
+
 		metadata, _ := msg.Metadata()
-		messages = append(messages, models.Message{
-			Message:      string(msg.Data),
+		data := (string(msg.Data))
+		if len(data) > 100 { // get the first chars for preview needs
+			data = data[0:100]
+		}
+		messages = append(messages, models.MessageDetails{
+			MessageSeq:   int(metadata.Sequence.Stream),
+			Data:         data,
 			ProducedBy:   msg.Header.Get("producedBy"),
-			CreationDate: metadata.Timestamp,
-			Size: len(msg.Subject) + len(msg.Reply) + len(msg.Data) + len(msg.Header),
+			ConnectionId: msg.Header.Get("connectionId"),
+			TimeSent:     metadata.Timestamp,
+			Size:         len(msg.Subject) + len(msg.Data) + GetHeaderSizeInBytes(msg.Header),
 		})
 		msg.Ack()
 	}
@@ -306,6 +342,30 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 
 	js.DeleteConsumer(station.Name, durableName)
 	return messages, nil
+}
+
+func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, error) {
+	msg, err := js.GetMsg(stationName, messageSeq)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
+}
+
+func ResendPoisonMessage(subject string, data []byte) error {
+	natsMessage := &nats.Msg{
+		Header:  map[string][]string{"producedBy": {"$memphis_dlq"}},
+		Subject: subject,
+		Data:    data,
+	}
+
+	err := broker.PublishMsg(natsMessage)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func RemoveProducer() error {
@@ -344,7 +404,7 @@ func ValidateUserCreds(token string) error {
 }
 
 func CreateInternalStream(name string) error {
-	dedupWindow := time.Duration(1) * time.Nanosecond
+	dedupWindow := time.Duration(100) * time.Millisecond
 	_, err := js.AddStream(&nats.StreamConfig{
 		Name:         name,
 		Subjects:     []string{name},
@@ -375,6 +435,10 @@ func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, er
 		return sub, getErrorWithoutNats(err)
 	}
 	return sub, nil
+}
+
+func QueueSubscribe(subject, queue_group_name string, cb func(msg *nats.Msg)) {
+	broker.QueueSubscribe(subject, queue_group_name, cb)
 }
 
 func IsConnectionAlive() bool {

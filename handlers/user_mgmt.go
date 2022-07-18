@@ -37,7 +37,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -97,12 +96,7 @@ func updateUserResources(user models.User) error {
 		}
 	}
 
-	_, err := tokensCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
-	if err != nil {
-		return err
-	}
-
-	_, err = factoriesCollection.UpdateMany(context.TODO(),
+	_, err := factoriesCollection.UpdateMany(context.TODO(),
 		bson.M{"created_by_user": user.Username},
 		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
 	)
@@ -155,16 +149,33 @@ func validateUsername(username string) error {
 	return nil
 }
 
-func createTokens(user models.User) (string, string, error) {
+type userToTokens interface {
+	models.User | models.SandboxUser
+}
+
+func CreateTokens[U userToTokens](user U) (string, string, error) {
 	atClaims := jwt.MapClaims{}
-	atClaims["user_id"] = user.ID.Hex()
-	atClaims["username"] = user.Username
-	atClaims["user_type"] = user.UserType
-	atClaims["creation_date"] = user.CreationDate
-	atClaims["already_logged_in"] = user.AlreadyLoggedIn
-	atClaims["avatar_id"] = user.AvatarId
-	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	var at *jwt.Token
+	switch u := any(user).(type) {
+	case models.User:
+		atClaims["user_id"] = u.ID.Hex()
+		atClaims["username"] = u.Username
+		atClaims["user_type"] = u.UserType
+		atClaims["creation_date"] = u.CreationDate
+		atClaims["already_logged_in"] = u.AlreadyLoggedIn
+		atClaims["avatar_id"] = u.AvatarId
+		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	case models.SandboxUser:
+		atClaims["user_id"] = u.ID.Hex()
+		atClaims["username"] = u.Username
+		atClaims["user_type"] = u.UserType
+		atClaims["creation_date"] = u.CreationDate
+		atClaims["already_logged_in"] = u.AlreadyLoggedIn
+		atClaims["avatar_id"] = u.AvatarId
+		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
 	if err != nil {
 		return "", "", err
@@ -216,11 +227,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			analytics.IncrementInstallationsCounter()
-		}
-
 		deploymentId := primitive.NewObjectID().Hex()
 		deploymentKey := models.SystemKey{
 			ID:    primitive.NewObjectID(),
@@ -240,6 +246,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 				Key:   "analytics",
 				Value: "true",
 			}
+			analytics.IncrementInstallationsCounter()
 		} else {
 			analyticsKey = models.SystemKey{
 				ID:    primitive.NewObjectID(),
@@ -312,19 +319,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
-	token, refreshToken, err := createTokens(user)
-	if err != nil {
-		logger.Error("Login error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	opts := options.Update().SetUpsert(true)
-	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"jwt_token": token, "refresh_token": refreshToken}},
-		opts,
-	)
+	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
 		logger.Error("Login error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -343,6 +338,13 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		analytics.IncrementLoginsCounter()
 	}
 
+	var env string
+	if configuration.DOCKER_ENV != "" {
+		env = "docker"
+	} else {
+		env = "K8S"
+	}
+
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -356,6 +358,8 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    sendAnalytics,
+		"env":               env,
+		"namespace":         configuration.K8S_NAMESPACE,
 	})
 }
 
@@ -377,23 +381,18 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
-	token, refreshToken, err := createTokens(user)
+	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
 		logger.Error("RefreshToken error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	opts := options.Update().SetUpsert(true)
-	_, err = tokensCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"jwt_token": token, "refresh_token": refreshToken}},
-		opts,
-	)
-	if err != nil {
-		logger.Error("RefreshToken error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	var env string
+	if configuration.DOCKER_ENV != "" {
+		env = "docker"
+	} else {
+		env = "K8S"
 	}
 
 	domain := ""
@@ -409,19 +408,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    sendAnalytics,
+		"env":               env,
+		"namespace":         configuration.K8S_NAMESPACE,
 	})
-}
-
-func (umh UserMgmtHandler) Logout(c *gin.Context) {
-	user := getUserDetailsFromMiddleware(c)
-	_, err := tokensCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
-	if err != nil {
-		logger.Error("Logout error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{})
 }
 
 // TODO
@@ -574,6 +563,9 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.RemoveUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -650,6 +642,9 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.EditHubCredsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -787,6 +782,9 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

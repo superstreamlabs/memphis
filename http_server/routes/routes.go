@@ -30,7 +30,7 @@ func (lw loggerWriter) Write(p []byte) (int, error) {
 	log := string(p)
 	splitted := strings.Split(log, "| ")
 	statusCode := strings.Trim(splitted[1], " ")
-	if statusCode != "200" &&  statusCode != "204" {
+	if statusCode != "200" && statusCode != "204" {
 		logger.Error(log)
 	}
 	return len(p), nil
@@ -41,7 +41,7 @@ func InitializeHttpRoutes() *gin.Engine {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:9000", "http://*", "https://*"},
+		AllowOrigins:     []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://*", "https://*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -61,6 +61,7 @@ func InitializeHttpRoutes() *gin.Engine {
 	InitializeConsumersRoutes(mainRouter)
 	InitializeMonitoringRoutes(mainRouter)
 	InitializeSysLogsRoutes(mainRouter)
+	InitializeSandboxRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",

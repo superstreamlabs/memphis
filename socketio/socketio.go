@@ -38,6 +38,7 @@ var stationsHandler = handlers.StationsHandler{}
 var factoriesHandler = handlers.FactoriesHandler{}
 var monitoringHandler = handlers.MonitoringHandler{}
 var sysLogsHandler = handlers.SysLogsHandler{}
+var poisonMsgsHandler = handlers.PoisonMessagesHandler{}
 
 func getMainOverviewData() (models.MainOverviewData, error) {
 	stations, err := stationsHandler.GetAllStationsDetails()
@@ -96,11 +97,11 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
-	activeProducers, killedProducers, destroyedProducers, err := producersHandler.GetProducersByStation(station)
+	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	activeConsumers, killedConsumers, destroyedConsumers, err := consumersHandler.GetConsumersByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -117,23 +118,29 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, err
 	}
 
-	messagesToFetch := 50
+	messagesToFetch := 1000
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
 
+	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
 	return models.StationOverviewData{
-		ActiveProducers:    activeProducers,
-		KilledProducers:    killedProducers,
-		DestroyedProducers: destroyedProducers,
-		ActiveConsumers:    activeConsumers,
-		KilledConsumers:    killedConsumers,
-		DestroyedConsumers: destroyedConsumers,
-		TotalMessages:      totalMessages,
-		AvgMsgSize:         avgMsgSize,
-		AuditLogs:          auditLogs,
-		Messages:           messages,
+		ConnectedProducers:    connectedProducers,
+		DisconnectedProducers: disconnectedProducers,
+		DeletedProducers:      deletedProducers,
+		ConnectedCgs:          connectedCgs,
+		DisconnectedCgs:       disconnectedCgs,
+		DeletedCgs:            deletedCgs,
+		TotalMessages:         totalMessages,
+		AvgMsgSize:            avgMsgSize,
+		AuditLogs:             auditLogs,
+		Messages:              messages,
+		PoisonMessages:        poisonMessages,
 	}, nil
 }
 
@@ -199,6 +206,13 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 		return "recv " + msg
 	})
 
+	server.OnEvent("/api", "register_poison_message_journey_data", func(s socketio.Conn, poisonMsgId string) string {
+		s.LeaveAll()
+		s.Join("poison_message_journey_group_" + poisonMsgId)
+
+		return "recv " + poisonMsgId
+	})
+
 	server.OnEvent("/api", "deregister", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		return "recv " + msg
@@ -238,7 +252,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 					if err != nil {
 						logger.Error("Error while trying to get station overview data - " + err.Error())
 					} else {
-						server.BroadcastToRoom("/api", room, "station_overview_data", data)
+						server.BroadcastToRoom("/api", room, "station_overview_data_"+stationName, data)
 					}
 				}
 
@@ -248,7 +262,17 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 					if err != nil {
 						logger.Error("Error while trying to get factory overview data - " + err.Error())
 					} else {
-						server.BroadcastToRoom("/api", room, "factory_overview_data", data)
+						server.BroadcastToRoom("/api", room, "factory_overview_data_"+factoryName, data)
+					}
+				}
+
+				if strings.HasPrefix(room, "poison_message_journey_group_") && server.RoomLen("/api", room) > 0 {
+					poisonMsgId := strings.Split(room, "poison_message_journey_group_")[1]
+					data, err := stationsHandler.GetPoisonMessageJourneyDetails(poisonMsgId)
+					if err != nil {
+						logger.Error("Error while trying to get poison message journey - " + err.Error())
+					} else {
+						server.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
 					}
 				}
 			}
@@ -257,7 +281,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	socketIoRouter := router.Group("/api/socket.io")
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:9000", "http://0.0.0.0", "https://0.0.0.0", "http://*", "https://*"},
+		AllowOrigins: []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://0.0.0.0", "https://0.0.0.0", "http://*", "https://*"},
 	}))
 	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
