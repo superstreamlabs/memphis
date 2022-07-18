@@ -184,7 +184,7 @@ node {
 
    	 stage('Open port forwarding to memphis service') {
    	   sh(script: """until kubectl get pods --selector=app=memphis-ui -o=jsonpath="{.items[*].status.phase}" -n memphis | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
-   	   sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis&"
+   	   sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis &"
    	   sh "nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis &"
    	 }
 
