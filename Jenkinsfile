@@ -43,7 +43,7 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
       dir ('memphis-docker'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'master'
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
       }
       sh "docker-compose -f ./memphis-docker/docker-compose-dev-memphis-broker.yml -p memphis up -d"
     }
