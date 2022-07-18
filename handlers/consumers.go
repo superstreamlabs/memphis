@@ -58,7 +58,7 @@ func validateConsumerType(consumerType string) error {
 }
 
 func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_active": true}
+	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_deleted": false}
 	var consumer models.Consumer
 	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
@@ -74,6 +74,7 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", station.ID}}}},
+		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
@@ -90,7 +91,18 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 		return consumers, err
 	}
 
-	return consumers, nil
+	var dedupedConsumers []models.CgMember
+	consumersNames := []string{}
+
+	for _, consumer := range consumers {
+		if slices.Contains(consumersNames, consumer.Name) {
+			continue
+		}
+		consumersNames = append(consumersNames, consumer.Name)
+		dedupedConsumers = append(dedupedConsumers, consumer)
+	}
+
+	return dedupedConsumers, nil
 }
 
 func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
@@ -305,69 +317,115 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (ch ConsumersHandler) GetConsumersByStation(station models.Station) ([]models.ExtendedConsumer, []models.ExtendedConsumer, []models.ExtendedConsumer, error) { // for socket io endpoint
+func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
+	var cgs []models.Cg
 	var consumers []models.ExtendedConsumer
 
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
 		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
+		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"connection", 0}}}},
 	})
 
 	if err != nil {
-		return consumers, consumers, consumers, err
+		return cgs, cgs, cgs, err
 	}
 
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		return consumers, consumers, consumers, err
+		return cgs, cgs, cgs, err
 	}
 
 	if len(consumers) == 0 {
-		consumers = []models.ExtendedConsumer{}
+		return []models.Cg{}, []models.Cg{}, []models.Cg{}, nil
 	}
 
-	var activeConsumers []models.ExtendedConsumer
-	var killedConsumers []models.ExtendedConsumer
-	var destroyedConsumers []models.ExtendedConsumer
+	m := make(map[string]*models.Cg)
 	consumersNames := []string{}
 
 	for _, consumer := range consumers {
 		if slices.Contains(consumersNames, consumer.Name) {
 			continue
 		}
-
 		consumersNames = append(consumersNames, consumer.Name)
+
+		var cg *models.Cg
+		if m[consumer.ConsumersGroup] == nil {
+			cg = &models.Cg{
+				Name:                  consumer.ConsumersGroup,
+				MaxAckTimeMs:          consumer.MaxAckTimeMs,
+				MaxMsgDeliveries:      consumer.MaxMsgDeliveries,
+				ConnectedConsumers:    []models.ExtendedConsumer{},
+				DisconnectedConsumers: []models.ExtendedConsumer{},
+				DeletedConsumers:      []models.ExtendedConsumer{},
+				IsActive:              consumer.IsActive,
+				IsDeleted:             consumer.IsDeleted,
+			}
+			m[consumer.ConsumersGroup] = cg
+		} else {
+			cg = m[consumer.ConsumersGroup]
+		}
+
 		if consumer.IsActive {
-			activeConsumers = append(activeConsumers, consumer)
+			cg.ConnectedConsumers = append(cg.ConnectedConsumers, consumer)
 		} else if !consumer.IsDeleted && !consumer.IsActive {
-			killedConsumers = append(killedConsumers, consumer)
+			cg.DisconnectedConsumers = append(cg.DisconnectedConsumers, consumer)
 		} else if consumer.IsDeleted {
-			destroyedConsumers = append(destroyedConsumers, consumer)
+			cg.DeletedConsumers = append(cg.DeletedConsumers, consumer)
 		}
 	}
 
-	if len(activeConsumers) == 0 {
-		activeConsumers = []models.ExtendedConsumer{}
+	var connectedCgs []models.Cg
+	var disconnectedCgs []models.Cg
+	var deletedCgs []models.Cg
+
+	for _, cg := range m {
+		if cg.IsDeleted {
+			cg.IsActive = false
+			cg.IsDeleted = true
+		} else { // not deleted
+			cgInfo, err := broker.GetCgInfo(station.Name, cg.Name)
+			if err != nil {
+				return cgs, cgs, cgs, err
+			}
+
+			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(station.Name, cg.Name)
+			if err != nil {
+				return cgs, cgs, cgs, err
+			}
+
+			cg.InProcessMessages = cgInfo.NumAckPending
+			cg.UnprocessedMessages = int(cgInfo.NumPending)
+			cg.PoisonMessages = totalPoisonMsgs
+		}
+
+		if len(cg.ConnectedConsumers) > 0 {
+			connectedCgs = append(connectedCgs, *cg)
+		} else if len(cg.DisconnectedConsumers) > 0 {
+			disconnectedCgs = append(disconnectedCgs, *cg)
+		} else {
+			deletedCgs = append(deletedCgs, *cg)
+		}
 	}
 
-	if len(killedConsumers) == 0 {
-		killedConsumers = []models.ExtendedConsumer{}
+	if len(connectedCgs) == 0 {
+		connectedCgs = []models.Cg{}
 	}
 
-	if len(destroyedConsumers) == 0 {
-		destroyedConsumers = []models.ExtendedConsumer{}
+	if len(disconnectedCgs) == 0 {
+		disconnectedCgs = []models.Cg{}
 	}
 
-	return activeConsumers, killedConsumers, destroyedConsumers, nil
+	if len(deletedCgs) == 0 {
+		deletedCgs = []models.Cg{}
+	}
+
+	return connectedCgs, disconnectedCgs, deletedCgs, nil
 }
 
+// TODO fix it
 func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint
 	var body models.GetAllConsumersByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -454,38 +512,40 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		return
 	}
 
-	if consumer.ConsumersGroup == "" {
-		err = broker.RemoveConsumer(stationName, name)
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	// ensure not part of an active consumer group
+	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
+	if err != nil {
+		logger.Error("DestroyConsumer error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if count == 0 { // no other members in this group
+		err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			logger.Error("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-	} else { // ensure not part of an active consumer group
-		var consumers []models.Consumer
 
-		cursor, err := consumersCollection.Find(context.TODO(), bson.M{"consumers_group": consumer.ConsumersGroup, "is_active": true})
+		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			logger.Error("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
-		}
-
-		if err = cursor.All(context.TODO(), &consumers); err != nil {
-			logger.Error("DestroyConsumer error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		if len(consumers) == 0 { // no other active members in this group
-			err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
-			if err != nil {
-				logger.Error("DestroyConsumer error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
 		}
 	}
+
 	user := getUserDetailsFromMiddleware(c)
 	message := "Consumer " + name + " has been deleted"
 	logger.Info(message)

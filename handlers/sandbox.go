@@ -44,7 +44,7 @@ type googleClaims struct {
 	EmailVerified bool   `json:"email_verified"`
 	FirstName     string `json:"given_name"`
 	LastName      string `json:"family_name"`
-	Picture       string `json: "picture"`
+	Picture       string `json:"picture"`
 	jwt.StandardClaims
 }
 
@@ -383,8 +383,10 @@ func getGithubData(accessToken string) (map[string]any, error) {
 }
 
 func DenyForSandboxEnv(c *gin.Context) error {
-	if configuration.SANDBOX_ENV == "true" {
-		c.AbortWithStatusJSON(666, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
+	user := getUserDetailsFromMiddleware(c)
+	
+	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
 		return errors.New("Sandbox environment")
 	}
 	return nil

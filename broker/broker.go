@@ -171,7 +171,7 @@ func CreateStream(station models.Station) error {
 
 	_, err := js.AddStream(&nats.StreamConfig{
 		Name:              station.Name,
-		Subjects:          []string{station.Name + ".*"},
+		Subjects:          []string{station.Name + ".>"},
 		Retention:         nats.LimitsPolicy,
 		MaxConsumers:      -1,
 		MaxMsgs:           int64(maxMsgs),
@@ -298,10 +298,10 @@ func GetHeaderSizeInBytes(headers nats.Header) int {
 	return bytes
 }
 
-func GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
+func GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
 	streamInfo, err := js.StreamInfo(station.Name)
 	if err != nil {
-		return []models.Message{}, getErrorWithoutNats(err)
+		return []models.MessageDetails{}, getErrorWithoutNats(err)
 	}
 	totalMessages := streamInfo.State.Msgs
 
@@ -314,13 +314,23 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.Message,
 	durableName := "$memphis_fetch_messages_consumer" + uid.String()
 	sub, err := js.PullSubscribe(station.Name+".final", durableName, nats.StartSequence(startSequence))
 	msgs, _ := sub.Fetch(messagesToFetch, nats.MaxWait(3*time.Second))
-	var messages []models.Message
+	var messages []models.MessageDetails
 	for _, msg := range msgs {
+		if msg.Header.Get("producedBy") == "$memphis_dlq" { // skip poison messages which have been resent
+			continue
+		}
+
 		metadata, _ := msg.Metadata()
-		messages = append(messages, models.Message{
-			Message:      string(msg.Data),
+		data := (string(msg.Data))
+		if len(data) > 100 { // get the first chars for preview needs
+			data = data[0:100]
+		}
+		messages = append(messages, models.MessageDetails{
+			MessageSeq:   int(metadata.Sequence.Stream),
+			Data:         data,
 			ProducedBy:   msg.Header.Get("producedBy"),
-			CreationDate: metadata.Timestamp,
+			ConnectionId: msg.Header.Get("connectionId"),
+			TimeSent:     metadata.Timestamp,
 			Size:         len(msg.Subject) + len(msg.Data) + GetHeaderSizeInBytes(msg.Header),
 		})
 		msg.Ack()
@@ -341,6 +351,21 @@ func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, erro
 	}
 
 	return msg, nil
+}
+
+func ResendPoisonMessage(subject string, data []byte) error {
+	natsMessage := &nats.Msg{
+		Header:  map[string][]string{"producedBy": {"$memphis_dlq"}},
+		Subject: subject,
+		Data:    data,
+	}
+
+	err := broker.PublishMsg(natsMessage)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func RemoveProducer() error {

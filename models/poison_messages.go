@@ -31,6 +31,8 @@ type PoisonedCg struct {
 	TotalPoisonMessages int        `json:"total_poison_messages" bson:"total_poison_messages"`
 	MaxMsgDeliveries    int        `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
 	CgMembers           []CgMember `json:"cg_members" bson:"cg_members"`
+	IsActive            bool       `json:"is_active" bson:"is_active"`
+	IsDeleted           bool       `json:"is_deleted" bson:"is_deleted"`
 }
 
 type PoisonMessage struct {
@@ -41,6 +43,11 @@ type PoisonMessage struct {
 	PoisonedCgs  []PoisonedCg       `json:"poisoned_cgs" bson:"poisoned_cgs"`
 	Message      MessagePayload     `json:"message" bson:"message"`
 	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
+}
+
+type LightPoisonMessage struct {
+	ID      primitive.ObjectID `json:"_id" bson:"_id"`
+	Message MessagePayload     `json:"message" bson:"message"`
 }
 
 type LightweightPoisonMessage struct {

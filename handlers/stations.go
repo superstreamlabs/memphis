@@ -388,17 +388,32 @@ func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
 	return avgMsgSize, err
 }
 
-func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.Message, error) {
+func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
 	messages, err := broker.GetMessages(station, messagesToFetch)
 	if err != nil {
-		return []models.Message{}, err
+		return messages, err
 	}
 
-	if len(messages) == 0 {
-		return []models.Message{}, nil
-	} else {
-		return messages, nil
+	return messages, nil
+}
+
+func getCgStatus(members []models.CgMember) (bool, bool) {
+	deletedCount := 0
+	for _, member := range members {
+		if member.IsActive {
+			return true, false
+		}
+
+		if member.IsDeleted {
+			deletedCount++
+		}
 	}
+
+	if len(members) == deletedCount {
+		return false, true
+	}
+
+	return false, false
 }
 
 func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessage, error) {
@@ -435,12 +450,14 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 			return poisonMessage, err
 		}
 
+		isActive, isDeleted := getCgStatus(cgMembers)
+
 		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.PoisonedCgs[i].CgName)
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
@@ -451,6 +468,8 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
 		poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
 		poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
+		poisonMessage.PoisonedCgs[i].IsActive = isActive
+		poisonMessage.PoisonedCgs[i].IsDeleted = isDeleted
 	}
 
 	return poisonMessage, nil
@@ -466,7 +485,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 	if err == mongo.ErrNoDocuments {
 		logger.Warn("GetPoisonMessageJourney error: " + err.Error())
-		c.AbortWithStatusJSON(666, gin.H{"message": "Poison message does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 		return
 	}
 	if err != nil {
@@ -476,4 +495,184 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, poisonMessage)
+}
+
+func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
+	var body models.AckPoisonMessagesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
+	if err != nil {
+		logger.Error("AckPoisonMessage error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
+	var body models.ResendPoisonMessagesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	var msgs []models.PoisonMessage
+	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
+	if err != nil {
+		logger.Error("ResendPoisonMessages error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if err = cursor.All(context.TODO(), &msgs); err != nil {
+		logger.Error("ResendPoisonMessages error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	for _, msg := range msgs {
+		for _, cg := range msg.PoisonedCgs {
+			err := broker.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
+			if err != nil {
+				logger.Error("ResendPoisonMessages error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+	}
+
+	if err != nil {
+		logger.Error("ResendPoisonMessages error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
+	var body models.GetMessageDetailsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	if body.IsPoisonMessage {
+		poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
+		if err == mongo.ErrNoDocuments {
+			logger.Warn("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
+			return
+		}
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		c.IndentedJSON(200, poisonMessage)
+		return
+	}
+	stationName := strings.ToLower(body.StationName)
+	exist, station, err := IsStationExist(stationName)
+	if !exist {
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		return
+	}
+	if err != nil {
+		logger.Error("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	natsMsg, err := broker.GetMessage(stationName, uint64(body.MessageSeq))
+
+	connectionIdHeader := natsMsg.Header.Get("connectionId")
+	producedByHeader := natsMsg.Header.Get("producedBy")
+
+	if connectionIdHeader == "" || producedByHeader == "" {
+		logger.Error("Error while getting notified about a poison message: Missing mandatory message headers")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers"})
+		return
+	}
+
+	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
+	poisonedCgs, err := GetPoisonedCgsByMessage(stationName, models.MessageDetails{MessageSeq: int(natsMsg.Sequence), ProducedBy: producedByHeader, TimeSent: natsMsg.Time})
+	if err != nil {
+		logger.Error("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	for i, cg := range poisonedCgs {
+		cgInfo, err := broker.GetCgInfo(stationName, cg.CgName)
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName, cg.CgName)
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+		if err != nil {
+			logger.Error("GetMessageDetails error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		isActive, isDeleted := getCgStatus(cgMembers)
+
+		poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+		poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+		poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+		poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+		poisonedCgs[i].IsActive = isActive
+		poisonedCgs[i].IsDeleted = isDeleted
+	}
+
+	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
+	var producer models.Producer
+	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err != nil {
+		logger.Error("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	_, conn, err := IsConnectionExist(connectionId)
+	if err != nil {
+		logger.Error("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	msg := models.Message{
+		MessageSeq: body.MessageSeq,
+		Message: models.MessagePayload{
+			TimeSent: natsMsg.Time,
+			Size:     len(natsMsg.Subject) + len(natsMsg.Data) + broker.GetHeaderSizeInBytes(natsMsg.Header),
+			Data:     string(natsMsg.Data),
+		},
+		Producer: models.ProducerDetails{
+			Name:          producedByHeader,
+			ConnectionId:  connectionId,
+			ClientAddress: conn.ClientAddress,
+			CreatedByUser: producer.CreatedByUser,
+			IsActive:      producer.IsActive,
+			IsDeleted:     producer.IsDeleted,
+		},
+		PoisonedCgs: poisonedCgs,
+	}
+	c.IndentedJSON(200, msg)
 }

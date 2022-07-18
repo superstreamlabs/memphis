@@ -257,9 +257,9 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		return producers, producers, producers, err
 	}
 
-	var activeProducers []models.ExtendedProducer
-	var killedProducers []models.ExtendedProducer
-	var destroyedProducers []models.ExtendedProducer
+	var connectedProducers []models.ExtendedProducer
+	var disconnectedProducers []models.ExtendedProducer
+	var deletedProducers []models.ExtendedProducer
 	producersNames := []string{}
 
 	for _, producer := range producers {
@@ -269,27 +269,27 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 
 		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
-			activeProducers = append(activeProducers, producer)
+			connectedProducers = append(connectedProducers, producer)
 		} else if !producer.IsDeleted && !producer.IsActive {
-			killedProducers = append(killedProducers, producer)
+			disconnectedProducers = append(disconnectedProducers, producer)
 		} else if producer.IsDeleted {
-			destroyedProducers = append(destroyedProducers, producer)
+			deletedProducers = append(deletedProducers, producer)
 		}
 	}
 
-	if len(activeProducers) == 0 {
-		activeProducers = []models.ExtendedProducer{}
+	if len(connectedProducers) == 0 {
+		connectedProducers = []models.ExtendedProducer{}
 	}
 
-	if len(killedProducers) == 0 {
-		killedProducers = []models.ExtendedProducer{}
+	if len(disconnectedProducers) == 0 {
+		disconnectedProducers = []models.ExtendedProducer{}
 	}
 
-	if len(destroyedProducers) == 0 {
-		destroyedProducers = []models.ExtendedProducer{}
+	if len(deletedProducers) == 0 {
+		deletedProducers = []models.ExtendedProducer{}
 	}
 
-	return activeProducers, killedProducers, destroyedProducers, nil
+	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }
 
 func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint

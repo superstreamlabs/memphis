@@ -34,7 +34,7 @@ func (ah AuditLogsHandler) GetAuditLogsByStation(station models.Station) ([]mode
 	var auditLogs []models.AuditLog
 
 	cursor, err := auditLogsCollection.Find(context.TODO(), bson.M{"station_name": station.Name, "creation_date": bson.M{
-		"$gte": (time.Now().AddDate(0, 0, -30)),
+		"$gte": (time.Now().AddDate(0, 0, -5)),
 	}})
 	if err != nil {
 		return auditLogs, err
