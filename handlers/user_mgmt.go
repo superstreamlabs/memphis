@@ -812,3 +812,12 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 
 	c.IndentedJSON(200, gin.H{})
 }
+
+func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementNextStepsCounter()
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
