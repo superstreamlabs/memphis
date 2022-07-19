@@ -33,6 +33,7 @@ var systemKeysCollection = db.GetCollection("system_keys")
 var ls launcher.Launcher
 var loginsCounter metric.Int64Counter
 var installationsCounter metric.Int64Counter
+var nextStepsCounter metric.Int64Counter
 var stationsCounter metric.Int64Counter
 var producersCounter metric.Int64Counter
 var consumersCounter metric.Int64Counter
@@ -98,55 +99,63 @@ func InitializeAnalytics() error {
 		analyticsFlag = analytics.Value
 	}
 
-	if analyticsFlag == "true" {
-		ls = launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName("memphis"),
-			launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
-		)
+	ls = launcher.ConfigureOpentelemetry(
+		launcher.WithServiceName("memphis"),
+		launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
+	)
 
-		var Meter = global.GetMeterProvider().Meter("memphis")
-		installationsCounter, err = Meter.NewInt64Counter(
-			"Installations",
-			metric.WithUnit("0"),
-			metric.WithDescription("Counting the number of installations of Memphis"),
-		)
+	var Meter = global.GetMeterProvider().Meter("memphis")
+	installationsCounter, err = Meter.NewInt64Counter(
+		"Installations",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of installations of Memphis"),
+	)
 
-		loginsCounter, err = Meter.NewInt64Counter(
-			"Logins",
-			metric.WithUnit("0"),
-			metric.WithDescription("Counting the number of logins to Memphis"),
-		)
+	nextStepsCounter, err = Meter.NewInt64Counter(
+		"NextSteps",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of users complete the next steps wizard in the UI"),
+	)
 
-		stationsCounter, err = Meter.NewInt64Counter(
-			"Stations",
-			metric.WithUnit("0"),
-			metric.WithDescription("Counting the number of stations"),
-		)
+	loginsCounter, err = Meter.NewInt64Counter(
+		"Logins",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of logins to Memphis"),
+	)
 
-		producersCounter, err = Meter.NewInt64Counter(
-			"Producers",
-			metric.WithUnit("0"),
-			metric.WithDescription("Counting the number of producers"),
-		)
+	stationsCounter, err = Meter.NewInt64Counter(
+		"Stations",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of stations"),
+	)
 
-		consumersCounter, err = Meter.NewInt64Counter(
-			"Consumers",
-			metric.WithUnit("0"),
-			metric.WithDescription("Counting the number of consumers"),
-		)
+	producersCounter, err = Meter.NewInt64Counter(
+		"Producers",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of producers"),
+	)
 
-		disableAnalyticsCounter, err = Meter.NewInt64Counter(
-			"DisableAnalytics",
-			metric.WithUnit("0"),
-			metric.WithDescription("Counting the number of disable analytics events"),
-		)
-	}
+	consumersCounter, err = Meter.NewInt64Counter(
+		"Consumers",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of consumers"),
+	)
+
+	disableAnalyticsCounter, err = Meter.NewInt64Counter(
+		"DisableAnalytics",
+		metric.WithUnit("0"),
+		metric.WithDescription("Counting the number of disable analytics events"),
+	)
 
 	return nil
 }
 
 func IncrementInstallationsCounter() {
 	installationsCounter.Add(context.TODO(), 1)
+}
+
+func IncrementNextStepsCounter() {
+	nextStepsCounter.Add(context.TODO(), 1)
 }
 
 func IncrementLoginsCounter() {
