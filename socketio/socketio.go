@@ -281,7 +281,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 	socketIoRouter := router.Group("/api/socket.io")
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://0.0.0.0", "https://0.0.0.0", "http://*", "https://*"},
+		AllowOrigins: []string{"*"},
 	}))
 	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
