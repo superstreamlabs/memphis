@@ -158,14 +158,6 @@ func IncrementNextStepsCounter() {
 	nextStepsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
 }
 
-func IncrementNextStepsCounter() {
-	nextStepsCounter.Add(context.TODO(), 1)
-}
-
-func IncrementNextStepsCounter() {
-	nextStepsCounter.Add(context.TODO(), 1)
-}
-
 func IncrementLoginsCounter() {
 	loginsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
 }
