@@ -227,37 +227,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		deploymentId := primitive.NewObjectID().Hex()
-		deploymentKey := models.SystemKey{
-			ID:    primitive.NewObjectID(),
-			Key:   "deployment_id",
-			Value: deploymentId,
-		}
-
-		_, err = systemKeysCollection.InsertOne(context.TODO(), deploymentKey)
-		if err != nil {
-			return err
-		}
-
-		var analyticsKey models.SystemKey
 		if configuration.ANALYTICS == "true" {
-			analyticsKey = models.SystemKey{
-				ID:    primitive.NewObjectID(),
-				Key:   "analytics",
-				Value: "true",
-			}
 			analytics.IncrementInstallationsCounter()
-		} else {
-			analyticsKey = models.SystemKey{
-				ID:    primitive.NewObjectID(),
-				Key:   "analytics",
-				Value: "false",
-			}
-		}
-
-		_, err = systemKeysCollection.InsertOne(context.TODO(), analyticsKey)
-		if err != nil {
-			return err
 		}
 
 		newUser := models.User{
