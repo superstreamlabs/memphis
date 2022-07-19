@@ -151,7 +151,15 @@ func InitializeAnalytics() error {
 }
 
 func IncrementInstallationsCounter() {
-	installationsCounter.Add(context.TODO(), 1)
+	installationsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+}
+
+func IncrementNextStepsCounter() {
+	nextStepsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+}
+
+func IncrementNextStepsCounter() {
+	nextStepsCounter.Add(context.TODO(), 1)
 }
 
 func IncrementNextStepsCounter() {
