@@ -85,7 +85,8 @@ docker compose -f docker-compose.yml -p memphis up
 [Tutorial: Build an event-driven food delivery app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
 
 ## High-Level Architecture
-<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/graphics+for+github/Architecture.png">
+<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/180664120-abd5e178-9cfe-4ab3-8722-b130fbcc6294.png">
+
 
 ## Local access
 ### Via Kubernetes
