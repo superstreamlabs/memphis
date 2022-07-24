@@ -1,9 +1,9 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the GNU General Public License v3.0 (the “License”);
+// Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// https://www.gnu.org/licenses/gpl-3.0.en.html
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an “AS IS” BASIS,
@@ -424,14 +424,13 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 		deletedCgs = []models.Cg{}
 	}
 
-	
-	sort.Slice(connectedCgs, func(i, j int) bool { 
+	sort.Slice(connectedCgs, func(i, j int) bool {
 		return connectedCgs[j].LastStatusChangeDate.Before(connectedCgs[i].LastStatusChangeDate)
 	})
-	sort.Slice(disconnectedCgs, func(i, j int) bool { 
+	sort.Slice(disconnectedCgs, func(i, j int) bool {
 		return disconnectedCgs[j].LastStatusChangeDate.Before(disconnectedCgs[i].LastStatusChangeDate)
 	})
-	sort.Slice(deletedCgs, func(i, j int) bool { 
+	sort.Slice(deletedCgs, func(i, j int) bool {
 		return deletedCgs[j].LastStatusChangeDate.Before(deletedCgs[i].LastStatusChangeDate)
 	})
 	return connectedCgs, disconnectedCgs, deletedCgs, nil

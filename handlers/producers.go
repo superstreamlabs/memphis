@@ -1,9 +1,9 @@
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the GNU General Public License v3.0 (the “License”);
+// Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// https://www.gnu.org/licenses/gpl-3.0.en.html
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an “AS IS” BASIS,
@@ -290,13 +290,13 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		deletedProducers = []models.ExtendedProducer{}
 	}
 
-	sort.Slice(connectedProducers, func(i, j int) bool { 
+	sort.Slice(connectedProducers, func(i, j int) bool {
 		return connectedProducers[j].CreationDate.Before(connectedProducers[i].CreationDate)
 	})
-	sort.Slice(disconnectedProducers, func(i, j int) bool { 
+	sort.Slice(disconnectedProducers, func(i, j int) bool {
 		return disconnectedProducers[j].CreationDate.Before(disconnectedProducers[i].CreationDate)
 	})
-	sort.Slice(deletedProducers, func(i, j int) bool { 
+	sort.Slice(deletedProducers, func(i, j int) bool {
 		return deletedProducers[j].CreationDate.Before(deletedProducers[i].CreationDate)
 	})
 	return connectedProducers, disconnectedProducers, deletedProducers, nil
