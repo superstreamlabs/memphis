@@ -170,7 +170,6 @@ func (s *Server) EnableJetStream(config *JetStreamConfig) error {
 		return fmt.Errorf("jetstream already enabled")
 	}
 
-	s.Noticef("Starting JetStream")
 	if config == nil || config.MaxMemory <= 0 || config.MaxStore <= 0 {
 		var storeDir, domain string
 		var maxStore, maxMem int64
@@ -356,14 +355,17 @@ func (s *Server) enableJetStream(cfg JetStreamConfig) error {
 		s.SetDefaultSystemAccount()
 	}
 
-	s.Noticef("    _ ___ _____ ___ _____ ___ ___   _   __  __")
-	s.Noticef(" _ | | __|_   _/ __|_   _| _ \\ __| /_\\ |  \\/  |")
-	s.Noticef("| || | _|  | | \\__ \\ | | |   / _| / _ \\| |\\/| |")
-	s.Noticef(" \\__/|___| |_| |___/ |_| |_|_\\___/_/ \\_\\_|  |_|")
+	s.Noticef(" __  __                              _       _           __      _                 __   ")
+	s.Noticef(" |  \\/  |                            | |     (_)         / /     | |                \\ \\  ")
+	s.Noticef(" | \\  / |   ___   _ __ ___    _ __   | |__    _   ___   | |    __| |   ___  __   __  | | ")
+	s.Noticef(" | |\\/| |  / _ \\ | '_ ` _ \\  | '_ \\  | '_ \\  | | / __| / /    / _` |  / _ \\ \\ \\ / /   \\ \\")
+	s.Noticef(" | |  | | |  __/ | | | | | | | |_) | | | | | | | \\__ \\ \\ \\   | (_| | |  __/  \\ V /    / /")
+	s.Noticef(" |_|  |_|  \\___| |_| |_| |_| | .__/  |_| |_| |_| |___/  | |   \\__,_|  \\___|   \\_/    | | ")
+	s.Noticef("                             | |                         \\_\\                        /_/  ")
+	s.Noticef("                             |_|                                                         ")
 	s.Noticef("")
-	s.Noticef("         https://docs.nats.io/jetstream")
+	s.Noticef("         https://docs.memphis.dev")
 	s.Noticef("")
-	s.Noticef("---------------- JETSTREAM ----------------")
 	s.Noticef("  Max Memory:      %s", friendlyBytes(cfg.MaxMemory))
 	s.Noticef("  Max Storage:     %s", friendlyBytes(cfg.MaxStore))
 	s.Noticef("  Store Directory: \"%s\"", cfg.StoreDir)

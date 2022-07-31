@@ -1596,7 +1596,7 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 // Start up the server, this will block.
 // Start via a Go routine if needed.
 func (s *Server) Start() {
-	s.Noticef("Starting nats-server")
+	s.Noticef("Starting Memphis{dev} broker")
 
 	gc := gitCommit
 	if gc == _EMPTY_ {
@@ -1607,17 +1607,10 @@ func (s *Server) Start() {
 	opts := s.getOpts()
 	clusterName := s.ClusterName()
 
-	s.Noticef("  Version:  %s", VERSION)
-	s.Noticef("  Git:      [%s]", gc)
-	s.Debugf("  Go build: %s", s.info.GoVersion)
+	s.Noticef("Version:  %s", VERSION)
 	if clusterName != _EMPTY_ {
 		s.Noticef("  Cluster:  %s", clusterName)
 	}
-	s.Noticef("  Name:     %s", s.info.Name)
-	if opts.JetStream {
-		s.Noticef("  Node:     %s", getHash(s.info.Name))
-	}
-	s.Noticef("  ID:       %s", s.info.ID)
 
 	defer s.Noticef("Server is ready")
 

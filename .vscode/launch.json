@@ -7,6 +7,9 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
+            "args": [
+                "--port", "6666", "--js"
+            ],
             "env": {
                 "DEV_ENV": "true",
                 "DOCKER_ENV": "true",
