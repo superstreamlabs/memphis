@@ -19,8 +19,16 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sync"
 
-	"github.com/nats-io/nats-server/v2/server"
+	// "memphis-broker/db"
+
+	// "memphis-broker/memphis/logger"
+
+	"memphis-broker/analytics"
+	"memphis-broker/db"
+	"memphis-broker/server"
+
 	"go.uber.org/automaxprocs/maxprocs"
 )
 
@@ -87,6 +95,51 @@ func usage() {
 	os.Exit(0)
 }
 
+func handleError(message string, err error) {
+	if err != nil {
+		// logger.Error(message + " " + err.Error())
+		panic(message + " " + err.Error())
+	}
+}
+
+func runMemphis(){
+
+	// err := logger.InitializeLogger()
+	// handleError("Failed initializing logger: ", err)
+	fmt.Print("hellp memphis")
+
+	err := analytics.InitializeAnalytics()
+	handleError("Failed initializing analytics: ", err)
+
+	// err = handlers.CreateRootUserOnFirstSystemLoad()
+	// handleError("Failed to create root user: ", err)
+
+	defer db.Close()
+	// defer broker.Close()
+	defer analytics.Close()
+
+	wg := new(sync.WaitGroup)
+	wg.Add(4)
+
+	// go background_tasks.ConsumeSysLogs(wg)
+	// go tcp_server.InitializeTcpServer(wg)
+	// go http_server.InitializeHttpServer(wg)
+	// go background_tasks.KillZombieResources(wg)
+	// go background_tasks.ListenForPoisonMessages()
+
+
+	// var env string
+	// if os.Getenv("DOCKER_ENV") != "" {
+	// 	env = "Docker"
+	// 	logger.Info("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
+	// } else {
+	// 	env = "K8S"
+	// }
+
+	// logger.Info("Memphis broker is up and running, ENV: " + env)
+	wg.Wait()
+}
+
 func main() {
 	exe := "nats-server"
 
@@ -126,6 +179,6 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("failed to set GOMAXPROCS: %v", err))
 	}
 	defer undo()
-
+	runMemphis()
 	s.WaitForShutdown()
 }

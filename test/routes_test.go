@@ -24,8 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/internal/testhelper"
-	"github.com/nats-io/nats-server/v2/server"
+	"memphis-broker/internal/testhelper"
+	"memphis-broker/server"
+
 	"github.com/nats-io/nats.go"
 )
 
