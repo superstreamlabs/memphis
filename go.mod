@@ -3,7 +3,13 @@ module memphis-broker
 go 1.18
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
+	github.com/go-playground/validator/v10 v10.10.0
+	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/googollee/go-socket.io v1.6.2
+	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
 	github.com/klauspost/compress v1.14.4
 	github.com/lightstep/otel-launcher-go v1.5.1
 	github.com/minio/highwayhash v1.0.2
@@ -29,10 +35,8 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -42,20 +46,16 @@ require (
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
-	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
-	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gomodule/redigo v1.8.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/googollee/go-socket.io v1.6.2 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147 // indirect
 	github.com/imdario/mergo v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

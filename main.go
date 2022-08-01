@@ -18,16 +18,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"sync"
-
-	// "memphis-broker/db"
-
-	// "memphis-broker/memphis/logger"
-
 	"memphis-broker/analytics"
 	"memphis-broker/db"
 	"memphis-broker/server"
+	"os"
+	"sync"
 
 	"go.uber.org/automaxprocs/maxprocs"
 )
@@ -102,11 +97,10 @@ func handleError(message string, err error) {
 	}
 }
 
-func runMemphis(){
+func runMemphis() {
 
 	// err := logger.InitializeLogger()
 	// handleError("Failed initializing logger: ", err)
-	fmt.Print("hellp memphis")
 
 	err := analytics.InitializeAnalytics()
 	handleError("Failed initializing analytics: ", err)
@@ -126,7 +120,6 @@ func runMemphis(){
 	// go http_server.InitializeHttpServer(wg)
 	// go background_tasks.KillZombieResources(wg)
 	// go background_tasks.ListenForPoisonMessages()
-
 
 	// var env string
 	// if os.Getenv("DOCKER_ENV") != "" {
