@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-<h1>A powerful message broker for developers</h1>
+<h1>A powerful message broker for modern developers</h1>
 <a target="_blank" href="https://twitter.com/intent/tweet?text=Probably+The+Easiest+Message+Broker+In+The+World%21+%0D%0Ahttps%3A%2F%2Fgithub.com%2Fmemphisdev%2Fmemphis-broker+%0D%0A%0D%0A%23MemphisDev"><img src="https://user-images.githubusercontent.com/70286779/174467733-e7656c1e-cfeb-4877-a5f3-1bd4fccc8cf1.png" width="60"></a> 
 </div>
  
@@ -26,6 +26,11 @@
 **[Memphis{dev}](https://memphis.dev)** is a message broker for developers made out of devs' struggles develop around message brokers.<br>Enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
 Focusing on automatic optimization, schema management, inline processing,  and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
+
+## 📸 Screenshots
+Dashboard             |  Station (Topic) overview|  CLI
+:-------------------------:|:-------------------------:|:-------------------------:
+<img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
 
 ## ⭐️ Why
 Working with data streaming is HARD.<br>
@@ -47,27 +52,20 @@ Give memphis{dev} a spin before.
 
 ## ✨ Features
 
-**v0.2.2**
+**v0.3.0**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
-- 🐳☸Runs on your Docker or Kubernetes
+- ☠️ Dead-Letter Queue with automatic message retransmit
+- SDKs: Node.JS, Go, Python, Typescript, NestJS
+- 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
 
-**Coming soon v0.2.5-1.0.0**
-- Embedded schema registry using dbt
-- Message Journey - Real-time messages tracing
-- More SDKs (GoLang, Python, Kafka compatible)
+**Roadmap**
+- Embedded schema store and transformation
 - Inline processing
-- Ready-to-use connectors and analysis functions
-
-## 📸 Screenshots
-Dashboard             |  Station overview|  CLI
-:-------------------------:|:-------------------------:|:-------------------------:
-<img src="https://user-images.githubusercontent.com/70286779/175805888-f08e2078-79e1-43f1-a841-1d7115bf15a8.png" alt="drawing" width="300"/>|<img src="https://user-images.githubusercontent.com/70286779/175805897-349dde51-427f-4c9b-95cd-12876a846f1a.png" alt="drawing" width="300"/>|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
-
-
+- Connectors and analysis functions
 
 ## 🚀 Getting Started
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
