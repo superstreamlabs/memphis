@@ -131,13 +131,11 @@ func initializeBrokerConnection() (*nats.Conn, nats.JetStreamContext) {
 }
 
 func AddUser(username string) (string, error) {
-	// return configuration.CONNECTION_TOKEN, nil
-	return "", errors.New("not implemented")
+	return configuration.CONNECTION_TOKEN, nil
 }
 
 func RemoveUser(username string) error {
-	// return nil
-	return errors.New("not implemented")
+	return nil
 }
 
 func CreateStream(station models.Station) error {

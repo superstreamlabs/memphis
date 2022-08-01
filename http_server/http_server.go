@@ -14,14 +14,14 @@
 package http_server
 
 import (
-	"memphis-broker/config"
+	"memphis-broker/conf"
 	"memphis-broker/http_server/routes"
 	"memphis-broker/socketio"
 	"sync"
 )
 
 func InitializeHttpServer(wg *sync.WaitGroup) {
-	configuration := config.GetConfig()
+	configuration := conf.GetConfig()
 
 	httpServer := routes.InitializeHttpRoutes()
 	socketioServer := socketio.InitializeSocketio(httpServer)

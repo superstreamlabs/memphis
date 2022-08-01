@@ -14,7 +14,7 @@
 package routes
 
 import (
-	"memphis-broker/logger"
+	"fmt"
 	"memphis-broker/middlewares"
 	"memphis-broker/utils"
 	"strings"
@@ -31,7 +31,7 @@ func (lw loggerWriter) Write(p []byte) (int, error) {
 	splitted := strings.Split(log, "| ")
 	statusCode := strings.Trim(splitted[1], " ")
 	if statusCode != "200" && statusCode != "204" {
-		logger.Error(log)
+		fmt.Errorf(log)
 	}
 	return len(p), nil
 }

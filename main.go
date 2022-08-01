@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/db"
+	"memphis-broker/http_server"
 	"memphis-broker/server"
 	"os"
 	"sync"
@@ -117,7 +118,7 @@ func runMemphis() {
 
 	// go background_tasks.ConsumeSysLogs(wg)
 	// go tcp_server.InitializeTcpServer(wg)
-	// go http_server.InitializeHttpServer(wg)
+	go http_server.InitializeHttpServer(wg)
 	// go background_tasks.KillZombieResources(wg)
 	// go background_tasks.ListenForPoisonMessages()
 
