@@ -42,8 +42,9 @@ import (
 	"testing"
 	"time"
 
+	"memphis-broker/server/sysmem"
+
 	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats-server/v2/server/sysmem"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"

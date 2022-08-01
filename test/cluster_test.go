@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/server"
+	"memphis-broker/server"
 )
 
 // Helper function to check that a cluster is formed

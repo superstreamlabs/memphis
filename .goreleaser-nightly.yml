@@ -5,7 +5,7 @@ builds:
     id: nats-server
     binary: nats-server
     ldflags:
-      - -w -X github.com/nats-io/nats-server/v2/server.gitCommit={{.ShortCommit}}
+      - -w -X memphis-broker/server.gitCommit={{.ShortCommit}}
     env:
       - GO111MODULE=on
       - CGO_ENABLED=0
@@ -28,7 +28,7 @@ dockers:
       - docker/nats-server.conf
 
 checksum:
-  name_template: 'SHA256SUMS'
+  name_template: "SHA256SUMS"
   algorithm: sha256
 
 snapshot:
