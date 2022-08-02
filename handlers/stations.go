@@ -19,6 +19,7 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"regexp"
 	"strings"
@@ -30,7 +31,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type StationsHandler struct{}
+type StationsHandler struct{ S *server.Server }
 
 func validateStationName(stationName string) error {
 	if len(stationName) > 32 {
@@ -284,7 +285,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		IsDeleted:       false,
 	}
 
-	err = broker.CreateStream(newStation)
+	err = broker.CreateStream(sh.S, newStation)
 	if err != nil {
 		// logger.Warn(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})

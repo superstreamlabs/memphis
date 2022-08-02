@@ -98,7 +98,11 @@ func handleError(message string, err error) {
 	}
 }
 
-func runMemphis() {
+func runMemphis(s *server.Server) {
+
+	if !s.MemphisInitialized() {
+		s.Fatalf("Jetstream not enabled on global account")
+	}
 
 	// err := logger.InitializeLogger()
 	// handleError("Failed initializing logger: ", err)
@@ -118,7 +122,7 @@ func runMemphis() {
 
 	// go background_tasks.ConsumeSysLogs(wg)
 	// go tcp_server.InitializeTcpServer(wg)
-	go http_server.InitializeHttpServer(wg)
+	go http_server.InitializeHttpServer(s, wg)
 	// go background_tasks.KillZombieResources(wg)
 	// go background_tasks.ListenForPoisonMessages()
 
@@ -173,6 +177,6 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("failed to set GOMAXPROCS: %v", err))
 	}
 	defer undo()
-	runMemphis()
+	runMemphis(s)
 	s.WaitForShutdown()
 }

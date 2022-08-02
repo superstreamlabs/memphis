@@ -15,12 +15,13 @@ package routes
 
 import (
 	"memphis-broker/handlers"
+	"memphis-broker/server"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeStationsRoutes(router *gin.RouterGroup) {
-	stationsHandler := handlers.StationsHandler{}
+func InitializeStationsRoutes(s *server.Server, router *gin.RouterGroup) {
+	stationsHandler := handlers.StationsHandler{S: s}
 	stationsRoutes := router.Group("/stations")
 	stationsRoutes.GET("/getStation", stationsHandler.GetStation)
 	stationsRoutes.GET("/getMessageDetails", stationsHandler.GetMessageDetails)

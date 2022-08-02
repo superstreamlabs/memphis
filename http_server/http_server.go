@@ -16,14 +16,15 @@ package http_server
 import (
 	"memphis-broker/conf"
 	"memphis-broker/http_server/routes"
+	"memphis-broker/server"
 	"memphis-broker/socketio"
 	"sync"
 )
 
-func InitializeHttpServer(wg *sync.WaitGroup) {
+func InitializeHttpServer(s *server.Server, wg *sync.WaitGroup) {
 	configuration := conf.GetConfig()
 
-	httpServer := routes.InitializeHttpRoutes()
+	httpServer := routes.InitializeHttpRoutes(s)
 	socketioServer := socketio.InitializeSocketio(httpServer)
 
 	defer socketioServer.Close()

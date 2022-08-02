@@ -16,9 +16,12 @@ package broker
 import (
 	"memphis-broker/conf"
 	"memphis-broker/models"
+	"memphis-broker/server"
+	"time"
 
 	"errors"
 	"log"
+
 	// "strings"
 	// "time"
 
@@ -29,25 +32,24 @@ import (
 
 var configuration = conf.GetConfig()
 var connectionChannel = make(chan bool)
-var connected = false
 var logger = log.Default()
 
-func getErrorWithoutNats(err error) error {
-	// message := strings.ToLower(err.Error())
-	// message = strings.Replace(message, "nats", "memphis-broker", -1)
-	// return errors.New(message)
-	return errors.New("not implemented")
-}
+// func getErrorWithoutNats(err error) error {
+// 	// message := strings.ToLower(err.Error())
+// 	// message = strings.Replace(message, "nats", "memphis-broker", -1)
+// 	// return errors.New(message)
+// 	return errors.New("not implemented")
+// }
 
-func handleDisconnectEvent(con *nats.Conn, err error) {
-	// if err != nil {
-	// 	logger.Print("[Error] Broker has disconnected: " + err.Error())
-	// }
-}
+// func handleDisconnectEvent(con *nats.Conn, err error) {
+// 	// if err != nil {
+// 	// 	logger.Print("[Error] Broker has disconnected: " + err.Error())
+// 	// }
+// }
 
-func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
-	// logger.Print("[Error] Broker has experienced an error: " + err.Error())
-}
+// func handleAsyncErrors(con *nats.Conn, sub *nats.Subscription, err error) {
+// 	// logger.Print("[Error] Broker has experienced an error: " + err.Error())
+// }
 
 func handleReconnect(con *nats.Conn) {
 	// if connected {
@@ -138,113 +140,101 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func CreateStream(station models.Station) error {
-	// var maxMsgs int
-	// if station.RetentionType == "messages" && station.RetentionValue > 0 {
-	// 	maxMsgs = station.RetentionValue
-	// } else {
-	// 	maxMsgs = -1
-	// }
+func CreateStream(s *server.Server, station models.Station) error {
+	var maxMsgs int
+	if station.RetentionType == "messages" && station.RetentionValue > 0 {
+		maxMsgs = station.RetentionValue
+	} else {
+		maxMsgs = -1
+	}
 
-	// var maxBytes int
-	// if station.RetentionType == "bytes" && station.RetentionValue > 0 {
-	// 	maxBytes = station.RetentionValue
-	// } else {
-	// 	maxBytes = -1
-	// }
+	var maxBytes int
+	if station.RetentionType == "bytes" && station.RetentionValue > 0 {
+		maxBytes = station.RetentionValue
+	} else {
+		maxBytes = -1
+	}
 
-	// var maxAge time.Duration
-	// if station.RetentionType == "message_age_sec" && station.RetentionValue > 0 {
-	// 	maxAge = time.Duration(station.RetentionValue) * time.Second
-	// } else {
-	// 	maxAge = time.Duration(0)
-	// }
+	var maxAge time.Duration
+	if station.RetentionType == "message_age_sec" && station.RetentionValue > 0 {
+		maxAge = time.Duration(station.RetentionValue) * time.Second
+	} else {
+		maxAge = time.Duration(0)
+	}
 
-	// var storage nats.StorageType
-	// if station.StorageType == "memory" {
-	// 	storage = nats.MemoryStorage
-	// } else {
-	// 	storage = nats.FileStorage
-	// }
+	var storage server.StorageType
+	if station.StorageType == "memory" {
+		storage = server.MemoryStorage
+	} else {
+		storage = server.FileStorage
+	}
 
-	// var dedupWindow time.Duration
-	// if station.DedupEnabled && station.DedupWindowInMs >= 100 {
-	// 	dedupWindow = time.Duration(station.DedupWindowInMs) * time.Millisecond
-	// } else {
-	// 	dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
-	// }
+	var dedupWindow time.Duration
+	if station.DedupEnabled && station.DedupWindowInMs >= 100 {
+		dedupWindow = time.Duration(station.DedupWindowInMs) * time.Millisecond
+	} else {
+		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
+	}
 
-	// _, err := js.AddStream(&nats.StreamConfig{
-	// 	Name:              station.Name,
-	// 	Subjects:          []string{station.Name + ".>"},
-	// 	Retention:         nats.LimitsPolicy,
-	// 	MaxConsumers:      -1,
-	// 	MaxMsgs:           int64(maxMsgs),
-	// 	MaxBytes:          int64(maxBytes),
-	// 	Discard:           nats.DiscardOld,
-	// 	MaxAge:            maxAge,
-	// 	MaxMsgsPerSubject: -1,
-	// 	MaxMsgSize:        int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
-	// 	Storage:           storage,
-	// 	Replicas:          station.Replicas,
-	// 	NoAck:             false,
-	// 	Duplicates:        dedupWindow,
-	// }, nats.MaxWait(15*time.Second))
-	// if err != nil {
-	// 	return getErrorWithoutNats(err)
-	// }
-
-	// return nil
-	return errors.New("not implemented")
+	return s.MemphisAddStream(&server.StreamConfig{
+		Name:         station.Name,
+		Subjects:     []string{station.Name + ".>"},
+		Retention:    server.LimitsPolicy,
+		MaxConsumers: -1,
+		MaxMsgs:      int64(maxMsgs),
+		MaxBytes:     int64(maxBytes),
+		Discard:      server.DiscardOld,
+		MaxAge:       maxAge,
+		MaxMsgsPer:   -1,
+		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+		Storage:      storage,
+		Replicas:     station.Replicas,
+		NoAck:        false,
+		Duplicates:   dedupWindow,
+	})
 }
 
 func CreateProducer() error {
-	// // nothing to create
-	// return nil
-	return errors.New("not implemented")
+	// nothing to create
+	return nil
 }
 
-func CreateConsumer(consumer models.Consumer, station models.Station) error {
-	// var consumerName string
-	// if consumer.ConsumersGroup != "" {
-	// 	consumerName = consumer.ConsumersGroup
-	// } else {
-	// 	consumerName = consumer.Name
-	// }
+func CreateConsumer(s *server.Server, consumer models.Consumer, station models.Station) error {
+	var consumerName string
+	if consumer.ConsumersGroup != "" {
+		consumerName = consumer.ConsumersGroup
+	} else {
+		consumerName = consumer.Name
+	}
 
-	// var maxAckTimeMs int64
-	// if consumer.MaxAckTimeMs <= 0 {
-	// 	maxAckTimeMs = 30000 // 30 sec
-	// } else {
-	// 	maxAckTimeMs = consumer.MaxAckTimeMs
-	// }
+	var maxAckTimeMs int64
+	if consumer.MaxAckTimeMs <= 0 {
+		maxAckTimeMs = 30000 // 30 sec
+	} else {
+		maxAckTimeMs = consumer.MaxAckTimeMs
+	}
 
-	// var MaxMsgDeliveries int
-	// if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
-	// 	MaxMsgDeliveries = 10
-	// } else {
-	// 	MaxMsgDeliveries = consumer.MaxMsgDeliveries
-	// }
+	var MaxMsgDeliveries int
+	if consumer.MaxMsgDeliveries <= 0 || consumer.MaxMsgDeliveries > 10 {
+		MaxMsgDeliveries = 10
+	} else {
+		MaxMsgDeliveries = consumer.MaxMsgDeliveries
+	}
 
-	// _, err := js.AddConsumer(station.Name, &nats.ConsumerConfig{
-	// 	Durable:       consumerName,
-	// 	DeliverPolicy: nats.DeliverAllPolicy,
-	// 	AckPolicy:     nats.AckExplicitPolicy,
-	// 	AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-	// 	MaxDeliver:    MaxMsgDeliveries,
-	// 	FilterSubject: station.Name + ".final",
-	// 	ReplayPolicy:  nats.ReplayInstantPolicy,
-	// 	MaxAckPending: -1,
-	// 	HeadersOnly:   false,
-	// 	// RateLimit: ,// Bits per sec
-	// 	// Heartbeat: // time.Duration,
-	// })
-	// if err != nil {
-	// 	return getErrorWithoutNats(err)
-	// }
-
-	// return nil
-	return errors.New("not implemented")
+	err := s.MemphisAddConsumer(station.Name, &server.ConsumerConfig{
+		Durable:       consumerName,
+		DeliverPolicy: server.DeliverAll,
+		AckPolicy:     server.AckExplicit,
+		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+		MaxDeliver:    MaxMsgDeliveries,
+		FilterSubject: station.Name + ".final",
+		ReplayPolicy:  server.ReplayInstant,
+		MaxAckPending: -1,
+		HeadersOnly:   false,
+		// RateLimit: ,// Bits per sec
+		// Heartbeat: // time.Duration,
+	})
+	return err
 }
 
 func GetCgInfo(stationName, cgName string) (*nats.ConsumerInfo, error) {
@@ -423,23 +413,17 @@ func ValidateUserCreds(token string) error {
 	return errors.New("not implemented")
 }
 
-func CreateInternalStream(name string) error {
-	// dedupWindow := time.Duration(100) * time.Millisecond
-	// _, err := js.AddStream(&nats.StreamConfig{
-	// 	Name:         name,
-	// 	Subjects:     []string{name},
-	// 	Retention:    nats.WorkQueuePolicy,
-	// 	MaxConsumers: -1,
-	// 	Storage:      nats.FileStorage,
-	// 	Replicas:     1,
-	// 	NoAck:        false,
-	// 	Duplicates:   dedupWindow,
-	// }, nats.MaxWait(10*time.Second))
-	// if err != nil && !strings.Contains(err.Error(), "stream name already in use") { // create only if not exist
-	// 	return getErrorWithoutNats(err)
-	// }
-	// return nil
-	return errors.New("not implemented")
+func CreateInternalStream(s *server.Server, name string) error {
+	return s.MemphisAddStream(&server.StreamConfig{
+		Name:         name,
+		Subjects:     []string{name},
+		Retention:    server.WorkQueuePolicy,
+		MaxConsumers: -1,
+		Storage:      server.FileStorage,
+		Replicas:     1,
+		NoAck:        false,
+		Duplicates:   100 * time.Millisecond,
+	})
 }
 
 func PublishMessageToSubject(subject string, msg []byte) error {

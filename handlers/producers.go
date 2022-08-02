@@ -18,6 +18,7 @@ import (
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"regexp"
 	"sort"
@@ -31,7 +32,7 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-type ProducersHandler struct{}
+type ProducersHandler struct{ S *server.Server }
 
 func validateProducerName(name string) error {
 	if len(name) > 32 {
@@ -108,7 +109,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
+		station, err = CreateDefaultStation(ph.S, stationName, connection.CreatedByUser)
 		if err != nil {
 			// logger.Error("CreateProducer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

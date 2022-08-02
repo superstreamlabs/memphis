@@ -19,6 +19,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -128,7 +129,7 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(stationName string, username string) (models.Station, error) {
+func CreateDefaultStation(s *server.Server, stationName string, username string) (models.Station, error) {
 	var newStation models.Station
 
 	// create default factory
@@ -171,7 +172,7 @@ func CreateDefaultStation(stationName string, username string) (models.Station, 
 		Functions:       []models.Function{},
 	}
 
-	err = broker.CreateStream(newStation)
+	err = broker.CreateStream(s, newStation)
 	if err != nil {
 		return newStation, err
 	}

@@ -21,6 +21,7 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 
 	"regexp"
@@ -34,7 +35,7 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-type ConsumersHandler struct{}
+type ConsumersHandler struct{ S *server.Server }
 
 func validateName(name string) error {
 	if len(name) > 32 {
@@ -171,7 +172,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
+		station, err = CreateDefaultStation(ch.S, stationName, connection.CreatedByUser)
 		if err != nil {
 			// logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -242,7 +243,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	} else {
 		newConsumer.MaxAckTimeMs = body.MaxAckTimeMs
 		newConsumer.MaxMsgDeliveries = body.MaxMsgDeliveries
-		broker.CreateConsumer(newConsumer, station)
+		broker.CreateConsumer(ch.S, newConsumer, station)
 		if err != nil {
 			// logger.Error("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
