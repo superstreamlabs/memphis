@@ -17,6 +17,7 @@ import (
 	"context"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"strconv"
 	"time"
@@ -28,11 +29,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
-
 type SysLogsHandler struct{}
 
-func (lh SysLogsHandler) GetSysLogs(c *gin.Context) {
+func (lh SysLogsHandler) GetSysLogs(c *gin.Context, s *server.Server) {
+	var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs", s)
 	var body models.GetSysLogsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -60,7 +60,8 @@ func (lh SysLogsHandler) GetSysLogs(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"logs": logs})
 }
 
-func (lh SysLogsHandler) InsertLogs(logs []interface{}) error {
+func (lh SysLogsHandler) InsertLogs(logs []interface{}, s *server.Server) error {
+	var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs", s)
 	_, err := sysLogsCollection.InsertMany(context.TODO(), logs)
 	if err != nil {
 		return err

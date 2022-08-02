@@ -18,8 +18,8 @@ import (
 	"flag"
 	"io/ioutil"
 	"memphis-broker/broker"
-	"memphis-broker/db"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"net/http"
 	"path/filepath"
@@ -77,7 +77,7 @@ func clientSetConfig() error {
 	return nil
 }
 
-func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
+func (mh MonitoringHandler) GetSystemComponents(s *server.Server) ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
 		uiAddress := "http://ui"
@@ -113,7 +113,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			})
 		}
 
-		err = db.Client.Ping(context.TODO(), nil)
+		err = s.DbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
@@ -184,7 +184,7 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
 }
 
-func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
+func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context, s *server.Server) {
 	stationsHandler := StationsHandler{}
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
@@ -198,7 +198,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	systemComponents, err := mh.GetSystemComponents()
+	systemComponents, err := mh.GetSystemComponents(s)
 	if err != nil {
 		// logger.Error("GetMainOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

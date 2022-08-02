@@ -18,6 +18,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"strconv"
 	"sync"
 	"time"
@@ -29,11 +30,19 @@ import (
 
 var configuration = conf.GetConfig()
 
-var connectionsCollection *mongo.Collection = db.GetCollection("connections")
-var producersCollection *mongo.Collection = db.GetCollection("producers")
-var consumersCollection *mongo.Collection = db.GetCollection("consumers")
-var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
-var poisonMessagesCollection *mongo.Collection = db.GetCollection("poison_messages")
+var connectionsCollection *mongo.Collection
+var producersCollection *mongo.Collection
+var consumersCollection *mongo.Collection
+var sysLogsCollection *mongo.Collection
+var poisonMessagesCollection *mongo.Collection
+
+func InitializeZombieResources(s *server.Server) {
+	connectionsCollection = db.GetCollection("connections", s)
+	producersCollection = db.GetCollection("producers", s)
+	consumersCollection = db.GetCollection("consumers", s)
+	sysLogsCollection = db.GetCollection("system_logs", s)
+	poisonMessagesCollection = db.GetCollection("poison_messages", s)
+}
 
 func killRelevantConnections() ([]models.Connection, error) {
 	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)

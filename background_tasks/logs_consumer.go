@@ -18,6 +18,7 @@ import (
 	"memphis-broker/broker"
 	"memphis-broker/handlers"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/socketio"
 	"strings"
 	"sync"
@@ -28,7 +29,7 @@ import (
 
 var sysLogsHandler = handlers.SysLogsHandler{}
 
-func ConsumeSysLogs(wg *sync.WaitGroup) {
+func ConsumeSysLogs(wg *sync.WaitGroup, s *server.Server) {
 	defer wg.Done()
 
 	sub, err := broker.CreatePullSubscriber("$memphis_sys_logs", "$memphis_sys_logs_consumers")
@@ -58,7 +59,7 @@ func ConsumeSysLogs(wg *sync.WaitGroup) {
 				}
 			}
 
-			err = sysLogsHandler.InsertLogs(logsForDB)
+			err = sysLogsHandler.InsertLogs(logsForDB, s)
 			if err != nil {
 				// logger.Error("Error inserting sys logs to DB: " + err.Error())
 			}
