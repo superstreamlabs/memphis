@@ -15,8 +15,8 @@ package routes
 
 import (
 	"fmt"
+	"memphis-broker/handlers"
 	"memphis-broker/middlewares"
-	"memphis-broker/server"
 	"memphis-broker/utils"
 	"strings"
 
@@ -37,7 +37,7 @@ func (lw loggerWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func InitializeHttpRoutes(s *server.Server) *gin.Engine {
+func InitializeHttpRoutes(handlers *handlers.Handlers) *gin.Engine {
 	gin.DefaultWriter = loggerWriter{}
 	router := gin.Default()
 
@@ -56,11 +56,11 @@ func InitializeHttpRoutes(s *server.Server) *gin.Engine {
 
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(mainRouter)
-	InitializeFactoriesRoutes(mainRouter)
-	InitializeStationsRoutes(s, mainRouter)
-	InitializeProducersRoutes(s, mainRouter)
-	InitializeConsumersRoutes(s, mainRouter)
-	InitializeMonitoringRoutes(mainRouter)
+	InitializeFactoriesRoutes(mainRouter, handlers)
+	InitializeStationsRoutes(mainRouter, handlers)
+	InitializeProducersRoutes(mainRouter, handlers)
+	InitializeConsumersRoutes(mainRouter, handlers)
+	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeSysLogsRoutes(mainRouter)
 	InitializeSandboxRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {

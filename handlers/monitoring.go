@@ -20,6 +20,7 @@ import (
 	"memphis-broker/broker"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"net/http"
 	"path/filepath"
@@ -34,14 +35,9 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-type MonitoringHandler struct{}
+type MonitoringHandler struct{ S *server.Server }
 
 var clientset *kubernetes.Clientset
-var stationsHandler = StationsHandler{}
-var producersHandler = ProducersHandler{}
-var consumersHandler = ConsumersHandler{}
-var auditLogsHandler = AuditLogsHandler{}
-var poisonMsgsHandler = PoisonMessagesHandler{}
 
 func clientSetConfig() error {
 	var config *rest.Config
@@ -185,7 +181,7 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	stationsHandler := StationsHandler{}
+	stationsHandler := StationsHandler{S: mh.S}
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
 		// logger.Error("GetMainOverviewData error: " + err.Error())
@@ -216,6 +212,11 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
+	stationsHandler := StationsHandler{S: mh.S}
+	producersHandler := ProducersHandler{S: mh.S}
+	consumersHandler := ConsumersHandler{S: mh.S}
+	auditLogsHandler := AuditLogsHandler{}
+	poisonMsgsHandler := PoisonMessagesHandler{}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

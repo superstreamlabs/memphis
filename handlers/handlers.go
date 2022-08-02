@@ -28,6 +28,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Handlers struct {
+	Producers  ProducersHandler
+	Consumers  ConsumersHandler
+	AuditLogs  AuditLogsHandler
+	Stations   StationsHandler
+	Factories  FactoriesHandler
+	Monitoring MonitoringHandler
+	SysLogs    SysLogsHandler
+	PoisonMsgs PoisonMessagesHandler
+}
+
 var usersCollection *mongo.Collection = db.GetCollection("users")
 var imagesCollection *mongo.Collection = db.GetCollection("images")
 var factoriesCollection *mongo.Collection = db.GetCollection("factories")

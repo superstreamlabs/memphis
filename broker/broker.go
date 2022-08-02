@@ -17,6 +17,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/models"
 	"memphis-broker/server"
+	"strings"
 	"time"
 
 	"errors"
@@ -237,60 +238,46 @@ func CreateConsumer(s *server.Server, consumer models.Consumer, station models.S
 	return err
 }
 
-func GetCgInfo(stationName, cgName string) (*nats.ConsumerInfo, error) {
-	// info, err := js.ConsumerInfo(stationName, cgName)
-	// if err != nil {
-	// 	return nil, nil
-	// }
+func GetCgInfo(s *server.Server, stationName, cgName string) (*server.ConsumerInfo, error) {
+	info, err := s.MemphisGetConsumerInfo(stationName, cgName)
+	if err != nil {
+		return nil, err
+	}
 
-	// return info, nil
-	return nil, errors.New("not implemented")
+	return info, nil
 }
 
-func RemoveStream(streamName string) error {
-	// err := js.DeleteStream(streamName)
-	// if err != nil {
-	// 	return getErrorWithoutNats(err)
-	// }
-
-	// return nil
-	return errors.New("not implemented")
+func RemoveStream(s *server.Server, streamName string) error {
+	return s.MemphisRemoveStream(streamName)
 }
 
-func GetTotalMessagesInStation(station models.Station) (int, error) {
-	// streamInfo, err := js.StreamInfo(station.Name)
-	// if err != nil {
-	// 	return 0, getErrorWithoutNats(err)
-	// }
+func GetTotalMessagesInStation(s *server.Server, station models.Station) (int, error) {
+	streamInfo, err := s.MemphisStreamInfo(station.Name)
+	if err != nil {
+		return 0, err
+	}
 
-	// return int(streamInfo.State.Msgs), nil
-	return 0, errors.New("not implemented")
+	return int(streamInfo.State.Msgs), nil
 }
 
-func GetTotalMessagesAcrossAllStations() (int, error) {
-	// messagesCounter := 0
-	// for streamInfo := range js.StreamsInfo(nats.MaxWait(15 * time.Second)) {
-	// 	if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
-	// 		messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
-	// 	}
-	// }
+func GetTotalMessagesAcrossAllStations(s *server.Server) (int, error) {
+	messagesCounter := 0
+	for _, streamInfo := range s.MemphisAllStreamsInfo() {
+		if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
+			messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
+		}
+	}
 
-	// return messagesCounter, nil
-	return 0, errors.New("not implemented")
+	return messagesCounter, nil
 }
 
-func GetAvgMsgSizeInStation(station models.Station) (int64, error) {
-	// streamInfo, err := js.StreamInfo(station.Name)
-	// if err != nil {
-	// 	return 0, getErrorWithoutNats(err)
-	// }
+func GetAvgMsgSizeInStation(s *server.Server, station models.Station) (int64, error) {
+	streamInfo, err := s.MemphisStreamInfo(station.Name)
+	if err != nil || streamInfo.State.Bytes == 0 {
+		return 0, err
+	}
 
-	// if streamInfo.State.Bytes == 0 {
-	// 	return 0, nil
-	// }
-
-	// return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
-	return 0, errors.New("not implemented")
+	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
 }
 
 func GetHeaderSizeInBytes(headers nats.Header) int {

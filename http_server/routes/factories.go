@@ -19,8 +19,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeFactoriesRoutes(router *gin.RouterGroup) {
-	factoriesHandler := handlers.FactoriesHandler{}
+func InitializeFactoriesRoutes(router *gin.RouterGroup, h *handlers.Handlers) {
+	factoriesHandler := h.Factories
 	factoriesRoutes := router.Group("/factories")
 	factoriesRoutes.POST("/createFactory", factoriesHandler.CreateFactory)
 	factoriesRoutes.GET("/getAllFactories", factoriesHandler.GetAllFactories)

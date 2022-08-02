@@ -30,25 +30,16 @@ import (
 
 var server = socketio.NewServer(nil)
 
-var producersHandler = handlers.ProducersHandler{}
-var consumersHandler = handlers.ConsumersHandler{}
-var auditLogsHandler = handlers.AuditLogsHandler{}
-var stationsHandler = handlers.StationsHandler{}
-var factoriesHandler = handlers.FactoriesHandler{}
-var monitoringHandler = handlers.MonitoringHandler{}
-var sysLogsHandler = handlers.SysLogsHandler{}
-var poisonMsgsHandler = handlers.PoisonMessagesHandler{}
-
-func getMainOverviewData() (models.MainOverviewData, error) {
-	stations, err := stationsHandler.GetAllStationsDetails()
+func getMainOverviewData(h *handlers.Handlers) (models.MainOverviewData, error) {
+	stations, err := h.Stations.GetAllStationsDetails()
 	if err != nil {
 		return models.MainOverviewData{}, nil
 	}
-	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
+	totalMessages, err := h.Stations.GetTotalMessagesAcrossAllStations()
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
-	systemComponents, err := monitoringHandler.GetSystemComponents()
+	systemComponents, err := h.Monitoring.GetSystemComponents()
 	if err != nil {
 		// logger.Error("GetSystemComponents error: " + err.Error())
 	}
@@ -61,8 +52,8 @@ func getMainOverviewData() (models.MainOverviewData, error) {
 	}, nil
 }
 
-func getFactoriesOverviewData() ([]models.ExtendedFactory, error) {
-	factories, err := factoriesHandler.GetAllFactoriesDetails()
+func getFactoriesOverviewData(h *handlers.Handlers) ([]models.ExtendedFactory, error) {
+	factories, err := h.Factories.GetAllFactoriesDetails()
 	if err != nil {
 		return factories, err
 	}
@@ -70,9 +61,9 @@ func getFactoriesOverviewData() ([]models.ExtendedFactory, error) {
 	return factories, nil
 }
 
-func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]interface{}, error) {
+func getFactoryOverviewData(factoryName string, s socketio.Conn, h *handlers.Handlers) (map[string]interface{}, error) {
 	factoryName = strings.ToLower(factoryName)
-	factory, err := factoriesHandler.GetFactoryDetails(factoryName)
+	factory, err := h.Factories.GetFactoryDetails(factoryName)
 	if err != nil {
 		if s != nil && err.Error() == "mongo: no documents in result" {
 			s.Emit("error", "Factory does not exist")
@@ -83,7 +74,7 @@ func getFactoryOverviewData(factoryName string, s socketio.Conn) (map[string]int
 	return factory, nil
 }
 
-func getStationOverviewData(stationName string, s socketio.Conn) (models.StationOverviewData, error) {
+func getStationOverviewData(stationName string, s socketio.Conn, h *handlers.Handlers) (models.StationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := handlers.IsStationExist(stationName)
 	if err != nil {
@@ -96,34 +87,34 @@ func getStationOverviewData(stationName string, s socketio.Conn) (models.Station
 		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
+	connectedProducers, disconnectedProducers, deletedProducers, err := h.Producers.GetProducersByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
+	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station)
+	totalMessages, err := h.Stations.GetTotalMessages(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
+	avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
 
 	messagesToFetch := 1000
-	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
+	messages, err := h.Stations.GetMessages(station, messagesToFetch)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
 
-	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+	poisonMessages, err := h.PoisonMsgs.GetPoisonMsgsByStation(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -164,7 +155,7 @@ func SendSysLogs(logs []models.SysLog) {
 	}
 }
 
-func InitializeSocketio(router *gin.Engine) *socketio.Server {
+func InitializeSocketio(router *gin.Engine, h *handlers.Handlers) *socketio.Server {
 
 	server.OnConnect("/api", func(s socketio.Conn) error {
 		return nil
@@ -226,7 +217,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 	go func() {
 		for range time.Tick(time.Second * 5) {
 			if server.RoomLen("/api", "main_overview_sockets_group") > 0 {
-				data, err := getMainOverviewData()
+				data, err := getMainOverviewData(h)
 				if err != nil {
 					// logger.Error("Error while trying to get main overview data - " + err.Error())
 				} else {
@@ -235,7 +226,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 			}
 
 			if server.RoomLen("/api", "factories_overview_sockets_group") > 0 {
-				data, err := getFactoriesOverviewData()
+				data, err := getFactoriesOverviewData(h)
 				if err != nil {
 					// logger.Error("Error while trying to get factories overview data - " + err.Error())
 				} else {
@@ -247,7 +238,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && server.RoomLen("/api", room) > 0 {
 					stationName := strings.Split(room, "station_overview_group_")[1]
-					data, err := getStationOverviewData(stationName, nil)
+					data, err := getStationOverviewData(stationName, nil, h)
 					if err != nil {
 						// logger.Error("Error while trying to get station overview data - " + err.Error())
 					} else {
@@ -257,7 +248,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 				if strings.HasPrefix(room, "factory_overview_group_") && server.RoomLen("/api", room) > 0 {
 					factoryName := strings.Split(room, "factory_overview_group_")[1]
-					data, err := getFactoryOverviewData(factoryName, nil)
+					data, err := getFactoryOverviewData(factoryName, nil, h)
 					if err != nil {
 						// logger.Error("Error while trying to get factory overview data - " + err.Error())
 					} else {
@@ -267,7 +258,7 @@ func InitializeSocketio(router *gin.Engine) *socketio.Server {
 
 				if strings.HasPrefix(room, "poison_message_journey_group_") && server.RoomLen("/api", room) > 0 {
 					poisonMsgId := strings.Split(room, "poison_message_journey_group_")[1]
-					data, err := stationsHandler.GetPoisonMessageJourneyDetails(poisonMsgId)
+					data, err := h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
 					if err != nil {
 						// logger.Error("Error while trying to get poison message journey - " + err.Error())
 					} else {

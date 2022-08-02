@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"memphis-broker/broker"
+	"memphis-broker/server"
 
 	// "memphis-broker/logger"
 	"memphis-broker/models"
@@ -31,7 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type FactoriesHandler struct{}
+type FactoriesHandler struct{ S *server.Server }
 
 func validateFactoryName(factoryName string) error {
 	re := regexp.MustCompile("^[a-z0-9_]*$")
@@ -44,7 +45,7 @@ func validateFactoryName(factoryName string) error {
 }
 
 // TODO remove the stations resources - functions, connectors
-func removeStations(factoryId primitive.ObjectID) error {
+func removeStations(s *server.Server, factoryId primitive.ObjectID) error {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
 		"factory_id": factoryId,
@@ -62,7 +63,7 @@ func removeStations(factoryId primitive.ObjectID) error {
 	}
 
 	for _, station := range stations {
-		err = broker.RemoveStream(station.Name)
+		err = broker.RemoveStream(s, station.Name)
 		if err != nil {
 			return err
 		}
@@ -293,7 +294,7 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 
-	err = removeStations(factory.ID)
+	err = removeStations(fh.S, factory.ID)
 	if err != nil {
 		// logger.Error("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

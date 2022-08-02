@@ -72,8 +72,8 @@ func validateReplicas(replicas int) error {
 }
 
 // TODO remove the station resources - functions, connectors
-func removeStationResources(station models.Station) error {
-	err := broker.RemoveStream(station.Name)
+func removeStationResources(s *server.Server, station models.Station) error {
+	err := broker.RemoveStream(s, station.Name)
 	if err != nil {
 		return err
 	}
@@ -346,7 +346,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	err = removeStationResources(station)
+	err = removeStationResources(sh.S, station)
 	if err != nil {
 		// logger.Error("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -374,17 +374,17 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
-	totalMessages, err := broker.GetTotalMessagesInStation(station)
+	totalMessages, err := broker.GetTotalMessagesInStation(sh.S, station)
 	return totalMessages, err
 }
 
 func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
-	totalMessages, err := broker.GetTotalMessagesAcrossAllStations()
+	totalMessages, err := broker.GetTotalMessagesAcrossAllStations(sh.S)
 	return totalMessages, err
 }
 
 func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
-	avgMsgSize, err := broker.GetAvgMsgSizeInStation(station)
+	avgMsgSize, err := broker.GetAvgMsgSizeInStation(sh.S, station)
 	return avgMsgSize, err
 }
 
@@ -452,7 +452,7 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 
 		isActive, isDeleted := getCgStatus(cgMembers)
 
-		cgInfo, err := broker.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
+		cgInfo, err := broker.GetCgInfo(sh.S, poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
@@ -609,7 +609,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	for i, cg := range poisonedCgs {
-		cgInfo, err := broker.GetCgInfo(stationName, cg.CgName)
+		cgInfo, err := broker.GetCgInfo(sh.S, stationName, cg.CgName)
 		if err != nil {
 			// logger.Error("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

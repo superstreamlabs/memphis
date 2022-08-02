@@ -19,8 +19,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeMonitoringRoutes(router *gin.RouterGroup) {
-	monitoringHandler := handlers.MonitoringHandler{}
+func InitializeMonitoringRoutes(router *gin.RouterGroup, h *handlers.Handlers) {
+	monitoringHandler := h.Monitoring
 	monitoringRoutes := router.Group("/monitoring")
 	monitoringRoutes.GET("/getClusterInfo", monitoringHandler.GetClusterInfo)
 	monitoringRoutes.GET("/getMainOverviewData", monitoringHandler.GetMainOverviewData)

@@ -388,7 +388,7 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 			cg.IsActive = false
 			cg.IsDeleted = true
 		} else { // not deleted
-			cgInfo, err := broker.GetCgInfo(station.Name, cg.Name)
+			cgInfo, err := broker.GetCgInfo(ch.S, station.Name, cg.Name)
 			if err != nil {
 				return cgs, cgs, cgs, err
 			}
