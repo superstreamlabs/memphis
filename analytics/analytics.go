@@ -45,8 +45,8 @@ var deploymentId string
 var analyticsFlag string
 
 func InitializeAnalytics(s *server.Server) error {
-	var test *mongo.Client
-	if s.DbClient != test {
+	// var clientTest *mongo.Client
+	if s.DbClient != nil {
 		systemKeysCollection = db.GetCollection("system_keys", s)
 		deployment, err := getSystemKey("deployment_id")
 		if err == mongo.ErrNoDocuments {

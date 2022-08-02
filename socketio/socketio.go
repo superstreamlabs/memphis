@@ -37,7 +37,6 @@ var auditLogsHandler = handlers.AuditLogsHandler{}
 var stationsHandler = handlers.StationsHandler{}
 var factoriesHandler = handlers.FactoriesHandler{}
 var monitoringHandler = handlers.MonitoringHandler{}
-var sysLogsHandler = handlers.SysLogsHandler{}
 var poisonMsgsHandler = handlers.PoisonMessagesHandler{}
 
 func getMainOverviewData(s *server.Server) (models.MainOverviewData, error) {
@@ -159,12 +158,6 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func SendSysLogs(logs []models.SysLog) {
-	if socketServer.RoomLen("/api", "system_logs_group") > 0 {
-		socketServer.BroadcastToRoom("/api", "system_logs_group", "system_logs_data", logs)
-	}
-}
-
 func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 
 	socketServer.OnConnect("/api", func(s socketio.Conn) error {
@@ -197,13 +190,6 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 		s.Join("station_overview_group_" + stationName)
 
 		return "recv " + stationName
-	})
-
-	socketServer.OnEvent("/api", "register_system_logs_data", func(s socketio.Conn, msg string) string {
-		s.LeaveAll()
-		s.Join("system_logs_group")
-
-		return "recv " + msg
 	})
 
 	socketServer.OnEvent("/api", "register_poison_message_journey_data", func(s socketio.Conn, poisonMsgId string) string {

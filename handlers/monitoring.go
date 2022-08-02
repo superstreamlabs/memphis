@@ -42,6 +42,11 @@ var producersHandler = ProducersHandler{}
 var consumersHandler = ConsumersHandler{}
 var auditLogsHandler = AuditLogsHandler{}
 var poisonMsgsHandler = PoisonMessagesHandler{}
+var s *server.Server
+
+func (mh MonitoringHandler) InitializeMonitoringHandlers(server *server.Server) {
+	s = server
+}
 
 func clientSetConfig() error {
 	var config *rest.Config
@@ -184,7 +189,13 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
 }
 
-func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context, s *server.Server) {
+// func GetMainOverviewDataTest(s *server.Server) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+
+// 	}
+// }
+
+func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{}
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
@@ -298,11 +309,4 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
-}
-
-// TODO
-func (mh MonitoringHandler) WriteSysLog(c *gin.Context) {
-
-	// logger.Info("")
-	c.IndentedJSON(200, gin.H{})
 }

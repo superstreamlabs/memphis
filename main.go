@@ -101,14 +101,14 @@ func handleError(s *server.Server, message string, err error) {
 
 func runMemphis(s *server.Server) {
 
-	err := analytics.InitializeAnalytics(s)
+	err := db.InitializeDbConnection(s)
+	handleError(s, "Failed initializing db connection: ", err)
+
+	err = analytics.InitializeAnalytics(s)
 	handleError(s, "Failed initializing analytics: ", err)
 
 	// err = handlers.CreateRootUserOnFirstSystemLoad()
 	// handleError("Failed to create root user: ", err)
-
-	err = db.InitializeDbConnection(s)
-	handleError(s, "Failed initializing db connection: ", err)
 
 	handlers.InitializeCollections(s)
 
@@ -122,7 +122,6 @@ func runMemphis(s *server.Server) {
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
 
-	go background_tasks.ConsumeSysLogs(wg, s)
 	// go tcp_server.InitializeTcpServer(wg)
 	// go http_server.InitializeHttpServer(wg, s)
 	go background_tasks.KillZombieResources(wg)

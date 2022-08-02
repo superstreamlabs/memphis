@@ -62,7 +62,7 @@ func InitializeDbConnection(s *server.Server) error {
 	s.DbClient = client
 	s.DbCtx = ctx
 	s.DbCancel = cancel
-	s.Noticef("[INFO] Established connection with the DB")
+	s.Noticef("Established connection with the DB")
 	return nil
 }
 

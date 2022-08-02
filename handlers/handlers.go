@@ -28,20 +28,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// type Handlers struct {
-// 	usersCollection          *mongo.Collection
-// 	imagesCollection         *mongo.Collection
-// 	factoriesCollection      *mongo.Collection
-// 	stationsCollection       *mongo.Collection
-// 	connectionsCollection    *mongo.Collection
-// 	producersCollection      *mongo.Collection
-// 	consumersCollection      *mongo.Collection
-// 	systemKeysCollection     *mongo.Collection
-// 	auditLogsCollection      *mongo.Collection
-// 	poisonMessagesCollection *mongo.Collection
-// 	configuration            *mongo.Collection
-// }
-
 var usersCollection *mongo.Collection
 var imagesCollection *mongo.Collection
 var factoriesCollection *mongo.Collection

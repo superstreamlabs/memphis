@@ -19,7 +19,6 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/models"
 	"memphis-broker/server"
-	"strconv"
 	"sync"
 	"time"
 
@@ -33,14 +32,12 @@ var configuration = conf.GetConfig()
 var connectionsCollection *mongo.Collection
 var producersCollection *mongo.Collection
 var consumersCollection *mongo.Collection
-var sysLogsCollection *mongo.Collection
 var poisonMessagesCollection *mongo.Collection
 
 func InitializeZombieResources(s *server.Server) {
 	connectionsCollection = db.GetCollection("connections", s)
 	producersCollection = db.GetCollection("producers", s)
 	consumersCollection = db.GetCollection("consumers", s)
-	sysLogsCollection = db.GetCollection("system_logs", s)
 	poisonMessagesCollection = db.GetCollection("poison_messages", s)
 }
 
@@ -102,21 +99,6 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 	return nil
 }
 
-func removeOldLogs() error {
-	retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
-	if err != nil {
-		return err
-	}
-	retentionDaysToHours := 24 * retentionToInt
-	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(retentionDaysToHours))))}}
-	_, err = sysLogsCollection.DeleteMany(context.TODO(), filter)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func removeOldPoisonMsgs() error {
 	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(configuration.POISON_MSGS_RETENTION_IN_HOURS))))}}
 	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), filter)
@@ -149,7 +131,6 @@ func KillZombieResources(wg *sync.WaitGroup) {
 			}
 		}
 
-		err = removeOldLogs()
 		if err != nil {
 			// logger.Error("KillZombieResources error: " + err.Error())
 		}
