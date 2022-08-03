@@ -38,8 +38,9 @@ var stationsHandler = handlers.StationsHandler{}
 var factoriesHandler = handlers.FactoriesHandler{}
 var monitoringHandler = handlers.MonitoringHandler{}
 var poisonMsgsHandler = handlers.PoisonMessagesHandler{}
+var serv *server.Server
 
-func getMainOverviewData(s *server.Server) (models.MainOverviewData, error) {
+func getMainOverviewData() (models.MainOverviewData, error) {
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
 		return models.MainOverviewData{}, nil
@@ -48,9 +49,9 @@ func getMainOverviewData(s *server.Server) (models.MainOverviewData, error) {
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
-	systemComponents, err := monitoringHandler.GetSystemComponents(s)
+	systemComponents, err := monitoringHandler.GetSystemComponents()
 	if err != nil {
-		s.Errorf("GetSystemComponents error: " + err.Error())
+		serv.Errorf("GetSystemComponents error: " + err.Error())
 	}
 
 	return models.MainOverviewData{
@@ -158,8 +159,8 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
-
+func InitializeSocketio(router *gin.Engine, ser *server.Server) *socketio.Server {
+	serv = ser
 	socketServer.OnConnect("/api", func(s socketio.Conn) error {
 		return nil
 	})
@@ -205,7 +206,7 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 	})
 
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
-		// logger.Error("An error occured during a socket connection " + e.Error())
+		serv.Errorf("An error occured during a socket connection " + e.Error())
 	})
 
 	go socketServer.Serve()
@@ -213,9 +214,9 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 	go func() {
 		for range time.Tick(time.Second * 5) {
 			if socketServer.RoomLen("/api", "main_overview_sockets_group") > 0 {
-				data, err := getMainOverviewData(s)
+				data, err := getMainOverviewData()
 				if err != nil {
-					// logger.Error("Error while trying to get main overview data - " + err.Error())
+					serv.Errorf("Error while trying to get main overview data - " + err.Error())
 				} else {
 					socketServer.BroadcastToRoom("/api", "main_overview_sockets_group", "main_overview_data", data)
 				}
@@ -224,7 +225,7 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 			if socketServer.RoomLen("/api", "factories_overview_sockets_group") > 0 {
 				data, err := getFactoriesOverviewData()
 				if err != nil {
-					// logger.Error("Error while trying to get factories overview data - " + err.Error())
+					serv.Errorf("Error while trying to get factories overview data - " + err.Error())
 				} else {
 					socketServer.BroadcastToRoom("/api", "factories_overview_sockets_group", "factories_overview_data", data)
 				}
@@ -236,7 +237,7 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 					stationName := strings.Split(room, "station_overview_group_")[1]
 					data, err := getStationOverviewData(stationName, nil)
 					if err != nil {
-						// logger.Error("Error while trying to get station overview data - " + err.Error())
+						serv.Errorf("Error while trying to get station overview data - " + err.Error())
 					} else {
 						socketServer.BroadcastToRoom("/api", room, "station_overview_data_"+stationName, data)
 					}
@@ -246,7 +247,7 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 					factoryName := strings.Split(room, "factory_overview_group_")[1]
 					data, err := getFactoryOverviewData(factoryName, nil)
 					if err != nil {
-						// logger.Error("Error while trying to get factory overview data - " + err.Error())
+						serv.Errorf("Error while trying to get factory overview data - " + err.Error())
 					} else {
 						socketServer.BroadcastToRoom("/api", room, "factory_overview_data_"+factoryName, data)
 					}
@@ -256,7 +257,7 @@ func InitializeSocketio(router *gin.Engine, s *server.Server) *socketio.Server {
 					poisonMsgId := strings.Split(room, "poison_message_journey_group_")[1]
 					data, err := stationsHandler.GetPoisonMessageJourneyDetails(poisonMsgId)
 					if err != nil {
-						// logger.Error("Error while trying to get poison message journey - " + err.Error())
+						serv.Errorf("Error while trying to get poison message journey - " + err.Error())
 					} else {
 						socketServer.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
 					}

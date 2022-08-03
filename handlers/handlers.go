@@ -42,16 +42,16 @@ var serv *server.Server
 var configuration = conf.GetConfig()
 
 func InitializeHandlers(s *server.Server) {
-	usersCollection = db.GetCollection("users", s)
-	imagesCollection = db.GetCollection("images", s)
-	factoriesCollection = db.GetCollection("ries", s)
-	stationsCollection = db.GetCollection("stations", s)
-	connectionsCollection = db.GetCollection("connections", s)
-	producersCollection = db.GetCollection("producers", s)
-	consumersCollection = db.GetCollection("consumers", s)
-	systemKeysCollection = db.GetCollection("system_keys", s)
-	auditLogsCollection = db.GetCollection("audit_logs", s)
-	poisonMessagesCollection = db.GetCollection("poison_messages", s)
+	usersCollection = db.GetCollection("users")
+	imagesCollection = db.GetCollection("images")
+	factoriesCollection = db.GetCollection("ries")
+	stationsCollection = db.GetCollection("stations")
+	connectionsCollection = db.GetCollection("connections")
+	producersCollection = db.GetCollection("producers")
+	consumersCollection = db.GetCollection("consumers")
+	systemKeysCollection = db.GetCollection("system_keys")
+	auditLogsCollection = db.GetCollection("audit_logs")
+	poisonMessagesCollection = db.GetCollection("poison_messages")
 	serv = s
 }
 

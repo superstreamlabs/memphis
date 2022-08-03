@@ -25,6 +25,7 @@ import (
 )
 
 var configuration = conf.GetConfig()
+var serv *server.Server
 
 const (
 	dbOperationTimeout = 20
@@ -48,33 +49,31 @@ func InitializeDbConnection(s *server.Server) error {
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return err
-		// panic("Failed to create Mongodb client: " + err.Error())
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		return err
-		// panic("Failed to create Mongo DB client: " + err.Error())
 	}
 
 	s.DbClient = client
 	s.DbCtx = ctx
 	s.DbCancel = cancel
+	serv = s
 	s.Noticef("Established connection with the DB")
 	return nil
 }
 
-func GetCollection(collectionName string, s *server.Server) *mongo.Collection {
-	var collection *mongo.Collection = s.DbClient.Database(configuration.DB_NAME).Collection(collectionName)
+func GetCollection(collectionName string) *mongo.Collection {
+	var collection *mongo.Collection = serv.DbClient.Database(configuration.DB_NAME).Collection(collectionName)
 	return collection
 }
 
-func Close(s *server.Server) {
-	defer s.DbCancel()
+func Close() {
+	defer serv.DbCancel()
 	defer func() {
-		if err := s.DbClient.Disconnect(s.DbCtx); err != nil {
-			s.Errorf("Failed to close Mongodb client: " + err.Error())
-			panic("Failed to close Mongodb client: " + err.Error())
+		if err := serv.DbClient.Disconnect(serv.DbCtx); err != nil {
+			serv.Errorf("Failed to close Mongodb client: " + err.Error())
 		}
 	}()
 }

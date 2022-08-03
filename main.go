@@ -95,7 +95,6 @@ func usage() {
 func handleError(s *server.Server, message string, err error) {
 	if err != nil {
 		s.Errorf(message + " " + err.Error())
-		panic(message + " " + err.Error())
 	}
 }
 
@@ -104,17 +103,17 @@ func runMemphis(s *server.Server) {
 	err := db.InitializeDbConnection(s)
 	handleError(s, "Failed initializing db connection: ", err)
 
-	err = analytics.InitializeAnalytics(s)
+	err = analytics.InitializeAnalytics()
 	handleError(s, "Failed initializing analytics: ", err)
 
 	handlers.InitializeHandlers(s)
 
-	err = handlers.CreateRootUserOnFirstSystemLoad(s)
+	err = handlers.CreateRootUserOnFirstSystemLoad()
 	handleError(s, "Failed to create root user: ", err)
 
 	background_tasks.InitializeZombieResources(s)
 
-	defer db.Close(s)
+	defer db.Close()
 
 	// defer broker.Close()
 	defer analytics.Close()

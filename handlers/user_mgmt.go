@@ -22,7 +22,6 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/broker"
 	"memphis-broker/models"
-	"memphis-broker/server"
 	"memphis-broker/utils"
 	"mime/multipart"
 	"os"
@@ -213,7 +212,7 @@ func imageToBase64(imagePath string) (string, error) {
 	return base64Encoding, nil
 }
 
-func CreateRootUserOnFirstSystemLoad(s *server.Server) error {
+func CreateRootUserOnFirstSystemLoad() error {
 	exist, err := isRootUserExist()
 	if err != nil {
 		return err
@@ -248,7 +247,7 @@ func CreateRootUserOnFirstSystemLoad(s *server.Server) error {
 			return err
 		}
 
-		s.Noticef("Root user has been created")
+		serv.Noticef("Root user has been created")
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),
 			bson.M{"username": "root"},

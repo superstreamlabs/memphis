@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"memphis-broker/broker"
 	"memphis-broker/models"
-	"memphis-broker/server"
 	"memphis-broker/utils"
 	"net/http"
 	"path/filepath"
@@ -77,7 +76,7 @@ func clientSetConfig() error {
 	return nil
 }
 
-func (mh MonitoringHandler) GetSystemComponents(serv *server.Server) ([]models.SystemComponent, error) {
+func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
 		uiAddress := "http://ui"
@@ -184,12 +183,6 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
 }
 
-// func GetMainOverviewDataTest(s *server.Server) gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-
-// 	}
-// }
-
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{}
 	stations, err := stationsHandler.GetAllStationsDetails()
@@ -204,7 +197,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	systemComponents, err := mh.GetSystemComponents(serv)
+	systemComponents, err := mh.GetSystemComponents()
 	if err != nil {
 		serv.Errorf("GetMainOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
