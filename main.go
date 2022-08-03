@@ -107,10 +107,10 @@ func runMemphis(s *server.Server) {
 	err = analytics.InitializeAnalytics(s)
 	handleError(s, "Failed initializing analytics: ", err)
 
-	// err = handlers.CreateRootUserOnFirstSystemLoad()
-	// handleError("Failed to create root user: ", err)
-
 	handlers.InitializeCollections(s)
+
+	err = handlers.CreateRootUserOnFirstSystemLoad(s)
+	handleError(s, "Failed to create root user: ", err)
 
 	background_tasks.InitializeZombieResources(s)
 
