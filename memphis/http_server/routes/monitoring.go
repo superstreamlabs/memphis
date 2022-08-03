@@ -22,7 +22,6 @@ import (
 
 func InitializeMonitoringRoutes(router *gin.RouterGroup, s *server.Server) {
 	monitoringHandler := handlers.MonitoringHandler{}
-	monitoringHandler.InitializeMonitoringHandlers(s)
 	monitoringRoutes := router.Group("/monitoring")
 	monitoringRoutes.GET("/getClusterInfo", monitoringHandler.GetClusterInfo)
 	monitoringRoutes.GET("/getMainOverviewData", monitoringHandler.GetMainOverviewData)

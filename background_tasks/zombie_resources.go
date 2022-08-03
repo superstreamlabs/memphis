@@ -33,12 +33,14 @@ var connectionsCollection *mongo.Collection
 var producersCollection *mongo.Collection
 var consumersCollection *mongo.Collection
 var poisonMessagesCollection *mongo.Collection
+var serv *server.Server
 
 func InitializeZombieResources(s *server.Server) {
 	connectionsCollection = db.GetCollection("connections", s)
 	producersCollection = db.GetCollection("producers", s)
 	consumersCollection = db.GetCollection("consumers", s)
 	poisonMessagesCollection = db.GetCollection("poison_messages", s)
+	serv = s
 }
 
 func killRelevantConnections() ([]models.Connection, error) {
@@ -47,12 +49,12 @@ func killRelevantConnections() ([]models.Connection, error) {
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}})
 	if err != nil {
-		// logger.Error("killRelevantConnections error: " + err.Error())
+		serv.Errorf("killRelevantConnections error: " + err.Error())
 		return connections, err
 	}
 
 	if err = cursor.All(context.TODO(), &connections); err != nil {
-		// logger.Error("killRelevantConnections error: " + err.Error())
+		serv.Errorf("killRelevantConnections error: " + err.Error())
 		return connections, err
 	}
 
@@ -61,7 +63,7 @@ func killRelevantConnections() ([]models.Connection, error) {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("KillConnections error: " + err.Error())
+		serv.Errorf("KillConnections error: " + err.Error())
 		return connections, err
 	}
 
@@ -79,7 +81,7 @@ func killProducersByConnections(connectionIds []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("killProducersByConnections error: " + err.Error())
+		serv.Errorf("killProducersByConnections error: " + err.Error())
 		return err
 	}
 
@@ -92,7 +94,7 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("killConsumersByConnections error: " + err.Error())
+		serv.Errorf("killConsumersByConnections error: " + err.Error())
 		return err
 	}
 
@@ -113,7 +115,7 @@ func KillZombieResources(wg *sync.WaitGroup) {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
 		if err != nil {
-			// logger.Error("KillZombieResources error: " + err.Error())
+			serv.Errorf("KillZombieResources error: " + err.Error())
 		} else if len(connections) > 0 {
 			var connectionIds []primitive.ObjectID
 			for _, con := range connections {
@@ -122,22 +124,22 @@ func KillZombieResources(wg *sync.WaitGroup) {
 
 			err = killProducersByConnections(connectionIds)
 			if err != nil {
-				// logger.Error("KillZombieResources error: " + err.Error())
+				serv.Errorf("KillZombieResources error: " + err.Error())
 			}
 
 			err = killConsumersByConnections(connectionIds)
 			if err != nil {
-				// logger.Error("KillZombieResources error: " + err.Error())
+				serv.Errorf("KillZombieResources error: " + err.Error())
 			}
 		}
 
 		if err != nil {
-			// logger.Error("KillZombieResources error: " + err.Error())
+			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 
 		err = removeOldPoisonMsgs()
 		if err != nil {
-			// logger.Error("KillZombieResources error: " + err.Error())
+			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 	}
 

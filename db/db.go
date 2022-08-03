@@ -18,7 +18,6 @@ import (
 	"memphis-broker/server"
 
 	"context"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,7 +25,6 @@ import (
 )
 
 var configuration = conf.GetConfig()
-var logger = log.Default()
 
 const (
 	dbOperationTimeout = 20

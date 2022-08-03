@@ -38,9 +38,10 @@ var consumersCollection *mongo.Collection
 var systemKeysCollection *mongo.Collection
 var auditLogsCollection *mongo.Collection
 var poisonMessagesCollection *mongo.Collection
+var serv *server.Server
 var configuration = conf.GetConfig()
 
-func InitializeCollections(s *server.Server) {
+func InitializeHandlers(s *server.Server) {
 	usersCollection = db.GetCollection("users", s)
 	imagesCollection = db.GetCollection("images", s)
 	factoriesCollection = db.GetCollection("ries", s)
@@ -51,6 +52,7 @@ func InitializeCollections(s *server.Server) {
 	systemKeysCollection = db.GetCollection("system_keys", s)
 	auditLogsCollection = db.GetCollection("audit_logs", s)
 	poisonMessagesCollection = db.GetCollection("poison_messages", s)
+	serv = s
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {

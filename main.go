@@ -107,7 +107,7 @@ func runMemphis(s *server.Server) {
 	err = analytics.InitializeAnalytics(s)
 	handleError(s, "Failed initializing analytics: ", err)
 
-	handlers.InitializeCollections(s)
+	handlers.InitializeHandlers(s)
 
 	err = handlers.CreateRootUserOnFirstSystemLoad(s)
 	handleError(s, "Failed to create root user: ", err)
