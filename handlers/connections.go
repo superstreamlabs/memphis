@@ -33,7 +33,7 @@ func (ch ConnectionsHandler) CreateConnection(username string, clientAddress str
 	username = strings.ToLower(username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
-		// logger.Error("CreateConnection error: " + err.Error())
+		serv.Errorf("CreateConnection error: " + err.Error())
 		return connectionId, err
 	}
 	if !exist {
@@ -51,7 +51,7 @@ func (ch ConnectionsHandler) CreateConnection(username string, clientAddress str
 
 	_, err = connectionsCollection.InsertOne(context.TODO(), newConnection)
 	if err != nil {
-		// logger.Error("CreateConnection error: " + err.Error())
+		serv.Errorf("CreateConnection error: " + err.Error())
 		return connectionId, err
 	}
 	return connectionId, nil
@@ -63,7 +63,7 @@ func (ch ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) err
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("KillConnection error: " + err.Error())
+		serv.Errorf("KillConnection error: " + err.Error())
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 		bson.M{"$set": bson.M{"is_active": true}},
 	)
 	if err != nil {
-		// logger.Error("ReliveConnection error: " + err.Error())
+		serv.Errorf("ReliveConnection error: " + err.Error())
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (ch ConnectionsHandler) UpdatePingTime(connectionId primitive.ObjectID) err
 		bson.M{"$set": bson.M{"last_ping": time.Now()}},
 	)
 	if err != nil {
-		// logger.Error("UpdatePingTime error: " + err.Error())
+		serv.Errorf("UpdatePingTime error: " + err.Error())
 		return err
 	}
 

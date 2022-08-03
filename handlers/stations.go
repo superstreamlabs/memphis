@@ -96,12 +96,12 @@ func removeStationResources(s *server.Server, station models.Station) error {
 
 	err = RemovePoisonMsgsByStation(station.Name)
 	if err != nil {
-		// logger.Warn("removeStationResources error: " + err.Error())
+		serv.Warnf("removeStationResources error: " + err.Error())
 	}
 
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
-		// logger.Warn("removeStationResources error: " + err.Error())
+		serv.Warnf("removeStationResources error: " + err.Error())
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	} else if err != nil {
-		// logger.Error("GetStationById error: " + err.Error())
+		serv.Errorf("GetStationById error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -165,7 +165,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 func (sh StationsHandler) GetAllStations(c *gin.Context) {
 	stations, err := sh.GetAllStationsDetails()
 	if err != nil {
-		// logger.Error("GetAllStations error: " + err.Error())
+		serv.Errorf("GetAllStations error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -183,7 +183,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -194,7 +194,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
-		// logger.Warn("Station with the same name is already exist")
+		serv.Warnf("Station with the same name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
@@ -209,7 +209,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if !exist { // create this factory
 		err := validateFactoryName(factoryName)
 		if err != nil {
-			// logger.Warn(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -224,7 +224,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
 		if err != nil {
-			// logger.Error("CreateStation error: " + err.Error())
+			serv.Errorf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -235,7 +235,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			// logger.Warn(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -249,7 +249,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			// logger.Warn(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -260,7 +260,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			// logger.Warn(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -287,19 +287,19 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = broker.CreateStream(sh.S, newStation)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
 	if err != nil {
-		// logger.Error("CreateStation error: " + err.Error())
+		serv.Errorf("CreateStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	message := "Station " + stationName + " has been created"
-	// logger.Info(message)
+	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
@@ -312,7 +312,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		// logger.Warn("CreateStation error: " + err.Error())
+		serv.Warnf("CreateStation error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -336,19 +336,19 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	stationName := strings.ToLower(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
-		// logger.Error("RemoveStation error: " + err.Error())
+		serv.Errorf("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		// logger.Warn("Station does not exist")
+		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 
 	err = removeStationResources(sh.S, station)
 	if err != nil {
-		// logger.Error("RemoveStation error: " + err.Error())
+		serv.Errorf("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -364,12 +364,12 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		bson.M{"$set": bson.M{"is_deleted": true}},
 	)
 	if err != nil {
-		// logger.Error("RemoveStation error: " + err.Error())
+		serv.Errorf("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	// logger.Info("Station " + stationName + " has been deleted")
+	serv.Noticef("Station " + stationName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -484,12 +484,12 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 	if err == mongo.ErrNoDocuments {
-		// logger.Warn("GetPoisonMessageJourney error: " + err.Error())
+		serv.Warnf("GetPoisonMessageJourney error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 		return
 	}
 	if err != nil {
-		// logger.Error("GetPoisonMessageJourney error: " + err.Error())
+		serv.Errorf("GetPoisonMessageJourney error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -506,7 +506,7 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 
 	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
 	if err != nil {
-		// logger.Error("AckPoisonMessage error: " + err.Error())
+		serv.Errorf("AckPoisonMessage error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -524,12 +524,12 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	var msgs []models.PoisonMessage
 	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
 	if err != nil {
-		// logger.Error("ResendPoisonMessages error: " + err.Error())
+		serv.Errorf("ResendPoisonMessages error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if err = cursor.All(context.TODO(), &msgs); err != nil {
-		// logger.Error("ResendPoisonMessages error: " + err.Error())
+		serv.Errorf("ResendPoisonMessages error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -538,7 +538,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		for _, cg := range msg.PoisonedCgs {
 			err := broker.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
 			if err != nil {
-				// logger.Error("ResendPoisonMessages error: " + err.Error())
+				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -546,7 +546,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	if err != nil {
-		// logger.Error("ResendPoisonMessages error: " + err.Error())
+		serv.Errorf("ResendPoisonMessages error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -564,12 +564,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if body.IsPoisonMessage {
 		poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 		if err == mongo.ErrNoDocuments {
-			// logger.Warn("GetMessageDetails error: " + err.Error())
+			serv.Warnf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 			return
 		}
 		if err != nil {
-			// logger.Error("GetMessageDetails error: " + err.Error())
+			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -584,7 +584,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		// logger.Error("GetMessageDetails error: " + err.Error())
+		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -595,7 +595,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	producedByHeader := natsMsg.Header.Get("producedBy")
 
 	if connectionIdHeader == "" || producedByHeader == "" {
-		// logger.Error("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
+		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using"})
 		return
 	}
@@ -603,7 +603,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	poisonedCgs, err := GetPoisonedCgsByMessage(stationName, models.MessageDetails{MessageSeq: int(natsMsg.Sequence), ProducedBy: producedByHeader, TimeSent: natsMsg.Time})
 	if err != nil {
-		// logger.Error("GetMessageDetails error: " + err.Error())
+		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -611,21 +611,21 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	for i, cg := range poisonedCgs {
 		cgInfo, err := broker.GetCgInfo(sh.S, stationName, cg.CgName)
 		if err != nil {
-			// logger.Error("GetMessageDetails error: " + err.Error())
+			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName, cg.CgName)
 		if err != nil {
-			// logger.Error("GetMessageDetails error: " + err.Error())
+			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 		if err != nil {
-			// logger.Error("GetMessageDetails error: " + err.Error())
+			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -645,14 +645,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	var producer models.Producer
 	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
 	if err != nil {
-		// logger.Error("GetMessageDetails error: " + err.Error())
+		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	_, conn, err := IsConnectionExist(connectionId)
 	if err != nil {
-		// logger.Error("GetMessageDetails error: " + err.Error())
+		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

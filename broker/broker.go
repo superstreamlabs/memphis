@@ -14,9 +14,11 @@
 package broker
 
 import (
+	"fmt"
 	"memphis-broker/conf"
 	"memphis-broker/models"
 	"memphis-broker/server"
+	"runtime"
 	"strings"
 	"time"
 
@@ -76,7 +78,7 @@ func sigHandler(nonce []byte, seed string) ([]byte, error) {
 
 	// sig, _ := kp.Sign(nonce)
 	// return sig, nil
-	return nil, errors.New("not implemented")
+	return nil, notImplemented()
 }
 
 func userCredentials(userJWT string, userKeySeed string) nats.Option {
@@ -333,7 +335,7 @@ func GetMessages(station models.Station, messagesToFetch int) ([]models.MessageD
 
 	// js.DeleteConsumer(station.Name, durableName)
 	// return messages, nil
-	return nil, errors.New("not implemented")
+	return nil, notImplemented()
 }
 
 func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, error) {
@@ -343,7 +345,7 @@ func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, erro
 	// }
 
 	// return msg, nil
-	return nil, errors.New("not implemented")
+	return nil, notImplemented()
 }
 
 func ResendPoisonMessage(subject string, data []byte) error {
@@ -359,13 +361,13 @@ func ResendPoisonMessage(subject string, data []byte) error {
 	// }
 
 	// return nil
-	return errors.New("not implemented")
+	return notImplemented()
 }
 
 func RemoveProducer() error {
 	// // nothing to remove
 	// return nil
-	return errors.New("not implemented")
+	return notImplemented()
 }
 
 func RemoveConsumer(streamName string, consumerName string) error {
@@ -375,7 +377,7 @@ func RemoveConsumer(streamName string, consumerName string) error {
 	// }
 
 	// return nil
-	return errors.New("not implemented")
+	return notImplemented()
 }
 
 func ValidateUserCreds(token string) error {
@@ -397,7 +399,7 @@ func ValidateUserCreds(token string) error {
 
 	// nc.Close()
 	// return nil
-	return errors.New("not implemented")
+	return notImplemented()
 }
 
 func CreateInternalStream(s *server.Server, name string) error {
@@ -419,7 +421,7 @@ func PublishMessageToSubject(subject string, msg []byte) error {
 	// 	return getErrorWithoutNats(err)
 	// }
 	// return nil
-	return errors.New("not implemented")
+	return notImplemented()
 }
 
 func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, error) {
@@ -428,7 +430,7 @@ func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, er
 	// 	return sub, getErrorWithoutNats(err)
 	// }
 	// return sub, nil
-	return nil, errors.New("not implemented")
+	return nil, notImplemented()
 }
 
 func QueueSubscribe(subject, queue_group_name string, cb func(msg *nats.Msg)) {
@@ -442,6 +444,12 @@ func IsConnectionAlive() bool {
 
 func Close() {
 	// broker.Close()
+}
+
+func notImplemented() error {
+	_, file, line, _ := runtime.Caller(1)
+	errString := fmt.Sprintf("%v:%v is not implemented", file, line)
+	return errors.New(errString)
 }
 
 var broker, js = initializeBrokerConnection()

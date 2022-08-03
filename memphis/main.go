@@ -43,7 +43,6 @@ func main() {
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
 
-	go background_tasks.ConsumeSysLogs(wg)
 	go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(wg)
 	go background_tasks.KillZombieResources(wg)

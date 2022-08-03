@@ -61,7 +61,6 @@ func InitializeHttpRoutes(handlers *handlers.Handlers) *gin.Engine {
 	InitializeProducersRoutes(mainRouter, handlers)
 	InitializeConsumersRoutes(mainRouter, handlers)
 	InitializeMonitoringRoutes(mainRouter, handlers)
-	InitializeSysLogsRoutes(mainRouter)
 	InitializeSandboxRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{

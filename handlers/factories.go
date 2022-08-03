@@ -19,7 +19,6 @@ import (
 	"memphis-broker/broker"
 	"memphis-broker/server"
 
-	// "memphis-broker/logger"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"regexp"
@@ -86,12 +85,12 @@ func removeStations(s *server.Server, factoryId primitive.ObjectID) error {
 
 		err = RemovePoisonMsgsByStation(station.Name)
 		if err != nil {
-			// logger.Warn("removeStations error: " + err.Error())
+			serv.Warnf("removeStations error: " + err.Error())
 		}
 
 		err = RemoveAllAuditLogsByStation(station.Name)
 		if err != nil {
-			// logger.Warn("removeStations error: " + err.Error())
+			serv.Warnf("removeStations error: " + err.Error())
 		}
 	}
 
@@ -122,19 +121,19 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.Name)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	exist, _, err := IsFactoryExist(factoryName)
 	if err != nil {
-		// logger.Error("CreateFactory error: " + err.Error())
+		serv.Errorf("CreateFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		// logger.Warn("Factory with that name is already exist")
+		serv.Warnf("Factory with that name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name is already exist"})
 		return
 	}
@@ -151,12 +150,12 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 
 	_, err = factoriesCollection.InsertOne(context.TODO(), newFactory)
 	if err != nil {
-		// logger.Error("CreateFactory error: " + err.Error())
+		serv.Errorf("CreateFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	// logger.Info("Factory " + factoryName + " has been created")
+	serv.Noticef("Factory " + factoryName + " has been created")
 	c.IndentedJSON(200, gin.H{
 		"id":              newFactory.ID,
 		"name":            newFactory.Name,
@@ -224,7 +223,7 @@ func (fh FactoriesHandler) GetFactory(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	} else if err != nil {
-		// logger.Error("GetFactory error: " + err.Error())
+		serv.Errorf("GetFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -263,7 +262,7 @@ func (fh FactoriesHandler) GetAllFactoriesDetails() ([]models.ExtendedFactory, e
 func (fh FactoriesHandler) GetAllFactories(c *gin.Context) {
 	factories, err := fh.GetAllFactoriesDetails()
 	if err != nil {
-		// logger.Error("GetAllFactories error: " + err.Error())
+		serv.Errorf("GetAllFactories error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -284,19 +283,19 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
-		// logger.Error("RemoveFactory error: " + err.Error())
+		serv.Errorf("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		// logger.Warn("Factory does not exist")
+		serv.Warnf("Factory does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	}
 
 	err = removeStations(fh.S, factory.ID)
 	if err != nil {
-		// logger.Error("RemoveFactory error: " + err.Error())
+		serv.Errorf("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -312,12 +311,12 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		bson.M{"$set": bson.M{"is_deleted": true}},
 	)
 	if err != nil {
-		// logger.Error("RemoveFactory error: " + err.Error())
+		serv.Errorf("RemoveFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	// logger.Info("Factory " + factoryName + " has been deleted")
+	serv.Noticef("Factory " + factoryName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -334,12 +333,12 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
-		// logger.Error("EditFactory error: " + err.Error())
+		serv.Errorf("EditFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		// logger.Warn("Factory with that name does not exist")
+		serv.Warnf("Factory with that name does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name does not exist"})
 		return
 	}
@@ -347,12 +346,12 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 	newName := strings.ToLower(body.NewName)
 	exist, _, err = IsFactoryExist(newName)
 	if err != nil {
-		// logger.Error("EditFactory error: " + err.Error())
+		serv.Errorf("EditFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		// logger.Warn("Factory with that name already exist")
+		serv.Warnf("Factory with that name already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name already exist"})
 		return
 	}
@@ -376,7 +375,7 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 		bson.M{"$set": bson.M{"name": factory.Name, "description": factory.Description}},
 	)
 	if err != nil {
-		// logger.Error("EditFactory error: " + err.Error())
+		serv.Errorf("EditFactory error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

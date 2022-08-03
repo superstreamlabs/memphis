@@ -19,7 +19,9 @@ import (
 	"flag"
 	"fmt"
 	"memphis-broker/analytics"
+	"memphis-broker/background_tasks"
 	"memphis-broker/db"
+	"memphis-broker/handlers"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
 	"os"
@@ -91,10 +93,9 @@ func usage() {
 	os.Exit(0)
 }
 
-func handleError(message string, err error) {
+func handleError(s *server.Server, message string, err error) {
 	if err != nil {
-		// logger.Error(message + " " + err.Error())
-		panic(message + " " + err.Error())
+		s.Errorf(message + " " + err.Error())
 	}
 }
 
@@ -104,37 +105,41 @@ func runMemphis(s *server.Server) {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	// err := logger.InitializeLogger()
-	// handleError("Failed initializing logger: ", err)
+	err := db.InitializeDbConnection(s)
+	handleError(s, "Failed initializing db connection: ", err)
 
-	err := analytics.InitializeAnalytics()
-	handleError("Failed initializing analytics: ", err)
+	err = analytics.InitializeAnalytics()
+	handleError(s, "Failed initializing analytics: ", err)
 
-	// err = handlers.CreateRootUserOnFirstSystemLoad()
-	// handleError("Failed to create root user: ", err)
+	handlers.InitializeHandlers(s)
+
+	err = handlers.CreateRootUserOnFirstSystemLoad()
+	handleError(s, "Failed to create root user: ", err)
+
+	background_tasks.InitializeZombieResources(s)
 
 	defer db.Close()
+
 	// defer broker.Close()
 	defer analytics.Close()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
 
-	// go background_tasks.ConsumeSysLogs(wg)
 	// go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(s, wg)
-	// go background_tasks.KillZombieResources(wg)
+	go background_tasks.KillZombieResources(wg)
 	// go background_tasks.ListenForPoisonMessages()
 
-	// var env string
-	// if os.Getenv("DOCKER_ENV") != "" {
-	// 	env = "Docker"
-	// 	logger.Info("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
-	// } else {
-	// 	env = "K8S"
-	// }
+	var env string
+	if os.Getenv("DOCKER_ENV") != "" {
+		env = "Docker"
+		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
+	} else {
+		env = "K8S"
+	}
 
-	// logger.Info("Memphis broker is up and running, ENV: " + env)
+	s.Noticef("Memphis broker is up and running, ENV: " + env)
 	wg.Wait()
 }
 

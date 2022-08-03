@@ -32,7 +32,6 @@ func InitializeHttpServer(s *server.Server, wg *sync.WaitGroup) {
 		Stations:   handlers.StationsHandler{S: s},
 		Factories:  handlers.FactoriesHandler{S: s},
 		Monitoring: handlers.MonitoringHandler{S: s},
-		SysLogs:    handlers.SysLogsHandler{},
 		PoisonMsgs: handlers.PoisonMessagesHandler{},
 	}
 

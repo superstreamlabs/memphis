@@ -83,12 +83,12 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 	})
 
 	if err != nil {
-		// logger.Error("GetConsumerGroupMembers error: " + err.Error())
+		serv.Errorf("GetConsumerGroupMembers error: " + err.Error())
 		return consumers, err
 	}
 
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		// logger.Error("GetConsumerGroupMembers error: " + err.Error())
+		serv.Errorf("GetConsumerGroupMembers error: " + err.Error())
 		return consumers, err
 	}
 
@@ -116,7 +116,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateName(name)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -125,7 +125,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
 		if err != nil {
-			// logger.Warn(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -136,30 +136,30 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	consumerType := strings.ToLower(body.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
-		// logger.Warn("Connection id is not valid")
+		serv.Warnf("Connection id is not valid")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
 	exist, connection, err := IsConnectionExist(connectionId)
 	if err != nil {
-		// logger.Error("CreateConsumer error: " + err.Error())
+		serv.Errorf("CreateConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		// logger.Warn("Connection id was not found")
+		serv.Warnf("Connection id was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
-		// logger.Warn("Connection is not active")
+		serv.Warnf("Connection is not active")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
@@ -167,21 +167,21 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	stationName := strings.ToLower(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
-		// logger.Error("CreateConsumer error: " + err.Error())
+		serv.Errorf("CreateConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
 		station, err = CreateDefaultStation(ch.S, stationName, connection.CreatedByUser)
 		if err != nil {
-			// logger.Error("CreateConsumer error: " + err.Error())
+			serv.Errorf("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		user := getUserDetailsFromMiddleware(c)
 		message := "Station " + stationName + " has been created"
-		// logger.Info(message)
+		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
@@ -194,7 +194,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			// logger.Warn("CreateConsumer error: " + err.Error())
+			serv.Warnf("CreateConsumer error: " + err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -205,19 +205,19 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 
 	exist, _, err = IsConsumerExist(name, station.ID)
 	if err != nil {
-		// logger.Error("CreateConsumer error: " + err.Error())
+		serv.Errorf("CreateConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		// logger.Warn("Consumer name has to be unique in a station level")
+		serv.Warnf("Consumer name has to be unique in a station level")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Consumer name has to be unique in a station level"})
 		return
 	}
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {
-		// logger.Error("CreateConsumer error: " + err.Error())
+		serv.Errorf("CreateConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -245,7 +245,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		newConsumer.MaxMsgDeliveries = body.MaxMsgDeliveries
 		broker.CreateConsumer(ch.S, newConsumer, station)
 		if err != nil {
-			// logger.Error("CreateConsumer error: " + err.Error())
+			serv.Errorf("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -253,13 +253,13 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 
 	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
 	if err != nil {
-		// logger.Error("CreateConsumer error: " + err.Error())
+		serv.Errorf("CreateConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	user := getUserDetailsFromMiddleware(c)
 	message := "Consumer " + name + " has been created"
-	// logger.Info(message)
+	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
@@ -272,7 +272,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		// logger.Warn("CreateConsumer error: " + err.Error())
+		serv.Warnf("CreateConsumer error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -300,13 +300,13 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	})
 
 	if err != nil {
-		// logger.Error("GetAllConsumers error: " + err.Error())
+		serv.Errorf("GetAllConsumers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		// logger.Error("GetAllConsumers error: " + err.Error())
+		serv.Errorf("GetAllConsumers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -450,7 +450,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		return
 	}
 	if !exist {
-		// logger.Warn("Station does not exist")
+		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -469,13 +469,13 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 	})
 
 	if err != nil {
-		// logger.Error("GetAllConsumersByStation error: " + err.Error())
+		serv.Errorf("GetAllConsumersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		// logger.Error("GetAllConsumersByStation error: " + err.Error())
+		serv.Errorf("GetAllConsumersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -502,7 +502,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
-		// logger.Error("DestroyConsumer error: " + err.Error())
+		serv.Errorf("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -513,12 +513,12 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
-		// logger.Warn("A consumer with the given details was not found")
+		serv.Warnf("A consumer with the given details was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A consumer with the given details was not found"})
 		return
 	}
 	if err != nil {
-		// logger.Error("DestroyConsumer error: " + err.Error())
+		serv.Errorf("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -528,7 +528,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	)
 	if err != nil {
-		// logger.Error("DestroyConsumer error: " + err.Error())
+		serv.Errorf("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -536,7 +536,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	// ensure not part of an active consumer group
 	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
 	if err != nil {
-		// logger.Error("DestroyConsumer error: " + err.Error())
+		serv.Errorf("DestroyConsumer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -544,14 +544,14 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	if count == 0 { // no other members in this group
 		err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
 		if err != nil {
-			// logger.Error("DestroyConsumer error: " + err.Error())
+			serv.Errorf("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
 		if err != nil {
-			// logger.Error("DestroyConsumer error: " + err.Error())
+			serv.Errorf("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -559,7 +559,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 
 	user := getUserDetailsFromMiddleware(c)
 	message := "Consumer " + name + " has been deleted"
-	// logger.Info(message)
+	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
@@ -572,7 +572,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		// logger.Warn("DestroyConsumer error: " + err.Error())
+		serv.Warnf("DestroyConsumer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -583,23 +583,23 @@ func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error 
 
 	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		// logger.Warn("KillConsumers error: " + err.Error())
+		serv.Warnf("KillConsumers error: " + err.Error())
 	}
 	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		// logger.Warn("KillConsumers error: " + err.Error())
+		serv.Warnf("KillConsumers error: " + err.Error())
 	}
 
 	if len(consumers) > 0 {
 		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
 		if err != nil {
-			// logger.Warn("KillConsumers error: " + err.Error())
+			serv.Warnf("KillConsumers error: " + err.Error())
 		}
 		_, err = consumersCollection.UpdateMany(context.TODO(),
 			bson.M{"connection_id": connectionId},
 			bson.M{"$set": bson.M{"is_active": false}},
 		)
 		if err != nil {
-			// logger.Error("KillConsumers error: " + err.Error())
+			serv.Errorf("KillConsumers error: " + err.Error())
 			return err
 		}
 
@@ -625,7 +625,7 @@ func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error 
 		}
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			// logger.Warn("KillConsumers error: " + err.Error())
+			serv.Warnf("KillConsumers error: " + err.Error())
 		}
 	}
 
@@ -638,7 +638,7 @@ func (ch ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) erro
 		bson.M{"$set": bson.M{"is_active": true}},
 	)
 	if err != nil {
-		// logger.Error("ReliveConsumers error: " + err.Error())
+		serv.Errorf("ReliveConsumers error: " + err.Error())
 		return err
 	}
 

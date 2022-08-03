@@ -65,7 +65,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateProducerName(name)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -73,30 +73,30 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	producerType := strings.ToLower(body.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		// logger.Warn(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
-		// logger.Warn("Connection id is not valid")
+		serv.Warnf("Connection id is not valid")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
 	exist, connection, err := IsConnectionExist(connectionId)
 	if err != nil {
-		// logger.Error("CreateProducer error: " + err.Error())
+		serv.Errorf("CreateProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		// logger.Warn("Connection id was not found")
+		serv.Warnf("Connection id was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
-		// logger.Warn("Connection is not active")
+		serv.Warnf("Connection is not active")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
@@ -104,21 +104,21 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	stationName := strings.ToLower(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
-		// logger.Error("CreateProducer error: " + err.Error())
+		serv.Errorf("CreateProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
 		station, err = CreateDefaultStation(ph.S, stationName, connection.CreatedByUser)
 		if err != nil {
-			// logger.Error("CreateProducer error: " + err.Error())
+			serv.Errorf("CreateProducer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		user := getUserDetailsFromMiddleware(c)
 		message := "Station " + stationName + " has been created"
-		// logger.Info(message)
+		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
@@ -131,7 +131,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			// logger.Warn("CreateProducer error: " + err.Error())
+			serv.Warnf("CreateProducer error: " + err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -142,12 +142,12 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 
 	exist, _, err = IsProducerExist(name, station.ID)
 	if err != nil {
-		// logger.Error("CreateProducer error: " + err.Error())
+		serv.Errorf("CreateProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		// logger.Warn("Producer name has to be unique in a station level")
+		serv.Warnf("Producer name has to be unique in a station level")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Producer name has to be unique in a station level"})
 		return
 	}
@@ -168,14 +168,14 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 
 	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
 	if err != nil {
-		// logger.Error("CreateProducer error: " + err.Error())
+		serv.Errorf("CreateProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	user := getUserDetailsFromMiddleware(c)
 
 	message := "Producer " + name + " has been created"
-	// logger.Info(message)
+	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
@@ -188,7 +188,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		// logger.Warn("CreateProducer error: " + err.Error())
+		serv.Warnf("CreateProducer error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -216,13 +216,13 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	})
 
 	if err != nil {
-		// logger.Error("GetAllProducers error: " + err.Error())
+		serv.Errorf("GetAllProducers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		// logger.Error("GetAllProducers error: " + err.Error())
+		serv.Errorf("GetAllProducers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -315,7 +315,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 	if !exist {
-		// logger.Warn("Station does not exist")
+		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -334,13 +334,13 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	})
 
 	if err != nil {
-		// logger.Error("GetAllProducersByStation error: " + err.Error())
+		serv.Errorf("GetAllProducersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		// logger.Error("GetAllProducersByStation error: " + err.Error())
+		serv.Errorf("GetAllProducersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -366,7 +366,7 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
-		// logger.Error("DestroyProducer error: " + err.Error())
+		serv.Errorf("DestroyProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -377,18 +377,18 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	).Decode(&producer)
 	if err != nil {
-		// logger.Error("DestroyProducer error: " + err.Error())
+		serv.Errorf("DestroyProducer error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if err == mongo.ErrNoDocuments {
-		// logger.Warn("A producer with the given details was not found")
+		serv.Warnf("A producer with the given details was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A producer with the given details was not found"})
 		return
 	}
 	user := getUserDetailsFromMiddleware(c)
 	message := "Producer " + name + " has been deleted"
-	// logger.Info(message)
+	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
@@ -401,7 +401,7 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		// logger.Warn("DestroyProducer error: " + err.Error())
+		serv.Warnf("DestroyProducer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -412,16 +412,16 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 
 	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		// logger.Warn("KillProducers error: " + err.Error())
+		serv.Warnf("KillProducers error: " + err.Error())
 	}
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		// logger.Warn("KillProducers error: " + err.Error())
+		serv.Warnf("KillProducers error: " + err.Error())
 	}
 
 	if len(producers) > 0 {
 		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
 		if err != nil {
-			// logger.Warn("KillProducers error: " + err.Error())
+			serv.Warnf("KillProducers error: " + err.Error())
 		}
 
 		_, err = producersCollection.UpdateMany(context.TODO(),
@@ -429,7 +429,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 			bson.M{"$set": bson.M{"is_active": false}},
 		)
 		if err != nil {
-			// logger.Error("KillProducers error: " + err.Error())
+			serv.Errorf("KillProducers error: " + err.Error())
 			return err
 		}
 
@@ -455,7 +455,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 		}
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			// logger.Warn("KillProducers error: " + err.Error())
+			serv.Warnf("KillProducers error: " + err.Error())
 		}
 	}
 
@@ -468,7 +468,7 @@ func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) erro
 		bson.M{"$set": bson.M{"is_active": true}},
 	)
 	if err != nil {
-		// logger.Error("ReliveProducers error: " + err.Error())
+		serv.Errorf("ReliveProducers error: " + err.Error())
 		return err
 	}
 

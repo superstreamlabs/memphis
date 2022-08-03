@@ -31,7 +31,7 @@ import (
 )
 
 var configuration = conf.GetConfig()
-var systemKeysCollection = db.GetCollection("system_keys")
+var systemKeysCollection *mongo.Collection
 var ls launcher.Launcher
 var loginsCounter metric.Int64Counter
 var installationsCounter metric.Int64Counter
@@ -43,17 +43,8 @@ var disableAnalyticsCounter metric.Int64Counter
 var deploymentId string
 var analyticsFlag string
 
-func getSystemKey(key string) (models.SystemKey, error) {
-	filter := bson.M{"key": key}
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err != nil {
-		return systemKey, err
-	}
-	return systemKey, nil
-}
-
 func InitializeAnalytics() error {
+	systemKeysCollection = db.GetCollection("system_keys")
 	deployment, err := getSystemKey("deployment_id")
 	if err == mongo.ErrNoDocuments {
 		deploymentId := primitive.NewObjectID().Hex()
@@ -112,44 +103,75 @@ func InitializeAnalytics() error {
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of installations of Memphis"),
 	)
+	if err != nil {
+		return err
+	}
 
 	nextStepsCounter, err = Meter.NewInt64Counter(
 		"NextSteps",
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of users complete the next steps wizard in the UI"),
 	)
+	if err != nil {
+		return err
+	}
 
 	loginsCounter, err = Meter.NewInt64Counter(
 		"Logins",
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of logins to Memphis"),
 	)
+	if err != nil {
+		return err
+	}
 
 	stationsCounter, err = Meter.NewInt64Counter(
 		"Stations",
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of stations"),
 	)
+	if err != nil {
+		return err
+	}
 
 	producersCounter, err = Meter.NewInt64Counter(
 		"Producers",
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of producers"),
 	)
+	if err != nil {
+		return err
+	}
 
 	consumersCounter, err = Meter.NewInt64Counter(
 		"Consumers",
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of consumers"),
 	)
+	if err != nil {
+		return err
+	}
 
 	disableAnalyticsCounter, err = Meter.NewInt64Counter(
 		"DisableAnalytics",
 		metric.WithUnit("0"),
 		metric.WithDescription("Counting the number of disable analytics events"),
 	)
+	if err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func getSystemKey(key string) (models.SystemKey, error) {
+	filter := bson.M{"key": key}
+	var systemKey models.SystemKey
+	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	if err != nil {
+		return systemKey, err
+	}
+	return systemKey, nil
 }
 
 func IncrementInstallationsCounter() {
