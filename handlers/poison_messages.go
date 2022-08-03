@@ -34,7 +34,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg.Data, &message)
 	if err != nil {
-		// logger.Error("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -45,7 +45,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 
 	poisonMessageContent, err := broker.GetMessage(stationName, uint64(messageSeq))
 	if err != nil {
-		// logger.Error("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -53,7 +53,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	producedByHeader := poisonMessageContent.Header.Get("producedBy")
 
 	if connectionIdHeader == "" || producedByHeader == "" {
-		// logger.Error("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
+		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
 		return
 	}
 
@@ -64,7 +64,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	_, conn, err := IsConnectionExist(connId)
 	if err != nil {
-		// logger.Error("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -97,7 +97,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	opts := options.Update().SetUpsert(true)
 	_, err = poisonMessagesCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		// logger.Error("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 }

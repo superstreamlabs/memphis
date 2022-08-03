@@ -18,7 +18,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
-	"strconv"
+	"memphis-broker/server"
 	"sync"
 	"time"
 
@@ -29,11 +29,19 @@ import (
 
 var configuration = conf.GetConfig()
 
-var connectionsCollection *mongo.Collection = db.GetCollection("connections")
-var producersCollection *mongo.Collection = db.GetCollection("producers")
-var consumersCollection *mongo.Collection = db.GetCollection("consumers")
-var sysLogsCollection *mongo.Collection = db.GetCollection("system_logs")
-var poisonMessagesCollection *mongo.Collection = db.GetCollection("poison_messages")
+var connectionsCollection *mongo.Collection
+var producersCollection *mongo.Collection
+var consumersCollection *mongo.Collection
+var poisonMessagesCollection *mongo.Collection
+var serv *server.Server
+
+func InitializeZombieResources(s *server.Server) {
+	connectionsCollection = db.GetCollection("connections")
+	producersCollection = db.GetCollection("producers")
+	consumersCollection = db.GetCollection("consumers")
+	poisonMessagesCollection = db.GetCollection("poison_messages")
+	serv = s
+}
 
 func killRelevantConnections() ([]models.Connection, error) {
 	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
@@ -41,12 +49,12 @@ func killRelevantConnections() ([]models.Connection, error) {
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}})
 	if err != nil {
-		// logger.Error("killRelevantConnections error: " + err.Error())
+		serv.Errorf("killRelevantConnections error: " + err.Error())
 		return connections, err
 	}
 
 	if err = cursor.All(context.TODO(), &connections); err != nil {
-		// logger.Error("killRelevantConnections error: " + err.Error())
+		serv.Errorf("killRelevantConnections error: " + err.Error())
 		return connections, err
 	}
 
@@ -55,7 +63,7 @@ func killRelevantConnections() ([]models.Connection, error) {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("KillConnections error: " + err.Error())
+		serv.Errorf("KillConnections error: " + err.Error())
 		return connections, err
 	}
 
@@ -73,7 +81,7 @@ func killProducersByConnections(connectionIds []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("killProducersByConnections error: " + err.Error())
+		serv.Errorf("killProducersByConnections error: " + err.Error())
 		return err
 	}
 
@@ -86,22 +94,7 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		// logger.Error("killConsumersByConnections error: " + err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func removeOldLogs() error {
-	retentionToInt, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
-	if err != nil {
-		return err
-	}
-	retentionDaysToHours := 24 * retentionToInt
-	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(retentionDaysToHours))))}}
-	_, err = sysLogsCollection.DeleteMany(context.TODO(), filter)
-	if err != nil {
+		serv.Errorf("killConsumersByConnections error: " + err.Error())
 		return err
 	}
 
@@ -122,7 +115,7 @@ func KillZombieResources(wg *sync.WaitGroup) {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
 		if err != nil {
-			// logger.Error("KillZombieResources error: " + err.Error())
+			serv.Errorf("KillZombieResources error: " + err.Error())
 		} else if len(connections) > 0 {
 			var connectionIds []primitive.ObjectID
 			for _, con := range connections {
@@ -131,23 +124,22 @@ func KillZombieResources(wg *sync.WaitGroup) {
 
 			err = killProducersByConnections(connectionIds)
 			if err != nil {
-				// logger.Error("KillZombieResources error: " + err.Error())
+				serv.Errorf("KillZombieResources error: " + err.Error())
 			}
 
 			err = killConsumersByConnections(connectionIds)
 			if err != nil {
-				// logger.Error("KillZombieResources error: " + err.Error())
+				serv.Errorf("KillZombieResources error: " + err.Error())
 			}
 		}
 
-		err = removeOldLogs()
 		if err != nil {
-			// logger.Error("KillZombieResources error: " + err.Error())
+			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 
 		err = removeOldPoisonMsgs()
 		if err != nil {
-			// logger.Error("KillZombieResources error: " + err.Error())
+			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 	}
 

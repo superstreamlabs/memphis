@@ -58,8 +58,6 @@ type githubAccessTokenResponse struct {
 	Scope       string `json:"scope"`
 }
 
-var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users")
-
 func (sbh SandboxHandler) Login(c *gin.Context) {
 	var body models.SandboxLoginSchema
 	var firstName string
@@ -76,13 +74,13 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	if loginType == "google" {
 		gOuth, err := getGoogleAuthToken(token)
 		if err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		claims, err := GetGoogleUser(*gOuth)
 		if err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -93,13 +91,13 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	} else if loginType == "github" {
 		gitAccessToken, err := getGithubAccessToken(token)
 		if err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		claims, err := getGithubData(gitAccessToken)
 		if err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -115,7 +113,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		lastName = fullName[1]
 		profilePic = claims["avatar_url"].(string)
 	} else {
-		// logger.Error("Wrong login type")
+		serv.Errorf("Wrong login type")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -127,7 +125,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	}
 	exist, user, err := isSandboxUserExist(username)
 	if err != nil {
-		// logger.Error("Login(Sandbox) error: " + err.Error())
+		serv.Errorf("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -155,7 +153,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 
 		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
 		if err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 		}
 
 		mailchimpReq := &gochimp3.MemberRequest{
@@ -165,32 +163,33 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		}
 
 		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 		}
-
+		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users")
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
-			// logger.Error("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		// logger.Info("New sandbox user was created: " + username)
+		serv.Noticef("New sandbox user was created: " + username)
 
 	}
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		// logger.Error("Login(Sandbox) error: " + err.Error())
+		serv.Errorf("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !user.AlreadyLoggedIn {
+		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users")
 		sandboxUsersCollection.UpdateOne(context.TODO(),
 			bson.M{"_id": user.ID},
 			bson.M{"$set": bson.M{"already_logged_in": true}},
 		)
 	}
-	// logger.Info("Sandbox user logged in: " + username)
+	serv.Noticef("Sandbox user logged in: " + username)
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -309,6 +308,7 @@ func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
 func isSandboxUserExist(username string) (bool, models.SandboxUser, error) {
 	filter := bson.M{"username": username}
 	var user models.SandboxUser
+	var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users")
 	err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return false, user, nil

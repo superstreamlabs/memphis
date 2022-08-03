@@ -31,10 +31,8 @@ import (
 var noNeedAuthRoutes = []string{
 	"/api/usermgmt/login",
 	"/api/usermgmt/refreshtoken",
-	"/api/monitoring/writesyslog",
 	"/api/status",
 	"/api/sandbox/login",
-	"/api/logs/getsyslogs",
 }
 
 var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
