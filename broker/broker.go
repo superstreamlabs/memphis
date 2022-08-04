@@ -291,51 +291,55 @@ func GetHeaderSizeInBytes(headers nats.Header) int {
 	return 0
 }
 
-func GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
-	// streamInfo, err := js.StreamInfo(station.Name)
-	// if err != nil {
-	// 	return []models.MessageDetails{}, getErrorWithoutNats(err)
-	// }
-	// totalMessages := streamInfo.State.Msgs
+func GetMessages(s *server.Server, station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
+	streamInfo, err := s.MemphisStreamInfo(station.Name)
+	if err != nil {
+		return []models.MessageDetails{}, err
+	}
+	totalMessages := streamInfo.State.Msgs
 
-	// var startSequence uint64 = 1
-	// if totalMessages > uint64(messagesToFetch) {
-	// 	startSequence = totalMessages - uint64(messagesToFetch) + 1
-	// }
+	var startSequence uint64 = 1
+	if totalMessages > uint64(messagesToFetch) {
+		startSequence = totalMessages - uint64(messagesToFetch) + 1
+	}
 
-	// uid, _ := uuid.NewV4()
-	// durableName := "$memphis_fetch_messages_consumer" + uid.String()
-	// sub, err := js.PullSubscribe(station.Name+".final", durableName, nats.StartSequence(startSequence))
-	// msgs, _ := sub.Fetch(messagesToFetch, nats.MaxWait(3*time.Second))
-	// var messages []models.MessageDetails
-	// for _, msg := range msgs {
-	// 	if msg.Header.Get("producedBy") == "$memphis_dlq" { // skip poison messages which have been resent
-	// 		continue
-	// 	}
+	msgs, err := s.MemphisGetMsgs(station.Name+".final",
+		station.Name,
+		startSequence,
+		messagesToFetch,
+		3*time.Second)
+	var messages []models.MessageDetails
+	//TODO (or) remove debug prints
+	s.Errorf("len(msgs): %v", len(msgs))
+	for _, msg := range msgs {
+		//TODO (or) support dlq
+		// if msg.Header.Get("producedBy") == "$memphis_dlq" { // skip poison messages which have been resent
+		// 	continue
+		// }
 
-	// 	metadata, _ := msg.Metadata()
-	// 	data := (string(msg.Data))
-	// 	if len(data) > 100 { // get the first chars for preview needs
-	// 		data = data[0:100]
-	// 	}
-	// 	messages = append(messages, models.MessageDetails{
-	// 		MessageSeq:   int(metadata.Sequence.Stream),
-	// 		Data:         data,
-	// 		ProducedBy:   msg.Header.Get("producedBy"),
-	// 		ConnectionId: msg.Header.Get("connectionId"),
-	// 		TimeSent:     metadata.Timestamp,
-	// 		Size:         len(msg.Subject) + len(msg.Data) + GetHeaderSizeInBytes(msg.Header),
-	// 	})
-	// 	msg.Ack()
-	// }
+		data := (string(msg.Data))
+		if len(data) > 100 { // get the first chars for preview needs
+			data = data[0:100]
+		}
+		messages = append(messages, models.MessageDetails{
+			MessageSeq: int(msg.Seq),
+			Data:       data,
+			//TODO(or)
+			// ProducedBy:   msg.Header.Get("producedBy"),
+			ProducedBy: "PLACEHOLDER",
+			// ConnectionId: msg.Header.Get("connectionId"),
+			ConnectionId: "PLACEHOLDER",
+			TimeSent:     msg.Timestamp,
+			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
+		})
+		// msg.Ack()
+	}
 
-	// for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old
-	// 	messages[i], messages[j] = messages[j], messages[i]
-	// }
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old
+		messages[i], messages[j] = messages[j], messages[i]
+	}
 
-	// js.DeleteConsumer(station.Name, durableName)
-	// return messages, nil
-	return nil, notImplemented()
+	return messages, nil
 }
 
 func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, error) {

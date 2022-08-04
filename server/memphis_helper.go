@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"time"
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -103,4 +104,53 @@ func (s *Server) MemphisAllStreamsInfo() []*StreamInfo {
 	}
 
 	return res
+}
+
+type MemphisHelperMsg struct {
+	Subject string
+	// Header    map[string]string
+	Header    string
+	Data      []byte
+	Seq       uint64
+	Timestamp time.Time
+}
+
+func (s *Server) MemphisGetMsgs(subjectName,
+	streamName string,
+	startSeq uint64,
+	amount int,
+	timeout time.Duration) ([]MemphisHelperMsg, error) {
+	acc := s.GlobalAccount()
+	stream, err := acc.lookupStream(streamName)
+	if err != nil {
+		return nil, err
+	}
+
+	var msgs []MemphisHelperMsg
+	seq := startSeq
+
+	timeoutCh := time.After(timeout)
+	for i := 0; i < amount; i++ {
+		select {
+		case <-timeoutCh:
+			return msgs, errors.New("MemphisGetMsgs timeout")
+		default:
+			pmsg := getJSPubMsgFromPool()
+			sm, sseq, err := stream.store.LoadNextMsg(subjectName, false, seq, &pmsg.StoreMsg)
+			// TODO that's probably not right
+			seq += sseq
+			if sm == nil || err != nil {
+				pmsg.returnToPool()
+				return msgs, err
+			}
+			s.Noticef("buf: %v, msg:%v", string(sm.buf), string(sm.msg))
+			msgs = append(msgs, MemphisHelperMsg{Subject: string(sm.subj),
+				Header:    string(sm.hdr),
+				Data:      sm.buf,
+				Seq:       sm.seq,
+				Timestamp: time.Unix(0, sm.ts).UTC()})
+		}
+	}
+
+	return msgs, err
 }

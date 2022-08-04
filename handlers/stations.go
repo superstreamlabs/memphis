@@ -389,7 +389,7 @@ func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
 }
 
 func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
-	messages, err := broker.GetMessages(station, messagesToFetch)
+	messages, err := broker.GetMessages(sh.S, station, messagesToFetch)
 	if err != nil {
 		return messages, err
 	}
@@ -590,6 +590,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	natsMsg, err := broker.GetMessage(stationName, uint64(body.MessageSeq))
+
+	if err != nil {
+		serv.Errorf("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	connectionIdHeader := natsMsg.Header.Get("connectionId")
 	producedByHeader := natsMsg.Header.Get("producedBy")
