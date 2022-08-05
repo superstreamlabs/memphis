@@ -30,6 +30,17 @@ func (s *Server) MemphisAddConsumer(streamName string, cc *ConsumerConfig) error
 	return err
 }
 
+func (s *Server) MemphisRemoveConsumer(streamName string, cn string) error {
+	acc := s.GlobalAccount()
+	stream, err := acc.lookupStream(streamName)
+	if err != nil {
+		return err
+	}
+	c := stream.lookupConsumer(cn)
+
+	return stream.deleteConsumer(c)
+}
+
 func (s *Server) MemphisGetConsumerInfo(streamName, consumerName string) (*ConsumerInfo, error) {
 	acc := s.GlobalAccount()
 	stream, err := acc.lookupStream(streamName)

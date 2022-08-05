@@ -365,19 +365,12 @@ func ResendPoisonMessage(subject string, data []byte) error {
 }
 
 func RemoveProducer() error {
-	// // nothing to remove
-	// return nil
-	return notImplemented()
+	// nothing to remove
+	return nil
 }
 
-func RemoveConsumer(streamName string, consumerName string) error {
-	// err := js.DeleteConsumer(streamName, consumerName)
-	// if err != nil {
-	// 	return getErrorWithoutNats(err)
-	// }
-
-	// return nil
-	return notImplemented()
+func RemoveConsumer(s *server.Server, streamName string, consumerName string) error {
+	return s.MemphisRemoveConsumer(streamName, consumerName)
 }
 
 func ValidateUserCreds(token string) error {

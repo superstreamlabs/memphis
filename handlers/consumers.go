@@ -542,7 +542,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	}
 
 	if count == 0 { // no other members in this group
-		err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
+		err = broker.RemoveConsumer(ch.S, stationName, consumer.ConsumersGroup)
 		if err != nil {
 			serv.Errorf("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
