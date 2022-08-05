@@ -309,8 +309,10 @@ func GetMessages(s *server.Server, station models.Station, messagesToFetch int) 
 		messagesToFetch,
 		3*time.Second)
 	var messages []models.MessageDetails
-	//TODO (or) remove debug prints
-	s.Errorf("len(msgs): %v", len(msgs))
+	if err != nil && err != server.ErrStoreEOF {
+		return []models.MessageDetails{}, err
+	}
+
 	for _, msg := range msgs {
 		//TODO (or) support dlq
 		// if msg.Header.Get("producedBy") == "$memphis_dlq" { // skip poison messages which have been resent
@@ -322,14 +324,14 @@ func GetMessages(s *server.Server, station models.Station, messagesToFetch int) 
 			data = data[0:100]
 		}
 		messages = append(messages, models.MessageDetails{
-			MessageSeq: int(msg.Seq),
+			MessageSeq: int(msg.Sequence),
 			Data:       data,
 			//TODO(or)
 			// ProducedBy:   msg.Header.Get("producedBy"),
 			ProducedBy: "PLACEHOLDER",
 			// ConnectionId: msg.Header.Get("connectionId"),
 			ConnectionId: "PLACEHOLDER",
-			TimeSent:     msg.Timestamp,
+			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		})
 		// msg.Ack()
@@ -342,14 +344,8 @@ func GetMessages(s *server.Server, station models.Station, messagesToFetch int) 
 	return messages, nil
 }
 
-func GetMessage(stationName string, messageSeq uint64) (*nats.RawStreamMsg, error) {
-	// msg, err := js.GetMsg(stationName, messageSeq)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// return msg, nil
-	return nil, notImplemented()
+func GetMessage(s *server.Server, stationName string, messageSeq uint64) (*server.StoredMsg, error) {
+	return s.MemphisGetSingleMsg(stationName, messageSeq)
 }
 
 func ResendPoisonMessage(subject string, data []byte) error {

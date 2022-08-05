@@ -119,14 +119,14 @@ func (s *Server) MemphisGetMsgs(subjectName,
 	streamName string,
 	startSeq uint64,
 	amount int,
-	timeout time.Duration) ([]MemphisHelperMsg, error) {
+	timeout time.Duration) ([]StoredMsg, error) {
 	acc := s.GlobalAccount()
 	stream, err := acc.lookupStream(streamName)
 	if err != nil {
 		return nil, err
 	}
 
-	var msgs []MemphisHelperMsg
+	var msgs []StoredMsg
 	seq := startSeq
 
 	timeoutCh := time.After(timeout)
@@ -137,20 +137,30 @@ func (s *Server) MemphisGetMsgs(subjectName,
 		default:
 			pmsg := getJSPubMsgFromPool()
 			sm, sseq, err := stream.store.LoadNextMsg(subjectName, false, seq, &pmsg.StoreMsg)
-			// TODO that's probably not right
-			seq += sseq
+			seq = sseq + 1
 			if sm == nil || err != nil {
 				pmsg.returnToPool()
 				return msgs, err
 			}
 			s.Noticef("buf: %v, msg:%v", string(sm.buf), string(sm.msg))
-			msgs = append(msgs, MemphisHelperMsg{Subject: string(sm.subj),
-				Header:    string(sm.hdr),
-				Data:      sm.buf,
-				Seq:       sm.seq,
-				Timestamp: time.Unix(0, sm.ts).UTC()})
+			msgs = append(msgs, StoredMsg{
+				Subject:  sm.subj,
+				Header:   sm.hdr,
+				Data:     sm.buf,
+				Sequence: sm.seq,
+				Time:     time.Unix(0, sm.ts).UTC(),
+			})
 		}
 	}
 
 	return msgs, err
+}
+
+func (s *Server) MemphisGetSingleMsg(streamName string, msgSeq uint64) (*StoredMsg, error) {
+	acc := s.GlobalAccount()
+	stream, err := acc.lookupStream(streamName)
+	if err != nil {
+		return nil, err
+	}
+	return stream.getMsg(msgSeq)
 }

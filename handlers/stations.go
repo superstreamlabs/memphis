@@ -589,7 +589,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	natsMsg, err := broker.GetMessage(stationName, uint64(body.MessageSeq))
+	natsMsg, err := broker.GetMessage(sh.S, stationName, uint64(body.MessageSeq))
 
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
@@ -597,8 +597,10 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	connectionIdHeader := natsMsg.Header.Get("connectionId")
-	producedByHeader := natsMsg.Header.Get("producedBy")
+	// connectionIdHeader := natsMsg.Header.Get("connectionId")
+	// producedByHeader := natsMsg.Header.Get("producedBy")
+	connectionIdHeader := ""
+	producedByHeader := ""
 
 	if connectionIdHeader == "" || producedByHeader == "" {
 		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
@@ -667,7 +669,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		MessageSeq: body.MessageSeq,
 		Message: models.MessagePayload{
 			TimeSent: natsMsg.Time,
-			Size:     len(natsMsg.Subject) + len(natsMsg.Data) + broker.GetHeaderSizeInBytes(natsMsg.Header),
+			Size:     len(natsMsg.Subject) + len(natsMsg.Data) + len(natsMsg.Header),
 			Data:     string(natsMsg.Data),
 		},
 		Producer: models.ProducerDetails{

@@ -215,7 +215,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	producersHandler := ProducersHandler{S: mh.S}
 	consumersHandler := ConsumersHandler{S: mh.S}
 	auditLogsHandler := AuditLogsHandler{}
-	poisonMsgsHandler := PoisonMessagesHandler{}
+	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

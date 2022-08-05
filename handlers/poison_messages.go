@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 
 	"context"
 	"time"
@@ -28,7 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type PoisonMessagesHandler struct{}
+type PoisonMessagesHandler struct{ S *server.Server }
 
 func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	var message map[string]interface{}
@@ -43,14 +44,17 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
-	poisonMessageContent, err := broker.GetMessage(stationName, uint64(messageSeq))
+	poisonMessageContent, err := broker.GetMessage(pmh.S, stationName, uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
-	connectionIdHeader := poisonMessageContent.Header.Get("connectionId")
-	producedByHeader := poisonMessageContent.Header.Get("producedBy")
+	// connectionIdHeader := poisonMessageContent.Header.Get("connectionId")
+	// producedByHeader := poisonMessageContent.Header.Get("producedBy")
+
+	connectionIdHeader := ""
+	producedByHeader := ""
 
 	if connectionIdHeader == "" || producedByHeader == "" {
 		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
@@ -76,7 +80,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 
 	messagePayload := models.MessagePayload{
 		TimeSent: poisonMessageContent.Time,
-		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + broker.GetHeaderSizeInBytes(poisonMessageContent.Header),
+		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
 	}
 	poisonedCg := models.PoisonedCg{
