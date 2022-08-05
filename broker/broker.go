@@ -395,6 +395,7 @@ func ValidateUserCreds(token string) error {
 	return notImplemented()
 }
 
+// TODO (or) remove unused function
 func CreateInternalStream(s *server.Server, name string) error {
 	return s.MemphisAddStream(&server.StreamConfig{
 		Name:         name,
@@ -408,26 +409,28 @@ func CreateInternalStream(s *server.Server, name string) error {
 	})
 }
 
-func PublishMessageToSubject(subject string, msg []byte) error {
-	// _, err := js.Publish(subject, msg)
-	// if err != nil {
-	// 	return getErrorWithoutNats(err)
-	// }
-	// return nil
-	return notImplemented()
-}
+// func PublishMessageToSubject(subject string, msg []byte) error {
+// 	// _, err := js.Publish(subject, msg)
+// 	// if err != nil {
+// 	// 	return getErrorWithoutNats(err)
+// 	// }
+// 	// return nil
+// 	return notImplemented()
+// }
 
-func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, error) {
-	// sub, err := js.PullSubscribe(stream, durable)
-	// if err != nil {
-	// 	return sub, getErrorWithoutNats(err)
-	// }
-	// return sub, nil
-	return nil, notImplemented()
-}
+// func CreatePullSubscriber(stream string, durable string) (*nats.Subscription, error) {
+// 	// sub, err := js.PullSubscribe(stream, durable)
+// 	// if err != nil {
+// 	// 	return sub, getErrorWithoutNats(err)
+// 	// }
+// 	// return sub, nil
+// 	return nil, notImplemented()
+// }
 
-func QueueSubscribe(subject, queue_group_name string, cb func(msg *nats.Msg)) {
-	// broker.QueueSubscribe(subject, queue_group_name, cb)
+type MessageHandler func(subject string, msg []byte)
+
+func QueueSubscribe(s *server.Server, subject, queueGroupName string, cb MessageHandler) {
+	s.MemphisQueueSubscribeInternal(subject, queueGroupName, cb)
 }
 
 func IsConnectionAlive() bool {

@@ -16,10 +16,14 @@ package background_tasks
 import (
 	"memphis-broker/broker"
 	"memphis-broker/handlers"
+	"memphis-broker/server"
 )
 
-var poisonMessagesHandler = handlers.PoisonMessagesHandler{}
+var poisonMessagesHandler handlers.PoisonMessagesHandler
 
-func ListenForPoisonMessages() {
-	broker.QueueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>", "$memphis_poison_messages_listeners_group", poisonMessagesHandler.HandleNewMessage)
+func ListenForPoisonMessages(s *server.Server) {
+	broker.QueueSubscribe(s,
+		"$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
+		"$memphis_poison_messages_listeners_group",
+		poisonMessagesHandler.HandleNewMessage)
 }

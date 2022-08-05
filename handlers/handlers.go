@@ -54,7 +54,7 @@ var configuration = conf.GetConfig()
 func InitializeHandlers(s *server.Server) {
 	usersCollection = db.GetCollection("users")
 	imagesCollection = db.GetCollection("images")
-	factoriesCollection = db.GetCollection("ries")
+	factoriesCollection = db.GetCollection("factories")
 	stationsCollection = db.GetCollection("stations")
 	connectionsCollection = db.GetCollection("connections")
 	producersCollection = db.GetCollection("producers")

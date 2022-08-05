@@ -175,3 +175,19 @@ func (s *Server) MemphisGetSingleMsg(streamName string, msgSeq uint64) (*StoredM
 	}
 	return stream.getMsg(msgSeq)
 }
+
+// func (s *Server) MemphisPublishInternalMsg(subj string, msg []byte) {
+// 	s.sendInternalMsgLocked(subj, _EMPTY_, nil, msg)
+// }
+
+func (s *Server) MemphisQueueSubscribeInternal(subj string, queueGroupName string, cb func(string, []byte)) error {
+	acc := s.GlobalAccount()
+	c := acc.ic
+	wcb := func(_ *subscription, _ *client, _ *Account, subject, _ string, rmsg []byte) {
+		cb(subject, rmsg)
+	}
+
+	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte("memphis_internal"), wcb, false)
+
+	return err
+}

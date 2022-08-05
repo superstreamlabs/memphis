@@ -22,7 +22,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,9 +30,9 @@ import (
 
 type PoisonMessagesHandler struct{ S *server.Server }
 
-func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
+func (pmh PoisonMessagesHandler) HandleNewMessage(subject string, msg []byte) {
 	var message map[string]interface{}
-	err := json.Unmarshal(msg.Data, &message)
+	err := json.Unmarshal(msg, &message)
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
