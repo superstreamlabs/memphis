@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/db"
+	"memphis-broker/handlers"
 	"memphis-broker/server"
 	"os"
 	"sync"
@@ -105,8 +106,8 @@ func runMemphis() {
 	err := analytics.InitializeAnalytics()
 	handleError("Failed initializing analytics: ", err)
 
-	// err = handlers.CreateRootUserOnFirstSystemLoad()
-	// handleError("Failed to create root user: ", err)
+	err = handlers.CreateRootUserOnFirstSystemLoad()
+	handleError("Failed to create root user: ", err)
 
 	defer db.Close()
 	// defer broker.Close()

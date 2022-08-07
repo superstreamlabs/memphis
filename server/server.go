@@ -44,8 +44,9 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
-
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"memphis-broker/logger"
+	"memphis-broker/tcp_server"
 )
 
 const (
@@ -86,12 +87,12 @@ type Info struct {
 	LameDuckMode      bool     `json:"ldm,omitempty"`
 
 	// Route Specific
-	Import        *SubjectPermission `json:"import,omitempty"`
-	Export        *SubjectPermission `json:"export,omitempty"`
-	LNOC          bool               `json:"lnoc,omitempty"`
-	InfoOnConnect bool               `json:"info_on_connect,omitempty"` // When true the server will respond to CONNECT with an INFO
-	ConnectInfo   bool               `json:"connect_info,omitempty"`    // When true this is the server INFO response to CONNECT
-
+	Import        *SubjectPermission 	`json:"import,omitempty"`
+	Export        *SubjectPermission 	`json:"export,omitempty"`
+	LNOC          bool               	`json:"lnoc,omitempty"`
+	InfoOnConnect bool               	`json:"info_on_connect,omitempty"` // When true the server will respond to CONNECT with an INFO
+	ConnectInfo   bool               	`json:"connect_info,omitempty"`    // When true this is the server INFO response to CONNECT
+	ConnectionId	primitive.ObjectID 	`json:"connection_id"`
 	// Gateways Specific
 	Gateway           string   `json:"gateway,omitempty"`             // Name of the origin Gateway (sent by gateway's INFO)
 	GatewayURLs       []string `json:"gateway_urls,omitempty"`        // Gateway URLs in the originating cluster (sent by gateway's INFO)
@@ -2057,9 +2058,9 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 		s.mu.Unlock()
 		s.Fatalf("Error listening on port: %s, %q", hp, e)
 		return
-	}
+	} 
 	s.Noticef("Listening for client connections on %s",
-		net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
+	net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
 
 	// Alert of TLS enabled.
 	if opts.TLSConfig != nil {
@@ -2510,9 +2511,12 @@ func (s *Server) createClient(conn net.Conn) *client {
 
 	c.Debugf("Client connection created")
 
+	//handle a client//
+	tcpResponseMessage, _ := tcp_server.HandleNewClient(conn)
 	// Send our information.
 	// Need to be sent in place since writeLoop cannot be started until
 	// TLS handshake is done (if applicable).
+	info.ConnectionId = tcpResponseMessage.ConnectionId
 	c.sendProtoNow(c.generateClientInfoJSON(info))
 
 	// Unlock to register
@@ -2555,7 +2559,7 @@ func (s *Server) createClient(conn net.Conn) *client {
 	// Connection could have been closed while sending the INFO proto.
 	isClosed := c.isClosed()
 
-	var pre []byte
+	var pre []byte = []byte(info.ConnectionId.String())
 	// If we have both TLS and non-TLS allowed we need to see which
 	// one the client wants.
 	if !isClosed && opts.TLSConfig != nil && opts.AllowNonTLS {
