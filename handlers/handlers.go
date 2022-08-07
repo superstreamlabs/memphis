@@ -19,6 +19,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -27,17 +28,32 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var usersCollection *mongo.Collection = db.GetCollection("users")
-var imagesCollection *mongo.Collection = db.GetCollection("images")
-var factoriesCollection *mongo.Collection = db.GetCollection("factories")
-var stationsCollection *mongo.Collection = db.GetCollection("stations")
-var connectionsCollection *mongo.Collection = db.GetCollection("connections")
-var producersCollection *mongo.Collection = db.GetCollection("producers")
-var consumersCollection *mongo.Collection = db.GetCollection("consumers")
-var systemKeysCollection *mongo.Collection = db.GetCollection("system_keys")
-var auditLogsCollection *mongo.Collection = db.GetCollection("audit_logs")
-var poisonMessagesCollection *mongo.Collection = db.GetCollection("poison_messages")
+var usersCollection *mongo.Collection
+var imagesCollection *mongo.Collection
+var factoriesCollection *mongo.Collection
+var stationsCollection *mongo.Collection
+var connectionsCollection *mongo.Collection
+var producersCollection *mongo.Collection
+var consumersCollection *mongo.Collection
+var systemKeysCollection *mongo.Collection
+var auditLogsCollection *mongo.Collection
+var poisonMessagesCollection *mongo.Collection
+var serv *server.Server
 var configuration = conf.GetConfig()
+
+func InitializeHandlers(s *server.Server) {
+	usersCollection = db.GetCollection("users")
+	imagesCollection = db.GetCollection("images")
+	factoriesCollection = db.GetCollection("ries")
+	stationsCollection = db.GetCollection("stations")
+	connectionsCollection = db.GetCollection("connections")
+	producersCollection = db.GetCollection("producers")
+	consumersCollection = db.GetCollection("consumers")
+	systemKeysCollection = db.GetCollection("system_keys")
+	auditLogsCollection = db.GetCollection("audit_logs")
+	poisonMessagesCollection = db.GetCollection("poison_messages")
+	serv = s
+}
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	user, _ := c.Get("user")

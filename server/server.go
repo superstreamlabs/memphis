@@ -25,6 +25,12 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"memphis-broker/logger"
+
+	// "memphis-broker/logger"
+	// "memphis-broker/analytics"
+
+	// "memphis-broker/tcp_server"
 	"net"
 	"net/http"
 	"regexp"
@@ -45,8 +51,7 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"memphis-broker/logger"
-	"memphis-broker/tcp_server"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -56,6 +61,11 @@ const (
 	// This is for the first ping for client connections.
 	firstClientPingInterval = 2 * time.Second
 )
+
+var handleClientFunc = func(net.Conn) (primitive.ObjectID){
+	var o primitive.ObjectID
+	return o
+}
 
 // Info is the information sent to clients, routes, gateways, and leaf nodes,
 // to help them understand information about this server.
@@ -290,6 +300,10 @@ type Server struct {
 
 	// Queue to process JS API requests that come from routes (or gateways)
 	jsAPIRoutedReqs *ipQueue
+
+	DbClient *mongo.Client
+	DbCancel context.CancelFunc
+	DbCtx    context.Context
 }
 
 // For tracking JS nodes.
@@ -1596,8 +1610,9 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 
 // Start up the server, this will block.
 // Start via a Go routine if needed.
-func (s *Server) Start() {
+func (s *Server) Start(handleClient func(net.Conn) (primitive.ObjectID)) {
 	s.Noticef("Starting Memphis{dev} broker")
+	handleClientFunc = handleClient
 
 	gc := gitCommit
 	if gc == _EMPTY_ {
@@ -1850,6 +1865,9 @@ func (s *Server) Start() {
 
 	// We've finished starting up.
 	close(s.startupComplete)
+
+	// handleClientFunc = handleClient
+
 
 	// Wait for clients.
 	if !opts.DontListen {
@@ -2512,11 +2530,11 @@ func (s *Server) createClient(conn net.Conn) *client {
 	c.Debugf("Client connection created")
 
 	//handle a client//
-	tcpResponseMessage, _ := tcp_server.HandleNewClient(conn)
+	connectionID := handleClientFunc(conn)
 	// Send our information.
 	// Need to be sent in place since writeLoop cannot be started until
 	// TLS handshake is done (if applicable).
-	info.ConnectionId = tcpResponseMessage.ConnectionId
+	info.ConnectionId = connectionID
 	c.sendProtoNow(c.generateClientInfoJSON(info))
 
 	// Unlock to register

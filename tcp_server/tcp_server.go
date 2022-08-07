@@ -16,7 +16,6 @@ package tcp_server
 import (
 	"encoding/json"
 	// "errors"
-	"fmt"
 	"memphis-broker/conf"
 	"memphis-broker/handlers"
 	"memphis-broker/models"
@@ -24,8 +23,13 @@ import (
 	"strings"
 	// "time"
 	// "github.com/dgrijalva/jwt-go"
+	"memphis-broker/server"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var serv *server.Server
+
 
 type tcpMessage struct {
 	Username          string             `json:"username"`
@@ -165,29 +169,32 @@ func handleConnectMessage(connection net.Conn) (TcpResponseMessage, models.User)
 	}
 }
 
-func killConnectionResources(connectionId primitive.ObjectID) error {
-	err := connectionsHandler.KillConnection(connectionId)
-	if err != nil {
-		return err
-	}
-	err = producersHandler.KillProducers(connectionId)
-	if err != nil {
-		return err
-	}
-	err = consumersHandler.KillConsumers(connectionId)
-	if err != nil {
-		return err
-	}
+// func killConnectionResources(connectionId primitive.ObjectID) error {
+// 	err := connectionsHandler.KillConnection(connectionId)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	err = producersHandler.KillProducers(connectionId)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	err = consumersHandler.KillConsumers(connectionId)
+// 	if err != nil {
+// 		return err
+// 	}
 
+// 	return nil
+// }
+
+func StartTcpServer (serv *server.Server) error{
+	serv.Start(handleNewClient)
 	return nil
 }
 
-func HandleNewClient(connection net.Conn) (TcpResponseMessage, models.User) {
+func handleNewClient(connection net.Conn) (primitive.ObjectID) {
 	// logger.Info("A new client connection has been established: " + connection.RemoteAddr().String())
-	TcpResponseMessage, user := handleConnectMessage(connection)
-	
-	fmt.Print("user", user, TcpResponseMessage)
-	return TcpResponseMessage, user
+	TcpResponseMessage, _ := handleConnectMessage(connection)
+	return TcpResponseMessage.ConnectionId
 	// if !connectionId.IsZero() {
 	// 	for {
 	// 		d := json.NewDecoder(connection)

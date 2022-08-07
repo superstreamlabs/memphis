@@ -15,9 +15,9 @@ package db
 
 import (
 	"memphis-broker/conf"
+	"memphis-broker/server"
 
 	"context"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,13 +25,13 @@ import (
 )
 
 var configuration = conf.GetConfig()
-var logger = log.Default()
+var serv *server.Server
 
 const (
 	dbOperationTimeout = 20
 )
 
-func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFunc) {
+func InitializeDbConnection(s *server.Server) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
 	var clientOptions *options.ClientOptions
@@ -48,33 +48,32 @@ func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFun
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		logger.Print("[Error] Failed to create Mongodb client: " + err.Error())
-		panic("Failed to create Mongodb client: " + err.Error())
+		return err
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		logger.Print("[Error] Failed to create Mongo DB client: " + err.Error())
-		panic("Failed to create Mongo DB client: " + err.Error())
+		return err
 	}
 
-	// logger.Print("[INFO] Established connection with the DB")
-	return client, ctx, cancel
+	s.DbClient = client
+	s.DbCtx = ctx
+	s.DbCancel = cancel
+	serv = s
+	s.Noticef("Established connection with the DB")
+	return nil
 }
 
 func GetCollection(collectionName string) *mongo.Collection {
-	var collection *mongo.Collection = Client.Database(configuration.DB_NAME).Collection(collectionName)
+	var collection *mongo.Collection = serv.DbClient.Database(configuration.DB_NAME).Collection(collectionName)
 	return collection
 }
 
 func Close() {
-	defer Cancel()
+	defer serv.DbCancel()
 	defer func() {
-		if err := Client.Disconnect(Ctx); err != nil {
-			logger.Print("[Error] Failed to close Mongodb client: " + err.Error())
-			panic("Failed to close Mongodb client: " + err.Error())
+		if err := serv.DbClient.Disconnect(serv.DbCtx); err != nil {
+			serv.Errorf("Failed to close Mongodb client: " + err.Error())
 		}
 	}()
 }
-
-var Client, Ctx, Cancel = initializeDbConnection()
