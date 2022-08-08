@@ -17,7 +17,6 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
-	"memphis-broker/broker"
 	"memphis-broker/models"
 	"memphis-broker/server"
 	"memphis-broker/utils"
@@ -94,19 +93,19 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			})
 		}
 
-		if broker.IsConnectionAlive() {
-			components = append(components, models.SystemComponent{
-				Component:   "broker",
-				DesiredPods: 1,
-				ActualPods:  1,
-			})
-		} else {
-			components = append(components, models.SystemComponent{
-				Component:   "broker",
-				DesiredPods: 1,
-				ActualPods:  0,
-			})
-		}
+		// if broker.IsConnectionAlive() {
+		// 	components = append(components, models.SystemComponent{
+		// 		Component:   "broker",
+		// 		DesiredPods: 1,
+		// 		ActualPods:  1,
+		// 	})
+		// } else {
+		// 	components = append(components, models.SystemComponent{
+		// 		Component:   "broker",
+		// 		DesiredPods: 1,
+		// 		ActualPods:  0,
+		// 	})
+		// }
 
 		err = serv.DbClient.Ping(context.TODO(), nil)
 		if err != nil {

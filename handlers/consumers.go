@@ -19,7 +19,6 @@ import (
 	"sort"
 
 	"memphis-broker/analytics"
-	"memphis-broker/broker"
 	"memphis-broker/models"
 	"memphis-broker/server"
 	"memphis-broker/utils"
@@ -243,7 +242,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	} else {
 		newConsumer.MaxAckTimeMs = body.MaxAckTimeMs
 		newConsumer.MaxMsgDeliveries = body.MaxMsgDeliveries
-		broker.CreateConsumer(ch.S, newConsumer, station)
+		ch.S.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -388,7 +387,7 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 			cg.IsActive = false
 			cg.IsDeleted = true
 		} else { // not deleted
-			cgInfo, err := broker.GetCgInfo(ch.S, station.Name, cg.Name)
+			cgInfo, err := ch.S.GetCgInfo(station.Name, cg.Name)
 			if err != nil {
 				return cgs, cgs, cgs, err
 			}
@@ -542,7 +541,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	}
 
 	if count == 0 { // no other members in this group
-		err = broker.RemoveConsumer(ch.S, stationName, consumer.ConsumersGroup)
+		err = ch.S.RemoveConsumer(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			serv.Errorf("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

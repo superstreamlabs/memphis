@@ -16,7 +16,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"memphis-broker/broker"
 	"memphis-broker/server"
 
 	"memphis-broker/models"
@@ -62,7 +61,7 @@ func removeStations(s *server.Server, factoryId primitive.ObjectID) error {
 	}
 
 	for _, station := range stations {
-		err = broker.RemoveStream(s, station.Name)
+		err = s.RemoveStream(station.Name)
 		if err != nil {
 			return err
 		}

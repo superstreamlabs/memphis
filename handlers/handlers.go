@@ -15,7 +15,6 @@ package handlers
 
 import (
 	"context"
-	"memphis-broker/broker"
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
@@ -197,7 +196,7 @@ func CreateDefaultStation(s *server.Server, stationName string, username string)
 		Functions:       []models.Function{},
 	}
 
-	err = broker.CreateStream(s, newStation)
+	err = s.CreateStation(newStation)
 	if err != nil {
 		return newStation, err
 	}

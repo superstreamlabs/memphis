@@ -17,7 +17,6 @@ import (
 	"context"
 	"errors"
 	"memphis-broker/analytics"
-	"memphis-broker/broker"
 	"memphis-broker/models"
 	"memphis-broker/server"
 	"memphis-broker/utils"
@@ -73,7 +72,7 @@ func validateReplicas(replicas int) error {
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *server.Server, station models.Station) error {
-	err := broker.RemoveStream(s, station.Name)
+	err := s.RemoveStream(station.Name)
 	if err != nil {
 		return err
 	}
@@ -285,7 +284,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		IsDeleted:       false,
 	}
 
-	err = broker.CreateStream(sh.S, newStation)
+	err = sh.S.CreateStation(newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -374,22 +373,22 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
-	totalMessages, err := broker.GetTotalMessagesInStation(sh.S, station)
+	totalMessages, err := sh.S.GetTotalMessagesInStation(station)
 	return totalMessages, err
 }
 
 func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
-	totalMessages, err := broker.GetTotalMessagesAcrossAllStations(sh.S)
+	totalMessages, err := sh.S.GetTotalMessagesAcrossAllStations()
 	return totalMessages, err
 }
 
 func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
-	avgMsgSize, err := broker.GetAvgMsgSizeInStation(sh.S, station)
+	avgMsgSize, err := sh.S.GetAvgMsgSizeInStation(station)
 	return avgMsgSize, err
 }
 
 func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
-	messages, err := broker.GetMessages(sh.S, station, messagesToFetch)
+	messages, err := sh.S.GetMessages(station, messagesToFetch)
 	if err != nil {
 		return messages, err
 	}
@@ -452,7 +451,7 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 
 		isActive, isDeleted := getCgStatus(cgMembers)
 
-		cgInfo, err := broker.GetCgInfo(sh.S, poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
+		cgInfo, err := sh.S.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
@@ -536,7 +535,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 
 	for _, msg := range msgs {
 		for _, cg := range msg.PoisonedCgs {
-			err := broker.ResendPoisonMessage(sh.S, "$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
+			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -589,7 +588,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	sm, err := broker.GetMessage(sh.S, stationName, uint64(body.MessageSeq))
+	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
 
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
@@ -597,7 +596,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	hdr, err := broker.DecodeHeader(sm.Header)
+	hdr, err := server.DecodeHeader(sm.Header)
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -622,7 +621,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	for i, cg := range poisonedCgs {
-		cgInfo, err := broker.GetCgInfo(sh.S, stationName, cg.CgName)
+		cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
 		if err != nil {
 			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

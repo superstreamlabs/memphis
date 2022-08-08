@@ -15,7 +15,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"memphis-broker/broker"
 	"memphis-broker/models"
 	"memphis-broker/server"
 
@@ -43,13 +42,13 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(subject string, msg []byte) {
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
-	poisonMessageContent, err := broker.GetMessage(pmh.S, stationName, uint64(messageSeq))
+	poisonMessageContent, err := pmh.S.GetMessage(stationName, uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
-	hdr, err := broker.DecodeHeader(poisonMessageContent.Header)
+	hdr, err := server.DecodeHeader(poisonMessageContent.Header)
 
 	if err != nil {
 		serv.Errorf(err.Error())
