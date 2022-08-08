@@ -153,11 +153,10 @@ func (s *Server) MemphisGetMsgs(subjectName,
 				pmsg.returnToPool()
 				return msgs, err
 			}
-			s.Noticef("buf: %v, msg:%v", string(sm.buf), string(sm.msg))
 			msgs = append(msgs, StoredMsg{
 				Subject:  sm.subj,
 				Header:   sm.hdr,
-				Data:     sm.buf,
+				Data:     sm.msg,
 				Sequence: sm.seq,
 				Time:     time.Unix(0, sm.ts).UTC(),
 			})
@@ -176,10 +175,6 @@ func (s *Server) MemphisGetSingleMsg(streamName string, msgSeq uint64) (*StoredM
 	return stream.getMsg(msgSeq)
 }
 
-// func (s *Server) MemphisPublishInternalMsg(subj string, msg []byte) {
-// 	s.sendInternalMsgLocked(subj, _EMPTY_, nil, msg)
-// }
-
 func (s *Server) MemphisQueueSubscribeInternal(subj string, queueGroupName string, cb func(string, []byte)) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
@@ -190,4 +185,17 @@ func (s *Server) MemphisQueueSubscribeInternal(subj string, queueGroupName strin
 	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte("memphis_internal"), wcb, false)
 
 	return err
+}
+
+func (s *Server) sendInternalMsgWithHeaderLocked(subj string, hdr map[string]string, msg interface{}) {
+	s.mu.Lock()
+	if s.sys == nil || s.sys.sendq == nil {
+		return
+	}
+	s.sys.sendq.push(newPubMsg(nil, subj, _EMPTY_, nil, hdr, msg, noCompression, false, false))
+	s.mu.Unlock()
+}
+
+func (s *Server) MemphisSendMsgWithHeader(subj string, hdr map[string]string, msg []byte) {
+	s.MemphisSendMsgWithHeader(subj, hdr, msg)
 }

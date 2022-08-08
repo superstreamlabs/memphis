@@ -49,11 +49,14 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(subject string, msg []byte) {
 		return
 	}
 
-	// connectionIdHeader := poisonMessageContent.Header.Get("connectionId")
-	// producedByHeader := poisonMessageContent.Header.Get("producedBy")
+	hdr, err := broker.DecodeHeader(poisonMessageContent.Header)
 
-	connectionIdHeader := ""
-	producedByHeader := ""
+	if err != nil {
+		serv.Errorf(err.Error())
+		return
+	}
+	connectionIdHeader := hdr["connectionId"]
+	producedByHeader := hdr["producedBy"]
 
 	if connectionIdHeader == "" || producedByHeader == "" {
 		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")

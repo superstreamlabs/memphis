@@ -14,10 +14,13 @@
 package broker
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"memphis-broker/conf"
 	"memphis-broker/models"
 	"memphis-broker/server"
+	"net/textproto"
 	"runtime"
 	"strings"
 	"time"
@@ -314,26 +317,27 @@ func GetMessages(s *server.Server, station models.Station, messagesToFetch int) 
 	}
 
 	for _, msg := range msgs {
-		//TODO (or) support dlq
-		// if msg.Header.Get("producedBy") == "$memphis_dlq" { // skip poison messages which have been resent
-		// 	continue
-		// }
+		hdr, err := DecodeHeader(msg.Header)
+		if err != nil {
+			return nil, err
+		}
+		if hdr["producedBy"] == "$memphis_dlq" { // skip poison messages which have been resent
+			continue
+		}
 
 		data := (string(msg.Data))
 		if len(data) > 100 { // get the first chars for preview needs
 			data = data[0:100]
 		}
 		messages = append(messages, models.MessageDetails{
-			MessageSeq: int(msg.Sequence),
-			Data:       data,
-			//TODO(or)
-			// ProducedBy:   msg.Header.Get("producedBy"),
-			ProducedBy: "PLACEHOLDER",
-			// ConnectionId: msg.Header.Get("connectionId"),
-			ConnectionId: "PLACEHOLDER",
+			MessageSeq:   int(msg.Sequence),
+			Data:         data,
+			ProducedBy:   hdr["producedBy"],
+			ConnectionId: hdr["connectionId"],
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		})
+		// TODO (or) is it needed
 		// msg.Ack()
 	}
 
@@ -348,20 +352,10 @@ func GetMessage(s *server.Server, stationName string, messageSeq uint64) (*serve
 	return s.MemphisGetSingleMsg(stationName, messageSeq)
 }
 
-func ResendPoisonMessage(subject string, data []byte) error {
-	// natsMessage := &nats.Msg{
-	// 	Header:  map[string][]string{"producedBy": {"$memphis_dlq"}},
-	// 	Subject: subject,
-	// 	Data:    data,
-	// }
-
-	// err := broker.PublishMsg(natsMessage)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// return nil
-	return notImplemented()
+func ResendPoisonMessage(s *server.Server, subject string, data []byte) error {
+	hdr := map[string]string{"producedBy": "$memphis_dlq"}
+	s.MemphisSendMsgWithHeader(subject, hdr, data)
+	return nil
 }
 
 func RemoveProducer() error {
@@ -448,4 +442,86 @@ func notImplemented() error {
 	return errors.New(errString)
 }
 
-var broker, js = initializeBrokerConnection()
+const (
+	hdrLine   = "NATS/1.0\r\n"
+	crlf      = "\r\n"
+	hdrPreEnd = len(hdrLine) - len(crlf)
+	statusLen = 3 // e.g. 20x, 40x, 50x
+	statusHdr = "Status"
+	descrHdr  = "Description"
+)
+
+// errors
+var (
+	ErrBadHeader = errors.New("could not decode header")
+)
+
+func DecodeHeader(buf []byte) (map[string]string, error) {
+	tp := textproto.NewReader(bufio.NewReader(bytes.NewReader(buf)))
+	l, err := tp.ReadLine()
+	if err != nil || len(l) < hdrPreEnd || l[:hdrPreEnd] != hdrLine[:hdrPreEnd] {
+		return nil, ErrBadHeader
+	}
+
+	// tp.readMIMEHeader changes key cases
+	mh, err := readMIMEHeader(tp)
+	// mh, err := readMIMEHeader(tp)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if we have an inlined status.
+	if len(l) > hdrPreEnd {
+		var description string
+		status := strings.TrimSpace(l[hdrPreEnd:])
+		if len(status) != statusLen {
+			description = strings.TrimSpace(status[statusLen:])
+			status = status[:statusLen]
+		}
+		mh.Add(statusHdr, status)
+		if len(description) > 0 {
+			mh.Add(descrHdr, description)
+		}
+	}
+
+	hdr := make(map[string]string)
+	for k, v := range mh {
+		hdr[k] = v[0]
+	}
+	return hdr, nil
+}
+
+// readMIMEHeader returns a MIMEHeader that preserves the
+// original case of the MIME header, based on the implementation
+// of textproto.ReadMIMEHeader.
+//
+// https://golang.org/pkg/net/textproto/#Reader.ReadMIMEHeader
+func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
+	m := make(textproto.MIMEHeader)
+	for {
+		kv, err := tp.ReadLine()
+		if len(kv) == 0 {
+			return m, err
+		}
+
+		// Process key fetching original case.
+		i := bytes.IndexByte([]byte(kv), ':')
+		if i < 0 {
+			return nil, ErrBadHeader
+		}
+		key := kv[:i]
+		if key == "" {
+			// Skip empty keys.
+			continue
+		}
+		i++
+		for i < len(kv) && (kv[i] == ' ' || kv[i] == '\t') {
+			i++
+		}
+		value := string(kv[i:])
+		m[key] = append(m[key], value)
+		if err != nil {
+			return m, err
+		}
+	}
+}

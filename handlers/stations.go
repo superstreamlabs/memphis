@@ -536,7 +536,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 
 	for _, msg := range msgs {
 		for _, cg := range msg.PoisonedCgs {
-			err := broker.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
+			err := broker.ResendPoisonMessage(sh.S, "$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -589,7 +589,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	natsMsg, err := broker.GetMessage(sh.S, stationName, uint64(body.MessageSeq))
+	sm, err := broker.GetMessage(sh.S, stationName, uint64(body.MessageSeq))
 
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
@@ -597,10 +597,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	// connectionIdHeader := natsMsg.Header.Get("connectionId")
-	// producedByHeader := natsMsg.Header.Get("producedBy")
-	connectionIdHeader := ""
-	producedByHeader := ""
+	hdr, err := broker.DecodeHeader(sm.Header)
+	if err != nil {
+		serv.Errorf("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	connectionIdHeader := hdr["connectionId"]
+	producedByHeader := hdr["producedBy"]
 
 	if connectionIdHeader == "" || producedByHeader == "" {
 		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
@@ -609,7 +614,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-	poisonedCgs, err := GetPoisonedCgsByMessage(stationName, models.MessageDetails{MessageSeq: int(natsMsg.Sequence), ProducedBy: producedByHeader, TimeSent: natsMsg.Time})
+	poisonedCgs, err := GetPoisonedCgsByMessage(stationName, models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -668,9 +673,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	msg := models.Message{
 		MessageSeq: body.MessageSeq,
 		Message: models.MessagePayload{
-			TimeSent: natsMsg.Time,
-			Size:     len(natsMsg.Subject) + len(natsMsg.Data) + len(natsMsg.Header),
-			Data:     string(natsMsg.Data),
+			TimeSent: sm.Time,
+			Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
+			Data:     string(sm.Data),
 		},
 		Producer: models.ProducerDetails{
 			Name:          producedByHeader,
