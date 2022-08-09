@@ -15,24 +15,23 @@ package handlers
 
 import (
 	"encoding/json"
-	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 
 	"context"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type PoisonMessagesHandler struct{}
+type PoisonMessagesHandler struct{ S *server.Server }
 
-func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
+func (pmh PoisonMessagesHandler) HandleNewMessage(_ string, msg []byte) {
 	var message map[string]interface{}
-	err := json.Unmarshal(msg.Data, &message)
+	err := json.Unmarshal(msg, &message)
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
@@ -43,14 +42,20 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
-	poisonMessageContent, err := broker.GetMessage(stationName, uint64(messageSeq))
+	poisonMessageContent, err := pmh.S.GetMessage(stationName, uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
-	connectionIdHeader := poisonMessageContent.Header.Get("connectionId")
-	producedByHeader := poisonMessageContent.Header.Get("producedBy")
+	hdr, err := server.DecodeHeader(poisonMessageContent.Header)
+
+	if err != nil {
+		serv.Errorf(err.Error())
+		return
+	}
+	connectionIdHeader := hdr["connectionId"]
+	producedByHeader := hdr["producedBy"]
 
 	if connectionIdHeader == "" || producedByHeader == "" {
 		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
@@ -76,7 +81,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 
 	messagePayload := models.MessagePayload{
 		TimeSent: poisonMessageContent.Time,
-		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + broker.GetHeaderSizeInBytes(poisonMessageContent.Header),
+		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
 	}
 	poisonedCg := models.PoisonedCg{

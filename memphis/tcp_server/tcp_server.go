@@ -16,7 +16,6 @@ package tcp_server
 import (
 	"encoding/json"
 	"errors"
-	"memphis-broker/broker"
 	"memphis-broker/config"
 	"memphis-broker/handlers"
 	"memphis-broker/logger"
@@ -114,12 +113,12 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 			return primitive.ObjectID{}, models.User{}
 		}
 
-		err = broker.ValidateUserCreds(message.BrokerCreds)
-		if err != nil {
-			connection.Write([]byte("Server error: " + err.Error()))
-			connection.Close()
-			return primitive.ObjectID{}, models.User{}
-		}
+		// err = broker.ValidateUserCreds(message.BrokerCreds)
+		// if err != nil {
+		// 	connection.Write([]byte("Server error: " + err.Error()))
+		// 	connection.Close()
+		// 	return primitive.ObjectID{}, models.User{}
+		// }
 
 		clientAddress := connection.RemoteAddr()
 		clientAddressString := clientAddress.String()
