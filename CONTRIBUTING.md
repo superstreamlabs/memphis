@@ -1,5 +1,7 @@
 # Contributing
 
+<b><a href="https://docs.memphis.dev/memphis-new/getting-started/how-to-contribute">Newer version here</a></b>
+
 We would ❤️ it if you contributed to the project and helped make Memphis{dev} even better.<br>
 We will make sure that contributing to Memphis{dev} is easy, enjoyable, and educational for anyone and everyone.<br>
 All contributions are welcome, including features, issues, documentation, guides, and more.
