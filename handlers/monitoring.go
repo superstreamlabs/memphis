@@ -17,8 +17,8 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
-	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"net/http"
 	"path/filepath"
@@ -33,14 +33,9 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-type MonitoringHandler struct{}
+type MonitoringHandler struct{ S *server.Server }
 
 var clientset *kubernetes.Clientset
-var stationsHandler = StationsHandler{}
-var producersHandler = ProducersHandler{}
-var consumersHandler = ConsumersHandler{}
-var auditLogsHandler = AuditLogsHandler{}
-var poisonMsgsHandler = PoisonMessagesHandler{}
 
 func clientSetConfig() error {
 	var config *rest.Config
@@ -98,20 +93,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			})
 		}
 
-		if broker.IsConnectionAlive() {
-			components = append(components, models.SystemComponent{
-				Component:   "broker",
-				DesiredPods: 1,
-				ActualPods:  1,
-			})
-		} else {
-			components = append(components, models.SystemComponent{
-				Component:   "broker",
-				DesiredPods: 1,
-				ActualPods:  0,
-			})
-		}
-
 		err = serv.DbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
@@ -128,7 +109,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		components = append(components, models.SystemComponent{
-			Component:   "control-plane",
+			Component:   "broker",
 			DesiredPods: 1,
 			ActualPods:  1,
 		})
@@ -184,7 +165,7 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	stationsHandler := StationsHandler{}
+	stationsHandler := StationsHandler{S: mh.S}
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
 		serv.Errorf("GetMainOverviewData error: " + err.Error())
@@ -215,6 +196,11 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
+	stationsHandler := StationsHandler{S: mh.S}
+	producersHandler := ProducersHandler{S: mh.S}
+	consumersHandler := ConsumersHandler{S: mh.S}
+	auditLogsHandler := AuditLogsHandler{}
+	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

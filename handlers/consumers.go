@@ -19,8 +19,8 @@ import (
 	"sort"
 
 	"memphis-broker/analytics"
-	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 
 	"regexp"
@@ -34,7 +34,7 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-type ConsumersHandler struct{}
+type ConsumersHandler struct{ S *server.Server }
 
 func validateName(name string) error {
 	if len(name) > 32 {
@@ -171,7 +171,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		station, err = CreateDefaultStation(stationName, connection.CreatedByUser)
+		station, err = CreateDefaultStation(ch.S, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -242,7 +242,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	} else {
 		newConsumer.MaxAckTimeMs = body.MaxAckTimeMs
 		newConsumer.MaxMsgDeliveries = body.MaxMsgDeliveries
-		broker.CreateConsumer(newConsumer, station)
+		ch.S.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -387,7 +387,7 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 			cg.IsActive = false
 			cg.IsDeleted = true
 		} else { // not deleted
-			cgInfo, err := broker.GetCgInfo(station.Name, cg.Name)
+			cgInfo, err := ch.S.GetCgInfo(station.Name, cg.Name)
 			if err != nil {
 				return cgs, cgs, cgs, err
 			}
@@ -541,7 +541,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	}
 
 	if count == 0 { // no other members in this group
-		err = broker.RemoveConsumer(stationName, consumer.ConsumersGroup)
+		err = ch.S.RemoveConsumer(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			serv.Errorf("DestroyConsumer error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

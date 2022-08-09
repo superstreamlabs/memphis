@@ -15,7 +15,6 @@ package handlers
 
 import (
 	"context"
-	"memphis-broker/broker"
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
@@ -27,6 +26,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type Handlers struct {
+	Producers  ProducersHandler
+	Consumers  ConsumersHandler
+	AuditLogs  AuditLogsHandler
+	Stations   StationsHandler
+	Factories  FactoriesHandler
+	Monitoring MonitoringHandler
+	PoisonMsgs PoisonMessagesHandler
+}
 
 var usersCollection *mongo.Collection
 var imagesCollection *mongo.Collection
@@ -44,7 +53,7 @@ var configuration = conf.GetConfig()
 func InitializeHandlers(s *server.Server) {
 	usersCollection = db.GetCollection("users")
 	imagesCollection = db.GetCollection("images")
-	factoriesCollection = db.GetCollection("ries")
+	factoriesCollection = db.GetCollection("factories")
 	stationsCollection = db.GetCollection("stations")
 	connectionsCollection = db.GetCollection("connections")
 	producersCollection = db.GetCollection("producers")
@@ -144,7 +153,7 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(stationName string, username string) (models.Station, error) {
+func CreateDefaultStation(s *server.Server, stationName string, username string) (models.Station, error) {
 	var newStation models.Station
 
 	// create default factory
@@ -187,7 +196,7 @@ func CreateDefaultStation(stationName string, username string) (models.Station, 
 		Functions:       []models.Function{},
 	}
 
-	err = broker.CreateStream(newStation)
+	err = s.CreateStream(newStation)
 	if err != nil {
 		return newStation, err
 	}

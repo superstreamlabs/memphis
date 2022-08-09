@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"memphis-broker/analytics"
-	"memphis-broker/broker"
 	"memphis-broker/models"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 	"mime/multipart"
 	"os"
@@ -89,7 +89,7 @@ func validateHubCreds(hubUsername string, hubPassword string) error {
 
 func updateUserResources(user models.User) error {
 	if user.UserType == "application" {
-		err := broker.RemoveUser(user.Username)
+		err := server.RemoveUser(user.Username)
 		if err != nil {
 			return err
 		}
@@ -460,7 +460,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	var brokerConnectionCreds string
 	if userType == "application" {
-		brokerConnectionCreds, err = broker.AddUser(username)
+		brokerConnectionCreds, err = server.AddUser(username)
 		if err != nil {
 			serv.Errorf("CreateUser error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})

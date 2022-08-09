@@ -7,14 +7,13 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/validator/v10 v10.10.0
-	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/googollee/go-socket.io v1.6.2
 	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
 	github.com/klauspost/compress v1.14.4
 	github.com/lightstep/otel-launcher-go v1.5.1
 	github.com/minio/highwayhash v1.0.2
 	github.com/nats-io/jwt/v2 v2.3.0
-	github.com/nats-io/nats.go v1.15.0
+	github.com/nats-io/nats.go v1.16.0
 	github.com/nats-io/nkeys v0.3.0
 	github.com/nats-io/nuid v1.0.1
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
@@ -48,6 +47,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
+	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

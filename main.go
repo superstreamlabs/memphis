@@ -1,4 +1,4 @@
-// Copyright 2012-2022 The NATS Authors
+// Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/handlers"
 	"memphis-broker/tcp_server"
+	"memphis-broker/http_server"
 	"memphis-broker/server"
 	"os"
 	"sync"
@@ -101,6 +102,10 @@ func handleError(s *server.Server, message string, err error) {
 
 func runMemphis(s *server.Server) {
 
+	if !s.MemphisInitialized() {
+		s.Fatalf("Jetstream not enabled on global account")
+	}
+
 	err := db.InitializeDbConnection(s)
 	handleError(s, "Failed initializing db connection: ", err)
 
@@ -124,9 +129,9 @@ func runMemphis(s *server.Server) {
 	wg.Add(4)
 
 	// go tcp_server.InitializeTcpServer(wg)
-	// go http_server.InitializeHttpServer(wg, s)
+	go http_server.InitializeHttpServer(s, wg)
 	go background_tasks.KillZombieResources(wg)
-	// go background_tasks.ListenForPoisonMessages()
+	go background_tasks.ListenForPoisonMessages(s)
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
