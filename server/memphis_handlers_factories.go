@@ -11,12 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package server
 
 import (
 	"context"
 	"errors"
-	"memphis-broker/server"
 
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -30,7 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type FactoriesHandler struct{ S *server.Server }
+type FactoriesHandler struct{ S *Server }
 
 func validateFactoryName(factoryName string) error {
 	re := regexp.MustCompile("^[a-z0-9_]*$")
@@ -43,7 +42,7 @@ func validateFactoryName(factoryName string) error {
 }
 
 // TODO remove the stations resources - functions, connectors
-func removeStations(s *server.Server, factoryId primitive.ObjectID) error {
+func removeStations(s *Server, factoryId primitive.ObjectID) error {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
 		"factory_id": factoryId,

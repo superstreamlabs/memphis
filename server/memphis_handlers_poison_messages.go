@@ -11,12 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package server
 
 import (
 	"encoding/json"
 	"memphis-broker/models"
-	"memphis-broker/server"
 
 	"context"
 	"time"
@@ -27,7 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type PoisonMessagesHandler struct{ S *server.Server }
+type PoisonMessagesHandler struct{ S *Server }
 
 func (pmh PoisonMessagesHandler) HandleNewMessage(_ string, msg []byte) {
 	var message map[string]interface{}
@@ -48,7 +47,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(_ string, msg []byte) {
 		return
 	}
 
-	hdr, err := server.DecodeHeader(poisonMessageContent.Header)
+	hdr, err := DecodeHeader(poisonMessageContent.Header)
 
 	if err != nil {
 		serv.Errorf(err.Error())

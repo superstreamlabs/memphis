@@ -25,12 +25,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"memphis-broker/logger"
-
-	// "memphis-broker/logger"
-	// "memphis-broker/analytics"
-
-	// "memphis-broker/tcp_server"
 	"net"
 	"net/http"
 	"regexp"
@@ -52,6 +46,7 @@ import (
 	"github.com/nats-io/nuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"memphis-broker/logger"
 )
 
 const (
@@ -62,9 +57,8 @@ const (
 	firstClientPingInterval = 2 * time.Second
 )
 
-var handleClientFunc = func(net.Conn) (primitive.ObjectID){
-	var o primitive.ObjectID
-	return o
+var handleClientFunc = func(net.Conn, error){
+	return 
 }
 
 // Info is the information sent to clients, routes, gateways, and leaf nodes,
@@ -1610,9 +1604,11 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 
 // Start up the server, this will block.
 // Start via a Go routine if needed.
-func (s *Server) Start(handleClient func(net.Conn) (primitive.ObjectID)) {
+// func (s *Server) Start(handleClient func(net.Conn, error, string, string, string)) {
+func (s *Server) Start() {
+
 	s.Noticef("Starting Memphis{dev} broker")
-	handleClientFunc = handleClient
+	// handleClientFunc = handleClient
 
 	gc := gitCommit
 	if gc == _EMPTY_ {
@@ -2529,12 +2525,9 @@ func (s *Server) createClient(conn net.Conn) *client {
 
 	c.Debugf("Client connection created")
 
-	//handle a client//
-	connectionID := handleClientFunc(conn)
 	// Send our information.
 	// Need to be sent in place since writeLoop cannot be started until
 	// TLS handshake is done (if applicable).
-	info.ConnectionId = connectionID
 	c.sendProtoNow(c.generateClientInfoJSON(info))
 
 	// Unlock to register
@@ -2576,8 +2569,8 @@ func (s *Server) createClient(conn net.Conn) *client {
 
 	// Connection could have been closed while sending the INFO proto.
 	isClosed := c.isClosed()
+	var pre []byte
 
-	var pre []byte = []byte(info.ConnectionId.String())
 	// If we have both TLS and non-TLS allowed we need to see which
 	// one the client wants.
 	if !isClosed && opts.TLSConfig != nil && opts.AllowNonTLS {
@@ -2638,7 +2631,9 @@ func (s *Server) createClient(conn net.Conn) *client {
 	c.setPingTimer()
 
 	// Spin up the read loop.
-	s.startGoRoutine(func() { c.readLoop(pre) })
+	s.startGoRoutine(func() { 
+		c.readLoop(pre) 	
+	})
 
 	// Spin up the write loop.
 	s.startGoRoutine(func() { c.writeLoop() })

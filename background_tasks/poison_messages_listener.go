@@ -14,11 +14,10 @@
 package background_tasks
 
 import (
-	"memphis-broker/handlers"
 	"memphis-broker/server"
 )
 
-var poisonMessagesHandler handlers.PoisonMessagesHandler
+var poisonMessagesHandler server.PoisonMessagesHandler
 
 func ListenForPoisonMessages(s *server.Server) {
 	s.QueueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",

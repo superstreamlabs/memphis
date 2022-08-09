@@ -14,12 +14,12 @@
 package routes
 
 import (
-	"memphis-broker/handlers"
+	"memphis-broker/server"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeMonitoringRoutes(router *gin.RouterGroup, h *handlers.Handlers) {
+func InitializeMonitoringRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	monitoringHandler := h.Monitoring
 	monitoringRoutes := router.Group("/monitoring")
 	monitoringRoutes.GET("/getClusterInfo", monitoringHandler.GetClusterInfo)

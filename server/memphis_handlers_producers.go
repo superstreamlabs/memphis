@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package server
 
 import (
 	"context"
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
-	"memphis-broker/server"
 	"memphis-broker/utils"
 	"regexp"
 	"sort"
@@ -32,7 +31,7 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-type ProducersHandler struct{ S *server.Server }
+type ProducersHandler struct{ S *Server }
 
 func validateProducerName(name string) error {
 	if len(name) > 32 {

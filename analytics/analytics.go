@@ -43,8 +43,8 @@ var disableAnalyticsCounter metric.Int64Counter
 var deploymentId string
 var analyticsFlag string
 
-func InitializeAnalytics() error {
-	systemKeysCollection = db.GetCollection("system_keys")
+func InitializeAnalytics(c *mongo.Client) error {
+	systemKeysCollection = db.GetCollection("system_keys", c)
 	deployment, err := getSystemKey("deployment_id")
 	if err == mongo.ErrNoDocuments {
 		deploymentId := primitive.NewObjectID().Hex()
@@ -90,6 +90,7 @@ func InitializeAnalytics() error {
 		return err
 	} else {
 		analyticsFlag = analytics.Value
+
 	}
 
 	ls = launcher.ConfigureOpentelemetry(

@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package server
 
 import (
 	"context"
 	"flag"
 	"io/ioutil"
 	"memphis-broker/models"
-	"memphis-broker/server"
 	"memphis-broker/utils"
 	"net/http"
 	"path/filepath"
@@ -33,7 +32,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-type MonitoringHandler struct{ S *server.Server }
+type MonitoringHandler struct{ S *Server }
 
 var clientset *kubernetes.Clientset
 
@@ -70,6 +69,8 @@ func clientSetConfig() error {
 
 	return nil
 }
+
+
 
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent

@@ -21,10 +21,9 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/background_tasks"
 	"memphis-broker/db"
-	"memphis-broker/handlers"
-	"memphis-broker/tcp_server"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
+	"memphis-broker/tcp_server"
 	"os"
 	"sync"
 
@@ -106,21 +105,21 @@ func runMemphis(s *server.Server) {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	err := db.InitializeDbConnection(s)
+	dbInstance, err := db.InitializeDbConnection(s)
 	handleError(s, "Failed initializing db connection: ", err)
 
-	err = analytics.InitializeAnalytics()
+	err = analytics.InitializeAnalytics(dbInstance.Client)
 	handleError(s, "Failed initializing analytics: ", err)
 
 
-	handlers.InitializeHandlers(s)
+	server.InitializeHandlers(s, dbInstance)
 
-	err = handlers.CreateRootUserOnFirstSystemLoad()
+	err = server.CreateRootUserOnFirstSystemLoad()
 	handleError(s, "Failed to create root user: ", err)
 
 	background_tasks.InitializeZombieResources(s)
 
-	defer db.Close()
+	defer db.Close(dbInstance, s)
 
 	// defer broker.Close()
 	defer analytics.Close()

@@ -14,15 +14,15 @@
 package routes
 
 import (
-	"memphis-broker/handlers"
 	"memphis-broker/middlewares"
+	"memphis-broker/server"
 	"memphis-broker/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeHttpRoutes(handlers *handlers.Handlers) *gin.Engine {
+func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{

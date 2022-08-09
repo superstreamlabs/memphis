@@ -14,13 +14,12 @@
 package routes
 
 import (
-	"memphis-broker/handlers"
-
+	"memphis-broker/server"
 	"github.com/gin-gonic/gin"
 )
 
 func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
-	userMgmtHandler := handlers.UserMgmtHandler{}
+	userMgmtHandler := server.UserMgmtHandler{}
 	userMgmtRoutes := router.Group("/usermgmt")
 	userMgmtRoutes.GET("/nats/authenticate", userMgmtHandler.AuthenticateNatsUser)
 	userMgmtRoutes.GET("/nats/authenticate/:publicKey", userMgmtHandler.AuthenticateNatsUser)

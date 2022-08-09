@@ -4,15 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"memphis-broker/conf"
 	"memphis-broker/models"
 	"net/textproto"
 	"sort"
 	"strings"
 	"time"
 )
-
-var configuration = conf.GetConfig()
 
 const (
 	crlf      = "\r\n"

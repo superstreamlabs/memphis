@@ -16,9 +16,11 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/textproto"
+	"strings"
 )
 
 type parserState int
@@ -131,6 +133,101 @@ const (
 	INFO_ARG
 )
 
+// func handleConnectMessage(connection net.Conn, err ClientOpts) ( models.User) {
+// 	// d := json.NewDecoder(connection)
+// 	// var message tcpMessage
+// 	// err := d.Decode(&message)
+// 	if err != nil {
+// 		connection.Write([]byte("Memphis protocol error"))
+// 		connection.Close()
+// 		return TcpResponseMessage{}, models.User{}
+// 	} else {
+// 		username := strings.ToLower(message.Username)
+// 		exist, user, err := handlers.IsUserExist(username)
+// 		if err != nil {
+// 			// logger.Error("handleConnectMessage: " + err.Error())
+// 			connection.Write([]byte("Server error: " + err.Error()))
+// 			connection.Close()
+// 			return TcpResponseMessage{}, models.User{}
+// 		}
+// 		if !exist {
+// 			connection.Write([]byte("User is not exist"))
+// 			connection.Close()
+// 			return TcpResponseMessage{}, models.User{}
+// 		}
+// 		if user.UserType != "root" && user.UserType != "application" {
+// 			connection.Write([]byte("Please use a user of type Root/Application and not Management"))
+// 			connection.Close()
+// 			return TcpResponseMessage{}, models.User{}
+// 		}
+
+// 		connectionId := message.ConnectionId
+// 		exist, _, err = handlers.IsConnectionExist(connectionId)
+// 		if err != nil {
+// 			// logger.Error("handleConnectMessage: " + err.Error())
+// 			connection.Write([]byte("Server error: " + err.Error()))
+// 			connection.Close()
+// 			return TcpResponseMessage{}, models.User{}
+// 		}
+
+// 		// err = broker.ValidateUserCreds(message.BrokerCreds)
+// 		// if err != nil {
+// 		// 	connection.Write([]byte("Server error: " + err.Error()))
+// 		// 	connection.Close()
+// 		// 	return primitive.ObjectID{}, models.User{}
+// 		// }
+
+// 		clientAddress := connection.RemoteAddr()
+// 		clientAddressString := clientAddress.String()
+// 		clientAddressString = strings.Split(clientAddressString, ":")[0]
+// 		if exist {
+// 			err = connectionsHandler.ReliveConnection(connectionId)
+// 			if err != nil {
+// 				// logger.Error("handleConnectMessage: " + err.Error())
+// 				connection.Write([]byte("Server error: " + err.Error()))
+// 				connection.Close()
+// 				return TcpResponseMessage{}, models.User{}
+// 			}
+// 			err = producersHandler.ReliveProducers(connectionId)
+// 			if err != nil {
+// 				// logger.Error("handleConnectMessage: " + err.Error())
+// 				connection.Write([]byte("Server error: " + err.Error()))
+// 				connection.Close()
+// 				return TcpResponseMessage{}, models.User{}
+// 			}
+// 			err = consumersHandler.ReliveConsumers(connectionId)
+// 			if err != nil {
+// 				// logger.Error("handleConnectMessage: " + err.Error())
+// 				connection.Write([]byte("Server error: " + err.Error()))
+// 				connection.Close()
+// 				return TcpResponseMessage{}, models.User{}
+// 			}
+// 		} else {
+// 			connectionId, err = connectionsHandler.CreateConnection(username, clientAddressString)
+// 			if err != nil {
+// 				// logger.Error("handleConnectMessage: " + err.Error())
+// 				connection.Write([]byte("Server error: " + err.Error()))
+// 				connection.Close()
+// 				return TcpResponseMessage{}, models.User{}
+// 			}
+// 		}
+
+// 		// accessToken, err := createAccessToken(user)
+// 		// if err != nil {
+// 		// 	// logger.Error("handleConnectMessage: " + err.Error())
+// 		// 	connection.Write([]byte("Server error: " + err.Error()))
+// 		// 	connection.Close()
+// 		// 	return primitive.ObjectID{}, models.User{}
+// 		// }
+
+// 		response := TcpResponseMessage{
+// 			ConnectionId:   connectionId,
+// 		}
+// 		// bytesResponse, _ := json.Marshal(response)
+// 		// connection.Write(bytesResponse)
+// 		return response, user
+// 	}
+// }
 func (c *client) parse(buf []byte) error {
 	// Branch out to mqtt clients. c.mqtt is immutable, but should it become
 	// an issue (say data race detection), we could branch outside in readLoop
@@ -916,6 +1013,17 @@ func (c *client) parse(buf []byte) error {
 					c.argBuf = nil
 				} else {
 					arg = buf[c.as : i-c.drop]
+
+					d := json.NewDecoder(strings.NewReader(string(arg)))
+					err := d.Decode(&c.opts)
+
+					if err != nil {
+						return  err}
+
+				}
+
+				if err := handleConnectMessage(c); err!= nil{
+					return err
 				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err

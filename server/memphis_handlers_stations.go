@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package server
 
 import (
 	"context"
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
-	"memphis-broker/server"
 	"memphis-broker/utils"
 	"regexp"
 	"strings"
@@ -30,7 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type StationsHandler struct{ S *server.Server }
+type StationsHandler struct{ S *Server }
 
 func validateStationName(stationName string) error {
 	if len(stationName) > 32 {
@@ -71,7 +70,7 @@ func validateReplicas(replicas int) error {
 }
 
 // TODO remove the station resources - functions, connectors
-func removeStationResources(s *server.Server, station models.Station) error {
+func removeStationResources(s *Server, station models.Station) error {
 	err := s.RemoveStream(station.Name)
 	if err != nil {
 		return err
@@ -596,7 +595,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	hdr, err := server.DecodeHeader(sm.Header)
+	hdr, err := DecodeHeader(sm.Header)
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

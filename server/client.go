@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"github.com/nats-io/jwt/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Type of client connection.
@@ -561,6 +562,7 @@ type ClientOpts struct {
 	AccountNew   bool   `json:"new_account,omitempty"`
 	Headers      bool   `json:"headers,omitempty"`
 	NoResponders bool   `json:"no_responders,omitempty"`
+	ConnectionId primitive.ObjectID `json:"connection_id,omitempty"`
 
 	// Routes and Leafnodes only
 	Import *SubjectPermission `json:"import,omitempty"`

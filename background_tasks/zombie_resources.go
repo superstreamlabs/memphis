@@ -36,10 +36,10 @@ var poisonMessagesCollection *mongo.Collection
 var serv *server.Server
 
 func InitializeZombieResources(s *server.Server) {
-	connectionsCollection = db.GetCollection("connections")
-	producersCollection = db.GetCollection("producers")
-	consumersCollection = db.GetCollection("consumers")
-	poisonMessagesCollection = db.GetCollection("poison_messages")
+	connectionsCollection = db.GetCollection("connections", s.DbClient)
+	producersCollection = db.GetCollection("producers", s.DbClient)
+	consumersCollection = db.GetCollection("consumers", s.DbClient)
+	poisonMessagesCollection = db.GetCollection("poison_messages", s.DbClient)
 	serv = s
 }
 

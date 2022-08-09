@@ -15,7 +15,6 @@ package http_server
 
 import (
 	"memphis-broker/conf"
-	"memphis-broker/handlers"
 	"memphis-broker/http_server/routes"
 	"memphis-broker/server"
 	"memphis-broker/socketio"
@@ -25,14 +24,14 @@ import (
 func InitializeHttpServer(s *server.Server, wg *sync.WaitGroup) {
 	configuration := conf.GetConfig()
 
-	handlers := handlers.Handlers{
-		Producers:  handlers.ProducersHandler{S: s},
-		Consumers:  handlers.ConsumersHandler{S: s},
-		AuditLogs:  handlers.AuditLogsHandler{},
-		Stations:   handlers.StationsHandler{S: s},
-		Factories:  handlers.FactoriesHandler{S: s},
-		Monitoring: handlers.MonitoringHandler{S: s},
-		PoisonMsgs: handlers.PoisonMessagesHandler{S: s},
+	handlers := server.Handlers{
+		Producers:  server.ProducersHandler{S: s},
+		Consumers:  server.ConsumersHandler{S: s},
+		AuditLogs:  server.AuditLogsHandler{},
+		Stations:   server.StationsHandler{S: s},
+		Factories:  server.FactoriesHandler{S: s},
+		Monitoring: server.MonitoringHandler{S: s},
+		PoisonMsgs: server.PoisonMessagesHandler{S: s},
 	}
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)

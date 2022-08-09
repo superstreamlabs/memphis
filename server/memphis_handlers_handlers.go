@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package server
 
 import (
 	"context"
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
-	"memphis-broker/server"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -47,21 +46,24 @@ var consumersCollection *mongo.Collection
 var systemKeysCollection *mongo.Collection
 var auditLogsCollection *mongo.Collection
 var poisonMessagesCollection *mongo.Collection
-var serv *server.Server
+var serv *Server
 var configuration = conf.GetConfig()
 
-func InitializeHandlers(s *server.Server) {
-	usersCollection = db.GetCollection("users")
-	imagesCollection = db.GetCollection("images")
-	factoriesCollection = db.GetCollection("factories")
-	stationsCollection = db.GetCollection("stations")
-	connectionsCollection = db.GetCollection("connections")
-	producersCollection = db.GetCollection("producers")
-	consumersCollection = db.GetCollection("consumers")
-	systemKeysCollection = db.GetCollection("system_keys")
-	auditLogsCollection = db.GetCollection("audit_logs")
-	poisonMessagesCollection = db.GetCollection("poison_messages")
+func InitializeHandlers(s *Server, dbInstance db.DbInstance) {
+	usersCollection = db.GetCollection("users", dbInstance.Client)
+	imagesCollection = db.GetCollection("images", dbInstance.Client)
+	factoriesCollection = db.GetCollection("factories", dbInstance.Client)
+	stationsCollection = db.GetCollection("stations", dbInstance.Client)
+	connectionsCollection = db.GetCollection("connections", dbInstance.Client)
+	producersCollection = db.GetCollection("producers", dbInstance.Client)
+	consumersCollection = db.GetCollection("consumers", dbInstance.Client)
+	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
+	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
+	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 	serv = s
+	serv.DbClient = dbInstance.Client
+	serv.DbCtx = dbInstance.Ctx
+	serv.DbCancel = dbInstance.Cancel
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
@@ -153,7 +155,7 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(s *server.Server, stationName string, username string) (models.Station, error) {
+func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, error) {
 	var newStation models.Station
 
 	// create default factory
