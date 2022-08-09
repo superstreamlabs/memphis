@@ -39,17 +39,7 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func CreateProducer() error {
-	// nothing to create
-	return nil
-}
-
-func RemoveProducer() error {
-	// nothing to remove
-	return nil
-}
-
-func (s *Server) CreateStation(station models.Station) error {
+func (s *Server) CreateStream(station models.Station) error {
 	var maxMsgs int
 	if station.RetentionType == "messages" && station.RetentionValue > 0 {
 		maxMsgs = station.RetentionValue

@@ -14,31 +14,15 @@
 package routes
 
 import (
-	"fmt"
 	"memphis-broker/handlers"
 	"memphis-broker/middlewares"
 	"memphis-broker/utils"
-	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-type loggerWriter struct {
-}
-
-func (lw loggerWriter) Write(p []byte) (int, error) {
-	log := string(p)
-	splitted := strings.Split(log, "| ")
-	statusCode := strings.Trim(splitted[1], " ")
-	if statusCode != "200" && statusCode != "204" {
-		fmt.Errorf(log)
-	}
-	return len(p), nil
-}
-
 func InitializeHttpRoutes(handlers *handlers.Handlers) *gin.Engine {
-	gin.DefaultWriter = loggerWriter{}
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{

@@ -93,20 +93,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			})
 		}
 
-		// if broker.IsConnectionAlive() {
-		// 	components = append(components, models.SystemComponent{
-		// 		Component:   "broker",
-		// 		DesiredPods: 1,
-		// 		ActualPods:  1,
-		// 	})
-		// } else {
-		// 	components = append(components, models.SystemComponent{
-		// 		Component:   "broker",
-		// 		DesiredPods: 1,
-		// 		ActualPods:  0,
-		// 	})
-		// }
-
 		err = serv.DbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
@@ -123,7 +109,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		components = append(components, models.SystemComponent{
-			Component:   "control-plane",
+			Component:   "broker",
 			DesiredPods: 1,
 			ActualPods:  1,
 		})

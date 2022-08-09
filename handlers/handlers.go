@@ -196,7 +196,7 @@ func CreateDefaultStation(s *server.Server, stationName string, username string)
 		Functions:       []models.Function{},
 	}
 
-	err = s.CreateStation(newStation)
+	err = s.CreateStream(newStation)
 	if err != nil {
 		return newStation, err
 	}

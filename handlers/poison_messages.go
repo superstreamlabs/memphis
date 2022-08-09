@@ -29,7 +29,7 @@ import (
 
 type PoisonMessagesHandler struct{ S *server.Server }
 
-func (pmh PoisonMessagesHandler) HandleNewMessage(subject string, msg []byte) {
+func (pmh PoisonMessagesHandler) HandleNewMessage(_ string, msg []byte) {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg, &message)
 	if err != nil {

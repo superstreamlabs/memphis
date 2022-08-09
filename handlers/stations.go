@@ -284,7 +284,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		IsDeleted:       false,
 	}
 
-	err = sh.S.CreateStation(newStation)
+	err = sh.S.CreateStream(newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
