@@ -595,8 +595,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	producedByHeader := natsMsg.Header.Get("producedBy")
 
 	if connectionIdHeader == "" || producedByHeader == "" {
-		logger.Error("Error while getting notified about a poison message: " + invalidHeaderErrMessage)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: " + invalidHeaderErrMessage})
+		logger.Error("Error while getting notified about a poison message: " + invalidPoisonHeaderErrMessage)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: " + invalidPoisonHeaderErrMessage})
 		return
 	}
 
