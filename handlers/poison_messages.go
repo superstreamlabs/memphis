@@ -31,6 +31,8 @@ import (
 
 type PoisonMessagesHandler struct{}
 
+const invalidPoisonHeaderErrMessage string = "Missing mandatory message headers, please upgrade the SDK version you are using"
+
 func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg.Data, &message)
@@ -54,7 +56,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(msg *nats.Msg) {
 	producedByHeader := poisonMessageContent.Header.Get("producedBy")
 
 	if connectionIdHeader == "" || producedByHeader == "" {
-		logger.Error("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
+		logger.Error("Error while getting notified about a poison message: " + invalidPoisonHeaderErrMessage)
 		return
 	}
 
