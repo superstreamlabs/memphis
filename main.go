@@ -23,7 +23,6 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
-	"memphis-broker/tcp_server"
 	"os"
 	"sync"
 
@@ -93,11 +92,6 @@ func usage() {
 	os.Exit(0)
 }
 
-func handleError(s *server.Server, message string, err error) {
-	if err != nil {
-		s.Errorf(message + " " + err.Error())
-	}
-}
 
 func runMemphis(s *server.Server) {
 
@@ -106,17 +100,26 @@ func runMemphis(s *server.Server) {
 	}
 
 	dbInstance, err := db.InitializeDbConnection(s)
-	handleError(s, "Failed initializing db connection: ", err)
+	if err != nil {
+		s.Errorf("Failed initializing db connection:" + " " + err.Error())
+		os.Exit(1)
+	}
 
 	err = analytics.InitializeAnalytics(dbInstance.Client)
-	handleError(s, "Failed initializing analytics: ", err)
-
-
+	if err != nil {
+		s.Errorf("Failed initializing analytics: " + " " + err.Error())
+		db.Close(dbInstance, s)
+		os.Exit(1)
+	}
+	
 	server.InitializeHandlers(s, dbInstance)
 
 	err = server.CreateRootUserOnFirstSystemLoad()
-	handleError(s, "Failed to create root user: ", err)
-
+	if err != nil {
+		s.Errorf("Failed to create root user: " + " " + err.Error())
+		db.Close(dbInstance, s)
+		os.Exit(1)
+	}
 	background_tasks.InitializeZombieResources(s)
 
 	defer db.Close(dbInstance, s)
@@ -135,7 +138,7 @@ func runMemphis(s *server.Server) {
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
 	} else {
 		env = "K8S"
 	}
@@ -173,7 +176,7 @@ func main() {
 	s.ConfigureLogger()
 
 	// Start things up. Block here until done.
-	if err := tcp_server.StartTcpServer(s); err != nil {
+	if err := server.Run(s); err != nil {
 		server.PrintAndDie(err.Error())
 	}
 

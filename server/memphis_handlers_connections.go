@@ -31,105 +31,60 @@ var connectionsHandler ConnectionsHandler
 var producersHandler ProducersHandler
 var consumersHandler ConsumersHandler
 
-func  handleConnectMessage(client *client) (error) {
-	// d := json.NewDecoder(connection)
-	// var message tcpMessage
-	// err := d.Decode(&message)
-	
+func handleConnectMessage(client *client) error {
 
-	// if err != nil {
-	// 	connection.Write([]byte("Memphis protocol error"))
-	// 	connection.Close()
-	// 	return  nil
-	
-		username := strings.ToLower(client.opts.Username)
-		exist, user, err := IsUserExist(username)
-		if err != nil {
-			// logger.Error("handleConnectMessage: " + err.Error())
-			// connection.Write([]byte("Server error: " + err.Error()))
-			// connection.Close()
-			return  err
-		}
-		if !exist {
-			// connection.Write([]byte("User is not exist"))
-			// connection.Close()
-			return errors.New("User is not exist")
-		}
-		if user.UserType != "root" && user.UserType != "application" {
-			// connection.Write([]byte("Please use a user of type Root/Application and not Management"))
-			// connection.Close()
-			return errors.New("Please use a user of type Root/Application and not Management")
-		}
-		// connectionId := []byte(connectionId)
-		// connectionId = connectionId[:12]
-		connectionId := primitive.NewObjectID()
-		exist, _, err = IsConnectionExist(primitive.ObjectID(connectionId))
-		if err != nil {
-			// logger.Error("handleConnectMessage: " + err.Error())
-			// connection.Write([]byte("Server error: " + err.Error()))
-			// connection.Close()
-			return err
-		}
-
-		// err = broker.ValidateUserCreds(message.BrokerCreds)
-		// if err != nil {
-		// 	connection.Write([]byte("Server error: " + err.Error()))
-		// 	connection.Close()
-		// 	return primitive.ObjectID{}, models.User{}
-		// }
-
-		// clientAddress := connection.RemoteAddr()
-		clientAddress:= client.host
-		// clientAddressString := clientAddress.String()
-		clientAddress = strings.Split(clientAddress, ":")[0]
-		if exist {
-			err = connectionsHandler.ReliveConnection(connectionId)
-			if err != nil {
-				// logger.Error("handleConnectMessage: " + err.Error())
-				// connection.Write([]byte("Server error: " + err.Error()))
-				// connection.Close()
-				return err
-			}
-			err = producersHandler.ReliveProducers(connectionId)
-			if err != nil {
-				// logger.Error("handleConnectMessage: " + err.Error())
-				// connection.Write([]byte("Server error: " + err.Error()))
-				// connection.Close()
-				return err
-			}
-			err = consumersHandler.ReliveConsumers(connectionId)
-			if err != nil {
-				// logger.Error("handleConnectMessage: " + err.Error())
-				// connection.Write([]byte("Server error: " + err.Error()))
-				// connection.Close()
-				return err
-			}
-		} else {
-			connectionId, err = connectionsHandler.CreateConnection(username, clientAddress)
-			if err != nil {
-				// logger.Error("handleConnectMessage: " + err.Error())
-				// connection.Write([]byte("Server error: " + err.Error()))
-				// connection.Close()
-				return err
-			}
-		}
-
-		// accessToken, err := createAccessToken(user)
-		// if err != nil {
-		// 	// logger.Error("handleConnectMessage: " + err.Error())
-		// 	connection.Write([]byte("Server error: " + err.Error()))
-		// 	connection.Close()
-		// 	return primitive.ObjectID{}, models.User{}
-		// }
-
-		// response := TcpResponseMessage{
-		// 	ConnectionId:   connectionId,
-		// }
-		// bytesResponse, _ := json.Marshal(response)
-		// client.nc.Write(bytesResponse)
-		return nil
+	username := strings.ToLower(client.opts.Username)
+	exist, user, err := IsUserExist(username)
+	if err != nil {
+		client.srv.Errorf("handleConnectMessage: " + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("User is not exist")
+	}
+	if user.UserType != "root" && user.UserType != "application" {
+		return errors.New("Please use a user of type Root/Application and not Management")
+	}
+	objID, err := primitive.ObjectIDFromHex(client.opts.Name)
+	if err != nil {
+		return err
+	}
+	exist, _, err = IsConnectionExist(objID)
+	if err != nil {
+		client.srv.Errorf("handleConnectMessage: " + err.Error())
+		return err
 	}
 
+	client.opts.ConnectionId = objID
+	clientAddress := client.host
+	clientAddress = strings.Split(clientAddress, ":")[0]
+	if exist {
+		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
+		if err != nil {
+			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			return err
+		}
+		err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
+		if err != nil {
+			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			return err
+		}
+		err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
+		if err != nil {
+			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			return err
+		}
+	} else {
+		connectionId, err := connectionsHandler.CreateConnection(username, clientAddress)
+		if err != nil {
+			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			return err
+		}
+		client.opts.ConnectionId = connectionId
+
+	}
+	return nil
+}
 
 func (ch ConnectionsHandler) CreateConnection(username string, clientAddress string) (primitive.ObjectID, error) {
 	connectionId := primitive.NewObjectID()

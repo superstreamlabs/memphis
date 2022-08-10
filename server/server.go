@@ -89,6 +89,8 @@ type Info struct {
 	ClientConnectURLs []string `json:"connect_urls,omitempty"`    // Contains URLs a client can connect to.
 	WSConnectURLs     []string `json:"ws_connect_urls,omitempty"` // Contains URLs a ws client can connect to.
 	LameDuckMode      bool     `json:"ldm,omitempty"`
+	ConnectionId	primitive.ObjectID 	`json:"connection_id"`
+
 
 	// Route Specific
 	Import        *SubjectPermission 	`json:"import,omitempty"`
@@ -96,7 +98,6 @@ type Info struct {
 	LNOC          bool               	`json:"lnoc,omitempty"`
 	InfoOnConnect bool               	`json:"info_on_connect,omitempty"` // When true the server will respond to CONNECT with an INFO
 	ConnectInfo   bool               	`json:"connect_info,omitempty"`    // When true this is the server INFO response to CONNECT
-	ConnectionId	primitive.ObjectID 	`json:"connection_id"`
 	// Gateways Specific
 	Gateway           string   `json:"gateway,omitempty"`             // Name of the origin Gateway (sent by gateway's INFO)
 	GatewayURLs       []string `json:"gateway_urls,omitempty"`        // Gateway URLs in the originating cluster (sent by gateway's INFO)

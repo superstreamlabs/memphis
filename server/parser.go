@@ -1018,11 +1018,12 @@ func (c *client) parse(buf []byte) error {
 					err := d.Decode(&c.opts)
 
 					if err != nil {
-						return  err}
+						return err
+					}
 
 				}
 
-				if err := handleConnectMessage(c); err!= nil{
+				if err := handleConnectMessage(c); err != nil {
 					return err
 				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
