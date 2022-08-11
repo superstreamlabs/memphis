@@ -45,17 +45,25 @@ func handleConnectMessage(client *client) error {
 	if user.UserType != "root" && user.UserType != "application" {
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}
-	objID, err := primitive.ObjectIDFromHex(client.opts.Name)
-	if err != nil {
-		return err
-	}
-	exist, _, err = IsConnectionExist(objID)
-	if err != nil {
-		client.srv.Errorf("handleConnectMessage: " + err.Error())
-		return err
+
+	objIdString := client.opts.Name
+	var objID primitive.ObjectID
+
+	if objIdString != "" {
+		objID, err := primitive.ObjectIDFromHex(client.opts.Name)
+		if err != nil {
+			return err
+		}
+		exist, _, err = IsConnectionExist(objID)
+		if err != nil {
+			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			return err
+		}
+		client.opts.ConnectionId = objID
+	} else {
+		exist = false
 	}
 
-	client.opts.ConnectionId = objID
 	clientAddress := client.host
 	clientAddress = strings.Split(clientAddress, ":")[0]
 	if exist {
