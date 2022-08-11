@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -36,7 +37,7 @@ func handleConnectMessage(client *client) error {
 	username := strings.ToLower(client.opts.Username)
 	exist, user, err := IsUserExist(username)
 	if err != nil {
-		client.srv.Errorf("handleConnectMessage: " + err.Error())
+		client.Errorf("handleConnectMessage: " + err.Error())
 		return err
 	}
 	if !exist {
@@ -56,10 +57,10 @@ func handleConnectMessage(client *client) error {
 		}
 		exist, _, err = IsConnectionExist(objID)
 		if err != nil {
-			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
-		client.opts.ConnectionId = objID
+		client.memphisInfo.ConnectionId = objID
 	} else {
 		exist = false
 	}
@@ -69,29 +70,62 @@ func handleConnectMessage(client *client) error {
 	if exist {
 		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
 		if err != nil {
-			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
 		err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
 		if err != nil {
-			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
 		err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
 		if err != nil {
-			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
 	} else {
 		connectionId, err := connectionsHandler.CreateConnection(username, clientAddress)
 		if err != nil {
-			client.srv.Errorf("handleConnectMessage: " + err.Error())
+			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
-		client.opts.ConnectionId = connectionId
+		client.memphisInfo.ConnectionId = connectionId
 
 	}
+
+	//TODO (or) remove the following panic if did not happen during testing
+	if exist, _, _ = IsUserExist(username); !exist {
+		panic("user should exist if we reached here")
+	}
+
+	accessToken, err := createAccessToken(user)
+	if err != nil {
+		client.Errorf("handleConnectMessage: " + err.Error())
+		return err
+	}
+
+	client.memphisInfo.AccessToken = accessToken
 	return nil
+}
+
+func createAccessToken(user models.User) (string, error) {
+	username := strings.ToLower(user.Username)
+
+	atClaims := jwt.MapClaims{}
+	atClaims["user_id"] = user.ID.Hex()
+	atClaims["username"] = username
+	atClaims["user_type"] = user.UserType
+	atClaims["creation_date"] = user.CreationDate
+	atClaims["already_logged_in"] = user.AlreadyLoggedIn
+	atClaims["avatar_id"] = user.AvatarId
+	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (ch ConnectionsHandler) CreateConnection(username string, clientAddress string) (primitive.ObjectID, error) {

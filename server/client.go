@@ -140,7 +140,7 @@ const (
 	skipFlushOnClose                              // Marks that flushOutbound() should not be called on connection close.
 	expectConnect                                 // Marks if this connection is expected to send a CONNECT
 	connectProcessFinished                        // Marks if this connection has finished the connect process.
-	connectionIdSent							  // connectionId sent to client
+	connectionIdSent                              // connectionId sent to client
 )
 
 // set the flag (would be equivalent to set the boolean to true)
@@ -278,6 +278,13 @@ type client struct {
 	nameTag string
 
 	tlsTo *time.Timer
+
+	memphisInfo memphisConnectInfo
+}
+
+type memphisConnectInfo struct {
+	AccessToken  string             `json:"jwt,omitempty"`
+	ConnectionId primitive.ObjectID `json:"connection_id,omitempty"`
 }
 
 type rrTracking struct {
@@ -563,7 +570,6 @@ type ClientOpts struct {
 	AccountNew   bool   `json:"new_account,omitempty"`
 	Headers      bool   `json:"headers,omitempty"`
 	NoResponders bool   `json:"no_responders,omitempty"`
-	ConnectionId primitive.ObjectID `json:"connection_id,omitempty"`
 
 	// Routes and Leafnodes only
 	Import *SubjectPermission `json:"import,omitempty"`
@@ -2145,7 +2151,8 @@ func (c *client) generateClientInfoJSON(info Info) []byte {
 	info.CID = c.cid
 	info.ClientIP = c.host
 	info.MaxPayload = c.mpay
-	info.ConnectionId = c.opts.ConnectionId
+	info.ConnectionId = c.memphisInfo.ConnectionId
+	info.AccessToken = c.memphisInfo.AccessToken
 	if c.isWebsocket() {
 		info.ClientConnectURLs = info.WSConnectURLs
 	}
