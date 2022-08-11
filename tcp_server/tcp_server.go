@@ -125,7 +125,7 @@ func handleConnectMessage(connection net.Conn) (primitive.ObjectID, models.User)
 		clientAddressString := clientAddress.String()
 		clientAddressString = strings.Split(clientAddressString, ":")[0]
 		if exist {
-			err = connectionsHandler.ReliveConnection(connectionId)
+			err = connectionsHandler.ReliveConnection(connectionId, clientAddressString)
 			if err != nil {
 				logger.Error("handleConnectMessage: " + err.Error())
 				connection.Write([]byte("Server error: " + err.Error()))

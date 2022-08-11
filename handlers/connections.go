@@ -71,10 +71,10 @@ func (ch ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) err
 	return nil
 }
 
-func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) error {
+func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID, clientAddress string) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": true}},
+		bson.M{"$set": bson.M{"is_active": true, "client_address": clientAddress}},
 	)
 	if err != nil {
 		logger.Error("ReliveConnection error: " + err.Error())
