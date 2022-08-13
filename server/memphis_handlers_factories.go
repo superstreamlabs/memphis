@@ -163,6 +163,44 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	})
 }
 
+func CreateFactoryDirect(username, factoryName, factoryDesc string) error {
+	factoryName = strings.ToLower(factoryName)
+	err := validateFactoryName(factoryName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	exist, _, err := IsFactoryExist(factoryName)
+	if err != nil {
+		serv.Errorf("CreateFactory error: " + err.Error())
+		return err
+	}
+
+	if exist {
+		serv.Warnf("Factory with that name is already exist")
+		return err
+	}
+
+	newFactory := models.Factory{
+		ID:            primitive.NewObjectID(),
+		Name:          factoryName,
+		Description:   strings.ToLower(factoryDesc),
+		CreatedByUser: username,
+		CreationDate:  time.Now(),
+		IsDeleted:     false,
+	}
+
+	_, err = factoriesCollection.InsertOne(context.TODO(), newFactory)
+	if err != nil {
+		serv.Errorf("CreateFactory error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Factory " + factoryName + " has been created")
+	return nil
+}
+
 func (fh FactoriesHandler) GetFactoryDetails(factoryName string) (map[string]interface{}, error) {
 	var factory models.Factory
 	err := factoriesCollection.FindOne(context.TODO(), bson.M{

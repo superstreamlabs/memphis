@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -90,7 +89,6 @@ func handleConnectMessage(client *client) error {
 			return err
 		}
 		client.memphisInfo.ConnectionId = connectionId
-
 	}
 
 	//TODO (or) remove the following panic if did not happen during testing
@@ -98,34 +96,7 @@ func handleConnectMessage(client *client) error {
 		panic("user should exist if we reached here")
 	}
 
-	accessToken, err := createAccessToken(user)
-	if err != nil {
-		client.Errorf("handleConnectMessage: " + err.Error())
-		return err
-	}
-
-	client.memphisInfo.AccessToken = accessToken
 	return nil
-}
-
-func createAccessToken(user models.User) (string, error) {
-	username := strings.ToLower(user.Username)
-
-	atClaims := jwt.MapClaims{}
-	atClaims["user_id"] = user.ID.Hex()
-	atClaims["username"] = username
-	atClaims["user_type"] = user.UserType
-	atClaims["creation_date"] = user.CreationDate
-	atClaims["already_logged_in"] = user.AlreadyLoggedIn
-	atClaims["avatar_id"] = user.AvatarId
-	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
 }
 
 func (ch ConnectionsHandler) CreateConnection(username string, clientAddress string) (primitive.ObjectID, error) {

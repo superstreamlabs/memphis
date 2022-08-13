@@ -134,6 +134,7 @@ func runMemphis(s *server.Server) {
 	go http_server.InitializeHttpServer(s, wg)
 	go background_tasks.KillZombieResources(wg)
 	go background_tasks.ListenForPoisonMessages(s)
+	go background_tasks.Listen(s)
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

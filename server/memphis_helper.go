@@ -379,6 +379,18 @@ func (s *Server) QueueSubscribe(subj, queueGroupName string, cb func(string, []b
 	return err
 }
 
+func (s *Server) Subscribe(subj, sid string, cb func(string, []byte)) error {
+	acc := s.GlobalAccount()
+	c := acc.ic
+	wcb := func(_ *subscription, _ *client, _ *Account, subject, _ string, rmsg []byte) {
+		cb(subject, rmsg)
+	}
+
+	_, err := c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
+
+	return err
+}
+
 func (s *Server) ResendPoisonMessage(subject string, data []byte) error {
 	hdr := map[string]string{"producedBy": "$memphis_dlq"}
 	s.sendInternalMsgWithHeaderLocked(subject, hdr, data)
