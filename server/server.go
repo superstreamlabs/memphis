@@ -57,10 +57,6 @@ const (
 	firstClientPingInterval = 2 * time.Second
 )
 
-var handleClientFunc = func(net.Conn, error) {
-	return
-}
-
 // Info is the information sent to clients, routes, gateways, and leaf nodes,
 // to help them understand information about this server.
 type Info struct {
@@ -1609,7 +1605,6 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 func (s *Server) Start() {
 
 	s.Noticef("Starting Memphis{dev} broker")
-	// handleClientFunc = handleClient
 
 	gc := gitCommit
 	if gc == _EMPTY_ {
@@ -1862,8 +1857,6 @@ func (s *Server) Start() {
 
 	// We've finished starting up.
 	close(s.startupComplete)
-
-	// handleClientFunc = handleClient
 
 
 	// Wait for clients.

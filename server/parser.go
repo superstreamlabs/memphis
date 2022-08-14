@@ -929,6 +929,7 @@ func (c *client) parse(buf []byte) error {
 				}
 
 				if err := handleConnectMessage(c); err != nil {
+					c.Errorf(err.Error())
 					goto authErr
 				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
