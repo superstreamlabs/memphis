@@ -105,6 +105,52 @@ func removeStationResources(s *Server, station models.Station) error {
 	return nil
 }
 
+func CreateStationDirect(username, stationName, factoryName, retentionType, storageType string, retentionValue, replicas, dedupWindowMillis int, dedupEnabled bool ) error {
+	stationName = strings.ToLower(stationName)
+	err := validateStationName(stationName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	exist, _, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("Create Station error: " + err.Error())
+		return err
+	}
+
+	if exist {
+		serv.Warnf("Station with that name is already exist")
+		return err
+	}
+
+	newStation := models.Station{
+		ID:            		primitive.NewObjectID(),
+		Name:          		stationName,
+		FactoryId:    		primitive.NewObjectID(),
+		CreatedByUser: 		username,
+		CreationDate:  		time.Now(),
+		IsDeleted:     		false,
+		RetentionType: 		retentionType,
+		RetentionValue: 	retentionValue,
+		StorageType: 		storageType,
+		Replicas: 			replicas,
+		DedupEnabled: 		dedupEnabled,
+		DedupWindowInMs: 	dedupWindowMillis,
+		LastUpdate: 		time.Now(),
+		Functions:       	[]models.Function{},
+	}
+
+	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Station " + stationName + " has been created")
+	return nil
+}
+
 func (sh StationsHandler) GetStation(c *gin.Context) {
 	var body models.GetStationSchema
 	ok := utils.Validate(c, &body, false, nil)
