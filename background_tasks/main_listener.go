@@ -36,12 +36,23 @@ type createStationRequest struct {
 	Username          string `json:"username"`
 }
 
-type CreateProducerRequest struct {
+type createProducerRequest struct {
 	Name         string `json:"name"`
 	StationName  string `json:"station_name"`
 	ConnectionId string `json:"connection_id"`
 	ProducerType string `json:"producer_type"`
 	Username   	 string `json:"username"`
+}
+
+type createConsumerRequest struct {
+	Name             string `json:"name"`
+	StationName      string `json:"station_name"`
+	ConnectionId     string `json:"connection_id"`
+	ConsumerType     string `json:"consumer_type"`
+	ConsumerGroup    string `json:"consumers_group"`
+	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+	Username    	 string `json:"username"`
 }
 
 func Listen(s *server.Server) {
@@ -54,6 +65,9 @@ func Listen(s *server.Server) {
 	s.Subscribe("$memphis_producer_creations",
 	"memphis_producer_creations_subscription",
 	createProducerHandler(s))
+	s.Subscribe("$memphis_consumer_creations",
+	"memphis_consumer_creations_subscription",
+	createConsumerHandler(s))
 }
 
 func createFactoryHandler(s *server.Server) func(string, []byte) {
@@ -87,12 +101,26 @@ func createStationHandler(s *server.Server) func(string, []byte) {
 func createProducerHandler(s *server.Server) func(string, []byte) {
 	return func(subject string, msg []byte) {
 		s.Noticef("PRODUCER CREATION REQUEST!")
-		var cpr CreateProducerRequest
+		var cpr createProducerRequest
 		if err := json.Unmarshal(msg, &cpr); err != nil {
 			s.Errorf("failed creating producer: %v", err.Error())
 
 		}
 
 		server.CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
+	}
+}
+
+
+func createConsumerHandler(s *server.Server) func(string, []byte) {
+	return func(subject string, msg []byte) {
+		s.Noticef("CONSUMER CREATION REQUEST!")
+		var ccr createConsumerRequest
+		if err := json.Unmarshal(msg, &ccr); err != nil {
+			s.Errorf("failed creating producer: %v", err.Error())
+
+		}
+
+		server.CreateConsumerDirect(s, ccr.Name, ccr.StationName, ccr.ConnectionId, ccr.ConsumerType, ccr.ConsumerGroup, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries)
 	}
 }

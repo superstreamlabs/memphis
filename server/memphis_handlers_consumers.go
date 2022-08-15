@@ -283,6 +283,161 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	})
 }
 
+func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerType, consumersGroup , username string, maxAckTimeMillis, maxMsgDeliveries int) {
+
+	name = strings.ToLower(name)
+	err := validateName(name)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return
+	}
+
+	consumerGroup := strings.ToLower(consumersGroup)
+	if consumerGroup != "" {
+		err = validateName(consumerGroup)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return
+		}
+	} else {
+		consumerGroup = name
+	}
+
+	consumerType = strings.ToLower(consumerType)
+	err = validateConsumerType(consumerType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return
+	}
+
+	connectionIdObj, err := primitive.ObjectIDFromHex(connectionId)
+	if err != nil {
+		serv.Warnf("Connection id is not valid")
+		return
+	}
+	exist, connection, err := IsConnectionExist(connectionIdObj)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return
+	}
+	if !exist {
+		serv.Warnf("Connection id was not found")
+		return
+	}
+	if !connection.IsActive {
+		serv.Warnf("Connection is not active")
+		return
+	}
+
+	stationName = strings.ToLower(stationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return
+	}
+	if !exist {
+		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		if err != nil {
+			serv.Errorf("CreateConsumer error: " + err.Error())
+			return
+		}
+
+		message := "Station " + stationName + " has been created"
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+			// UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("CreateConsumer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.IncrementStationsCounter()
+		}
+	}
+
+	exist, _, err = IsConsumerExist(name, station.ID)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return
+	}
+	if exist {
+		serv.Warnf("Consumer name has to be unique in a station level")
+		return
+	}
+
+	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return
+	}
+
+	consumerId := primitive.NewObjectID()
+	newConsumer := models.Consumer{
+		ID:             consumerId,
+		Name:           name,
+		StationId:      station.ID,
+		FactoryId:      station.FactoryId,
+		Type:           consumerType,
+		ConnectionId:   connectionIdObj,
+		CreatedByUser:  connection.CreatedByUser,
+		ConsumersGroup: consumerGroup,
+		IsActive:       true,
+		CreationDate:   time.Now(),
+		IsDeleted:      false,
+	}
+
+	if consumerGroupExist {
+		newConsumer.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
+		newConsumer.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
+	} else {
+		newConsumer.MaxAckTimeMs = int64(maxAckTimeMillis)
+		newConsumer.MaxMsgDeliveries = maxMsgDeliveries
+		s.CreateConsumer(newConsumer, station)
+		if err != nil {
+			serv.Errorf("CreateConsumer error: " + err.Error())
+			return
+		}
+	}
+
+	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return
+	}
+	message := "Consumer " + name + " has been created"
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: username,
+		CreationDate:  time.Now(),
+		// UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("CreateConsumer error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementConsumersCounter()
+	}
+
+}
+
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	var consumers []models.ExtendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
