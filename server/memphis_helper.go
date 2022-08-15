@@ -379,16 +379,21 @@ func (s *Server) QueueSubscribe(subj, queueGroupName string, cb func(string, []b
 	return err
 }
 
-func (s *Server) Subscribe(subj, sid string, cb func(string, []byte)) error {
+func (s *Server) Subscribe(subj, sid string, cb func(string, string, []byte)) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
-	wcb := func(_ *subscription, _ *client, _ *Account, subject, _ string, rmsg []byte) {
-		cb(subject, rmsg)
+	wcb := func(_ *subscription, _ *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(subject, reply, rmsg)
 	}
 
 	_, err := c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 
 	return err
+}
+
+func (s *Server) Respond(reply string, msg []byte) {
+	acc := s.GlobalAccount()
+	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
 func (s *Server) ResendPoisonMessage(subject string, data []byte) error {

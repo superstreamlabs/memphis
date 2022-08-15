@@ -163,6 +163,8 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	})
 }
 
+var ErrFactoryAlreadyExists = errors.New("memphis: factory already exists")
+
 func CreateFactoryDirect(username, factoryName, factoryDesc string) error {
 	factoryName = strings.ToLower(factoryName)
 	err := validateFactoryName(factoryName)
@@ -178,8 +180,8 @@ func CreateFactoryDirect(username, factoryName, factoryDesc string) error {
 	}
 
 	if exist {
-		serv.Warnf("Factory with that name is already exist")
-		return err
+		serv.Warnf("Factory with that name already exists")
+		return ErrFactoryAlreadyExists
 	}
 
 	newFactory := models.Factory{

@@ -227,6 +227,7 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
+		// TODO returning an empty err
 		return err
 	}
 	if !connection.IsActive {
@@ -235,13 +236,13 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 	}
 
 	exist, user, err := IsUserExist(username)
-		if err != nil {
-			serv.Errorf("CreateProducer" + err.Error())
-			return err
-		}
-		if !exist {
-			return errors.New("User is not exist")
-		}
+	if err != nil {
+		serv.Errorf("CreateProducer" + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("User does not exist")
+	}
 
 	stationName = strings.ToLower(stationName)
 	exist, station, err := IsStationExist(stationName)
@@ -285,7 +286,9 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 		return err
 	}
 	if exist {
+		// TODO English: is something wrong with 'unique in a station level'?
 		serv.Warnf("Producer name has to be unique in a station level")
+		// TODO returning an empty err
 		return err
 	}
 

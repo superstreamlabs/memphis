@@ -18,6 +18,8 @@ import (
 	"memphis-broker/server"
 )
 
+type simplifiedMsgHandler func(string, string, []byte)
+
 type createFactoryRequest struct {
 	Username    string `json:"username"`
 	FactoryName string `json:"factory_name"`
@@ -41,7 +43,7 @@ type createProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ConnectionId string `json:"connection_id"`
 	ProducerType string `json:"producer_type"`
-	Username   	 string `json:"username"`
+	Username     string `json:"username"`
 }
 
 type createConsumerRequest struct {
@@ -52,7 +54,7 @@ type createConsumerRequest struct {
 	ConsumerGroup    string `json:"consumers_group"`
 	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
-	Username    	 string `json:"username"`
+	Username         string `json:"username"`
 }
 
 func Listen(s *server.Server) {
@@ -63,64 +65,69 @@ func Listen(s *server.Server) {
 		"memphis_station_creations_subscription",
 		createStationHandler(s))
 	s.Subscribe("$memphis_producer_creations",
-	"memphis_producer_creations_subscription",
-	createProducerHandler(s))
+		"memphis_producer_creations_subscription",
+		createProducerHandler(s))
 	s.Subscribe("$memphis_consumer_creations",
-	"memphis_consumer_creations_subscription",
-	createConsumerHandler(s))
+		"memphis_consumer_creations_subscription",
+		createConsumerHandler(s))
 }
 
-func createFactoryHandler(s *server.Server) func(string, []byte) {
-	return func(subject string, msg []byte) {
-		s.Noticef("FACTORY CREATION REQUEST!")
+func createFactoryHandler(s *server.Server) simplifiedMsgHandler {
+	return func(subject, reply string, msg []byte) {
 		var cfr createFactoryRequest
 		if err := json.Unmarshal(msg, &cfr); err != nil {
 			s.Errorf("failed creating factory: %v", err.Error())
 		}
-		server.CreateFactoryDirect(cfr.Username, cfr.FactoryName, cfr.FactoryDesc)
+		err := server.CreateFactoryDirect(cfr.Username, cfr.FactoryName, cfr.FactoryDesc)
+		respondWithErr(s, reply, err)
 	}
 }
 
-func createStationHandler(s *server.Server) func(string, []byte) {
-	return func(subject string, msg []byte) {
-		s.Noticef("STATION CREATION REQUEST!")
+func createStationHandler(s *server.Server) simplifiedMsgHandler {
+	return func(subject, reply string, msg []byte) {
 		var csr createStationRequest
 		if err := json.Unmarshal(msg, &csr); err != nil {
 			s.Errorf("failed creating station: %v", err.Error())
 
 		}
 
-		server.CreateStationDirect(s, csr.Username, csr.StationName, csr.FactoryName, csr.RetentionType,
-			csr.StorageType, csr.RetentionValue, csr.Replicas, csr.DedupWindowMillis, csr.DedupEnabled)
-
-		//send csr to the func instead send all the params
+		//TODO send csr to the func instead send all the params
 		// server.CreateStationDirect(&csr)
+		err := server.CreateStationDirect(s, csr.Username, csr.StationName, csr.FactoryName, csr.RetentionType,
+			csr.StorageType, csr.RetentionValue, csr.Replicas, csr.DedupWindowMillis, csr.DedupEnabled)
+		respondWithErr(s, reply, err)
 	}
 }
 
-func createProducerHandler(s *server.Server) func(string, []byte) {
-	return func(subject string, msg []byte) {
-		s.Noticef("PRODUCER CREATION REQUEST!")
+func createProducerHandler(s *server.Server) simplifiedMsgHandler {
+	return func(subject, reply string, msg []byte) {
 		var cpr createProducerRequest
 		if err := json.Unmarshal(msg, &cpr); err != nil {
 			s.Errorf("failed creating producer: %v", err.Error())
 
 		}
 
-		server.CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
+		err := server.CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
+		respondWithErr(s, reply, err)
 	}
 }
 
-
-func createConsumerHandler(s *server.Server) func(string, []byte) {
-	return func(subject string, msg []byte) {
-		s.Noticef("CONSUMER CREATION REQUEST!")
+func createConsumerHandler(s *server.Server) simplifiedMsgHandler {
+	return func(subject, reply string, msg []byte) {
 		var ccr createConsumerRequest
 		if err := json.Unmarshal(msg, &ccr); err != nil {
 			s.Errorf("failed creating producer: %v", err.Error())
-
 		}
 
-		server.CreateConsumerDirect(s, ccr.Name, ccr.StationName, ccr.ConnectionId, ccr.ConsumerType, ccr.ConsumerGroup, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries)
+		err := server.CreateConsumerDirect(s, ccr.Name, ccr.StationName, ccr.ConnectionId, ccr.ConsumerType, ccr.ConsumerGroup, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries)
+		respondWithErr(s, reply, err)
 	}
+}
+
+func respondWithErr(s *server.Server, replySubject string, err error) {
+	resp := []byte("")
+	if err != nil {
+		resp = []byte(err.Error())
+	}
+	s.Respond(replySubject, resp)
 }

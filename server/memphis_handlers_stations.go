@@ -120,7 +120,9 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 	}
 
 	if exist {
-		serv.Warnf("Station with that name is already exist")
+		// TODO English: exists?
+		serv.Warnf("Station with that name already exist")
+		// TODO returning an empty err
 		return err
 	}
 
@@ -221,7 +223,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		return err
 	}
 	if !exist {
-		return errors.New("User is not exist")
+		return errors.New("User does not exist")
 	}
 
 	var auditLogs []interface{}

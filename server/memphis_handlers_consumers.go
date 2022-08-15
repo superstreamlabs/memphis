@@ -283,13 +283,22 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	})
 }
 
-func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerType, consumersGroup , username string, maxAckTimeMillis, maxMsgDeliveries int) {
+func CreateConsumerDirect(
+	s *Server,
+	name,
+	stationName,
+	connectionId,
+	consumerType,
+	consumersGroup,
+	username string,
+	maxAckTimeMillis,
+	maxMsgDeliveries int) error {
 
 	name = strings.ToLower(name)
 	err := validateName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return
+		return err
 	}
 
 	consumerGroup := strings.ToLower(consumersGroup)
@@ -297,7 +306,7 @@ func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerTy
 		err = validateName(consumerGroup)
 		if err != nil {
 			serv.Warnf(err.Error())
-			return
+			return err
 		}
 	} else {
 		consumerGroup = name
@@ -307,39 +316,39 @@ func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerTy
 	err = validateConsumerType(consumerType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return
+		return err
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(connectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
-		return
+		return err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return
+		return err
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		return
+		return errors.New("connection id was not found")
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		return
+		return errors.New("connection is not active")
 	}
 
 	stationName = strings.ToLower(stationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return
+		return err
 	}
 	if !exist {
 		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
-			return
+			return err
 		}
 
 		message := "Station " + stationName + " has been created"
@@ -368,17 +377,18 @@ func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerTy
 	exist, _, err = IsConsumerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return
+		return err
 	}
 	if exist {
+		//TODO English
 		serv.Warnf("Consumer name has to be unique in a station level")
-		return
+		return errors.New("Consumer name has to be unique in a station level")
 	}
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return
+		return err
 	}
 
 	consumerId := primitive.NewObjectID()
@@ -405,14 +415,14 @@ func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerTy
 		s.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
-			return
+			return err
 		}
 	}
 
 	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return
+		return err
 	}
 	message := "Consumer " + name + " has been created"
 	serv.Noticef(message)
@@ -436,6 +446,7 @@ func CreateConsumerDirect(s *Server, name, stationName, connectionId, consumerTy
 		analytics.IncrementConsumersCounter()
 	}
 
+	return nil
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
