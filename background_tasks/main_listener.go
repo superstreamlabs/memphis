@@ -93,6 +93,6 @@ func createProducerHandler(s *server.Server) func(string, []byte) {
 
 		}
 
-		server.CreateProducerDirect(cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
+		server.CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
 	}
 }

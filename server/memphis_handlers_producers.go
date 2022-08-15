@@ -200,6 +200,139 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	})
 }
 
+func CreateProducerDirect(s *Server, name, stationName, connectionId, producerType, username string) error {
+	name = strings.ToLower(name)
+	err := validateProducerName(name)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	producerType = strings.ToLower(producerType)
+	err = validateProducerType(producerType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	connectionIdObj, err := primitive.ObjectIDFromHex(connectionId)
+	if err != nil {
+		serv.Warnf("Connection id is not valid")
+		return err
+	}
+	exist, connection, err := IsConnectionExist(connectionIdObj)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("Connection id was not found")
+		return err
+	}
+	if !connection.IsActive {
+		serv.Warnf("Connection is not active")
+		return err
+	}
+
+	exist, user, err := IsUserExist(username)
+		if err != nil {
+			serv.Errorf("CreateProducer" + err.Error())
+			return err
+		}
+		if !exist {
+			return errors.New("User is not exist")
+		}
+
+	stationName = strings.ToLower(stationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		if err != nil {
+			serv.Errorf("CreateProducer error: " + err.Error())
+			return err
+		}
+
+		message := "Station " + stationName + " has been created"
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("CreateProducer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.IncrementStationsCounter()
+		}
+	}
+
+	exist, _, err = IsProducerExist(name, station.ID)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		return err
+	}
+	if exist {
+		serv.Warnf("Producer name has to be unique in a station level")
+		return err
+	}
+
+	producerId := primitive.NewObjectID()
+	newProducer := models.Producer{
+		ID:            producerId,
+		Name:          name,
+		StationId:     station.ID,
+		FactoryId:     station.FactoryId,
+		Type:          producerType,
+		ConnectionId:  connectionIdObj,
+		CreatedByUser: connection.CreatedByUser,
+		IsActive:      true,
+		CreationDate:  time.Now(),
+		IsDeleted:     false,
+	}
+
+	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		return err
+	}
+
+	message := "Producer " + name + " has been created"
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("CreateProducer error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementProducersCounter()
+	}
+	return nil
+}
+
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{

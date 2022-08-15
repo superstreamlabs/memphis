@@ -115,7 +115,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
-		serv.Errorf("Create Station error: " + err.Error())
+		serv.Errorf("CreateStation error: " + err.Error())
 		return err
 	}
 
@@ -147,7 +147,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		}
 		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
 		if err != nil {
-			serv.Errorf("CreateFactory error: " + err.Error())
+			serv.Errorf("CreateStation error: " + err.Error())
 			return err
 		}
 	}
@@ -217,7 +217,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 
 	exist, user, err := IsUserExist(username)
 	if err != nil {
-		serv.Errorf("Error" + err.Error())
+		serv.Errorf("CreateStation" + err.Error())
 		return err
 	}
 	if !exist {
@@ -243,7 +243,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 	if shouldSendAnalytics {
 		analytics.IncrementStationsCounter()
 	}
-	
+
 	return nil
 }
 
