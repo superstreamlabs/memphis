@@ -105,7 +105,7 @@ func removeStationResources(s *Server, station models.Station) error {
 	return nil
 }
 
-func CreateStationDirect(username, stationName, factoryName, retentionType, storageType string, retentionValue, replicas, dedupWindowMillis int, dedupEnabled bool ) error {
+func CreateStationDirect(s *Server, username, stationName, factoryName, retentionType, storageType string, retentionValue, replicas, dedupWindowMillis int, dedupEnabled bool) error {
 	stationName = strings.ToLower(stationName)
 	err := validateStationName(stationName)
 	if err != nil {
@@ -124,21 +124,87 @@ func CreateStationDirect(username, stationName, factoryName, retentionType, stor
 		return err
 	}
 
+	factoryName = strings.ToLower(factoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
+	if err != nil {
+		serv.Errorf("Server Error" + err.Error())
+		return err
+	}
+	if !exist { // create this factory
+		err := validateFactoryName(factoryName)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+
+		factory = models.Factory{
+			ID:            primitive.NewObjectID(),
+			Name:          factoryName,
+			Description:   "",
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+			IsDeleted:     false,
+		}
+		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
+		if err != nil {
+			serv.Errorf("CreateFactory error: " + err.Error())
+			return err
+		}
+	}
+
+	if retentionType != "" {
+		retentionType = strings.ToLower(retentionType)
+		err = validateRetentionType(retentionType)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+	} else {
+		retentionType = "message_age_sec"
+		retentionValue = 604800 // 1 week
+	}
+
+	if storageType != "" {
+		storageType = strings.ToLower(storageType)
+		err = validateStorageType(storageType)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+	} else {
+		storageType = "file"
+	}
+
+	if replicas > 0 {
+		err = validateReplicas(replicas)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+	} else {
+		replicas = 1
+	}
 	newStation := models.Station{
-		ID:            		primitive.NewObjectID(),
-		Name:          		stationName,
-		FactoryId:    		primitive.NewObjectID(),
-		CreatedByUser: 		username,
-		CreationDate:  		time.Now(),
-		IsDeleted:     		false,
-		RetentionType: 		retentionType,
-		RetentionValue: 	retentionValue,
-		StorageType: 		storageType,
-		Replicas: 			replicas,
-		DedupEnabled: 		dedupEnabled,
-		DedupWindowInMs: 	dedupWindowMillis,
-		LastUpdate: 		time.Now(),
-		Functions:       	[]models.Function{},
+		ID:              primitive.NewObjectID(),
+		Name:            stationName,
+		FactoryId:       factory.ID,
+		CreatedByUser:   username,
+		CreationDate:    time.Now(),
+		IsDeleted:       false,
+		RetentionType:   retentionType,
+		RetentionValue:  retentionValue,
+		StorageType:     storageType,
+		Replicas:        replicas,
+		DedupEnabled:    dedupEnabled,
+		DedupWindowInMs: dedupWindowMillis,
+		LastUpdate:      time.Now(),
+		Functions:       []models.Function{},
+	}
+
+	err = s.CreateStream(newStation)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
@@ -146,8 +212,38 @@ func CreateStationDirect(username, stationName, factoryName, retentionType, stor
 		serv.Errorf("CreateStation error: " + err.Error())
 		return err
 	}
+	message := "Station " + stationName + " has been created"
+	serv.Noticef(message)
 
-	serv.Noticef("Station " + stationName + " has been created")
+	exist, user, err := IsUserExist(username)
+	if err != nil {
+		serv.Errorf("Error" + err.Error())
+		return err
+	}
+	if !exist {
+		return errors.New("User is not exist")
+	}
+
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementStationsCounter()
+	}
+	
 	return nil
 }
 
