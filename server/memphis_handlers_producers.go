@@ -532,6 +532,49 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) DestroyProducerDirect(stationName, producerName, username string) error {
+	stationName = strings.ToLower(stationName)
+	name := strings.ToLower(producerName)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("DestroyProducer error: " + err.Error())
+		return err
+	}
+
+	var producer models.Producer
+	err = producersCollection.FindOneAndUpdate(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID, "is_active": true},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	).Decode(&producer)
+	if err != nil {
+		serv.Errorf("DestroyProducer error: " + err.Error())
+		return err
+	}
+	if err == mongo.ErrNoDocuments {
+		serv.Warnf("A producer with the given details was not found")
+		return errors.New("memphis: a producer with the given details was not found")
+	}
+
+	message := "Producer " + name + " has been deleted"
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("DestroyProducer error: " + err.Error())
+	}
+
+	return nil
+}
+
 func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
 	var producers []models.Producer
 	var station models.Station

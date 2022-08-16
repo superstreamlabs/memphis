@@ -506,6 +506,43 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) RemoveStationDirect(stationName string) error {
+	stationName = strings.ToLower(stationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		return err
+	}
+
+	err = removeStationResources(s, station)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		return err
+	}
+
+	_, err = stationsCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": stationName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Station " + stationName + " has been deleted")
+	return nil
+}
+
 func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
 	totalMessages, err := sh.S.GetTotalMessagesInStation(station)
 	return totalMessages, err

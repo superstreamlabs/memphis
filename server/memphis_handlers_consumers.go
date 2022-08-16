@@ -741,6 +741,79 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) DestroyConsumerDirect(stationName, consumerName, username string) error {
+	stationName = strings.ToLower(stationName)
+	name := strings.ToLower(consumerName)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	var consumer models.Consumer
+	err = consumersCollection.FindOneAndUpdate(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID, "is_active": true},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	).Decode(&consumer)
+	if err == mongo.ErrNoDocuments {
+		serv.Warnf("A consumer with the given details was not found")
+		return errors.New("memphis: a consumer with the given details was not found")
+	}
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	// ensure not part of an active consumer group
+	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	if count == 0 { // no other members in this group
+		err = s.RemoveConsumer(stationName, consumer.ConsumersGroup)
+		if err != nil {
+			serv.Errorf("DestroyConsumer error: " + err.Error())
+			return err
+		}
+
+		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
+		if err != nil {
+			serv.Errorf("DestroyConsumer error: " + err.Error())
+			return err
+		}
+	}
+
+	message := "Consumer " + name + " has been deleted"
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("DestroyConsumer error: " + err.Error())
+	}
+
+	return nil
+}
+
 func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
 	var consumers []models.Consumer
 	var station models.Station
