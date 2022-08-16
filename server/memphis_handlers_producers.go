@@ -227,12 +227,11 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		// TODO returning an empty err
-		return err
+		return errors.New("memphis: connection id was not found")
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		return err
+		return errors.New("memphis: connection id is not active")
 	}
 
 	stationName := strings.ToLower(cpr.StationName)
@@ -277,10 +276,8 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 		return err
 	}
 	if exist {
-		// TODO English: is something wrong with 'unique in a station level'?
-		serv.Warnf("Producer name has to be unique in a station level")
-		// TODO returning an empty err
-		return err
+		serv.Warnf("Producer name has to be unique per station")
+		return errors.New("memphis: producer name has to be unique per station")
 	}
 
 	producerId := primitive.NewObjectID()

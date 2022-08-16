@@ -307,8 +307,6 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		})
-		// TODO (or) is it needed
-		// msg.Ack()
 	}
 
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old

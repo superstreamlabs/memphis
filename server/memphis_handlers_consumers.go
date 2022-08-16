@@ -370,9 +370,8 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest) error {
 		return err
 	}
 	if exist {
-		//TODO English
-		serv.Warnf("Consumer name has to be unique in a station level")
-		return errors.New("Consumer name has to be unique in a station level")
+		serv.Warnf("Consumer name has to be unique per station")
+		return errors.New("memphis: consumer name has to be unique per station")
 	}
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)

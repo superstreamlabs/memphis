@@ -120,10 +120,8 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	}
 
 	if exist {
-		// TODO English: exists?
-		serv.Warnf("Station with that name already exist")
-		// TODO returning an empty err
-		return err
+		serv.Warnf("Station with that name already exists")
+		return errors.New("memphis: station with that name already exists")
 	}
 
 	factoryName := strings.ToLower(csr.FactoryName)

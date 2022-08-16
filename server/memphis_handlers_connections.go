@@ -91,11 +91,6 @@ func handleConnectMessage(client *client) error {
 		client.memphisInfo.ConnectionId = connectionId
 	}
 
-	//TODO (or) remove the following panic if did not happen during testing
-	if exist, _, _ = IsUserExist(username); !exist {
-		panic("user should exist if we reached here")
-	}
-
 	return nil
 }
 
