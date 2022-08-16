@@ -11,11 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package background_tasks
+package server
 
 import (
 	"encoding/json"
-	"memphis-broker/server"
 )
 
 type simplifiedMsgHandler func(string, string, []byte)
@@ -77,7 +76,7 @@ type destroyConsumerRequest struct {
 	Username     string `json:"username"`
 }
 
-func Listen(s *server.Server) {
+func (s *Server) initialiseSDKHandlers() {
 	// factories
 	s.Subscribe("$memphis_factory_creations",
 		"memphis_factory_creations_subscription",
@@ -111,18 +110,18 @@ func Listen(s *server.Server) {
 		destroyConsumerHandler(s))
 }
 
-func createFactoryHandler(s *server.Server) simplifiedMsgHandler {
+func createFactoryHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var cfr createFactoryRequest
 		if err := json.Unmarshal(msg, &cfr); err != nil {
 			s.Errorf("failed creating factory: %v", err.Error())
 		}
-		err := server.CreateFactoryDirect(cfr.Username, cfr.FactoryName, cfr.FactoryDesc)
+		err := CreateFactoryDirect(cfr.Username, cfr.FactoryName, cfr.FactoryDesc)
 		respondWithErr(s, reply, err)
 	}
 }
 
-func destroyFactoryHandler(s *server.Server) simplifiedMsgHandler {
+func destroyFactoryHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var dfr destroyFactoryRequest
 		if err := json.Unmarshal(msg, &dfr); err != nil {
@@ -133,7 +132,7 @@ func destroyFactoryHandler(s *server.Server) simplifiedMsgHandler {
 	}
 }
 
-func createStationHandler(s *server.Server) simplifiedMsgHandler {
+func createStationHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var csr createStationRequest
 		if err := json.Unmarshal(msg, &csr); err != nil {
@@ -142,14 +141,14 @@ func createStationHandler(s *server.Server) simplifiedMsgHandler {
 		}
 
 		//TODO send csr to the func instead send all the params
-		// server.CreateStationDirect(&csr)
-		err := server.CreateStationDirect(s, csr.Username, csr.StationName, csr.FactoryName, csr.RetentionType,
+		// CreateStationDirect(&csr)
+		err := CreateStationDirect(s, csr.Username, csr.StationName, csr.FactoryName, csr.RetentionType,
 			csr.StorageType, csr.RetentionValue, csr.Replicas, csr.DedupWindowMillis, csr.DedupEnabled)
 		respondWithErr(s, reply, err)
 	}
 }
 
-func destroyStationHandler(s *server.Server) simplifiedMsgHandler {
+func destroyStationHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var dsr destroyStationRequest
 		if err := json.Unmarshal(msg, &dsr); err != nil {
@@ -161,19 +160,19 @@ func destroyStationHandler(s *server.Server) simplifiedMsgHandler {
 	}
 }
 
-func createProducerHandler(s *server.Server) simplifiedMsgHandler {
+func createProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var cpr createProducerRequest
 		if err := json.Unmarshal(msg, &cpr); err != nil {
 			s.Errorf("failed creating producer: %v", err.Error())
 		}
 
-		err := server.CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
+		err := CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
 		respondWithErr(s, reply, err)
 	}
 }
 
-func destroyProducerHandler(s *server.Server) simplifiedMsgHandler {
+func destroyProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var dpr destroyProducerRequest
 		if err := json.Unmarshal(msg, &dpr); err != nil {
@@ -185,19 +184,19 @@ func destroyProducerHandler(s *server.Server) simplifiedMsgHandler {
 	}
 }
 
-func createConsumerHandler(s *server.Server) simplifiedMsgHandler {
+func createConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var ccr createConsumerRequest
 		if err := json.Unmarshal(msg, &ccr); err != nil {
 			s.Errorf("failed creating consumer: %v", err.Error())
 		}
 
-		err := server.CreateConsumerDirect(s, ccr.Name, ccr.StationName, ccr.ConnectionId, ccr.ConsumerType, ccr.ConsumerGroup, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries)
+		err := CreateConsumerDirect(s, ccr.Name, ccr.StationName, ccr.ConnectionId, ccr.ConsumerType, ccr.ConsumerGroup, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries)
 		respondWithErr(s, reply, err)
 	}
 }
 
-func destroyConsumerHandler(s *server.Server) simplifiedMsgHandler {
+func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(subject, reply string, msg []byte) {
 		var dcr destroyConsumerRequest
 		if err := json.Unmarshal(msg, &dcr); err != nil {
@@ -209,7 +208,7 @@ func destroyConsumerHandler(s *server.Server) simplifiedMsgHandler {
 	}
 }
 
-func respondWithErr(s *server.Server, replySubject string, err error) {
+func respondWithErr(s *Server, replySubject string, err error) {
 	resp := []byte("")
 	if err != nil {
 		resp = []byte(err.Error())

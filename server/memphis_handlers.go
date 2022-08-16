@@ -49,7 +49,7 @@ var poisonMessagesCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
-func InitializeHandlers(s *Server, dbInstance db.DbInstance) {
+func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
 	factoriesCollection = db.GetCollection("factories", dbInstance.Client)
@@ -64,6 +64,7 @@ func InitializeHandlers(s *Server, dbInstance db.DbInstance) {
 	serv.DbClient = dbInstance.Client
 	serv.DbCtx = dbInstance.Ctx
 	serv.DbCancel = dbInstance.Cancel
+	s.initialiseSDKHandlers()
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
