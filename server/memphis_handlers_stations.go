@@ -217,15 +217,6 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 	message := "Station " + stationName + " has been created"
 	serv.Noticef(message)
 
-	exist, user, err := IsUserExist(username)
-	if err != nil {
-		serv.Errorf("CreateStation" + err.Error())
-		return err
-	}
-	if !exist {
-		return errors.New("User does not exist")
-	}
-
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
@@ -233,7 +224,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		Message:       message,
 		CreatedByUser: username,
 		CreationDate:  time.Now(),
-		UserType:      user.UserType,
+		UserType:      "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

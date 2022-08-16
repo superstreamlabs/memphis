@@ -360,7 +360,7 @@ func CreateConsumerDirect(
 			Message:       message,
 			CreatedByUser: username,
 			CreationDate:  time.Now(),
-			// UserType:      user.UserType,
+			UserType:      "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -433,7 +433,7 @@ func CreateConsumerDirect(
 		Message:       message,
 		CreatedByUser: username,
 		CreationDate:  time.Now(),
-		// UserType:      user.UserType,
+		UserType:      "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

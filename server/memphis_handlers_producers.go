@@ -235,15 +235,6 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 		return err
 	}
 
-	exist, user, err := IsUserExist(username)
-	if err != nil {
-		serv.Errorf("CreateProducer" + err.Error())
-		return err
-	}
-	if !exist {
-		return errors.New("User does not exist")
-	}
-
 	stationName = strings.ToLower(stationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
@@ -266,7 +257,7 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 			Message:       message,
 			CreatedByUser: username,
 			CreationDate:  time.Now(),
-			UserType:      user.UserType,
+			UserType:      "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -321,7 +312,7 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 		Message:       message,
 		CreatedByUser: username,
 		CreationDate:  time.Now(),
-		UserType:      user.UserType,
+		UserType:      "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
