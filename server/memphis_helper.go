@@ -379,7 +379,7 @@ func (s *Server) QueueSubscribe(subj, queueGroupName string, cb func(string, []b
 	return err
 }
 
-func (s *Server) Subscribe(subj, sid string, cb func(string, string, []byte)) error {
+func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb func(string, string, []byte)) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
 	wcb := func(_ *subscription, _ *client, _ *Account, subject, reply string, rmsg []byte) {

@@ -105,8 +105,8 @@ func removeStationResources(s *Server, station models.Station) error {
 	return nil
 }
 
-func CreateStationDirect(s *Server, username, stationName, factoryName, retentionType, storageType string, retentionValue, replicas, dedupWindowMillis int, dedupEnabled bool) error {
-	stationName = strings.ToLower(stationName)
+func (s *Server) createStationDirect(csr *createStationRequest) error {
+	stationName := strings.ToLower(csr.StationName)
 	err := validateStationName(stationName)
 	if err != nil {
 		serv.Warnf(err.Error())
@@ -126,7 +126,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		return err
 	}
 
-	factoryName = strings.ToLower(factoryName)
+	factoryName := strings.ToLower(csr.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		serv.Errorf("Server Error" + err.Error())
@@ -143,7 +143,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 			ID:            primitive.NewObjectID(),
 			Name:          factoryName,
 			Description:   "",
-			CreatedByUser: username,
+			CreatedByUser: csr.Username,
 			CreationDate:  time.Now(),
 			IsDeleted:     false,
 		}
@@ -154,20 +154,24 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		}
 	}
 
-	if retentionType != "" {
-		retentionType = strings.ToLower(retentionType)
+	var retentionType string
+	var retentionValue int
+	if csr.RetentionType != "" {
+		retentionType = strings.ToLower(csr.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf(err.Error())
 			return err
 		}
+		retentionValue = csr.RetentionValue
 	} else {
 		retentionType = "message_age_sec"
 		retentionValue = 604800 // 1 week
 	}
 
-	if storageType != "" {
-		storageType = strings.ToLower(storageType)
+	var storageType string
+	if csr.StorageType != "" {
+		storageType = strings.ToLower(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf(err.Error())
@@ -177,6 +181,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		storageType = "file"
 	}
 
+	replicas := csr.Replicas
 	if replicas > 0 {
 		err = validateReplicas(replicas)
 		if err != nil {
@@ -190,15 +195,15 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
 		FactoryId:       factory.ID,
-		CreatedByUser:   username,
+		CreatedByUser:   csr.Username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
 		RetentionType:   retentionType,
 		RetentionValue:  retentionValue,
 		StorageType:     storageType,
 		Replicas:        replicas,
-		DedupEnabled:    dedupEnabled,
-		DedupWindowInMs: dedupWindowMillis,
+		DedupEnabled:    csr.DedupEnabled,
+		DedupWindowInMs: csr.DedupWindowMillis,
 		LastUpdate:      time.Now(),
 		Functions:       []models.Function{},
 	}
@@ -222,7 +227,7 @@ func CreateStationDirect(s *Server, username, stationName, factoryName, retentio
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: username,
+		CreatedByUser: csr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -506,8 +511,8 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) RemoveStationDirect(stationName string) error {
-	stationName = strings.ToLower(stationName)
+func (s *Server) removeStationDirect(dsr *destroyStationRequest) error {
+	stationName := strings.ToLower(dsr.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())

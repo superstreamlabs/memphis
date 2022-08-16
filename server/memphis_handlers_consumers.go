@@ -283,25 +283,15 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	})
 }
 
-func CreateConsumerDirect(
-	s *Server,
-	name,
-	stationName,
-	connectionId,
-	consumerType,
-	consumersGroup,
-	username string,
-	maxAckTimeMillis,
-	maxMsgDeliveries int) error {
-
-	name = strings.ToLower(name)
+func (s *Server) createConsumerDirect(ccr *createConsumerRequest) error {
+	name := strings.ToLower(ccr.Name)
 	err := validateName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
 		return err
 	}
 
-	consumerGroup := strings.ToLower(consumersGroup)
+	consumerGroup := strings.ToLower(ccr.ConsumerGroup)
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
 		if err != nil {
@@ -312,14 +302,14 @@ func CreateConsumerDirect(
 		consumerGroup = name
 	}
 
-	consumerType = strings.ToLower(consumerType)
+	consumerType := strings.ToLower(ccr.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
 		serv.Warnf(err.Error())
 		return err
 	}
 
-	connectionIdObj, err := primitive.ObjectIDFromHex(connectionId)
+	connectionIdObj, err := primitive.ObjectIDFromHex(ccr.ConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
 		return err
@@ -338,7 +328,7 @@ func CreateConsumerDirect(
 		return errors.New("connection is not active")
 	}
 
-	stationName = strings.ToLower(stationName)
+	stationName := strings.ToLower(ccr.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
@@ -358,7 +348,7 @@ func CreateConsumerDirect(
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: username,
+			CreatedByUser: ccr.Username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -410,8 +400,8 @@ func CreateConsumerDirect(
 		newConsumer.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
 		newConsumer.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
 	} else {
-		newConsumer.MaxAckTimeMs = int64(maxAckTimeMillis)
-		newConsumer.MaxMsgDeliveries = maxMsgDeliveries
+		newConsumer.MaxAckTimeMs = int64(ccr.MaxAckTimeMillis)
+		newConsumer.MaxMsgDeliveries = ccr.MaxMsgDeliveries
 		s.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
@@ -431,7 +421,7 @@ func CreateConsumerDirect(
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: username,
+		CreatedByUser: ccr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -741,9 +731,9 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) DestroyConsumerDirect(stationName, consumerName, username string) error {
-	stationName = strings.ToLower(stationName)
-	name := strings.ToLower(consumerName)
+func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest) error {
+	stationName := strings.ToLower(dcr.StationName)
+	name := strings.ToLower(dcr.ConsumerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
@@ -801,7 +791,7 @@ func (s *Server) DestroyConsumerDirect(stationName, consumerName, username strin
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: username,
+		CreatedByUser: dcr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}

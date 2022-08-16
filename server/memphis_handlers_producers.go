@@ -200,22 +200,22 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	})
 }
 
-func CreateProducerDirect(s *Server, name, stationName, connectionId, producerType, username string) error {
-	name = strings.ToLower(name)
+func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
+	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
 		return err
 	}
 
-	producerType = strings.ToLower(producerType)
+	producerType := strings.ToLower(cpr.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf(err.Error())
 		return err
 	}
 
-	connectionIdObj, err := primitive.ObjectIDFromHex(connectionId)
+	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
 		return err
@@ -235,7 +235,7 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 		return err
 	}
 
-	stationName = strings.ToLower(stationName)
+	stationName := strings.ToLower(cpr.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
@@ -255,7 +255,7 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: username,
+			CreatedByUser: cpr.Username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -310,7 +310,7 @@ func CreateProducerDirect(s *Server, name, stationName, connectionId, producerTy
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: username,
+		CreatedByUser: cpr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -532,9 +532,9 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) DestroyProducerDirect(stationName, producerName, username string) error {
-	stationName = strings.ToLower(stationName)
-	name := strings.ToLower(producerName)
+func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest) error {
+	stationName := strings.ToLower(dpr.StationName)
+	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("DestroyProducer error: " + err.Error())
@@ -562,7 +562,7 @@ func (s *Server) DestroyProducerDirect(stationName, producerName, username strin
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: username,
+		CreatedByUser: dpr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}

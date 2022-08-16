@@ -78,34 +78,34 @@ type destroyConsumerRequest struct {
 
 func (s *Server) initialiseSDKHandlers() {
 	// factories
-	s.Subscribe("$memphis_factory_creations",
+	s.subscribeOnGlobalAcc("$memphis_factory_creations",
 		"memphis_factory_creations_subscription",
 		createFactoryHandler(s))
-	s.Subscribe("$memphis_factory_destructions",
+	s.subscribeOnGlobalAcc("$memphis_factory_destructions",
 		"memphis_factory_destructions_subscription",
 		destroyFactoryHandler(s))
 
 	//stations
-	s.Subscribe("$memphis_station_creations",
+	s.subscribeOnGlobalAcc("$memphis_station_creations",
 		"memphis_station_creations_subscription",
 		createStationHandler(s))
-	s.Subscribe("$memphis_station_destructions",
+	s.subscribeOnGlobalAcc("$memphis_station_destructions",
 		"memphis_station_destructions_subscription",
 		destroyStationHandler(s))
 
 	// producers
-	s.Subscribe("$memphis_producer_creations",
+	s.subscribeOnGlobalAcc("$memphis_producer_creations",
 		"memphis_producer_creations_subscription",
 		createProducerHandler(s))
-	s.Subscribe("$memphis_producer_destructions",
+	s.subscribeOnGlobalAcc("$memphis_producer_destructions",
 		"memphis_producer_destructions_subscription",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.Subscribe("$memphis_consumer_creations",
+	s.subscribeOnGlobalAcc("$memphis_consumer_creations",
 		"memphis_consumer_creations_subscription",
 		createConsumerHandler(s))
-	s.Subscribe("$memphis_consumer_destructions",
+	s.subscribeOnGlobalAcc("$memphis_consumer_destructions",
 		"memphis_consumer_destructions_subscription",
 		destroyConsumerHandler(s))
 }
@@ -116,7 +116,7 @@ func createFactoryHandler(s *Server) simplifiedMsgHandler {
 		if err := json.Unmarshal(msg, &cfr); err != nil {
 			s.Errorf("failed creating factory: %v", err.Error())
 		}
-		err := CreateFactoryDirect(cfr.Username, cfr.FactoryName, cfr.FactoryDesc)
+		err := createFactoryDirect(&cfr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -127,7 +127,7 @@ func destroyFactoryHandler(s *Server) simplifiedMsgHandler {
 		if err := json.Unmarshal(msg, &dfr); err != nil {
 			s.Errorf("failed destroying factory: %v", err.Error())
 		}
-		err := s.RemoveFactoryDirect(dfr.FactoryName)
+		err := s.RemoveFactoryDirect(&dfr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -139,11 +139,7 @@ func createStationHandler(s *Server) simplifiedMsgHandler {
 			s.Errorf("failed creating station: %v", err.Error())
 
 		}
-
-		//TODO send csr to the func instead send all the params
-		// CreateStationDirect(&csr)
-		err := CreateStationDirect(s, csr.Username, csr.StationName, csr.FactoryName, csr.RetentionType,
-			csr.StorageType, csr.RetentionValue, csr.Replicas, csr.DedupWindowMillis, csr.DedupEnabled)
+		err := s.createStationDirect(&csr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -155,7 +151,7 @@ func destroyStationHandler(s *Server) simplifiedMsgHandler {
 			s.Errorf("failed destroying station: %v", err.Error())
 		}
 
-		err := s.RemoveStationDirect(dsr.StationName)
+		err := s.removeStationDirect(&dsr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -167,7 +163,7 @@ func createProducerHandler(s *Server) simplifiedMsgHandler {
 			s.Errorf("failed creating producer: %v", err.Error())
 		}
 
-		err := CreateProducerDirect(s, cpr.Name, cpr.StationName, cpr.ConnectionId, cpr.ProducerType, cpr.Username)
+		err := s.createProducerDirect(&cpr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -179,7 +175,7 @@ func destroyProducerHandler(s *Server) simplifiedMsgHandler {
 			s.Errorf("failed destoying producer: %v", err.Error())
 		}
 
-		err := s.DestroyProducerDirect(dpr.StationName, dpr.ProducerName, dpr.Username)
+		err := s.destroyProducerDirect(&dpr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -191,7 +187,7 @@ func createConsumerHandler(s *Server) simplifiedMsgHandler {
 			s.Errorf("failed creating consumer: %v", err.Error())
 		}
 
-		err := CreateConsumerDirect(s, ccr.Name, ccr.StationName, ccr.ConnectionId, ccr.ConsumerType, ccr.ConsumerGroup, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries)
+		err := s.createConsumerDirect(&ccr)
 		respondWithErr(s, reply, err)
 	}
 }
@@ -203,7 +199,7 @@ func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 			s.Errorf("failed destoying consumer: %v", err.Error())
 		}
 
-		err := s.DestroyConsumerDirect(dcr.StationName, dcr.ConsumerName, dcr.Username)
+		err := s.destroyConsumerDirect(&dcr)
 		respondWithErr(s, reply, err)
 	}
 }

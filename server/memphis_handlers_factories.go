@@ -165,8 +165,8 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 
 var ErrFactoryAlreadyExists = errors.New("memphis: factory already exists")
 
-func CreateFactoryDirect(username, factoryName, factoryDesc string) error {
-	factoryName = strings.ToLower(factoryName)
+func createFactoryDirect(cfr *createFactoryRequest) error {
+	factoryName := strings.ToLower(cfr.FactoryName)
 	err := validateFactoryName(factoryName)
 	if err != nil {
 		serv.Warnf(err.Error())
@@ -187,8 +187,8 @@ func CreateFactoryDirect(username, factoryName, factoryDesc string) error {
 	newFactory := models.Factory{
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,
-		Description:   strings.ToLower(factoryDesc),
-		CreatedByUser: username,
+		Description:   strings.ToLower(cfr.FactoryDesc),
+		CreatedByUser: cfr.Username,
 		CreationDate:  time.Now(),
 		IsDeleted:     false,
 	}
@@ -358,8 +358,8 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) RemoveFactoryDirect(factoryName string) error {
-	factoryName = strings.ToLower(factoryName)
+func (s *Server) RemoveFactoryDirect(dfr *destroyFactoryRequest) error {
+	factoryName := strings.ToLower(dfr.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		serv.Errorf("RemoveFactory error: " + err.Error())
