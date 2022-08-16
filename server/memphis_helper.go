@@ -307,8 +307,6 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		})
-		// TODO (or) is it needed
-		// msg.Ack()
 	}
 
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old
@@ -377,6 +375,23 @@ func (s *Server) QueueSubscribe(subj, queueGroupName string, cb func(string, []b
 	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte("memphis_internal"), wcb, false)
 
 	return err
+}
+
+func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb func(string, string, []byte)) error {
+	acc := s.GlobalAccount()
+	c := acc.ic
+	wcb := func(_ *subscription, _ *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(subject, reply, rmsg)
+	}
+
+	_, err := c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
+
+	return err
+}
+
+func (s *Server) Respond(reply string, msg []byte) {
+	acc := s.GlobalAccount()
+	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
 func (s *Server) ResendPoisonMessage(subject string, data []byte) error {

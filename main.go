@@ -92,7 +92,6 @@ func usage() {
 	os.Exit(0)
 }
 
-
 func runMemphis(s *server.Server) {
 
 	if !s.MemphisInitialized() {
@@ -111,8 +110,8 @@ func runMemphis(s *server.Server) {
 		db.Close(dbInstance, s)
 		os.Exit(1)
 	}
-	
-	server.InitializeHandlers(s, dbInstance)
+
+	s.InitializeMemphisHandlers(dbInstance)
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
@@ -130,7 +129,6 @@ func runMemphis(s *server.Server) {
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
 
-	// go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(s, wg)
 	go background_tasks.KillZombieResources(wg)
 	go background_tasks.ListenForPoisonMessages(s)

@@ -105,6 +105,144 @@ func removeStationResources(s *Server, station models.Station) error {
 	return nil
 }
 
+func (s *Server) createStationDirect(csr *createStationRequest) error {
+	stationName := strings.ToLower(csr.StationName)
+	err := validateStationName(stationName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	exist, _, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		return err
+	}
+
+	if exist {
+		serv.Warnf("Station with that name already exists")
+		return errors.New("memphis: station with that name already exists")
+	}
+
+	factoryName := strings.ToLower(csr.FactoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
+	if err != nil {
+		serv.Errorf("Server Error" + err.Error())
+		return err
+	}
+	if !exist { // create this factory
+		err := validateFactoryName(factoryName)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+
+		factory = models.Factory{
+			ID:            primitive.NewObjectID(),
+			Name:          factoryName,
+			Description:   "",
+			CreatedByUser: csr.Username,
+			CreationDate:  time.Now(),
+			IsDeleted:     false,
+		}
+		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
+		if err != nil {
+			serv.Errorf("CreateStation error: " + err.Error())
+			return err
+		}
+	}
+
+	var retentionType string
+	var retentionValue int
+	if csr.RetentionType != "" {
+		retentionType = strings.ToLower(csr.RetentionType)
+		err = validateRetentionType(retentionType)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+		retentionValue = csr.RetentionValue
+	} else {
+		retentionType = "message_age_sec"
+		retentionValue = 604800 // 1 week
+	}
+
+	var storageType string
+	if csr.StorageType != "" {
+		storageType = strings.ToLower(csr.StorageType)
+		err = validateStorageType(storageType)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+	} else {
+		storageType = "file"
+	}
+
+	replicas := csr.Replicas
+	if replicas > 0 {
+		err = validateReplicas(replicas)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+	} else {
+		replicas = 1
+	}
+	newStation := models.Station{
+		ID:              primitive.NewObjectID(),
+		Name:            stationName,
+		FactoryId:       factory.ID,
+		CreatedByUser:   csr.Username,
+		CreationDate:    time.Now(),
+		IsDeleted:       false,
+		RetentionType:   retentionType,
+		RetentionValue:  retentionValue,
+		StorageType:     storageType,
+		Replicas:        replicas,
+		DedupEnabled:    csr.DedupEnabled,
+		DedupWindowInMs: csr.DedupWindowMillis,
+		LastUpdate:      time.Now(),
+		Functions:       []models.Function{},
+	}
+
+	err = s.CreateStream(newStation)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		return err
+	}
+	message := "Station " + stationName + " has been created"
+	serv.Noticef(message)
+
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: csr.Username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementStationsCounter()
+	}
+
+	return nil
+}
+
 func (sh StationsHandler) GetStation(c *gin.Context) {
 	var body models.GetStationSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -369,6 +507,43 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 	serv.Noticef("Station " + stationName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (s *Server) removeStationDirect(dsr *destroyStationRequest) error {
+	stationName := strings.ToLower(dsr.StationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		return err
+	}
+
+	err = removeStationResources(s, station)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		return err
+	}
+
+	_, err = stationsCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": stationName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Station " + stationName + " has been deleted")
+	return nil
 }
 
 func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {

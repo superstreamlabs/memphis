@@ -163,6 +163,46 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	})
 }
 
+var ErrFactoryAlreadyExists = errors.New("memphis: factory already exists")
+
+func createFactoryDirect(cfr *createFactoryRequest) error {
+	factoryName := strings.ToLower(cfr.FactoryName)
+	err := validateFactoryName(factoryName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	exist, _, err := IsFactoryExist(factoryName)
+	if err != nil {
+		serv.Errorf("CreateFactory error: " + err.Error())
+		return err
+	}
+
+	if exist {
+		serv.Warnf("Factory with that name already exists")
+		return ErrFactoryAlreadyExists
+	}
+
+	newFactory := models.Factory{
+		ID:            primitive.NewObjectID(),
+		Name:          factoryName,
+		Description:   strings.ToLower(cfr.FactoryDesc),
+		CreatedByUser: cfr.Username,
+		CreationDate:  time.Now(),
+		IsDeleted:     false,
+	}
+
+	_, err = factoriesCollection.InsertOne(context.TODO(), newFactory)
+	if err != nil {
+		serv.Errorf("CreateFactory error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Factory " + factoryName + " has been created")
+	return nil
+}
+
 func (fh FactoriesHandler) GetFactoryDetails(factoryName string) (map[string]interface{}, error) {
 	var factory models.Factory
 	err := factoriesCollection.FindOne(context.TODO(), bson.M{
@@ -316,6 +356,43 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 
 	serv.Noticef("Factory " + factoryName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (s *Server) RemoveFactoryDirect(dfr *destroyFactoryRequest) error {
+	factoryName := strings.ToLower(dfr.FactoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
+	if err != nil {
+		serv.Errorf("RemoveFactory error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("Factory does not exist")
+		return errors.New("memphis: factory does not exist")
+	}
+
+	err = removeStations(s, factory.ID)
+	if err != nil {
+		serv.Errorf("RemoveFactory error: " + err.Error())
+		return err
+	}
+
+	_, err = factoriesCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": factoryName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
+	if err != nil {
+		serv.Errorf("RemoveFactory error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Factory " + factoryName + " has been deleted")
+	return nil
 }
 
 func (fh FactoriesHandler) EditFactory(c *gin.Context) {

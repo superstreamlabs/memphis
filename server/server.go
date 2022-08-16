@@ -86,7 +86,6 @@ type Info struct {
 	WSConnectURLs     []string           `json:"ws_connect_urls,omitempty"` // Contains URLs a ws client can connect to.
 	LameDuckMode      bool               `json:"ldm,omitempty"`
 	ConnectionId      primitive.ObjectID `json:"connection_id"`
-	AccessToken       string             `json:"access_token"`
 
 	// Route Specific
 	Import        *SubjectPermission `json:"import,omitempty"`

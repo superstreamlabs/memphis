@@ -283,7 +283,6 @@ type client struct {
 }
 
 type memphisConnectInfo struct {
-	AccessToken  string             `json:"jwt,omitempty"`
 	ConnectionId primitive.ObjectID `json:"connection_id,omitempty"`
 }
 
@@ -2152,7 +2151,6 @@ func (c *client) generateClientInfoJSON(info Info) []byte {
 	info.ClientIP = c.host
 	info.MaxPayload = c.mpay
 	info.ConnectionId = c.memphisInfo.ConnectionId
-	info.AccessToken = c.memphisInfo.AccessToken
 	if c.isWebsocket() {
 		info.ClientConnectURLs = info.WSConnectURLs
 	}

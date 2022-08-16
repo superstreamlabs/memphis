@@ -283,6 +283,161 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	})
 }
 
+func (s *Server) createConsumerDirect(ccr *createConsumerRequest) error {
+	name := strings.ToLower(ccr.Name)
+	err := validateName(name)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	consumerGroup := strings.ToLower(ccr.ConsumerGroup)
+	if consumerGroup != "" {
+		err = validateName(consumerGroup)
+		if err != nil {
+			serv.Warnf(err.Error())
+			return err
+		}
+	} else {
+		consumerGroup = name
+	}
+
+	consumerType := strings.ToLower(ccr.ConsumerType)
+	err = validateConsumerType(consumerType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		return err
+	}
+
+	connectionIdObj, err := primitive.ObjectIDFromHex(ccr.ConnectionId)
+	if err != nil {
+		serv.Warnf("Connection id is not valid")
+		return err
+	}
+	exist, connection, err := IsConnectionExist(connectionIdObj)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("Connection id was not found")
+		return errors.New("connection id was not found")
+	}
+	if !connection.IsActive {
+		serv.Warnf("Connection is not active")
+		return errors.New("connection is not active")
+	}
+
+	stationName := strings.ToLower(ccr.StationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return err
+	}
+	if !exist {
+		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		if err != nil {
+			serv.Errorf("CreateConsumer error: " + err.Error())
+			return err
+		}
+
+		message := "Station " + stationName + " has been created"
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: ccr.Username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("CreateConsumer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.IncrementStationsCounter()
+		}
+	}
+
+	exist, _, err = IsConsumerExist(name, station.ID)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return err
+	}
+	if exist {
+		serv.Warnf("Consumer name has to be unique per station")
+		return errors.New("memphis: consumer name has to be unique per station")
+	}
+
+	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return err
+	}
+
+	consumerId := primitive.NewObjectID()
+	newConsumer := models.Consumer{
+		ID:             consumerId,
+		Name:           name,
+		StationId:      station.ID,
+		FactoryId:      station.FactoryId,
+		Type:           consumerType,
+		ConnectionId:   connectionIdObj,
+		CreatedByUser:  connection.CreatedByUser,
+		ConsumersGroup: consumerGroup,
+		IsActive:       true,
+		CreationDate:   time.Now(),
+		IsDeleted:      false,
+	}
+
+	if consumerGroupExist {
+		newConsumer.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
+		newConsumer.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
+	} else {
+		newConsumer.MaxAckTimeMs = int64(ccr.MaxAckTimeMillis)
+		newConsumer.MaxMsgDeliveries = ccr.MaxMsgDeliveries
+		s.CreateConsumer(newConsumer, station)
+		if err != nil {
+			serv.Errorf("CreateConsumer error: " + err.Error())
+			return err
+		}
+	}
+
+	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		return err
+	}
+	message := "Consumer " + name + " has been created"
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: ccr.Username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("CreateConsumer error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.IncrementConsumersCounter()
+	}
+
+	return nil
+}
+
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	var consumers []models.ExtendedConsumer
 	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
@@ -573,6 +728,79 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 		serv.Warnf("DestroyConsumer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest) error {
+	stationName := strings.ToLower(dcr.StationName)
+	name := strings.ToLower(dcr.ConsumerName)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	var consumer models.Consumer
+	err = consumersCollection.FindOneAndUpdate(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID, "is_active": true},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	).Decode(&consumer)
+	if err == mongo.ErrNoDocuments {
+		serv.Warnf("A consumer with the given details was not found")
+		return errors.New("memphis: a consumer with the given details was not found")
+	}
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	_, err = consumersCollection.UpdateMany(context.TODO(),
+		bson.M{"name": name, "station_id": station.ID},
+		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
+	)
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	// ensure not part of an active consumer group
+	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		return err
+	}
+
+	if count == 0 { // no other members in this group
+		err = s.RemoveConsumer(stationName, consumer.ConsumersGroup)
+		if err != nil {
+			serv.Errorf("DestroyConsumer error: " + err.Error())
+			return err
+		}
+
+		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
+		if err != nil {
+			serv.Errorf("DestroyConsumer error: " + err.Error())
+			return err
+		}
+	}
+
+	message := "Consumer " + name + " has been deleted"
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName,
+		Message:       message,
+		CreatedByUser: dcr.Username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("DestroyConsumer error: " + err.Error())
+	}
+
+	return nil
 }
 
 func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
