@@ -358,6 +358,43 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) RemoveFactoryDirect(factoryName string) error {
+	factoryName = strings.ToLower(factoryName)
+	exist, factory, err := IsFactoryExist(factoryName)
+	if err != nil {
+		serv.Errorf("RemoveFactory error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("Factory does not exist")
+		return errors.New("memphis: factory does not exist")
+	}
+
+	err = removeStations(s, factory.ID)
+	if err != nil {
+		serv.Errorf("RemoveFactory error: " + err.Error())
+		return err
+	}
+
+	_, err = factoriesCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": factoryName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	)
+	if err != nil {
+		serv.Errorf("RemoveFactory error: " + err.Error())
+		return err
+	}
+
+	serv.Noticef("Factory " + factoryName + " has been deleted")
+	return nil
+}
+
 func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return

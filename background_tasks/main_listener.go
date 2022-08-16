@@ -26,6 +26,10 @@ type createFactoryRequest struct {
 	FactoryDesc string `json:"factory_description"`
 }
 
+type destroyFactoryRequest struct {
+	FactoryName string `json:"factory_name"`
+}
+
 type createStationRequest struct {
 	StationName       string `json:"name"`
 	FactoryName       string `json:"factory_name"`
@@ -58,9 +62,14 @@ type createConsumerRequest struct {
 }
 
 func Listen(s *server.Server) {
+	// factories
 	s.Subscribe("$memphis_factory_creations",
 		"memphis_factory_creations_subscription",
 		createFactoryHandler(s))
+	s.Subscribe("$memphis_factory_destructions",
+		"memphis_factory_destructions_subscription",
+		destroyFactoryHandler(s))
+
 	s.Subscribe("$memphis_station_creations",
 		"memphis_station_creations_subscription",
 		createStationHandler(s))
@@ -79,6 +88,17 @@ func createFactoryHandler(s *server.Server) simplifiedMsgHandler {
 			s.Errorf("failed creating factory: %v", err.Error())
 		}
 		err := server.CreateFactoryDirect(cfr.Username, cfr.FactoryName, cfr.FactoryDesc)
+		respondWithErr(s, reply, err)
+	}
+}
+
+func destroyFactoryHandler(s *server.Server) simplifiedMsgHandler {
+	return func(subject, reply string, msg []byte) {
+		var dfr destroyFactoryRequest
+		if err := json.Unmarshal(msg, &dfr); err != nil {
+			s.Errorf("failed creating factory: %v", err.Error())
+		}
+		err := s.RemoveFactoryDirect(dfr.FactoryName)
 		respondWithErr(s, reply, err)
 	}
 }
