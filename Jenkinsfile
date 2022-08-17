@@ -43,22 +43,22 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
       dir ('memphis-docker'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'unified'
       }
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-docker/unified-docker-compose-dev.yaml -p memphis up -d"
     }
 
-    stage('Tests - Run e2e tests over Docker') {
+    /*stage('Tests - Run e2e tests over Docker') {
       sh "rm -rf memphis-e2e-tests"
       dir ('memphis-e2e-tests'){
         git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-e2e-tests.git', branch: 'master'
       }
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js docker"
-    }
+    }*/
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
+      sh "docker-compose -f ./memphis-docker/unified-docker-compose-dev.yaml -p memphis down"
       sh "docker volume prune -f"
     }
 
@@ -69,7 +69,7 @@ node {
     stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
-       	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
+       	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'unified'
       	}
       	sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
     }
@@ -81,10 +81,10 @@ node {
       sh "nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis-$unique_id &"
     }
 
-    stage('Tests - Run e2e tests over kubernetes') {
+    /*stage('Tests - Run e2e tests over kubernetes') {
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id"
-    }
+    }*/
 
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
@@ -103,7 +103,7 @@ node {
     ////////////////////////////////////////
 
 
-    stage('Build and push image to Docker Hub') {
+    /*stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       if (env.BRANCH_NAME ==~ /(beta)/) {
       	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
@@ -116,7 +116,7 @@ node {
 			    sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
 		    }	
 	    }
-    }
+    }*/
 	  
 	  
     ///////////////////////////////////////
