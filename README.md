@@ -118,7 +118,7 @@ Schema registry, and inline processing, as well as making more SDKs and supporti
 How does it affect you? Well... mostly it doesn't.<br>
 (a) The core of memphis broker is highly stable<br>
 (b) We learn&fix fast<br><br>
-But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
+But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancements.<br>
 Read more on https://memphis.dev/docs
 
 ## Support
