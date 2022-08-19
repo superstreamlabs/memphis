@@ -3,7 +3,9 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
 	"sort"
@@ -17,6 +19,11 @@ const (
 	statusLen = 3 // e.g. 20x, 40x, 50x
 	statusHdr = "Status"
 	descrHdr  = "Description"
+)
+
+// internal reply subjects
+const (
+	replySubjectStreamInfo = "$memphis_stream_info_reply"
 )
 
 // errors
@@ -207,6 +214,30 @@ func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
 	return messagesCounter, nil
 }
 
+func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
+	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
+
+	// signal the handler that we will be waiting for a reply
+	s.memphis.replySubjectActive[replySubjectStreamInfo] = true
+
+	// send on golbal account
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), requestSubject, replySubjectStreamInfo, nil, _EMPTY_, true)
+
+	// wait for response to arrive
+	rawResp := <-s.memphis.replySubjectRespCh[replySubjectStreamInfo]
+
+	s.memphis.replySubjectActive[replySubjectStreamInfo] = false
+
+	var resp JSApiStreamInfoResponse
+	err := json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		s.Errorf("getStreamInfo json response unmarshal error")
+		return nil, err
+	}
+
+	return resp.StreamInfo, nil
+}
+
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	streamInfo, err := s.memphisStreamInfo(station.Name)
 	if err != nil || streamInfo.State.Bytes == 0 {
@@ -214,30 +245,6 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	}
 
 	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
-}
-
-func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
-	acc := s.GlobalAccount()
-	mset, err := acc.lookupStream(streamName)
-	if err != nil {
-		return nil, err
-	}
-	config := mset.config()
-
-	js, _ := s.getJetStreamCluster()
-
-	info := StreamInfo{
-		Created: mset.createdTime(),
-		State:   mset.stateWithDetail(true),
-		Config:  config,
-		Domain:  s.getOpts().JetStreamDomain,
-		Cluster: js.clusterInfo(mset.raftGroup()),
-		Mirror:  mset.mirrorInfo(),
-		Sources: mset.sourcesInfo(),
-		// Alternates: js.streamAlternates(ci, config.Name),
-	}
-
-	return &info, nil
 }
 
 func (s *Server) memphisAllStreamsInfo() []*StreamInfo {
@@ -365,7 +372,7 @@ func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error
 	return stream.getMsg(msgSeq)
 }
 
-func (s *Server) QueueSubscribe(subj, queueGroupName string, cb func(string, []byte)) error {
+func (s *Server) queueSubscribe(subj, queueGroupName string, cb func(string, []byte)) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
 	wcb := func(_ *subscription, _ *client, _ *Account, subject, _ string, rmsg []byte) {

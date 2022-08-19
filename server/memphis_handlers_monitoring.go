@@ -70,8 +70,6 @@ func clientSetConfig() error {
 	return nil
 }
 
-
-
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
@@ -94,7 +92,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			})
 		}
 
-		err = serv.DbClient.Ping(context.TODO(), nil)
+		err = serv.memphis.dbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",

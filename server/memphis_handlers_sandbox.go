@@ -165,7 +165,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
 			serv.Errorf("Login(Sandbox) error: " + err.Error())
 		}
-		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.DbClient)
+		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
 			serv.Errorf("Login(Sandbox) error: " + err.Error())
@@ -183,7 +183,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		return
 	}
 	if !user.AlreadyLoggedIn {
-		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users",  serv.DbClient)
+		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 		sandboxUsersCollection.UpdateOne(context.TODO(),
 			bson.M{"_id": user.ID},
 			bson.M{"$set": bson.M{"already_logged_in": true}},
@@ -308,7 +308,7 @@ func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
 func isSandboxUserExist(username string) (bool, models.SandboxUser, error) {
 	filter := bson.M{"username": username}
 	var user models.SandboxUser
-	var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users",  serv.DbClient)
+	var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 	err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return false, user, nil

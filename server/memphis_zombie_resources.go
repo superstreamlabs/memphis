@@ -11,37 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package background_tasks
+package server
 
 import (
 	"context"
-	"memphis-broker/conf"
-	"memphis-broker/db"
 	"memphis-broker/models"
-	"memphis-broker/server"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var configuration = conf.GetConfig()
-
-var connectionsCollection *mongo.Collection
-var producersCollection *mongo.Collection
-var consumersCollection *mongo.Collection
-var poisonMessagesCollection *mongo.Collection
-var serv *server.Server
-
-func InitializeZombieResources(s *server.Server) {
-	connectionsCollection = db.GetCollection("connections", s.DbClient)
-	producersCollection = db.GetCollection("producers", s.DbClient)
-	consumersCollection = db.GetCollection("consumers", s.DbClient)
-	poisonMessagesCollection = db.GetCollection("poison_messages", s.DbClient)
-	serv = s
-}
 
 func killRelevantConnections() ([]models.Connection, error) {
 	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
@@ -111,7 +90,7 @@ func removeOldPoisonMsgs() error {
 	return nil
 }
 
-func KillZombieResources(wg *sync.WaitGroup) {
+func KillZombieResources() {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
 		if err != nil {
@@ -142,6 +121,4 @@ func KillZombieResources(wg *sync.WaitGroup) {
 			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 	}
-
-	defer wg.Done()
 }

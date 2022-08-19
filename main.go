@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 	"memphis-broker/analytics"
-	"memphis-broker/background_tasks"
 	"memphis-broker/db"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
@@ -119,7 +118,6 @@ func runMemphis(s *server.Server) {
 		db.Close(dbInstance, s)
 		os.Exit(1)
 	}
-	background_tasks.InitializeZombieResources(s)
 
 	defer db.Close(dbInstance, s)
 
@@ -127,11 +125,10 @@ func runMemphis(s *server.Server) {
 	defer analytics.Close()
 
 	wg := new(sync.WaitGroup)
-	wg.Add(4)
+	wg.Add(2)
 
 	go http_server.InitializeHttpServer(s, wg)
-	go background_tasks.KillZombieResources(wg)
-	go background_tasks.ListenForPoisonMessages(s)
+	go server.KillZombieResources()
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

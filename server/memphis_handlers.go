@@ -49,7 +49,24 @@ var poisonMessagesCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
+type srvMemphis struct {
+	replySubjectActive map[string]bool
+	replySubjectRespCh map[string]chan []byte
+	dbClient           *mongo.Client
+	dbCtx              context.Context
+	dbCancel           context.CancelFunc
+}
+
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
+
+	// initialise db
+	serv = s
+	serv.memphis.dbClient = dbInstance.Client
+	serv.memphis.dbCtx = dbInstance.Ctx
+	serv.memphis.dbCancel = dbInstance.Cancel
+	serv.memphis.replySubjectActive = make(map[string]bool)
+	serv.memphis.replySubjectRespCh = make(map[string]chan []byte)
+
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
 	factoriesCollection = db.GetCollection("factories", dbInstance.Client)
@@ -60,11 +77,36 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
-	serv = s
-	serv.DbClient = dbInstance.Client
-	serv.DbCtx = dbInstance.Ctx
-	serv.DbCancel = dbInstance.Cancel
 	s.initialiseSDKHandlers()
+	listenForPoisonMessages(s)
+	s.prepReplySubjSubscription(replySubjectStreamInfo)
+}
+
+func (s *Server) prepReplySubjSubscription(subject string) {
+	s.memphis.replySubjectActive[subject] = false
+	s.memphis.replySubjectRespCh[subject] = make(chan []byte)
+	s.subscribeOnGlobalAcc(subject, subject+"_sid", createReplyHandler(s))
+}
+
+func createReplyHandler(s *Server) simplifiedMsgHandler {
+	return func(subject, reply string, msg []byte) {
+		active, ok := s.memphis.replySubjectActive[subject]
+		if !ok {
+			s.Fatalf("memphis reply subject does not exist")
+		}
+
+		if active {
+			s.memphis.replySubjectRespCh[subject] <- msg
+		}
+	}
+}
+
+var poisonMessagesHandler PoisonMessagesHandler
+
+func listenForPoisonMessages(s *Server) {
+	s.queueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
+		"$memphis_poison_messages_listeners_group",
+		poisonMessagesHandler.HandleNewMessage)
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {

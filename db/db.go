@@ -24,22 +24,23 @@ import (
 )
 
 var configuration = conf.GetConfig()
+
 // var serv *server.Server
 
 const (
 	dbOperationTimeout = 20
 )
 
-type logger interface{
+type logger interface {
 	Noticef(string, ...interface{})
 	Errorf(string, ...interface{})
 }
 
 type DbInstance struct {
-	Client  *mongo.Client
-	Ctx	context.Context
+	Client *mongo.Client
+	Ctx    context.Context
 	Cancel context.CancelFunc
-} 
+}
 
 func InitializeDbConnection(l logger) (DbInstance, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
@@ -68,12 +69,8 @@ func InitializeDbConnection(l logger) (DbInstance, error) {
 		return DbInstance{}, err
 	}
 
-	// s.DbClient = client
-	// s.DbCtx = ctx
-	// s.DbCancel = cancel
-	// serv = s
 	l.Noticef("Established connection with the DB")
-	return DbInstance{Client:client, Ctx: ctx, Cancel: cancel}, nil
+	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
 }
 
 func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {

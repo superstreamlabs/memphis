@@ -45,7 +45,6 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"memphis-broker/logger"
 )
 
@@ -291,9 +290,7 @@ type Server struct {
 	// Queue to process JS API requests that come from routes (or gateways)
 	jsAPIRoutedReqs *ipQueue
 
-	DbClient *mongo.Client
-	DbCancel context.CancelFunc
-	DbCtx    context.Context
+	memphis srvMemphis
 }
 
 // For tracking JS nodes.
