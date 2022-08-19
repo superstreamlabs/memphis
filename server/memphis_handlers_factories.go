@@ -83,12 +83,12 @@ func removeStations(s *Server, factoryId primitive.ObjectID) error {
 
 		err = RemovePoisonMsgsByStation(station.Name)
 		if err != nil {
-			serv.Warnf("removeStations error: " + err.Error())
+			serv.Errorf("removeStations error: " + err.Error())
 		}
 
 		err = RemoveAllAuditLogsByStation(station.Name)
 		if err != nil {
-			serv.Warnf("removeStations error: " + err.Error())
+			serv.Errorf("removeStations error: " + err.Error())
 		}
 	}
 
@@ -119,7 +119,7 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.Name)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -131,7 +131,7 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Warnf("Factory with that name is already exist")
+		serv.Errorf("Factory with that name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name is already exist"})
 		return
 	}
@@ -169,7 +169,7 @@ func createFactoryDirect(cfr *createFactoryRequest) error {
 	factoryName := strings.ToLower(cfr.FactoryName)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf(err.Error())
 		return err
 	}
 
@@ -180,7 +180,7 @@ func createFactoryDirect(cfr *createFactoryRequest) error {
 	}
 
 	if exist {
-		serv.Warnf("Factory with that name already exists")
+		serv.Errorf("Factory with that name already exists")
 		return ErrFactoryAlreadyExists
 	}
 
@@ -326,7 +326,7 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Factory does not exist")
+		serv.Errorf("Factory does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	}
@@ -366,7 +366,7 @@ func (s *Server) RemoveFactoryDirect(dfr *destroyFactoryRequest) error {
 		return err
 	}
 	if !exist {
-		serv.Warnf("Factory does not exist")
+		serv.Errorf("Factory does not exist")
 		return errors.New("memphis: factory does not exist")
 	}
 
@@ -413,7 +413,7 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Factory with that name does not exist")
+		serv.Errorf("Factory with that name does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name does not exist"})
 		return
 	}
@@ -426,7 +426,7 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Warnf("Factory with that name already exist")
+		serv.Errorf("Factory with that name already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name already exist"})
 		return
 	}

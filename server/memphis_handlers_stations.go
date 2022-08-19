@@ -94,12 +94,12 @@ func removeStationResources(s *Server, station models.Station) error {
 
 	err = RemovePoisonMsgsByStation(station.Name)
 	if err != nil {
-		serv.Warnf("removeStationResources error: " + err.Error())
+		serv.Errorf("removeStationResources error: " + err.Error())
 	}
 
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
-		serv.Warnf("removeStationResources error: " + err.Error())
+		serv.Errorf("removeStationResources error: " + err.Error())
 	}
 
 	return nil
@@ -109,7 +109,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	stationName := strings.ToLower(csr.StationName)
 	err := validateStationName(stationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf(err.Error())
 		return err
 	}
 
@@ -120,7 +120,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	}
 
 	if exist {
-		serv.Warnf("Station with that name already exists")
+		serv.Errorf("Station with that name already exists")
 		return errors.New("memphis: station with that name already exists")
 	}
 
@@ -133,7 +133,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	if !exist { // create this factory
 		err := validateFactoryName(factoryName)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			return err
 		}
 
@@ -158,7 +158,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		retentionType = strings.ToLower(csr.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			return err
 		}
 		retentionValue = csr.RetentionValue
@@ -172,7 +172,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		storageType = strings.ToLower(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			return err
 		}
 	} else {
@@ -183,7 +183,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	if replicas > 0 {
 		err = validateReplicas(replicas)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			return err
 		}
 	} else {
@@ -208,7 +208,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 
 	err = s.CreateStream(newStation)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf(err.Error())
 		return err
 	}
 
@@ -232,7 +232,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("create audit logs error: " + err.Error())
+		serv.Errorf("create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -319,7 +319,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -330,7 +330,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Warnf("Station with the same name is already exist")
+		serv.Errorf("Station with the same name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
@@ -345,7 +345,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if !exist { // create this factory
 		err := validateFactoryName(factoryName)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -371,7 +371,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -385,7 +385,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -396,7 +396,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Errorf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -423,7 +423,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = sh.S.CreateStream(newStation)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -448,7 +448,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("CreateStation error: " + err.Error())
+		serv.Errorf("CreateStation error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -477,7 +477,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Errorf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -517,7 +517,7 @@ func (s *Server) removeStationDirect(dsr *destroyStationRequest) error {
 		return err
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Errorf("Station does not exist")
 		return err
 	}
 
@@ -657,7 +657,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 	if err == mongo.ErrNoDocuments {
-		serv.Warnf("GetPoisonMessageJourney error: " + err.Error())
+		serv.Errorf("GetPoisonMessageJourney error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 		return
 	}
@@ -737,7 +737,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if body.IsPoisonMessage {
 		poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 		if err == mongo.ErrNoDocuments {
-			serv.Warnf("GetMessageDetails error: " + err.Error())
+			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 			return
 		}

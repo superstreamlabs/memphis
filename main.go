@@ -121,7 +121,6 @@ func runMemphis(s *server.Server) {
 
 	defer db.Close(dbInstance, s)
 
-	// defer broker.Close()
 	defer analytics.Close()
 
 	wg := new(sync.WaitGroup)

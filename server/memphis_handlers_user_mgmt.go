@@ -407,7 +407,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Warnf("A user with this username is already exist")
+		serv.Errorf("A user with this username is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
 		return
 	}
@@ -415,14 +415,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		serv.Warnf(userTypeError.Error())
+		serv.Errorf(userTypeError.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		serv.Warnf(usernameError.Error())
+		serv.Errorf(usernameError.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
@@ -431,7 +431,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			serv.Warnf("Password was not provided")
+			serv.Errorf("Password was not provided")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
@@ -544,7 +544,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user := getUserDetailsFromMiddleware(c)
 	if user.Username == username {
-		serv.Warnf("You can't remove your own user")
+		serv.Errorf("You can't remove your own user")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can't remove your own user"})
 		return
 	}
@@ -556,12 +556,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("User does not exist")
+		serv.Errorf("User does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
-		serv.Warnf("You can not remove the root user")
+		serv.Errorf("You can not remove the root user")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}

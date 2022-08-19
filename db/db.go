@@ -25,8 +25,6 @@ import (
 
 var configuration = conf.GetConfig()
 
-// var serv *server.Server
-
 const (
 	dbOperationTimeout = 20
 )
