@@ -164,8 +164,12 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 
 func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error {
 	requestSubject := fmt.Sprintf(JSApiConsumerCreateT, streamName)
+	if cc.Durable != _EMPTY_ {
+		requestSubject = fmt.Sprintf(JSApiDurableCreateT, streamName, cc.Durable)
+	}
 
-	rawRequest, err := json.Marshal(cc)
+	request := CreateConsumerRequest{Stream: streamName, Config: *cc}
+	rawRequest, err := json.Marshal(request)
 
 	if err != nil {
 		return err
@@ -336,6 +340,8 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	var startSequence uint64 = 1
 	if totalMessages > uint64(messagesToFetch) {
 		startSequence = totalMessages - uint64(messagesToFetch) + 1
+	} else {
+		messagesToFetch = int(totalMessages)
 	}
 
 	msgs, err := s.memphisGetMsgs(station.Name+".final",
@@ -344,7 +350,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch,
 		3*time.Second)
 	var messages []models.MessageDetails
-	if err != nil && err != ErrStoreEOF {
+	if err != nil {
 		return []models.MessageDetails{}, err
 	}
 
@@ -383,12 +389,6 @@ func (s *Server) memphisGetMsgs(subjectName,
 	startSeq uint64,
 	amount int,
 	timeout time.Duration) ([]StoredMsg, error) {
-	acc := s.GlobalAccount()
-	stream, err := acc.lookupStream(streamName)
-	if err != nil {
-		return nil, err
-	}
-
 	var msgs []StoredMsg
 	seq := startSeq
 
@@ -398,24 +398,16 @@ func (s *Server) memphisGetMsgs(subjectName,
 		case <-timeoutCh:
 			return msgs, errors.New("MemphisGetMsgs timeout")
 		default:
-			pmsg := getJSPubMsgFromPool()
-			sm, sseq, err := stream.store.LoadNextMsg(subjectName, false, seq, &pmsg.StoreMsg)
-			seq = sseq + 1
+			sm, err := s.GetMessage(streamName, seq)
 			if sm == nil || err != nil {
-				pmsg.returnToPool()
 				return msgs, err
 			}
-			msgs = append(msgs, StoredMsg{
-				Subject:  sm.subj,
-				Header:   sm.hdr,
-				Data:     sm.msg,
-				Sequence: sm.seq,
-				Time:     time.Unix(0, sm.ts).UTC(),
-			})
+			seq = sm.Sequence + 1
+			msgs = append(msgs, *sm)
 		}
 	}
 
-	return msgs, err
+	return msgs, nil
 }
 
 func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
@@ -457,16 +449,14 @@ func (s *Server) queueSubscribe(subj, queueGroupName string, cb func(string, []b
 	return err
 }
 
-func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb func(string, string, []byte)) error {
+func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb func(string, string, []byte)) (*subscription, error) {
 	acc := s.GlobalAccount()
 	c := acc.ic
 	wcb := func(_ *subscription, _ *client, _ *Account, subject, reply string, rmsg []byte) {
 		cb(subject, reply, rmsg)
 	}
 
-	_, err := c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
-
-	return err
+	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
 func (s *Server) Respond(reply string, msg []byte) {
