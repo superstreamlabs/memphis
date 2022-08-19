@@ -77,9 +77,17 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
+
 	s.initialiseSDKHandlers()
 	listenForPoisonMessages(s)
+
 	s.prepReplySubjSubscription(replySubjectStreamInfo)
+	s.prepReplySubjSubscription(replySubjectCreateConsumer)
+	s.prepReplySubjSubscription(replySubjectDeleteConsumer)
+	s.prepReplySubjSubscription(replySubjectConsumerInfo)
+	s.prepReplySubjSubscription(replySubjectDeleteStream)
+	s.prepReplySubjSubscription(replySubjectStreamList)
+	s.prepReplySubjSubscription(replySubjectGetMsg)
 }
 
 func (s *Server) prepReplySubjSubscription(subject string) {

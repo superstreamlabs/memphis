@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
-	"sort"
 	"strings"
 	"time"
 )
@@ -23,7 +22,13 @@ const (
 
 // internal reply subjects
 const (
-	replySubjectStreamInfo = "$memphis_stream_info_reply"
+	replySubjectStreamInfo     = "$memphis_stream_info_reply"
+	replySubjectCreateConsumer = "$memphis_create_consumer_reply"
+	replySubjectDeleteConsumer = "$memphis_delete_consumer_reply"
+	replySubjectConsumerInfo   = "$memphis_consumer_info_reply"
+	replySubjectDeleteStream   = "$memphis_delete_stream_reply"
+	replySubjectStreamList     = "$memphis_stream_list_reply"
+	replySubjectGetMsg         = "$memphis_get_msg_reply"
 )
 
 // errors
@@ -33,6 +38,21 @@ var (
 
 func (s *Server) MemphisInitialized() bool {
 	return s.GlobalAccount().JetStreamEnabled()
+}
+
+func (s *Server) jsApiRequest(subject, reply string, msg []byte) []byte {
+	// signal the handler that we will be waiting for a reply
+	s.memphis.replySubjectActive[reply] = true
+
+	// send on golbal account
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
+
+	// wait for response to arrive
+	rawResp := <-s.memphis.replySubjectRespCh[reply]
+
+	s.memphis.replySubjectActive[reply] = false
+
+	return rawResp
 }
 
 func AddUser(username string) (string, error) {
@@ -143,55 +163,89 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 }
 
 func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error {
-	acc := s.GlobalAccount()
-	stream, err := acc.lookupStream(streamName)
+	requestSubject := fmt.Sprintf(JSApiConsumerCreateT, streamName)
+
+	rawRequest, err := json.Marshal(cc)
+
 	if err != nil {
 		return err
 	}
 
-	_, err = stream.addConsumer(cc)
+	rawResp := s.jsApiRequest(requestSubject, replySubjectCreateConsumer, []byte(rawRequest))
 
-	return err
+	var resp JSApiConsumerCreateResponse
+	err = json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		s.Errorf("ConsumerCreate json response unmarshal error")
+		return err
+	}
+
+	err = resp.ApiResponse.ToError()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Server) RemoveConsumer(streamName string, cn string) error {
-	acc := s.GlobalAccount()
-	stream, err := acc.lookupStream(streamName)
+	requestSubject := fmt.Sprintf(JSApiConsumerDeleteT, streamName, cn)
+
+	rawResp := s.jsApiRequest(requestSubject, replySubjectDeleteConsumer, []byte(_EMPTY_))
+
+	var resp JSApiConsumerDeleteResponse
+	err := json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		s.Errorf("ConsumerDelete json response unmarshal error")
+		return err
+	}
+
+	err = resp.ApiResponse.ToError()
 	if err != nil {
 		return err
 	}
-	c := stream.lookupConsumer(cn)
 
-	return stream.deleteConsumer(c)
+	return nil
 }
 
 func (s *Server) GetCgInfo(stationName, cgName string) (*ConsumerInfo, error) {
-	consumerName := cgName
-	acc := s.GlobalAccount()
-	stream, err := acc.lookupStream(stationName)
+	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName, cgName)
+
+	rawResp := s.jsApiRequest(requestSubject, replySubjectConsumerInfo, []byte(_EMPTY_))
+
+	var resp JSApiConsumerInfoResponse
+	err := json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		s.Errorf("ConsumerInfo json response unmarshal error")
+		return nil, err
+	}
+
+	err = resp.ApiResponse.ToError()
 	if err != nil {
 		return nil, err
 	}
 
-	consumer := stream.lookupConsumer(consumerName)
-	if consumer == nil {
-		return nil, errors.New("Consumer doesn't exist")
-	}
-
-	return consumer.info(), nil
+	return resp.ConsumerInfo, nil
 }
 
 func (s *Server) RemoveStream(streamName string) error {
-	acc := s.GlobalAccount()
-	stream, err := acc.lookupStream(streamName)
+	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
+
+	rawResp := s.jsApiRequest(requestSubject, replySubjectDeleteStream, []byte(_EMPTY_))
+
+	var resp JSApiStreamDeleteResponse
+	err := json.Unmarshal(rawResp, &resp)
 	if err != nil {
-		s.Errorf(err.Error())
+		s.Errorf("StreamDelete json response unmarshal error")
 		return err
 	}
 
-	_, err = stream.purge(nil)
+	err = resp.ApiResponse.ToError()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func (s *Server) GetTotalMessagesInStation(station models.Station) (int, error) {
@@ -205,7 +259,13 @@ func (s *Server) GetTotalMessagesInStation(station models.Station) (int, error) 
 
 func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
 	messagesCounter := 0
-	for _, streamInfo := range s.memphisAllStreamsInfo() {
+
+	streams, err := s.memphisAllStreamsInfo()
+	if err != nil {
+		return messagesCounter, err
+	}
+
+	for _, streamInfo := range streams {
 		if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
 			messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
 		}
@@ -215,23 +275,20 @@ func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
 }
 
 func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
+
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
 
-	// signal the handler that we will be waiting for a reply
-	s.memphis.replySubjectActive[replySubjectStreamInfo] = true
-
-	// send on golbal account
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), requestSubject, replySubjectStreamInfo, nil, _EMPTY_, true)
-
-	// wait for response to arrive
-	rawResp := <-s.memphis.replySubjectRespCh[replySubjectStreamInfo]
-
-	s.memphis.replySubjectActive[replySubjectStreamInfo] = false
+	rawResp := s.jsApiRequest(requestSubject, replySubjectStreamInfo, []byte(_EMPTY_))
 
 	var resp JSApiStreamInfoResponse
 	err := json.Unmarshal(rawResp, &resp)
 	if err != nil {
-		s.Errorf("getStreamInfo json response unmarshal error")
+		s.Errorf("StreamInfo json response unmarshal error")
+		return nil, err
+	}
+
+	err = resp.ApiResponse.ToError()
+	if err != nil {
 		return nil, err
 	}
 
@@ -247,28 +304,26 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
 }
 
-func (s *Server) memphisAllStreamsInfo() []*StreamInfo {
-	acc := s.GlobalAccount()
-	streams := acc.streams()
+func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
+	requestSubject := fmt.Sprintf(JSApiStreamList)
 
-	sort.Slice(streams, func(i, j int) bool {
-		return strings.Compare(streams[i].cfg.Name, streams[j].cfg.Name) < 0
-	})
+	request := JSApiStreamListRequest{}
+	rawRequest, err := json.Marshal(request)
+	rawResp := s.jsApiRequest(requestSubject, replySubjectStreamList, []byte(rawRequest))
 
-	var res []*StreamInfo
-	for _, mset := range streams {
-		config := mset.config()
-		res = append(res, &StreamInfo{
-			Created: mset.createdTime(),
-			State:   mset.state(),
-			Config:  config,
-			Domain:  s.getOpts().JetStreamDomain,
-			Mirror:  mset.mirrorInfo(),
-			Sources: mset.sourcesInfo(),
-		})
+	var resp JSApiStreamListResponse
+	err = json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		s.Errorf("StreamList json response unmarshal error")
+		return nil, err
 	}
 
-	return res
+	err = resp.ApiResponse.ToError()
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Streams, nil
 }
 
 func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
@@ -364,12 +419,30 @@ func (s *Server) memphisGetMsgs(subjectName,
 }
 
 func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
-	acc := s.GlobalAccount()
-	stream, err := acc.lookupStream(streamName)
+	requestSubject := fmt.Sprintf(JSApiMsgGetT, streamName)
+
+	request := JSApiMsgGetRequest{Seq: msgSeq}
+
+	rawRequest, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
-	return stream.getMsg(msgSeq)
+
+	rawResp := s.jsApiRequest(requestSubject, replySubjectGetMsg, rawRequest)
+
+	var resp JSApiMsgGetResponse
+	err = json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		s.Errorf("MsgGet json response unmarshal error")
+		return nil, err
+	}
+
+	err = resp.ApiResponse.ToError()
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Message, nil
 }
 
 func (s *Server) queueSubscribe(subj, queueGroupName string, cb func(string, []byte)) error {
