@@ -56,6 +56,8 @@ Give memphis{dev} a spin before.
 
 ## ✨ Features
 
+[**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
+
 **v0.3.0**
 
 - 🚀 Fully optimized message broker in under 3 minutes
@@ -65,11 +67,6 @@ Give memphis{dev} a spin before.
 - SDKs: Node.JS, Go, Python, Typescript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
-
-**Roadmap**
-- Embedded schema store and transformation
-- Inline processing
-- Connectors and analysis functions
 
 ## 🚀 Getting Started
 [Sandbox](https://sandbox.memphis.dev)<br>
