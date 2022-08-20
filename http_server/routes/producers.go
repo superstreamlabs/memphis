@@ -14,12 +14,12 @@
 package routes
 
 import (
-	"memphis-broker/handlers"
+	"memphis-broker/server"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeProducersRoutes(router *gin.RouterGroup, h *handlers.Handlers) {
+func InitializeProducersRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	producersHandler := h.Producers
 	producersRoutes := router.Group("/producers")
 	producersRoutes.GET("/getAllProducers", producersHandler.GetAllProducers)

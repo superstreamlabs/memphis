@@ -15,7 +15,6 @@ package db
 
 import (
 	"memphis-broker/conf"
-	"memphis-broker/server"
 
 	"context"
 	"time"
@@ -25,13 +24,23 @@ import (
 )
 
 var configuration = conf.GetConfig()
-var serv *server.Server
 
 const (
 	dbOperationTimeout = 20
 )
 
-func InitializeDbConnection(s *server.Server) error {
+type logger interface {
+	Noticef(string, ...interface{})
+	Errorf(string, ...interface{})
+}
+
+type DbInstance struct {
+	Client *mongo.Client
+	Ctx    context.Context
+	Cancel context.CancelFunc
+}
+
+func InitializeDbConnection(l logger) (DbInstance, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
 	var clientOptions *options.ClientOptions
@@ -48,32 +57,30 @@ func InitializeDbConnection(s *server.Server) error {
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		return err
+		cancel()
+		return DbInstance{}, err
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		return err
+		cancel()
+		return DbInstance{}, err
 	}
 
-	s.DbClient = client
-	s.DbCtx = ctx
-	s.DbCancel = cancel
-	serv = s
-	s.Noticef("Established connection with the DB")
-	return nil
+	l.Noticef("Established connection with the DB")
+	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
 }
 
-func GetCollection(collectionName string) *mongo.Collection {
-	var collection *mongo.Collection = serv.DbClient.Database(configuration.DB_NAME).Collection(collectionName)
+func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
+	var collection *mongo.Collection = dbClient.Database(configuration.DB_NAME).Collection(collectionName)
 	return collection
 }
 
-func Close() {
-	defer serv.DbCancel()
+func Close(dbi DbInstance, l logger) {
+	defer dbi.Cancel()
 	defer func() {
-		if err := serv.DbClient.Disconnect(serv.DbCtx); err != nil {
-			serv.Errorf("Failed to close Mongodb client: " + err.Error())
+		if err := dbi.Client.Disconnect(dbi.Ctx); err != nil {
+			l.Errorf("Failed to close Mongodb client: " + err.Error())
 		}
 	}()
 }

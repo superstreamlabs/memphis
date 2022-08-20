@@ -19,9 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"memphis-broker/analytics"
-	"memphis-broker/background_tasks"
 	"memphis-broker/db"
-	"memphis-broker/handlers"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
 	"os"
@@ -93,48 +91,48 @@ func usage() {
 	os.Exit(0)
 }
 
-func handleError(s *server.Server, message string, err error) {
-	if err != nil {
-		s.Errorf(message + " " + err.Error())
-	}
-}
-
 func runMemphis(s *server.Server) {
 
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	err := db.InitializeDbConnection(s)
-	handleError(s, "Failed initializing db connection: ", err)
+	dbInstance, err := db.InitializeDbConnection(s)
+	if err != nil {
+		s.Errorf("Failed initializing db connection:" + " " + err.Error())
+		os.Exit(1)
+	}
 
-	err = analytics.InitializeAnalytics()
-	handleError(s, "Failed initializing analytics: ", err)
+	err = analytics.InitializeAnalytics(dbInstance.Client)
+	if err != nil {
+		s.Errorf("Failed initializing analytics: " + " " + err.Error())
+		db.Close(dbInstance, s)
+		os.Exit(1)
+	}
 
-	handlers.InitializeHandlers(s)
+	s.InitializeMemphisHandlers(dbInstance)
 
-	err = handlers.CreateRootUserOnFirstSystemLoad()
-	handleError(s, "Failed to create root user: ", err)
+	err = server.CreateRootUserOnFirstSystemLoad()
+	if err != nil {
+		s.Errorf("Failed to create root user: " + " " + err.Error())
+		db.Close(dbInstance, s)
+		os.Exit(1)
+	}
 
-	background_tasks.InitializeZombieResources(s)
+	defer db.Close(dbInstance, s)
 
-	defer db.Close()
-
-	// defer broker.Close()
 	defer analytics.Close()
 
 	wg := new(sync.WaitGroup)
-	wg.Add(4)
+	wg.Add(2)
 
-	// go tcp_server.InitializeTcpServer(wg)
 	go http_server.InitializeHttpServer(s, wg)
-	go background_tasks.KillZombieResources(wg)
-	go background_tasks.ListenForPoisonMessages(s)
+	go server.KillZombieResources()
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:5555 (Management Port) / 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
 	} else {
 		env = "K8S"
 	}

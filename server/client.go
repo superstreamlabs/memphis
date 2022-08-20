@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"github.com/nats-io/jwt/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Type of client connection.
@@ -139,6 +140,7 @@ const (
 	skipFlushOnClose                              // Marks that flushOutbound() should not be called on connection close.
 	expectConnect                                 // Marks if this connection is expected to send a CONNECT
 	connectProcessFinished                        // Marks if this connection has finished the connect process.
+	connectionIdSent                              // connectionId sent to client
 )
 
 // set the flag (would be equivalent to set the boolean to true)
@@ -276,6 +278,12 @@ type client struct {
 	nameTag string
 
 	tlsTo *time.Timer
+
+	memphisInfo memphisConnectInfo
+}
+
+type memphisConnectInfo struct {
+	ConnectionId primitive.ObjectID `json:"connection_id,omitempty"`
 }
 
 type rrTracking struct {
@@ -2142,6 +2150,7 @@ func (c *client) generateClientInfoJSON(info Info) []byte {
 	info.CID = c.cid
 	info.ClientIP = c.host
 	info.MaxPayload = c.mpay
+	info.ConnectionId = c.memphisInfo.ConnectionId
 	if c.isWebsocket() {
 		info.ClientConnectURLs = info.WSConnectURLs
 	}
@@ -2223,7 +2232,9 @@ func (c *client) processPing() {
 		c.flags.set(firstPongSent)
 		// If there was a cluster update since this client was created,
 		// send an updated INFO protocol now.
-		if srv.lastCURLsUpdate >= c.start.UnixNano() || c.mpay != int32(opts.MaxPayload) {
+		// send connectionId to client if wasn't yet sent
+		if srv.lastCURLsUpdate >= c.start.UnixNano() || c.mpay != int32(opts.MaxPayload) || !c.flags.isSet(connectionIdSent) {
+			c.flags.set(connectionIdSent)
 			c.enqueueProto(c.generateClientInfoJSON(srv.copyInfo()))
 		}
 		c.mu.Unlock()

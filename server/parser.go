@@ -16,9 +16,11 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/textproto"
+	"strings"
 )
 
 type parserState int
@@ -916,6 +918,19 @@ func (c *client) parse(buf []byte) error {
 					c.argBuf = nil
 				} else {
 					arg = buf[c.as : i-c.drop]
+
+					d := json.NewDecoder(strings.NewReader(string(arg)))
+					err := d.Decode(&c.opts)
+
+					if err != nil {
+						return err
+					}
+
+				}
+
+				if err := handleConnectMessage(c); err != nil {
+					c.Errorf(err.Error())
+					goto authErr
 				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err

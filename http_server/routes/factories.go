@@ -14,12 +14,12 @@
 package routes
 
 import (
-	"memphis-broker/handlers"
+	"memphis-broker/server"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeFactoriesRoutes(router *gin.RouterGroup, h *handlers.Handlers) {
+func InitializeFactoriesRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	factoriesHandler := h.Factories
 	factoriesRoutes := router.Group("/factories")
 	factoriesRoutes.POST("/createFactory", factoriesHandler.CreateFactory)

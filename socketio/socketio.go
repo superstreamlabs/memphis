@@ -14,9 +14,9 @@
 package socketio
 
 import (
-	"memphis-broker/handlers"
 	"memphis-broker/middlewares"
 	"memphis-broker/models"
+	"memphis-broker/server"
 
 	"errors"
 	"net/http"
@@ -30,7 +30,7 @@ import (
 
 var socketServer = socketio.NewServer(nil)
 
-func getMainOverviewData(h *handlers.Handlers) (models.MainOverviewData, error) {
+func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	serv := h.Stations.S
 	stations, err := h.Stations.GetAllStationsDetails()
 	if err != nil {
@@ -53,7 +53,7 @@ func getMainOverviewData(h *handlers.Handlers) (models.MainOverviewData, error) 
 	}, nil
 }
 
-func getFactoriesOverviewData(h *handlers.Handlers) ([]models.ExtendedFactory, error) {
+func getFactoriesOverviewData(h *server.Handlers) ([]models.ExtendedFactory, error) {
 	factories, err := h.Factories.GetAllFactoriesDetails()
 	if err != nil {
 		return factories, err
@@ -62,7 +62,7 @@ func getFactoriesOverviewData(h *handlers.Handlers) ([]models.ExtendedFactory, e
 	return factories, nil
 }
 
-func getFactoryOverviewData(factoryName string, s socketio.Conn, h *handlers.Handlers) (map[string]interface{}, error) {
+func getFactoryOverviewData(factoryName string, s socketio.Conn, h *server.Handlers) (map[string]interface{}, error) {
 	factoryName = strings.ToLower(factoryName)
 	factory, err := h.Factories.GetFactoryDetails(factoryName)
 	if err != nil {
@@ -75,9 +75,9 @@ func getFactoryOverviewData(factoryName string, s socketio.Conn, h *handlers.Han
 	return factory, nil
 }
 
-func getStationOverviewData(stationName string, s socketio.Conn, h *handlers.Handlers) (models.StationOverviewData, error) {
+func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handlers) (models.StationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
-	exist, station, err := handlers.IsStationExist(stationName)
+	exist, station, err := server.IsStationExist(stationName)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -150,7 +150,7 @@ func ginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func InitializeSocketio(router *gin.Engine, h *handlers.Handlers) *socketio.Server {
+func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server {
 	serv := h.Stations.S
 	socketServer.OnConnect("/api", func(s socketio.Conn) error {
 		return nil

@@ -44,8 +44,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
-	"go.mongodb.org/mongo-driver/mongo"
-
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"memphis-broker/logger"
 )
 
@@ -60,31 +59,32 @@ const (
 // Info is the information sent to clients, routes, gateways, and leaf nodes,
 // to help them understand information about this server.
 type Info struct {
-	ID                string   `json:"server_id"`
-	Name              string   `json:"server_name"`
-	Version           string   `json:"version"`
-	Proto             int      `json:"proto"`
-	GitCommit         string   `json:"git_commit,omitempty"`
-	GoVersion         string   `json:"go"`
-	Host              string   `json:"host"`
-	Port              int      `json:"port"`
-	Headers           bool     `json:"headers"`
-	AuthRequired      bool     `json:"auth_required,omitempty"`
-	TLSRequired       bool     `json:"tls_required,omitempty"`
-	TLSVerify         bool     `json:"tls_verify,omitempty"`
-	TLSAvailable      bool     `json:"tls_available,omitempty"`
-	MaxPayload        int32    `json:"max_payload"`
-	JetStream         bool     `json:"jetstream,omitempty"`
-	IP                string   `json:"ip,omitempty"`
-	CID               uint64   `json:"client_id,omitempty"`
-	ClientIP          string   `json:"client_ip,omitempty"`
-	Nonce             string   `json:"nonce,omitempty"`
-	Cluster           string   `json:"cluster,omitempty"`
-	Dynamic           bool     `json:"cluster_dynamic,omitempty"`
-	Domain            string   `json:"domain,omitempty"`
-	ClientConnectURLs []string `json:"connect_urls,omitempty"`    // Contains URLs a client can connect to.
-	WSConnectURLs     []string `json:"ws_connect_urls,omitempty"` // Contains URLs a ws client can connect to.
-	LameDuckMode      bool     `json:"ldm,omitempty"`
+	ID                string             `json:"server_id"`
+	Name              string             `json:"server_name"`
+	Version           string             `json:"version"`
+	Proto             int                `json:"proto"`
+	GitCommit         string             `json:"git_commit,omitempty"`
+	GoVersion         string             `json:"go"`
+	Host              string             `json:"host"`
+	Port              int                `json:"port"`
+	Headers           bool               `json:"headers"`
+	AuthRequired      bool               `json:"auth_required,omitempty"`
+	TLSRequired       bool               `json:"tls_required,omitempty"`
+	TLSVerify         bool               `json:"tls_verify,omitempty"`
+	TLSAvailable      bool               `json:"tls_available,omitempty"`
+	MaxPayload        int32              `json:"max_payload"`
+	JetStream         bool               `json:"jetstream,omitempty"`
+	IP                string             `json:"ip,omitempty"`
+	CID               uint64             `json:"client_id,omitempty"`
+	ClientIP          string             `json:"client_ip,omitempty"`
+	Nonce             string             `json:"nonce,omitempty"`
+	Cluster           string             `json:"cluster,omitempty"`
+	Dynamic           bool               `json:"cluster_dynamic,omitempty"`
+	Domain            string             `json:"domain,omitempty"`
+	ClientConnectURLs []string           `json:"connect_urls,omitempty"`    // Contains URLs a client can connect to.
+	WSConnectURLs     []string           `json:"ws_connect_urls,omitempty"` // Contains URLs a ws client can connect to.
+	LameDuckMode      bool               `json:"ldm,omitempty"`
+	ConnectionId      primitive.ObjectID `json:"connection_id"`
 
 	// Route Specific
 	Import        *SubjectPermission `json:"import,omitempty"`
@@ -92,7 +92,6 @@ type Info struct {
 	LNOC          bool               `json:"lnoc,omitempty"`
 	InfoOnConnect bool               `json:"info_on_connect,omitempty"` // When true the server will respond to CONNECT with an INFO
 	ConnectInfo   bool               `json:"connect_info,omitempty"`    // When true this is the server INFO response to CONNECT
-
 	// Gateways Specific
 	Gateway           string   `json:"gateway,omitempty"`             // Name of the origin Gateway (sent by gateway's INFO)
 	GatewayURLs       []string `json:"gateway_urls,omitempty"`        // Gateway URLs in the originating cluster (sent by gateway's INFO)
@@ -291,9 +290,7 @@ type Server struct {
 	// Queue to process JS API requests that come from routes (or gateways)
 	jsAPIRoutedReqs *ipQueue
 
-	DbClient *mongo.Client
-	DbCancel context.CancelFunc
-	DbCtx    context.Context
+	memphis srvMemphis
 }
 
 // For tracking JS nodes.
@@ -1600,7 +1597,9 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 
 // Start up the server, this will block.
 // Start via a Go routine if needed.
+// func (s *Server) Start(handleClient func(net.Conn, error, string, string, string)) {
 func (s *Server) Start() {
+
 	s.Noticef("Starting Memphis{dev} broker")
 
 	gc := gitCommit
@@ -1855,6 +1854,7 @@ func (s *Server) Start() {
 	// We've finished starting up.
 	close(s.startupComplete)
 
+
 	// Wait for clients.
 	if !opts.DontListen {
 		s.AcceptLoop(clientListenReady)
@@ -2062,9 +2062,9 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 		s.mu.Unlock()
 		s.Fatalf("Error listening on port: %s, %q", hp, e)
 		return
-	}
+	} 
 	s.Noticef("Listening for client connections on %s",
-		net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
+	net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
 
 	// Alert of TLS enabled.
 	if opts.TLSConfig != nil {
@@ -2559,8 +2559,8 @@ func (s *Server) createClient(conn net.Conn) *client {
 
 	// Connection could have been closed while sending the INFO proto.
 	isClosed := c.isClosed()
-
 	var pre []byte
+
 	// If we have both TLS and non-TLS allowed we need to see which
 	// one the client wants.
 	if !isClosed && opts.TLSConfig != nil && opts.AllowNonTLS {
@@ -2621,7 +2621,9 @@ func (s *Server) createClient(conn net.Conn) *client {
 	c.setPingTimer()
 
 	// Spin up the read loop.
-	s.startGoRoutine(func() { c.readLoop(pre) })
+	s.startGoRoutine(func() { 
+		c.readLoop(pre) 	
+	})
 
 	// Spin up the write loop.
 	s.startGoRoutine(func() { c.writeLoop() })
