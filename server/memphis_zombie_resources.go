@@ -16,6 +16,7 @@ package server
 import (
 	"context"
 	"memphis-broker/models"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -90,7 +91,7 @@ func removeOldPoisonMsgs() error {
 	return nil
 }
 
-func KillZombieResources() {
+func KillZombieResources(wg *sync.WaitGroup) {
 	for range time.Tick(time.Second * 30) {
 		connections, err := killRelevantConnections()
 		if err != nil {
@@ -121,4 +122,6 @@ func KillZombieResources() {
 			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 	}
+
+	defer wg.Done()
 }
