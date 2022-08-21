@@ -11,7 +11,7 @@ WORKDIR /run
 
 RUN apk add --update ca-certificates && mkdir -p /nats/bin && mkdir /nats/conf
 
-COPY docker/nats-server.conf /nats/conf/nats-server.conf
+COPY docker/memphis-server.conf /nats/conf/memphis-server.conf
 COPY --from=build $GOPATH/memphis-broker/memphis-broker /bin/nats-server
 COPY --from=build $GOPATH/memphis-broker/conf/* conf/
 COPY --from=build $GOPATH/memphis-broker/version.conf .
@@ -19,4 +19,4 @@ COPY --from=build $GOPATH/memphis-broker/version.conf .
 EXPOSE 5555 6666 8222
 
 ENTRYPOINT ["/bin/nats-server"]
-CMD ["-c", "/nats/conf/nats-server.conf"]
+CMD ["-c", "/nats/conf/memphis-server.conf"]
