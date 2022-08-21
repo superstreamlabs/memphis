@@ -1,11 +1,9 @@
 {
     "HTTP_PORT": "5555",
-    "TCP_PORT": "6666",
     "MONGO_URL": "mongodb://mongo:27017/maindb?retryWrites=true&w=majority",
     "DB_NAME": "maindb",
     "JWT_EXPIRES_IN_MINUTES": 15,
     "REFRESH_JWT_EXPIRES_IN_MINUTES": 2880,
-    "BROKER_URL": "broker:4222",
     "MAX_MESSAGE_SIZE_MB": 12,
     "SHOWABLE_ERROR_STATUS_CODE": 666,
     "PING_INTERVAL_MS": 60000,

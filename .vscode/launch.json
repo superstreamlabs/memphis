@@ -14,7 +14,6 @@
                 "DEV_ENV": "true",
                 "DOCKER_ENV": "true",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
-                "BROKER_URL": "localhost:7766",
                 "ROOT_PASSWORD": "memphis",
                 "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",

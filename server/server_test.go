@@ -254,7 +254,7 @@ func TestTlsCipher(t *testing.T) {
 
 func TestGetConnectURLs(t *testing.T) {
 	opts := DefaultOptions()
-	opts.Port = 4222
+	opts.Port = 6666
 
 	var globalIP net.IP
 
@@ -280,7 +280,7 @@ func TestGetConnectURLs(t *testing.T) {
 			if ip.IsUnspecified() {
 				t.Fatalf("IP %v is unspecified", ip.String())
 			}
-			addr := strings.TrimSuffix(u, ":4222")
+			addr := strings.TrimSuffix(u, ":6666")
 			if addr == opts.Host {
 				t.Fatalf("Returned url is not right: %v", u)
 			}
@@ -328,7 +328,7 @@ func TestGetConnectURLs(t *testing.T) {
 
 func TestInfoServerNameDefaultsToPK(t *testing.T) {
 	opts := DefaultOptions()
-	opts.Port = 4222
+	opts.Port = 6666
 	opts.ClientAdvertise = "nats.example.com"
 	s := New(opts)
 	defer s.Shutdown()
@@ -340,7 +340,7 @@ func TestInfoServerNameDefaultsToPK(t *testing.T) {
 
 func TestInfoServerNameIsSettable(t *testing.T) {
 	opts := DefaultOptions()
-	opts.Port = 4222
+	opts.Port = 6666
 	opts.ClientAdvertise = "nats.example.com"
 	opts.ServerName = "test_server_name"
 	s := New(opts)
@@ -353,7 +353,7 @@ func TestInfoServerNameIsSettable(t *testing.T) {
 
 func TestClientAdvertiseConnectURL(t *testing.T) {
 	opts := DefaultOptions()
-	opts.Port = 4222
+	opts.Port = 6666
 	opts.ClientAdvertise = "nats.example.com"
 	s := New(opts)
 	defer s.Shutdown()
@@ -365,8 +365,8 @@ func TestClientAdvertiseConnectURL(t *testing.T) {
 		t.Fatalf("Expected to get one url, got none: %v with ClientAdvertise %v",
 			opts.Host, opts.ClientAdvertise)
 	}
-	if urls[0] != "nats.example.com:4222" {
-		t.Fatalf("Expected to get '%s', got: '%v'", "nats.example.com:4222", urls[0])
+	if urls[0] != "nats.example.com:6666" {
+		t.Fatalf("Expected to get '%s', got: '%v'", "nats.example.com:6666", urls[0])
 	}
 	s.Shutdown()
 
@@ -403,7 +403,7 @@ func TestClientAdvertiseConnectURL(t *testing.T) {
 
 func TestClientAdvertiseInCluster(t *testing.T) {
 	optsA := DefaultOptions()
-	optsA.ClientAdvertise = "srvA:4222"
+	optsA.ClientAdvertise = "srvA:6666"
 	srvA := RunServer(optsA)
 	defer srvA.Shutdown()
 
@@ -411,7 +411,7 @@ func TestClientAdvertiseInCluster(t *testing.T) {
 	defer nc.Close()
 
 	optsB := DefaultOptions()
-	optsB.ClientAdvertise = "srvBC:4222"
+	optsB.ClientAdvertise = "srvBC:6666"
 	optsB.Routes = RoutesFromStr(fmt.Sprintf("nats://127.0.0.1:%d", optsA.Cluster.Port))
 	srvB := RunServer(optsB)
 	defer srvB.Shutdown()
@@ -430,20 +430,20 @@ func TestClientAdvertiseInCluster(t *testing.T) {
 			return fmt.Errorf("Url %q not found in %q", expected, srvs)
 		})
 	}
-	checkURLs("nats://srvBC:4222")
+	checkURLs("nats://srvBC:6666")
 
 	optsC := DefaultOptions()
-	optsC.ClientAdvertise = "srvBC:4222"
+	optsC.ClientAdvertise = "srvBC:6666"
 	optsC.Routes = RoutesFromStr(fmt.Sprintf("nats://127.0.0.1:%d", optsA.Cluster.Port))
 	srvC := RunServer(optsC)
 	defer srvC.Shutdown()
 
 	checkClusterFormed(t, srvA, srvB, srvC)
-	checkURLs("nats://srvBC:4222")
+	checkURLs("nats://srvBC:6666")
 
 	srvB.Shutdown()
 	checkNumRoutes(t, srvA, 1)
-	checkURLs("nats://srvBC:4222")
+	checkURLs("nats://srvBC:6666")
 }
 
 func TestClientAdvertiseErrorOnStartup(t *testing.T) {
@@ -456,7 +456,7 @@ func TestClientAdvertiseErrorOnStartup(t *testing.T) {
 func TestNoDeadlockOnStartFailure(t *testing.T) {
 	opts := DefaultOptions()
 	opts.Host = "x.x.x.x" // bad host
-	opts.Port = 4222
+	opts.Port = 6666
 	opts.HTTPHost = opts.Host
 	opts.Cluster.Host = "127.0.0.1"
 	opts.Cluster.Port = -1
@@ -464,7 +464,7 @@ func TestNoDeadlockOnStartFailure(t *testing.T) {
 	s := New(opts)
 
 	// This should return since it should fail to start a listener
-	// on x.x.x.x:4222
+	// on x.x.x.x:6666
 	ch := make(chan struct{})
 	go func() {
 		s.Start()
@@ -532,7 +532,7 @@ func TestProcessCommandLineArgs(t *testing.T) {
 	var port int
 	cmd := flag.NewFlagSet("nats-server", flag.ExitOnError)
 	cmd.StringVar(&host, "a", "0.0.0.0", "Host.")
-	cmd.IntVar(&port, "p", 4222, "Port.")
+	cmd.IntVar(&port, "p", 6666, "Port.")
 
 	cmd.Parse([]string{"-a", "127.0.0.1", "-p", "9090"})
 	showVersion, showHelp, err := ProcessCommandLineArgs(cmd)
@@ -586,8 +586,8 @@ func TestRandomPorts(t *testing.T) {
 		t.Fatal("Should have dynamically assigned server port.")
 	}
 
-	if s.Addr() == nil || s.Addr().(*net.TCPAddr).Port == 4222 {
-		t.Fatal("Should not have dynamically assigned default port: 4222.")
+	if s.Addr() == nil || s.Addr().(*net.TCPAddr).Port == 6666 {
+		t.Fatal("Should not have dynamically assigned default port: 6666.")
 	}
 
 	if s.MonitorAddr() == nil || s.MonitorAddr().Port <= 0 {
@@ -1345,30 +1345,30 @@ func TestGetRandomIP(t *testing.T) {
 		t.Fatalf("Expected error about port missing, got %v", err)
 	}
 	resolver.err = fmt.Errorf("on purpose")
-	if _, err := s.getRandomIP(resolver, "localhost:4222", nil); err == nil || !strings.Contains(err.Error(), "on purpose") {
+	if _, err := s.getRandomIP(resolver, "localhost:6666", nil); err == nil || !strings.Contains(err.Error(), "on purpose") {
 		t.Fatalf("Expected error about no port, got %v", err)
 	}
 	resolver.err = nil
-	a, err := s.getRandomIP(resolver, "localhost:4222", nil)
+	a, err := s.getRandomIP(resolver, "localhost:6666", nil)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if a != "localhost:4222" {
-		t.Fatalf("Expected address to be %q, got %q", "localhost:4222", a)
+	if a != "localhost:6666" {
+		t.Fatalf("Expected address to be %q, got %q", "localhost:6666", a)
 	}
 	resolver.ips = []string{"1.2.3.4"}
-	a, err = s.getRandomIP(resolver, "localhost:4222", nil)
+	a, err = s.getRandomIP(resolver, "localhost:6666", nil)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if a != "1.2.3.4:4222" {
-		t.Fatalf("Expected address to be %q, got %q", "1.2.3.4:4222", a)
+	if a != "1.2.3.4:6666" {
+		t.Fatalf("Expected address to be %q, got %q", "1.2.3.4:6666", a)
 	}
 	// Check for randomness
 	resolver.ips = []string{"1.2.3.4", "2.2.3.4", "3.2.3.4"}
 	dist := [3]int{}
 	for i := 0; i < 100; i++ {
-		ip, err := s.getRandomIP(resolver, "localhost:4222", nil)
+		ip, err := s.getRandomIP(resolver, "localhost:6666", nil)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -1386,9 +1386,9 @@ func TestGetRandomIP(t *testing.T) {
 	}
 
 	// Check IP exclusions
-	excludedIPs := map[string]struct{}{"1.2.3.4:4222": {}}
+	excludedIPs := map[string]struct{}{"1.2.3.4:6666": {}}
 	for i := 0; i < 100; i++ {
-		ip, err := s.getRandomIP(resolver, "localhost:4222", excludedIPs)
+		ip, err := s.getRandomIP(resolver, "localhost:6666", excludedIPs)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -1396,9 +1396,9 @@ func TestGetRandomIP(t *testing.T) {
 			t.Fatalf("Should not have returned this ip: %q", ip)
 		}
 	}
-	excludedIPs["2.2.3.4:4222"] = struct{}{}
+	excludedIPs["2.2.3.4:6666"] = struct{}{}
 	for i := 0; i < 100; i++ {
-		ip, err := s.getRandomIP(resolver, "localhost:4222", excludedIPs)
+		ip, err := s.getRandomIP(resolver, "localhost:6666", excludedIPs)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -1406,16 +1406,16 @@ func TestGetRandomIP(t *testing.T) {
 			t.Fatalf("Should only have returned '3.2.3.4', got returned %q", ip)
 		}
 	}
-	excludedIPs["3.2.3.4:4222"] = struct{}{}
+	excludedIPs["3.2.3.4:6666"] = struct{}{}
 	for i := 0; i < 100; i++ {
-		if _, err := s.getRandomIP(resolver, "localhost:4222", excludedIPs); err != errNoIPAvail {
+		if _, err := s.getRandomIP(resolver, "localhost:6666", excludedIPs); err != errNoIPAvail {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 	}
 
 	// Now check that exclusion takes into account the port number.
 	resolver.ips = []string{"127.0.0.1"}
-	excludedIPs = map[string]struct{}{"127.0.0.1:4222": {}}
+	excludedIPs = map[string]struct{}{"127.0.0.1:6666": {}}
 	for i := 0; i < 100; i++ {
 		if _, err := s.getRandomIP(resolver, "localhost:4223", excludedIPs); err == errNoIPAvail {
 			t.Fatal("Should not have failed")

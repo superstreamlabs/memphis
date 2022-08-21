@@ -1109,7 +1109,7 @@ func TestKeyDanglingSingleQuotedString(t *testing.T) {
 }
 
 var mapdanglingbracket = `
-listen = 4222
+listen = 6666
 
 cluster = {
 
@@ -1120,7 +1120,7 @@ cluster = {
 func TestMapDanglingBracket(t *testing.T) {
 	expectedItems := []item{
 		{itemKey, "listen", 2, 1},
-		{itemInteger, "4222", 2, 10},
+		{itemInteger, "6666", 2, 10},
 		{itemKey, "cluster", 4, 1},
 		{itemMapStart, "", 4, 12},
 		{itemKey, "foo", 6, 3},
@@ -1132,7 +1132,7 @@ func TestMapDanglingBracket(t *testing.T) {
 }
 
 var blockdanglingparens = `
-listen = 4222
+listen = 6666
 
 quote = (
 
@@ -1143,7 +1143,7 @@ quote = (
 func TestBlockDanglingParens(t *testing.T) {
 	expectedItems := []item{
 		{itemKey, "listen", 2, 1},
-		{itemInteger, "4222", 2, 10},
+		{itemInteger, "6666", 2, 10},
 		{itemKey, "quote", 4, 1},
 		{itemError, "Unexpected EOF processing block.", 8, 1},
 	}
@@ -1255,10 +1255,10 @@ func TestBlockStringMultiLine(t *testing.T) {
 func TestUnquotedIPAddr(t *testing.T) {
 	expectedItems := []item{
 		{itemKey, "listen", 1, 0},
-		{itemString, "127.0.0.1:4222", 1, 8},
+		{itemString, "127.0.0.1:6666", 1, 8},
 		{itemEOF, "", 1, 0},
 	}
-	lx := lex("listen: 127.0.0.1:4222")
+	lx := lex("listen: 127.0.0.1:6666")
 	expect(t, lx, expectedItems)
 
 	expectedItems = []item{
@@ -1312,12 +1312,12 @@ func TestUnquotedIPAddr(t *testing.T) {
 	expectedItems = []item{
 		{itemKey, "listen", 1, 0},
 		{itemArrayStart, "", 1, 10},
-		{itemString, "localhost:4222", 1, 10},
+		{itemString, "localhost:6666", 1, 10},
 		{itemString, "localhost:4333", 1, 26},
 		{itemArrayEnd, "", 1, 41},
 		{itemEOF, "", 1, 0},
 	}
-	lx = lex("listen = [localhost:4222, localhost:4333]")
+	lx = lex("listen = [localhost:6666, localhost:4333]")
 	expect(t, lx, expectedItems)
 }
 
@@ -1503,7 +1503,7 @@ func TestJSONCompat(t *testing.T) {
 		},
 		{
 			name: "should support uglified JSON with inner blocks",
-			input: `{"http_port": 8227,"port": 4227,"write_deadline": "1h","cluster": {"port": 6222,"routes": ["nats://127.0.0.1:4222","nats://127.0.0.1:4223","nats://127.0.0.1:4224"]}}
+			input: `{"http_port": 8227,"port": 4227,"write_deadline": "1h","cluster": {"port": 6222,"routes": ["nats://127.0.0.1:6666","nats://127.0.0.1:4223","nats://127.0.0.1:4224"]}}
                         `,
 			expected: []item{
 				{itemKey, "http_port", 1, 2},
@@ -1518,7 +1518,7 @@ func TestJSONCompat(t *testing.T) {
 				{itemInteger, "6222", 1, 75},
 				{itemKey, "routes", 1, 81},
 				{itemArrayStart, "", 1, 91},
-				{itemString, "nats://127.0.0.1:4222", 1, 92},
+				{itemString, "nats://127.0.0.1:6666", 1, 92},
 				{itemString, "nats://127.0.0.1:4223", 1, 116},
 				{itemString, "nats://127.0.0.1:4224", 1, 140},
 				{itemArrayEnd, "", 1, 163},
@@ -1535,7 +1535,7 @@ func TestJSONCompat(t *testing.T) {
                           "cluster": {
                             "port": 6222,
                             "routes": [
-                              "nats://127.0.0.1:4222",
+                              "nats://127.0.0.1:6666",
                               "nats://127.0.0.1:4223",
                               "nats://127.0.0.1:4224"
                             ]
@@ -1555,7 +1555,7 @@ func TestJSONCompat(t *testing.T) {
 				{itemInteger, "6222", 7, 37},
 				{itemKey, "routes", 8, 30},
 				{itemArrayStart, "", 8, 40},
-				{itemString, "nats://127.0.0.1:4222", 9, 32},
+				{itemString, "nats://127.0.0.1:6666", 9, 32},
 				{itemString, "nats://127.0.0.1:4223", 10, 32},
 				{itemString, "nats://127.0.0.1:4224", 11, 32},
 				{itemArrayEnd, "", 12, 30},

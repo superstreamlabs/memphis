@@ -108,11 +108,11 @@ func TestURLsAreEqual(t *testing.T) {
 			t.Fatalf("Expected %v and %v to be different, they were not", u1, u2)
 		}
 	}
-	check(t, "nats://localhost:4222", "nats://localhost:4222", true)
-	check(t, "nats://ivan:pwd@localhost:4222", "nats://ivan:pwd@localhost:4222", true)
-	check(t, "nats://ivan@localhost:4222", "nats://ivan@localhost:4222", true)
-	check(t, "nats://ivan:@localhost:4222", "nats://ivan:@localhost:4222", true)
-	check(t, "nats://host1:4222", "nats://host2:4222", false)
+	check(t, "nats://localhost:6666", "nats://localhost:6666", true)
+	check(t, "nats://ivan:pwd@localhost:6666", "nats://ivan:pwd@localhost:6666", true)
+	check(t, "nats://ivan@localhost:6666", "nats://ivan@localhost:6666", true)
+	check(t, "nats://ivan:@localhost:6666", "nats://ivan:@localhost:6666", true)
+	check(t, "nats://host1:6666", "nats://host2:6666", false)
 }
 
 func TestComma(t *testing.T) {

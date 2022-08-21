@@ -23,7 +23,6 @@ import (
 type Configuration struct {
 	DEV_ENV                        string
 	HTTP_PORT                      string
-	TCP_PORT                       string
 	MONGO_URL                      string
 	MONGO_USER                     string
 	MONGO_PASS                     string
@@ -33,7 +32,6 @@ type Configuration struct {
 	REFRESH_JWT_SECRET             string
 	REFRESH_JWT_EXPIRES_IN_MINUTES int
 	ROOT_PASSWORD                  string
-	BROKER_URL                     string
 	CONNECTION_TOKEN               string
 	MAX_MESSAGE_SIZE_MB            int
 	SHOWABLE_ERROR_STATUS_CODE     int

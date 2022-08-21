@@ -769,14 +769,14 @@ func TestServerPoolUpdatedWhenRouteGoesAway(t *testing.T) {
 	s1Opts := DefaultOptions()
 	s1Opts.ServerName = "A"
 	s1Opts.Host = "127.0.0.1"
-	s1Opts.Port = 4222
+	s1Opts.Port = 6666
 	s1Opts.Cluster.Host = "127.0.0.1"
 	s1Opts.Cluster.Port = 6222
 	s1Opts.Routes = RoutesFromStr("nats://127.0.0.1:6223,nats://127.0.0.1:6224")
 	s1 := RunServer(s1Opts)
 	defer s1.Shutdown()
 
-	s1Url := "nats://127.0.0.1:4222"
+	s1Url := "nats://127.0.0.1:6666"
 	s2Url := "nats://127.0.0.1:4223"
 	s3Url := "nats://127.0.0.1:4224"
 

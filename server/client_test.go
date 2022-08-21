@@ -2371,7 +2371,7 @@ type connAddrString struct {
 }
 
 func (a *connAddrString) String() string {
-	return "[fe80::abc:def:ghi:123%utun0]:4222"
+	return "[fe80::abc:def:ghi:123%utun0]:6666"
 }
 
 type connString struct {
@@ -2417,7 +2417,7 @@ func TestClientConnectionName(t *testing.T) {
 			if host := "fe80::abc:def:ghi:123%utun0"; host != c.host {
 				t.Fatalf("expected host to be %q, got %q", host, c.host)
 			}
-			if port := uint16(4222); port != c.port {
+			if port := uint16(6666); port != c.port {
 				t.Fatalf("expected port to be %v, got %v", port, c.port)
 			}
 

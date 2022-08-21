@@ -86,7 +86,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when authorization config has unknown fields",
 			config: `
-		port = 4222
+		port = 6666
 
 		authorization = {
 		  user = "hello"
@@ -257,7 +257,7 @@ func TestConfigCheck(t *testing.T) {
 			name: "when unknown option is in clustering config",
 			config: `
 		# NATS Server Configuration
-		port = 4222
+		port = 6666
 
 		cluster = {
 
@@ -391,7 +391,7 @@ func TestConfigCheck(t *testing.T) {
 			name: "when used as variable in authorization block it should not be considered as unknown field",
 			config: `
 		# listen:   127.0.0.1:-1
-		listen:   127.0.0.1:4222
+		listen:   127.0.0.1:6666
 
 		authorization {
 		  # Superuser can do anything.
@@ -439,7 +439,7 @@ func TestConfigCheck(t *testing.T) {
 
 		http_port = $monitoring_port
 
-		port = 4222
+		port = 6666
 		`,
 			err: nil,
 		},
@@ -721,7 +721,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts list includes reserved account",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = [foo, bar, "$G"]
 
@@ -734,7 +734,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts list includes a dupe entry",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = [foo, bar, bar]
 
@@ -747,7 +747,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts block includes a dupe user",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -768,7 +768,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts block imports are not a list",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -785,7 +785,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts block exports are not a list",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -802,7 +802,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts block imports items are not a map",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -821,7 +821,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts block export items are not a map",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -840,7 +840,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts exports has a stream name that is not a string",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -878,7 +878,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts imports stream without name",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
@@ -897,7 +897,7 @@ func TestConfigCheck(t *testing.T) {
 		{
 			name: "when accounts imports service without name",
 			config: `
-                port = 4222
+                port = 6666
 
 		accounts = {
                   nats {
