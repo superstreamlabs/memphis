@@ -86,6 +86,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.prepReplySubjSubscription(replySubjectDeleteConsumer)
 	s.prepReplySubjSubscription(replySubjectConsumerInfo)
 	s.prepReplySubjSubscription(replySubjectDeleteStream)
+	s.prepReplySubjSubscription(replySubjectCreateStream)
 	s.prepReplySubjSubscription(replySubjectStreamList)
 	s.prepReplySubjSubscription(replySubjectGetMsg)
 }
