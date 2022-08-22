@@ -52,25 +52,20 @@ func handleConnectMessage(client *client) error {
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}
 
-	var objID primitive.ObjectID
-
-	if objIdString != "" {
-		objID, err := primitive.ObjectIDFromHex(objIdString)
-		if err != nil {
-			return err
-		}
-		exist, _, err = IsConnectionExist(objID)
-		if err != nil {
-			client.Errorf("handleConnectMessage: " + err.Error())
-			return err
-		}
-		client.memphisInfo.ConnectionId = objID
-	} else {
-		exist = false
+	objID, err := primitive.ObjectIDFromHex(objIdString)
+	if err != nil {
+		return err
 	}
 
-	clientAddress := client.host
+	exist, _, err = IsConnectionExist(objID)
+	if err != nil {
+		client.Errorf("handleConnectMessage: " + err.Error())
+		return err
+	}
+
+	clientAddress := client.RemoteAddress().String()
 	clientAddress = strings.Split(clientAddress, ":")[0]
+
 	if exist {
 		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
 		if err != nil {
@@ -88,28 +83,26 @@ func handleConnectMessage(client *client) error {
 			return err
 		}
 	} else {
-		connectionId, err := connectionsHandler.CreateConnection(username, clientAddress)
+		err := connectionsHandler.CreateConnection(username, clientAddress, objID)
 		if err != nil {
 			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
-		client.memphisInfo.ConnectionId = connectionId
 	}
 
+	client.memphisInfo.ConnectionId = objID
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(username string, clientAddress string) (primitive.ObjectID, error) {
-	connectionId := primitive.NewObjectID()
-
+func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, connectionId primitive.ObjectID) error {
 	username = strings.ToLower(username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
 		serv.Errorf("CreateConnection error: " + err.Error())
-		return connectionId, err
+		return err
 	}
 	if !exist {
-		return connectionId, errors.New("User was not found")
+		return errors.New("User was not found")
 	}
 
 	newConnection := models.Connection{
@@ -124,9 +117,9 @@ func (ch ConnectionsHandler) CreateConnection(username string, clientAddress str
 	_, err = connectionsCollection.InsertOne(context.TODO(), newConnection)
 	if err != nil {
 		serv.Errorf("CreateConnection error: " + err.Error())
-		return connectionId, err
+		return err
 	}
-	return connectionId, nil
+	return nil
 }
 
 func (ch ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) error {
