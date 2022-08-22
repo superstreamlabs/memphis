@@ -1616,8 +1616,6 @@ func (s *Server) Start() {
 		s.Noticef("  Cluster:  %s", clusterName)
 	}
 
-	defer s.Noticef("Server is ready")
-
 	// Check for insecure configurations.
 	s.checkAuthforWarnings()
 

@@ -245,8 +245,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 		if err != nil {
 			return err
 		}
-
-		serv.Noticef("Root user has been created")
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),
 			bson.M{"username": "root"},
