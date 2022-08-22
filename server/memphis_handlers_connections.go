@@ -32,8 +32,14 @@ var producersHandler ProducersHandler
 var consumersHandler ConsumersHandler
 
 func handleConnectMessage(client *client) error {
+	splittedMemphisInfo := strings.Split(client.opts.Name, "::")
+	if len(splittedMemphisInfo) != 2 {
+		client.Errorf("handleConnectMessage: missing username or connectionId")
+		return errors.New("missing username or connectionId")
+	}
+	objIdString := splittedMemphisInfo[0]
+	username := strings.ToLower(splittedMemphisInfo[1])
 
-	username := strings.ToLower(client.opts.Username)
 	exist, user, err := IsUserExist(username)
 	if err != nil {
 		client.Errorf("handleConnectMessage: " + err.Error())
@@ -46,11 +52,10 @@ func handleConnectMessage(client *client) error {
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}
 
-	objIdString := client.opts.Name
 	var objID primitive.ObjectID
 
 	if objIdString != "" {
-		objID, err := primitive.ObjectIDFromHex(client.opts.Name)
+		objID, err := primitive.ObjectIDFromHex(objIdString)
 		if err != nil {
 			return err
 		}
