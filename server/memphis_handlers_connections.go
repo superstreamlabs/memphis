@@ -90,7 +90,7 @@ func handleConnectMessage(client *client) error {
 		}
 	}
 
-	client.memphisInfo.ConnectionId = objID
+	client.memphisInfo.connectionId = objID
 	return nil
 }
 
@@ -148,9 +148,9 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 	return nil
 }
 
-func (ch ConnectionsHandler) UpdatePingTime(connectionId primitive.ObjectID) error {
+func (mci *memphisClientInfo) updatePingTime() error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": connectionId},
+		bson.M{"_id": mci.connectionId},
 		bson.M{"$set": bson.M{"last_ping": time.Now()}},
 	)
 	if err != nil {

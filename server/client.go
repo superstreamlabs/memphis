@@ -279,11 +279,11 @@ type client struct {
 
 	tlsTo *time.Timer
 
-	memphisInfo memphisConnectInfo
+	memphisInfo memphisClientInfo
 }
 
-type memphisConnectInfo struct {
-	ConnectionId primitive.ObjectID `json:"connection_id,omitempty"`
+type memphisClientInfo struct {
+	connectionId primitive.ObjectID `json:"connection_id,omitempty"`
 }
 
 type rrTracking struct {
@@ -2150,7 +2150,7 @@ func (c *client) generateClientInfoJSON(info Info) []byte {
 	info.CID = c.cid
 	info.ClientIP = c.host
 	info.MaxPayload = c.mpay
-	info.ConnectionId = c.memphisInfo.ConnectionId
+	info.ConnectionId = c.memphisInfo.connectionId
 	if c.isWebsocket() {
 		info.ClientConnectURLs = info.WSConnectURLs
 	}
@@ -2194,6 +2194,8 @@ func (c *client) processPing() {
 	// Record this to suppress us sending one if this
 	// is within a given time interval for activity.
 	c.ping.last = time.Now()
+
+	c.memphisInfo.updatePingTime()
 
 	// If not a CLIENT, we are done. Also the CONNECT should
 	// have been received, but make sure it is so before proceeding
