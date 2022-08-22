@@ -26,6 +26,7 @@ const (
 	replySubjectCreateConsumer = "$memphis_create_consumer_reply"
 	replySubjectDeleteConsumer = "$memphis_delete_consumer_reply"
 	replySubjectConsumerInfo   = "$memphis_consumer_info_reply"
+	replySubjectCreateStream   = "$memphis_create_stream_reply"
 	replySubjectDeleteStream   = "$memphis_delete_stream_reply"
 	replySubjectStreamList     = "$memphis_stream_list_reply"
 	replySubjectGetMsg         = "$memphis_get_msg_reply"
@@ -118,10 +119,22 @@ func (s *Server) CreateStream(station models.Station) error {
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {
-	acc := s.GlobalAccount()
-	_, err := acc.addStream(sc)
+	requestSubject := fmt.Sprintf(JSApiStreamCreateT, sc.Name)
 
-	return err
+	request, err := json.Marshal(sc)
+	if err != nil {
+		return err
+	}
+
+	rawResp := s.jsApiRequest(requestSubject, replySubjectCreateStream, request)
+
+	var resp JSApiStreamCreateResponse
+	err = json.Unmarshal(rawResp, &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
 }
 
 func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station) error {
@@ -184,12 +197,7 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 		return err
 	}
 
-	err = resp.ApiResponse.ToError()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return resp.ToError()
 }
 
 func (s *Server) RemoveConsumer(streamName string, cn string) error {
@@ -204,12 +212,7 @@ func (s *Server) RemoveConsumer(streamName string, cn string) error {
 		return err
 	}
 
-	err = resp.ApiResponse.ToError()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return resp.ToError()
 }
 
 func (s *Server) GetCgInfo(stationName, cgName string) (*ConsumerInfo, error) {
@@ -224,7 +227,7 @@ func (s *Server) GetCgInfo(stationName, cgName string) (*ConsumerInfo, error) {
 		return nil, err
 	}
 
-	err = resp.ApiResponse.ToError()
+	err = resp.ToError()
 	if err != nil {
 		return nil, err
 	}
@@ -244,12 +247,7 @@ func (s *Server) RemoveStream(streamName string) error {
 		return err
 	}
 
-	err = resp.ApiResponse.ToError()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return resp.ToError()
 }
 
 func (s *Server) GetTotalMessagesInStation(station models.Station) (int, error) {
@@ -291,7 +289,7 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 		return nil, err
 	}
 
-	err = resp.ApiResponse.ToError()
+	err = resp.ToError()
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +320,7 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 		return nil, err
 	}
 
-	err = resp.ApiResponse.ToError()
+	err = resp.ToError()
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +427,7 @@ func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error
 		return nil, err
 	}
 
-	err = resp.ApiResponse.ToError()
+	err = resp.ToError()
 	if err != nil {
 		return nil, err
 	}
