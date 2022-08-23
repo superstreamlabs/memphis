@@ -98,7 +98,7 @@ func (s *Server) prepReplySubjSubscription(subject string) {
 }
 
 func createReplyHandler(s *Server) simplifiedMsgHandler {
-	return func(subject, reply string, msg []byte) {
+	return func(_ *client, subject, _ string, msg []byte) {
 		active, ok := s.memphis.replySubjectActive[subject]
 		if !ok {
 			s.Fatalf("memphis reply subject does not exist")

@@ -165,7 +165,7 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 
 var ErrFactoryAlreadyExists = errors.New("memphis: factory already exists")
 
-func createFactoryDirect(cfr *createFactoryRequest) error {
+func createFactoryDirect(cfr *createFactoryRequest, c *client) error {
 	factoryName := strings.ToLower(cfr.FactoryName)
 	err := validateFactoryName(factoryName)
 	if err != nil {
@@ -188,7 +188,7 @@ func createFactoryDirect(cfr *createFactoryRequest) error {
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,
 		Description:   strings.ToLower(cfr.FactoryDesc),
-		CreatedByUser: cfr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		IsDeleted:     false,
 	}

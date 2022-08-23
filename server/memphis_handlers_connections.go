@@ -90,7 +90,7 @@ func handleConnectMessage(client *client) error {
 		}
 	}
 
-	client.memphisInfo.connectionId = objID
+	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID}
 	return nil
 }
 
@@ -167,14 +167,14 @@ func (mci *memphisClientInfo) updateDisconnection() {
 	if err != nil {
 		serv.Fatalf("updateDisconnection error: " + err.Error())
 	}
-	_, err = producersCollection.UpdateOne(ctx,
+	_, err = producersCollection.UpdateMany(ctx,
 		bson.M{"connection_id": mci.connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
 		serv.Fatalf("updateDisconnection error: " + err.Error())
 	}
-	_, err = consumersCollection.UpdateOne(ctx,
+	_, err = consumersCollection.UpdateMany(ctx,
 		bson.M{"connection_id": mci.connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)

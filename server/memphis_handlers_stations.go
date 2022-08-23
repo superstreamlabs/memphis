@@ -105,7 +105,7 @@ func removeStationResources(s *Server, station models.Station) error {
 	return nil
 }
 
-func (s *Server) createStationDirect(csr *createStationRequest) error {
+func (s *Server) createStationDirect(csr *createStationRequest, c *client) error {
 	stationName := strings.ToLower(csr.StationName)
 	err := validateStationName(stationName)
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 			ID:            primitive.NewObjectID(),
 			Name:          factoryName,
 			Description:   "",
-			CreatedByUser: csr.Username,
+			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
 			IsDeleted:     false,
 		}
@@ -193,7 +193,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
 		FactoryId:       factory.ID,
-		CreatedByUser:   csr.Username,
+		CreatedByUser:   c.memphisInfo.username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
 		RetentionType:   retentionType,
@@ -225,7 +225,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: csr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}

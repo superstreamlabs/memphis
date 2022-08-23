@@ -283,7 +283,7 @@ func (ch ConsumersHandler) CreateConsumer(c *gin.Context) {
 	})
 }
 
-func (s *Server) createConsumerDirect(ccr *createConsumerRequest) error {
+func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) error {
 	name := strings.ToLower(ccr.Name)
 	err := validateName(name)
 	if err != nil {
@@ -348,7 +348,7 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest) error {
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: ccr.Username,
+			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -420,7 +420,7 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: ccr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -730,7 +730,7 @@ func (ch ConsumersHandler) DestroyConsumer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest) error {
+func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) error {
 	stationName := strings.ToLower(dcr.StationName)
 	name := strings.ToLower(dcr.ConsumerName)
 	_, station, err := IsStationExist(stationName)
@@ -790,7 +790,7 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: dcr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}

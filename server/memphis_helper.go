@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -435,23 +436,29 @@ func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error
 	return resp.Message, nil
 }
 
-func (s *Server) queueSubscribe(subj, queueGroupName string, cb func(string, []byte)) error {
+func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHandler) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
-	wcb := func(_ *subscription, _ *client, _ *Account, subject, _ string, rmsg []byte) {
-		cb(subject, rmsg)
+
+	acc.mu.Lock()
+	acc.isid++
+	sid := strconv.FormatUint(acc.isid, 10)
+	acc.mu.Unlock()
+
+	wcb := func(_ *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(c, subject, reply, rmsg)
 	}
 
-	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte("memphis_internal"), wcb, false)
+	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
 
 	return err
 }
 
-func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb func(string, string, []byte)) (*subscription, error) {
+func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler) (*subscription, error) {
 	acc := s.GlobalAccount()
 	c := acc.ic
-	wcb := func(_ *subscription, _ *client, _ *Account, subject, reply string, rmsg []byte) {
-		cb(subject, reply, rmsg)
+	wcb := func(_ *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(c, subject, reply, rmsg)
 	}
 
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)

@@ -200,7 +200,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	})
 }
 
-func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
+func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) error {
 	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
@@ -254,7 +254,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: cpr.Username,
+			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -307,7 +307,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: cpr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -529,7 +529,7 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest) error {
+func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) error {
 	stationName := strings.ToLower(dpr.StationName)
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := IsStationExist(stationName)
@@ -559,7 +559,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: dpr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
