@@ -148,15 +148,37 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 	return nil
 }
 
-func (mci *memphisClientInfo) updatePingTime() error {
+func (mci *memphisClientInfo) updatePingTime() {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": mci.connectionId},
 		bson.M{"$set": bson.M{"last_ping": time.Now()}},
 	)
 	if err != nil {
-		serv.Errorf("UpdatePingTime error: " + err.Error())
-		return err
+		serv.Fatalf("updatePingTime error: " + err.Error())
 	}
+}
 
-	return nil
+func (mci *memphisClientInfo) updateDisconnection() {
+	ctx := context.TODO()
+	_, err := connectionsCollection.UpdateOne(ctx,
+		bson.M{"_id": mci.connectionId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
+	if err != nil {
+		serv.Fatalf("updateDisconnection error: " + err.Error())
+	}
+	_, err = producersCollection.UpdateOne(ctx,
+		bson.M{"connection_id": mci.connectionId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
+	if err != nil {
+		serv.Fatalf("updateDisconnection error: " + err.Error())
+	}
+	_, err = consumersCollection.UpdateOne(ctx,
+		bson.M{"connection_id": mci.connectionId},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
+	if err != nil {
+		serv.Fatalf("updateDisconnection error: " + err.Error())
+	}
 }
