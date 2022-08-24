@@ -357,9 +357,17 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	}
 	totalMessages := streamInfo.State.Msgs
 
-	var startSequence uint64 = 1
+	state := streamInfo.State
+
+	var startSequence uint64
+	if state.FirstSeq > 0 {
+		startSequence = state.FirstSeq
+	} else {
+		startSequence = 1
+	}
+
 	if totalMessages > uint64(messagesToFetch) {
-		startSequence = totalMessages - uint64(messagesToFetch) + 1
+		startSequence = state.LastSeq - uint64(messagesToFetch) + 1
 	} else {
 		messagesToFetch = int(totalMessages)
 	}
