@@ -1603,7 +1603,7 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 			go c.srv.saveClosedClient(c, nc, reason)
 			if c.kind == CLIENT {
 				if err := c.memphisInfo.updateDisconnection(); err != nil {
-					c.srv.Warnf("memphis db disconnection update error")
+					c.srv.Errorf("memphis db disconnection update error")
 				}
 			}
 		}
@@ -2230,7 +2230,7 @@ func (c *client) processPing() {
 
 	if c.kind == CLIENT {
 		if err := c.memphisInfo.updatePingTime(); err != nil {
-			c.srv.Warnf("memphis db ping update error")
+			c.srv.Errorf("memphis db ping update error")
 		}
 	}
 

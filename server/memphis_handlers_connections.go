@@ -153,9 +153,6 @@ func (mci *memphisClientInfo) updatePingTime() error {
 		bson.M{"_id": mci.connectionId},
 		bson.M{"$set": bson.M{"last_ping": time.Now()}},
 	)
-	if err != nil {
-		serv.Errorf("updatePingTime error: " + err.Error())
-	}
 	return err
 }
 
@@ -166,7 +163,6 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		serv.Errorf("updateDisconnection error: " + err.Error())
 		return err
 	}
 	_, err = producersCollection.UpdateMany(ctx,
@@ -174,15 +170,12 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		serv.Errorf("updateDisconnection error: " + err.Error())
 		return err
 	}
 	_, err = consumersCollection.UpdateMany(ctx,
 		bson.M{"connection_id": mci.connectionId},
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
-	if err != nil {
-		serv.Errorf("updateDisconnection error: " + err.Error())
-	}
+
 	return err
 }
