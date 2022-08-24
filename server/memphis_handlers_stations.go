@@ -1,16 +1,24 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Licensed under the MIT License (the "License");
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// This license limiting reselling the software itself "AS IS".
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 package server
 
 import (
@@ -94,22 +102,22 @@ func removeStationResources(s *Server, station models.Station) error {
 
 	err = RemovePoisonMsgsByStation(station.Name)
 	if err != nil {
-		serv.Errorf("removeStationResources error: " + err.Error())
+		serv.Warnf("removeStationResources error: " + err.Error())
 	}
 
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
-		serv.Errorf("removeStationResources error: " + err.Error())
+		serv.Warnf("removeStationResources error: " + err.Error())
 	}
 
 	return nil
 }
 
-func (s *Server) createStationDirect(csr *createStationRequest) error {
+func (s *Server) createStationDirect(csr *createStationRequest, c *client) error {
 	stationName := strings.ToLower(csr.StationName)
 	err := validateStationName(stationName)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
@@ -120,7 +128,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	}
 
 	if exist {
-		serv.Errorf("Station with that name already exists")
+		serv.Warnf("Station with that name already exists")
 		return errors.New("memphis: station with that name already exists")
 	}
 
@@ -133,7 +141,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	if !exist { // create this factory
 		err := validateFactoryName(factoryName)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			return err
 		}
 
@@ -141,7 +149,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 			ID:            primitive.NewObjectID(),
 			Name:          factoryName,
 			Description:   "",
-			CreatedByUser: csr.Username,
+			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
 			IsDeleted:     false,
 		}
@@ -158,7 +166,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		retentionType = strings.ToLower(csr.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			return err
 		}
 		retentionValue = csr.RetentionValue
@@ -172,7 +180,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		storageType = strings.ToLower(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			return err
 		}
 	} else {
@@ -183,7 +191,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 	if replicas > 0 {
 		err = validateReplicas(replicas)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			return err
 		}
 	} else {
@@ -193,7 +201,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
 		FactoryId:       factory.ID,
-		CreatedByUser:   csr.Username,
+		CreatedByUser:   c.memphisInfo.username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
 		RetentionType:   retentionType,
@@ -208,7 +216,7 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 
 	err = s.CreateStream(newStation)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
@@ -225,14 +233,14 @@ func (s *Server) createStationDirect(csr *createStationRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: csr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("create audit logs error: " + err.Error())
+		serv.Warnf("create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -319,7 +327,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	stationName := strings.ToLower(body.Name)
 	err := validateStationName(stationName)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -330,7 +338,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Errorf("Station with the same name is already exist")
+		serv.Warnf("Station with the same name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
 	}
@@ -345,7 +353,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if !exist { // create this factory
 		err := validateFactoryName(factoryName)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -371,7 +379,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -385,7 +393,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		storageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -396,7 +404,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			serv.Errorf(err.Error())
+			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -423,7 +431,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = sh.S.CreateStream(newStation)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -448,7 +456,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("CreateStation error: " + err.Error())
+		serv.Warnf("CreateStation error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -477,7 +485,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Station does not exist")
+		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -517,7 +525,7 @@ func (s *Server) removeStationDirect(dsr *destroyStationRequest) error {
 		return err
 	}
 	if !exist {
-		serv.Errorf("Station does not exist")
+		serv.Warnf("Station does not exist")
 		return err
 	}
 
@@ -657,7 +665,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 	if err == mongo.ErrNoDocuments {
-		serv.Errorf("GetPoisonMessageJourney error: " + err.Error())
+		serv.Warnf("GetPoisonMessageJourney error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 		return
 	}
@@ -737,7 +745,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if body.IsPoisonMessage {
 		poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 		if err == mongo.ErrNoDocuments {
-			serv.Errorf("GetMessageDetails error: " + err.Error())
+			serv.Warnf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
 			return
 		}

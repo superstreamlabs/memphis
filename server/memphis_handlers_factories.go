@@ -1,16 +1,24 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Licensed under the MIT License (the "License");
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// This license limiting reselling the software itself "AS IS".
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 package server
 
 import (
@@ -119,7 +127,7 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 	factoryName := strings.ToLower(body.Name)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -131,7 +139,7 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Errorf("Factory with that name is already exist")
+		serv.Warnf("Factory with that name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name is already exist"})
 		return
 	}
@@ -165,11 +173,11 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 
 var ErrFactoryAlreadyExists = errors.New("memphis: factory already exists")
 
-func createFactoryDirect(cfr *createFactoryRequest) error {
+func createFactoryDirect(cfr *createFactoryRequest, c *client) error {
 	factoryName := strings.ToLower(cfr.FactoryName)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
@@ -180,7 +188,7 @@ func createFactoryDirect(cfr *createFactoryRequest) error {
 	}
 
 	if exist {
-		serv.Errorf("Factory with that name already exists")
+		serv.Warnf("Factory with that name already exists")
 		return ErrFactoryAlreadyExists
 	}
 
@@ -188,7 +196,7 @@ func createFactoryDirect(cfr *createFactoryRequest) error {
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,
 		Description:   strings.ToLower(cfr.FactoryDesc),
-		CreatedByUser: cfr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		IsDeleted:     false,
 	}
@@ -326,7 +334,7 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Factory does not exist")
+		serv.Warnf("Factory does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory does not exist"})
 		return
 	}
@@ -366,7 +374,7 @@ func (s *Server) RemoveFactoryDirect(dfr *destroyFactoryRequest) error {
 		return err
 	}
 	if !exist {
-		serv.Errorf("Factory does not exist")
+		serv.Warnf("Factory does not exist")
 		return errors.New("memphis: factory does not exist")
 	}
 
@@ -413,7 +421,7 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Factory with that name does not exist")
+		serv.Warnf("Factory with that name does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name does not exist"})
 		return
 	}
@@ -426,7 +434,7 @@ func (fh FactoriesHandler) EditFactory(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Errorf("Factory with that name already exist")
+		serv.Warnf("Factory with that name already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Factory with that name already exist"})
 		return
 	}

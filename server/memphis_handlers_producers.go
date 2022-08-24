@@ -1,16 +1,24 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Licensed under the MIT License (the "License");
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// This license limiting reselling the software itself "AS IS".
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 package server
 
 import (
@@ -54,170 +62,24 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (ph ProducersHandler) CreateProducer(c *gin.Context) {
-	var body models.CreateProducerSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	name := strings.ToLower(body.Name)
-	err := validateProducerName(name)
-	if err != nil {
-		serv.Errorf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-
-	producerType := strings.ToLower(body.ProducerType)
-	err = validateProducerType(producerType)
-	if err != nil {
-		serv.Errorf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-
-	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
-	if err != nil {
-		serv.Errorf("Connection id is not valid")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
-		return
-	}
-	exist, connection, err := IsConnectionExist(connectionId)
-	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Errorf("Connection id was not found")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
-		return
-	}
-	if !connection.IsActive {
-		serv.Errorf("Connection is not active")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
-		return
-	}
-
-	stationName := strings.ToLower(body.StationName)
-	exist, station, err := IsStationExist(stationName)
-	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		station, err = CreateDefaultStation(ph.S, stationName, connection.CreatedByUser)
-		if err != nil {
-			serv.Errorf("CreateProducer error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		user := getUserDetailsFromMiddleware(c)
-		message := "Station " + stationName + " has been created"
-		serv.Noticef(message)
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
-			Message:       message,
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			UserType:      user.UserType,
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("CreateProducer error: " + err.Error())
-		}
-
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			analytics.IncrementStationsCounter()
-		}
-	}
-
-	exist, _, err = IsProducerExist(name, station.ID)
-	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if exist {
-		serv.Errorf("Producer name has to be unique in a station level")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Producer name has to be unique in a station level"})
-		return
-	}
-
-	producerId := primitive.NewObjectID()
-	newProducer := models.Producer{
-		ID:            producerId,
-		Name:          name,
-		StationId:     station.ID,
-		FactoryId:     station.FactoryId,
-		Type:          producerType,
-		ConnectionId:  connectionId,
-		CreatedByUser: connection.CreatedByUser,
-		IsActive:      true,
-		CreationDate:  time.Now(),
-		IsDeleted:     false,
-	}
-
-	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
-	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	user := getUserDetailsFromMiddleware(c)
-
-	message := "Producer " + name + " has been created"
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.IncrementProducersCounter()
-	}
-
-	c.IndentedJSON(200, gin.H{
-		"producer_id": producerId,
-	})
-}
-
-func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
+func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) error {
 	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
 	producerType := strings.ToLower(cpr.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
 	if err != nil {
-		serv.Errorf("Connection id is not valid")
+		serv.Warnf("Connection id is not valid")
 		return err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
@@ -226,11 +88,11 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 		return err
 	}
 	if !exist {
-		serv.Errorf("Connection id was not found")
+		serv.Warnf("Connection id was not found")
 		return errors.New("memphis: connection id was not found")
 	}
 	if !connection.IsActive {
-		serv.Errorf("Connection is not active")
+		serv.Warnf("Connection is not active")
 		return errors.New("memphis: connection id is not active")
 	}
 
@@ -243,7 +105,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 	if !exist {
 		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
-			serv.Errorf("CreateProducer error: " + err.Error())
+			serv.Errorf("creating default station error: " + err.Error())
 			return err
 		}
 
@@ -254,7 +116,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: cpr.Username,
+			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -276,7 +138,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 		return err
 	}
 	if exist {
-		serv.Errorf("Producer name has to be unique per station")
+		serv.Warnf("Producer name has to be unique per station")
 		return errors.New("memphis: producer name has to be unique per station")
 	}
 
@@ -307,7 +169,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: cpr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -438,7 +300,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 	if !exist {
-		serv.Errorf("Station does not exist")
+		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -475,61 +337,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	}
 }
 
-func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
-	var body models.DestroyProducerSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	stationName := strings.ToLower(body.StationName)
-	name := strings.ToLower(body.Name)
-	_, station, err := IsStationExist(stationName)
-	if err != nil {
-		serv.Errorf("DestroyProducer error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	var producer models.Producer
-	err = producersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": station.ID, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&producer)
-	if err != nil {
-		serv.Errorf("DestroyProducer error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if err == mongo.ErrNoDocuments {
-		serv.Errorf("A producer with the given details was not found")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A producer with the given details was not found"})
-		return
-	}
-	user := getUserDetailsFromMiddleware(c)
-	message := "Producer " + name + " has been deleted"
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("DestroyProducer error: " + err.Error())
-	}
-	c.IndentedJSON(200, gin.H{})
-}
-
-func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest) error {
+func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) error {
 	stationName := strings.ToLower(dpr.StationName)
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := IsStationExist(stationName)
@@ -548,7 +356,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest) error {
 		return err
 	}
 	if err == mongo.ErrNoDocuments {
-		serv.Errorf("A producer with the given details was not found")
+		serv.Warnf("A producer with the given details was not found")
 		return errors.New("memphis: a producer with the given details was not found")
 	}
 
@@ -559,7 +367,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest) error {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: dpr.Username,
+		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
