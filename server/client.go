@@ -1602,7 +1602,9 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 			// of creating a new go routine for each save.
 			go c.srv.saveClosedClient(c, nc, reason)
 			if c.kind == CLIENT {
-				c.memphisInfo.updateDisconnection()
+				if err := c.memphisInfo.updateDisconnection(); err != nil {
+					c.srv.Warnf("memphis db disconnection update error")
+				}
 			}
 		}
 	}
@@ -2199,8 +2201,6 @@ func (c *client) processPing() {
 	// is within a given time interval for activity.
 	c.ping.last = time.Now()
 
-	c.memphisInfo.updatePingTime()
-
 	// If not a CLIENT, we are done. Also the CONNECT should
 	// have been received, but make sure it is so before proceeding
 	if c.kind != CLIENT || !c.flags.isSet(connectReceived) {
@@ -2227,6 +2227,12 @@ func (c *client) processPing() {
 		checkInfoChange = !c.flags.isSet(firstPongSent)
 	}
 	c.mu.Unlock()
+
+	if c.kind == CLIENT {
+		if err := c.memphisInfo.updatePingTime(); err != nil {
+			c.srv.Warnf("memphis db ping update error")
+		}
+	}
 
 	if checkInfoChange {
 		opts := srv.getOpts()

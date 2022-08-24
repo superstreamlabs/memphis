@@ -23,8 +23,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const pingGrace = 5 * time.Second
+
 func killRelevantConnections() ([]models.Connection, error) {
-	lastAllowedTime := time.Now().Add(time.Duration(-configuration.PING_INTERVAL_MS-5000) * time.Millisecond)
+	duration := -(serv.opts.PingInterval + pingGrace)
+	lastAllowedTime := time.Now().Local().Add(duration)
 
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true, "last_ping": bson.M{"$lt": lastAllowedTime}})
