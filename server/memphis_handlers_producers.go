@@ -64,7 +64,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateProducerName(name)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -72,14 +72,14 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	producerType := strings.ToLower(body.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	connectionId, err := primitive.ObjectIDFromHex(body.ConnectionId)
 	if err != nil {
-		serv.Errorf("Connection id is not valid")
+		serv.Warnf("Connection id is not valid")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id is not valid"})
 		return
 	}
@@ -90,12 +90,12 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Connection id was not found")
+		serv.Warnf("Connection id was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection id was not found"})
 		return
 	}
 	if !connection.IsActive {
-		serv.Errorf("Connection is not active")
+		serv.Warnf("Connection is not active")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Connection is not active"})
 		return
 	}
@@ -130,7 +130,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Errorf("CreateProducer error: " + err.Error())
+			serv.Warnf("CreateProducer error: " + err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -146,7 +146,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Errorf("Producer name has to be unique in a station level")
+		serv.Warnf("Producer name has to be unique in a station level")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Producer name has to be unique in a station level"})
 		return
 	}
@@ -187,7 +187,7 @@ func (ph ProducersHandler) CreateProducer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
+		serv.Warnf("CreateProducer error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -204,20 +204,20 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
 	producerType := strings.ToLower(cpr.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Warnf(err.Error())
 		return err
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
 	if err != nil {
-		serv.Errorf("Connection id is not valid")
+		serv.Warnf("Connection id is not valid")
 		return err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
@@ -226,11 +226,11 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 		return err
 	}
 	if !exist {
-		serv.Errorf("Connection id was not found")
+		serv.Warnf("Connection id was not found")
 		return errors.New("memphis: connection id was not found")
 	}
 	if !connection.IsActive {
-		serv.Errorf("Connection is not active")
+		serv.Warnf("Connection is not active")
 		return errors.New("memphis: connection id is not active")
 	}
 
@@ -261,7 +261,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Errorf("CreateProducer error: " + err.Error())
+			serv.Warnf("CreateProducer error: " + err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -276,7 +276,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 		return err
 	}
 	if exist {
-		serv.Errorf("Producer name has to be unique per station")
+		serv.Warnf("Producer name has to be unique per station")
 		return errors.New("memphis: producer name has to be unique per station")
 	}
 
@@ -314,7 +314,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("CreateProducer error: " + err.Error())
+		serv.Warnf("CreateProducer error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -438,7 +438,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 	if !exist {
-		serv.Errorf("Station does not exist")
+		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -505,7 +505,7 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 		return
 	}
 	if err == mongo.ErrNoDocuments {
-		serv.Errorf("A producer with the given details was not found")
+		serv.Warnf("A producer with the given details was not found")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A producer with the given details was not found"})
 		return
 	}
@@ -524,7 +524,7 @@ func (ph ProducersHandler) DestroyProducer(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("DestroyProducer error: " + err.Error())
+		serv.Warnf("DestroyProducer error: " + err.Error())
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -548,7 +548,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		return err
 	}
 	if err == mongo.ErrNoDocuments {
-		serv.Errorf("A producer with the given details was not found")
+		serv.Warnf("A producer with the given details was not found")
 		return errors.New("memphis: a producer with the given details was not found")
 	}
 
@@ -566,7 +566,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("DestroyProducer error: " + err.Error())
+		serv.Warnf("DestroyProducer error: " + err.Error())
 	}
 
 	return nil
@@ -578,16 +578,16 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 
 	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
 	if err != nil {
-		serv.Errorf("KillProducers error: " + err.Error())
+		serv.Warnf("KillProducers error: " + err.Error())
 	}
 	if err = cursor.All(context.TODO(), &producers); err != nil {
-		serv.Errorf("KillProducers error: " + err.Error())
+		serv.Warnf("KillProducers error: " + err.Error())
 	}
 
 	if len(producers) > 0 {
 		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
 		if err != nil {
-			serv.Errorf("KillProducers error: " + err.Error())
+			serv.Warnf("KillProducers error: " + err.Error())
 		}
 
 		_, err = producersCollection.UpdateMany(context.TODO(),
@@ -621,7 +621,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 		}
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Errorf("KillProducers error: " + err.Error())
+			serv.Warnf("KillProducers error: " + err.Error())
 		}
 	}
 
