@@ -39,7 +39,6 @@ import (
 var socketServer = socketio.NewServer(nil)
 
 func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
-	serv := h.Stations.S
 	stations, err := h.Stations.GetAllStationsDetails()
 	if err != nil {
 		return models.MainOverviewData{}, nil
@@ -50,7 +49,7 @@ func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	}
 	systemComponents, err := h.Monitoring.GetSystemComponents()
 	if err != nil {
-		serv.Errorf("GetSystemComponents error: " + err.Error())
+		return models.MainOverviewData{}, err
 	}
 
 	return models.MainOverviewData{

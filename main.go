@@ -141,7 +141,7 @@ func runMemphis(s *server.Server) {
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:6666 (client connections)\n 6666 (TCP Port)\nUI/CLI root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:6666 (client connections)\nMemphis broker: localhost:5555 (CLI connections)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
 	} else {
 		env = "K8S"
 	}
