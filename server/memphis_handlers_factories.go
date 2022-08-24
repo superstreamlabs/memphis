@@ -91,12 +91,12 @@ func removeStations(s *Server, factoryId primitive.ObjectID) error {
 
 		err = RemovePoisonMsgsByStation(station.Name)
 		if err != nil {
-			serv.Warnf("removeStations error: " + err.Error())
+			serv.Errorf("removeStations error: " + err.Error())
 		}
 
 		err = RemoveAllAuditLogsByStation(station.Name)
 		if err != nil {
-			serv.Warnf("removeStations error: " + err.Error())
+			serv.Errorf("removeStations error: " + err.Error())
 		}
 	}
 

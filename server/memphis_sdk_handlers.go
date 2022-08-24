@@ -116,7 +116,9 @@ func createFactoryHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		var cfr createFactoryRequest
 		if err := json.Unmarshal(msg, &cfr); err != nil {
-			s.Errorf("failed creating factory: %v", err.Error())
+			s.Warnf("failed creating factory: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 		err := createFactoryDirect(&cfr, c)
 		respondWithErr(s, reply, err)
@@ -127,7 +129,9 @@ func destroyFactoryHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, subject, reply string, msg []byte) {
 		var dfr destroyFactoryRequest
 		if err := json.Unmarshal(msg, &dfr); err != nil {
-			s.Errorf("failed destroying factory: %v", err.Error())
+			s.Warnf("failed destroying factory: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 		err := s.RemoveFactoryDirect(&dfr)
 		respondWithErr(s, reply, err)
@@ -138,7 +142,9 @@ func createStationHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		var csr createStationRequest
 		if err := json.Unmarshal(msg, &csr); err != nil {
-			s.Errorf("failed creating station: %v", err.Error())
+			s.Warnf("failed creating station: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 
 		}
 		err := s.createStationDirect(&csr, c)
@@ -150,7 +156,9 @@ func destroyStationHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, subject, reply string, msg []byte) {
 		var dsr destroyStationRequest
 		if err := json.Unmarshal(msg, &dsr); err != nil {
-			s.Errorf("failed destroying station: %v", err.Error())
+			s.Warnf("failed destroying station: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		err := s.removeStationDirect(&dsr)
@@ -162,7 +170,9 @@ func createProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		var cpr createProducerRequest
 		if err := json.Unmarshal(msg, &cpr); err != nil {
-			s.Errorf("failed creating producer: %v", err.Error())
+			s.Warnf("failed creating producer: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		err := s.createProducerDirect(&cpr, c)
@@ -174,7 +184,9 @@ func destroyProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		var dpr destroyProducerRequest
 		if err := json.Unmarshal(msg, &dpr); err != nil {
-			s.Errorf("failed destoying producer: %v", err.Error())
+			s.Warnf("failed destoying producer: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		err := s.destroyProducerDirect(&dpr, c)
@@ -186,7 +198,9 @@ func createConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		var ccr createConsumerRequest
 		if err := json.Unmarshal(msg, &ccr); err != nil {
-			s.Errorf("failed creating consumer: %v", err.Error())
+			s.Warnf("failed creating consumer: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		err := s.createConsumerDirect(&ccr, c)
@@ -198,7 +212,9 @@ func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		var dcr destroyConsumerRequest
 		if err := json.Unmarshal(msg, &dcr); err != nil {
-			s.Errorf("failed destoying consumer: %v", err.Error())
+			s.Warnf("failed destoying consumer: %v", err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		err := s.destroyConsumerDirect(&dcr, c)
