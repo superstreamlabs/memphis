@@ -40,6 +40,10 @@ import (
 type FactoriesHandler struct{ S *Server }
 
 func validateFactoryName(factoryName string) error {
+	if len(factoryName) == 0 {
+		return errors.New("factory name can not be empty")
+	}
+
 	re := regexp.MustCompile("^[a-z0-9_]*$")
 
 	validName := re.MatchString(factoryName)

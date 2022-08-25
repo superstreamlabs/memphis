@@ -40,6 +40,10 @@ import (
 type StationsHandler struct{ S *Server }
 
 func validateStationName(stationName string) error {
+	if len(stationName) == 0 {
+		return errors.New("station name can not be empty")
+	}
+	
 	if len(stationName) > 32 {
 		return errors.New("station name should be under 32 characters")
 	}
