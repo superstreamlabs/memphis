@@ -789,8 +789,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	producedByHeader := hdr["producedBy"]
 
 	if connectionIdHeader == "" || producedByHeader == "" {
-		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDk version you are using"})
+		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
 		return
 	}
 

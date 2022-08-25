@@ -42,6 +42,10 @@ import (
 type ProducersHandler struct{ S *Server }
 
 func validateProducerName(name string) error {
+	if len(name) == 0 {
+		return errors.New("Producer name can not be empty")
+	}
+	
 	if len(name) > 32 {
 		return errors.New("Producer name should be under 32 characters")
 	}

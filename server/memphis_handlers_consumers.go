@@ -44,6 +44,10 @@ import (
 type ConsumersHandler struct{ S *Server }
 
 func validateName(name string) error {
+	if len(name) == 0 {
+		return errors.New("Consumer name can not be empty")
+	}
+	
 	if len(name) > 32 {
 		return errors.New("Consumer name/consumer group should be under 32 characters")
 	}
