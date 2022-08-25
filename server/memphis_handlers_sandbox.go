@@ -171,7 +171,12 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		}
 
 		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			if strings.Contains(err.Error(), "valid email address") {
+				mailchimpReq.EmailAddress = mailchimpReq.EmailAddress + "@github.memphis" // in order to get users without emails signed in mailchimp
+				mailchimpList.CreateMember(mailchimpReq)
+			} else {
+				serv.Errorf("Login(Sandbox) error: " + err.Error())
+			}
 		}
 		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
