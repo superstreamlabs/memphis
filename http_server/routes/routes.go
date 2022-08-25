@@ -31,7 +31,8 @@ import (
 )
 
 func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://*", "https://*"},
