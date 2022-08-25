@@ -7,31 +7,12 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this feature request!
-  - type: dropdown
-    attributes:
-      multiple: false
-      label: Type of feature
-      description: Select the type of feature request, the lowercase should also be the PR prefix.
-      options:
-        - "🍕 Feature"
-        - "🐛 Fix"
-        - "📝 Documentation"
-        - "🎨 Style"
-        - "🧑‍💻 Refactor"
-        - "🔥 Performance"
-        - "✅ Test"
-        - "🤖 Build"
-        - "🔁 CI"
-        - "📦 Chore"
-        - "⏩ Revert"
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: Current behavior
       description: Is your feature request related to a problem? Please describe.
     validations:
-      required: true
+      required: false
   - type: textarea
     attributes:
       label: Suggested solution
