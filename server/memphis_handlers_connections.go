@@ -72,7 +72,6 @@ func handleConnectMessage(client *client) error {
 	}
 
 	clientAddress := client.RemoteAddress().String()
-	clientAddress = strings.Split(clientAddress, ":")[0]
 
 	if exist {
 		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
