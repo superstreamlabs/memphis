@@ -29,9 +29,12 @@ import (
 	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -76,6 +79,44 @@ func (s *Server) jsApiRequest(subject, reply string, msg []byte) []byte {
 	s.memphis.replySubjectActive[reply] = false
 
 	return rawResp
+}
+
+type consumeMsg struct {
+	ts   time.Time
+	seq  uint64
+	data []byte
+}
+
+func (s *Server) jsApiConsumeToChan(streamName, durable string, cc *ConsumerConfig, amount int, respCh chan consumeMsg) (*subscription, error) {
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durable)
+	reply := durable + "reply"
+
+	req := []byte(strconv.Itoa(amount))
+
+	// send on golbal account
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+
+	return s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+
+		// ack
+		s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+		splitReply := strings.Split(reply, ".")
+
+		rawSeq, rawTs := splitReply[6], splitReply[7]
+		intTs, err := strconv.Atoi(rawTs)
+		if err != nil {
+			s.Errorf(err.Error())
+		}
+		seq, err := strconv.Atoi(rawSeq)
+		if err != nil {
+			s.Errorf(err.Error())
+		}
+		respCh <- consumeMsg{data: msg,
+			ts:  time.Unix(0, int64(intTs)),
+			seq: uint64(seq),
+		}
+
+	})
 }
 
 func AddUser(username string) (string, error) {
@@ -357,17 +398,9 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	}
 	totalMessages := streamInfo.State.Msgs
 
-	state := streamInfo.State
-
-	var startSequence uint64
-	if state.FirstSeq > 0 {
-		startSequence = state.FirstSeq
-	} else {
-		startSequence = 1
-	}
-
+	var startSequence uint64 = 1
 	if totalMessages > uint64(messagesToFetch) {
-		startSequence = state.LastSeq - uint64(messagesToFetch) + 1
+		startSequence = totalMessages - uint64(messagesToFetch) + 1
 	} else {
 		messagesToFetch = int(totalMessages)
 	}
@@ -417,22 +450,57 @@ func (s *Server) memphisGetMsgs(subjectName,
 	startSeq uint64,
 	amount int,
 	timeout time.Duration) ([]StoredMsg, error) {
-	var msgs []StoredMsg
-	seq := startSeq
 
-	timeoutCh := time.After(timeout)
+	var msgs []StoredMsg
+
+	uid, _ := uuid.NewV4()
+	durableName := "$memphis_fetch_messages_consumer" + uid.String()
+
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: DeliverByStartSequence,
+		Durable:       durableName,
+		AckPolicy:     AckExplicit}
+
+	err := s.memphisAddConsumer(streamName, &cc)
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch messages using CONSUMER.GET.NEXT api that fetches next request for (streamName, consumerName)
+	responseChan := make(chan consumeMsg)
+	sub, err := s.jsApiConsumeToChan(streamName, durableName, &cc, amount, responseChan)
+	if err != nil {
+		return nil, err
+	}
+
+	regex := regexp.MustCompile(`(?P<hdr>(.*\r\n)*)\r\n(?P<msg>.*)\r\n$`)
 	for i := 0; i < amount; i++ {
-		select {
-		case <-timeoutCh:
-			return msgs, errors.New("MemphisGetMsgs timeout")
-		default:
-			sm, err := s.GetMessage(streamName, seq)
-			if sm == nil || err != nil {
-				return msgs, err
-			}
-			seq = sm.Sequence + 1
-			msgs = append(msgs, *sm)
+		recvMsg := <-responseChan
+		sm := StoredMsg{
+			Subject:  subjectName,
+			Time:     recvMsg.ts,
+			Sequence: recvMsg.seq,
 		}
+		match := regex.FindSubmatch(recvMsg.data)
+		if len(match) == 0 {
+			continue
+		}
+		for i, gName := range regex.SubexpNames() {
+			switch gName {
+			case "hdr":
+				sm.Header = append(match[i], []byte("\r\n")...)
+			case "msg":
+				sm.Data = match[i]
+			}
+		}
+		msgs = append(msgs, sm)
+	}
+	sub.close()
+
+	err = s.RemoveConsumer(streamName, durableName)
+	if err != nil {
+		return nil, err
 	}
 
 	return msgs, nil
