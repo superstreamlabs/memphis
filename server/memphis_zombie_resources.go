@@ -108,6 +108,7 @@ func KillZombieResources(wg *sync.WaitGroup) {
 		if err != nil {
 			serv.Errorf("KillZombieResources error: " + err.Error())
 		} else if len(connections) > 0 {
+			serv.Warnf("zombie connection found, killing %v", connections)
 			var connectionIds []primitive.ObjectID
 			for _, con := range connections {
 				connectionIds = append(connectionIds, con.ID)

@@ -232,7 +232,7 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 	} else {
 		newConsumer.MaxAckTimeMs = int64(ccr.MaxAckTimeMillis)
 		newConsumer.MaxMsgDeliveries = ccr.MaxMsgDeliveries
-		s.CreateConsumer(newConsumer, station)
+		err := s.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
 			return err
