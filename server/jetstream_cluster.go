@@ -5704,6 +5704,7 @@ func (s *Server) jsClusteredConsumerRequest(ci *ClientInfo, acc *Account, subjec
 		return
 	}
 
+	s.Debugf("jsapi received CLUSTERED create consumer %v", subject)
 	var resp = JSApiConsumerCreateResponse{ApiResponse: ApiResponse{Type: JSApiConsumerCreateResponseType}}
 
 	streamCfg, ok := js.clusterStreamConfig(acc.Name, stream)
@@ -5932,6 +5933,7 @@ func (s *Server) jsClusteredConsumerRequest(ci *ClientInfo, acc *Account, subjec
 	ca.pending = true
 	sa.consumers[ca.Name] = ca
 
+	s.Debugf("jsapi propose create consumer")
 	// Do formal proposal.
 	cc.meta.Propose(eca)
 }

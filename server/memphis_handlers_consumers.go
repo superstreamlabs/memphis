@@ -115,6 +115,7 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 }
 
 func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) error {
+	s.Debugf("memphis consumer creation request received")
 	name := strings.ToLower(ccr.Name)
 	err := validateName(name)
 	if err != nil {
