@@ -69,14 +69,15 @@ func (s *Server) MemphisInitialized() bool {
 func (s *Server) jsApiRequest(subject, reply string, msg []byte) []byte {
 	// signal the handler that we will be waiting for a reply
 	s.memphis.replySubjectActive[reply] = true
-	s.Debugf("memphis request %v sent to jsapi", subject)
 
 	// send on golbal account
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
 
+	s.Debugf("memphis request %v sent to jsapi", subject)
 	// wait for response to arrive
 	rawResp := <-s.memphis.replySubjectRespCh[reply]
 
+	s.Debugf("memphis response %v received from jsapi", reply)
 	s.memphis.replySubjectActive[reply] = false
 
 	return rawResp

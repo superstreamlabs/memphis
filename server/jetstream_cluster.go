@@ -4052,8 +4052,10 @@ func (js *jetStream) processConsumerLeaderChange(o *consumer, isLeader bool) err
 		return nil
 	}
 
+	s.Noticef("JetStream cluster sending response for new consumer %s, on reply-subject %s", consumerName, reply)
 	var resp = JSApiConsumerCreateResponse{ApiResponse: ApiResponse{Type: JSApiConsumerCreateResponseType}}
 	if err != nil {
+		s.Errorf("JetStream cluster sending response for new consumer err: %v", err)
 		resp.Error = NewJSConsumerCreateError(err, Unless(err))
 		s.sendAPIErrResponse(client, acc, subject, reply, _EMPTY_, s.jsonResponse(&resp))
 	} else {
