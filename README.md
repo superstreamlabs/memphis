@@ -37,12 +37,12 @@ Dashboard             |  Station (Topic) overview|  CLI
 <img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
 
 ## ⭐️ Why
-Working with data streaming is HARD.<br>
-As a developer, you need to build a dedicated pipeline per data source,<br>change the schema, individual analysis, enrich the data with other sources, it constantly crashes, it requires adaptation to different rate limits, constantly change APIs, and scale for better performance 🥵 .<br>
-**It takes time and resources that you don't have.**<br><br>
+Working with data streaming is DIFFICULT.<br><br>
+As a developer, you need to build a dedicated pipeline for each data source, change the schema, analyse them individually, enrich the data with other sources, constantly change APIs, and scale for better performance 🥵 but sometimes it constantly crashes and it requires adaptation to different rate limits.
+**It takes time and resources that you may not have with you.**<br><br>
 Message broker is the answer. In short - It's an event-store.<br>
-Message broker acts as the middleman and supports streaming architecture,<br>but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
-Give memphis{dev} a spin before.
+
+Message broker acts as the middleman and supports streaming architecture, but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs. **Give memphis{dev} a spin before.**
 
 ## 👉 Use-cases
 - Async task management
@@ -64,7 +64,7 @@ Give memphis{dev} a spin before.
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
-- SDKs: Node.JS, Go, Python, Typescript, NestJS
+- ⛓  SDKs: Node.JS, Go, Python, Typescript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
 
@@ -109,12 +109,11 @@ Broker - localhost:7766<br>
 Control-Plane - localhost:5555/6666<br>
 
 ## Beta
-Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing,<br>
-Schema registry, and inline processing, as well as making more SDKs and supporting materials.
+Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing, schema registry and inline processing as well as making more SDKs and supporting materials.
 
 How does it affect you? Well... mostly it doesn't.<br>
 (a) The core of memphis broker is highly stable<br>
-(b) We learn&fix fast<br><br>
+(b) We learn and fix fast<br><br>
 But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
 Read more on https://memphis.dev/docs
 
@@ -133,7 +132,7 @@ If you see an error message or run into an issue, please [create bug report](htt
 
 ### Submit a feature request
 
-If you have an idea, or you're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
+If you have an idea, or you think that we're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
 
 If a similar feature request already exists, don't forget to leave a "+1".
 If you add some more information such as your thoughts and vision about the feature, your comments will be embraced warmly :)
@@ -142,7 +141,7 @@ If you add some more information such as your thoughts and vision about the feat
 
 Memphis{dev} is an open-source project.<br>
 We are committed to a fully transparent development process and appreciate highly any contributions.<br>
-Whether you are helping us fix bugs, proposing new features, improving our documentation or spreading the word - <br>we would love to have you as part of the Memphis{dev} community.
+Whether you are helping us fix bugs, proposing new features, improving our documentation or spreading the word - we would love to have you as part of the Memphis{dev} community.
 
 Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./code_of_conduct.md).
 
@@ -151,3 +150,5 @@ Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Co
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):<br><br>
 <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://avatars.githubusercontent.com/u/86390740?s=60&v=4" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://avatars.githubusercontent.com/u/24862253?s=120&v=4" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
 
+## License
+Please check out [License](./LICENSE.md) to read the full text.
