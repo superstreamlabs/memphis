@@ -355,13 +355,14 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		bson.M{"name": name, "station_id": station.ID, "is_active": true},
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	).Decode(&producer)
+	
+	if err == mongo.ErrNoDocuments {
+		serv.Warnf("Producer does not exist")
+		return errors.New("Producer does not exist")
+	}
 	if err != nil {
 		serv.Errorf("DestroyProducer error: " + err.Error())
 		return err
-	}
-	if err == mongo.ErrNoDocuments {
-		serv.Warnf("A producer with the given details was not found")
-		return errors.New("memphis: a producer with the given details was not found")
 	}
 
 	message := "Producer " + name + " has been deleted"

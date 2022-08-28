@@ -487,8 +487,8 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
-		serv.Warnf("A consumer with the given details was not found")
-		return errors.New("memphis: a consumer with the given details was not found")
+		serv.Warnf("Consumer does not exist")
+		return errors.New("Consumer does not exist")
 	}
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
