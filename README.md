@@ -27,8 +27,11 @@
 <a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a> <a href=""><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/LICENSE"><img src="https://img.shields.io/github/license/memphisdev/memphis-broker?color=ffc633" alt="License"></a> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"> <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-**[Memphis{dev}](https://memphis.dev)** is a message broker for developers made out of devs' struggles develop around message brokers.<br>Enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
-Focusing on automatic optimization, schema management, inline processing,  and troubleshooting abilities. All under the same hood.
+**[Memphis{dev}](https://memphis.dev)** is a message broker for developers made by devs' that struggled to develop around message brokers. When we couldn't something that brought answers to our problems, we decided to come up witht the solution!
+
+Memphis(dev) enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
+
+Focusing on automatic optimization, schema management, inline processing and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
 
 ## 📸 Screenshots
@@ -81,12 +84,21 @@ Docker Compose
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
 docker compose -f docker-compose.yml -p memphis up
 ```
-[![Connect your first app](https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg)](https://youtu.be/-5YmxYRQsdw)<br>
-[Tutorial: Build an event-driven food delivery app](https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71)
+
+<p align="center">
+<a href="https://youtu.be/-5YmxYRQsdw"><img align="center" alt="connect your first app" src="https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg"></a>
+</p>
+
+<p align="center">
+<a href="https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71"> Build an event-driven food delivery app </a>
+
+</p>
 
 ## High-Level Architecture
-<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/180664120-abd5e178-9cfe-4ab3-8722-b130fbcc6294.png">
 
+<p align="center">
+<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/180664120-abd5e178-9cfe-4ab3-8722-b130fbcc6294.png">
+</p>
 
 ## Local access
 ### Via Kubernetes
