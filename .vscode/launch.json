@@ -8,7 +8,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "--js", "--auth", "memphis"
+                "--js", "--auth", "memphis", "-D"
             ],
             "env": {
                 "DEV_ENV": "true",
