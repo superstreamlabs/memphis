@@ -395,7 +395,12 @@ func getGithubData(accessToken string) (map[string]any, error) {
 }
 
 func DenyForSandboxEnv(c *gin.Context) error {
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+
+	if err != nil {
+		serv.Errorf("Sandbox error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
 
 	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})

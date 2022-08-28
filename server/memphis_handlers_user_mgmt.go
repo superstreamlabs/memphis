@@ -149,7 +149,7 @@ func validateUsername(username string) error {
 	re := regexp.MustCompile("^[a-z0-9_.]*$")
 
 	validName := re.MatchString(username)
-	if !validName {
+	if !validName || !(len(username) > 0) {
 		return errors.New("username has to include only letters/numbers/./_ ")
 	}
 	return nil
@@ -339,8 +339,12 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
-	user := getUserDetailsFromMiddleware(c)
-	_, user, err := IsUserExist(user.Username)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("refreshToken error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	_, user, err = IsUserExist(user.Username)
 	if err != nil {
 		serv.Errorf("RefreshToken error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -466,7 +470,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var brokerConnectionCreds string
 	if userType == "application" {
 		brokerConnectionCreds, err = AddUser(username)
-		if err != nil {
+		if err != nil || !(len(username) > 0) {
 			serv.Errorf("CreateUser error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 			return
@@ -486,7 +490,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	_, err = usersCollection.InsertOne(context.TODO(), newUser)
-	if err != nil {
+	if err != nil || !(len(username) > 0) {
 		serv.Errorf("CreateUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -548,7 +552,11 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 
 	username := strings.ToLower(body.Username)
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveUser error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
 	if user.Username == username {
 		serv.Warnf("You can't remove your own user")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can't remove your own user"})
@@ -591,14 +599,18 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveUser error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
 
 	if user.UserType == "root" {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
 		return
 	}
 
-	err := updateUserResources(user)
+	err = updateUserResources(user)
 	if err != nil {
 		serv.Errorf("RemoveMyUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -633,7 +645,12 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 		return
 	}
 
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("EditHubCreds error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	_, err = usersCollection.UpdateOne(context.TODO(),
 		bson.M{"username": user.Username},
 		bson.M{"$set": bson.M{"hub_username": body.HubUsername, "hub_password": body.HubPassword}},
@@ -668,8 +685,13 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		avatarId = body.AvatarId
 	}
 
-	user := getUserDetailsFromMiddleware(c)
-	_, err := usersCollection.UpdateOne(context.TODO(),
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("EditAvatar error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
+	_, err = usersCollection.UpdateOne(context.TODO(),
 		bson.M{"username": user.Username},
 		bson.M{"$set": bson.M{"avatar_id": avatarId}},
 	)
