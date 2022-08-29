@@ -24,7 +24,6 @@ package server
 import (
 	"context"
 	"memphis-broker/models"
-	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -102,38 +101,32 @@ func removeOldPoisonMsgs() error {
 	return nil
 }
 
-func KillZombieResources(wg *sync.WaitGroup) {
+func KillZombieResources() {
 	for range time.Tick(time.Second * 30) {
-		connections, err := killRelevantConnections()
-		if err != nil {
-			serv.Errorf("KillZombieResources error: " + err.Error())
-		} else if len(connections) > 0 {
-			serv.Warnf("zombie connection found, killing %v", connections)
-			var connectionIds []primitive.ObjectID
-			for _, con := range connections {
-				connectionIds = append(connectionIds, con.ID)
-			}
+		// connections, err := killRelevantConnections()
+		// if err != nil {
+		// 	serv.Errorf("KillZombieResources error: " + err.Error())
+		// } else if len(connections) > 0 {
+		// 	serv.Warnf("zombie connection found, killing %v", connections)
+		// 	var connectionIds []primitive.ObjectID
+		// 	for _, con := range connections {
+		// 		connectionIds = append(connectionIds, con.ID)
+		// 	}
 
-			err = killProducersByConnections(connectionIds)
-			if err != nil {
-				serv.Errorf("KillZombieResources error: " + err.Error())
-			}
+		// 	err = killProducersByConnections(connectionIds)
+		// 	if err != nil {
+		// 		serv.Errorf("KillZombieResources error: " + err.Error())
+		// 	}
 
-			err = killConsumersByConnections(connectionIds)
-			if err != nil {
-				serv.Errorf("KillZombieResources error: " + err.Error())
-			}
-		}
+		// 	err = killConsumersByConnections(connectionIds)
+		// 	if err != nil {
+		// 		serv.Errorf("KillZombieResources error: " + err.Error())
+		// 	}
+		// }
 
-		if err != nil {
-			serv.Errorf("KillZombieResources error: " + err.Error())
-		}
-
-		err = removeOldPoisonMsgs()
+		err := removeOldPoisonMsgs()
 		if err != nil {
 			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 	}
-
-	defer wg.Done()
 }

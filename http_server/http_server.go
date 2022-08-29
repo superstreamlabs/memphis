@@ -26,10 +26,9 @@ import (
 	"memphis-broker/http_server/routes"
 	"memphis-broker/server"
 	"memphis-broker/socketio"
-	"sync"
 )
 
-func InitializeHttpServer(s *server.Server, wg *sync.WaitGroup) {
+func InitializeHttpServer(s *server.Server) {
 	configuration := conf.GetConfig()
 
 	handlers := server.Handlers{
@@ -46,7 +45,5 @@ func InitializeHttpServer(s *server.Server, wg *sync.WaitGroup) {
 	socketioServer := socketio.InitializeSocketio(httpServer, &handlers)
 
 	defer socketioServer.Close()
-	defer wg.Done()
-
 	httpServer.Run("0.0.0.0:" + configuration.HTTP_PORT)
 }

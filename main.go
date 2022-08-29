@@ -32,7 +32,6 @@ import (
 	"memphis-broker/http_server"
 	"memphis-broker/server"
 	"os"
-	"sync"
 
 	"go.uber.org/automaxprocs/maxprocs"
 )
@@ -100,7 +99,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) {
+func runMemphis(s *server.Server) db.DbInstance {
 
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
@@ -115,8 +114,6 @@ func runMemphis(s *server.Server) {
 	err = analytics.InitializeAnalytics(dbInstance.Client)
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + " " + err.Error())
-		db.Close(dbInstance, s)
-		os.Exit(1)
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
@@ -128,26 +125,19 @@ func runMemphis(s *server.Server) {
 		os.Exit(1)
 	}
 
-	defer db.Close(dbInstance, s)
-
-	defer analytics.Close()
-
-	wg := new(sync.WaitGroup)
-	wg.Add(2)
-
-	go http_server.InitializeHttpServer(s, wg)
-	go server.KillZombieResources(wg)
+	go http_server.InitializeHttpServer(s)
+	go server.KillZombieResources()
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:6666 (client connections)\nMemphis broker: localhost:5555 (CLI connections)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK root connection token - memphis  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard: http://localhost:9000\nMemphis broker: localhost:6666 (client connections)\nMemphis broker: localhost:5555 (CLI connections)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis  \n\n**********")
 	} else {
 		env = "K8S"
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	wg.Wait()
+	return dbInstance
 }
 
 func main() {
@@ -187,8 +177,13 @@ func main() {
 	undo, err := maxprocs.Set(maxprocs.Logger(s.Debugf))
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("failed to set GOMAXPROCS: %v", err))
+	} else {
+		defer undo()
 	}
-	defer undo()
-	runMemphis(s)
+
+	dbConnection := runMemphis(s)
+	defer db.Close(dbConnection, s)
+	defer analytics.Close()
+
 	s.WaitForShutdown()
 }

@@ -67,8 +67,6 @@ type srvMemphis struct {
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
-
-	// initialise db
 	serv = s
 	serv.memphis.dbClient = dbInstance.Client
 	serv.memphis.dbCtx = dbInstance.Ctx
@@ -86,7 +84,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
-	s.initialiseSDKHandlers()
+	s.initializeSDKHandlers()
 	listenForPoisonMessages(s)
 
 	s.prepReplySubjSubscription(replySubjectStreamInfo)

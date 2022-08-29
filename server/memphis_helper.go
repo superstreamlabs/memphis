@@ -457,11 +457,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	return messages, nil
 }
 
-func (s *Server) memphisGetMsgs(subjectName,
-	streamName string,
-	startSeq uint64,
-	amount int,
-	timeout time.Duration) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
 
 	var msgs []StoredMsg
 

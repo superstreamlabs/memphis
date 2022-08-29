@@ -78,8 +78,8 @@ type destroyConsumerRequest struct {
 	ConsumerName string `json:"name"`
 }
 
-func (s *Server) initialiseSDKHandlers() {
-	// factories
+func (s *Server) initializeSDKHandlers() {
+	// factories|
 	s.queueSubscribe("$memphis_factory_creations",
 		"memphis_factory_creations_listeners_group",
 		createFactoryHandler(s))
