@@ -26,6 +26,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -58,7 +59,7 @@ var serv *Server
 var configuration = conf.GetConfig()
 
 type srvMemphis struct {
-	replySubjectActive map[string]bool
+	replySubjectRespMu sync.Mutex
 	replySubjectRespCh map[string]chan []byte
 	dbClient           *mongo.Client
 	dbCtx              context.Context
@@ -72,7 +73,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	serv.memphis.dbClient = dbInstance.Client
 	serv.memphis.dbCtx = dbInstance.Ctx
 	serv.memphis.dbCancel = dbInstance.Cancel
-	serv.memphis.replySubjectActive = make(map[string]bool)
 	serv.memphis.replySubjectRespCh = make(map[string]chan []byte)
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
@@ -99,22 +99,25 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.prepReplySubjSubscription(replySubjectGetMsg)
 }
 
-func (s *Server) prepReplySubjSubscription(subject string) {
-	s.memphis.replySubjectActive[subject] = false
-	s.memphis.replySubjectRespCh[subject] = make(chan []byte)
+func (s *Server) prepReplySubjSubscription(subjectSuffix string) {
+	s.memphis.replySubjectRespMu.Lock()
+	s.memphis.replySubjectRespCh[subjectSuffix] = make(chan []byte)
+	s.memphis.replySubjectRespMu.Unlock()
+
+	subject := s.getJsApiReplySubject(subjectSuffix)
+	s.Debugf("memphis reply handler subscribing on %s", subject)
 	s.subscribeOnGlobalAcc(subject, subject+"_sid", createReplyHandler(s))
 }
 
 func createReplyHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
-		active, ok := s.memphis.replySubjectActive[subject]
+		replySuffix := tokenAt(subject, 2)
+		respCh, ok := s.memphis.replySubjectRespCh[replySuffix]
 		if !ok {
 			s.Fatalf("memphis reply subject does not exist")
 		}
 
-		if active {
-			s.memphis.replySubjectRespCh[subject] <- msg
-		}
+		respCh <- msg
 	}
 }
 

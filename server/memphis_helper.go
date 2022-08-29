@@ -66,19 +66,21 @@ func (s *Server) MemphisInitialized() bool {
 	return s.GlobalAccount().JetStreamEnabled()
 }
 
-func (s *Server) jsApiRequest(subject, reply string, msg []byte) []byte {
-	// signal the handler that we will be waiting for a reply
-	s.memphis.replySubjectActive[reply] = true
+func (s *Server) jsApiRequest(subject, replySuffix string, msg []byte) []byte {
+
+	reply := s.getJsApiReplySubject(replySuffix)
+
+	s.memphis.replySubjectRespMu.Lock()
 
 	// send on golbal account
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
-
 	s.Debugf("memphis request %v sent to jsapi", subject)
+
 	// wait for response to arrive
-	rawResp := <-s.memphis.replySubjectRespCh[reply]
+	rawResp := <-s.memphis.replySubjectRespCh[replySuffix]
+	s.memphis.replySubjectRespMu.Unlock()
 
 	s.Debugf("memphis response %v received from jsapi", reply)
-	s.memphis.replySubjectActive[reply] = false
 
 	return rawResp
 }
@@ -87,6 +89,14 @@ type consumeMsg struct {
 	ts   time.Time
 	seq  uint64
 	data []byte
+}
+
+func (s *Server) getJsApiReplySubject(subjectSuffix string) string {
+	var sb strings.Builder
+	sb.WriteString(s.info.ID)
+	sb.WriteRune(btsep)
+	sb.WriteString(subjectSuffix)
+	return sb.String()
 }
 
 func (s *Server) jsApiConsumeToChan(streamName, durable string, cc *ConsumerConfig, amount int, respCh chan consumeMsg) (*subscription, error) {
