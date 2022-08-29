@@ -148,7 +148,12 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateFactory error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	newFactory := models.Factory{
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,
@@ -196,11 +201,21 @@ func createFactoryDirect(cfr *createFactoryRequest, c *client) error {
 		return ErrFactoryAlreadyExists
 	}
 
+	exist, user, err := IsUserExist(c.memphisInfo.username)
+	if err != nil {
+		serv.Errorf("createFactoryDirect error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Errorf("CreateFactory error: User does not exist")
+		return errors.New("User does not exist")
+	}
+
 	newFactory := models.Factory{
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,
 		Description:   strings.ToLower(cfr.FactoryDesc),
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		IsDeleted:     false,
 	}

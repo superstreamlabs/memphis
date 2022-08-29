@@ -47,7 +47,7 @@ func validateName(name string) error {
 	if len(name) == 0 {
 		return errors.New("Consumer name can not be empty")
 	}
-	
+
 	if len(name) > 32 {
 		return errors.New("Consumer name/consumer group should be under 32 characters")
 	}
@@ -122,6 +122,16 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 		return err
 	}
 
+	exist, user, err := IsUserExist(c.memphisInfo.username)
+	if err != nil {
+		serv.Errorf("createConsumerDirect error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Errorf("createConsumerDirect error: User does not exist")
+		return errors.New("User does not exist")
+	}
+
 	consumerGroup := strings.ToLower(ccr.ConsumerGroup)
 	if consumerGroup != "" {
 		err = validateName(consumerGroup)
@@ -179,7 +189,7 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: c.memphisInfo.username,
+			CreatedByUser: user.Username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -251,7 +261,7 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -524,6 +534,16 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 		}
 	}
 
+	exist, user, err := IsUserExist(c.memphisInfo.username)
+	if err != nil {
+		serv.Errorf("destroyConsumerDirect error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Errorf("destroyConsumerDirect error: User does not exist")
+		return errors.New("User does not exist")
+	}
+
 	message := "Consumer " + name + " has been deleted"
 	serv.Noticef(message)
 	var auditLogs []interface{}
@@ -531,7 +551,7 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
