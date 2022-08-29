@@ -43,7 +43,7 @@ func validateStationName(stationName string) error {
 	if len(stationName) == 0 {
 		return errors.New("station name can not be empty")
 	}
-	
+
 	if len(stationName) > 32 {
 		return errors.New("station name should be under 32 characters")
 	}
@@ -136,6 +136,16 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		return errors.New("memphis: station with that name already exists")
 	}
 
+	exist, user, err := IsUserExist(c.memphisInfo.username)
+	if err != nil {
+		serv.Errorf("createStationDirect error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("createStationDirect error: User does not exist")
+		return errors.New("User does not exist")
+	}
+
 	factoryName := strings.ToLower(csr.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
@@ -153,7 +163,7 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 			ID:            primitive.NewObjectID(),
 			Name:          factoryName,
 			Description:   "",
-			CreatedByUser: c.memphisInfo.username,
+			CreatedByUser: user.Username,
 			CreationDate:  time.Now(),
 			IsDeleted:     false,
 		}
@@ -205,7 +215,7 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
 		FactoryId:       factory.ID,
-		CreatedByUser:   c.memphisInfo.username,
+		CreatedByUser:   user.Username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
 		RetentionType:   retentionType,
@@ -237,7 +247,7 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -347,7 +357,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	factoryName := strings.ToLower(body.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {

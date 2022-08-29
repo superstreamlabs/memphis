@@ -45,7 +45,7 @@ func validateProducerName(name string) error {
 	if len(name) == 0 {
 		return errors.New("Producer name can not be empty")
 	}
-	
+
 	if len(name) > 32 {
 		return errors.New("Producer name should be under 32 characters")
 	}
@@ -72,6 +72,16 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 	if err != nil {
 		serv.Warnf(err.Error())
 		return err
+	}
+
+	exist, user, err := IsUserExist(c.memphisInfo.username)
+	if err != nil {
+		serv.Errorf("createProducerDirect error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("createProducerDirect error: User does not exist")
+		return errors.New("User does not exist")
 	}
 
 	producerType := strings.ToLower(cpr.ProducerType)
@@ -120,7 +130,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName,
 			Message:       message,
-			CreatedByUser: c.memphisInfo.username,
+			CreatedByUser: user.Username,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -173,7 +183,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -364,6 +374,16 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		return errors.New("memphis: a producer with the given details was not found")
 	}
 
+	exist, user, err := IsUserExist(c.memphisInfo.username)
+	if err != nil {
+		serv.Errorf("destroyProducerDirect error: " + err.Error())
+		return err
+	}
+	if !exist {
+		serv.Warnf("destroyProducerDirect error: User does not exist")
+		return errors.New("User does not exist")
+	}
+
 	message := "Producer " + name + " has been deleted"
 	serv.Noticef(message)
 	var auditLogs []interface{}
@@ -371,7 +391,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName,
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
