@@ -149,7 +149,7 @@ func validateUsername(username string) error {
 	re := regexp.MustCompile("^[a-z0-9_.]*$")
 
 	validName := re.MatchString(username)
-	if !validName || !(len(username) > 0) {
+	if !validName || len(username) == 0 {
 		return errors.New("username has to include only letters/numbers/./_ ")
 	}
 	return nil
@@ -470,7 +470,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var brokerConnectionCreds string
 	if userType == "application" {
 		brokerConnectionCreds, err = AddUser(username)
-		if err != nil || !(len(username) > 0) {
+		if err != nil || len(username) == 0 {
 			serv.Errorf("CreateUser error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 			return
@@ -490,7 +490,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	_, err = usersCollection.InsertOne(context.TODO(), newUser)
-	if err != nil || !(len(username) > 0) {
+	if err != nil || len(username) == 0 {
 		serv.Errorf("CreateUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return

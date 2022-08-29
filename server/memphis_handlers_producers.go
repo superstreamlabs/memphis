@@ -80,7 +80,7 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 		return err
 	}
 	if !exist {
-		serv.Errorf("createProducerDirect error: User does not exist")
+		serv.Warnf("createProducerDirect error: User does not exist")
 		return errors.New("User does not exist")
 	}
 
@@ -380,7 +380,7 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		return err
 	}
 	if !exist {
-		serv.Errorf("destroyProducerDirect error: User does not exist")
+		serv.Warnf("destroyProducerDirect error: User does not exist")
 		return errors.New("User does not exist")
 	}
 

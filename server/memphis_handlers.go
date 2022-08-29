@@ -131,7 +131,7 @@ func listenForPoisonMessages(s *Server) {
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	user, _ := c.Get("user")
 	userModel := user.(models.User)
-	if !(len(userModel.Username) > 0) {
+	if len(userModel.Username) == 0 {
 		return userModel, errors.New("Username is empty")
 	}
 	return userModel, nil

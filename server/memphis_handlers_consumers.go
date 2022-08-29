@@ -128,7 +128,7 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 		return err
 	}
 	if !exist {
-		serv.Errorf("createConsumerDirect error: User does not exist")
+		serv.Warnf("createConsumerDirect error: User does not exist")
 		return errors.New("User does not exist")
 	}
 
@@ -540,7 +540,7 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 		return err
 	}
 	if !exist {
-		serv.Errorf("destroyConsumerDirect error: User does not exist")
+		serv.Warnf("destroyConsumerDirect error: User does not exist")
 		return errors.New("User does not exist")
 	}
 

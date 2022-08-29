@@ -142,7 +142,7 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		return err
 	}
 	if !exist {
-		serv.Errorf("createStationDirect error: User does not exist")
+		serv.Warnf("createStationDirect error: User does not exist")
 		return errors.New("User does not exist")
 	}
 

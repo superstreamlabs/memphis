@@ -207,7 +207,7 @@ func createFactoryDirect(cfr *createFactoryRequest, c *client) error {
 		return err
 	}
 	if !exist {
-		serv.Errorf("CreateFactory error: User does not exist")
+		serv.Warnf("CreateFactory error: User does not exist")
 		return errors.New("User does not exist")
 	}
 
