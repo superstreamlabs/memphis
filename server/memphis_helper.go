@@ -67,8 +67,9 @@ func (s *Server) MemphisInitialized() bool {
 	return s.GlobalAccount().JetStreamEnabled()
 }
 
-func createReplyHandler(respCh chan []byte) simplifiedMsgHandler {
+func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
+		s.Debugf("memphis response from jsapi %v", string(msg))
 		respCh <- msg
 	}
 }
@@ -79,7 +80,7 @@ func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) 
 
 	timeout := time.After(4 * time.Second)
 	respCh := make(chan []byte)
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(respCh))
+	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
 		return nil, err
 	}
