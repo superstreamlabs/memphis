@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"memphis-broker/models"
@@ -177,23 +178,33 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 
 var ErrFactoryAlreadyExists = errors.New("memphis: factory already exists")
 
-func createFactoryDirect(cfr *createFactoryRequest, c *client) error {
+func (s *Server) createFactoryDirect(c *client, reply string, msg []byte) {
+	var cfr createFactoryRequest
+	if err := json.Unmarshal(msg, &cfr); err != nil {
+		s.Warnf("failed creating factory: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	factoryName := strings.ToLower(cfr.FactoryName)
 	err := validateFactoryName(factoryName)
 	if err != nil {
-		serv.Warnf(err.Error())
-		return err
+		s.Warnf(err.Error())
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	exist, _, err := IsFactoryExist(factoryName)
 	if err != nil {
 		serv.Errorf("CreateFactory error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	if exist {
 		serv.Warnf("Factory with that name already exists")
-		return ErrFactoryAlreadyExists
+		respondWithErr(s, reply, ErrFactoryAlreadyExists)
+		return
 	}
 
 	newFactory := models.Factory{
@@ -208,11 +219,13 @@ func createFactoryDirect(cfr *createFactoryRequest, c *client) error {
 	_, err = factoriesCollection.InsertOne(context.TODO(), newFactory)
 	if err != nil {
 		serv.Errorf("CreateFactory error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	serv.Noticef("Factory " + factoryName + " has been created")
-	return nil
+	respondWithErr(s, reply, err)
+	return
 }
 
 func (fh FactoriesHandler) GetFactoryDetails(factoryName string) (map[string]interface{}, error) {
@@ -370,22 +383,31 @@ func (fh FactoriesHandler) RemoveFactory(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) RemoveFactoryDirect(dfr *destroyFactoryRequest) error {
+func (s *Server) RemoveFactoryDirect(reply string, msg []byte) {
+	var dfr destroyFactoryRequest
+	if err := json.Unmarshal(msg, &dfr); err != nil {
+		s.Warnf("failed destroying factory: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	factoryName := strings.ToLower(dfr.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		serv.Errorf("RemoveFactory error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist {
 		serv.Warnf("Factory does not exist")
-		return errors.New("memphis: factory does not exist")
+		respondWithErr(s, reply, errors.New("memphis: factory does not exist"))
+		return
 	}
 
 	err = removeStations(s, factory.ID)
 	if err != nil {
 		serv.Errorf("RemoveFactory error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	_, err = factoriesCollection.UpdateOne(context.TODO(),
@@ -400,11 +422,12 @@ func (s *Server) RemoveFactoryDirect(dfr *destroyFactoryRequest) error {
 	)
 	if err != nil {
 		serv.Errorf("RemoveFactory error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	serv.Noticef("Factory " + factoryName + " has been deleted")
-	return nil
+	respondWithErr(s, reply, err)
 }
 
 func (fh FactoriesHandler) EditFactory(c *gin.Context) {

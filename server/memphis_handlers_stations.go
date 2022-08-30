@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
@@ -43,7 +44,7 @@ func validateStationName(stationName string) error {
 	if len(stationName) == 0 {
 		return errors.New("station name can not be empty")
 	}
-	
+
 	if len(stationName) > 32 {
 		return errors.New("station name should be under 32 characters")
 	}
@@ -117,36 +118,47 @@ func removeStationResources(s *Server, station models.Station) error {
 	return nil
 }
 
-func (s *Server) createStationDirect(csr *createStationRequest, c *client) error {
+func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
+	var csr createStationRequest
+	if err := json.Unmarshal(msg, &csr); err != nil {
+		s.Warnf("failed creating station: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	stationName := strings.ToLower(csr.StationName)
 	err := validateStationName(stationName)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateStation error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	if exist {
 		serv.Warnf("Station with that name already exists")
-		return errors.New("memphis: station with that name already exists")
+		respondWithErr(s, reply, errors.New("memphis: station with that name already exists"))
+		return
 	}
 
 	factoryName := strings.ToLower(csr.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {
 		serv.Errorf("Server Error" + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist { // create this factory
 		err := validateFactoryName(factoryName)
 		if err != nil {
 			serv.Warnf(err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		factory = models.Factory{
@@ -160,7 +172,8 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
 		if err != nil {
 			serv.Errorf("CreateStation error: " + err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 	}
 
@@ -171,7 +184,8 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf(err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 		retentionValue = csr.RetentionValue
 	} else {
@@ -185,7 +199,8 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf(err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 	} else {
 		storageType = "file"
@@ -196,7 +211,8 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		err = validateReplicas(replicas)
 		if err != nil {
 			serv.Warnf(err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 	} else {
 		replicas = 1
@@ -221,13 +237,15 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 	err = s.CreateStream(newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
 	if err != nil {
 		serv.Errorf("CreateStation error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	message := "Station " + stationName + " has been created"
 	serv.Noticef(message)
@@ -252,7 +270,8 @@ func (s *Server) createStationDirect(csr *createStationRequest, c *client) error
 		analytics.IncrementStationsCounter()
 	}
 
-	return nil
+	respondWithErr(s, reply, nil)
+	return
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
@@ -521,22 +540,31 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) removeStationDirect(dsr *destroyStationRequest) error {
+func (s *Server) removeStationDirect(reply string, msg []byte) {
+	var dsr destroyStationRequest
+	if err := json.Unmarshal(msg, &dsr); err != nil {
+		s.Warnf("failed destroying station: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	stationName := strings.ToLower(dsr.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist {
 		serv.Warnf("Station does not exist")
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	err = removeStationResources(s, station)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	_, err = stationsCollection.UpdateOne(context.TODO(),
@@ -551,11 +579,13 @@ func (s *Server) removeStationDirect(dsr *destroyStationRequest) error {
 	)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	serv.Noticef("Station " + stationName + " has been deleted")
-	return nil
+	respondWithErr(s, reply, err)
+	return
 }
 
 func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {

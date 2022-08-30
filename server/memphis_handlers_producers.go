@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
@@ -45,7 +46,7 @@ func validateProducerName(name string) error {
 	if len(name) == 0 {
 		return errors.New("Producer name can not be empty")
 	}
-	
+
 	if len(name) > 32 {
 		return errors.New("Producer name should be under 32 characters")
 	}
@@ -66,51 +67,65 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) error {
+func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
+	var cpr createProducerRequest
+	if err := json.Unmarshal(msg, &cpr); err != nil {
+		s.Warnf("failed creating producer: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	producerType := strings.ToLower(cpr.ProducerType)
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		return errors.New("memphis: connection id was not found")
+		respondWithErr(s, reply, errors.New("memphis: connection id was not found"))
+		return
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		return errors.New("memphis: connection id is not active")
+		respondWithErr(s, reply, errors.New("memphis: connection id is not active"))
+		return
 	}
 
 	stationName := strings.ToLower(cpr.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist {
 		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		message := "Station " + stationName + " has been created"
@@ -139,11 +154,13 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 	exist, _, err = IsProducerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if exist {
 		serv.Warnf("Producer name has to be unique per station")
-		return errors.New("memphis: producer name has to be unique per station")
+		respondWithErr(s, reply, errors.New("memphis: producer name has to be unique per station"))
+		return
 	}
 
 	producerId := primitive.NewObjectID()
@@ -163,7 +180,8 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 	_, err = producersCollection.InsertOne(context.TODO(), newProducer)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	message := "Producer " + name + " has been created"
@@ -187,7 +205,8 @@ func (s *Server) createProducerDirect(cpr *createProducerRequest, c *client) err
 	if shouldSendAnalytics {
 		analytics.IncrementProducersCounter()
 	}
-	return nil
+	respondWithErr(s, reply, nil)
+	return
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
@@ -341,13 +360,20 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	}
 }
 
-func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) error {
+func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
+	var dpr destroyProducerRequest
+	if err := json.Unmarshal(msg, &dpr); err != nil {
+		s.Warnf("failed destoying producer: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	stationName := strings.ToLower(dpr.StationName)
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("DestroyProducer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	var producer models.Producer
@@ -355,14 +381,16 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		bson.M{"name": name, "station_id": station.ID, "is_active": true},
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
 	).Decode(&producer)
-	
+
 	if err == mongo.ErrNoDocuments {
 		serv.Warnf("Producer does not exist")
-		return errors.New("Producer does not exist")
+		respondWithErr(s, reply, errors.New("Producer does not exist"))
+		return
 	}
 	if err != nil {
 		serv.Errorf("DestroyProducer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	message := "Producer " + name + " has been deleted"
@@ -382,7 +410,8 @@ func (s *Server) destroyProducerDirect(dpr *destroyProducerRequest, c *client) e
 		serv.Errorf("DestroyProducer error: " + err.Error())
 	}
 
-	return nil
+	respondWithErr(s, reply, nil)
+	return
 }
 
 func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {

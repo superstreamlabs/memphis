@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sort"
 
@@ -47,7 +48,7 @@ func validateName(name string) error {
 	if len(name) == 0 {
 		return errors.New("Consumer name can not be empty")
 	}
-	
+
 	if len(name) > 32 {
 		return errors.New("Consumer name/consumer group should be under 32 characters")
 	}
@@ -114,13 +115,21 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 	return dedupedConsumers, nil
 }
 
-func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) error {
+func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	s.Debugf("memphis consumer creation request received")
+
+	var ccr createConsumerRequest
+	if err := json.Unmarshal(msg, &ccr); err != nil {
+		s.Warnf("failed creating consumer: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	name := strings.ToLower(ccr.Name)
 	err := validateName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	consumerGroup := strings.ToLower(ccr.ConsumerGroup)
@@ -128,7 +137,8 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 		err = validateName(consumerGroup)
 		if err != nil {
 			serv.Warnf(err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 	} else {
 		consumerGroup = name
@@ -138,39 +148,46 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 	err = validateConsumerType(consumerType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(ccr.ConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		return errors.New("connection id was not found")
+		respondWithErr(s, reply, errors.New("connection id was not found"))
+		return
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		return errors.New("connection is not active")
+		respondWithErr(s, reply, errors.New("connection is not active"))
+		return
 	}
 
 	stationName := strings.ToLower(ccr.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if !exist {
 		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		message := "Station " + stationName + " has been created"
@@ -199,17 +216,20 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 	exist, _, err = IsConsumerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	if exist {
 		serv.Warnf("Consumer name has to be unique per station")
-		return errors.New("memphis: consumer name has to be unique per station")
+		respondWithErr(s, reply, errors.New("memphis: consumer name has to be unique per station"))
+		return
 	}
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	consumerId := primitive.NewObjectID()
@@ -236,14 +256,16 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 		err := s.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 	}
 
 	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 	message := "Consumer " + name + " has been created"
 	serv.Noticef(message)
@@ -267,7 +289,8 @@ func (s *Server) createConsumerDirect(ccr *createConsumerRequest, c *client) err
 		analytics.IncrementConsumersCounter()
 	}
 
-	return nil
+	respondWithErr(s, reply, nil)
+	return
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
@@ -472,13 +495,20 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 	}
 }
 
-func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) error {
+func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
+	var dcr destroyConsumerRequest
+	if err := json.Unmarshal(msg, &dcr); err != nil {
+		s.Warnf("failed destoying consumer: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	stationName := strings.ToLower(dcr.StationName)
 	name := strings.ToLower(dcr.ConsumerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	var consumer models.Consumer
@@ -488,11 +518,14 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 	).Decode(&consumer)
 	if err == mongo.ErrNoDocuments {
 		serv.Warnf("Consumer does not exist")
-		return errors.New("Consumer does not exist")
+
+		respondWithErr(s, reply, errors.New("Consumer does not exist"))
+		return
 	}
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	_, err = consumersCollection.UpdateMany(context.TODO(),
@@ -501,27 +534,31 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 	)
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	// ensure not part of an active consumer group
 	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
-		return err
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	if count == 0 { // no other members in this group
 		err = s.RemoveConsumer(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			serv.Errorf("DestroyConsumer error: " + err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 
 		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
 		if err != nil {
 			serv.Errorf("DestroyConsumer error: " + err.Error())
-			return err
+			respondWithErr(s, reply, err)
+			return
 		}
 	}
 
@@ -542,7 +579,8 @@ func (s *Server) destroyConsumerDirect(dcr *destroyConsumerRequest, c *client) e
 		serv.Errorf("DestroyConsumer error: " + err.Error())
 	}
 
-	return nil
+	respondWithErr(s, reply, nil)
+	return
 }
 
 func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {

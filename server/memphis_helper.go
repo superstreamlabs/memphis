@@ -69,13 +69,12 @@ func (s *Server) MemphisInitialized() bool {
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
-		s.Debugf("memphis response from jsapi %v", string(msg))
+		s.Debugf("memphis response from jsapi for subject: %v", subject)
 		respCh <- msg
 	}
 }
 
 func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
-
 	reply := s.getJsApiReplySubject()
 
 	timeout := time.After(4 * time.Second)
@@ -86,11 +85,9 @@ func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) 
 	}
 	// send on golbal account
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
-	s.Debugf("memphis request %v sent to jsapi", subject)
+	s.Debugf("memphis request %v sent to jsapi (expect reply: %v)", subject, reply)
 
 	// wait for response to arrive
-
-	s.Debugf("memphis response %v received from jsapi", reply)
 	select {
 	case rawResp := <-respCh:
 		sub.close()
