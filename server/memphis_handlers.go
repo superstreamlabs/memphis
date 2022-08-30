@@ -85,7 +85,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
 	s.initializeSDKHandlers()
-	listenForPoisonMessages(s)
 
 	s.prepReplySubjSubscription(replySubjectStreamInfo)
 	s.prepReplySubjSubscription(replySubjectCreateConsumer)
@@ -121,7 +120,7 @@ func createReplyHandler(s *Server) simplifiedMsgHandler {
 
 var poisonMessagesHandler PoisonMessagesHandler
 
-func listenForPoisonMessages(s *Server) {
+func (s *Server) ListenForPoisonMessages() {
 	poisonMessagesHandler.S = serv
 	s.queueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
 		"$memphis_poison_messages_listeners_group",
