@@ -26,10 +26,10 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nats-io/nuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -59,11 +59,10 @@ var serv *Server
 var configuration = conf.GetConfig()
 
 type srvMemphis struct {
-	replySubjectRespMu sync.Mutex
-	replySubjectRespCh map[string]chan []byte
-	dbClient           *mongo.Client
-	dbCtx              context.Context
-	dbCancel           context.CancelFunc
+	nuid     *nuid.NUID
+	dbClient *mongo.Client
+	dbCtx    context.Context
+	dbCancel context.CancelFunc
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
@@ -71,7 +70,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	serv.memphis.dbClient = dbInstance.Client
 	serv.memphis.dbCtx = dbInstance.Ctx
 	serv.memphis.dbCancel = dbInstance.Cancel
-	serv.memphis.replySubjectRespCh = make(map[string]chan []byte)
+	serv.memphis.nuid = nuid.New()
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
@@ -85,47 +84,10 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
 	s.initializeSDKHandlers()
-
-	s.prepReplySubjSubscription(replySubjectStreamInfo)
-	s.prepReplySubjSubscription(replySubjectCreateConsumer)
-	s.prepReplySubjSubscription(replySubjectDeleteConsumer)
-	s.prepReplySubjSubscription(replySubjectConsumerInfo)
-	s.prepReplySubjSubscription(replySubjectDeleteStream)
-	s.prepReplySubjSubscription(replySubjectCreateStream)
-	s.prepReplySubjSubscription(replySubjectStreamList)
-	s.prepReplySubjSubscription(replySubjectGetMsg)
-}
-
-func (s *Server) prepReplySubjSubscription(subjectSuffix string) {
-	s.memphis.replySubjectRespMu.Lock()
-	s.memphis.replySubjectRespCh[subjectSuffix] = make(chan []byte)
-	s.memphis.replySubjectRespMu.Unlock()
-
-	subject := s.getJsApiReplySubject(subjectSuffix)
-	s.Debugf("memphis reply handler subscribing on %s", subject)
-	s.subscribeOnGlobalAcc(subject, subject+"_sid", createReplyHandler(s))
-}
-
-func createReplyHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, subject, _ string, msg []byte) {
-		replySuffix := tokenAt(subject, 2)
-		respCh, ok := s.memphis.replySubjectRespCh[replySuffix]
-		if !ok {
-			s.Fatalf("memphis reply subject does not exist")
-		}
-
-		respCh <- msg
-	}
+	s.ListenForPoisonMessages()
 }
 
 var poisonMessagesHandler PoisonMessagesHandler
-
-func (s *Server) ListenForPoisonMessages() {
-	poisonMessagesHandler.S = serv
-	s.queueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
-		"$memphis_poison_messages_listeners_group",
-		poisonMessagesHandler.HandleNewMessage)
-}
 
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	user, _ := c.Get("user")
