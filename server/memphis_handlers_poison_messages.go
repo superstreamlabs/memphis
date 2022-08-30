@@ -40,10 +40,16 @@ func (s *Server) ListenForPoisonMessages() {
 	poisonMessagesHandler.S = serv
 	s.queueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
 		"$memphis_poison_messages_listeners_group",
-		poisonMessagesHandler.HandleNewMessage)
+		createPoisonMessageHandler(s))
 }
 
-func (pmh PoisonMessagesHandler) HandleNewMessage(_ *client, _, _ string, msg []byte) {
+func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
+	return func(_ *client, _, _ string, msg []byte) {
+		go s.HandleNewMessage(msg)
+	}
+}
+
+func (s *Server) HandleNewMessage(msg []byte) {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
@@ -56,7 +62,7 @@ func (pmh PoisonMessagesHandler) HandleNewMessage(_ *client, _, _ string, msg []
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
-	poisonMessageContent, err := pmh.S.GetMessage(stationName, uint64(messageSeq))
+	poisonMessageContent, err := s.GetMessage(stationName, uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
