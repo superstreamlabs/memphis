@@ -39,6 +39,7 @@ import (
 var noNeedAuthRoutes = []string{
 	"/api/usermgmt/login",
 	"/api/usermgmt/refreshtoken",
+	"/api/usermgmt/addusersignup",
 	"/api/status",
 	"/api/sandbox/login",
 }
@@ -52,7 +53,7 @@ func isAuthNeeded(path string) bool {
 		return false
 	}
 
-	for _, route := range noNeedAuthRoutes {
+  	for _, route := range noNeedAuthRoutes {
 		if route == path {
 			return false
 		}

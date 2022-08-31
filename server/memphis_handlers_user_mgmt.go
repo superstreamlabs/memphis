@@ -27,6 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -40,6 +41,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/hanzoai/gochimp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -58,6 +60,24 @@ func isRootUserExist() (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func isOnlyRootUserExist() (bool, error) {
+	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	var users []models.User
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		log.Fatal(err)
+	}
+	if len(users) == 1 && users[0].Username == "root" {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
@@ -151,6 +171,15 @@ func validateUsername(username string) error {
 	validName := re.MatchString(username)
 	if !validName || len(username) == 0 {
 		return errors.New("username has to include only letters/numbers/./_ ")
+	}
+	return nil
+}
+
+func validateEmail(email string) error {
+	re := regexp.MustCompile("^[a-z0-9._%+-]+@[a-z0-9_.-]+.[a-z]{2,4}$")
+	validateEmail := re.MatchString(email)
+	if !validateEmail || len(email) == 0 {
+		return errors.New("email validate")
 	}
 	return nil
 }
@@ -400,6 +429,116 @@ func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
+	exist, err := isOnlyRootUserExist()
+	if err != nil {
+		serv.Errorf("AddUserSignUp error: " + err.Error())
+		return
+	}
+	if !exist {
+		serv.Warnf("More than root user exists")
+		c.IndentedJSON(200, gin.H{"message": "A root user is not only exists"})
+		return
+	} else {
+		serv.Warnf("Only root user exists")
+		var body models.AddUserSchema
+		ok := utils.Validate(c, &body, false, nil)
+		if !ok {
+			return
+		}
+		username := strings.ToLower(body.Username)
+		exist, _, err := IsUserExist(username)
+		if err != nil {
+			serv.Errorf("CreateUser error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if exist {
+			serv.Warnf("A user with this username is already exist")
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
+			return
+		}
+
+		usernameError := validateUsername(username)
+		if usernameError != nil {
+			serv.Warnf(usernameError.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+			return
+		}
+		email := strings.ToLower((body.Email))
+		fullName := strings.ToLower(body.FullName)
+		password := strings.ToLower(body.Password)
+		subscription := body.Subscribtion
+
+		emailError := validateEmail(email)
+		if emailError != nil {
+			serv.Warnf(emailError.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": emailError.Error()})
+			return
+
+
+		}
+
+		//
+		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+		mailchimpListID := configuration.MAILCHIMP_LIST_ID
+		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+		if err != nil {
+			serv.Errorf("SignUperror: " + err.Error())
+		}
+
+		mailchimpReq := &gochimp3.MemberRequest{
+			EmailAddress: email,
+			Status:       "subscribed",
+			Tags:         []string{"SignUp"},
+		}
+
+		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
+			if strings.Contains(err.Error(), "valid email address") {
+				mailchimpReq.EmailAddress = mailchimpReq.EmailAddress + "@github.memphis" // in order to get users without emails signed in mailchimp
+				mailchimpList.CreateMember(mailchimpReq)
+			} else {
+				serv.Errorf("SignUp error: " + err.Error())
+			}
+		}
+		//
+
+		newUser := models.User{
+			ID:              primitive.NewObjectID(),
+			Username:        username,
+			Password:        password,
+			FullName:        fullName,
+			Email:           email,
+			Subscribtion:    subscription,
+			UserType:        "managment",
+			CreationDate:    time.Now(),
+			AlreadyLoggedIn: false,
+			AvatarId:        1,
+		}
+
+		_, err = usersCollection.InsertOne(context.TODO(), newUser)
+		if err != nil || len(username) == 0 {
+			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		serv.Noticef("User " + username + " has been created")
+		c.IndentedJSON(200, gin.H{
+			"id":                      newUser.ID,
+			"username":                username,
+			"hub_username":            "",
+			"hub_password":            "",
+			"user_type":               "management",
+			"creation_date":           newUser.CreationDate,
+			"already_logged_in":       false,
+			"avatar_id":               1,
+			"broker_connection_creds": "",
+		})
+
+	}
 }
 
 func (umh UserMgmtHandler) AddUser(c *gin.Context) {
