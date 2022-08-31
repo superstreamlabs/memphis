@@ -488,6 +488,26 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	return messages, nil
 }
 
+func getHdrLastIdxFromRaw(msg []byte) int {
+	inCrlf := false
+	inDouble := false
+	for i, b := range msg {
+		switch b {
+		case '\r':
+			inCrlf = true
+		case '\n':
+			if inDouble {
+				return i
+			}
+			inDouble = inCrlf
+			inCrlf = false
+		default:
+			inCrlf, inDouble = false, false
+		}
+	}
+	return -1
+}
+
 func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
@@ -514,10 +534,10 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 		go func(respCh chan StoredMsg) {
 			// ack
 			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
-			
+
 			rawSeq := tokenAt(reply, 6)
 			rawTs := tokenAt(reply, 8)
-			s.Noticef(string(msg))
+
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
 				s.Errorf(err.Error())
@@ -526,15 +546,23 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 			if err != nil {
 				s.Errorf(err.Error())
 			}
-			
-			// headers :=
-			// payload :=
-			
+
+			dataFirstIdx := getHdrLastIdxFromRaw(msg) + 1
+			if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
+				s.Errorf("memphis error parsing in station get messages")
+			}
+
+			dataLen := len(msg) - dataFirstIdx - len(CR_LF)
+			// some messages with just \n at the end can arrive
+			if msg[len(msg)-1] != '\r' {
+				dataLen--
+			}
+
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
-				// Header: headers,
-				// Data: payload,
-				Time: time.Unix(0, int64(intTs)),
+				Header:   msg[:dataFirstIdx],
+				Data:     msg[dataFirstIdx : dataFirstIdx+dataLen],
+				Time:     time.Unix(0, int64(intTs)),
 			}
 		}(responseChan)
 	})
@@ -545,39 +573,18 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
 
 	var msgs []StoredMsg
-	timeoutCh := time.NewTimer(timeout)
+	timer := time.NewTimer(timeout)
 	for i := 0; i < amount; i++ {
 		select {
-		case <-timeoutCh.C:
-			return msgs, nil
+		case <-timer.C:
+			goto cleanup
 		case msg := <-responseChan:
 			msgs = append(msgs, msg)
 		}
 	}
 
-	// regex := regexp.MustCompile(`(?P<hdr>(.*\r\n)*)\r\n(?P<msg>.*)\r\n$`)
-	// for i := 0; i < amount; i++ {
-	// 	recvMsg := <-responseChan
-	// 	sm := StoredMsg{
-	// 		Subject:  subjectName,
-	// 		Time:     recvMsg.ts,
-	// 		Sequence: recvMsg.seq,
-	// 	}
-	// 	match := regex.FindSubmatch(recvMsg.data)
-	// 	if len(match) == 0 {
-	// 		continue
-	// 	}
-	// 	for i, gName := range regex.SubexpNames() {
-	// 		switch gName {
-	// 		case "hdr":
-	// 			sm.Header = append(match[i], []byte("\r\n")...)
-	// 		case "msg":
-	// 			sm.Data = match[i]
-	// 		}
-	// 	}
-	// 	msgs = append(msgs, sm)
-	// }
-
+cleanup:
+	timer.Stop()
 	sub.close()
 	err = s.RemoveConsumer(streamName, durableName)
 	if err != nil {
