@@ -86,8 +86,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.initializeSDKHandlers()
 }
 
-var poisonMessagesHandler PoisonMessagesHandler
-
 func getUserDetailsFromMiddleware(c *gin.Context) models.User {
 	user, _ := c.Get("user")
 	return user.(models.User)
