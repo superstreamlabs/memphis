@@ -46,7 +46,7 @@ const (
 	descrHdr  = "Description"
 )
 
-// internal reply subjects
+// JetStream API request kinds
 const (
 	kindStreamInfo     = "$memphis_stream_info"
 	kindCreateConsumer = "$memphis_create_consumer"
@@ -69,7 +69,6 @@ func (s *Server) MemphisInitialized() bool {
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
-		s.Debugf("memphis response from jsapi for subject: %v", subject)
 		respCh <- msg
 	}
 }
@@ -85,7 +84,6 @@ func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) 
 	}
 	// send on golbal account
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
-	s.Debugf("memphis request %v sent to jsapi (expect reply: %v)", subject, reply)
 
 	// wait for response to arrive
 	select {

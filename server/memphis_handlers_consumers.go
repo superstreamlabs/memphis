@@ -116,8 +116,6 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 }
 
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
-	s.Debugf("memphis consumer creation request received")
-
 	var ccr createConsumerRequest
 	if err := json.Unmarshal(msg, &ccr); err != nil {
 		s.Warnf("failed creating consumer: %v", err.Error())

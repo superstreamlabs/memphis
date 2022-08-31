@@ -584,7 +584,7 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 	}
 
 	serv.Noticef("Station " + stationName + " has been deleted")
-	respondWithErr(s, reply, err)
+	respondWithErr(s, reply, nil)
 	return
 }
 

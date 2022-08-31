@@ -844,7 +844,6 @@ func (s *Server) setJetStreamExportSubs() error {
 func (s *Server) sendAPIResponse(ci *ClientInfo, acc *Account, subject, reply, request, response string) {
 	acc.trackAPI()
 	if reply != _EMPTY_ {
-		s.Debugf("jsapi response to reply: %q", reply)
 		s.sendInternalAccountMsg(nil, reply, response)
 	}
 	s.sendJetStreamAPIAuditAdvisory(ci, acc, subject, request, response)

@@ -84,7 +84,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
 	s.initializeSDKHandlers()
-	s.ListenForPoisonMessages()
 }
 
 var poisonMessagesHandler PoisonMessagesHandler

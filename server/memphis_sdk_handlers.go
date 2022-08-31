@@ -75,7 +75,7 @@ type destroyConsumerRequest struct {
 }
 
 func (s *Server) initializeSDKHandlers() {
-	// factories|
+	// factories
 	s.queueSubscribe("$memphis_factory_creations",
 		"memphis_factory_creations_listeners_group",
 		createFactoryHandler(s))
