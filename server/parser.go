@@ -936,12 +936,6 @@ func (c *client) parse(buf []byte) error {
 
 				}
 
-				if c.kind == CLIENT {
-					if err := handleConnectMessage(c); err != nil {
-						c.Errorf(err.Error())
-						goto authErr
-					}
-				}
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {
 					return err
 				}
@@ -956,6 +950,13 @@ func (c *client) parse(buf []byte) error {
 				c.mu.Lock()
 				authSet = c.awaitingAuth()
 				c.mu.Unlock()
+
+				if c.kind == CLIENT {
+					if err := handleConnectMessage(c); err != nil {
+						c.Errorf(err.Error())
+						goto authErr
+					}
+				}
 			default:
 				if c.argBuf != nil {
 					c.argBuf = append(c.argBuf, b)
