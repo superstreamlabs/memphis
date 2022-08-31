@@ -29,7 +29,6 @@ import (
 	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -440,10 +439,11 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		return []models.MessageDetails{}, err
 	}
 	totalMessages := streamInfo.State.Msgs
+	lastStreamSeq := streamInfo.State.LastSeq
 
 	var startSequence uint64 = 1
 	if totalMessages > uint64(messagesToFetch) {
-		startSequence = totalMessages - uint64(messagesToFetch) + 1
+		startSequence = lastStreamSeq - uint64(messagesToFetch) + 1
 	} else {
 		messagesToFetch = int(totalMessages)
 	}
@@ -489,17 +489,15 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 }
 
 func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
-
-	var msgs []StoredMsg
-
 	uid, _ := uuid.NewV4()
-	durableName := "$memphis_fetch_messages_consumer" + uid.String()
+	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
 		Durable:       durableName,
-		AckPolicy:     AckExplicit}
+		AckPolicy:     AckExplicit,
+	}
 
 	err := s.memphisAddConsumer(streamName, &cc)
 	if err != nil {
@@ -507,36 +505,80 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 	}
 
 	// fetch messages using CONSUMER.GET.NEXT api that fetches next request for (streamName, consumerName)
-	responseChan := make(chan consumeMsg)
-	sub, err := s.jsApiConsumeToChan(streamName, durableName, &cc, amount, responseChan)
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.Itoa(amount))
+
+	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg) {
+			// ack
+			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			
+			rawSeq := tokenAt(reply, 6)
+			rawTs := tokenAt(reply, 8)
+			s.Noticef(string(msg))
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				s.Errorf(err.Error())
+			}
+			seq, err := strconv.Atoi(rawSeq)
+			if err != nil {
+				s.Errorf(err.Error())
+			}
+			
+			// headers :=
+			// payload :=
+			
+			respCh <- StoredMsg{
+				Sequence: uint64(seq),
+				// Header: headers,
+				// Data: payload,
+				Time: time.Unix(0, int64(intTs)),
+			}
+		}(responseChan)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	regex := regexp.MustCompile(`(?P<hdr>(.*\r\n)*)\r\n(?P<msg>.*)\r\n$`)
-	for i := 0; i < amount; i++ {
-		recvMsg := <-responseChan
-		sm := StoredMsg{
-			Subject:  subjectName,
-			Time:     recvMsg.ts,
-			Sequence: recvMsg.seq,
-		}
-		match := regex.FindSubmatch(recvMsg.data)
-		if len(match) == 0 {
-			continue
-		}
-		for i, gName := range regex.SubexpNames() {
-			switch gName {
-			case "hdr":
-				sm.Header = append(match[i], []byte("\r\n")...)
-			case "msg":
-				sm.Data = match[i]
-			}
-		}
-		msgs = append(msgs, sm)
-	}
-	sub.close()
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
 
+	var msgs []StoredMsg
+	timeoutCh := time.NewTimer(timeout)
+	for i := 0; i < amount; i++ {
+		select {
+		case <-timeoutCh.C:
+			return msgs, nil
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+	// regex := regexp.MustCompile(`(?P<hdr>(.*\r\n)*)\r\n(?P<msg>.*)\r\n$`)
+	// for i := 0; i < amount; i++ {
+	// 	recvMsg := <-responseChan
+	// 	sm := StoredMsg{
+	// 		Subject:  subjectName,
+	// 		Time:     recvMsg.ts,
+	// 		Sequence: recvMsg.seq,
+	// 	}
+	// 	match := regex.FindSubmatch(recvMsg.data)
+	// 	if len(match) == 0 {
+	// 		continue
+	// 	}
+	// 	for i, gName := range regex.SubexpNames() {
+	// 		switch gName {
+	// 		case "hdr":
+	// 			sm.Header = append(match[i], []byte("\r\n")...)
+	// 		case "msg":
+	// 			sm.Data = match[i]
+	// 		}
+	// 	}
+	// 	msgs = append(msgs, sm)
+	// }
+
+	sub.close()
 	err = s.RemoveConsumer(streamName, durableName)
 	if err != nil {
 		return nil, err
