@@ -366,7 +366,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	factoryName := strings.ToLower(body.FactoryName)
 	exist, factory, err := IsFactoryExist(factoryName)
 	if err != nil {

@@ -149,7 +149,12 @@ func (fh FactoriesHandler) CreateFactory(c *gin.Context) {
 		return
 	}
 
-	user := getUserDetailsFromMiddleware(c)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateFactory error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	newFactory := models.Factory{
 		ID:            primitive.NewObjectID(),
 		Name:          factoryName,

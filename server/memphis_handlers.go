@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
@@ -86,9 +87,13 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.initializeSDKHandlers()
 }
 
-func getUserDetailsFromMiddleware(c *gin.Context) models.User {
+func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	user, _ := c.Get("user")
-	return user.(models.User)
+	userModel := user.(models.User)
+	if len(userModel.Username) == 0 {
+		return userModel, errors.New("Username is empty")
+	}
+	return userModel, nil
 }
 
 func IsUserExist(username string) (bool, models.User, error) {
