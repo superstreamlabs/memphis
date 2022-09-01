@@ -461,7 +461,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 	if !exist {
 		serv.Warnf("More than root user exists")
-		c.IndentedJSON(200, gin.H{"message": "More than root user exists"})
+		c.IndentedJSON(401, gin.H{"message": "More than root user exists"})
 		return
 	} else {
 		serv.Warnf("Only root user exists")
