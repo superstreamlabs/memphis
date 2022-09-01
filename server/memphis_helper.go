@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -443,9 +444,9 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		})
 	}
 
-	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old
-		messages[i], messages[j] = messages[j], messages[i]
-	}
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].MessageSeq < messages[j].MessageSeq
+	})
 
 	return messages, nil
 }
@@ -492,18 +493,14 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 	req := []byte(strconv.Itoa(amount))
 
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg) {
+		go func(respCh chan StoredMsg, reply string, msg []byte) {
 			// ack
 			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 
-			rawSeq := tokenAt(reply, 6)
 			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
 
 			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				s.Errorf(err.Error())
-			}
-			seq, err := strconv.Atoi(rawSeq)
 			if err != nil {
 				s.Errorf(err.Error())
 			}
@@ -521,7 +518,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 				Data:     msg[dataFirstIdx : dataFirstIdx+dataLen],
 				Time:     time.Unix(0, int64(intTs)),
 			}
-		}(responseChan)
+		}(responseChan, reply, copyBytes(msg))
 	})
 	if err != nil {
 		return nil, err
