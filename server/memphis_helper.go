@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"memphis-broker/models"
 	"net/textproto"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -95,49 +96,11 @@ func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) 
 	}
 }
 
-type consumeMsg struct {
-	ts   time.Time
-	seq  uint64
-	data []byte
-}
-
 func (s *Server) getJsApiReplySubject() string {
 	var sb strings.Builder
 	sb.WriteString("$memphis_jsapi_reply_")
 	sb.WriteString(nuid.Next())
 	return sb.String()
-}
-
-func (s *Server) jsApiConsumeToChan(streamName, durable string, cc *ConsumerConfig, amount int, respCh chan consumeMsg) (*subscription, error) {
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durable)
-	reply := durable + "reply"
-
-	req := []byte(strconv.Itoa(amount))
-
-	// send on golbal account
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
-
-	return s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-
-		// ack
-		s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
-		splitReply := strings.Split(reply, ".")
-
-		rawSeq, rawTs := splitReply[6], splitReply[7]
-		intTs, err := strconv.Atoi(rawTs)
-		if err != nil {
-			s.Errorf(err.Error())
-		}
-		seq, err := strconv.Atoi(rawSeq)
-		if err != nil {
-			s.Errorf(err.Error())
-		}
-		respCh <- consumeMsg{data: msg,
-			ts:  time.Unix(0, int64(intTs)),
-			seq: uint64(seq),
-		}
-
-	})
 }
 
 func AddUser(username string) (string, error) {
@@ -452,7 +415,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		station.Name,
 		startSequence,
 		messagesToFetch,
-		3*time.Second)
+		5*time.Second)
 	var messages []models.MessageDetails
 	if err != nil {
 		return []models.MessageDetails{}, err
@@ -481,11 +444,31 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		})
 	}
 
-	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 { // sort from new to old
-		messages[i], messages[j] = messages[j], messages[i]
-	}
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].MessageSeq < messages[j].MessageSeq
+	})
 
 	return messages, nil
+}
+
+func getHdrLastIdxFromRaw(msg []byte) int {
+	inCrlf := false
+	inDouble := false
+	for i, b := range msg {
+		switch b {
+		case '\r':
+			inCrlf = true
+		case '\n':
+			if inDouble {
+				return i
+			}
+			inDouble = inCrlf
+			inCrlf = false
+		default:
+			inCrlf, inDouble = false, false
+		}
+	}
+	return -1
 }
 
 func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
@@ -504,39 +487,38 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 		return nil, err
 	}
 
-	// fetch messages using CONSUMER.GET.NEXT api that fetches next request for (streamName, consumerName)
 	responseChan := make(chan StoredMsg)
 	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
 	reply := durableName + "_reply"
 	req := []byte(strconv.Itoa(amount))
 
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg) {
+		go func(respCh chan StoredMsg, reply string, msg []byte) {
 			// ack
 			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
-			
-			rawSeq := tokenAt(reply, 6)
+
 			rawTs := tokenAt(reply, 8)
-			s.Noticef(string(msg))
+			seq, _, _ := ackReplyInfo(reply)
+
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
 				s.Errorf(err.Error())
 			}
-			seq, err := strconv.Atoi(rawSeq)
-			if err != nil {
-				s.Errorf(err.Error())
+
+			dataFirstIdx := getHdrLastIdxFromRaw(msg) + 1
+			if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
+				s.Errorf("memphis error parsing in station get messages")
 			}
-			
-			// headers :=
-			// payload :=
-			
+
+			dataLen := len(msg) - dataFirstIdx
+
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
-				// Header: headers,
-				// Data: payload,
-				Time: time.Unix(0, int64(intTs)),
+				Header:   msg[:dataFirstIdx],
+				Data:     msg[dataFirstIdx : dataFirstIdx+dataLen],
+				Time:     time.Unix(0, int64(intTs)),
 			}
-		}(responseChan)
+		}(responseChan, reply, copyBytes(msg))
 	})
 	if err != nil {
 		return nil, err
@@ -545,39 +527,18 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
 
 	var msgs []StoredMsg
-	timeoutCh := time.NewTimer(timeout)
+	timer := time.NewTimer(timeout)
 	for i := 0; i < amount; i++ {
 		select {
-		case <-timeoutCh.C:
-			return msgs, nil
+		case <-timer.C:
+			goto cleanup
 		case msg := <-responseChan:
 			msgs = append(msgs, msg)
 		}
 	}
 
-	// regex := regexp.MustCompile(`(?P<hdr>(.*\r\n)*)\r\n(?P<msg>.*)\r\n$`)
-	// for i := 0; i < amount; i++ {
-	// 	recvMsg := <-responseChan
-	// 	sm := StoredMsg{
-	// 		Subject:  subjectName,
-	// 		Time:     recvMsg.ts,
-	// 		Sequence: recvMsg.seq,
-	// 	}
-	// 	match := regex.FindSubmatch(recvMsg.data)
-	// 	if len(match) == 0 {
-	// 		continue
-	// 	}
-	// 	for i, gName := range regex.SubexpNames() {
-	// 		switch gName {
-	// 		case "hdr":
-	// 			sm.Header = append(match[i], []byte("\r\n")...)
-	// 		case "msg":
-	// 			sm.Data = match[i]
-	// 		}
-	// 	}
-	// 	msgs = append(msgs, sm)
-	// }
-
+cleanup:
+	timer.Stop()
 	sub.close()
 	err = s.RemoveConsumer(streamName, durableName)
 	if err != nil {
