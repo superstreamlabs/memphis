@@ -95,12 +95,6 @@ func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) 
 	}
 }
 
-type consumeMsg struct {
-	ts   time.Time
-	seq  uint64
-	data []byte
-}
-
 func (s *Server) getJsApiReplySubject() string {
 	var sb strings.Builder
 	sb.WriteString("$memphis_jsapi_reply_")
@@ -519,11 +513,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 				s.Errorf("memphis error parsing in station get messages")
 			}
 
-			dataLen := len(msg) - dataFirstIdx - len(CR_LF)
-			// some messages with just \n at the end can arrive
-			if msg[len(msg)-1] != '\r' {
-				dataLen--
-			}
+			dataLen := len(msg) - dataFirstIdx
 
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
