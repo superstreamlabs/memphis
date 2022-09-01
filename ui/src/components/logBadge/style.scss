@@ -1,0 +1,33 @@
+.log-badge-container {
+    .info,
+    .error,
+    .warn {
+        display: flex;
+        align-items: center;
+        border-radius: 15px;
+        justify-content: center;
+        width: 60px;
+        font-weight: normal;
+        font-size: 12px;
+        p {
+            margin-top: 2px;
+            margin: 0;
+        }
+    }
+    .info {
+        background-color: rgba(46, 212, 122, 0.1);
+        color: #2ed47a;
+    }
+    .error {
+        background-color: rgba(247, 104, 91, 0.1);
+        color: #f7685b;
+    }
+    .warn {
+        background-color: #fffbeb;
+        color: #ffb946;
+    }
+    .badge-icon {
+        font-size: 13px;
+        margin-right: 5px;
+    }
+}

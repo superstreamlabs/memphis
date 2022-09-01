@@ -1,0 +1,75 @@
+.modal-shadow {
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+}
+.header-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.MuiDialogActions-root {
+    display: block !important;
+    padding: 0 !important;
+    bottom: 7px;
+    position: absolute;
+    width: 100%;
+    hr {
+        border: 1px solid #e8e8e8;
+    }
+    .btnContainer {
+        justify-content: right;
+        display: flex;
+        margin-right: 10px;
+        button {
+            margin-left: 10px;
+        }
+        .cancel-button {
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+            color: var(--purple);
+            font-weight: 600;
+            font-size: 12px;
+        }
+    }
+}
+
+.modalContainer {
+    display: flex;
+    flex-direction: row;
+    flex-direction: column;
+    justify-content: space-between;
+    align-content: space-between;
+}
+
+.modal-header {
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.MuiDialog-paperWidthSm {
+    max-width: unset !important;
+}
+
+.MuiBackdrop-root {
+    opacity: 0.3 !important;
+}
+
+.dialogPaperConfirm {
+    display: flex;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.buttonLoader {
+    color: #f7f7f7;
+    margin-top: 5px;
+}
+
+.dialogPaper {
+    display: flex;
+    justify-content: center;
+    border-radius: 4px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+}

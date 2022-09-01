@@ -1,0 +1,21 @@
+.search-input-container {
+    position: relative;
+    z-index: 2;
+    margin-right: 30px;
+    align-self: center;
+    // display: flex;
+    // align-items: center;
+}
+
+.search-input-container Input {
+    font-size: 12px;
+    margin-top: 3px;
+    // font-weight: bold;
+    // background-color: aqua;
+}
+.search-icon .anticon svg {
+    margin-left: 5px;
+    width: 1vw;
+    height: 12px;
+    opacity: 0.5;
+}

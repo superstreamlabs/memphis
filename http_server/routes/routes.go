@@ -24,6 +24,7 @@ package routes
 import (
 	"memphis-broker/middlewares"
 	"memphis-broker/server"
+	"memphis-broker/ui"
 	"memphis-broker/utils"
 
 	"github.com/gin-contrib/cors"
@@ -33,9 +34,10 @@ import (
 func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
+	// uiRouter := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://*", "https://*"},
+		AllowOrigins:     []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://*", "https://*", "http://localhost:5555"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -55,11 +57,15 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	InitializeConsumersRoutes(mainRouter, handlers)
 	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeSandboxRoutes(mainRouter)
+	ui.InitializeUIRoutes(router)
+
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Ok",
 		})
 	})
+
+	// uiRouter.Run(":9000")
 
 	return router
 }
