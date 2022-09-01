@@ -108,38 +108,6 @@ func (s *Server) getJsApiReplySubject() string {
 	return sb.String()
 }
 
-func (s *Server) jsApiConsumeToChan(streamName, durable string, cc *ConsumerConfig, amount int, respCh chan consumeMsg) (*subscription, error) {
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durable)
-	reply := durable + "reply"
-
-	req := []byte(strconv.Itoa(amount))
-
-	// send on golbal account
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
-
-	return s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-
-		// ack
-		s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
-		splitReply := strings.Split(reply, ".")
-
-		rawSeq, rawTs := splitReply[6], splitReply[7]
-		intTs, err := strconv.Atoi(rawTs)
-		if err != nil {
-			s.Errorf(err.Error())
-		}
-		seq, err := strconv.Atoi(rawSeq)
-		if err != nil {
-			s.Errorf(err.Error())
-		}
-		respCh <- consumeMsg{data: msg,
-			ts:  time.Unix(0, int64(intTs)),
-			seq: uint64(seq),
-		}
-
-	})
-}
-
 func AddUser(username string) (string, error) {
 	return configuration.CONNECTION_TOKEN, nil
 }
@@ -452,7 +420,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		station.Name,
 		startSequence,
 		messagesToFetch,
-		3*time.Second)
+		5*time.Second)
 	var messages []models.MessageDetails
 	if err != nil {
 		return []models.MessageDetails{}, err
@@ -524,7 +492,6 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 		return nil, err
 	}
 
-	// fetch messages using CONSUMER.GET.NEXT api that fetches next request for (streamName, consumerName)
 	responseChan := make(chan StoredMsg)
 	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
 	reply := durableName + "_reply"
