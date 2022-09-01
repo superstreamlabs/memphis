@@ -37,7 +37,7 @@ type User struct {
 	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
-	FullName		string 			   `json:"fullname" bson:"full_name"`
+	FullName		string 			   `json:"full_name" bson:"full_name"`
 	Email			string 			   `json:"email" bson:"email"`
 	Subscribtion	bool 			   `json:"subscription" bson:"subscription"`
 }
@@ -57,7 +57,7 @@ type AddUserSchema struct {
 	AvatarId    	int    `json:"avatar_id"`
 	FullName		string `json:"full_name"`
 	Email			string `json:"email"`
-	Subscribtion	bool   `json:"subscribtion"`
+	Subscribtion	bool   `json:"subscription"`
 }
 
 type AuthenticateNatsSchema struct {

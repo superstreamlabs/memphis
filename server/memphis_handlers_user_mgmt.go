@@ -27,7 +27,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -69,7 +68,7 @@ func isOnlyRootUserExist() (bool, error) {
 	} else if err != nil {
 		return false, err
 	}
-	if configuration.SANDBOX_ENV == "true"{
+	if configuration.SANDBOX_ENV == "true" {
 		return false, err
 	}
 	var users []models.User
@@ -435,7 +434,7 @@ func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) GetSignUpFlag (c *gin.Context) {
+func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	exist, err := isOnlyRootUserExist()
 	if err != nil {
 		serv.Errorf("GetSignUpFlag error: " + err.Error())
@@ -445,7 +444,7 @@ func (umh UserMgmtHandler) GetSignUpFlag (c *gin.Context) {
 	var message string
 	if exist {
 		message = "Only root user exists"
-	}else{
+	} else {
 		message = "More than root user exists"
 	}
 	serv.Warnf(message)
@@ -501,21 +500,23 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			return
 		}
 
-		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
-		mailchimpListID := configuration.MAILCHIMP_LIST_ID
-		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
-		if err != nil {
-			serv.Errorf("SignUperror: " + err.Error())
-		}
+		if subscription {
+			mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+			mailchimpListID := configuration.MAILCHIMP_LIST_ID
+			mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+			if err != nil {
+				serv.Errorf("SignUperror: " + err.Error())
+			}
 
-		mailchimpReq := &gochimp3.MemberRequest{
-			EmailAddress: email,
-			Status:       "subscribed",
-			Tags:         []string{"signup"},
-		}
+			mailchimpReq := &gochimp3.MemberRequest{
+				EmailAddress: email,
+				Status:       "subscribed",
+				Tags:         []string{"signup"},
+			}
 
-		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
+			if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
 				serv.Errorf("Failed to subscribe in mailChimp: " + err.Error())
+			}
 		}
 
 		newUser := models.User{
@@ -541,7 +542,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		serv.Noticef("User " + username + " has been created")
 		c.IndentedJSON(200, gin.H{
 			"id":                      newUser.ID,
-			"username":                username,
+			"username":                newUser.Username,
 			"hub_username":            "",
 			"hub_password":            "",
 			"user_type":               "management",
@@ -549,6 +550,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			"already_logged_in":       false,
 			"avatar_id":               1,
 			"broker_connection_creds": "",
+			"full_name":               newUser.FullName,
+			"email":                   newUser.Email,
+			"subscription":            newUser.Subscribtion,
+			"password":                newUser.Password,
 		})
 
 	}
