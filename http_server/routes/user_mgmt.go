@@ -36,6 +36,7 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.POST("/refreshToken", userMgmtHandler.RefreshToken)
 	userMgmtRoutes.POST("/addUser", userMgmtHandler.AddUser)
 	userMgmtRoutes.POST("/addUserSignUp", userMgmtHandler.AddUserSignUp)
+	userMgmtRoutes.GET("/getSignUpFlag", userMgmtHandler.GetSignUpFlag)
 	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
 	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)
 	userMgmtRoutes.DELETE("/removeMyUser", userMgmtHandler.RemoveMyUser)

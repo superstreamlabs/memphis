@@ -40,6 +40,7 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/login",
 	"/api/usermgmt/refreshtoken",
 	"/api/usermgmt/addusersignup",
+	"/api/usermgmt/getsignupflag",
 	"/api/status",
 	"/api/sandbox/login",
 }

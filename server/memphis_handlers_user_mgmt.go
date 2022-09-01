@@ -69,9 +69,13 @@ func isOnlyRootUserExist() (bool, error) {
 	} else if err != nil {
 		return false, err
 	}
+	if configuration.SANDBOX_ENV == "true"{
+		return false, err
+	}
 	var users []models.User
 	if err = cursor.All(context.TODO(), &users); err != nil {
-		log.Fatal(err)
+		serv.Errorf("isOnlyRootUserExist error: " + err.Error())
+		return false, err
 	}
 	if len(users) == 1 && users[0].Username == "root" {
 		return true, nil
@@ -431,15 +435,33 @@ func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (umh UserMgmtHandler) GetSignUpFlag (c *gin.Context) {
+	exist, err := isOnlyRootUserExist()
+	if err != nil {
+		serv.Errorf("GetSignUpFlag error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	var message string
+	if exist {
+		message = "Only root user exists"
+	}else{
+		message = "More than root user exists"
+	}
+	serv.Warnf(message)
+	c.IndentedJSON(200, gin.H{"exist": exist, "message": message})
+}
+
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	exist, err := isOnlyRootUserExist()
 	if err != nil {
 		serv.Errorf("AddUserSignUp error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
 		serv.Warnf("More than root user exists")
-		c.IndentedJSON(200, gin.H{"message": "A root user is not only exists"})
+		c.IndentedJSON(200, gin.H{"message": "More than root user exists"})
 		return
 	} else {
 		serv.Warnf("Only root user exists")
@@ -451,7 +473,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		username := strings.ToLower(body.Username)
 		exist, _, err := IsUserExist(username)
 		if err != nil {
-			serv.Errorf("CreateUser error: " + err.Error())
+			serv.Errorf("AddUserSignUp error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -477,11 +499,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			serv.Warnf(emailError.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": emailError.Error()})
 			return
-
-
 		}
 
-		//
 		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
 		mailchimpListID := configuration.MAILCHIMP_LIST_ID
 		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
@@ -492,18 +511,12 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		mailchimpReq := &gochimp3.MemberRequest{
 			EmailAddress: email,
 			Status:       "subscribed",
-			Tags:         []string{"SignUp"},
+			Tags:         []string{"signup"},
 		}
 
 		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
-			if strings.Contains(err.Error(), "valid email address") {
-				mailchimpReq.EmailAddress = mailchimpReq.EmailAddress + "@github.memphis" // in order to get users without emails signed in mailchimp
-				mailchimpList.CreateMember(mailchimpReq)
-			} else {
-				serv.Errorf("SignUp error: " + err.Error())
-			}
+				serv.Errorf("Failed to subscribe in mailChimp: " + err.Error())
 		}
-		//
 
 		newUser := models.User{
 			ID:              primitive.NewObjectID(),
