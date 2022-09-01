@@ -62,13 +62,13 @@ func isRootUserExist() (bool, error) {
 }
 
 func isOnlyRootUserExist() (bool, error) {
+	if configuration.SANDBOX_ENV == "true" {
+		return false, nil
+	}
 	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
 	if err == mongo.ErrNoDocuments {
 		return false, nil
 	} else if err != nil {
-		return false, err
-	}
-	if configuration.SANDBOX_ENV == "true" {
 		return false, err
 	}
 	var users []models.User
@@ -76,7 +76,7 @@ func isOnlyRootUserExist() (bool, error) {
 		serv.Errorf("isOnlyRootUserExist error: " + err.Error())
 		return false, err
 	}
-	if len(users) == 1 && users[0].Username == "root" {
+	if len(users) == 1 && users[0].UserType == "root" {
 		return true, nil
 	} else {
 		return false, nil
@@ -182,7 +182,7 @@ func validateEmail(email string) error {
 	re := regexp.MustCompile("^[a-z0-9._%+-]+@[a-z0-9_.-]+.[a-z]{2,4}$")
 	validateEmail := re.MatchString(email)
 	if !validateEmail || len(email) == 0 {
-		return errors.New("email validate")
+		return errors.New("email is not valid")
 	}
 	return nil
 }
@@ -441,25 +441,17 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	var message string
-	if exist {
-		message = "Only root user exists"
-	} else {
-		message = "More than root user exists"
-	}
-	serv.Warnf(message)
-	c.IndentedJSON(200, gin.H{"exist": exist, "message": message})
+	c.IndentedJSON(200, gin.H{"exist": exist})
 }
 
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	exist, err := isOnlyRootUserExist()
 	if err != nil {
-		serv.Errorf("AddUserSignUp error: " + err.Error())
+		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("More than root user exists")
 		c.IndentedJSON(401, gin.H{"message": "More than root user exists"})
 		return
 	} else {
@@ -470,46 +462,33 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			return
 		}
 		username := strings.ToLower(body.Username)
-		exist, _, err := IsUserExist(username)
-		if err != nil {
-			serv.Errorf("AddUserSignUp error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if exist {
-			serv.Warnf("A user with this username is already exist")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
-			return
-		}
-
-		usernameError := validateUsername(username)
+		usernameError := validateEmail(username)
 		if usernameError != nil {
 			serv.Warnf(usernameError.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 			return
 		}
-		email := strings.ToLower((body.Email))
 		fullName := strings.ToLower(body.FullName)
-		password := strings.ToLower(body.Password)
-		subscription := body.Subscribtion
 
-		emailError := validateEmail(email)
-		if emailError != nil {
-			serv.Warnf(emailError.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": emailError.Error()})
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
+		if err != nil {
+			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		hashedPwdString := string(hashedPwd)
+		subscription := body.Subscribtion
 
 		if subscription {
 			mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
 			mailchimpListID := configuration.MAILCHIMP_LIST_ID
 			mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
 			if err != nil {
-				serv.Errorf("SignUperror: " + err.Error())
+				serv.Errorf("CreateUserSignUp error: " + err.Error())
 			}
 
 			mailchimpReq := &gochimp3.MemberRequest{
-				EmailAddress: email,
+				EmailAddress: username,
 				Status:       "subscribed",
 				Tags:         []string{"signup"},
 			}
@@ -520,11 +499,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		}
 
 		newUser := models.User{
-			ID:              primitive.NewObjectID(),
-			Username:        username,
-			Password:        password,
-			FullName:        fullName,
-			Email:           email,
+			ID:       primitive.NewObjectID(),
+			Username: username,
+			Password: hashedPwdString,
+			FullName: fullName,
 			Subscribtion:    subscription,
 			UserType:        "managment",
 			CreationDate:    time.Now(),
@@ -533,27 +511,41 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		}
 
 		_, err = usersCollection.InsertOne(context.TODO(), newUser)
-		if err != nil || len(username) == 0 {
+		if err != nil {
 			serv.Errorf("CreateUserSignUp error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		serv.Noticef("User " + username + " has been created")
+		token, refreshToken, err := CreateTokens(newUser)
+		if err != nil {
+			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		var env string
+		if configuration.DOCKER_ENV != "" {
+			env = "docker"
+		} else {
+			env = "K8S"
+		}
+
+		domain := ""
+		secure := false
+		c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 		c.IndentedJSON(200, gin.H{
-			"id":                      newUser.ID,
-			"username":                newUser.Username,
-			"hub_username":            "",
-			"hub_password":            "",
-			"user_type":               "management",
-			"creation_date":           newUser.CreationDate,
-			"already_logged_in":       false,
-			"avatar_id":               1,
-			"broker_connection_creds": "",
-			"full_name":               newUser.FullName,
-			"email":                   newUser.Email,
-			"subscription":            newUser.Subscribtion,
-			"password":                newUser.Password,
+			"jwt":               token,
+			"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+			"user_id":           newUser.ID,
+			"username":          newUser.Username,
+			"user_type":         newUser.UserType,
+			"creation_date":     newUser.CreationDate,
+			"already_logged_in": newUser.AlreadyLoggedIn,
+			"avatar_id":         newUser.AvatarId,
+			"send_analytics":    "",
+			"env":               env,
+			"namespace":         configuration.K8S_NAMESPACE,
 		})
 
 	}

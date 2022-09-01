@@ -38,7 +38,6 @@ type User struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 	FullName		string 			   `json:"full_name" bson:"full_name"`
-	Email			string 			   `json:"email" bson:"email"`
 	Subscribtion	bool 			   `json:"subscription" bson:"subscription"`
 }
 
@@ -56,7 +55,6 @@ type AddUserSchema struct {
 	UserType    	string `json:"user_type" binding:"required"`
 	AvatarId    	int    `json:"avatar_id"`
 	FullName		string `json:"full_name"`
-	Email			string `json:"email"`
 	Subscribtion	bool   `json:"subscription"`
 }
 
