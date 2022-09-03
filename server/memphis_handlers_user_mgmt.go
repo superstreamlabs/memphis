@@ -24,6 +24,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -48,6 +49,12 @@ import (
 )
 
 type UserMgmtHandler struct{}
+type MailChimpErr struct {
+	Title    string `json:"title"`
+	Status   int    `json:"status"`
+	Detail   string `json:"detail"`
+	Instance string `json:"instance"`
+}
 
 func isRootUserExist() (bool, error) {
 	filter := bson.M{"user_type": "root"}
@@ -492,17 +499,39 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 				Status:       "subscribed",
 				Tags:         []string{"signup"},
 			}
+			_, err = mailchimpList.CreateMember(mailchimpReq)
+			if err != nil {
+				data, err := json.Marshal(err)
+				var mailChimpErr MailChimpErr
+				if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
+					serv.Errorf("Error: " + err.Error())
+				}
+				mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
+					Query: body.Username,
+				}
+				if data != nil {
+					if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
+						res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
+						if err != nil {
+							serv.Errorf("Failed to search member in mailChimp: " + err.Error())
+						}
+						_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
+						if err != nil {
+							serv.Errorf("Failed to update member in mailChimp: " + err.Error())
+						}
+					} else {
+						serv.Errorf("Failed to subscribe in mailChimp: " + err.Error())
+					}
+				}
 
-			if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
-				serv.Errorf("Failed to subscribe in mailChimp: " + err.Error())
 			}
 		}
 
 		newUser := models.User{
-			ID:       primitive.NewObjectID(),
-			Username: username,
-			Password: hashedPwdString,
-			FullName: fullName,
+			ID:              primitive.NewObjectID(),
+			Username:        username,
+			Password:        hashedPwdString,
+			FullName:        fullName,
 			Subscribtion:    subscription,
 			UserType:        "managment",
 			CreationDate:    time.Now(),
