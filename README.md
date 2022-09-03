@@ -31,7 +31,7 @@
 
 Memphis(dev) enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
 
-Focusing on automatic optimization, schema management, inline processing and troubleshooting abilities. All under the same hood.
+Focusing on automatic optimization, schema management, stream processing and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
 
 ## 📸 Screenshots
@@ -41,11 +41,15 @@ Dashboard             |  Station (Topic) overview|  CLI
 
 ## ⭐️ Why
 Working with data streaming is DIFFICULT.<br><br>
-As a developer, you need to build a dedicated pipeline for each data source, change the schema, analyse them individually, enrich the data with other sources, constantly change APIs, and scale for better performance 🥵 but sometimes it constantly crashes and it requires adaptation to different rate limits.
-**It takes time and resources that you may not have with you.**<br><br>
-Message broker is the answer. In short - It's an event-store.<br>
+As a developer, you need to build a dedicated pipeline for each data source,<br>
+work with schemas, formats, serializations, analyse each source individually,<br>
+enrich the data with other sources, constantly change APIs, and scale for better performance 🥵.<br>
+Beside that, it constantly crashes and it requires adaptation to different rate limits.<br>
+**It takes time and resources that you probably don't have.**<br>
 
-Message broker acts as the middleman and supports streaming architecture, but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs. **Give memphis{dev} a spin before.**
+Message broker acts as the middleman and supports streaming architecture,<br>
+but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
+**Give memphis{dev} a spin before.**
 
 ## 👉 Use-cases
 - Async task management
