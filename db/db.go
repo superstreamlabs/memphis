@@ -1,37 +1,54 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Licensed under the MIT License (the "License");
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// This license limiting reselling the software itself "AS IS".
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 package db
 
 import (
-	"memphis-broker/config"
+	"memphis-broker/conf"
 
 	"context"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var configuration = config.GetConfig()
-var logger = log.Default()
+var configuration = conf.GetConfig()
 
 const (
 	dbOperationTimeout = 20
 )
 
-func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFunc) {
+type logger interface {
+	Noticef(string, ...interface{})
+	Errorf(string, ...interface{})
+}
+
+type DbInstance struct {
+	Client *mongo.Client
+	Ctx    context.Context
+	Cancel context.CancelFunc
+}
+
+func InitializeDbConnection(l logger) (DbInstance, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
 	var clientOptions *options.ClientOptions
@@ -48,33 +65,30 @@ func initializeDbConnection() (*mongo.Client, context.Context, context.CancelFun
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		logger.Print("[Error] Failed to create Mongodb client: " + err.Error())
-		panic("Failed to create Mongodb client: " + err.Error())
+		cancel()
+		return DbInstance{}, err
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		logger.Print("[Error] Failed to create Mongo DB client: " + err.Error())
-		panic("Failed to create Mongo DB client: " + err.Error())
+		cancel()
+		return DbInstance{}, err
 	}
 
-	logger.Print("[INFO] Established connection with the DB")
-	return client, ctx, cancel
+	l.Noticef("Established connection with the DB")
+	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
 }
 
-func GetCollection(collectionName string) *mongo.Collection {
-	var collection *mongo.Collection = Client.Database(configuration.DB_NAME).Collection(collectionName)
+func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
+	var collection *mongo.Collection = dbClient.Database(configuration.DB_NAME).Collection(collectionName)
 	return collection
 }
 
-func Close() {
-	defer Cancel()
+func Close(dbi DbInstance, l logger) {
+	defer dbi.Cancel()
 	defer func() {
-		if err := Client.Disconnect(Ctx); err != nil {
-			logger.Print("[Error] Failed to close Mongodb client: " + err.Error())
-			panic("Failed to close Mongodb client: " + err.Error())
+		if err := dbi.Client.Disconnect(dbi.Ctx); err != nil {
+			l.Errorf("Failed to close Mongodb client: " + err.Error())
 		}
 	}()
 }
-
-var Client, Ctx, Cancel = initializeDbConnection()
