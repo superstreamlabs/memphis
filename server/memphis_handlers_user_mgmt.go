@@ -24,6 +24,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -40,6 +41,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/hanzoai/gochimp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -47,6 +49,12 @@ import (
 )
 
 type UserMgmtHandler struct{}
+type MailChimpErr struct {
+	Title    string `json:"title"`
+	Status   int    `json:"status"`
+	Detail   string `json:"detail"`
+	Instance string `json:"instance"`
+}
 
 func isRootUserExist() (bool, error) {
 	filter := bson.M{"user_type": "root"}
@@ -58,6 +66,28 @@ func isRootUserExist() (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func isOnlyRootUserExist() (bool, error) {
+	if configuration.SANDBOX_ENV == "true" {
+		return false, nil
+	}
+	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	var users []models.User
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		serv.Errorf("isOnlyRootUserExist error: " + err.Error())
+		return false, err
+	}
+	if len(users) == 1 && users[0].UserType == "root" {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
@@ -151,6 +181,15 @@ func validateUsername(username string) error {
 	validName := re.MatchString(username)
 	if !validName || len(username) == 0 {
 		return errors.New("username has to include only letters/numbers/./_ ")
+	}
+	return nil
+}
+
+func validateEmail(email string) error {
+	re := regexp.MustCompile("^[a-z0-9._%+-]+@[a-z0-9_.-]+.[a-z]{2,4}$")
+	validateEmail := re.MatchString(email)
+	if !validateEmail || len(email) == 0 {
+		return errors.New("email is not valid")
 	}
 	return nil
 }
@@ -400,6 +439,160 @@ func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
+	exist, err := isOnlyRootUserExist()
+	if err != nil {
+		serv.Errorf("GetSignUpFlag error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, gin.H{"exist": exist})
+}
+
+func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
+	var body models.AddUserSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	exist, err := isOnlyRootUserExist()
+	if err != nil {
+		serv.Errorf("CreateUserSignUp error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		c.IndentedJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	} else {
+		username := strings.ToLower(body.Username)
+		usernameError := validateEmail(username)
+		if usernameError != nil {
+			serv.Warnf(usernameError.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+			return
+		}
+		fullName := strings.ToLower(body.FullName)
+
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
+		if err != nil {
+			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		hashedPwdString := string(hashedPwd)
+		subscription := body.Subscribtion
+
+		var tag []string
+		if subscription {
+			tag = []string{"installation", "newsletter"}
+		} else {
+			tag = []string{"installation"}
+		}
+
+		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+		mailchimpListID := configuration.MAILCHIMP_LIST_ID
+		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+		if err != nil {
+			serv.Debugf("getList in mailchimp error: " + err.Error())
+		}
+
+		mailchimpReq := &gochimp3.MemberRequest{
+			EmailAddress: username,
+			Status:       "subscribed",
+			Tags:         tag,
+		}
+		_, err = mailchimpList.CreateMember(mailchimpReq)
+		if err != nil {
+			data, err := json.Marshal(err)
+			if err != nil {
+				serv.Debugf("Error: " + err.Error())
+			}
+			var mailChimpErr MailChimpErr
+			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
+				serv.Debugf("Error: " + err.Error())
+			}
+			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
+				Query: body.Username,
+			}
+			if data != nil {
+				if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
+					res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
+					if err != nil {
+						serv.Debugf("Failed to search member in mailChimp: " + err.Error())
+					}
+					_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
+					if err != nil {
+						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
+					}
+				} else {
+					serv.Debugf("Failed to subscribe in mailChimp: " + err.Error())
+				}
+			}
+		}
+
+		newUser := models.User{
+			ID:              primitive.NewObjectID(),
+			Username:        username,
+			Password:        hashedPwdString,
+			FullName:        fullName,
+			Subscribtion:    subscription,
+			UserType:        "management",
+			CreationDate:    time.Now(),
+			AlreadyLoggedIn: false,
+			AvatarId:        1,
+		}
+
+		_, err = usersCollection.InsertOne(context.TODO(), newUser)
+		if err != nil {
+			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		serv.Noticef("User " + username + " has been created")
+		token, refreshToken, err := CreateTokens(newUser)
+		if err != nil {
+			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		var env string
+		if configuration.DOCKER_ENV != "" {
+			env = "docker"
+		} else {
+			env = "K8S"
+		}
+
+		var systemKey models.SystemKey
+		err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+		if err != nil {
+			serv.Errorf("Login error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+
+		domain := ""
+		secure := false
+		c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+		c.IndentedJSON(200, gin.H{
+			"jwt":               token,
+			"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+			"user_id":           newUser.ID,
+			"username":          newUser.Username,
+			"user_type":         newUser.UserType,
+			"creation_date":     newUser.CreationDate,
+			"already_logged_in": newUser.AlreadyLoggedIn,
+			"avatar_id":         newUser.AvatarId,
+			"send_analytics":    sendAnalytics,
+			"env":               env,
+			"namespace":         configuration.K8S_NAMESPACE,
+		})
+
+	}
 }
 
 func (umh UserMgmtHandler) AddUser(c *gin.Context) {

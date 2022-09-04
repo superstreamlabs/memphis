@@ -37,6 +37,8 @@ type User struct {
 	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
+	FullName		string 			   `json:"full_name" bson:"full_name"`
+	Subscribtion	bool 			   `json:"subscription" bson:"subscription"`
 }
 
 type Image struct {
@@ -46,12 +48,14 @@ type Image struct {
 }
 
 type AddUserSchema struct {
-	Username    string `json:"username" binding:"required,min=1,max=25"`
-	Password    string `json:"password"`
-	HubUsername string `json:"hub_username"`
-	HubPassword string `json:"hub_password"`
-	UserType    string `json:"user_type" binding:"required"`
-	AvatarId    int    `json:"avatar_id"`
+	Username    	string `json:"username" binding:"required,min=1,max=60"`
+	Password    	string `json:"password"`
+	HubUsername 	string `json:"hub_username"`
+	HubPassword 	string `json:"hub_password"`
+	UserType    	string `json:"user_type" binding:"required"`
+	AvatarId    	int    `json:"avatar_id"`
+	FullName		string `json:"full_name"`
+	Subscribtion	bool   `json:"subscription"`
 }
 
 type AuthenticateNatsSchema struct {
