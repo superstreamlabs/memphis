@@ -43,7 +43,7 @@ func InitializeAnalytics(c *mongo.Client) error {
 	systemKeysCollection = db.GetCollection("system_keys", c)
 	deployment, err := getSystemKey("deployment_id")
 	if err == mongo.ErrNoDocuments {
-		deploymentId := primitive.NewObjectID().Hex()
+		deploymentId = primitive.NewObjectID().Hex()
 		deploymentKey := models.SystemKey{
 			ID:    primitive.NewObjectID(),
 			Key:   "deployment_id",
