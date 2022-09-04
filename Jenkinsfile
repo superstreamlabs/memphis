@@ -162,7 +162,6 @@ node {
 	  
   } catch (e) {
       currentBuild.result = "FAILED"
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev-memphis-broker.yml -p memphis down"
       sh "kubectl delete ns memphis-$unique_id &"
       cleanWs()
       notifyFailed()
