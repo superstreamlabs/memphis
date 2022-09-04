@@ -115,7 +115,13 @@ func Close() {
 }
 
 func SendEvent(userId, eventName string) {
-	distinctId := deploymentId + "-" + userId
+	var distinctId string
+	if configuration.DEV_ENV != "" {
+		distinctId = "dev"
+	} else {
+		distinctId = deploymentId + "-" + userId
+	}
+	
 	AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
 		Event:      eventName,
