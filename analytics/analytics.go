@@ -27,31 +27,18 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/models"
 
-	"github.com/lightstep/otel-launcher-go/launcher"
+	"github.com/posthog/posthog-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel/attribute"
-
-	"go.opentelemetry.io/otel/metric"
-
-	"go.opentelemetry.io/otel/metric/global"
 )
 
 var configuration = conf.GetConfig()
 var systemKeysCollection *mongo.Collection
-var ls launcher.Launcher
-var loginsCounter metric.Int64Counter
-var installationsCounter metric.Int64Counter
-var nextStepsCounter metric.Int64Counter
-var stationsCounter metric.Int64Counter
-var producersCounter metric.Int64Counter
-var consumersCounter metric.Int64Counter
-var disableAnalyticsCounter metric.Int64Counter
 var deploymentId string
 var analyticsFlag string
 
-func InitializeAnalytics(c *mongo.Client) error {
+func InitializeAnalytics(c *mongo.Client) (posthog.Client, error) {
 	systemKeysCollection = db.GetCollection("system_keys", c)
 	deployment, err := getSystemKey("deployment_id")
 	if err == mongo.ErrNoDocuments {
@@ -64,10 +51,10 @@ func InitializeAnalytics(c *mongo.Client) error {
 
 		_, err = systemKeysCollection.InsertOne(context.TODO(), deploymentKey)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else if err != nil {
-		return err
+		return nil, err
 	} else {
 		deploymentId = deployment.Value
 	}
@@ -91,86 +78,22 @@ func InitializeAnalytics(c *mongo.Client) error {
 
 		_, err = systemKeysCollection.InsertOne(context.TODO(), analyticsKey)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		analyticsFlag = configuration.ANALYTICS
 	} else if err != nil {
-		return err
+		return nil, err
 	} else {
 		analyticsFlag = analytics.Value
 
 	}
 
-	ls = launcher.ConfigureOpentelemetry(
-		launcher.WithServiceName("memphis"),
-		launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
-	)
-
-	var Meter = global.GetMeterProvider().Meter("memphis")
-	installationsCounter, err = Meter.NewInt64Counter(
-		"Installations",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of installations of Memphis"),
-	)
+	client, err := posthog.NewWithConfig(configuration.ANALYTICS_TOKEN, posthog.Config{Endpoint: "https://app.posthog.com"})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	nextStepsCounter, err = Meter.NewInt64Counter(
-		"NextSteps",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of users complete the next steps wizard in the UI"),
-	)
-	if err != nil {
-		return err
-	}
-
-	loginsCounter, err = Meter.NewInt64Counter(
-		"Logins",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of logins to Memphis"),
-	)
-	if err != nil {
-		return err
-	}
-
-	stationsCounter, err = Meter.NewInt64Counter(
-		"Stations",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of stations"),
-	)
-	if err != nil {
-		return err
-	}
-
-	producersCounter, err = Meter.NewInt64Counter(
-		"Producers",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of producers"),
-	)
-	if err != nil {
-		return err
-	}
-
-	consumersCounter, err = Meter.NewInt64Counter(
-		"Consumers",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of consumers"),
-	)
-	if err != nil {
-		return err
-	}
-
-	disableAnalyticsCounter, err = Meter.NewInt64Counter(
-		"DisableAnalytics",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of disable analytics events"),
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return client, nil
 }
 
 func getSystemKey(key string) (models.SystemKey, error) {
@@ -183,37 +106,17 @@ func getSystemKey(key string) (models.SystemKey, error) {
 	return systemKey, nil
 }
 
-func IncrementInstallationsCounter() {
-	installationsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementNextStepsCounter() {
-	nextStepsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementLoginsCounter() {
-	loginsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementStationsCounter() {
-	stationsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementProducersCounter() {
-	producersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementConsumersCounter() {
-	consumersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementDisableAnalyticsCounter() {
-	disableAnalyticsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func Close() {
+func Close(client posthog.Client) {
 	analytics, _ := getSystemKey("analytics")
 	if analytics.Value == "true" {
-		ls.Shutdown()
+		client.Close()
 	}
 }
+
+// err = client.Enqueue(posthog.Capture{
+// 	DistinctId: "envid-userid",
+// 	Event:      "test-snippet",
+// 	Properties: posthog.NewProperties().
+// 		Set("plan", "Enterprise").
+// 		Set("friends", 42),
+// })

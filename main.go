@@ -33,6 +33,7 @@ import (
 	"memphis-broker/server"
 	"os"
 
+	"github.com/posthog/posthog-go"
 	"go.uber.org/automaxprocs/maxprocs"
 )
 
@@ -99,7 +100,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) db.DbInstance {
+func runMemphis(s *server.Server) (db.DbInstance, posthog.Client) {
 
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
@@ -111,7 +112,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	err = analytics.InitializeAnalytics(dbInstance.Client)
+	analyticsClient, err := analytics.InitializeAnalytics(dbInstance.Client)
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + " " + err.Error())
 	}
@@ -138,7 +139,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return dbInstance
+	return dbInstance, analyticsClient
 }
 
 func main() {
@@ -182,9 +183,9 @@ func main() {
 		defer undo()
 	}
 
-	dbConnection := runMemphis(s)
+	dbConnection, analyticsClient := runMemphis(s)
 	defer db.Close(dbConnection, s)
-	defer analytics.Close()
+	defer analytics.Close(analyticsClient)
 
 	s.WaitForShutdown()
 }
