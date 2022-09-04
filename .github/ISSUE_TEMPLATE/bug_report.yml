@@ -1,0 +1,91 @@
+name: 🐛 Bug report
+description: Create a bug report to help us improve Memphis ⚒️
+title: "Bug: "
+labels: [👀 needs triage, 🐛 bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Describe how to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      multiple: true
+      label: Affected services
+      description: Select the platforms where the issue can be reproduced (that you know of).
+      options:
+        - "Broker"
+        - "UI"
+        - "CLI"
+        - "Data"
+        - "SDKs"
+        - "Other"
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      multiple: true
+      label: Platforms
+      description: Select the platforms where the issue can be reproduced (that you know of).
+      options:
+        - "Docker"
+        - "Kubernetes"
+        - "Other"
+  - type: dropdown
+    attributes:
+      multiple: true
+      label: If UI - Browsers
+      description: Select the browsers where the issue can be reproduced (that you know of).
+      options:
+        - "Chrome"
+        - "Firefox"
+        - "Safari"
+        - "Edge"
+        - "Opera"
+        - "Other (add additional context)"
+  - type: dropdown
+    attributes:
+      multiple: true
+      label: Environment
+      description: Select the browsers where the issue can be reproduced (that you know of).
+      options:
+        - "Production"
+        - "Development"
+        - "Testing"
+  - type: input
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem or helpful links here.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contributing Docs
+      description: If you plan on contributing code please read - [Contribution Guide](https://docs.memphis.dev/memphis-new/getting-started/how-to-contribute)
+      options:
+        - label: I agree to follow this project's Contribution Docs
+          required: false
