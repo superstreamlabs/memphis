@@ -462,7 +462,6 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		c.IndentedJSON(401, gin.H{"message": "More than root user exists"})
 		return
 	} else {
-		serv.Warnf("Only root user exists")
 		var body models.AddUserSchema
 		ok := utils.Validate(c, &body, false, nil)
 		if !ok {
@@ -486,44 +485,51 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		hashedPwdString := string(hashedPwd)
 		subscription := body.Subscribtion
 
+		var tag []string
 		if subscription {
-			mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
-			mailchimpListID := configuration.MAILCHIMP_LIST_ID
-			mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
-			if err != nil {
-				serv.Errorf("CreateUserSignUp error: " + err.Error())
-			}
+			tag = []string{"installation", "newsLetter"}
+		} else {
+			tag = []string{"installation"}
+		}
 
-			mailchimpReq := &gochimp3.MemberRequest{
-				EmailAddress: username,
-				Status:       "subscribed",
-				Tags:         []string{"signup"},
-			}
-			_, err = mailchimpList.CreateMember(mailchimpReq)
+		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+		mailchimpListID := configuration.MAILCHIMP_LIST_ID
+		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+		if err != nil {
+			serv.Debugf("getList in mailchimp error: " + err.Error())
+		}
+
+		mailchimpReq := &gochimp3.MemberRequest{
+			EmailAddress: username,
+			Status:       "subscribed",
+			Tags:         tag,
+		}
+		_, err = mailchimpList.CreateMember(mailchimpReq)
+		if err != nil {
+			data, err := json.Marshal(err)
 			if err != nil {
-				data, err := json.Marshal(err)
-				var mailChimpErr MailChimpErr
-				if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-					serv.Errorf("Error: " + err.Error())
-				}
-				mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
-					Query: body.Username,
-				}
-				if data != nil {
-					if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
-						res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
-						if err != nil {
-							serv.Errorf("Failed to search member in mailChimp: " + err.Error())
-						}
-						_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
-						if err != nil {
-							serv.Errorf("Failed to update member in mailChimp: " + err.Error())
-						}
-					} else {
-						serv.Errorf("Failed to subscribe in mailChimp: " + err.Error())
+				serv.Errorf("Error: " + err.Error())
+			}
+			var mailChimpErr MailChimpErr
+			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
+				serv.Errorf("Error: " + err.Error())
+			}
+			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
+				Query: body.Username,
+			}
+			if data != nil {
+				if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
+					res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
+					if err != nil {
+						serv.Debugf("Failed to search member in mailChimp: " + err.Error())
 					}
+					_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
+					if err != nil {
+						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
+					}
+				} else {
+					serv.Debugf("Failed to subscribe in mailChimp: " + err.Error())
 				}
-
 			}
 		}
 
@@ -533,7 +539,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			Password:        hashedPwdString,
 			FullName:        fullName,
 			Subscribtion:    subscription,
-			UserType:        "managment",
+			UserType:        "management",
 			CreationDate:    time.Now(),
 			AlreadyLoggedIn: false,
 			AvatarId:        1,
@@ -560,6 +566,15 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			env = "K8S"
 		}
 
+		var systemKey models.SystemKey
+		err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+		if err != nil {
+			serv.Errorf("Login error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+
 		domain := ""
 		secure := false
 		c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -572,7 +587,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			"creation_date":     newUser.CreationDate,
 			"already_logged_in": newUser.AlreadyLoggedIn,
 			"avatar_id":         newUser.AvatarId,
-			"send_analytics":    "",
+			"send_analytics":    sendAnalytics,
 			"env":               env,
 			"namespace":         configuration.K8S_NAMESPACE,
 		})

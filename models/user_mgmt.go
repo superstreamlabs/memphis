@@ -48,7 +48,7 @@ type Image struct {
 }
 
 type AddUserSchema struct {
-	Username    	string `json:"username" binding:"required,min=1,max=25"`
+	Username    	string `json:"username" binding:"required,min=1,max=60"`
 	Password    	string `json:"password"`
 	HubUsername 	string `json:"hub_username"`
 	HubPassword 	string `json:"hub_password"`
