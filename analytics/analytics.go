@@ -122,7 +122,7 @@ func SendEvent(userId, eventName string) {
 		distinctId = deploymentId + "-" + userId
 	}
 	
-	AnalyticsClient.Enqueue(posthog.Capture{
+	go AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
 		Event:      eventName,
 	})
