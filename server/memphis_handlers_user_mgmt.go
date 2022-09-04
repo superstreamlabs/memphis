@@ -193,6 +193,55 @@ func validateEmail(email string) error {
 	return nil
 }
 
+func createMemberMailChimp(subscription bool, username string) {
+	var tag []string
+		if subscription {
+			tag = []string{"installation", "newsletter"}
+		} else {
+			tag = []string{"installation"}
+		}
+		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+		mailchimpListID := configuration.MAILCHIMP_LIST_ID
+		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+		if err != nil {
+			serv.Debugf("getList in mailchimp error: " + err.Error())
+		}else{
+			mailchimpReq := &gochimp3.MemberRequest{
+				EmailAddress: username,
+				Status:       "subscribed",
+				Tags:         tag,
+			}
+			_, err = mailchimpList.CreateMember(mailchimpReq)
+			if err != nil {
+				data, err := json.Marshal(err)
+				if err != nil {
+					serv.Debugf("Error: " + err.Error())
+				}
+				var mailChimpErr MailChimpErr
+				if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
+					serv.Debugf("Error: " + err.Error())
+				}
+				mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
+					Query: username,
+				}
+				if data != nil {
+					if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
+						res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
+						if err != nil {
+							serv.Debugf("Failed to search member in mailChimp: " + err.Error())
+						}
+						_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
+						if err != nil {
+							serv.Debugf("Failed to update member in mailChimp: " + err.Error())
+						}
+					} else{
+						serv.Debugf("Failed to subscribe in mailChimp:")
+					}
+				}
+			}
+		}
+}
+
 type userToTokens interface {
 	models.User | models.SandboxUser
 }
@@ -465,54 +514,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		}
 		hashedPwdString := string(hashedPwd)
 		subscription := body.Subscribtion
+		createMemberMailChimp(subscription, username)
 
-		var tag []string
-		if subscription {
-			tag = []string{"installation", "newsletter"}
-		} else {
-			tag = []string{"installation"}
-		}
-
-		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
-		mailchimpListID := configuration.MAILCHIMP_LIST_ID
-		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
-		if err != nil {
-			serv.Debugf("getList in mailchimp error: " + err.Error())
-		}else{
-			mailchimpReq := &gochimp3.MemberRequest{
-				EmailAddress: username,
-				Status:       "subscribed",
-				Tags:         tag,
-			}
-			_, err = mailchimpList.CreateMember(mailchimpReq)
-			if err != nil {
-				data, err := json.Marshal(err)
-				if err != nil {
-					serv.Debugf("Error: " + err.Error())
-				}
-				var mailChimpErr MailChimpErr
-				if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-					serv.Debugf("Error: " + err.Error())
-				}
-				mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
-					Query: body.Username,
-				}
-				if data != nil {
-					if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
-						res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
-						if err != nil {
-							serv.Debugf("Failed to search member in mailChimp: " + err.Error())
-						}
-						_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
-						if err != nil {
-							serv.Debugf("Failed to update member in mailChimp: " + err.Error())
-						}
-					} else{
-						serv.Debugf("Failed to subscribe in mailChimp: " + err.Error())
-					}
-				}
-			}
-		}
 
 		newUser := models.User{
 			ID:              primitive.NewObjectID(),
