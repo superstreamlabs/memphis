@@ -452,6 +452,11 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
+	var body models.AddUserSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
 	exist, err := isOnlyRootUserExist()
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
@@ -459,14 +464,9 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		return
 	}
 	if !exist {
-		c.IndentedJSON(401, gin.H{"message": "More than root user exists"})
+		c.IndentedJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	} else {
-		var body models.AddUserSchema
-		ok := utils.Validate(c, &body, false, nil)
-		if !ok {
-			return
-		}
 		username := strings.ToLower(body.Username)
 		usernameError := validateEmail(username)
 		if usernameError != nil {
@@ -487,7 +487,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 		var tag []string
 		if subscription {
-			tag = []string{"installation", "newsLetter"}
+			tag = []string{"installation", "newsletter"}
 		} else {
 			tag = []string{"installation"}
 		}
@@ -508,11 +508,11 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		if err != nil {
 			data, err := json.Marshal(err)
 			if err != nil {
-				serv.Errorf("Error: " + err.Error())
+				serv.Debugf("Error: " + err.Error())
 			}
 			var mailChimpErr MailChimpErr
 			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-				serv.Errorf("Error: " + err.Error())
+				serv.Debugf("Error: " + err.Error())
 			}
 			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
 				Query: body.Username,
