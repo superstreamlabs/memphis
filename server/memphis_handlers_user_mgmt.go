@@ -195,51 +195,51 @@ func validateEmail(email string) error {
 
 func createMemberMailChimp(subscription bool, username string) {
 	var tag []string
-		if subscription {
-			tag = []string{"installation", "newsletter"}
-		} else {
-			tag = []string{"installation"}
+	if subscription {
+		tag = []string{"installation", "newsletter"}
+	} else {
+		tag = []string{"installation"}
+	}
+	mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
+	mailchimpListID := configuration.MAILCHIMP_LIST_ID
+	mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+	if err != nil {
+		serv.Debugf("getList in mailchimp error: " + err.Error())
+	} else {
+		mailchimpReq := &gochimp3.MemberRequest{
+			EmailAddress: username,
+			Status:       "subscribed",
+			Tags:         tag,
 		}
-		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
-		mailchimpListID := configuration.MAILCHIMP_LIST_ID
-		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
+		_, err = mailchimpList.CreateMember(mailchimpReq)
 		if err != nil {
-			serv.Debugf("getList in mailchimp error: " + err.Error())
-		}else{
-			mailchimpReq := &gochimp3.MemberRequest{
-				EmailAddress: username,
-				Status:       "subscribed",
-				Tags:         tag,
-			}
-			_, err = mailchimpList.CreateMember(mailchimpReq)
+			data, err := json.Marshal(err)
 			if err != nil {
-				data, err := json.Marshal(err)
-				if err != nil {
-					serv.Debugf("Error: " + err.Error())
-				}
-				var mailChimpErr MailChimpErr
-				if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-					serv.Debugf("Error: " + err.Error())
-				}
-				mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
-					Query: username,
-				}
-				if data != nil {
-					if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
-						res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
-						if err != nil {
-							serv.Debugf("Failed to search member in mailChimp: " + err.Error())
-						}
-						_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
-						if err != nil {
-							serv.Debugf("Failed to update member in mailChimp: " + err.Error())
-						}
-					} else{
-						serv.Debugf("Failed to subscribe in mailChimp:")
+				serv.Debugf("Error: " + err.Error())
+			}
+			var mailChimpErr MailChimpErr
+			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
+				serv.Debugf("Error: " + err.Error())
+			}
+			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
+				Query: username,
+			}
+			if data != nil {
+				if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
+					res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
+					if err != nil {
+						serv.Debugf("Failed to search member in mailChimp: " + err.Error())
 					}
+					_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
+					if err != nil {
+						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
+					}
+				} else {
+					serv.Debugf("Failed to subscribe in mailChimp:")
 				}
 			}
 		}
+	}
 }
 
 type userToTokens interface {
@@ -320,12 +320,9 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		if configuration.ANALYTICS == "true" {
-			analytics.SendEvent("", "installation")
-		}
-
+		rootUserId, _ := primitive.ObjectIDFromHex("6314c8f7ef142f3f04fccdc3") // default root user id
 		newUser := models.User{
-			ID:              primitive.NewObjectID(),
+			ID:              rootUserId,
 			Username:        "root",
 			Password:        hashedPwdString,
 			HubUsername:     "",
@@ -338,7 +335,14 @@ func CreateRootUserOnFirstSystemLoad() error {
 
 		_, err = usersCollection.InsertOne(context.TODO(), newUser)
 		if err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				return nil
+			}
 			return err
+		}
+
+		if configuration.ANALYTICS == "true" {
+			analytics.SendEvent("", "installation")
 		}
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),
@@ -467,7 +471,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"send_analytics":    sendAnalytics,
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
-		"full_name":		 user.FullName,
+		"full_name":         user.FullName,
 	})
 }
 
@@ -515,7 +519,6 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		hashedPwdString := string(hashedPwd)
 		subscription := body.Subscribtion
 		createMemberMailChimp(subscription, username)
-
 
 		newUser := models.User{
 			ID:              primitive.NewObjectID(),
