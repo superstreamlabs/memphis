@@ -17,7 +17,7 @@
                 "ROOT_PASSWORD": "memphis",
                 "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",
-                "ANALYTICS_TOKEN": "UICQP3RXYsnDp9ACDmsYxRD+bvOl2X79ATb3o2BzrDaeWLX4wBBH2O/eK7ebYNs9H4G8Hdk38TFzej6bguxh3QZl0N4IvJhtKAbxoK4H",
+                "ANALYTICS_TOKEN": "phc_iANQTRY2wf7Jj9TCwge21i83gLHPSZdgzg1JsCpKV3F",
                 "K8S_NAMESPACE": "memphis",
                 "LOGS_RETENTION_IN_DAYS": "30",
                 "JWT_SECRET": "35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk",
@@ -26,7 +26,9 @@
                 "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
                 "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
                 "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here", 
-                "SANDBOX_REDIRECT_URI": "http://localhost:9000/login"
+                "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
+                "MAILCHIMP_KEY":  "50afc29f5c1fda04bf10bdc4009a986c-us9",
+                "MAILCHIMP_LIST_ID": "506751f7f5"
             }
         }
     ]
