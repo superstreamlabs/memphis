@@ -150,13 +150,14 @@ node {
 	  
       if (env.BRANCH_NAME ==~ /(latest)/) {
     	stage('checkout to version branch'){
-	  sh "git reset --hard origin/latest"
-	  sh "git pull"
-	  sh "git checkout -b ${versionTag}"
-	  sh "git commit -m 'Release v${versionTag}' -a"
-	  sh "git push"
+	    withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
+	    sh "git reset --hard origin/latest"
+	    sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b ${versionTag}"
+       	    sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin ${versionTag}"
+  	  }
 	}
       }  
+	  
 	  
     notifySuccessful()
 	  
