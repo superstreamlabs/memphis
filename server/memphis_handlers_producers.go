@@ -147,7 +147,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.IncrementStationsCounter()
+			analytics.SendEvent(c.memphisInfo.username, "user-create-station")
 		}
 	}
 
@@ -203,7 +203,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.IncrementProducersCounter()
+		analytics.SendEvent(c.memphisInfo.username, "user-create-producer")
 	}
 	respondWithErr(s, reply, nil)
 	return
@@ -408,6 +408,11 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
 		serv.Errorf("DestroyProducer error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(c.memphisInfo.username, "user-remove-producer")
 	}
 
 	respondWithErr(s, reply, nil)

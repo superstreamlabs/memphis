@@ -207,7 +207,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.IncrementStationsCounter()
+			analytics.SendEvent(c.memphisInfo.username, "user-create-station")
 		}
 	}
 
@@ -284,7 +284,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.IncrementConsumersCounter()
+		analytics.SendEvent(c.memphisInfo.username, "user-create-consumer")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -575,6 +575,11 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
 		serv.Errorf("DestroyConsumer error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(c.memphisInfo.username, "user-remove-consumer")
 	}
 
 	respondWithErr(s, reply, nil)

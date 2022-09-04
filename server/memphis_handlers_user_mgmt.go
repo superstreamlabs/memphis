@@ -26,7 +26,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
@@ -273,7 +272,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 
 	if !exist {
 		if configuration.ANALYTICS == "true" {
-			analytics.IncrementInstallationsCounter()
+			analytics.SendEvent("", "installation")
 		}
 
 		newUser := models.User{
@@ -324,15 +323,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 
-	var systemKey models.SystemKey
-	err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
-	if err != nil {
-		serv.Errorf("Login error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
 		serv.Errorf("Login error: " + err.Error())
@@ -349,7 +339,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.IncrementLoginsCounter()
+		analytics.SendEvent(user.Username, "user-login")
 	}
 
 	var env string
@@ -371,7 +361,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         user.AvatarId,
-		"send_analytics":    sendAnalytics,
+		"send_analytics":    shouldSendAnalytics,
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
 	})
@@ -429,16 +419,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
 	})
-}
-
-// TODO
-func (umh UserMgmtHandler) AuthenticateNatsUser(c *gin.Context) {
-	publicKey := c.Param("publicKey")
-	if publicKey != "" {
-		fmt.Println(publicKey)
-	}
-
-	c.IndentedJSON(200, gin.H{})
 }
 
 func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
@@ -566,14 +546,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			env = "K8S"
 		}
 
-		var systemKey models.SystemKey
-		err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
-		if err != nil {
-			serv.Errorf("Login error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.SendEvent(newUser.Username, "user-signup")
 		}
-		sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
 		domain := ""
 		secure := false
@@ -587,7 +563,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			"creation_date":     newUser.CreationDate,
 			"already_logged_in": newUser.AlreadyLoggedIn,
 			"avatar_id":         newUser.AvatarId,
-			"send_analytics":    sendAnalytics,
+			"send_analytics":    shouldSendAnalytics,
 			"env":               env,
 			"namespace":         configuration.K8S_NAMESPACE,
 		})
@@ -689,6 +665,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-add-user")
+	}
+
 	serv.Noticef("User " + username + " has been created")
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
@@ -787,6 +769,11 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.Username, "user-remove-user")
+	}
+
 	serv.Noticef("User " + username + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
@@ -815,6 +802,11 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		serv.Errorf("RemoveMyUser error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.Username, "user-remove-himself")
 	}
 
 	serv.Noticef("User " + user.Username + " has been deleted")
@@ -997,7 +989,8 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 	}
 
 	if !body.SendAnalytics {
-		analytics.IncrementDisableAnalyticsCounter()
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-disable-analytics")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1006,7 +999,8 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.IncrementNextStepsCounter()
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-done-next-steps")
 	}
 
 	c.IndentedJSON(200, gin.H{})

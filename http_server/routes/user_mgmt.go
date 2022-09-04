@@ -29,8 +29,6 @@ import (
 func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtHandler := server.UserMgmtHandler{}
 	userMgmtRoutes := router.Group("/usermgmt")
-	userMgmtRoutes.GET("/nats/authenticate", userMgmtHandler.AuthenticateNatsUser)
-	userMgmtRoutes.GET("/nats/authenticate/:publicKey", userMgmtHandler.AuthenticateNatsUser)
 	userMgmtRoutes.POST("/login", userMgmtHandler.Login)
 	userMgmtRoutes.POST("/doneNextSteps", userMgmtHandler.DoneNextSteps)
 	userMgmtRoutes.POST("/refreshToken", userMgmtHandler.RefreshToken)

@@ -267,7 +267,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.IncrementStationsCounter()
+		analytics.SendEvent(c.memphisInfo.username, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -489,7 +489,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.IncrementStationsCounter()
+		analytics.SendEvent(user.Username, "user-create-station")
 	}
 
 	c.IndentedJSON(200, newStation)
@@ -539,6 +539,12 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		serv.Errorf("RemoveStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
 	serv.Noticef("Station " + stationName + " has been deleted")
@@ -714,6 +720,12 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-message-journey")
+	}
+
 	c.IndentedJSON(200, poisonMessage)
 }
 
@@ -729,6 +741,12 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 		serv.Errorf("AckPoisonMessage error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-ack-poison-message")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -769,6 +787,12 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		serv.Errorf("ResendPoisonMessages error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-resend-poison-message")
 	}
 
 	c.IndentedJSON(200, gin.H{})

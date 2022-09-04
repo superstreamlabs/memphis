@@ -37,8 +37,9 @@ var configuration = conf.GetConfig()
 var systemKeysCollection *mongo.Collection
 var deploymentId string
 var analyticsFlag string
+var AnalyticsClient posthog.Client
 
-func InitializeAnalytics(c *mongo.Client) (posthog.Client, error) {
+func InitializeAnalytics(c *mongo.Client) error {
 	systemKeysCollection = db.GetCollection("system_keys", c)
 	deployment, err := getSystemKey("deployment_id")
 	if err == mongo.ErrNoDocuments {
@@ -51,10 +52,10 @@ func InitializeAnalytics(c *mongo.Client) (posthog.Client, error) {
 
 		_, err = systemKeysCollection.InsertOne(context.TODO(), deploymentKey)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else if err != nil {
-		return nil, err
+		return err
 	} else {
 		deploymentId = deployment.Value
 	}
@@ -78,22 +79,22 @@ func InitializeAnalytics(c *mongo.Client) (posthog.Client, error) {
 
 		_, err = systemKeysCollection.InsertOne(context.TODO(), analyticsKey)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		analyticsFlag = configuration.ANALYTICS
 	} else if err != nil {
-		return nil, err
+		return err
 	} else {
 		analyticsFlag = analytics.Value
-
 	}
 
 	client, err := posthog.NewWithConfig(configuration.ANALYTICS_TOKEN, posthog.Config{Endpoint: "https://app.posthog.com"})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return client, nil
+	AnalyticsClient = client
+	return nil
 }
 
 func getSystemKey(key string) (models.SystemKey, error) {
@@ -106,17 +107,17 @@ func getSystemKey(key string) (models.SystemKey, error) {
 	return systemKey, nil
 }
 
-func Close(client posthog.Client) {
+func Close() {
 	analytics, _ := getSystemKey("analytics")
 	if analytics.Value == "true" {
-		client.Close()
+		AnalyticsClient.Close()
 	}
 }
 
-// err = client.Enqueue(posthog.Capture{
-// 	DistinctId: "envid-userid",
-// 	Event:      "test-snippet",
-// 	Properties: posthog.NewProperties().
-// 		Set("plan", "Enterprise").
-// 		Set("friends", 42),
-// })
+func SendEvent(userId, eventName string) {
+	distinctId := deploymentId + "-" + userId
+	AnalyticsClient.Enqueue(posthog.Capture{
+		DistinctId: distinctId,
+		Event:      eventName,
+	})
+}

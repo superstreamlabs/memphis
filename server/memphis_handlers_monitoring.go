@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"memphis-broker/models"
 	"memphis-broker/utils"
+	"memphis-broker/analytics"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -287,6 +288,12 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-station-overview")
 	}
 
 	c.IndentedJSON(200, response)
