@@ -43,22 +43,22 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
       dir ('memphis-docker'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'unified'
       }
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-docker/unified-docker-compose-dev.yaml -p memphis up -d"
     }
 
-    stage('Tests - Run e2e tests over Docker') {
+    /*stage('Tests - Run e2e tests over Docker') {
       sh "rm -rf memphis-e2e-tests"
       dir ('memphis-e2e-tests'){
         git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-e2e-tests.git', branch: 'master'
       }
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js docker"
-    }
+    }*/
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
+      sh "docker-compose -f ./memphis-docker/unified-docker-compose-dev.yaml -p memphis down"
       sh "docker volume prune -f"
     }
 
@@ -69,22 +69,22 @@ node {
     stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
-       	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
+       	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'unified'
       	}
-      	sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+      	sh "helm upgrade --atomic --install memphis-tests memphis-k8s/memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
     }
 	  
 
     stage('Open port forwarding to memphis service') {
       sh(script: """until kubectl get pods --selector=app=memphis-ui -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
       sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis-$unique_id &"
-      sh "nohup kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis-$unique_id &"
+      sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis-$unique_id &"
     }
 
-    stage('Tests - Run e2e tests over kubernetes') {
+    /*stage('Tests - Run e2e tests over kubernetes') {
       sh "npm install --prefix ./memphis-e2e-tests"
       sh "node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id"
-    }
+    }*/
 
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
@@ -103,7 +103,7 @@ node {
     ////////////////////////////////////////
 
 
-    stage('Build and push image to Docker Hub') {
+    /*stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       if (env.BRANCH_NAME ==~ /(beta)/) {
       	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:beta --platform linux/amd64,linux/arm64 ."
@@ -116,7 +116,7 @@ node {
 			    sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."
 		    }	
 	    }
-    }
+    }*/
 	  
 	  
     ///////////////////////////////////////
@@ -127,7 +127,7 @@ node {
     	stage('Push to staging'){
 	  sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
           sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
-          sh 'helm install my-memphis memphis-k8s/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
+          sh 'helm upgrade --atomic --install my-memphis memphis-k8s/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
           sh "rm -rf memphis-k8s"
 	}
       }
@@ -179,7 +179,7 @@ node {
       	dir ('memphis-k8s'){
        	 git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
       	}
-      	sh "helm install memphis-tests memphis-k8s/memphis --set analytics='false' --create-namespace --namespace memphis"
+      	sh "helm upgrade --atomic --install memphis-tests memphis-k8s/memphis --set analytics='false' --create-namespace --namespace memphis"
     	}
 
    	 stage('Open port forwarding to memphis service') {

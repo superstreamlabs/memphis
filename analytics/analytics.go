@@ -1,57 +1,46 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the GNU General Public License v3.0 (the “License”);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// https://www.gnu.org/licenses/gpl-3.0.en.html
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Licensed under the MIT License (the "License");
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// This license limiting reselling the software itself "AS IS".
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 package analytics
 
 import (
 	"context"
-	"memphis-broker/config"
+	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
 
-	"github.com/lightstep/otel-launcher-go/launcher"
+	"github.com/posthog/posthog-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/global"
 )
 
-var configuration = config.GetConfig()
-var systemKeysCollection = db.GetCollection("system_keys")
-var ls launcher.Launcher
-var loginsCounter metric.Int64Counter
-var installationsCounter metric.Int64Counter
-var nextStepsCounter metric.Int64Counter
-var stationsCounter metric.Int64Counter
-var producersCounter metric.Int64Counter
-var consumersCounter metric.Int64Counter
-var disableAnalyticsCounter metric.Int64Counter
+var configuration = conf.GetConfig()
+var systemKeysCollection *mongo.Collection
 var deploymentId string
 var analyticsFlag string
+var AnalyticsClient posthog.Client
 
-func getSystemKey(key string) (models.SystemKey, error) {
-	filter := bson.M{"key": key}
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err != nil {
-		return systemKey, err
-	}
-	return systemKey, nil
-}
-
-func InitializeAnalytics() error {
+func InitializeAnalytics(c *mongo.Client) error {
+	systemKeysCollection = db.GetCollection("system_keys", c)
 	deployment, err := getSystemKey("deployment_id")
 	if err == mongo.ErrNoDocuments {
 		deploymentId := primitive.NewObjectID().Hex()
@@ -99,88 +88,36 @@ func InitializeAnalytics() error {
 		analyticsFlag = analytics.Value
 	}
 
-	ls = launcher.ConfigureOpentelemetry(
-		launcher.WithServiceName("memphis"),
-		launcher.WithAccessToken(configuration.ANALYTICS_TOKEN),
-	)
+	client, err := posthog.NewWithConfig(configuration.ANALYTICS_TOKEN, posthog.Config{Endpoint: "https://app.posthog.com"})
+	if err != nil {
+		return err
+	}
 
-	var Meter = global.GetMeterProvider().Meter("memphis")
-	installationsCounter, err = Meter.NewInt64Counter(
-		"Installations",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of installations of Memphis"),
-	)
-
-	nextStepsCounter, err = Meter.NewInt64Counter(
-		"NextSteps",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of users complete the next steps wizard in the UI"),
-	)
-
-	loginsCounter, err = Meter.NewInt64Counter(
-		"Logins",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of logins to Memphis"),
-	)
-
-	stationsCounter, err = Meter.NewInt64Counter(
-		"Stations",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of stations"),
-	)
-
-	producersCounter, err = Meter.NewInt64Counter(
-		"Producers",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of producers"),
-	)
-
-	consumersCounter, err = Meter.NewInt64Counter(
-		"Consumers",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of consumers"),
-	)
-
-	disableAnalyticsCounter, err = Meter.NewInt64Counter(
-		"DisableAnalytics",
-		metric.WithUnit("0"),
-		metric.WithDescription("Counting the number of disable analytics events"),
-	)
-
+	AnalyticsClient = client
 	return nil
 }
 
-func IncrementInstallationsCounter() {
-	installationsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementNextStepsCounter() {
-	nextStepsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementLoginsCounter() {
-	loginsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementStationsCounter() {
-	stationsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementProducersCounter() {
-	producersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementConsumersCounter() {
-	consumersCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
-}
-
-func IncrementDisableAnalyticsCounter() {
-	disableAnalyticsCounter.Add(context.TODO(), 1, attribute.String("deployment_id", deploymentId))
+func getSystemKey(key string) (models.SystemKey, error) {
+	filter := bson.M{"key": key}
+	var systemKey models.SystemKey
+	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	if err != nil {
+		return systemKey, err
+	}
+	return systemKey, nil
 }
 
 func Close() {
 	analytics, _ := getSystemKey("analytics")
 	if analytics.Value == "true" {
-		ls.Shutdown()
+		AnalyticsClient.Close()
 	}
+}
+
+func SendEvent(userId, eventName string) {
+	distinctId := deploymentId + "-" + userId
+	AnalyticsClient.Enqueue(posthog.Capture{
+		DistinctId: distinctId,
+		Event:      eventName,
+	})
 }

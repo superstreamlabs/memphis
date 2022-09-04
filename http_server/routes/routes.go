@@ -1,44 +1,38 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the GNU General Public License v3.0 (the “License”);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// https://www.gnu.org/licenses/gpl-3.0.en.html
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Licensed under the MIT License (the "License");
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// This license limiting reselling the software itself "AS IS".
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 package routes
 
 import (
-	"memphis-broker/logger"
 	"memphis-broker/middlewares"
+	"memphis-broker/server"
 	"memphis-broker/utils"
-	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-type loggerWriter struct {
-}
-
-func (lw loggerWriter) Write(p []byte) (int, error) {
-	log := string(p)
-	splitted := strings.Split(log, "| ")
-	statusCode := strings.Trim(splitted[1], " ")
-	if statusCode != "200" && statusCode != "204" {
-		logger.Error(log)
-	}
-	return len(p), nil
-}
-
-func InitializeHttpRoutes() *gin.Engine {
-	gin.DefaultWriter = loggerWriter{}
-	router := gin.Default()
+func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
+	router := gin.New()
+	router.Use(gin.Recovery())
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://*", "https://*"},
@@ -55,12 +49,11 @@ func InitializeHttpRoutes() *gin.Engine {
 
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(mainRouter)
-	InitializeFactoriesRoutes(mainRouter)
-	InitializeStationsRoutes(mainRouter)
-	InitializeProducersRoutes(mainRouter)
-	InitializeConsumersRoutes(mainRouter)
-	InitializeMonitoringRoutes(mainRouter)
-	InitializeSysLogsRoutes(mainRouter)
+	InitializeFactoriesRoutes(mainRouter, handlers)
+	InitializeStationsRoutes(mainRouter, handlers)
+	InitializeProducersRoutes(mainRouter, handlers)
+	InitializeConsumersRoutes(mainRouter, handlers)
+	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeSandboxRoutes(mainRouter)
 	mainRouter.GET("/status", func(c *gin.Context) {
 		c.JSON(200, gin.H{
