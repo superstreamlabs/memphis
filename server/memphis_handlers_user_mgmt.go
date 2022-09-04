@@ -527,8 +527,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 					if err != nil {
 						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
 					}
-				} else {
-					serv.Debugf("Failed to subscribe in mailChimp: " + err.Error())
+				} else if string(data) != "{}" {
+					serv.Debugf("Failed in mailChimp: " + string(data))
 				}
 			}
 		}
