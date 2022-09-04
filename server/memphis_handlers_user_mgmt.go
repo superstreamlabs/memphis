@@ -311,7 +311,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if !ok {
 		return
 	}
-
 	username := strings.ToLower(body.Username)
 	authenticated, user, err := authenticateUser(username, body.Password)
 	if err != nil {
@@ -374,6 +373,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"send_analytics":    sendAnalytics,
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
+		"full_name":         user.FullName,
 	})
 }
 
@@ -590,6 +590,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			"send_analytics":    sendAnalytics,
 			"env":               env,
 			"namespace":         configuration.K8S_NAMESPACE,
+			"full_name":         newUser.FullName,
 		})
 
 	}
