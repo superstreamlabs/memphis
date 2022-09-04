@@ -428,6 +428,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"send_analytics":    sendAnalytics,
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
+		"full_name":		 user.FullName,
 	})
 }
 
@@ -497,38 +498,38 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
 		if err != nil {
 			serv.Debugf("getList in mailchimp error: " + err.Error())
-		}
-
-		mailchimpReq := &gochimp3.MemberRequest{
-			EmailAddress: username,
-			Status:       "subscribed",
-			Tags:         tag,
-		}
-		_, err = mailchimpList.CreateMember(mailchimpReq)
-		if err != nil {
-			data, err := json.Marshal(err)
+		}else{
+			mailchimpReq := &gochimp3.MemberRequest{
+				EmailAddress: username,
+				Status:       "subscribed",
+				Tags:         tag,
+			}
+			_, err = mailchimpList.CreateMember(mailchimpReq)
 			if err != nil {
-				serv.Debugf("Error: " + err.Error())
-			}
-			var mailChimpErr MailChimpErr
-			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-				serv.Debugf("Error: " + err.Error())
-			}
-			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
-				Query: body.Username,
-			}
-			if data != nil {
-				if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
-					res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
-					if err != nil {
-						serv.Debugf("Failed to search member in mailChimp: " + err.Error())
+				data, err := json.Marshal(err)
+				if err != nil {
+					serv.Debugf("Error: " + err.Error())
+				}
+				var mailChimpErr MailChimpErr
+				if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
+					serv.Debugf("Error: " + err.Error())
+				}
+				mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
+					Query: body.Username,
+				}
+				if data != nil {
+					if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
+						res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
+						if err != nil {
+							serv.Debugf("Failed to search member in mailChimp: " + err.Error())
+						}
+						_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
+						if err != nil {
+							serv.Debugf("Failed to update member in mailChimp: " + err.Error())
+						}
+					} else{
+						serv.Debugf("Failed to subscribe in mailChimp: " + err.Error())
 					}
-					_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
-					if err != nil {
-						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
-					}
-				} else if string(data) != "{}" {
-					serv.Debugf("Failed in mailChimp: " + string(data))
 				}
 			}
 		}
