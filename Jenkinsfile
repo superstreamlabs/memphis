@@ -152,7 +152,7 @@ node {
     	stage('checkout to version branch'){
 	  sh "git reset --hard origin/latest"
 	  sh "git pull"
-	  sh "git checkout -b v${versionTag}"
+	  sh "git checkout -b ${versionTag}"
 	  sh "git commit -m 'Release v${versionTag}' -a"
 	  sh "git push"
 	}
