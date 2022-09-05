@@ -132,7 +132,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	} else {
 		username = email
 	}
-	exist, user, err := isSandboxUserExist(username)
+	exist, user, err := IsSandboxUserExist(username)
 	if err != nil {
 		serv.Errorf("Login(Sandbox) error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -325,7 +325,7 @@ func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
 	return claims, nil
 }
 
-func isSandboxUserExist(username string) (bool, models.SandboxUser, error) {
+func IsSandboxUserExist(username string) (bool, models.SandboxUser, error) {
 	filter := bson.M{"username": username}
 	var user models.SandboxUser
 	var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
