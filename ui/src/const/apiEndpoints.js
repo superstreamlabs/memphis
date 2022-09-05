@@ -22,6 +22,7 @@
 export const ApiEndpoints = {
     //Auth
     LOGIN: '/usermgmt/login',
+    SIGNUP: '/usermgmt/addUserSignUp',
     REFRESH_TOKEN: '/usermgmt/refreshToken',
     ADD_USER: '/usermgmt/addUser',
     GET_ALL_USERS: '/usermgmt/getAllUsers',
@@ -34,6 +35,7 @@ export const ApiEndpoints = {
     EDIT_ANALYTICS: '/usermgmt/editAnalytics',
     SANDBOX_LOGIN: '/sandbox/login',
     DONE_NEXT_STEPS: '/usermgmt/doneNextSteps',
+    GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
 
     //Factory
     CREATE_FACTORY: '/factories/createFactory',

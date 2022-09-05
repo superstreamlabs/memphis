@@ -10,7 +10,7 @@
 }
 @font-face {
     font-family: 'InterSemiBold';
-    src: local('Inter-Bold'), url('./assets/fonts/Inter/Inter-SemiBold.ttf') format('truetype');
+    src: local('Inter-SemiBold'), url('./assets/fonts/Inter/Inter-SemiBold.ttf') format('truetype');
     font-weight: 500;
 }
 
@@ -56,7 +56,7 @@ input[type='number'] {
 }
 
 .ant-switch-handle::before {
-    background-color: #2b2e3f !important;
+    background-color: white !important;
 }
 
 .ant-switch-checked .ant-switch-handle::before {
@@ -65,16 +65,16 @@ input[type='number'] {
 
 .ant-switch {
     background-color: var(--white) !important;
-    border: 0.5px solid #2b2e3f !important;
+    border: 0.5px !important;
     position: initial !important;
 }
 
 .ant-switch-inner {
-    color: #2b2e3f !important;
+    color: rgba(120, 120, 128, 0.16) !important;
 }
 
 .ant-switch-checked {
-    background-color: #046d0c !important;
+    background-color: #6557ff !important;
     border: unset !important;
     .ant-switch-inner {
         color: var(--white) !important;

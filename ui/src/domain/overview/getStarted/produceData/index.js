@@ -50,8 +50,8 @@ const ProduceData = (props) => {
     return (
         <ProduceConsumeData
             waitingImage={prodWaiting}
-            waitingTitle={'We are waiting for produced data'}
-            successfullTitle={'Successfully received'}
+            waitingTitle={'Waiting for produced data'}
+            successfullTitle={'Success! You created your first producer'}
             languages={selectLngOption}
             activeData={'connected_producers'}
             dataName={'producer_app'}

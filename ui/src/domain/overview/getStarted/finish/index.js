@@ -23,9 +23,9 @@ import './style.scss';
 
 import React, { useContext, useEffect } from 'react';
 import Button from '../../../../components/button';
-import SlackIcon from '../../../../assets/images/slackIcon.svg';
-import GithubIcon from '../../../../assets/images/githubIcon.svg';
-import DiscordIcon from '../../../../assets/images/discordIcon.svg';
+import docsLogo from '../../../../assets/images/docsLogo.svg';
+import GithubLogo from '../../../../assets/images/githubLogo.svg';
+import discordLogo from '../../../../assets/images/discordLogo.svg';
 import { Link, useHistory } from 'react-router-dom';
 import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
@@ -78,14 +78,18 @@ const Finish = (props) => {
                     }}
                 />
                 <p className="link-finish-header">Link to our channels</p>
-                <Link className="icon-image" to={{ pathname: 'https://memphiscommunity.slack.com/archives/C03KRNC6R3Q' }} target="_blank">
-                    <img src={SlackIcon} width="25px" height="25px" alt="slack-icon"></img>
+                <Link
+                    className="icon-image"
+                    to={{ pathname: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/getting-started/1-installation' }}
+                    target="_blank"
+                >
+                    <img src={docsLogo} width="25px" height="25px" alt="slack-icon"></img>
                 </Link>
                 <Link className="icon-image" to={{ pathname: 'https://github.com/memphisdev' }} target="_blank">
-                    <img src={GithubIcon} width="25px" height="25px" alt="github-icon"></img>
+                    <img src={GithubLogo} width="25px" height="25px" alt="github-icon"></img>
                 </Link>
                 <Link className="icon-image" to={{ pathname: 'https://discord.com/invite/WZpysvAeTf' }} target="_blank">
-                    <img src={DiscordIcon} width="25px" height="25px" alt="discord_icon"></img>
+                    <img src={discordLogo} width="25px" height="25px" alt="discord_icon"></img>
                 </Link>
             </div>
         </div>

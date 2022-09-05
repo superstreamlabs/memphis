@@ -2,8 +2,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: calc(100% - 120px);
-    position: absolute;
+    height: 100%;
     .field-title {
         font-weight: 400;
         font-size: 12px;
@@ -71,5 +70,15 @@
     }
     .ant-form-item {
         margin-bottom: 10px;
+    }
+    .retention-type {
+        display: flex;
+        align-items: center;
+        padding-top: 5px;
+        padding-bottom: 34px;
+        p {
+            margin-left: 5px;
+            margin-bottom: 10px;
+        }
     }
 }

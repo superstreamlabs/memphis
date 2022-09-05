@@ -31,7 +31,8 @@ import {
     LOCAL_STORAGE_ALLOW_ANALYTICS,
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_NAMESPACE,
-    LOCAL_STORAGE_WELCOME_MESSAGE
+    LOCAL_STORAGE_WELCOME_MESSAGE,
+    LOCAL_STORAGE_FULL_NAME
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 
@@ -46,6 +47,7 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_TOKEN, userData.jwt);
         localStorage.setItem(LOCAL_STORAGE_USER_ID, userData.user_id);
         localStorage.setItem(LOCAL_STORAGE_USER_NAME, userData.username);
+        localStorage.setItem(LOCAL_STORAGE_FULL_NAME, userData.full_name);
         localStorage.setItem(LOCAL_STORAGE_USER_TYPE, userData.user_type);
         localStorage.setItem(LOCAL_STORAGE_EXPIRED_TOKEN, expiryToken);
         localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, userData.send_analytics);

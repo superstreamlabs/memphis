@@ -134,11 +134,10 @@ const Factory = (props) => {
             </div>
             <Modal
                 header="Remove Factory"
-                height="260px"
+                height="160px"
                 minWidth="460px"
                 rBtnText="Cancel"
                 lBtnText="Remove"
-                closeAction={() => modalFlip(false)}
                 lBtnClick={() => {
                     removeFactory();
                 }}

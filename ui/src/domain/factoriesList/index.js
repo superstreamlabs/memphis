@@ -72,7 +72,6 @@ function FactoriesList() {
     const removeFactory = (id) => {
         setFactoriesList(factoriesList.filter((item) => item.id !== id));
     };
-
     return (
         <div>
             <div className="factories-container">
@@ -129,11 +128,10 @@ function FactoriesList() {
             </div>
             <Modal
                 header="Create a factory"
-                height="475px"
-                minWidth="440px"
+                height="380px"
+                width="440px"
                 rBtnText="Create"
                 lBtnText="Cancel"
-                closeAction={() => modalFlip(false)}
                 lBtnClick={() => {
                     modalFlip(false);
                 }}

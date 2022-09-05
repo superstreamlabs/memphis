@@ -37,6 +37,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import { SOCKET_URL } from '../../config';
 import io from 'socket.io-client';
+import Signup from '../signup';
 
 const Login = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -49,12 +50,27 @@ const Login = (props) => {
     const [error, setError] = useState('');
     const referer = props?.location?.state?.referer || '/overview';
     const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [isLoading, setisLoading] = useState(false);
+    const [isSignup, setIsSignup] = useState(false);
 
     useEffect(() => {
         if (localStorage.getItem(LOCAL_STORAGE_TOKEN) && AuthService.isValidToken()) {
             history.push(referer);
+        } else {
+            getSignupFlag();
         }
     }, []);
+
+    const getSignupFlag = async () => {
+        setisLoading(true);
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
+            setIsSignup(data.exist);
+            setisLoading(false);
+        } catch (error) {
+            setisLoading(false);
+        }
+    };
 
     const handleUserNameChange = (e) => {
         setFormFields({ ...formFields, username: e.target.value });
@@ -94,128 +110,116 @@ const Login = (props) => {
         }
     };
 
-    const layout = {
-        labelCol: {
-            span: 8
-        },
-        wrapperCol: {
-            span: 16
-        }
-    };
-
-    const tailLayout = {
-        wrapperCol: {
-            offset: 8,
-            span: 16
-        }
-    };
-
     return (
-        <section className="loginContainers">
-            {state.loading ? <Loader></Loader> : ''}
-            <div className="desktop-container">
-                <div className="desktop-content">
-                    <div className="logoImg">
-                        <img alt="logo" src={betaFullLogo}></img>
-                    </div>
-                    <div className="title">
-                        <p>Hey Memphiser,</p>
-                        <p>Welcome</p>
-                    </div>
-                    <div className="login-form">
-                        <Form
-                            {...layout}
-                            name="basic"
-                            initialValues={{
-                                remember: true
-                            }}
-                            form={loginForm}
-                        >
-                            <Form.Item
-                                name="username"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Username can not be empty'
-                                    }
-                                ]}
-                            >
-                                <div className="field name">
-                                    <p>Username</p>
-                                    <Input
-                                        placeholder="Type username"
-                                        type="text"
-                                        radiusType="semi-round"
-                                        colorType="gray"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        width="19vw"
-                                        height="43px"
-                                        minWidth="200px"
-                                        onBlur={handleUserNameChange}
-                                        onChange={handleUserNameChange}
-                                        value={formFields.username}
-                                    />
-                                </div>
-                            </Form.Item>
-                            <Form.Item
-                                name="password"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Password can not be empty'
-                                    }
-                                ]}
-                            >
-                                <div className="field password">
-                                    <p>Password</p>
-                                    <div id="e2e-tests-password">
-                                        <Input
-                                            placeholder="Password"
-                                            type="password"
-                                            radiusType="semi-round"
-                                            colorType="gray"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
+        <>
+            {!isLoading && isSignup && <Signup />}
+            {!isLoading && !isSignup && (
+                <section className="loginContainers">
+                    {state.loading ? <Loader></Loader> : ''}
+                    <div className="desktop-container">
+                        <div className="desktop-content">
+                            <div className="logoImg">
+                                <img alt="logo" src={betaFullLogo}></img>
+                            </div>
+                            <div className="title">
+                                <p>Hey Memphiser,</p>
+                                <p>Welcome</p>
+                            </div>
+                            <div className="login-form">
+                                <Form
+                                    name="basic"
+                                    initialValues={{
+                                        remember: true
+                                    }}
+                                    form={loginForm}
+                                >
+                                    <Form.Item
+                                        name="username"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Username can not be empty'
+                                            }
+                                        ]}
+                                    >
+                                        <div className="field name">
+                                            <p>Username / Email</p>
+                                            <Input
+                                                placeholder="Type username / email"
+                                                type="text"
+                                                radiusType="semi-round"
+                                                colorType="gray"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                width="19vw"
+                                                height="43px"
+                                                minWidth="200px"
+                                                onBlur={handleUserNameChange}
+                                                onChange={handleUserNameChange}
+                                                value={formFields.username}
+                                            />
+                                        </div>
+                                    </Form.Item>
+                                    <Form.Item
+                                        name="password"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Password can not be empty'
+                                            }
+                                        ]}
+                                    >
+                                        <div className="field password">
+                                            <p>Password</p>
+                                            <div id="e2e-tests-password">
+                                                <Input
+                                                    placeholder="Password"
+                                                    type="password"
+                                                    radiusType="semi-round"
+                                                    colorType="gray"
+                                                    backgroundColorType="none"
+                                                    borderColorType="gray"
+                                                    width="19vw"
+                                                    height="43px"
+                                                    minWidth="200px"
+                                                    onChange={handlePasswordChange}
+                                                    onBlur={handlePasswordChange}
+                                                    value={formFields.password}
+                                                />
+                                            </div>
+                                        </div>
+                                    </Form.Item>
+                                    <Form.Item className="button-container">
+                                        <Button
                                             width="19vw"
                                             height="43px"
                                             minWidth="200px"
-                                            onChange={handlePasswordChange}
-                                            onBlur={handlePasswordChange}
-                                            value={formFields.password}
+                                            placeholder="Sign in"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            fontSize="12px"
+                                            fontWeight="600"
+                                            isLoading={loadingSubmit}
+                                            onClick={handleSubmit}
                                         />
-                                    </div>
-                                </div>
-                            </Form.Item>
-                            <Form.Item {...tailLayout} className="button-container">
-                                <Button
-                                    width="19vw"
-                                    height="43px"
-                                    minWidth="200px"
-                                    placeholder="Sign in"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    isLoading={loadingSubmit}
-                                    onClick={handleSubmit}
-                                />
-                            </Form.Item>
+                                    </Form.Item>
 
-                            {error && (
-                                <div className="error-message">
-                                    <p>The username and password you entered did not match our records. Please double-check and try again.</p>
-                                </div>
-                            )}
-                        </Form>
+                                    {error && (
+                                        <div className="error-message">
+                                            <p>The username and password you entered did not match our records. Please double-check and try again.</p>
+                                        </div>
+                                    )}
+                                </Form>
+                            </div>
+                        </div>
+                        <div className="brand-shapes">
+                            <img alt="sharps" src={sharps}></img>
+                        </div>
                     </div>
-                </div>
-                <div className="brand-shapes">
-                    <img alt="sharps" src={sharps}></img>
-                </div>
-            </div>
-        </section>
+                </section>
+            )}
+        </>
     );
 };
 

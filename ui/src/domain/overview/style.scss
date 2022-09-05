@@ -153,31 +153,34 @@
 }
 
 .sandbox-welcome {
+    display: flex;
+    flex-direction: column;
     text-align: center;
     align-items: center;
-
+    margin-top: 30px;
+    .welcome-img {
+        width: 120px;
+    }
     .welcome-header {
         font-size: 20px;
         font-weight: bold;
-    }
-
-    .welcome-modal-btn {
-        margin-left: 40%;
-    }
-
-    .sandbox-welcome-links {
         margin-top: 15px;
         margin-bottom: 15px;
-        color: #b4b4b4;
-        img {
-            margin-left: 10px;
-            margin-right: 10px;
-        }
+    }
+    .welcome-message {
+        color: #8f8f8f;
     }
 
     .sandbox-icon {
-        width: 5%;
-        height: 5%;
-        margin-left: 13px;
+        border: 1px solid #f4f4f4;
+        border-radius: 4px;
+        height: 40px;
+        width: 40px;
+        margin-left: 5px;
+        margin-right: 5px;
+        margin-top: 30px;
+        margin-bottom: 30px;
+        padding: 6px;
+        cursor: pointer;
     }
 }

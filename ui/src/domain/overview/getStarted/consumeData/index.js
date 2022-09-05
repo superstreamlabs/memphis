@@ -50,8 +50,8 @@ const ConsumeData = (props) => {
     return (
         <ProduceConsumeData
             waitingImage={consWaiting}
-            waitingTitle={'We are waiting for a consumer to consume data'}
-            successfullTitle={'Start to receive messages.'}
+            waitingTitle={'Waiting to consume messages from the station'}
+            successfullTitle={'Success! You created your first consumer'}
             languages={selectLngOption}
             activeData={'connected_cgs'}
             dataName={'consumer_app'}

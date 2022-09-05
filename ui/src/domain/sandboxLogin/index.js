@@ -33,7 +33,7 @@ import { httpRequest } from '../../services/http';
 import AuthService from '../../services/auth';
 import Button from '../../components/button';
 import Loader from '../../components/loader';
-import GitHubLogo from '../../assets/images/GitHubLogo.png';
+import GitHubLogo from '../../assets/images/githubLogo.svg';
 import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';

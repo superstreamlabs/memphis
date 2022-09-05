@@ -41,7 +41,7 @@ import BetaLogo from '../../assets/images/betaLogo.svg';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import AuthService from '../../services/auth';
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { DOC_URL } from '../../config';
@@ -142,7 +142,6 @@ function SideBar() {
                         </Link>
                     </div>
                 </div>
-
                 <div className="item-wrapper">
                     <div id="e2e-tests-users-sidebar">
                         <Link to={pathDomains.users}>
@@ -158,6 +157,9 @@ function SideBar() {
                             <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                         </Link>
                     </div>
+                </div>
+                <div className="item-wrapper">
+                    <div id="e2e-tests-users-sidebar"></div>
                 </div>
             </div>
             <div id="e2e-tests-settings-btn" className="bottom-icons">
@@ -183,7 +185,11 @@ function SideBar() {
                                     <div className="company-logo">
                                         <img className="logoimg" src={state?.companyLogo || Logo} width="30" height="30" alt="companyLogo" />
                                     </div>
-                                    <p>{localStorage.getItem(LOCAL_STORAGE_USER_NAME)}</p>
+                                    <p>
+                                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+                                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
+                                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                                    </p>
                                 </div>
                             }
                         >

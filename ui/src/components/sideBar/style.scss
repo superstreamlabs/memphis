@@ -164,6 +164,20 @@
     height: 120px;
     padding-top: 10px !important;
 }
+
 .ant-menu.ant-menu-dark .ant-menu-item-selected.customclass {
     background-color: green; /*Overriden property*/
+}
+
+.installation-icon-wrapper{
+    width: 40px;
+    height: 40px;
+    background: rgba(101, 87, 255, 0.1);
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    img {
+        width: 20px;
+    }
 }

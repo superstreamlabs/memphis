@@ -145,11 +145,9 @@ function Users() {
             </div>
             <Modal
                 header="Add a new user"
-                minHeight="630px"
-                minWidth="564px"
+                height="550px"
                 rBtnText="Add"
                 lBtnText="Cancel"
-                closeAction={() => addUserModalFlip(false)}
                 lBtnClick={() => {
                     addUserModalFlip(false);
                 }}
@@ -163,10 +161,8 @@ function Users() {
             </Modal>
             <Modal
                 header="User connection details"
-                height="320px"
-                minWidth="440px"
+                height="220px"
                 rBtnText="Close"
-                closeAction={() => setUserDetailsModal(false)}
                 clickOutside={() => setUserDetailsModal(false)}
                 rBtnClick={() => {
                     setUserDetailsModal(false);

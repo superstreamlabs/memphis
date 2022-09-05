@@ -1,0 +1,82 @@
+.installation-modal{
+    display: flex;
+    flex-direction: column;
+    height: calc(100%);
+    justify-content: space-between;
+    p{
+        margin: 0;
+    }
+    header{
+        p{
+            font-family: 'InterSemiBold';
+            font-weight: 500;
+            font-size: 18px;
+            line-height: 28px;
+            margin-bottom: 8px;
+        }
+        span{
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 20px;
+            color: #667085;
+            a{
+                color: var(--purple);
+                font-weight: 600;
+                text-decoration-line: underline;
+            }
+        }
+    }
+    content {
+        height: 500px;
+        .content-title{
+            font-family: 'InterSemiBold';
+            font-size: 18px;
+            line-height: 28px;
+            margin-bottom: 20px;
+        }
+        .option-wrapper{
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 16px;
+            gap: 4px;
+            height: 52px;            
+            background: #FFFFFF;
+            border: 1px solid #EAECF0;
+            border-radius: 8px;
+            color: #101828;
+            font-weight: 500;
+            font-size: 16px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            cursor: pointer;
+            p{
+                line-height:13px;
+                font-family: 'InterSemiBold';
+            }
+            svg {
+                width: 18px;
+            }
+            .uncheck-icon{
+                width: 16px;
+                height: 16px;
+                border: 1px solid #D0D5DD;
+                border-radius: 8px;
+            }
+        }
+        .option-wrapper:hover{
+            border-color: var(--purple) !important;
+        }
+        .selected{
+            background: rgba(101, 87, 255, 0.1);
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+    }
+    buttons {
+        z-index: 2;
+        display: flex;
+        justify-content:space-between;
+    }
+}

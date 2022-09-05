@@ -28,7 +28,7 @@ const GetStartedItem = (props) => {
                         <Button
                             width={getStartedState?.currentStep === 5 ? '190px' : '129px'}
                             height="36px"
-                            placeholder={getStartedState?.currentStep === 5 ? 'Lanuch Dashboard' : 'Next'}
+                            placeholder={getStartedState?.currentStep === 5 ? 'Launch Dashboard' : 'Next'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType={'purple'}

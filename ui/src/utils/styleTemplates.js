@@ -78,6 +78,8 @@ export function getBackgroundColor(backgroundColor) {
             return '#18171E';
         case 'gray':
             return '#A9A9A9';
+        case 'gray-light':
+            return '#E9E9E9';
         case 'none':
             return 'transparent';
         default:
@@ -88,7 +90,7 @@ export function getBackgroundColor(backgroundColor) {
 export function getBoxShadows(boxShadowsType) {
     switch (boxShadowsType) {
         case 'none':
-            return 'transparent';
+            return 'none';
         case 'gray':
             return '0px 0px 2px 0px rgba(0,0,0,0.5)';
         case 'gray2':

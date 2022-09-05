@@ -78,7 +78,7 @@ const PoisionMessage = ({ stationName, messageId, details, message, processing, 
                     <Button
                         width="75px"
                         height="24px"
-                        placeholder="Ignore"
+                        placeholder="Drop"
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"

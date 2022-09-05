@@ -25,6 +25,7 @@ import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import io from 'socket.io-client';
+import { message } from 'antd';
 
 import { LOCAL_STORAGE_TOKEN } from './const/localStorageConsts';
 import { HANDLE_REFRESH_INTERVAL, SOCKET_URL } from './config';
@@ -46,19 +47,24 @@ import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
 
-const Desktop = ({ children }) => {
-    const isDesktop = useMediaQuery({ minWidth: 850 });
-    return isDesktop ? children : null;
-};
-
-const Mobile = ({ children }) => {
-    const isMobile = useMediaQuery({ maxWidth: 849 });
-    return isMobile ? children : null;
-};
-
 const App = withRouter(() => {
-    const [authCheck, setAuthCheck] = useState(true);
     const [state, dispatch] = useContext(Context);
+    const isMobile = useMediaQuery({ maxWidth: 849 });
+    const [authCheck, setAuthCheck] = useState(true);
+
+    useEffect(() => {
+        if (isMobile) {
+            message.warn({
+                key: 'memphisWarningMessage',
+                duration: 0,
+                content: 'Hi, please pay attention. We do not support these dimensions.',
+                style: { cursor: 'not-allowed' }
+            });
+        }
+        return () => {
+            message.destroy('memphisWarningMessage');
+        };
+    }, [isMobile]);
 
     const history = useHistory();
 
@@ -105,7 +111,8 @@ const App = withRouter(() => {
                 {' '}
                 {!authCheck && (
                     <Switch>
-                        <Route exact path={pathDomains.login} component={process.env.REACT_APP_SANDBOX_ENV ? SandboxLogin : Login} />
+                        {process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.login} component={SandboxLogin} />}
+                        {!process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.login} component={Login} />}
                         <PrivateRoute
                             exact
                             path={pathDomains.overview}

@@ -44,7 +44,7 @@ const FailedStations = () => {
                 <div className="coulmns-table">
                     <span style={{ width: '100px' }}>Name</span>
                     <span style={{ width: '100px' }}>Factory</span>
-                    <span style={{ width: '150px' }}>Creation date</span>
+                    <span style={{ width: '200px' }}>Creation date</span>
                     {/* <span style={{ width: '100px' }}>Status</span> */}
                     <span style={{ width: '100px' }}></span>
                 </div>
@@ -58,7 +58,7 @@ const FailedStations = () => {
                                 <OverflowTip text={station.factory_name} width={'100px'}>
                                     {station.factory_name}
                                 </OverflowTip>
-                                <OverflowTip text={parsingDate(station.creation_date)} width={'150px'}>
+                                <OverflowTip text={parsingDate(station.creation_date)} width={'200px'}>
                                     {parsingDate(station.creation_date)}
                                 </OverflowTip>
                                 {/* {station.status === 1 && (

@@ -47,12 +47,12 @@ function Users() {
     return (
         <div className="preferences-container">
             <h1 className="main-header-h1">Preferences</h1>
-            <div className="preferences-panel-tabs">
+            {/* <div className="preferences-panel-tabs">
                 <div>
                     <CustomTabs value={value} onChange={handleChangeMenuItem} tabs={tabs}></CustomTabs>
                     <Divider />
                 </div>
-            </div>
+            </div> */}
             <div className="tabs-body">
                 {value === 0 && <Profile />}
                 {value === 1 && <Integrations />}

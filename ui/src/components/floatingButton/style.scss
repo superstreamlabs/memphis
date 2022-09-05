@@ -1,0 +1,95 @@
+.floating-button-container{
+    position: fixed;
+    right: 0px;
+    z-index: 111;
+    .box-wrapper{
+        cursor: pointer;
+        background: #6557FF;
+        border-radius: 16px 0px 0px 16px;
+        width: 50px;
+        height: 45px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: reduce 1s;
+        box-shadow: 0px 0px 20px 0px #6557ff;
+        .box-open{
+            width: 160px;
+            height: 107px;
+            background: #6557FF;
+            border-radius: 16px 0px 0px 16px;
+            box-shadow: rgb(101 87 255 / 76%) 12px 12px 20px 0px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding-left: 25px;
+            color: #ffffff;
+            p{
+                margin: 0;
+                font-weight: 600;
+                font-size: 14px;
+                cursor: pointer;
+            }
+            span{
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 10px;
+                text-decoration: underline;
+            }
+        }
+        .close-box{
+            background: white;
+            position: absolute;
+            border-radius: 53px;
+            width: 25px;
+            height: 25px;
+            border: 1px solid var(--purple);
+            transform: rotate(90deg);
+            left: -10px;
+            cursor: pointer;
+            svg {
+                color: var(--purple);
+            }
+        }
+        .download-icon{
+            animation : pulse 3s infinite;
+
+        }
+    }
+    .open{
+        animation: expend 1s;
+        width: 160px;
+        height: 107px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        box-shadow: none;
+    }
+}
+
+
+@keyframes expend {
+  from {width: 50px; height: 45px;}
+  to {width: 160px; height: 107px;}
+}
+
+@keyframes reduce {
+    from {width: 160px; height: 107px;}
+    to {width: 50px; height: 45px;}
+  }
+
+@keyframes pulse {
+    from {
+        transform : scale(1);
+        opacity   : 1;
+    }
+    50% {
+        transform : scale(0.75);
+        opacity   : 0.8;
+    }
+    to {
+        transform : scale(1);
+        opacity   : 1;
+    }
+}

@@ -213,15 +213,7 @@ const StationOverviewHeader = (props) => {
                     </div>
                 </div>
             </div>
-            <Modal
-                header="SDK"
-                minHeight="730px"
-                minWidth="710px"
-                closeAction={() => setSdkModal(false)}
-                clickOutside={() => setSdkModal(false)}
-                open={sdkModal}
-                hr={false}
-            >
+            <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
                 <div className="sdk-details-container">
                     <div className="select-lan">
                         <p>Language</p>
@@ -277,20 +269,6 @@ const StationOverviewHeader = (props) => {
                             </div>
                         )}
                     </div>
-
-                    {/* <div className="code-example">
-                        <p>Code</p>
-                        <div className="code-content">
-                            <CopyBlock
-                                language={CODE_EXAMPLE[langSelected].langCode}
-                                text={codeExample}
-                                showLineNumbers={true}
-                                theme={atomOneLight}
-                                wrapLines={true}
-                                codeBlock
-                            />
-                        </div>
-                    </div> */}
                 </div>
             </Modal>
             <Modal
@@ -303,13 +281,12 @@ const StationOverviewHeader = (props) => {
                         </div>
                     </div>
                 }
-                minHeight="400px"
-                minWidth="800px"
-                closeAction={() => setAuditModal(false)}
+                displayButtons={false}
+                height="300px"
+                width="800px"
                 clickOutside={() => setAuditModal(false)}
                 open={auditModal}
                 hr={false}
-                className="audit"
             >
                 <Auditing />
             </Modal>

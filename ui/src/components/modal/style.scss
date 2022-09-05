@@ -1,20 +1,18 @@
-.modal-shadow {
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
-}
-.header-container {
-    display: flex;
-    justify-content: space-between;
-}
-
-.MuiDialogActions-root {
-    display: block !important;
-    padding: 0 !important;
-    bottom: 7px;
-    position: absolute;
-    width: 100%;
-    hr {
-        border: 1px solid #e8e8e8;
-    }
+.modal-wrapper{
+        .ant-modal-body {
+            padding-top:10px
+        }
+        .ant-modal-header{
+            border: none;
+            border-radius: 12px 12px 0px 0px
+        }
+        .ant-modal-content{
+            border-radius: 12px;
+        }
+        .ant-modal-title{
+            font-family: InterSemiBold;
+            font-size: 18px;
+        }
     .btnContainer {
         justify-content: right;
         display: flex;
@@ -32,6 +30,29 @@
         }
     }
 }
+.ant-modal-mask{
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.modal-shadow {
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+}
+.header-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.MuiDialogActions-root {
+    display: block !important;
+    padding: 0 !important;
+    bottom: 7px;
+    position: absolute;
+    width: 100%;
+    hr {
+        border: 1px solid #e8e8e8;
+    }
+}
+
 
 .modalContainer {
     display: flex;
