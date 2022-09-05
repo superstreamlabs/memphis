@@ -199,6 +199,7 @@
             height: 50px;
             display: flex;
             align-items: center;
+            padding-right:3px;
             p {
                 margin: 0;
             }
@@ -227,7 +228,7 @@
     }
     .hpPViG,
     .hzFDPg {
-        border: none;
-        background: white;
+        border: none !important;
+        background: white !important;
     }
 }

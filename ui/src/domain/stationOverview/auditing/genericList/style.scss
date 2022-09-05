@@ -1,12 +1,11 @@
 .generic-list-wrapper {
     display: flex;
     position: relative;
-    height: calc(100% - 60px);
+    height: calc(100%);
     width: 100%;
     .list {
         position: relative;
         width: 100%;
-        padding-top: 20px;
         .coulmns-table {
             border-bottom: 1px solid #e9e9e9;
             display: flex;
@@ -21,8 +20,7 @@
         }
         .rows-wrapper {
             position: relative;
-            width: calc(100% - 1px);
-            height: calc(100% - 40px);
+            height: calc(100% - 10px);
             overflow: auto;
             .pubSub-row {
                 width: 100%;

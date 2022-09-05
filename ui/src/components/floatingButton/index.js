@@ -23,8 +23,7 @@ import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 
 const FloatingButton = () => {
     const [showInstallaion, setShowInstallaion] = useState(false);
-    const [openBox, setOpenBox] = useState(true);
-    const [expendBox, setexpendBoxBox] = useState(false);
+    const [expendBox, setexpendBoxBox] = useState(true);
 
     const openModal = () => {
         setexpendBoxBox(false);

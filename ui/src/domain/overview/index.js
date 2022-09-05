@@ -221,9 +221,10 @@ function OverView() {
             >
                 <div className="sandbox-welcome">
                     <img src={welcome} alt="docs" className="welcome-img"></img>
-                    <label className="welcome-header">Welcome onboard</label>
-                    <label className="welcome-message">We are super happy to have you with us! Please remember that this is a sandbox</label>
-                    <label className="welcome-message">environment and is under constant modifications.</label>
+                    <label className="welcome-header">Welcome aboard</label>
+                    <label className="welcome-message">We are super happy to have you with us!</label>
+                    <label className="welcome-message">Please remember that this is a sandbox environment</label>
+                    <label className="welcome-message">and is under constant modifications.</label>
                     <label className="welcome-message">Downtimes might occur.</label>
                     <div>
                         <Link to={{ pathname: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/memphis/overview' }} target="_blank">

@@ -204,7 +204,7 @@ const Signup = (props) => {
                         </Form.Item>
                         <p className="future-updates">Features and releases updates</p>
                         <div className="toggle-analytics">
-                            <Form.Item name="subscription" initialValue={formFields.subscription}>
+                            <Form.Item name="subscription" initialValue={formFields.subscription} style={{ marginBottom: '0' }}>
                                 <Switcher onChange={() => switchSubscription()} checked={formFields.subscription} checkedChildren="" unCheckedChildren="" />
                             </Form.Item>
                             <label className="unselected-toggle">Receive features and releases updates (You can unsubscribe any time)</label>

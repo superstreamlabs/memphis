@@ -25,16 +25,16 @@ export const INSTALLATION_GUIDE = {
     },
     Kubernetes: {
         header: 'Installation/Kubernetes',
-        description: <span>Memphis can be deployed over any kubernetes cluster above version 1.20, including minikub</span>,
+        description: <span>Memphis can be deployed over any kubernetes cluster above version 1.20, including minikube</span>,
         steps: [
             {
-                title: 'Step 1 - Copy&Paste to your terminal',
-                command: `helm repo add memphis https://k8s.memphis.dev/charts/&& \nhelm install my-memphis memphis/memphis --create-namespace --namespace memphis`,
+                title: 'Step 1 - Copy & Paste to your terminal',
+                command: `helm repo add memphis https://k8s.memphis.dev/charts/ --force-update &&  \nhelm install my-memphis memphis/memphis --create-namespace --namespace memphis`,
                 icon: 'copy'
             },
             {
                 title: 'Step 2 - Expose memphis to your localhost',
-                command: `$# kubectl port-forward service/memphis-ui 9000:80 --namespace memphis & >/dev/null`,
+                command: `kubectl port-forward service/memphis-ui 9000:80 --namespace memphis & >/dev/null`,
                 icon: 'copy'
             },
             {
@@ -63,7 +63,7 @@ export const INSTALLATION_GUIDE = {
         description: <span>Memphis can be deployed over docker engine, swarm, and compose</span>,
         steps: [
             {
-                title: 'Step 1 - Copy&Paste to your terminal',
+                title: 'Step 1 - Copy & Paste to your terminal',
                 command: `curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \ndocker compose -f docker-compose.yml -p memphis up`,
                 icon: 'copy'
             },
