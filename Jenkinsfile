@@ -43,15 +43,9 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
       dir ('memphis-docker'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: 'master'
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
       }
-      if (env.BRANCH_NAME ==~ /(master)/) {
         sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
-      }
-      else 
-      {
-	sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis up -d"
-      }      
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -64,12 +58,7 @@ node {
     }
 
     stage('Tests - Remove Docker compose') {
-      if (env.BRANCH_NAME ==~ /(master)/) {
-        sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
-      }
-      else {
-	sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis down"
-      }
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
       sh "docker volume prune -f"
     }
 
@@ -80,14 +69,8 @@ node {
     stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
-	  if (env.BRANCH_NAME ==~ /(master)/) {
-       	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'staging'
+       	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
             sh "helm upgrade --atomic --install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
-	  }
-          else {
- 	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'master'
-	    sh "helm upgrade --atomic --install memphis-tests memphis --set analytics='false' --create-namespace --namespace memphis-$unique_id"
-	  }
       	}
     }
 	  
@@ -123,7 +106,7 @@ node {
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
       if (env.BRANCH_NAME ==~ /(master)/) { //NEW TAG
-      	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-staging --platform linux/amd64,linux/arm64 ."
+	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
       }
       else{
 	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
