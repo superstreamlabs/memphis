@@ -428,7 +428,12 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	exist, user, err := IsUserExist(username)
-	if err != nil || !exist {
+	if err != nil {
+		serv.Errorf("RefreshToken error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
 		exist, sandboxUser, err := IsSandboxUserExist(username)
 		if exist {
 			var systemKey models.SystemKey
@@ -461,10 +466,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 				"env":               "K8S",
 				"namespace":         configuration.K8S_NAMESPACE,
 			})
-			return
-		} else {
-			serv.Errorf("RefreshToken error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
