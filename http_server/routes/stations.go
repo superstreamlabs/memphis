@@ -33,6 +33,7 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.GET("/getStation", stationsHandler.GetStation)
 	stationsRoutes.GET("/getMessageDetails", stationsHandler.GetMessageDetails)
 	stationsRoutes.GET("/getAllStations", stationsHandler.GetAllStations)
+	stationsRoutes.GET("/getAllStationsOverviewData", stationsHandler.GetAllStationsOverviewData)
 	stationsRoutes.GET("/getPoisonMessageJourney", stationsHandler.GetPoisonMessageJourney)
 	stationsRoutes.POST("/createStation", stationsHandler.CreateStation)
 	stationsRoutes.POST("/resendPoisonMessages", stationsHandler.ResendPoisonMessages)

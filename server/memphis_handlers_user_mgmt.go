@@ -235,7 +235,7 @@ func createMemberMailChimp(subscription bool, username string) {
 						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
 					}
 				} else {
-					serv.Debugf("Failed to subscribe in mailChimp:")
+					serv.Debugf("Failed to subscribe in mailChimp")
 				}
 			}
 		}

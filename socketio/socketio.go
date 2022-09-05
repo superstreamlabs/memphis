@@ -203,6 +203,12 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		return "recv " + msg
 	})
 
+	socketServer.OnEvent("/api", "get_all_stations_overview_data", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("stations_overview_group_")
+		return "recv " + msg
+	})
+
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
 		serv.Errorf("An error occured during a socket connection " + e.Error())
 	})
@@ -258,6 +264,16 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 						serv.Errorf("Error while trying to get poison message journey - " + err.Error())
 					} else {
 						socketServer.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
+					}
+				}
+
+				if strings.HasPrefix(room, "stations_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
+					poisonMsgId := strings.Split(room, "stations_overview_group_")[1]
+					data, err := h.Stations.GetAllStationsExtendedDetails()
+					if err != nil {
+						serv.Errorf("Error while trying to get all stations details - " + err.Error())
+					} else {
+						socketServer.BroadcastToRoom("/api", room, "stations_overview_group_"+poisonMsgId, data)
 					}
 				}
 			}

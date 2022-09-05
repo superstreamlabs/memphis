@@ -89,6 +89,12 @@ type ExtendedStation struct {
 	FactoryName     string             `json:"factory_name" bson:"factory_name"`
 }
 
+type ExtendedStationOverview struct {
+	Station 		Station 			 `json:"station"`
+	TotalMessages  	int                  `json:"total_messages" bson:"total_messages"`
+	PoisonMessages 	[]LightPoisonMessage `json:"posion_messages" bson:"poison_messages"`
+}
+
 type GetStationSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
