@@ -379,15 +379,51 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
+	username := user.Username
 	if err != nil {
 		serv.Errorf("refreshToken error: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-	_, user, err = IsUserExist(user.Username)
-	if err != nil {
-		serv.Errorf("RefreshToken error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	exist, user, err := IsUserExist(username)
+	if err != nil || !exist {
+		exist, sandboxUser, err := IsSandboxUserExist(username)
+		if exist {
+			var systemKey models.SystemKey
+			err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
+			if err != nil {
+				serv.Errorf("RefreshToken error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			token, refreshToken, err := CreateTokens(sandboxUser)
+			if err != nil {
+				serv.Errorf("RefreshToken error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			domain := ""
+			secure := true
+			c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+			c.IndentedJSON(200, gin.H{
+				"jwt":               token,
+				"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+				"user_id":           sandboxUser.ID,
+				"username":          sandboxUser.Username,
+				"user_type":         sandboxUser.UserType,
+				"creation_date":     sandboxUser.CreationDate,
+				"already_logged_in": sandboxUser.AlreadyLoggedIn,
+				"avatar_id":         sandboxUser.AvatarId,
+				"send_analytics":    true,
+				"env":               "K8S",
+				"namespace":         configuration.K8S_NAMESPACE,
+			})
+			return
+		} else {
+			serv.Errorf("RefreshToken error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	var systemKey models.SystemKey
