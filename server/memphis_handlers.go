@@ -84,6 +84,13 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
+	mod := mongo.IndexModel{
+		Keys: bson.M{
+			"creation_date": -1,
+		}, Options: nil,
+	}
+	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mod)
+
 	s.initializeSDKHandlers()
 }
 

@@ -375,9 +375,9 @@ func (s *Server) enableJetStream(cfg JetStreamConfig) error {
 	s.Noticef("")
 	s.Noticef("         https://docs.memphis.dev")
 	s.Noticef("")
-	// s.Noticef("  Max Memory:      %s", friendlyBytes(cfg.MaxMemory))
-	// s.Noticef("  Max Storage:     %s", friendlyBytes(cfg.MaxStore))
-	// s.Noticef("  Store Directory: \"%s\"", cfg.StoreDir)
+	s.Noticef("  Max Memory:      %s", friendlyBytes(cfg.MaxMemory))
+	s.Noticef("  Max Storage:     %s", friendlyBytes(cfg.MaxStore))
+	s.Noticef("  Store Directory: \"%s\"", cfg.StoreDir)
 	if cfg.Domain != _EMPTY_ {
 		s.Noticef("  Domain:          %s", cfg.Domain)
 	}
