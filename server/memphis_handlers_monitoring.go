@@ -28,7 +28,6 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"memphis-broker/analytics"
-	"net/http"
 	"path/filepath"
 	"strings"
 
