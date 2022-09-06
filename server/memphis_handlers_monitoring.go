@@ -117,13 +117,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		for _, d := range deploymentsList.Items {
-			if !strings.Contains(d.GetName(), "busybox") { // TODO remove it when busybox is getting fixed
-				components = append(components, models.SystemComponent{
-					Component:   d.GetName(),
-					DesiredPods: int(*d.Spec.Replicas),
-					ActualPods:  int(d.Status.ReadyReplicas),
-				})
-			}
+			components = append(components, models.SystemComponent{
+				Component:   d.GetName(),
+				DesiredPods: int(*d.Spec.Replicas),
+				ActualPods:  int(d.Status.ReadyReplicas),
+			})
 		}
 
 		statefulsetsClient := clientset.AppsV1().StatefulSets(configuration.K8S_NAMESPACE)
