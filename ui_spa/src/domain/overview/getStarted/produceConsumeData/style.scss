@@ -1,0 +1,108 @@
+.create-produce-data {
+    height: calc(100%);
+    position: relative;
+    margin-right: 20px;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+   p{
+    margin: 0;
+    font-weight: 600;
+    font-size: 16px;
+   }
+    .code-snippet {
+        position: relative;
+        height: calc(100% - 30px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .code-example {
+            height: calc(100% - 170px);
+            position: relative;
+            .code-content {
+                border: 1px solid var(--gray);
+                box-sizing: border-box;
+                border-radius: 4px;
+                overflow: auto;
+                position: relative;
+                height: calc(100% - 25px);
+                p {
+                    margin: 0;
+                    white-space: pre-line;
+                }
+            }
+        }
+    }
+    .installation {
+        .install-copy {
+            border: 1px solid var(--gray);
+            box-sizing: border-box;
+            border-radius: 4px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding-right:3px
+        }
+    }
+
+    .produce-data-icon {
+        margin-top: 34px;
+        margin-bottom: 18px;
+    }
+    .header-create-produce-data {
+        font-weight: 600;
+        font-size: 24px;
+        line-height: 29px;
+        color: #1d1d1d;
+        margin-bottom: 55px;
+    }
+
+    .header-language {
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 20px;
+        color: #2e2c34;
+        margin-bottom: 16px;
+    }
+
+    .data-waiting-container,
+    .successfully-container {
+        .waiting-for-data-btn {
+            display: flex;
+            .waiting-for-data-space {
+                width: 20px;
+            }
+        }
+        padding: 10px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        flex-direction: column;
+        border: 1px solid #d8d8d8;
+        border-radius: 4px;
+        // height: 34vh;
+
+        .image-waiting-successful {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            width: 150px;
+            height: 150px;
+        }
+
+        .successfully-consume-produce {
+            font-weight: 600;
+            font-size: 18px;
+            color: #1d1d1d;
+            margin-top: 15px;
+        }
+        p {
+            top: 0;
+        }
+
+        .ant-btn-primary {
+            box-shadow: none;
+        }
+    }
+}

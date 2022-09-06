@@ -1,0 +1,82 @@
+.installation-command{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .steps{
+        a{
+            color: var(--purple);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .step-wrapper{
+            padding-bottom: 30px;
+            .step-title{
+                font-family: 'InterSemiBold';
+                font-size: 18px;
+                padding-bottom: 15px;
+                span{
+                    font-family: 'InterSemiBold';
+                    font-size: 18px;
+                    a{
+                        font-family: 'InterSemiBold';
+                        font-size: 18px;
+                    }
+                }
+            }
+            .step-command{
+                border: 1px solid #D8D8D8;
+                border-radius: 4px;     
+                padding: 16px;
+                display: flex;
+                justify-content: space-between;
+                width: 95%;
+                span{
+                    font-weight: 400;
+                    font-size: 12px;
+                    white-space:pre-wrap;
+                }
+                img{
+                    cursor: pointer;
+                    svg{
+                        color: aqua;
+                    }
+                }
+            }
+        }
+    }
+    .coming-soon-wrapper{
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        img{
+            width: 90px;
+        }
+        p{
+            font-size: 18px;
+            color: var(--purple);
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    }
+    .link-wrapper{
+        display: flex;
+        cursor: pointer;
+        padding-bottom: 12px;
+        img{
+            margin-right: 8px;
+        }
+        p{
+            color: var(--purple);
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+        }
+        svg{
+            color: #7C7C7C;
+            width: 16px;
+        }
+    }
+}
