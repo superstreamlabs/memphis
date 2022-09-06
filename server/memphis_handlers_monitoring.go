@@ -81,26 +81,8 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		uiAddress := "http://ui"
-		if configuration.DEV_ENV != "" {
-			uiAddress = "http://localhost:9000"
-		}
-		_, err := http.Get(uiAddress)
-		if err != nil {
-			components = append(components, models.SystemComponent{
-				Component:   "ui",
-				DesiredPods: 1,
-				ActualPods:  0,
-			})
-		} else {
-			components = append(components, models.SystemComponent{
-				Component:   "ui",
-				DesiredPods: 1,
-				ActualPods:  1,
-			})
-		}
 
-		err = serv.memphis.dbClient.Ping(context.TODO(), nil)
+		err := serv.memphis.dbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
@@ -116,7 +98,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		components = append(components, models.SystemComponent{
-			Component:   "broker",
+			Component:   "memphis-broker",
 			DesiredPods: 1,
 			ActualPods:  1,
 		})
