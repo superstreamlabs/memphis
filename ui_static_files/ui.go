@@ -41,10 +41,6 @@ func InitializeUIRoutes(router gin.IRouter) {
 	fallbackFileSystem := newFallbackFileSystem(embeddedBuildFolder)
 	router.Use(static.Serve("/", embeddedBuildFolder))
 	router.Use(static.Serve("/", fallbackFileSystem))
-	// router.Use(static.Serve("/login", embeddedBuildFolder))
-	// router.Use(static.Serve("/login", fallbackFileSystem))
-	// router.Use(static.Serve("/overview", embeddedBuildFolder))
-	// router.Use(static.Serve("/overview", fallbackFileSystem))
 }
 
 // ----------------------------------------------------------------------
