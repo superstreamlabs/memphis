@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-package socketio
+package routes
 
 import (
 	"memphis-broker/middlewares"
@@ -31,7 +31,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 )
@@ -265,9 +264,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 	}()
 
 	socketIoRouter := router.Group("/api/socket.io")
-	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-	}))
 	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
 

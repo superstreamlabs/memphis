@@ -29,14 +29,17 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 )
 
-func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
+func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Server) {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:9000", "https://sandbox.memphis.dev", "http://*", "https://*", "http://localhost:5555"},
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -56,6 +59,7 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	InitializeConsumersRoutes(mainRouter, handlers)
 	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeSandboxRoutes(mainRouter)
+	socketioServer := InitializeSocketio(router, handlers)
 	ui.InitializeUIRoutes(router)
 
 	mainRouter.GET("/status", func(c *gin.Context) {
@@ -64,5 +68,5 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 		})
 	})
 
-	return router
+	return router, socketioServer
 }
