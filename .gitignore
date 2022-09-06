@@ -8,7 +8,6 @@ _obj
 _test
 
 # Configuration Files
-*.conf
 *.cfg
 
 # Architecture specific extensions/prefixes
@@ -22,7 +21,7 @@ _cgo_gotypes.go
 _cgo_export.*
 
 _testmain.go
-
+__debug_bin
 *.exe
 
 # Eclipse
