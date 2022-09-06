@@ -24,7 +24,7 @@ package routes
 import (
 	"memphis-broker/middlewares"
 	"memphis-broker/server"
-	"memphis-broker/ui"
+	ui "memphis-broker/ui_static_files"
 	"memphis-broker/utils"
 
 	"github.com/gin-contrib/cors"
