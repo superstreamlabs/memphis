@@ -72,6 +72,78 @@ func NewStdLogger(time, debug, trace, colors, pid bool) *Logger {
 	return l
 }
 
+// HybridLogPublishFunc is a function used to publish logs
+type HybridLogPublishFunc func(string, []byte)
+
+type hybridStreamLogger struct {
+	labelStart   int
+	canPublish   bool
+	canPublishMu sync.Mutex
+	publishFunc  HybridLogPublishFunc
+}
+
+func newHybridStreamLogger(publishFunc HybridLogPublishFunc, labelStart int) *hybridStreamLogger {
+	return &hybridStreamLogger{
+		labelStart:  labelStart,
+		publishFunc: publishFunc,
+	}
+}
+
+const labelLen = 3
+
+func (hsl *hybridStreamLogger) Write(b []byte) (int, error) {
+	hsl.canPublishMu.Lock()
+	canPublish := hsl.canPublish
+	hsl.canPublishMu.Unlock()
+
+	if canPublish {
+		label := string(b[hsl.labelStart : hsl.labelStart+labelLen])
+		hsl.publishFunc(label, b)
+	}
+
+	return os.Stderr.Write(b)
+}
+
+// NewMemphisLogger creates a logger with output directed to Stderr and to a subject
+func NewMemphisLogger(publishFunc HybridLogPublishFunc, time, debug, trace, colors, pid bool) (*Logger, func()) {
+	flags := 0
+	labelStart := 1 // skip the [
+	if time {
+		flags = log.LstdFlags | log.Lmicroseconds
+		labelStart += 26
+	}
+
+	pre := ""
+	if pid {
+		pre = pidPrefix()
+		labelStart += len(pre)
+	}
+
+	if pid || time {
+		labelStart += 1 // skip a space
+	}
+
+	hsl := newHybridStreamLogger(publishFunc, labelStart)
+
+	l := &Logger{
+		logger: log.New(hsl, pre, flags),
+		debug:  debug,
+		trace:  trace,
+	}
+
+	if colors {
+		setColoredLabelFormats(l)
+	} else {
+		setPlainLabelFormats(l)
+	}
+
+	return l, func() {
+		hsl.canPublishMu.Lock()
+		hsl.canPublish = true
+		hsl.canPublishMu.Unlock()
+	}
+}
+
 // NewFileLogger creates a logger with output directed to a file
 func NewFileLogger(filename string, time, debug, trace, pid bool) *Logger {
 	flags := 0

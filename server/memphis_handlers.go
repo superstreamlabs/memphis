@@ -60,18 +60,19 @@ var serv *Server
 var configuration = conf.GetConfig()
 
 type srvMemphis struct {
-	nuid     *nuid.NUID
-	dbClient *mongo.Client
-	dbCtx    context.Context
-	dbCancel context.CancelFunc
+	nuid                   *nuid.NUID
+	dbClient               *mongo.Client
+	dbCtx                  context.Context
+	dbCancel               context.CancelFunc
+	activateSysLogsPubFunc func()
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	serv = s
-	serv.memphis.dbClient = dbInstance.Client
-	serv.memphis.dbCtx = dbInstance.Ctx
-	serv.memphis.dbCancel = dbInstance.Cancel
-	serv.memphis.nuid = nuid.New()
+	s.memphis.dbClient = dbInstance.Client
+	s.memphis.dbCtx = dbInstance.Ctx
+	s.memphis.dbCancel = dbInstance.Cancel
+	s.memphis.nuid = nuid.New()
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
@@ -85,6 +86,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
 	s.initializeSDKHandlers()
+	s.memphis.activateSysLogsPubFunc()
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {

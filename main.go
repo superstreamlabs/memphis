@@ -99,7 +99,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) (db.DbInstance) {
+func runMemphis(s *server.Server) db.DbInstance {
 
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
@@ -124,7 +124,8 @@ func runMemphis(s *server.Server) (db.DbInstance) {
 		db.Close(dbInstance, s)
 		os.Exit(1)
 	}
-	
+
+	s.CreateSystemLogsStream()
 	go http_server.InitializeHttpServer(s)
 	go server.KillZombieResources()
 	s.ListenForPoisonMessages()

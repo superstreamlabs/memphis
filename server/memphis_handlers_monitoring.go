@@ -25,9 +25,9 @@ import (
 	"context"
 	"flag"
 	"io/ioutil"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"memphis-broker/analytics"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -297,4 +297,22 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
+	var request models.SystemLogsRequest
+	ok := utils.Validate(c, &request, false, nil)
+	if !ok {
+		return
+	}
+
+	//TODO(shay/or)
+	// use the following to start a consumer and create a response with the messages
+	// request.LogType
+	// request.StartIdx
+	//
+	// don't forget to remove to consumer
+	// c.IndentedJSON(200, response)
+
+	c.IndentedJSON(200, nil)
 }

@@ -51,3 +51,8 @@ type StationOverviewData struct {
 type GetStationOverviewDataSchema struct {
 	StationName string `form:"station_name" json:"station_name"  binding:"required"`
 }
+
+type SystemLogsRequest struct {
+	LogType  string `json:"log_type"`
+	StartIdx int    `json:"start_index"`
+}
