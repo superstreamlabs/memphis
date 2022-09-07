@@ -168,7 +168,6 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		ID:            producerId,
 		Name:          name,
 		StationId:     station.ID,
-		FactoryId:     station.FactoryId,
 		Type:          producerType,
 		ConnectionId:  connectionIdObj,
 		CreatedByUser: connection.CreatedByUser,
@@ -215,12 +214,10 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 		bson.D{{"$match", bson.D{}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -250,12 +247,10 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {
@@ -333,12 +328,10 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
 		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"factory_name", "$factory.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"factory", 0}, {"connection", 0}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
 
 	if err != nil {

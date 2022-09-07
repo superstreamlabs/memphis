@@ -35,7 +35,6 @@ func InitializeHttpServer(s *server.Server) {
 		Consumers:  server.ConsumersHandler{S: s},
 		AuditLogs:  server.AuditLogsHandler{},
 		Stations:   server.StationsHandler{S: s},
-		Factories:  server.FactoriesHandler{S: s},
 		Monitoring: server.MonitoringHandler{S: s},
 		PoisonMsgs: server.PoisonMessagesHandler{S: s},
 	}
