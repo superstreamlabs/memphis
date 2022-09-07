@@ -1,0 +1,33 @@
+.circle-status{
+    border-radius: 32px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .dot{
+        width: 6px;
+        height: 6px;
+        border-radius: 50px;
+    }
+    .disconnected-dot{
+        background: #F7685B;
+    }
+    .active-dot {
+        background: #2ED47A;
+    }
+    .proccesing{
+        background: #2ED47A;
+        animation: blinker 0.5s cubic-bezier(.5, 0, 1, 1) infinite alternate;  
+    }
+}
+.disconnected{
+    background: #FEE4E2;
+}
+.active{
+    background: #DDF8E9;
+}
+.deleted svg {
+    width: 13px;
+    color: #ADADAD;
+}

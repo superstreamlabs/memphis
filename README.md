@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-<h1>A powerful message broker for modern developers</h1>
+<h1>A powerful messaging platform for modern developers</h1>
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png">
 
@@ -80,7 +80,7 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 Helm for Kubernetes
 ```shell
-helm repo add memphis https://k8s.memphis.dev/charts/ && \
+helm repo add memphis https://k8s.memphis.dev/charts/ --force-update && \
 helm install my-memphis memphis/memphis --create-namespace --namespace memphis
 ```
 Docker Compose

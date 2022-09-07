@@ -1,0 +1,26 @@
+.resources-container {
+    height: 47.5%;
+    padding: 15px;
+    min-width: 250px;
+    min-height: 250px;
+    p {
+        margin-bottom: 0;
+    }
+    .charts-wrapper{
+        position: relative;
+        height: 100%;
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        overflow: auto;
+        .resource {
+            display: flex;
+            height: 80px;
+            place-items: center;
+            .chart-pie {
+                width: 130px;
+            }
+        }
+    }
+}

@@ -1,0 +1,54 @@
+.connect-to-hub {
+    .connect-to-hub-header {
+        display: flex;
+        justify-content: space-between;
+        p {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        img {
+            cursor: pointer;
+        }
+    }
+    .user-password-sectoin {
+        .user-name-input {
+            margin-bottom: 40px;
+            margin-top: 60px;
+            p {
+                margin-bottom: 5px;
+            }
+        }
+        .password-input {
+            margin-bottom: 10px;
+            p {
+                margin-bottom: 5px;
+            }
+        }
+        .remember-me-checkbox {
+            display: flex;
+            // color: #979797;
+            p {
+                margin-left: 10px;
+                color: #979797;
+            }
+            .ant-checkbox-checked .ant-checkbox-inner {
+                background-color: var(--purple);
+                border-color: var(--purple);
+                border-radius: '2px';
+            }
+            .ant-checkbox-checked .ant-checkbox-inner::after {
+                background-color: var(--purple);
+                border-radius: '2px';
+            }
+        }
+    }
+
+    .sign-in-btn {
+        margin-top: 30px;
+        p {
+            color: #979797;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    }
+}

@@ -1,0 +1,23 @@
+.create-user-form {
+    .field {
+        p {
+            font-size: 12px;
+            font-weight: 400;
+        }
+    }
+    .password {
+        margin-top: 20px;
+        p {
+            margin-top: 20px;
+        }
+        .generate-password-button{
+            color: var(--purple);
+            cursor: pointer;
+            font-weight:600;
+            font-size: 12px;
+        }
+    }
+    .password-section {
+        margin-top: 50px;
+    }
+}

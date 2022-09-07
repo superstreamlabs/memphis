@@ -632,16 +632,21 @@ func (s *Server) Respond(reply string, msg []byte) {
 
 func (s *Server) ResendPoisonMessage(subject string, data []byte) error {
 	hdr := map[string]string{"producedBy": "$memphis_dlq"}
-	s.sendInternalMsgWithHeaderLocked(subject, hdr, data)
+	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdr, data)
 	return nil
 }
 
-func (s *Server) sendInternalMsgWithHeaderLocked(subj string, hdr map[string]string, msg interface{}) {
+func (s *Server) sendInternalMsgWithHeaderLocked(acc *Account, subj string, hdr map[string]string, msg interface{}) {
+
+	acc.mu.Lock()
+	c := acc.internalClient()
+	acc.mu.Unlock()
+
 	s.mu.Lock()
 	if s.sys == nil || s.sys.sendq == nil {
 		return
 	}
-	s.sys.sendq.push(newPubMsg(nil, subj, _EMPTY_, nil, hdr, msg, noCompression, false, false))
+	s.sys.sendq.push(newPubMsg(c, subj, _EMPTY_, nil, hdr, msg, noCompression, false, false))
 	s.mu.Unlock()
 }
 

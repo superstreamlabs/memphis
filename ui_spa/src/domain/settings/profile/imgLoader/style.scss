@@ -1,0 +1,30 @@
+.avatar-uploader {
+    .ant-upload-list-picture-card-container{
+
+        width: 140px;
+        height: 140px;
+    }   
+    .ant-upload.ant-upload-select-picture-card:hover{
+        border-color: var(--purple);
+    }
+}
+
+.ant-upload.ant-upload-select-picture-card {
+    background: #ffffff;
+    border: 1px dashed var(--gray);
+    box-sizing: border-box;
+    border-radius: 10px;
+    width: 140px;
+    height: 140px;
+}
+.dad-sentence{
+    
+    font-weight: 400;
+    font-size: 12px;
+    .gray-line{
+        color: #a9a9a9;
+    }
+    .purple-line{
+        color: var(--purple);
+    }
+}

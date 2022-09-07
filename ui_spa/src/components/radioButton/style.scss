@@ -1,0 +1,40 @@
+// .ant-radio-wrapper{
+//     padding-left: 20px;
+//     padding-right: 20px;
+// }
+// .ant-radio-wrapper span{
+//     font-weight: bold !important;
+//     font-size: 20px;
+// }
+// .ant-radio-checked .ant-radio-inner{
+//     border-color: var(--purple) !important ;
+//     background-color: var(--purple);
+// }
+// .ant-radio-checked .ant-radio-inner:after{
+//     background-color: var(--white);
+// }
+// .ant-radio:hover .ant-radio-inner {
+//     border-color: var(--purple) ;
+// }
+
+.radio-group {
+    .ant-radio-wrapper {
+        margin-right: 25px;
+        color: #777777;
+        font-size: 12px;
+    }
+    .ant-radio-checked {
+        .ant-radio-inner {
+            border-color: var(--purple);
+        }
+        .ant-radio-inner:after {
+            background-color: var(--purple) !important;
+        }
+    }
+    .ant-radio-checked:after {
+        border: 1px solid var(--purple);
+    }
+    .ant-radio:hover .ant-radio-inner {
+        border-color: var(--purple);
+    }
+}

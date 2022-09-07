@@ -1,0 +1,77 @@
+.factory {
+    .factory-card-container {
+        width: 18vw;
+        min-width: 320px;
+        height: 27vh;
+        min-height: 225px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 4px 3px rgba(221, 221, 221, 0.3);
+        background-color: white;
+        padding: 15px 20px 0px 20px;
+        position: relative;
+        display: grid;
+        grid-template-rows: 75% 25%;
+        .factory-card-title {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            align-items: center;
+            h2 {
+                color: var(--blue);
+                margin: 0;
+                font-weight: 600;
+                font-size: 16px;
+            }
+            .threedots-menu {
+                color: #a9a9a9;
+            }
+        }
+        .factory-card-description {
+            margin-top: 5px;
+            p {
+                color: var(--blue);
+                overflow-y: scroll;
+                overflow-x: hidden;
+                position: relative;
+                font-weight: 500;
+                overflow-wrap: anywhere;
+                height: 15vh;
+                min-height: 100px;
+                font-weight: 400;
+                font-size: 12px;
+            }
+        }
+        .factory-owner {
+            border-top: 1px solid var(--gray);
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            .user-avatar {
+                width: 35px;
+                height: 35px;
+                background: #ffffff;
+                box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 10px;
+            }
+            .user-details {
+                p {
+                    font-weight: 400;
+                    font-size: 14px;
+                    margin: 0;
+                }
+                span {
+                    font-weight: 400;
+                    font-size: 12px;
+                    color: #a9a9a9;
+                }
+            }
+        }
+        .sandboxUserImg {
+            border-radius: 50%;
+        }
+    }
+}

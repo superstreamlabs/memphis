@@ -1,0 +1,35 @@
+.healthy-badge-container {
+    .healthy,
+    .unhealthy,
+    .risky {
+        display: flex;
+        align-items: center;
+        border-radius: 15px;
+        width: 5.5vw;
+        justify-content: center;
+        width: 90px;
+        font-weight: normal;
+        font-size: 12px;
+        height: 25px;
+        p {
+            margin-top: 2px;
+            margin: 0;
+        }
+    }
+    .healthy {
+        background-color: rgba(46, 212, 122, 0.1);
+        color: #2ed47a;
+    }
+    .unhealthy {
+        background-color: rgba(247, 104, 91, 0.1);
+        color: #f7685b;
+    }
+    .risky {
+        background-color: #fffbeb;
+        color: #ffb946;
+    }
+    .badge-icon {
+        font-size: 13px;
+        margin-right: 5px;
+    }
+}
