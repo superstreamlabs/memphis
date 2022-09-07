@@ -125,7 +125,13 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	s.CreateSystemLogsStream()
+	err = s.CreateSystemLogsStream()
+	if err != nil {
+		s.Errorf("Failed to create syslogs stream: " + " " + err.Error())
+		db.Close(dbInstance, s)
+		os.Exit(1)
+	}
+
 	go http_server.InitializeHttpServer(s)
 	go server.KillZombieResources()
 	s.ListenForPoisonMessages()

@@ -53,6 +53,10 @@ type GetStationOverviewDataSchema struct {
 }
 
 type SystemLogsRequest struct {
-	LogType  string `json:"log_type"`
-	StartIdx int    `json:"start_index"`
+	LogType  string `form:"log_type" json:"log_type"  binding:"required"`
+	StartIdx uint64 `form:"start_index" json:"start_index"  binding:"required"`
+}
+
+type SystemLogsResponse struct {
+	Logs []MessageDetails `json:"logs"`
 }

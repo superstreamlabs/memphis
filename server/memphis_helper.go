@@ -181,6 +181,7 @@ func (s *Server) CreateSystemLogsStream() error {
 		Retention:    LimitsPolicy,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
+		Storage:      FileStorage,
 	})
 }
 

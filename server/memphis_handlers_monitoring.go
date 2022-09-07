@@ -24,12 +24,15 @@ package server
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -279,19 +282,119 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
+
+	const amount = 100
+	const timeout = 3 * time.Second
+
 	var request models.SystemLogsRequest
 	ok := utils.Validate(c, &request, false, nil)
 	if !ok {
 		return
 	}
 
-	//TODO(shay/or)
-	// use the following to start a consumer and create a response with the messages
-	// request.LogType
-	// request.StartIdx
-	//
-	// don't forget to remove to consumer
-	// c.IndentedJSON(200, response)
+	uid := mh.S.memphis.nuid.Next()
+	durableName := "$memphis_fetch_logs_consumer_" + uid
 
-	c.IndentedJSON(200, nil)
+	cc := ConsumerConfig{
+		OptStartSeq:   request.StartIdx,
+		DeliverPolicy: DeliverByStartSequence,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+	}
+
+	switch request.LogType {
+	case "err":
+		cc.FilterSubject = syslogsErrSubject
+	case "wrn":
+		cc.FilterSubject = syslogsWarnSubject
+	case "inf":
+		cc.FilterSubject = syslogsInfoSubject
+	}
+
+	err := mh.S.memphisAddConsumer(syslogsStreamName, &cc)
+	if err != nil {
+		serv.Errorf("GetSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, syslogsStreamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.Itoa(amount))
+
+	sub, err := mh.S.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, reply string, msg []byte) {
+			// ack
+			mh.S.sendInternalAccountMsg(mh.S.GlobalAccount(), reply, []byte(_EMPTY_))
+
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				mh.S.Errorf(err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, reply, copyBytes(msg))
+	})
+	if err != nil {
+		serv.Errorf("GetSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	mh.S.sendInternalAccountMsgWithReply(mh.S.GlobalAccount(), subject, reply, nil, req, true)
+
+	var msgs []StoredMsg
+	timer := time.NewTimer(timeout)
+	for i := 0; i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	sub.close()
+	err = mh.S.RemoveConsumer(syslogsStreamName, durableName)
+	if err != nil {
+		serv.Errorf("GetSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	var resMsgs []models.MessageDetails
+	for _, msg := range msgs {
+		if err != nil {
+			serv.Errorf("GetSystemLogs error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		data := string(msg.Data)
+		if len(data) > 100 { // get the first chars for preview needs
+			data = data[0:100]
+		}
+		resMsgs = append(resMsgs, models.MessageDetails{
+			MessageSeq:   int(msg.Sequence),
+			Data:         data,
+			ProducedBy:   _EMPTY_,
+			ConnectionId: _EMPTY_,
+			TimeSent:     msg.Time,
+			Size:         len(msg.Subject) + len(msg.Data),
+		})
+	}
+	response := models.SystemLogsResponse{
+		Logs: resMsgs}
+
+	c.IndentedJSON(200, response)
 }
