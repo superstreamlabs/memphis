@@ -41,14 +41,12 @@ type Handlers struct {
 	Consumers  ConsumersHandler
 	AuditLogs  AuditLogsHandler
 	Stations   StationsHandler
-	Factories  FactoriesHandler
 	Monitoring MonitoringHandler
 	PoisonMsgs PoisonMessagesHandler
 }
 
 var usersCollection *mongo.Collection
 var imagesCollection *mongo.Collection
-var factoriesCollection *mongo.Collection
 var stationsCollection *mongo.Collection
 var connectionsCollection *mongo.Collection
 var producersCollection *mongo.Collection
@@ -75,7 +73,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
-	factoriesCollection = db.GetCollection("factories", dbInstance.Client)
 	stationsCollection = db.GetCollection("stations", dbInstance.Client)
 	connectionsCollection = db.GetCollection("connections", dbInstance.Client)
 	producersCollection = db.GetCollection("producers", dbInstance.Client)
@@ -113,24 +110,6 @@ func IsUserExist(username string) (bool, models.User, error) {
 		return false, user, err
 	}
 	return true, user, nil
-}
-
-func IsFactoryExist(factoryName string) (bool, models.Factory, error) {
-	filter := bson.M{
-		"name": factoryName,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	}
-	var factory models.Factory
-	err := factoriesCollection.FindOne(context.TODO(), filter).Decode(&factory)
-	if err == mongo.ErrNoDocuments {
-		return false, factory, nil
-	} else if err != nil {
-		return false, factory, err
-	}
-	return true, factory, nil
 }
 
 func IsStationExist(stationName string) (bool, models.Station, error) {
@@ -190,34 +169,9 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, error) {
 	var newStation models.Station
 
-	// create default factory
-	var factoryId primitive.ObjectID
-	exist, factory, err := IsFactoryExist("melvis")
-	if err != nil {
-		return newStation, err
-	}
-	if !exist {
-		factoryId = primitive.NewObjectID()
-		newFactory := models.Factory{
-			ID:            factoryId,
-			Name:          "melvis",
-			Description:   "",
-			CreatedByUser: username,
-			CreationDate:  time.Now(),
-		}
-
-		_, err := factoriesCollection.InsertOne(context.TODO(), newFactory)
-		if err != nil {
-			return newStation, err
-		}
-	} else {
-		factoryId = factory.ID
-	}
-
 	newStation = models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
-		FactoryId:       factoryId,
 		RetentionType:   "message_age_sec",
 		RetentionValue:  604800,
 		StorageType:     "file",
@@ -230,7 +184,7 @@ func CreateDefaultStation(s *Server, stationName string, username string) (model
 		Functions:       []models.Function{},
 	}
 
-	err = s.CreateStream(newStation)
+	err := s.CreateStream(newStation)
 	if err != nil {
 		return newStation, err
 	}

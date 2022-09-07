@@ -23,18 +23,8 @@ package server
 
 type simplifiedMsgHandler func(*client, string, string, []byte)
 
-type createFactoryRequest struct {
-	FactoryName string `json:"factory_name"`
-	FactoryDesc string `json:"factory_description"`
-}
-
-type destroyFactoryRequest struct {
-	FactoryName string `json:"factory_name"`
-}
-
 type createStationRequest struct {
 	StationName       string `json:"name"`
-	FactoryName       string `json:"factory_name"`
 	RetentionType     string `json:"retention_type"`
 	RetentionValue    int    `json:"retention_value"`
 	StorageType       string `json:"storage_type"`
@@ -75,14 +65,6 @@ type destroyConsumerRequest struct {
 }
 
 func (s *Server) initializeSDKHandlers() {
-	// factories
-	s.queueSubscribe("$memphis_factory_creations",
-		"memphis_factory_creations_listeners_group",
-		createFactoryHandler(s))
-	s.queueSubscribe("$memphis_factory_destructions",
-		"memphis_factory_destructions_listeners_group",
-		destroyFactoryHandler(s))
-
 	//stations
 	s.queueSubscribe("$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
@@ -106,18 +88,6 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
-}
-
-func createFactoryHandler(s *Server) simplifiedMsgHandler {
-	return func(c *client, subject, reply string, msg []byte) {
-		go s.createFactoryDirect(c, reply, msg)
-	}
-}
-
-func destroyFactoryHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, subject, reply string, msg []byte) {
-		go s.RemoveFactoryDirect(reply, msg)
-	}
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
