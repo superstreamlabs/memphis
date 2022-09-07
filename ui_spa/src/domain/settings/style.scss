@@ -1,0 +1,54 @@
+.preferences-container {
+    width: calc(100% - 70px);
+    position: absolute;
+    padding: 1vw;
+    height: 100%;
+    .preferences-panel-tabs {
+        padding-left: 2vw;
+        color: var(--blue);
+        padding-top: 20px;
+        .ant-divider {
+            margin-top: 0;
+            position: absolute;
+            left: 0px;
+        }
+    }
+    .tabs-body{
+        width: calc(100% - 70px);
+        position: absolute;
+        padding: 1vw;
+        height: calc(100% - 130px);
+        overflow: auto;
+        margin-top: 10px;
+        min-height: 560px;
+    }
+}
+
+.alerts-integrations-container {
+    width: 40vw;
+    margin-top: 1vh;
+    .alert-integration-type {
+        width: 40vw;
+        min-width: 500px;
+        height: auto;
+        margin-bottom: 10px;
+        background-color: var(--white);
+        border-radius: 15px;
+        box-shadow: 1px 2px 8px 4px #eeeeee;
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        align-items: center;
+        color: var(--blue);
+        .alert-integration-label-bold {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+    }
+}
+
+.alert-integration-value .rc-virtual-list-holder-inner {
+    height: 90px !important;
+    overflow: scroll;
+}

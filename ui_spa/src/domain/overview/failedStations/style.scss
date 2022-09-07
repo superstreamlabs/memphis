@@ -1,0 +1,86 @@
+.failed-factories-container {
+    padding: 15px;
+    position: relative;
+    min-width: 400px;
+    min-height: 200px;
+    overflow: hidden;
+    .factories-err-message {
+        display: flex;
+        width: 100%;
+        height: 35px;
+        background: rgba(90, 79, 229, 0.1);
+        border: 1px solid var(--purple);
+        box-sizing: border-box;
+        border-radius: 8px;
+        color: var(--purple);
+        align-items: center;
+        .err-icon {
+            font-size: 16px;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+        p {
+            margin: 0;
+            font-size: 12px;
+        }
+    }
+    .err-factories-list {
+        position: relative;
+        height: calc(100% - 20px);
+        font-size: 12px;
+        .coulmns-table {
+            border-bottom: 1px solid #e9e9e9;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            color: #979797;
+            padding: 10px;
+            span {
+                display: flex;
+                align-items: center;
+                height: 10px;
+            }
+        }
+        .rows-wrapper {
+            position: absolute;
+            width: 100%;
+            height: calc(100% - 25px);
+            overflow: auto;
+            .factory-row {
+                display: flex;
+                color: #1d1d1d;
+                justify-content: space-between;
+                width: 100%;
+                cursor: pointer;
+                padding: 10px;
+                height: 35px;
+                align-items: center;
+                .link-row {
+                    color: var(--purple);
+                    font-weight: 600;
+                    cursor: pointer;
+                }
+                .dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    margin-right: 5px;
+                }
+                .green {
+                    background-color: #00b292;
+                }
+                .yellow {
+                    background-color: #ffd12f;
+                }
+                a{
+                    width: 100px;
+                }
+            }
+            .factory-row:nth-child(even) {
+                background-color: #f8f8f8;
+            }
+        }
+   
+    }
+}

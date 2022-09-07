@@ -1,0 +1,37 @@
+.get-started-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    height: 100%;
+    .get-started-top {
+        padding: 20px 0px 30px 20px;
+        border: 1px solid #f2f2f2;
+        border-radius: 8px;
+        height: calc(100% - 60px);
+        position: relative;
+        .get-started-header{
+            padding-left: 3px;
+            height: 60px;
+        }
+        .get-started-body {
+            height: calc(100% - 40px);
+            padding-top: 15px;
+            padding-left: 3px;
+            overflow-y: auto;
+        }
+        .finish {
+            height: 8vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+    .get-started-footer {
+        height: 60px;
+        display: flex;
+        flex-direction: row-reverse;
+        align-items: center;
+        justify-content: space-between;
+    }
+}

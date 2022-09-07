@@ -1,0 +1,40 @@
+.multi{  
+    .ant-collapse-content-box{
+        padding: 0 !important;
+    }
+    .consumer-number {
+        background: #DFDFDF;
+        width: 30px;
+        display: flex;
+        justify-content: center;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+    .collapse-child{
+        .collapse-header{
+            p{font-size: 12px !important;}
+            status{
+                margin-right: 10px;
+                img {
+                    width: 9px !important;
+                }
+            }
+        }
+        .ant-collapse-content-box{
+            padding: 16px !important;
+        }
+        .ant-collapse-item.ant-collapse-no-arrow{
+            border: none;
+            border-bottom: 1px solid #efefef;
+            border-radius: 0px
+        }
+        .ant-collapse-item-active.ant-collapse-no-arrow{
+            background: rgba(101, 87, 255, 0.03)
+        }
+        .ant-collapse-item.ant-collapse-no-arrow:last-child{
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+    }   
+}
