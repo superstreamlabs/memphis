@@ -68,6 +68,14 @@ func getFactoriesOverviewData(h *server.Handlers) ([]models.ExtendedFactory, err
 	return factories, nil
 }
 
+func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetails, error) {
+	stations, err := h.Stations.GetStationsDetails()
+	if err != nil {
+		return stations, err
+	}
+	return stations, nil
+}
+
 func getFactoryOverviewData(factoryName string, s socketio.Conn, h *server.Handlers) (map[string]interface{}, error) {
 	factoryName = strings.ToLower(factoryName)
 	factory, err := h.Factories.GetFactoryDetails(factoryName)
@@ -202,9 +210,9 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		return "recv " + msg
 	})
 
-	socketServer.OnEvent("/api", "get_all_stations_overview_data", func(s socketio.Conn, msg string) string {
+	socketServer.OnEvent("/api", "get_all_stations_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		s.Join("stations_overview_group_")
+		s.Join("all_stations_group_")
 		return "recv " + msg
 	})
 
@@ -234,6 +242,14 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 				}
 			}
 
+			if socketServer.RoomLen("/api", "all_stations_group_") > 0 {
+				data, err := getStationsOverviewData(h)
+				if err != nil {
+					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "all_stations_group_", "stations_overview_data", data)
+				}
+			}
 			rooms := socketServer.Rooms("/api")
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
@@ -266,13 +282,12 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 					}
 				}
 
-				if strings.HasPrefix(room, "stations_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
-					poisonMsgId := strings.Split(room, "stations_overview_group_")[1]
-					data, err := h.Stations.GetAllStationsExtendedDetails()
+				if strings.HasPrefix(room, "all_stations_group_") && socketServer.RoomLen("/api", room) > 0 {
+					data, err := getStationsOverviewData(h)
 					if err != nil {
 						serv.Errorf("Error while trying to get all stations details - " + err.Error())
 					} else {
-						socketServer.BroadcastToRoom("/api", room, "stations_overview_group_"+poisonMsgId, data)
+						socketServer.BroadcastToRoom("/api", room, "all_stations_data_", data)
 					}
 				}
 			}

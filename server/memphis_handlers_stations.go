@@ -301,40 +301,41 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
-func (sh StationsHandler) GetAllStationsExtendedDetails() ([]models.ExtendedStationOverview, error) {
-	var exStations []models.ExtendedStationOverview
+func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails, error) {
+	var exStations []models.ExtendedStationDetails
 	var stations []models.Station
 
-	stationsHandler := StationsHandler{S: sh.S}
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
-
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
-		"is_deleted": false,
+	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"$or", []interface{}{
+			bson.D{{"is_deleted", false}},
+			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
+		}}}}},
 	})
 
 	if err != nil {
-		return []models.ExtendedStationOverview{}, err
+		return []models.ExtendedStationDetails{}, err
 	}
 
 	if err = cursor.All(context.TODO(), &stations); err != nil {
-		return []models.ExtendedStationOverview{}, err
+		return []models.ExtendedStationDetails{}, err
 	}
 
 	if len(stations) == 0 {
-		return []models.ExtendedStationOverview{}, nil
+		return []models.ExtendedStationDetails{}, nil
 	} else {
 		for _, station := range stations {
-			totalMessages, err := stationsHandler.GetTotalMessages(station)
+			totalMessages, err := sh.GetTotalMessages(station)
 			if err != nil {
 				serv.Errorf("GetAllStationsUI error: " + err.Error())
-				return []models.ExtendedStationOverview{}, err
+				return []models.ExtendedStationDetails{}, err
 			}
 			poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
 			if err != nil {
 				serv.Errorf("GetStationOverviewData error: " + err.Error())
-				return []models.ExtendedStationOverview{}, err
+				return []models.ExtendedStationDetails{}, err
 			}
-			exStations = append(exStations, models.ExtendedStationOverview{Station:station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
 		}
 		return exStations, nil
 	}
@@ -368,15 +369,15 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	}
 }
 
-func (sh StationsHandler) GetAllStationsOverviewData(c *gin.Context) {
-	stations, err := sh.GetAllStationsExtendedDetails()
+func (sh StationsHandler) GetStations(c *gin.Context) {
+	stations, err := sh.GetStationsDetails()
 	if err != nil {
-		serv.Errorf("GetAllStations error: " + err.Error())
+		serv.Errorf("GetStations error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	c.IndentedJSON(200, gin.H{
-		"stations":      stations,
+		"stations": stations,
 	})
 }
 
