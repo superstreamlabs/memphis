@@ -351,10 +351,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.RetentionValue = 604800 // 1 week
 	}
 
-	var storageType string
 	if body.StorageType != "" {
-		storageType = strings.ToLower(body.StorageType)
-		err = validateStorageType(storageType)
+		body.StorageType = strings.ToLower(body.StorageType)
+		err = validateStorageType(body.StorageType)
 		if err != nil {
 			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -380,7 +379,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		Name:            stationName,
 		RetentionType:   retentionType,
 		RetentionValue:  body.RetentionValue,
-		StorageType:     storageType,
+		StorageType:     body.StorageType,
 		Replicas:        body.Replicas,
 		DedupEnabled:    body.DedupEnabled,
 		DedupWindowInMs: body.DedupWindowInMs,
