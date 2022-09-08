@@ -282,7 +282,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
-
 	const amount = 100
 	const timeout = 3 * time.Second
 
@@ -304,11 +303,11 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 
 	switch request.LogType {
 	case "err":
-		cc.FilterSubject = syslogsErrSubject
+		cc.FilterSubject = syslogsStreamName + "." + syslogsErrSubject
 	case "wrn":
-		cc.FilterSubject = syslogsWarnSubject
+		cc.FilterSubject = syslogsStreamName + "." + syslogsWarnSubject
 	case "inf":
-		cc.FilterSubject = syslogsInfoSubject
+		cc.FilterSubject = syslogsStreamName + "." + syslogsInfoSubject
 	}
 
 	err := mh.S.memphisAddConsumer(syslogsStreamName, &cc)
