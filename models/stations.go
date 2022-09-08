@@ -92,7 +92,7 @@ type ExtendedStation struct {
 type ExtendedStationDetails struct {
 	Station 		Station 			 `json:"station"`
 	TotalMessages  	int                  `json:"total_messages"`
-	PoisonMessages 	[]LightPoisonMessage `json:"posion_messages"`
+	PoisonMessages 	int64 				 `json:"posion_messages"`
 }
 
 type GetStationSchema struct {

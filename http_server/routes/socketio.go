@@ -212,7 +212,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 
 	socketServer.OnEvent("/api", "get_all_stations_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
-		s.Join("all_stations_group_")
+		s.Join("all_stations_group")
 		return "recv " + msg
 	})
 
@@ -242,12 +242,12 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 				}
 			}
 
-			if socketServer.RoomLen("/api", "all_stations_group_") > 0 {
+			if socketServer.RoomLen("/api", "all_stations_group") > 0 {
 				data, err := getStationsOverviewData(h)
 				if err != nil {
 					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
 				} else {
-					socketServer.BroadcastToRoom("/api", "all_stations_group_", "stations_overview_data", data)
+					socketServer.BroadcastToRoom("/api", "all_stations_group", "stations_overview_data", data)
 				}
 			}
 			rooms := socketServer.Rooms("/api")
@@ -282,14 +282,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 					}
 				}
 
-				if strings.HasPrefix(room, "all_stations_group_") && socketServer.RoomLen("/api", room) > 0 {
-					data, err := getStationsOverviewData(h)
-					if err != nil {
-						serv.Errorf("Error while trying to get all stations details - " + err.Error())
-					} else {
-						socketServer.BroadcastToRoom("/api", room, "all_stations_data_", data)
-					}
-				}
 			}
 		}
 	}()

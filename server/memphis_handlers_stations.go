@@ -327,12 +327,10 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station)
 			if err != nil {
-				serv.Errorf("GetAllStationsUI error: " + err.Error())
 				return []models.ExtendedStationDetails{}, err
 			}
-			poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station)
 			if err != nil {
-				serv.Errorf("GetStationOverviewData error: " + err.Error())
 				return []models.ExtendedStationDetails{}, err
 			}
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
