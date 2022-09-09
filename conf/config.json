@@ -1,5 +1,5 @@
 {
-    "HTTP_PORT": "5555",
+    "HTTP_PORT": "9000",
     "MONGO_URL": "mongodb://mongo:27017/maindb?retryWrites=true&w=majority",
     "MONGO_USER": "memphis",
     "MONGO_PASS": "memph1smong0",
