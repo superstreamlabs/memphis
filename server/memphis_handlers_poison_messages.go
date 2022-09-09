@@ -152,16 +152,16 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 	return poisonMessages, nil
 }
 
-func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(station models.Station) (int64, error) {
+func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(station models.Station) (int, error) {
 
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
 		"station_name": station.Name,
 	})
 
 	if err != nil {
-		return count, err
+		return int(count), err
 	}
-	return count, nil
+	return int(count), nil
 }
 
 func GetPoisonMsgById(messageId primitive.ObjectID) (models.PoisonMessage, error) {
