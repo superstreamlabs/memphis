@@ -59,34 +59,12 @@ func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	}, nil
 }
 
-func getFactoriesOverviewData(h *server.Handlers) ([]models.ExtendedFactory, error) {
-	factories, err := h.Factories.GetAllFactoriesDetails()
-	if err != nil {
-		return factories, err
-	}
-
-	return factories, nil
-}
-
 func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetails, error) {
 	stations, err := h.Stations.GetStationsDetails()
 	if err != nil {
 		return stations, err
 	}
 	return stations, nil
-}
-
-func getFactoryOverviewData(factoryName string, s socketio.Conn, h *server.Handlers) (map[string]interface{}, error) {
-	factoryName = strings.ToLower(factoryName)
-	factory, err := h.Factories.GetFactoryDetails(factoryName)
-	if err != nil {
-		if s != nil && err.Error() == "mongo: no documents in result" {
-			s.Emit("error", "Factory does not exist")
-		}
-		return factory, err
-	}
-
-	return factory, nil
 }
 
 func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handlers) (models.StationOverviewData, error) {
@@ -177,20 +155,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		return "recv " + msg
 	})
 
-	socketServer.OnEvent("/api", "register_factories_overview_data", func(s socketio.Conn, msg string) string {
-		s.LeaveAll()
-		s.Join("factories_overview_sockets_group")
-
-		return "recv " + msg
-	})
-
-	socketServer.OnEvent("/api", "register_factory_overview_data", func(s socketio.Conn, factoryName string) string {
-		s.LeaveAll()
-		s.Join("factory_overview_group_" + factoryName)
-
-		return "recv " + factoryName
-	})
-
 	socketServer.OnEvent("/api", "register_station_overview_data", func(s socketio.Conn, stationName string) string {
 		s.LeaveAll()
 		s.Join("station_overview_group_" + stationName)
@@ -233,15 +197,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 				}
 			}
 
-			if socketServer.RoomLen("/api", "factories_overview_sockets_group") > 0 {
-				data, err := getFactoriesOverviewData(h)
-				if err != nil {
-					serv.Errorf("Error while trying to get factories overview data - " + err.Error())
-				} else {
-					socketServer.BroadcastToRoom("/api", "factories_overview_sockets_group", "factories_overview_data", data)
-				}
-			}
-
 			if socketServer.RoomLen("/api", "all_stations_group") > 0 {
 				data, err := getStationsOverviewData(h)
 				if err != nil {
@@ -250,6 +205,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 					socketServer.BroadcastToRoom("/api", "all_stations_group", "stations_overview_data", data)
 				}
 			}
+      
 			rooms := socketServer.Rooms("/api")
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
@@ -259,16 +215,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 						serv.Errorf("Error while trying to get station overview data - " + err.Error())
 					} else {
 						socketServer.BroadcastToRoom("/api", room, "station_overview_data_"+stationName, data)
-					}
-				}
-
-				if strings.HasPrefix(room, "factory_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
-					factoryName := strings.Split(room, "factory_overview_group_")[1]
-					data, err := getFactoryOverviewData(factoryName, nil, h)
-					if err != nil {
-						serv.Errorf("Error while trying to get factory overview data - " + err.Error())
-					} else {
-						socketServer.BroadcastToRoom("/api", room, "factory_overview_data_"+factoryName, data)
 					}
 				}
 

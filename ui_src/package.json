@@ -33,7 +33,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "PORT=9000 react-scripts start",
+    "start": "PORT=5555 react-scripts start",
     "build": "GENERATE_SOURCEMAP=false BUILD_PATH='./../ui_static_files/build' react-scripts build",
     "test": "jest",
     "eject": "react-scripts eject"

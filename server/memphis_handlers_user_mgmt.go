@@ -131,15 +131,7 @@ func updateUserResources(user models.User) error {
 		}
 	}
 
-	_, err := factoriesCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": user.Username},
-		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
-	)
-	if err != nil {
-		return err
-	}
-
-	_, err = stationsCollection.UpdateMany(context.TODO(),
+	_, err := stationsCollection.UpdateMany(context.TODO(),
 		bson.M{"created_by_user": user.Username},
 		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
 	)

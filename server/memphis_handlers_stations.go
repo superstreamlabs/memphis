@@ -146,37 +146,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	factoryName := strings.ToLower(csr.FactoryName)
-	exist, factory, err := IsFactoryExist(factoryName)
-	if err != nil {
-		serv.Errorf("Server Error" + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	if !exist { // create this factory
-		err := validateFactoryName(factoryName)
-		if err != nil {
-			serv.Warnf(err.Error())
-			respondWithErr(s, reply, err)
-			return
-		}
-
-		factory = models.Factory{
-			ID:            primitive.NewObjectID(),
-			Name:          factoryName,
-			Description:   "",
-			CreatedByUser: c.memphisInfo.username,
-			CreationDate:  time.Now(),
-			IsDeleted:     false,
-		}
-		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
-		if err != nil {
-			serv.Errorf("CreateStation error: " + err.Error())
-			respondWithErr(s, reply, err)
-			return
-		}
-	}
-
 	var retentionType string
 	var retentionValue int
 	if csr.RetentionType != "" {
@@ -220,7 +189,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
-		FactoryId:       factory.ID,
 		CreatedByUser:   c.memphisInfo.username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
@@ -346,10 +314,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"factory_id", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"factory", 0}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
 
 	if err != nil {
@@ -422,36 +387,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	factoryName := strings.ToLower(body.FactoryName)
-	exist, factory, err := IsFactoryExist(factoryName)
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist { // create this factory
-		err := validateFactoryName(factoryName)
-		if err != nil {
-			serv.Warnf(err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-
-		factory = models.Factory{
-			ID:            primitive.NewObjectID(),
-			Name:          factoryName,
-			Description:   "",
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			IsDeleted:     false,
-		}
-		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
-		if err != nil {
-			serv.Errorf("CreateStation error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
-
 	var retentionType string
 	if body.RetentionType != "" && body.RetentionValue > 0 {
 		retentionType = strings.ToLower(body.RetentionType)
@@ -466,10 +401,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.RetentionValue = 604800 // 1 week
 	}
 
-	var storageType string
 	if body.StorageType != "" {
-		storageType = strings.ToLower(body.StorageType)
-		err = validateStorageType(storageType)
+		body.StorageType = strings.ToLower(body.StorageType)
+		err = validateStorageType(body.StorageType)
 		if err != nil {
 			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -493,10 +427,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
-		FactoryId:       factory.ID,
 		RetentionType:   retentionType,
 		RetentionValue:  body.RetentionValue,
-		StorageType:     storageType,
+		StorageType:     body.StorageType,
 		Replicas:        body.Replicas,
 		DedupEnabled:    body.DedupEnabled,
 		DedupWindowInMs: body.DedupWindowInMs,
