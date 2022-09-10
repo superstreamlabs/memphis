@@ -269,6 +269,44 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
+func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails, error) {
+	var exStations []models.ExtendedStationDetails
+	var stations []models.Station
+
+	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"$or", []interface{}{
+			bson.D{{"is_deleted", false}},
+			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
+		}}}}},
+	})
+
+	if err != nil {
+		return []models.ExtendedStationDetails{}, err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return []models.ExtendedStationDetails{}, err
+	}
+
+	if len(stations) == 0 {
+		return []models.ExtendedStationDetails{}, nil
+	} else {
+		for _, station := range stations {
+			totalMessages, err := sh.GetTotalMessages(station)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+		}
+		return exStations, nil
+	}
+}
+
 func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
@@ -292,6 +330,18 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	} else {
 		return stations, nil
 	}
+}
+
+func (sh StationsHandler) GetStations(c *gin.Context) {
+	stations, err := sh.GetStationsDetails()
+	if err != nil {
+		serv.Errorf("GetStations error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, gin.H{
+		"stations": stations,
+	})
 }
 
 func (sh StationsHandler) GetAllStations(c *gin.Context) {

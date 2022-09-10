@@ -59,6 +59,14 @@ func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	}, nil
 }
 
+func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetails, error) {
+	stations, err := h.Stations.GetStationsDetails()
+	if err != nil {
+		return stations, err
+	}
+	return stations, nil
+}
+
 func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handlers) (models.StationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := server.IsStationExist(stationName)
@@ -166,6 +174,12 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		return "recv " + msg
 	})
 
+	socketServer.OnEvent("/api", "get_all_stations_data", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("all_stations_group")
+		return "recv " + msg
+	})
+
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
 		serv.Errorf("An error occured during a socket connection " + e.Error())
 	})
@@ -183,6 +197,15 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 				}
 			}
 
+			if socketServer.RoomLen("/api", "all_stations_group") > 0 {
+				data, err := getStationsOverviewData(h)
+				if err != nil {
+					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "all_stations_group", "stations_overview_data", data)
+				}
+			}
+      
 			rooms := socketServer.Rooms("/api")
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
@@ -204,6 +227,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 						socketServer.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
 					}
 				}
+
 			}
 		}
 	}()
