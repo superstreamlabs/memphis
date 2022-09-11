@@ -39,8 +39,8 @@ import pathDomains from '../../router';
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
     const url = window.location.href;
-    const messageId = url.split('factories/')[1].split('/')[2];
-    const stationName = url.split('factories/')[1].split('/')[1];
+    const messageId = url.split('stations/')[1].split('/')[1];
+    const stationName = url.split('stations/')[1].split('/')[0];
     const [isLoading, setisLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [messageData, setMessageData] = useState({});
@@ -63,7 +63,7 @@ const MessageJourney = () => {
     };
 
     useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'factories' });
+        dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getPosionMessageDetails();
     }, []);
 
@@ -80,7 +80,7 @@ const MessageJourney = () => {
     }, [state.socket]);
 
     const returnBack = () => {
-        history.push(`${pathDomains.factoriesList}/${url.split('factories/')[1].split('/')[0]}/${stationName}`);
+        history.push(`${pathDomains.stations}/${stationName}`);
     };
     const arrangeData = (data) => {
         let poisionedCGs = [];

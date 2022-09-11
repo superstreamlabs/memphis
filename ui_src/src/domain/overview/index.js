@@ -191,7 +191,7 @@ function OverView() {
             )}
             <Modal
                 header="Your station details"
-                height="500px"
+                height="460px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {
@@ -203,7 +203,7 @@ function OverView() {
                 clickOutside={() => modalFlip(false)}
                 open={open}
             >
-                <CreateStationDetails chooseFactoryField={true} createStationRef={createStationRef} />
+                <CreateStationDetails createStationRef={createStationRef} />
             </Modal>
             <Modal
                 header={''}

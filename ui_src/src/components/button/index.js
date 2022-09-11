@@ -46,6 +46,7 @@ const Button = (props) => {
         marginBottom,
         marginTop,
         marginRight,
+        marginLeft,
         boxShadowStyle,
         minHeight,
         zIndex,
@@ -69,6 +70,7 @@ const Button = (props) => {
         marginBottom: marginBottom,
         marginTop: marginTop,
         marginRight: marginRight,
+        marginLeft: marginLeft,
         alignSelf: alignSelf
     };
 

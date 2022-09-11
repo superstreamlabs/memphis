@@ -28,16 +28,16 @@ import { Link } from 'react-router-dom';
 import { Menu } from 'antd';
 
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
-import factoriesIconActive from '../../assets/images/factoriesIconActive.svg';
+import stationsIconActive from '../../assets/images/stationsIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
-import factoriesIcon from '../../assets/images/factoriesIcon.svg';
+import stationsIcon from '../../assets/images/stationsIcon.svg';
 import supportIcon from '../../assets/images/supportIcon.svg';
 import accountIcon from '../../assets/images/accountIcon.svg';
 import logoutIcon from '../../assets/images/logoutIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
 import Logo from '../../assets/images/logo.svg';
-import BetaLogo from '../../assets/images/betaLogo.svg';
+import betaLogo from '../../assets/images/betaLogo.svg';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import AuthService from '../../services/auth';
@@ -110,7 +110,7 @@ function SideBar() {
         <div className="sidebar-container">
             <div className="upper-icons">
                 <Link to={pathDomains.overview}>
-                    <img src={BetaLogo} width="55" height="40" className="logoimg" alt="logo" />
+                    <img src={betaLogo} width="62" className="logoimg" alt="logo" />
                 </Link>
                 <div className="item-wrapper">
                     <Link to={pathDomains.overview}>
@@ -127,18 +127,18 @@ function SideBar() {
                     </Link>
                 </div>
                 <div className="item-wrapper">
-                    <div id="e2e-tests-factory-sidebar">
-                        <Link to={pathDomains.factoriesList}>
+                    <div id="e2e-tests-station-sidebar">
+                        <Link to={pathDomains.stations}>
                             <div className="icon">
-                                <div className={state.route === 'factories' ? 'circle-nav-item checked' : 'circle-nav-item'}>
-                                    {state.route === 'factories' ? (
-                                        <img src={factoriesIconActive} alt="factoriesIconActive" width="20" height="20"></img>
+                                <div className={state.route === 'stations' ? 'circle-nav-item checked' : 'circle-nav-item'}>
+                                    {state.route === 'stations' ? (
+                                        <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
                                     ) : (
-                                        <img src={factoriesIcon} alt="factoriesIcon" width="20" height="20"></img>
+                                        <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
                                     )}
                                 </div>
                             </div>
-                            <p className={state.route === 'factories' ? 'checked' : 'name'}>Factories</p>
+                            <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                         </Link>
                     </div>
                 </div>
@@ -183,7 +183,7 @@ function SideBar() {
                             title={
                                 <div className="header-menu">
                                     <div className="company-logo">
-                                        <img className="logoimg" src={state?.companyLogo || Logo} width="30" height="30" alt="companyLogo" />
+                                        <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
                                     </div>
                                     <p>
                                         {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
@@ -196,29 +196,29 @@ function SideBar() {
                             <Menu.Item key={1} className="customclass">
                                 <div className="item-wrapp">
                                     <img src={accountIcon} width="15" height="15" alt="accountIcon" />
-                                    <p>Preferences</p>
+                                    <p className="item-title">Preferences</p>
                                 </div>
                             </Menu.Item>
                             <Menu.Item key={2}>
                                 <Link to={{ pathname: DOC_URL }} target="_blank">
                                     <div className="item-wrapp">
                                         <img src={supportIcon} width="15" height="15" alt="supportIcon" />
-                                        <p>Support</p>
+                                        <p className="item-title">Support</p>
                                     </div>
                                 </Link>
                             </Menu.Item>
                             <Menu.Item key={3}>
                                 <div className="item-wrapp">
                                     <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
-                                    <p>Log out</p>
+                                    <p className="item-title">Log out</p>
                                 </div>
                             </Menu.Item>
                         </Menu.ItemGroup>
                     </SubMenu>
                 </Menu>
-                <div className="system-version">
+                <version is="x3d">
                     <p>v{systemVersion}</p>
-                </div>
+                </version>
             </div>
         </div>
     );

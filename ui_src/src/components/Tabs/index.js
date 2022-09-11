@@ -24,8 +24,6 @@ import './style.scss';
 import { Tabs } from 'antd';
 import React from 'react';
 
-import { getFontColor } from '../../utils/styleTemplates';
-
 const { TabPane } = Tabs;
 
 const CustomTabs = (props) => {

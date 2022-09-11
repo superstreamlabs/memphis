@@ -64,7 +64,7 @@ const StationOverviewHeader = (props) => {
     const [tabValue, setTabValue] = useState('0');
     const tabs = ['Producer', 'Consumer'];
     const url = window.location.href;
-    const stationName = url.split('factories/')[1].split('/')[1];
+    const stationName = url.split('stations/')[1];
     const handleSelectLang = (e) => {
         setLangSelected(e);
         changeDynamicCode(e);
@@ -102,9 +102,7 @@ const StationOverviewHeader = (props) => {
     };
 
     const returnToStaionsList = () => {
-        const url = window.location.href;
-        const staionName = url.split('factories/')[1].split('/')[0];
-        history.push(`${pathDomains.factoriesList}/${staionName}`);
+        history.push(pathDomains.stations);
     };
 
     return (
@@ -173,8 +171,8 @@ const StationOverviewHeader = (props) => {
                             <Progress showInfo={false} status={(20 / 80) * 100 > 60 ? 'exception' : 'success'} percent={(20 / 80) * 100} size="small" />
                             <p className="title">Mem</p>
                         </div>
-                    </div>
-                    <div className="details-wrapper">
+                    </div> */}
+                    {/* <div className="details-wrapper">
                         <div className="icon">
                             <img src={cpuIcon} width={22} height={22} alt="cpuIcon" />
                         </div>
@@ -183,8 +181,8 @@ const StationOverviewHeader = (props) => {
                             <Progress showInfo={false} status={(35 / 100) * 100 > 60 ? 'exception' : 'success'} percent={(35 / 100) * 100} size="small" />
                             <p className="title">CPU</p>
                         </div>
-                    </div>
-                    <div className="details-wrapper">
+                    </div> */}
+                    {/* <div className="details-wrapper">
                         <div className="icon">
                             <img src={storageIcon} width={30} height={30} alt="storageIcon" />
                         </div>
@@ -212,84 +210,91 @@ const StationOverviewHeader = (props) => {
                         <span onClick={() => setAuditModal(true)}>View Details {'>'}</span>
                     </div>
                 </div>
-            </div>
-            <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
-                <div className="sdk-details-container">
-                    <div className="select-lan">
-                        <p>Language</p>
-                        <SelectComponent
-                            value={langSelected}
-                            colorType="navy"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            width="220px"
-                            height="50px"
-                            options={selectLngOption}
-                            onChange={(e) => handleSelectLang(e)}
-                            dropdownClassName="select-options"
-                        />
-                    </div>
-                    <div className="installation">
-                        <p>Installation</p>
-                        <div className="install-copy">
-                            <p></p>
-                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                {/* </div> */}
+                <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
+                    <div className="sdk-details-container">
+                        <div className="select-lan">
+                            <p>Language</p>
+                            <SelectComponent
+                                value={langSelected}
+                                colorType="navy"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                width="220px"
+                                height="50px"
+                                options={selectLngOption}
+                                onChange={(e) => handleSelectLang(e)}
+                                dropdownClassName="select-options"
+                            />
                         </div>
-                    </div>
-                    <div className="tabs">
-                        <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>
-                        {tabValue === '0' && (
-                            <div className="code-example">
-                                <div className="code-content">
-                                    <CopyBlock
-                                        language={CODE_EXAMPLE[langSelected].langCode}
-                                        text={codeExample.producer}
-                                        showLineNumbers={true}
-                                        theme={atomOneLight}
-                                        wrapLines={true}
-                                        codeBlock
-                                    />
-                                </div>
+                        <div className="installation">
+                            <p>Installation</p>
+                            <div className="install-copy">
+                                <CopyBlock
+                                    className="copyBlock"
+                                    text={CODE_EXAMPLE[langSelected].installation}
+                                    showLineNumbers={false}
+                                    theme={atomOneLight}
+                                    wrapLines={true}
+                                    codeBlock
+                                />
                             </div>
-                        )}
+                        </div>
+                        <div className="tabs">
+                            <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>
+                            {tabValue === '0' && (
+                                <div className="code-example">
+                                    <div className="code-content">
+                                        <CopyBlock
+                                            language={CODE_EXAMPLE[langSelected].langCode}
+                                            text={codeExample.producer}
+                                            showLineNumbers={true}
+                                            theme={atomOneLight}
+                                            wrapLines={true}
+                                            codeBlock
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
-                        {tabValue === '1' && (
-                            <div className="code-example">
-                                <div className="code-content">
-                                    <CopyBlock
-                                        language={CODE_EXAMPLE[langSelected].langCode}
-                                        text={codeExample.consumer}
-                                        showLineNumbers={true}
-                                        theme={atomOneLight}
-                                        wrapLines={true}
-                                        codeBlock
-                                    />
+                            {tabValue === '1' && (
+                                <div className="code-example">
+                                    <div className="code-content">
+                                        <CopyBlock
+                                            language={CODE_EXAMPLE[langSelected].langCode}
+                                            text={codeExample.consumer}
+                                            showLineNumbers={true}
+                                            theme={atomOneLight}
+                                            wrapLines={true}
+                                            codeBlock
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </Modal>
-            <Modal
-                header={
-                    <div className="audit-header">
-                        <p className="title">Audit</p>
-                        <div className="msg">
-                            <InfoOutlined />
-                            <p>Showing last 5 days</p>
+                            )}
                         </div>
                     </div>
-                }
-                displayButtons={false}
-                height="300px"
-                width="800px"
-                clickOutside={() => setAuditModal(false)}
-                open={auditModal}
-                hr={false}
-            >
-                <Auditing />
-            </Modal>
+                </Modal>
+                <Modal
+                    header={
+                        <div className="audit-header">
+                            <p className="title">Audit</p>
+                            <div className="msg">
+                                <InfoOutlined />
+                                <p>Showing last 5 days</p>
+                            </div>
+                        </div>
+                    }
+                    displayButtons={false}
+                    height="300px"
+                    width="800px"
+                    clickOutside={() => setAuditModal(false)}
+                    open={auditModal}
+                    hr={false}
+                >
+                    <Auditing />
+                </Modal>
+            </div>
         </div>
     );
 };

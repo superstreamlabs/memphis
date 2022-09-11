@@ -74,7 +74,6 @@ const initialState = {
     currentStep: 1,
     completedSteps: 0,
     formFieldsCreateStation: {
-        factory_name: '',
         name: '',
         retention_type: 'message_age_sec',
         retention_value: 604800,

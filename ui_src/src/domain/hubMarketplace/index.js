@@ -135,7 +135,6 @@ function HubMarketplace(props) {
         >
             <ConnectToHub open={isOpenSignIn} closeModeal={(e) => flipIsOpenSignIn(e)} />
             <div className="functions-modal-header">
-                <label className="factory-name">Factory name</label>
                 <div>
                     <label className="visit-hub">Visit hub</label>
                     <img src={Seperator} alt="|" width="20" height="20" className="seperator" />

@@ -25,6 +25,7 @@ import axios from 'axios';
 import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE } from '../config';
 import { ApiEndpoints } from '../const/apiEndpoints';
 import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_EXPIRED_TOKEN } from '../const/localStorageConsts.js';
+import pathDomains from '../router';
 import AuthService from './auth';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0) {
@@ -54,7 +55,11 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         const results = res.data;
         return results;
     } catch (err) {
-        if (endPointUrl !== ApiEndpoints.LOGIN && err?.response?.status === AUTHENTICATION_ERROR_STATUS_CODE) {
+        if (
+            window.location.pathname !== pathDomains.login &&
+            window.location.pathname !== pathDomains.signup &&
+            err?.response?.status === AUTHENTICATION_ERROR_STATUS_CODE
+        ) {
             localStorage.clear();
             window.location.assign('/login');
         }

@@ -66,15 +66,13 @@ const storageOptions = [
 ];
 
 const CreateStationDetails = (props) => {
-    const { chooseFactoryField = false, createStationRef, factoryName = '' } = props;
-    const [factoryNames, setFactoryNames] = useState([]);
+    const { createStationRef } = props;
     const [actualPods, setActualPods] = useState(null);
     const [loading, setLoading] = useState([]);
     const [creationForm] = Form.useForm();
     const history = useHistory();
     const [formFields, setFormFields] = useState({
         name: '',
-        factory_name: '',
         retention_type: 'message_age_sec',
         retention_value: '',
         storage_type: 'file',
@@ -92,40 +90,14 @@ const CreateStationDetails = (props) => {
     const getOverviewData = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components.findIndex(item => item.component.includes("broker"));
+            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
             indexOfBrokerComponent = indexOfBrokerComponent || 1;
             data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(data?.system_components[indexOfBrokerComponent]?.actual_pods);
-        } catch (error) { }
-    };
-
-    const getAllFactories = async () => {
-        setLoading(true);
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.GEL_ALL_FACTORIES);
-            if (data) {
-                if (data.length === 0) {
-                    updateFormState('factory_name', 'Melvis');
-                    creationForm.setFieldsValue({ ['factory_name']: 'Melvis' });
-                    creationForm.setFieldsValue({ ['factories_List']: [] });
-                } else {
-                    const factories = data.map((factory) => factory.name);
-                    setFactoryNames(factories);
-                    updateFormState('factory_name', data[0].name);
-                    creationForm.setFieldsValue({ ['factory_name']: data[0].name });
-                    creationForm.setFieldsValue({ ['factories_List']: factories });
-                }
-            }
-        } catch (error) { }
-        setLoading(false);
+        } catch (error) {}
     };
 
     useEffect(() => {
         createStationRef.current = onFinish;
-        if (chooseFactoryField) {
-            getAllFactories();
-        } else {
-            updateFormState('factory_name', factoryName);
-        }
         getOverviewData();
     }, []);
 
@@ -170,14 +142,15 @@ const CreateStationDetails = (props) => {
             try {
                 const bodyRequest = {
                     name: values.name,
-                    factory_name: factoryName || values.factory_name,
                     retention_type: values.retention_type,
                     retention_value: values.retention_value,
                     storage_type: values.storage_type,
                     replicas: values.replicas
                 };
                 createStation(bodyRequest);
-            } catch (error) { }
+            } catch (error) {
+                console.log(error);
+            }
         }
     };
 
@@ -185,9 +158,9 @@ const CreateStationDetails = (props) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                history.push(`${pathDomains.factoriesList}/${bodyRequest.factory_name}/${data.name}`);
+                history.push(`${pathDomains.stations}/${data.name}`);
             }
-        } catch (error) { }
+        } catch (error) {}
     };
 
     return (
@@ -325,24 +298,6 @@ const CreateStationDetails = (props) => {
                     <p>replicas</p>
                 </div>
             </div>
-            {chooseFactoryField && !loading && (
-                <div className="factory-name">
-                    <p className="field-title">Factory name</p>
-                    <Form.Item name="factory_name" initialValue={formFields.factory_name}>
-                        <SelectComponent
-                            value={formFields.factory_name}
-                            colorType="navy"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            height="40px"
-                            options={factoryNames}
-                            onChange={(e) => updateFormState('factory_name', e)}
-                            dropdownClassName="select-options"
-                        />
-                    </Form.Item>
-                </div>
-            )}
         </Form>
     );
 };

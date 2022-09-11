@@ -147,6 +147,9 @@
                 border-left: 1px solid #f3f3f3;
             }
         }
+        .info-buttons span:hover {
+            opacity: 0.8;
+        }
     }
 }
 .modal-wrapper {
@@ -219,15 +222,14 @@
         }
     }
 }
-.iKtiIo,
-.dyHnFg {
+.sc-gsnTZi {
     background: white !important;
     width: 100% !important;
     span {
         background: white !important;
     }
-    .hpPViG,
-    .hzFDPg {
+    button {
+        cursor: pointer !important;
         border: none !important;
         background: white !important;
     }

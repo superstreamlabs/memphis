@@ -31,11 +31,6 @@ const Reducer = (getStartedState, action) => {
                 ...getStartedState,
                 backDisable: action.payload
             };
-        case 'SET_FACTORY':
-            return {
-                ...getStartedState,
-                factoryName: action.payload
-            };
         case 'SET_STATION':
             return {
                 ...getStartedState,

@@ -50,7 +50,7 @@ const Finish = (props) => {
     const onFinish = (e) => {
         e.preventDefault();
         doneNextSteps();
-        history.push(`${pathDomains.factoriesList}/${getStartedState.factoryName}/${getStartedState.stationName}`);
+        history.push(`${pathDomains.stations}/${getStartedState.stationName}`);
     };
 
     const doneNextSteps = async () => {

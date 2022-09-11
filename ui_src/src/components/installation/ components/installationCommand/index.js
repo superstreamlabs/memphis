@@ -48,7 +48,7 @@ const InstallationCommand = ({ steps, showLinks, videoLink, docsLink }) => {
                                     <span>{value.command}</span>
                                     {value.icon === 'copy' && <img src={copied === key ? Copied : Copy} onClick={() => handleCopy(key, value.command)} />}
                                     {value.icon === 'link' && (
-                                        <Link to={{ pathname: 'http://localhost:9000' }} target="_blank">
+                                        <Link to={{ pathname: 'http://localhost:5555' }} target="_blank">
                                             <img src={redirectIcon} />
                                         </Link>
                                     )}

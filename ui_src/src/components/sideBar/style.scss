@@ -3,7 +3,7 @@
     height: 100vh;
     position: relative;
     text-align: center;
-    background: #fcfcfc;
+    background: white;
 
     .upper-icons {
         .logoimg {
@@ -28,8 +28,11 @@
 
     .bottom-icons {
         position: absolute;
-        bottom: 0;
+        bottom: 10px;
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        place-items: center;
         .sub-icon-wrapper {
             width: 35px;
             height: 35px;
@@ -39,10 +42,14 @@
             display: flex;
             align-items: center;
         }
+        .sub-icon-wrapper:hover {
+            opacity: 0.8;
+        }
 
         .ant-menu-vertical {
             background: transparent !important;
             border: unset !important;
+            width: 100%;
         }
         .app-menu {
             i {
@@ -62,11 +69,19 @@
                 place-content: center;
             }
         }
-        .system-version p {
-            margin-bottom: 5px;
-            font-size: 12px;
-            font-weight: 600;
-            opacity: 0.6;
+        version{
+                background: rgba(132, 129, 138, 0.1);
+                border-radius: 4px;
+                width: 80%;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                p {
+                margin: 0;
+                font-size: 12px;
+                font-family: 'InterSemiBold';
+                }
         }
     }
 
@@ -124,20 +139,21 @@
         color: #000000;
     }
 }
+.item-wrapp .item-title:hover {
+    opacity: 0.8;
+}
+.ant-menu-item a:hover{
+    p{
+        opacity: 0.8;
+    }
+
+}
 
 .ant-menu-submenu > .ant-menu {
     border-radius: 8px;
     border: 1px solid var(--gray);
     width: 12vw;
     min-width: 220px;
-}
-
-.ant-menu-item-group-list .ant-menu-item {
-    padding: 0 16px 0 21px;
-}
-
-.ant-menu-item-group-title {
-    padding: 0px 0px;
 }
 
 .ant-menu-vertical .ant-menu-item {
@@ -148,14 +164,6 @@
     background: transparent;
 }
 
-.ant-menu-light .ant-menu-item:hover,
-.ant-menu-light .ant-menu-item-active {
-    color: var(--purple);
-}
-
-.ant-menu-item-selected {
-    color: black;
-}
 .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
     background-color: unset;
 }
@@ -163,10 +171,6 @@
 .ant-menu-item-group-list {
     height: 120px;
     padding-top: 10px !important;
-}
-
-.ant-menu.ant-menu-dark .ant-menu-item-selected.customclass {
-    background-color: green; /*Overriden property*/
 }
 
 .installation-icon-wrapper{

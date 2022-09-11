@@ -49,7 +49,7 @@ const Messages = () => {
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [loadMessageData, setLoadMessageData] = useState(false);
     const url = window.location.href;
-    const stationName = url.split('factories/')[1].split('/')[1];
+    const stationName = url.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('0');
     const tabs = ['All', 'Dead-letter'];

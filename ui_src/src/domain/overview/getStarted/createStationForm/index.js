@@ -73,7 +73,7 @@ const CreateStationForm = (props) => {
     }, []);
 
     const checkState = () => {
-        if (getStartedState?.formFieldsCreateStation?.factory_name) {
+        if (getStartedState?.formFieldsCreateStation?.name) {
             setAllowEdit(false);
             getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
         } else {
@@ -82,7 +82,7 @@ const CreateStationForm = (props) => {
     };
 
     const onFinish = async () => {
-        if (getStartedState.stationName) {
+        if (getStartedState?.completedSteps > 0) {
             getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
         } else {
             let retentionValue = 0;
@@ -99,7 +99,6 @@ const CreateStationForm = (props) => {
                 updateFormState('retention_value', retentionValue);
                 const bodyRequest = {
                     name: values.name,
-                    factory_name: values.factory_name,
                     retention_type: values.retention_type,
                     retention_value: retentionValue,
                     storage_type: values.storage_type,
@@ -113,7 +112,6 @@ const CreateStationForm = (props) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                getStartedDispatch({ type: 'SET_FACTORY', payload: bodyRequest.factory_name });
                 getStartedDispatch({ type: 'SET_STATION', payload: data.name });
                 getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
                 getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
@@ -130,42 +128,6 @@ const CreateStationForm = (props) => {
 
     return (
         <Form name="form" form={creationForm} autoComplete="off" className="create-station-form-getstarted">
-            <div>
-                <TitleComponent
-                    headerTitle="Enter factory name"
-                    typeTitle="sub-header"
-                    headerDescription="A factory presents the application/use case that the user requires to build, and, within it, all the stations (queues) that establish the use case"
-                    required={true}
-                ></TitleComponent>
-                <Form.Item
-                    name="factory_name"
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Please input factory name!'
-                        }
-                    ]}
-                    style={{ height: '50px' }}
-                    initialValue={getStartedState?.formFieldsCreateStation.factory_name}
-                >
-                    <Input
-                        placeholder="Type factory name"
-                        type="text"
-                        radiusType="semi-round"
-                        colorType="black"
-                        backgroundColorType="none"
-                        borderColorType="gray"
-                        width="450px"
-                        height="40px"
-                        onBlur={(e) => updateFormState('factory_name', e.target.value)}
-                        onChange={(e) => {
-                            updateFormState('factory_name', e.target.value);
-                        }}
-                        value={getStartedState?.formFieldsCreateStation.factory_name}
-                        disabled={!allowEdit}
-                    />
-                </Form.Item>
-            </div>
             <div>
                 <TitleComponent
                     headerTitle="Enter station name"

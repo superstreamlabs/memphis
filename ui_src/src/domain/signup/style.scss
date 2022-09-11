@@ -29,6 +29,7 @@
         .form-logo {
             width: 300px;
             height: 40px;
+            margin-bottom: 10px;
         }
         .signup-sub-title {
             font-size: 20px;
@@ -48,6 +49,19 @@
             margin-top: 25px;
             display: flex;
             justify-content: center;
+            .placeholder-btn{
+                display: flex;
+                align-items: center;
+                p{
+                    margin: 0;
+                    font-size: 12px;
+                }
+                svg{
+                    width: 22px;
+                    position: absolute;
+                    right: 10px;                    
+                }
+            }
         }
         .toggle-analytics {
             display: flex;
@@ -64,5 +78,17 @@
     }
     .form-fields {
         z-index: 3;
+    }
+    .error-message{
+        margin-top: 10px;
+    }
+    .version{
+        display: flex;
+        p{
+            font-weight: 400;
+            font-size: 12px;
+            margin-bottom: 0;
+            margin-right: 10px;
+        }
     }
 }

@@ -57,7 +57,7 @@ const FloatingButton = () => {
                         <img src={installationIcon} />
                     </label>
                 }
-                height="680px"
+                height="700px"
                 clickOutside={() => {
                     setShowInstallaion(false);
                 }}

@@ -37,7 +37,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import { SOCKET_URL } from '../../config';
 import io from 'socket.io-client';
-import Signup from '../signup';
+import pathDomains from '../../router';
 
 const Login = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -65,6 +65,9 @@ const Login = (props) => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
+            if (data.exist) {
+                history.push(pathDomains.signup);
+            }
             setIsSignup(data.exist);
             setisLoading(false);
         } catch (error) {
@@ -112,7 +115,6 @@ const Login = (props) => {
 
     return (
         <>
-            {!isLoading && isSignup && <Signup />}
             {!isLoading && !isSignup && (
                 <section className="loginContainers">
                     {state.loading ? <Loader></Loader> : ''}

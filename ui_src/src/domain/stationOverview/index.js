@@ -38,7 +38,7 @@ import { parsingDate } from '../../services/valueConvertor';
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
     const url = window.location.href;
-    const stationName = url.split('factories/')[1].split('/')[1];
+    const stationName = url.split('stations/')[1];
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
@@ -50,7 +50,7 @@ const StationOverview = () => {
             stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
         } catch (error) {
             if (error.status === 404) {
-                history.push(`${pathDomains.factoriesList}/${url.split('factories/')[1].split('/')[0]}`);
+                history.push(pathDomains.stations);
             }
         }
     };
@@ -76,14 +76,14 @@ const StationOverview = () => {
         } catch (error) {
             setisLoading(false);
             if (error.status === 404) {
-                history.push(`${pathDomains.factoriesList}/${url.split('factories/')[1].split('/')[0]}`);
+                history.push(pathDomains.stations);
             }
         }
     };
 
     useEffect(() => {
         setisLoading(true);
-        dispatch({ type: 'SET_ROUTE', payload: 'factories' });
+        dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getStaionMetaData();
         getStationDetails();
     }, []);

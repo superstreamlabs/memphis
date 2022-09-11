@@ -1,7 +1,5 @@
 .tabs-container {
-    .ant-tabs-tab:hover{
-        color: var(--purple);
-    }
+    
     .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn{
         color: var(--purple) !important;
     }
@@ -10,4 +8,8 @@
         border-radius: 10px;
     }
 
+}
+
+.ant-tabs-tab:hover{
+    color: var(--purple) !important;
 }

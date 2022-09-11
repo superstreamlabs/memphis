@@ -4,70 +4,81 @@
     border-radius: 10px;
     box-shadow: 0px 0px 4px 3px rgba(221, 221, 221, 0.3);
     min-height: 60px;
-    margin-bottom: 10px;
+    margin-bottom: 17px;
     overflow: auto;
-    .station-box-header {
-        display: flex;
-        min-height: 60px;
-        padding-left: 20px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+
+    .data-labels {
+        color: #84818a;
+        font-size: 12px;
+        font-weight: 500px;
+    }
+    .data-info {
+        color: #2e2c34;
+        font-size: 14px;
+        margin-bottom: 0px;
+        text-transform: capitalize;
+        margin-left: 1px;
+        margin-top: 10px;
+        font-weight: 500px;
+
+        .anticon svg {
+            color: #2e2c34;
+            width: 7px;
+            height: 20px;
+        }
+
+        .station-box-container .data-info .anticon svg {
+            width: 7px;
+            height: 20px;
+        }
+    }
+    .left-section {
+        width: 22%;
+        .station-name {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2e2c34;
+        }
+    }
+    .middle-section {
+        width: 11.5%;
+        border-left: 1px solid #e9e9e9;
         justify-content: space-between;
-        h3,
-        p {
-            margin: 0;
+        padding-left: 20px;
+        display: flex;
+        .station-created {
+            margin-right: 15px;
         }
-        .info-fields {
-            display: flex;
-            align-items: center;
-            .field-wrapper {
-                padding-right: 25px;
-                display: flex;
-                align-items: center;
-                width: 200px;
-                h3 {
-                    font-weight: 600;
-                    padding-right: 3px;
-                    font-size: 14px;
-                }
-                p {
-                    font-weight: 400;
-                    font-size: 14px;
-                }
-            }
-            .retention{
-                width: 200px;
-            }
-            .replicas{
-                width: 200px;
-            }
-            .storage{
-                width: 200px;
-            }
-        }
-        .actions-side {
-            display: flex;
-            margin-right: 20px;
-            .hover-section{
-                display: flex;
-                color: var(--purple);
-            }
-            .action {
-                display: flex;
-                align-items: center;
-                margin-left: 20px;
-            }
-            .overview,
-            .edit {
-                font-weight: 600;
-                font-size: 12px;
-                cursor: pointer;
-            }
-            .station-menu {
-                .threedots-menu {
-                    color: #a9a9a9;
-                    margin-top: 0px;
-                    margin-left: 10px;
-                }
+    }
+    .right-section {
+        width: 50%;
+        display: flex;
+        border-left: 1px solid #e9e9e9;
+        padding-left: 20px;
+
+        justify-content: space-between;
+        .station-meta {
+            img {
+                margin-right: 3px;
             }
         }
     }
+
+    .threedots-menu {
+        margin-left: 30px;
+    }
+    .MuiSvgIcon-root {
+        color: #84818a;
+    }
 }
+
+.station-box-container:hover {
+    opacity: 0.7;
+}
+
+

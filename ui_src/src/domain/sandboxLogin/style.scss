@@ -158,75 +158,8 @@
             overflow: hidden;
         }
     }
-}
-
-.error-message {
-    position: absolute;
-    width: 21vw;
-    p {
-        color: #ff4d4f;
+    .error-message {
+        width: 21vw;
     }
 }
 
-.mobile-login {
-    display: grid;
-    overflow: auto;
-    grid-template-rows: 30% 70%;
-    height: 100%;
-    .logo-mobile {
-        position: relative;
-        top: 10%;
-    }
-    .mobile-form {
-        position: relative;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        .ant-form {
-            position: relative;
-            justify-items: center;
-            .ant-form-item {
-                min-width: 230px;
-                height: 70px;
-                margin-bottom: 0px;
-            }
-            .ant-form-item-explain.ant-form-item-explain-error {
-                float: left;
-                display: flex;
-                padding-left: 16px;
-                width: 60vw;
-                text-align: left;
-            }
-        }
-
-        .ant-input-affix-wrapper {
-            background-color: #f9f9f9 !important;
-            box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.21);
-        }
-        .checkbox-container {
-            justify-content: center;
-        }
-        .ant-checkbox-checked .ant-checkbox-inner {
-            background-color: #8277d9;
-            border-color: #8277d9;
-        }
-        .ant-checkbox-checked::after {
-            border-color: #8277d9;
-        }
-        .ant-checkbox-inner {
-            border-color: #8277d9;
-            background-color: transparent;
-        }
-        .ant-checkbox + span {
-            color: var(--blue);
-        }
-        .error-message {
-            position: relative;
-        }
-    }
-}
-
-.styles_loading__Z65VQ {
-    height: 40px !important;
-    padding-top: 10px;
-}

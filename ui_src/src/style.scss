@@ -64,13 +64,16 @@ input[type='number'] {
 }
 
 .ant-switch {
-    background-color: var(--white) !important;
+    background-color: #d9d9d9 !important;
     border: 0.5px !important;
     position: initial !important;
+    span{
+        color: white;
+    }
 }
 
 .ant-switch-inner {
-    color: rgba(120, 120, 128, 0.16) !important;
+    color: var(--blue) !important;
 }
 
 .ant-switch-checked {
@@ -79,4 +82,8 @@ input[type='number'] {
     .ant-switch-inner {
         color: var(--white) !important;
     }
+}
+
+button:hover{
+    opacity: 0.8 !important;
 }
