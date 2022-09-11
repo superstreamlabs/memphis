@@ -51,6 +51,18 @@ Message broker acts as the middleman and supports streaming architecture,<br>
 but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
 **Give memphis{dev} a spin before.**
 
+Working with data streaming is DIFFICULT.<br><br>
+
+As a developer, you need to build a dedicated pipeline for each data source,<br>
+work with schemas, formats, serializations, analyze each source individually,<br>
+enrich the data with other sources, constantly change APIs, and scale for better performance 🥵.<br>
+Besides that, it constantly crashes and requires adaptation to different rate limits.<br>
+**It takes time and resources that you probably don't have.**<br>
+
+Message broker acts as the middleman and supports streaming architecture,<br>
+but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
+**Give memphis{dev} a spin before.**
+
 ## 👉 Use-cases
 - Async task management
 - Real-time streaming pipelines
