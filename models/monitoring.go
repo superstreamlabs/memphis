@@ -56,7 +56,7 @@ type GetStationOverviewDataSchema struct {
 
 type SystemLogsRequest struct {
 	LogType  string `form:"log_type" json:"log_type"  binding:"required"`
-	StartIdx uint64 `form:"start_index" json:"start_index"  binding:"required"`
+	StartIdx int    `form:"start_index" json:"start_index"  binding:"required"`
 }
 
 type Log struct {
