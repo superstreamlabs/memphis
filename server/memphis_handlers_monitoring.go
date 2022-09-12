@@ -301,13 +301,18 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		Durable:       durableName,
 	}
 
+	filterSubjectSuffix := _EMPTY_
 	switch request.LogType {
 	case "err":
-		cc.FilterSubject = syslogsStreamName + "." + syslogsErrSubject
+		filterSubjectSuffix = syslogsErrSubject
 	case "wrn":
-		cc.FilterSubject = syslogsStreamName + "." + syslogsWarnSubject
+		filterSubjectSuffix = syslogsWarnSubject
 	case "inf":
-		cc.FilterSubject = syslogsStreamName + "." + syslogsInfoSubject
+		filterSubjectSuffix = syslogsInfoSubject
+	}
+
+	if filterSubjectSuffix != _EMPTY_ {
+		cc.FilterSubject = syslogsStreamName + "." + filterSubjectSuffix
 	}
 
 	err := mh.S.memphisAddConsumer(syslogsStreamName, &cc)
@@ -323,10 +328,9 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	req := []byte(strconv.Itoa(amount))
 
 	sub, err := mh.S.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
 			mh.S.sendInternalAccountMsg(mh.S.GlobalAccount(), reply, []byte(_EMPTY_))
-
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -336,11 +340,12 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 			}
 
 			respCh <- StoredMsg{
+				Subject:  subject,
 				Sequence: uint64(seq),
 				Data:     msg,
 				Time:     time.Unix(0, int64(intTs)),
 			}
-		}(responseChan, reply, copyBytes(msg))
+		}(responseChan, subject, reply, copyBytes(msg))
 	})
 	if err != nil {
 		serv.Errorf("GetSystemLogs error: " + err.Error())
@@ -371,7 +376,7 @@ cleanup:
 		return
 	}
 
-	var resMsgs []models.MessageDetails
+	var resMsgs []models.Log
 	for _, msg := range msgs {
 		if err != nil {
 			serv.Errorf("GetSystemLogs error: " + err.Error())
@@ -380,20 +385,19 @@ cleanup:
 		}
 
 		data := string(msg.Data)
-		if len(data) > 100 { // get the first chars for preview needs
-			data = data[0:100]
-		}
-		resMsgs = append(resMsgs, models.MessageDetails{
-			MessageSeq:   int(msg.Sequence),
-			Data:         data,
-			ProducedBy:   _EMPTY_,
-			ConnectionId: _EMPTY_,
-			TimeSent:     msg.Time,
-			Size:         len(msg.Subject) + len(msg.Data),
+		resMsgs = append(resMsgs, models.Log{
+			MessageSeq: int(msg.Sequence),
+			Subject:    msg.Subject,
+			Data:       data,
+			ProducedBy: mh.S.memphis.serverID,
+			TimeSent:   msg.Time,
+			Size:       len(msg.Subject) + len(msg.Data),
 		})
 	}
+
 	response := models.SystemLogsResponse{
-		Logs: resMsgs}
+		Logs: resMsgs,
+	}
 
 	c.IndentedJSON(200, response)
 }

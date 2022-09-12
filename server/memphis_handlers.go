@@ -58,6 +58,7 @@ var serv *Server
 var configuration = conf.GetConfig()
 
 type srvMemphis struct {
+	serverID               string
 	nuid                   *nuid.NUID
 	dbClient               *mongo.Client
 	dbCtx                  context.Context
@@ -71,6 +72,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.memphis.dbCtx = dbInstance.Ctx
 	s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
+	s.memphis.serverID = configuration.SERVER_NAME
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
