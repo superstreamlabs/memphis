@@ -31,7 +31,6 @@ import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import SearchInput from '../../components/searchInput';
 import pathDomains from '../../router';
-import { parsingDate } from '../../services/valueConvertor';
 import stationsIcon from '../../assets/images/stationIcon.svg';
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
@@ -39,9 +38,7 @@ import CreateStationDetails from '../../components/createStationDetails';
 import Loader from '../../components/loader';
 
 const StationsList = () => {
-    const url = window.location.href;
     const history = useHistory();
-    const botId = 1;
 
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
@@ -50,9 +47,6 @@ const StationsList = () => {
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setisLoading] = useState(false);
     const createStationRef = useRef(null);
-    const [parseDate, setParseDate] = useState('');
-    const [botUrl, setBotUrl] = useState('');
-    const [botImage, setBotImage] = useState('');
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
@@ -66,7 +60,7 @@ const StationsList = () => {
 
     useEffect(() => {
         if (searchInput !== '' && searchInput.length >= 2) {
-            setFilteredList(stationsList.filter((station) => station.station.name.startsWith(searchInput)));
+            setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
         } else setFilteredList(stationsList);
     }, [stationsList]);
 
@@ -78,7 +72,7 @@ const StationsList = () => {
             setFilteredList(res.stations);
             setTimeout(() => {
                 setisLoading(false);
-            }, 1000);
+            }, 500);
         } catch (err) {
             setisLoading(false);
             return;
@@ -95,8 +89,6 @@ const StationsList = () => {
 
     useEffect(() => {
         state.socket?.on(`stations_overview_data`, (data) => {
-            setBotImage(data.user_avatar_id || botId);
-            setParseDate(parsingDate(data.creation_date));
             setStationList(data);
         });
 

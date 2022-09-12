@@ -4,7 +4,7 @@
     padding: 1vw;
     min-width: 700px;
     overflow: auto;
-
+    height: 100%;
     ::-webkit-input-placeholder {
         color: #818c99;
         font-size: 12px;
@@ -147,11 +147,11 @@
         }
     }
     .stations-content {
-        height: calc(100% - 70px);
+        height: calc(100% - 80px);
         padding: 3px 3px 2px 3px;
         position: relative;
         overflow: auto;
-        margin-left: 33px;
+        margin-left: 25px;
         .no-station-to-display {
             position: relative;
             display: flex;
