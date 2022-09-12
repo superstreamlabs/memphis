@@ -1,0 +1,165 @@
+.sandbox-containers {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: white;
+    min-width: 800px;
+    overflow: auto;
+    .desktop-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: 50% 50%;
+
+        min-height: 600px;
+        .desktop-content {
+            .logoImg {
+                padding: 50px;
+                height: 15%;
+                img {
+                    width: 175px;
+                    height: auto;
+                }
+            }
+            content {
+                position: relative;
+                display: grid;
+                grid-template-rows: 40% 40%;
+                flex-direction: column;
+                justify-content: center;
+                .title {
+                    font-size: 48px;
+                    color: var(--blue);
+                    font-weight: 600;
+                    margin-bottom: 20px;
+                    p {
+                        display: flex;
+                        margin: 5px;
+                        justify-content: center;
+                    }
+                }
+                .login-container {
+                    display: flex;
+                    justify-content: center;
+                    margin: 5px;
+                    flex-direction: column;
+                    width: 500px;
+                    align-items: center;
+                    .login-form {
+                        justify-self: center;
+                        .field {
+                            p {
+                                font-size: 12px;
+                                font-weight: 400;
+                                color: var(--blue);
+                                margin-bottom: 8px;
+                            }
+                        }
+                        .button-container {
+                            padding-top: 10px;
+                        }
+                        .ant-form-item-control {
+                            margin: 0;
+                        }
+                        .ant-form-item-explain-error {
+                            min-width: 195px;
+                        }
+                    }
+
+                    .sandbox-pad {
+                        height: 10%;
+                        padding-top: 2%;
+                        padding-left: 16%;
+                    }
+
+                    .google-login-button {
+                        padding: 10px;
+                        font-family: 'Inter';
+                        font-size: 18px;
+                        font-style: normal;
+                        line-height: 128%;
+                        margin-bottom: 10px;
+                        border: none;
+                        color: #4285f4;
+                        border-radius: 26px;
+                        border: 2px solid #4285f4;
+                        width: 338px;
+                        height: 48px;
+                        background-color: white;
+                        margin-top: 30px;
+                        cursor: pointer;
+                        box-shadow: rgb(0 0 0 / 24%) 0px 2px 2px 0px, rgb(0 0 0 / 24%) 0px 0px 1px 0px;
+                    }
+
+                    .github-login-button {
+                        padding: 10px;
+                        font-family: 'Inter';
+                        font-size: 18px;
+                        font-style: normal;
+                        line-height: 128%;
+                        margin-bottom: 10px;
+                        border: none;
+                        color: black;
+                        border-radius: 26px;
+                        border: 2px solid black;
+                        width: 338px;
+                        height: 48px;
+                        background-color: white;
+                        margin-top: 15px;
+                        cursor: pointer;
+                        box-shadow: rgb(0 0 0 / 24%) 0px 2px 2px 0px, rgb(0 0 0 / 24%) 0px 0px 1px 0px;
+                    }
+
+                    .git-image {
+                        margin-right: 20px;
+                        margin-left: 6px;
+                        width: 18px;
+                        height: 18px;
+                    }
+                }
+
+                or {
+                    width: 60%;
+                    text-align: center;
+                    border-bottom: 1px solid #000;
+                    line-height: 0.1em;
+                    margin: 30px 0 30px;
+                }
+
+                or span {
+                    background: white;
+                    padding: 0 10px;
+                }
+
+                .admin-access-button {
+                    color: #4285f4 !important;
+                    border: 0px;
+                    background-color: transparent;
+                    text-decoration: underline;
+                    display: flex;
+                    padding-left: 32%;
+                    cursor: pointer;
+                    padding-top: 10%;
+                }
+
+                .google-access-button {
+                    color: #4285f4 !important;
+                    border: 0px;
+                    background-color: transparent;
+                    text-decoration: underline;
+                    display: flex;
+                    padding-left: 32%;
+                    cursor: pointer;
+                }
+            }
+        }
+        .brand-shapes {
+            overflow: hidden;
+        }
+    }
+    .error-message {
+        width: 21vw;
+    }
+}
+

@@ -1,0 +1,150 @@
+@import '~antd/dist/antd.css';
+
+.App {
+    text-align: center;
+    color: var(--blue);
+}
+.app-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background: #f5f6f8;
+}
+
+.App-logo {
+    height: 40vmin;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .App-logo {
+        animation: App-logo-spin infinite 20s linear;
+    }
+}
+
+.App-header {
+    background-color: #282c34;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+    color: white;
+}
+
+.App-link {
+    color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#panel-open-menu {
+    position: absolute;
+    top: 30px;
+}
+
+.main-header-h1 {
+    font-weight: 600;
+    font-size: 24px;
+    color: var(--blue);
+    position: relative;
+    margin-bottom: 0;
+    line-height: 30px;
+}
+
+::-webkit-scrollbar {
+    width: 3px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbcbcb;
+    border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #bcb7b7;
+}
+
+.ant-message-notice-content {
+    background: #f7f7f7 !important;
+    border-radius: 15px;
+    color: var(--blue);
+    font-weight: bold !important;
+    font-size: 16px;
+}
+.ant-message-warning .anticon {
+    color: var(--purple);
+}
+.ant-btn > .anticon {
+    line-height: 0;
+}
+
+.circular-progress {
+    color: #6557ff;
+}
+
+.ant-btn-primary {
+    text-shadow: none !important;
+}
+
+//Threedots Menu
+.Menu.MuiPopover-paper {
+    width: 150px;
+    margin-top: 25px;
+    margin-left: 10px;
+    background: #ffffff;
+    border: 1px solid #d8d8d8;
+    box-sizing: border-box;
+    border-radius: 8px;
+}
+.threedots-menu {
+    margin-top: 10px;
+    cursor: pointer;
+}
+.menu-item-icon {
+    color: var(--gray);
+    font-size: 16px !important;
+}
+.menu-item-label {
+    font-size: 12px;
+    font-weight: 400;
+    color: black;
+    margin-left: 10px;
+
+    .a{
+        color: black;
+    }
+}
+.sidebar-and-containers {
+    position: absolute;
+    display: flex;
+    width: 100%;
+}
+.required-field-mark {
+    color: var(--red);
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+    background-color: var(--purple);
+    border-color: var(--purple);
+}
+.ant-checkbox-checked .ant-checkbox-inner::after {
+    background-color: var(--purple);
+}
+
+.error-message {
+    position: absolute;
+    p {
+        color: #ff4d4f;
+    }
+}

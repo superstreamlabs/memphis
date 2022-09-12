@@ -1,0 +1,75 @@
+.sys-components-container {
+    height: 47.5%;
+    padding: 15px;
+    min-width: 280px;
+    min-height: 250px;
+    p {
+        margin-bottom: 0px;
+    }
+    .sys-components-header {
+        margin-top: 15px;
+        color: #979797;
+        display: grid;
+        grid-template-columns: 34% 33% 33%;
+        padding-left: 10px;
+        padding-bottom: 10px;
+        height: 30px;
+    }
+    .component-list {
+        overflow-y: scroll;
+        height: calc(100% - 70px);
+        .sys-components {
+            display: grid;
+            grid-template-columns: 34% 33% 33%;
+            padding-top: 7px;
+            padding-bottom: 7px;
+            padding-left: 10px;
+            align-items: center;
+        }
+    }
+    .overview-components-header {
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+        height: 25px;
+        margin-bottom: 0;
+    }
+    .actions-side {
+        display: flex;
+        width: 30px;
+        margin-right: 20px;
+        float: right;
+        .hover-section {
+            align-items: center;
+            display: flex;
+            color: var(--purple);
+        }
+        .link-row {
+            color: var(--purple);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .action {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+        .overview,
+        .edit {
+            width: 27px;
+            left: 1327px;
+            top: 568px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .station-menu {
+            .threedots-menu {
+                color: #a9a9a9;
+                margin-top: 0px;
+                margin-left: 10px;
+            }
+        }
+    }
+}

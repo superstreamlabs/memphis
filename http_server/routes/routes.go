@@ -35,7 +35,6 @@ import (
 func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Server) {
 	router := gin.New()
 	router.Use(gin.Recovery())
-
 	router.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -53,7 +52,6 @@ func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Ser
 
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(mainRouter)
-	InitializeFactoriesRoutes(mainRouter, handlers)
 	InitializeStationsRoutes(mainRouter, handlers)
 	InitializeProducersRoutes(mainRouter, handlers)
 	InitializeConsumersRoutes(mainRouter, handlers)

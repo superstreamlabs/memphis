@@ -58,7 +58,6 @@ type MessageDetails struct {
 type Station struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
-	FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
 	RetentionType   string             `json:"retention_type" bson:"retention_type"`
 	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
 	StorageType     string             `json:"storage_type" bson:"storage_type"`
@@ -75,7 +74,6 @@ type Station struct {
 type ExtendedStation struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
-	FactoryId       primitive.ObjectID `json:"factory_id" bson:"factory_id"`
 	RetentionType   string             `json:"retention_type" bson:"retention_type"`
 	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
 	StorageType     string             `json:"storage_type" bson:"storage_type"`
@@ -86,7 +84,12 @@ type ExtendedStation struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
-	FactoryName     string             `json:"factory_name" bson:"factory_name"`
+}
+
+type ExtendedStationDetails struct {
+	Station 		Station 			 `json:"station"`
+	TotalMessages  	int                  `json:"total_messages"`
+	PoisonMessages 	int 				 `json:"posion_messages"`
 }
 
 type GetStationSchema struct {
@@ -95,7 +98,6 @@ type GetStationSchema struct {
 
 type CreateStationSchema struct {
 	Name            string `json:"name" binding:"required,min=1,max=32"`
-	FactoryName     string `json:"factory_name" binding:"required"`
 	RetentionType   string `json:"retention_type"`
 	RetentionValue  int    `json:"retention_value"`
 	Replicas        int    `json:"replicas"`

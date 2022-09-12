@@ -1,0 +1,88 @@
+.consumer-group{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #FFFFFF;
+    box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.14);
+    border-radius: 8px;
+    header{
+        position: relative;
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        height: 30px;
+        align-items: center;
+        background: #FF3624;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        p{
+            font-weight: 500;
+            font-size: 12px;
+            color: #FFFFFF;
+            margin-left: 15px;
+            margin-bottom: 0;
+        }
+        .circle-status {
+            margin-right: 15px;
+        }
+    }
+    .content-wrapper{
+        padding: 15px;
+        padding-right: 2px;
+        display: flex;
+        height: calc(100% - 30px);
+        position: relative;
+        justify-content: space-between;
+        .details {
+            width: 49%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            background: #FFFFFF;
+            border: 1px solid #EFEFEF;
+            box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
+            border-radius: 8px;
+            p{
+                margin: 0;
+            }
+            .title{
+                font-weight: 500;
+                font-size: 14px;
+                margin-left: 15px;
+            }
+            content {
+                display: flex;
+                justify-content: space-between;
+                line-height: 30px;
+                margin-right: 15px;
+                margin-left: 15px;
+                p{
+                    font-weight: 400;
+                    font-size: 12px;
+                    color: #84818A;
+                }
+                span {
+                    font-size: 12px;
+                    color: #1d1d1d;
+                    font-family: 'InterSemiBold';
+                }
+            }
+        }
+        .consumers {
+            width: 49%;
+            overflow: auto;
+            .multi {
+                padding-right: 5px;
+                .ant-collapse-header{
+                    padding-right: 2px !important;
+                }
+                .collapse-child .ant-collapse-item.ant-collapse-no-arrow{
+                    border: 1px solid #EFEFEF !important;
+                    border-radius: 8px !important;
+                    margin-bottom: 8px;        
+                }
+            }
+
+        }
+    }
+}

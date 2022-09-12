@@ -1,0 +1,28 @@
+.empty-stations-container {
+    height: calc(100% - 75px);
+    text-align: center;
+    align-items: center;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    margin-top: 10%;
+
+    .stations-icon {
+        width: 120px;
+    }
+
+    .header-empty-stations {
+        font-size: 24px;
+        font-weight: 600;
+        margin-top: 37px;
+        color: #1d1d1d;
+    }
+
+    .header-empty-description {
+        font-size: 12px;
+        font-weight: 400;
+        color: #8f8f8f;
+        width: 35%;
+        margin-top: 12px;
+    }
+}
