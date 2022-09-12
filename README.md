@@ -40,7 +40,7 @@ Dashboard             |  Station (Topic) overview|  CLI
 <img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
 
 ## ⭐️ Why
-Working with data streaming is DIFFICULT.<br><br>
+Working with data streaming is HARD.<br>
 
 As a developer, you need to build a dedicated pipeline for each data source,<br>
 work with schemas, formats, serializations, analyze each source individually,<br>
