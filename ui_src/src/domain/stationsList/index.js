@@ -22,7 +22,6 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
-import { SearchOutlined } from '@ant-design/icons';
 
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import StationBoxOverview from './stationBoxOverview';
@@ -32,6 +31,7 @@ import { Context } from '../../hooks/store';
 import SearchInput from '../../components/searchInput';
 import pathDomains from '../../router';
 import stationsIcon from '../../assets/images/stationIcon.svg';
+import searchIcon from '../../assets/images/searchIcon.svg';
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
 import CreateStationDetails from '../../components/createStationDetails';
@@ -68,6 +68,7 @@ const StationsList = () => {
         setisLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
+            res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
             setStationList(res.stations);
             setFilteredList(res.stations);
             setTimeout(() => {
@@ -89,6 +90,7 @@ const StationsList = () => {
 
     useEffect(() => {
         state.socket?.on(`stations_overview_data`, (data) => {
+            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
             setStationList(data);
         });
 
@@ -152,7 +154,7 @@ const StationsList = () => {
                             height="37px"
                             borderRadiusType="circle"
                             backgroundColorType="gray-dark"
-                            iconComponent={<SearchOutlined style={{ color: '#818C99', marginTop: '10px' }} />}
+                            iconComponent={<img src={searchIcon} />}
                             onChange={handleSearch}
                             value={searchInput}
                         />

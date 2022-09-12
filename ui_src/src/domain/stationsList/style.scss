@@ -5,127 +5,19 @@
     min-width: 700px;
     overflow: auto;
     height: 100%;
-    ::-webkit-input-placeholder {
-        color: #818c99;
-        font-size: 12px;
-        font-weight: 400;
-    }
+
     .stations-details-header {
-        padding-top: 15px;
         height: 75px;
         display: flex;
         justify-content: space-between;
         .left-side {
-            color: var(--blue);
-            .main-header-h1 {
-                padding: 1px;
-                margin-bottom: 10px;
-                font-size: 24px;
-                font-weight: 600;
-                margin-left: 25px;
-                .num-stations {
-                    color: #b4b4b4;
-                    font-weight: 400;
-                    font-size: 24px;
-                }
-            }
-            .edit-icon {
-                cursor: pointer;
-                margin-left: 6px;
-                color: var(--gray);
-                svg {
-                    font-size: 16px;
-                }
-            }
-            .edit-input-name {
-                margin-bottom: 5px;
-                input {
-                    background-color: transparent;
-                    border: 1px solid var(--gray);
-                    border-radius: 5px;
-                    font-size: 24px;
-                    font-weight: 600;
-                    padding: 0;
-                    height: 37px;
-                }
-            }
-            .description {
-                display: flex;
-                height: 30px;
-                p {
-                    max-width: 25vw;
-                    overflow-y: auto;
-                    overflow-x: hidden;
-                    display: flex;
-                    font-size: 14px;
-                    font-weight: 400;
-                    padding: 0;
-                    margin: 2px;
-                    overflow-wrap: anywhere;
-                    padding: 1px;
-                }
-                .edit-icon {
-                    margin-top: 6px;
-                }
-            }
-            textarea {
-                display: flex;
-                height: 30px;
-                color: rgba(0, 0, 0, 0.85);
-                background-color: transparent;
-                border: 1px solid var(--gray);
-                border-radius: 5px;
-                font-size: 14px;
+            .num-stations {
+                color: #b4b4b4;
                 font-weight: 400;
-                overflow: auto;
-                resize: none;
-                width: 270px;
-            }
-
-            .stations-length {
-                display: flex;
-                height: 35px;
-                align-items: center;
-                h1 {
-                    font-weight: 600;
-                    color: var(--blue);
-                    font-size: 16px;
-                    margin: 0;
-                }
-            }
-            .stations-owner {
-                height: 65px;
-                display: flex;
-                align-items: center;
-
-                .user-avatar {
-                    width: 35px;
-                    height: 35px;
-                    background: #ffffff;
-                    box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin-right: 10px;
-                }
-                .user-details {
-                    p {
-                        font-weight: 400;
-                        font-size: 14px;
-                        margin: 0;
-                        text-transform: capitalize;
-                    }
-                    span {
-                        font-weight: 400;
-                        font-size: 12px;
-                        color: #a9a9a9;
-                    }
-                }
+                font-size: 24px;
             }
         }
         .right-side {
-            margin-right: 0.2vw;
             display: flex;
             justify-content: flex-end;
             align-items: center;
@@ -151,7 +43,6 @@
         padding: 3px 3px 2px 3px;
         position: relative;
         overflow: auto;
-        margin-left: 25px;
         .no-station-to-display {
             position: relative;
             display: flex;
@@ -175,5 +66,8 @@
                 margin-bottom: 60px;
             }
         }
+    }
+    ::-webkit-scrollbar-thumb {
+        display: none;
     }
 }

@@ -39,6 +39,9 @@
             padding-left: 3px;
         }
     }
+    ::-webkit-scrollbar-thumb {
+        display: none;
+    }
 }
 .user-details-modal {
     font-size: 14px;

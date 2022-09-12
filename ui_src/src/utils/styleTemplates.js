@@ -38,6 +38,8 @@ export function getBorderColor(borderColorType) {
             return 'transparent';
         case 'gray':
             return '#d8d8d8';
+        case 'gray-light':
+            return '#E9E9E9';
     }
 }
 

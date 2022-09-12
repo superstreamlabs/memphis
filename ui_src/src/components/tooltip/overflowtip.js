@@ -62,7 +62,7 @@ const OverflowTip = (props) => {
     const [hoverStatus, setHover] = useState(false);
 
     return (
-        <Tooltip title={props?.text} interactive disableHoverListener={!hoverStatus} classes={classes} arrow>
+        <Tooltip className={props?.className} title={props?.text} interactive disableHoverListener={!hoverStatus} classes={classes} arrow>
             <div
                 ref={textElementRef}
                 style={{

@@ -34,11 +34,11 @@ import { convertSecondsToDate } from '../../../services/valueConvertor';
 import Modal from '../../../components/modal';
 import { parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
-import retentionImg from '../../../assets/images/retention.svg';
-import storageImg from '../../../assets/images/storage.svg';
-import replicasImg from '../../../assets/images/replicas.svg';
-import totalMsgImg from '../../../assets/images/total_msg.svg';
-import poisonMsgImg from '../../../assets/images/poison_msg.svg';
+import retentionIcon from '../../../assets/images/retentionIcon.svg';
+import storageIcon from '../../../assets/images/strIcon.svg';
+import replicasIcon from '../../../assets/images/replicasIcon.svg';
+import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
+import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
 import { Link } from 'react-router-dom';
 import stationsIcon from '../../../assets/images/stationsIcon.svg';
 
@@ -83,41 +83,39 @@ const StationBoxOverview = (props) => {
                 <div className="middle-section">
                     <div className="station-created">
                         <label className="data-labels">Created by</label>
-                        <OverflowTip text={props.station.station.created_by_user} width={'100px'}>
-                            <p className="data-info">{props.station.station.created_by_user}</p>
+                        <OverflowTip className="data-info" text={props.station.station.created_by_user} width={'100px'}>
+                            {props.station.station.created_by_user}
                         </OverflowTip>
                     </div>
                 </div>
                 <div className="right-section">
                     <div className="station-meta">
-                        <img src={retentionImg} alt="retention" />
-                        <label className="data-labels">Retention</label>
-                        <p className="data-info">
-                            <OverflowTip text={retentionValue} width={'90px'}>
-                                {retentionValue}
-                            </OverflowTip>
-                        </p>
+                        <img src={retentionIcon} alt="retention" />
+                        <label className="data-labels retention">Retention</label>
+                        <OverflowTip className="data-info" text={retentionValue} width={'90px'}>
+                            {retentionValue}
+                        </OverflowTip>
                     </div>
                     <div className="station-meta">
-                        <img src={storageImg} alt="storage" />
-                        <label className="data-labels">Storage Type</label>
+                        <img src={storageIcon} alt="storage" />
+                        <label className="data-labels storage">Storage Type</label>
                         <p className="data-info">{props.station.station.storage_type}</p>
                     </div>
                     <div className="station-meta">
-                        <img src={replicasImg} alt="replicas" />
-                        <label className="data-labels">Replicas</label>
+                        <img src={replicasIcon} alt="replicas" />
+                        <label className="data-labels replicas">Replicas</label>
                         <p className="data-info">{props.station.station.replicas}</p>
                     </div>
                     <div className="station-meta">
-                        <img src={totalMsgImg} alt="total messages" />
-                        <label className="data-labels">Total messages</label>
+                        <img src={totalMsgIcon} alt="total messages" />
+                        <label className="data-labels total">Total messages</label>
                         <p className="data-info">
                             {props.station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : props?.station?.total_messages}
                         </p>
                     </div>
                     <div className="station-meta">
-                        <img src={poisonMsgImg} alt="poison messages" />
-                        <label className="data-labels">Poison messages</label>
+                        <img src={poisonMsgIcon} alt="poison messages" />
+                        <label className="data-labels poison">Poison messages</label>
                         <p className="data-info">{props?.station?.posion_messages === 0 ? <MinusOutlined /> : props?.station?.posion_messages}</p>
                     </div>
                     <MoreVertIcon

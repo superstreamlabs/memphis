@@ -38,7 +38,7 @@ const TransitionsModal = (props) => {
         <Modal
             wrapClassName={'modal-wrapper'}
             title={header}
-            visible={open}
+            open={open}
             width={width}
             onCancel={() => props.clickOutside()}
             bodyStyle={contentStyle}
