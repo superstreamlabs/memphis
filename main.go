@@ -126,8 +126,10 @@ func runMemphis(s *server.Server) (db.DbInstance) {
 	}
 	
 	go http_server.InitializeHttpServer(s)
-	go server.KillZombieResources()
 	s.ListenForPoisonMessages()
+	s.ListenForZombieResources()
+	go s.KillZombieResources()
+
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
