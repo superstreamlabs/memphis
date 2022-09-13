@@ -127,6 +127,13 @@ func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handl
 	}, nil
 }
 
+func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
+	const amount = 300
+	const timeout = 3 * time.Second
+
+	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "")
+}
+
 func ginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -179,6 +186,11 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		s.Join("all_stations_group")
 		return "recv " + msg
 	})
+	socketServer.OnEvent("/api", "get_syslogs", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("syslogs_group")
+		return "recv " + msg
+	})
 
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
 		serv.Errorf("An error occured during a socket connection " + e.Error())
@@ -205,7 +217,16 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 					socketServer.BroadcastToRoom("/api", "all_stations_group", "stations_overview_data", data)
 				}
 			}
-      
+
+			if socketServer.RoomLen("/api", "syslogs_group") > 0 {
+				data, err := getSystemLogs(h)
+				if err != nil {
+					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs", data)
+				}
+			}
+
 			rooms := socketServer.Rooms("/api")
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && socketServer.RoomLen("/api", room) > 0 {

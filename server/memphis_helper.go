@@ -147,21 +147,41 @@ func (s *Server) CreateStream(station models.Station) error {
 		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
 	}
 
+	return s.
+		memphisAddStream(&StreamConfig{
+			Name:         station.Name,
+			Subjects:     []string{station.Name + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(maxMsgs),
+			MaxBytes:     int64(maxBytes),
+			Discard:      DiscardOld,
+			MaxAge:       maxAge,
+			MaxMsgsPer:   -1,
+			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:      storage,
+			Replicas:     station.Replicas,
+			NoAck:        false,
+			Duplicates:   dedupWindow,
+		})
+}
+
+const (
+	syslogsStreamName  = "$memphis_syslogs"
+	syslogsInfoSubject = "info"
+	syslogsWarnSubject = "warn"
+	syslogsErrSubject  = "err"
+)
+
+func (s *Server) CreateSystemLogsStream() error {
 	return s.memphisAddStream(&StreamConfig{
-		Name:         station.Name,
-		Subjects:     []string{station.Name + ".>"},
+		Name:     syslogsStreamName,
+		Subjects: []string{syslogsStreamName + ".>"},
+		//TODO(shay/or) take retention from config
 		Retention:    LimitsPolicy,
 		MaxConsumers: -1,
-		MaxMsgs:      int64(maxMsgs),
-		MaxBytes:     int64(maxBytes),
 		Discard:      DiscardOld,
-		MaxAge:       maxAge,
-		MaxMsgsPer:   -1,
-		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
-		Storage:      storage,
-		Replicas:     station.Replicas,
-		NoAck:        false,
-		Duplicates:   dedupWindow,
+		Storage:      FileStorage,
 	})
 }
 

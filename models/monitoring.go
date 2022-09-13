@@ -21,6 +21,8 @@
 // SOFTWARE.
 package models
 
+import "time"
+
 type SystemComponent struct {
 	Component   string `json:"component"`
 	DesiredPods int    `json:"desired_pods"`
@@ -50,4 +52,22 @@ type StationOverviewData struct {
 
 type GetStationOverviewDataSchema struct {
 	StationName string `form:"station_name" json:"station_name"  binding:"required"`
+}
+
+type SystemLogsRequest struct {
+	LogType  string `form:"log_type" json:"log_type"  binding:"required"`
+	StartIdx int    `form:"start_index" json:"start_index"  binding:"required"`
+}
+
+type Log struct {
+	MessageSeq int       `json:"message_seq"`
+	Subject    string    `json:"subject"`
+	ProducedBy string    `json:"produced_by"`
+	Data       string    `json:"data"`
+	TimeSent   time.Time `json:"creation_date"`
+	Size       int       `json:"size"`
+}
+
+type SystemLogsResponse struct {
+	Logs []Log `json:"logs"`
 }

@@ -24,12 +24,16 @@ package server
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"memphis-broker/analytics"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -276,4 +280,158 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
+	const amount = 100
+	const timeout = 3 * time.Second
+
+	var request models.SystemLogsRequest
+	ok := utils.Validate(c, &request, false, nil)
+	if !ok {
+		return
+	}
+
+	startSeq := uint64(request.StartIdx)
+	getLast := false
+	if request.StartIdx == -1 {
+		getLast = true
+	}
+
+	filterSubject, filterSubjectSuffix := _EMPTY_, _EMPTY_
+	switch request.LogType {
+	case "err":
+		filterSubjectSuffix = syslogsErrSubject
+	case "wrn":
+		filterSubjectSuffix = syslogsWarnSubject
+	case "inf":
+		filterSubjectSuffix = syslogsInfoSubject
+	}
+
+	if filterSubjectSuffix != _EMPTY_ {
+		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
+	}
+
+	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject)
+	if err != nil {
+		serv.Errorf("GetSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, response)
+}
+
+func min(x, y uint64) uint64 {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func (s *Server) GetSystemLogs(amount uint64,
+	timeout time.Duration,
+	fromLast bool,
+	startSeq uint64,
+	filterSubject string) (models.SystemLogsResponse, error) {
+	uid := s.memphis.nuid.Next()
+	durableName := "$memphis_fetch_logs_consumer_" + uid
+
+	if fromLast {
+		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
+		startSeq = min(streamInfo.State.Msgs-amount, uint64(1))
+		amount = min(streamInfo.State.Msgs, amount)
+	}
+
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: DeliverByStartSequence,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+	}
+
+	if filterSubject != _EMPTY_ {
+		cc.FilterSubject = filterSubject
+	}
+
+	err := s.memphisAddConsumer(syslogsStreamName, &cc)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, syslogsStreamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+
+	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				s.Errorf(err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+
+	var msgs []StoredMsg
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	sub.close()
+	err = s.RemoveConsumer(syslogsStreamName, durableName)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	var resMsgs []models.Log
+	for _, msg := range msgs {
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
+
+		data := string(msg.Data)
+		resMsgs = append(resMsgs, models.Log{
+			MessageSeq: int(msg.Sequence),
+			Subject:    msg.Subject,
+			Data:       data,
+			ProducedBy: s.memphis.serverID,
+			TimeSent:   msg.Time,
+			Size:       len(msg.Subject) + len(msg.Data),
+		})
+	}
+
+	sort.Slice(resMsgs, func(i, j int) bool {
+		return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
+	})
+
+	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }
