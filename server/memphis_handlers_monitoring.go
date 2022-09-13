@@ -342,7 +342,13 @@ func (s *Server) GetSystemLogs(amount uint64,
 		if err != nil {
 			return models.SystemLogsResponse{}, err
 		}
-		startSeq = min(streamInfo.State.Msgs-amount, uint64(1))
+		startSeq = streamInfo.State.LastSeq - amount
+
+		//handle uint wrap around
+		if amount > streamInfo.State.LastSeq {
+			startSeq = 1
+		}
+
 		amount = min(streamInfo.State.Msgs, amount)
 	}
 
@@ -421,11 +427,10 @@ cleanup:
 		data := string(msg.Data)
 		resMsgs = append(resMsgs, models.Log{
 			MessageSeq: int(msg.Sequence),
-			Subject:    msg.Subject,
+			Type:       msg.Subject,
 			Data:       data,
-			ProducedBy: s.memphis.serverID,
+			Source:     s.memphis.serverID,
 			TimeSent:   msg.Time,
-			Size:       len(msg.Subject) + len(msg.Data),
 		})
 	}
 

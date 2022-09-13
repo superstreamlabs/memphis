@@ -174,11 +174,17 @@ const (
 )
 
 func (s *Server) CreateSystemLogsStream() error {
+	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
+	if err != nil {
+		return err
+	}
+	retentionDur := time.Duration(retentionDays) * time.Hour * 24
+
 	return s.memphisAddStream(&StreamConfig{
-		Name:     syslogsStreamName,
-		Subjects: []string{syslogsStreamName + ".>"},
-		//TODO(shay/or) take retention from config
+		Name:         syslogsStreamName,
+		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
+		MaxAge:       retentionDur,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,

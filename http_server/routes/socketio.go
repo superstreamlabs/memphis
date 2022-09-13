@@ -221,7 +221,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 			if socketServer.RoomLen("/api", "syslogs_group") > 0 {
 				data, err := getSystemLogs(h)
 				if err != nil {
-					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
+					serv.Errorf("Error while trying to get system logs - " + err.Error())
 				} else {
 					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs", data)
 				}

@@ -61,11 +61,10 @@ type SystemLogsRequest struct {
 
 type Log struct {
 	MessageSeq int       `json:"message_seq"`
-	Subject    string    `json:"subject"`
-	ProducedBy string    `json:"produced_by"`
+	Type       string    `json:"type"`
+	Source     string    `json:"source"`
 	Data       string    `json:"data"`
 	TimeSent   time.Time `json:"creation_date"`
-	Size       int       `json:"size"`
 }
 
 type SystemLogsResponse struct {

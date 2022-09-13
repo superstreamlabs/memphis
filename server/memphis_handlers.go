@@ -72,7 +72,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.memphis.dbCtx = dbInstance.Ctx
 	s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
-	s.memphis.serverID = configuration.SERVER_NAME
+	s.memphis.serverID = configuration.BROKER_NAME
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
