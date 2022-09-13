@@ -92,7 +92,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mod)
 
 	s.initializeSDKHandlers()
-	s.memphis.activateSysLogsPubFunc()
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {

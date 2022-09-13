@@ -180,7 +180,7 @@ func (s *Server) CreateSystemLogsStream() error {
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
 
-	return s.memphisAddStream(&StreamConfig{
+	err = s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
@@ -189,6 +189,15 @@ func (s *Server) CreateSystemLogsStream() error {
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
+
+	if err == nil {
+		if s.memphis.activateSysLogsPubFunc == nil {
+			return errors.New("publish activation func is not initialised")
+		}
+		s.memphis.activateSysLogsPubFunc()
+	}
+
+	return err
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {
