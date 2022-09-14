@@ -33,34 +33,19 @@ import (
 
 const pingGrace = 5 * time.Second
 
-func killRelevantConnections() ([]models.Connection, error) {
-	var connections []models.Connection
-	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true})
-	if err != nil {
-		serv.Errorf("killRelevantConnections error: " + err.Error())
-		return connections, err
+func killRelevantConnections(zombieCOnnections []primitive.ObjectID) ([]primitive.ObjectID, error) {
+	for _, zombieConnId := range zombieCOnnections {
+		_, err := connectionsCollection.UpdateOne(context.TODO(),
+			bson.M{"_id": zombieConnId},
+			bson.M{"$set": bson.M{"is_active": false}},
+		)
+		if err != nil {
+			serv.Errorf("killRelevantConnections error: " + err.Error())
+			return zombieCOnnections, err
+		}
 	}
 
-	if err = cursor.All(context.TODO(), &connections); err != nil {
-		serv.Errorf("killRelevantConnections error: " + err.Error())
-		return connections, err
-	}
-
-	_, err = connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"is_active": true},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		serv.Errorf("KillConnections error: " + err.Error())
-		return connections, err
-	}
-
-	var connectionIds []primitive.ObjectID
-	for _, con := range connections {
-		connectionIds = append(connectionIds, con.ID)
-	}
-
-	return connections, nil
+	return zombieCOnnections, nil
 }
 
 func killProducersByConnections(connectionIds []primitive.ObjectID) error {
@@ -110,7 +95,7 @@ func (s *Server) ListenForZombieResources() error {
 			message := strings.TrimSuffix(string(msg), "\r\n")
 			if connId == message {
 				s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("yes"), true)
-			}else{
+			} else {
 				s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("no"), true)
 			}
 		}
@@ -132,6 +117,7 @@ func (s *Server) KillZombieResources() {
 		})
 
 		var connections []models.Connection
+		var zombieConnections []primitive.ObjectID
 		cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true})
 		if err != nil {
 			serv.Errorf("KillZombieResources error: " + err.Error())
@@ -151,14 +137,15 @@ func (s *Server) KillZombieResources() {
 					rawResponse := strings.TrimSuffix(string(rawResp), "\r\n")
 
 					if rawResponse == "no" {
-						connections, err := killRelevantConnections()
+						zombieConnections = append(zombieConnections, connection_id.ID)
+						zombieConns, err := killRelevantConnections(zombieConnections)
 						if err != nil {
 							serv.Errorf("KillZombieResources error: " + err.Error())
-						} else if len(connections) > 0 {
-							serv.Warnf("zombie connection found, killing %v", connections)
+						} else if len(zombieConns) > 0 {
+							serv.Warnf("zombie connection found, killing %v", zombieConns)
 							var connectionIds []primitive.ObjectID
-							for _, con := range connections {
-								connectionIds = append(connectionIds, con.ID)
+							for _, con := range zombieConns {
+								connectionIds = append(connectionIds, con)
 							}
 
 							err = killProducersByConnections(connectionIds)
