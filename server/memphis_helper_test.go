@@ -119,3 +119,16 @@ func TestMemphisGetMsgs(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateName(t *testing.T) {
+	validName := "abc123._-"
+	invalidName := "$isWhatINeed(hey,hey)"
+
+	if validateName(validName, "some type") != nil {
+		t.Error()
+	}
+
+	if validateName(invalidName, "some type") == nil {
+		t.Error()
+	}
+}

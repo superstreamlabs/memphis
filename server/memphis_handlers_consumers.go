@@ -31,7 +31,6 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 
-	"regexp"
 	"strings"
 	"time"
 
@@ -44,22 +43,12 @@ import (
 
 type ConsumersHandler struct{ S *Server }
 
-func validateName(name string) error {
-	if len(name) == 0 {
-		return errors.New("Consumer name can not be empty")
-	}
+const (
+	consumerObjectName = "Consumer"
+)
 
-	if len(name) > 32 {
-		return errors.New("Consumer name/consumer group should be under 32 characters")
-	}
-
-	re := regexp.MustCompile("^[a-z0-9_]*$")
-
-	validName := re.MatchString(name)
-	if !validName {
-		return errors.New("Consumer name/consumer group has to include only letters and _")
-	}
-	return nil
+func validateConsumerName(consumerName string) error {
+	return validateName(consumerName, consumerObjectName)
 }
 
 func validateConsumerType(consumerType string) error {
@@ -123,7 +112,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	name := strings.ToLower(ccr.Name)
-	err := validateName(name)
+	err := validateConsumerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
 		respondWithErr(s, reply, err)
@@ -132,7 +121,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	consumerGroup := strings.ToLower(ccr.ConsumerGroup)
 	if consumerGroup != "" {
-		err = validateName(consumerGroup)
+		err = validateConsumerName(consumerGroup)
 		if err != nil {
 			serv.Warnf(err.Error())
 			respondWithErr(s, reply, err)
