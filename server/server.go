@@ -49,11 +49,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"memphis-broker/logger"
+
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"memphis-broker/logger"
 )
 
 const (

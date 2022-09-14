@@ -147,22 +147,57 @@ func (s *Server) CreateStream(station models.Station) error {
 		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
 	}
 
-	return s.memphisAddStream(&StreamConfig{
-		Name:         station.Name,
-		Subjects:     []string{station.Name + ".>"},
+	return s.
+		memphisAddStream(&StreamConfig{
+			Name:         station.Name,
+			Subjects:     []string{station.Name + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(maxMsgs),
+			MaxBytes:     int64(maxBytes),
+			Discard:      DiscardOld,
+			MaxAge:       maxAge,
+			MaxMsgsPer:   -1,
+			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:      storage,
+			Replicas:     station.Replicas,
+			NoAck:        false,
+			Duplicates:   dedupWindow,
+		})
+}
+
+const (
+	syslogsStreamName  = "$memphis_syslogs"
+	syslogsInfoSubject = "info"
+	syslogsWarnSubject = "warn"
+	syslogsErrSubject  = "err"
+)
+
+func (s *Server) CreateSystemLogsStream() error {
+	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
+	if err != nil {
+		return err
+	}
+	retentionDur := time.Duration(retentionDays) * time.Hour * 24
+
+	err = s.memphisAddStream(&StreamConfig{
+		Name:         syslogsStreamName,
+		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
+		MaxAge:       retentionDur,
 		MaxConsumers: -1,
-		MaxMsgs:      int64(maxMsgs),
-		MaxBytes:     int64(maxBytes),
 		Discard:      DiscardOld,
-		MaxAge:       maxAge,
-		MaxMsgsPer:   -1,
-		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
-		Storage:      storage,
-		Replicas:     station.Replicas,
-		NoAck:        false,
-		Duplicates:   dedupWindow,
+		Storage:      FileStorage,
 	})
+
+	if err == nil {
+		if s.memphis.activateSysLogsPubFunc == nil {
+			return errors.New("publish activation func is not initialised")
+		}
+		s.memphis.activateSysLogsPubFunc()
+	}
+
+	return err
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {

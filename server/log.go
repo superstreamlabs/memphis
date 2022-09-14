@@ -92,7 +92,7 @@ func (s *Server) ConfigureLogger() {
 		if err != nil || (stat.Mode()&os.ModeCharDevice) == 0 {
 			colors = false
 		}
-		log = srvlog.NewStdLogger(opts.Logtime, opts.Debug, opts.Trace, colors, true)
+		log, s.memphis.activateSysLogsPubFunc = srvlog.NewMemphisLogger(s.createMemphisLoggerFunc(), opts.Logtime, opts.Debug, opts.Trace, colors, true)
 	}
 
 	s.SetLoggerV2(log, opts.Debug, opts.Trace, opts.TraceVerbose)
@@ -259,4 +259,16 @@ func (s *Server) executeLogCall(f func(logger Logger, format string, v ...interf
 	}
 
 	f(s.logging.logger, format, args...)
+}
+
+func (s *Server) createMemphisLoggerFunc() srvlog.HybridLogPublishFunc {
+	logLabelToSubjectMap := map[string]string{"INF": syslogsInfoSubject, "WRN": syslogsWarnSubject, "ERR": syslogsErrSubject}
+	return func(label string, log []byte) {
+		subjectSuffix, ok := logLabelToSubjectMap[label]
+		if !ok {
+			return
+		}
+		subject := syslogsStreamName + "." + subjectSuffix
+		s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
+	}
 }

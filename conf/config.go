@@ -57,6 +57,7 @@ type Configuration struct {
 	POISON_MSGS_RETENTION_IN_HOURS int
 	MAILCHIMP_KEY                  string
 	MAILCHIMP_LIST_ID              string
+	SERVER_NAME                    string
 }
 
 func GetConfig() Configuration {
