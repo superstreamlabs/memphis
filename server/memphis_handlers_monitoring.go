@@ -332,24 +332,31 @@ func min(x, y uint64) uint64 {
 func (s *Server) GetSystemLogs(amount uint64,
 	timeout time.Duration,
 	fromLast bool,
-	startSeq uint64,
+	lastKnownSeq uint64,
 	filterSubject string) (models.SystemLogsResponse, error) {
 	uid := s.memphis.nuid.Next()
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 
+	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	amount = min(streamInfo.State.Msgs, amount)
+	startSeq := lastKnownSeq - amount
+
 	if fromLast {
-		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
-		if err != nil {
-			return models.SystemLogsResponse{}, err
-		}
+
 		startSeq = streamInfo.State.LastSeq - amount
 
 		//handle uint wrap around
-		if amount > streamInfo.State.LastSeq {
+		if amount >= streamInfo.State.LastSeq {
 			startSeq = 1
 		}
 
-		amount = min(streamInfo.State.Msgs, amount)
+	} else if amount >= lastKnownSeq {
+		startSeq = 1
+		amount = lastKnownSeq
 	}
 
 	cc := ConsumerConfig{
@@ -363,7 +370,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err := s.memphisAddConsumer(syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
