@@ -32,6 +32,5 @@ type Connection struct {
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 	IsActive      bool               `json:"is_active" bson:"is_active"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	LastPing      time.Time          `json:"last_ping" bson:"last_ping"`
 	ClientAddress string             `json:"client_address" bson:"client_address"`
 }

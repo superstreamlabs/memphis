@@ -31,22 +31,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const pingGrace = 5 * time.Second
-const subject = "$memphis_connection_status"
+const CONN_STATUS_SUBJ = "$memphis_connection_status"
 
-func killRelevantConnections(zombieCOnnections []primitive.ObjectID) ([]primitive.ObjectID, error) {
-	for _, zombieConnId := range zombieCOnnections {
-		_, err := connectionsCollection.UpdateOne(context.TODO(),
-			bson.M{"_id": zombieConnId},
-			bson.M{"$set": bson.M{"is_active": false}},
-		)
-		if err != nil {
-			serv.Errorf("killRelevantConnections error: " + err.Error())
-			return zombieCOnnections, err
-		}
+func killRelevantConnections(zombieConnections []primitive.ObjectID) error {
+	_, err := connectionsCollection.UpdateMany(context.TODO(),
+		bson.M{"_id": bson.M{"$in": zombieConnections}},
+		bson.M{"$set": bson.M{"is_active": false}},
+	)
+	if err != nil {
+		serv.Errorf("killRelevantConnections error: " + err.Error())
+		return err
 	}
 
-	return zombieCOnnections, nil
+	return nil
 }
 
 func killProducersByConnections(connectionIds []primitive.ObjectID) error {
@@ -89,21 +86,17 @@ func getActiveConnections() ([]models.Connection, error) {
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true})
 	if err != nil {
-		serv.Errorf("getActiveConnections error: " + err.Error())
 		return connections, err
-
 	}
-
 	if err = cursor.All(context.TODO(), &connections); err != nil {
-		serv.Errorf("getActiveConnections error: " + err.Error())
 		return connections, err
 	}
 
 	return connections, nil
 }
 
-func (s *Server) ListenForConnectionCheckRequests() error {
-	_, err := s.subscribeOnGlobalAcc(subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+func (s *Server) ListenForZombieConnCheckRequests() error {
+	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		connInfo := &ConnzOptions{}
 		conns, _ := s.Connz(connInfo)
 		for _, conn := range conns.Conns {
@@ -123,6 +116,7 @@ func (s *Server) ListenForConnectionCheckRequests() error {
 
 func (s *Server) KillZombieResources() {
 	respCh := make(chan []byte)
+
 	for range time.Tick(time.Second * 30) {
 		var zombieConnections []primitive.ObjectID
 		connections, err := getActiveConnections()
@@ -131,46 +125,41 @@ func (s *Server) KillZombieResources() {
 			continue
 		}
 
-		for _, connection_id := range connections {
-			msg := (connection_id.ID).Hex()
-			reply := subject + "_reply" + s.memphis.nuid.Next()
+		for _, conn := range connections {
+			msg := (conn.ID).Hex()
+			reply := CONN_STATUS_SUBJ + "_reply" + s.memphis.nuid.Next()
 
 			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func() { respCh <- msg }()
 			})
-
 			if err != nil {
 				serv.Errorf("KillZombieResources error: " + err.Error())
 				continue
 			}
-			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
-			timeout := time.After(4 * time.Second)
+
+			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, reply, nil, msg, true)
+			timeout := time.After(10 * time.Second)
 			select {
 			case <-respCh:
 				continue
 			case <-timeout:
-				zombieConnections = append(zombieConnections, connection_id.ID)
+				zombieConnections = append(zombieConnections, conn.ID)
 			}
 			sub.close()
 		}
 
 		if len(zombieConnections) > 0 {
-			zombieConns, err := killRelevantConnections(zombieConnections)
+			serv.Warnf("Zombie connection found, killing")
+			err := killRelevantConnections(zombieConnections)
 			if err != nil {
 				serv.Errorf("KillZombieResources error: " + err.Error())
-			} else if len(zombieConns) > 0 {
-				serv.Warnf("zombie connection found, killing %v", zombieConns)
-				var connectionIds []primitive.ObjectID
-				for _, con := range zombieConns {
-					connectionIds = append(connectionIds, con)
-				}
-
-				err = killProducersByConnections(connectionIds)
+			} else {
+				err = killProducersByConnections(zombieConnections)
 				if err != nil {
 					serv.Errorf("KillZombieResources error: " + err.Error())
 				}
 
-				err = killConsumersByConnections(connectionIds)
+				err = killConsumersByConnections(zombieConnections)
 				if err != nil {
 					serv.Errorf("KillZombieResources error: " + err.Error())
 				}

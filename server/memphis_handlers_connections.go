@@ -117,7 +117,6 @@ func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, co
 		CreatedByUser: username,
 		IsActive:      true,
 		CreationDate:  time.Now(),
-		LastPing:      time.Now(),
 		ClientAddress: clientAddress,
 	}
 
@@ -153,14 +152,6 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 	}
 
 	return nil
-}
-
-func (mci *memphisClientInfo) updatePingTime() error {
-	_, err := connectionsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": mci.connectionId},
-		bson.M{"$set": bson.M{"last_ping": time.Now()}},
-	)
-	return err
 }
 
 func (mci *memphisClientInfo) updateDisconnection() error {
