@@ -127,7 +127,7 @@ func runMemphis(s *server.Server) (db.DbInstance) {
 	
 	go http_server.InitializeHttpServer(s)
 	s.ListenForPoisonMessages()
-	s.ListenForZombieResources()
+	s.ListenForConnectionsCheckRequest()
 	go s.KillZombieResources()
 
 
