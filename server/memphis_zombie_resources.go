@@ -32,6 +32,7 @@ import (
 )
 
 const pingGrace = 5 * time.Second
+const subject = "$memphis_connection_status"
 
 func killRelevantConnections(zombieCOnnections []primitive.ObjectID) ([]primitive.ObjectID, error) {
 	for _, zombieConnId := range zombieCOnnections {
@@ -101,10 +102,8 @@ func getActiveConnections() ([]models.Connection, error) {
 	return connections, nil
 }
 
-func (s *Server) ListenForConnectionsCheckRequest() error {
-	subject := "connection_status_request"
-	reply := "conns" + "_reply" + s.memphis.nuid.Next()
-	_, err := s.subscribeOnGlobalAcc(subject, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+func (s *Server) ListenForConnectionCheckRequests() error {
+	_, err := s.subscribeOnGlobalAcc(subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		connInfo := &ConnzOptions{}
 		conns, _ := s.Connz(connInfo)
 		for _, conn := range conns.Conns {
@@ -124,18 +123,17 @@ func (s *Server) ListenForConnectionsCheckRequest() error {
 
 func (s *Server) KillZombieResources() {
 	respCh := make(chan []byte)
-	subject := "connection_status_request"
-
 	for range time.Tick(time.Second * 30) {
 		var zombieConnections []primitive.ObjectID
 		connections, err := getActiveConnections()
 		if err != nil {
 			serv.Errorf("KillZombieResources error: " + err.Error())
+			continue
 		}
 
 		for _, connection_id := range connections {
 			msg := (connection_id.ID).Hex()
-			reply := "conns" + "_reply" + s.memphis.nuid.Next()
+			reply := subject + "_reply" + s.memphis.nuid.Next()
 
 			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func() { respCh <- msg }()
@@ -143,11 +141,13 @@ func (s *Server) KillZombieResources() {
 
 			if err != nil {
 				serv.Errorf("KillZombieResources error: " + err.Error())
+				continue
 			}
 			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
 			timeout := time.After(4 * time.Second)
 			select {
 			case <-respCh:
+				continue
 			case <-timeout:
 				zombieConnections = append(zombieConnections, connection_id.ID)
 			}
