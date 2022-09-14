@@ -34,6 +34,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Handlers struct {
@@ -84,12 +85,9 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
-	mod := mongo.IndexModel{
-		Keys: bson.M{
-			"creation_date": -1,
-		}, Options: nil,
-	}
-	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mod)
+	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys: bson.M{"creation_date": -1}, Options: nil,
+	})
 
 	s.initializeSDKHandlers()
 }
@@ -169,9 +167,8 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, error) {
+func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, bool, error) {
 	var newStation models.Station
-
 	newStation = models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
@@ -189,15 +186,35 @@ func CreateDefaultStation(s *Server, stationName string, username string) (model
 
 	err := s.CreateStream(newStation)
 	if err != nil {
-		return newStation, err
+		return newStation, false, err
 	}
 
-	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                newStation.ID,
+			"retention_type":     newStation.RetentionType,
+			"retention_value":    newStation.RetentionValue,
+			"storage_type":       newStation.StorageType,
+			"replicas":           newStation.Replicas,
+			"dedup_enabled":      newStation.DedupEnabled,
+			"dedup_window_in_ms": newStation.DedupWindowInMs,
+			"created_by_user":    newStation.CreatedByUser,
+			"creation_date":      newStation.CreationDate,
+			"last_update":        newStation.LastUpdate,
+			"functions":          newStation.Functions,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		return newStation, err
+		return newStation, false, err
+	}
+	if updateResults.MatchedCount > 0 {
+		return newStation, false, nil
 	}
 
-	return newStation, nil
+	return newStation, true, nil
 }
 
 func shouldSendAnalytics() (bool, error) {

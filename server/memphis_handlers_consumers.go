@@ -39,6 +39,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -181,33 +182,36 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if !exist {
-		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		var created bool
+		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
 			respondWithErr(s, reply, err)
 			return
 		}
 
-		message := "Station " + stationName + " has been created"
-		serv.Noticef(message)
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
-			Message:       message,
-			CreatedByUser: c.memphisInfo.username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("CreateConsumer error: " + err.Error())
-		}
+		if created {
+			message := "Station " + stationName + " has been created"
+			serv.Noticef(message)
+			var auditLogs []interface{}
+			newAuditLog := models.AuditLog{
+				ID:            primitive.NewObjectID(),
+				StationName:   stationName,
+				Message:       message,
+				CreatedByUser: c.memphisInfo.username,
+				CreationDate:  time.Now(),
+				UserType:      "application",
+			}
+			auditLogs = append(auditLogs, newAuditLog)
+			err = CreateAuditLogs(auditLogs)
+			if err != nil {
+				serv.Errorf("CreateConsumer error: " + err.Error())
+			}
 
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+			shouldSendAnalytics, _ := shouldSendAnalytics()
+			if shouldSendAnalytics {
+				analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+			}
 		}
 	}
 
@@ -230,9 +234,8 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	consumerId := primitive.NewObjectID()
 	newConsumer := models.Consumer{
-		ID:             consumerId,
+		ID:             primitive.NewObjectID(),
 		Name:           name,
 		StationId:      station.ID,
 		Type:           consumerType,
@@ -258,32 +261,49 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
+	filter := bson.M{"name": newConsumer.Name, "station_id": station.ID, "is_active": true, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                newConsumer.ID,
+			"type":               newConsumer.Type,
+			"connection_id":      newConsumer.ConnectionId,
+			"created_by_user":    newConsumer.CreatedByUser,
+			"consumers_group":    newConsumer.ConsumersGroup,
+			"creation_date":      newConsumer.CreationDate,
+			"max_ack_time_ms":    newConsumer.MaxAckTimeMs,
+			"max_msg_deliveries": newConsumer.MaxMsgDeliveries,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := consumersCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Consumer " + name + " has been created"
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
-		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("CreateConsumer error: " + err.Error())
-	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-create-consumer")
+	if updateResults.MatchedCount > 0 {
+		message := "Consumer " + name + " has been created"
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: c.memphisInfo.username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("CreateConsumer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.SendEvent(c.memphisInfo.username, "user-create-consumer")
+		}
 	}
 
 	respondWithErr(s, reply, nil)

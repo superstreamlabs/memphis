@@ -186,7 +186,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		s.Join("all_stations_group")
 		return "recv " + msg
 	})
-	socketServer.OnEvent("/api", "get_syslogs", func(s socketio.Conn, msg string) string {
+	socketServer.OnEvent("/api", "register_syslogs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		s.Join("syslogs_group")
 		return "recv " + msg
@@ -199,7 +199,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 	go socketServer.Serve()
 
 	go func() {
-		for range time.Tick(time.Second * 5) {
+		for range time.Tick(time.Second * 20) {
 			if socketServer.RoomLen("/api", "main_overview_sockets_group") > 0 {
 				data, err := getMainOverviewData(h)
 				if err != nil {
@@ -223,7 +223,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 				if err != nil {
 					serv.Errorf("Error while trying to get system logs - " + err.Error())
 				} else {
-					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs", data)
+					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs_data", data)
 				}
 			}
 
