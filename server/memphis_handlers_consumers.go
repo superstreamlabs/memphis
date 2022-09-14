@@ -245,6 +245,8 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if consumerGroupExist {
+		consumerFromGroup.MaxAckTimeMs = int64(ccr.MaxAckTimeMillis)
+		consumerFromGroup.MaxMsgDeliveries = ccr.MaxMsgDeliveries
 		newConsumer.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
 		newConsumer.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
 	} else {
