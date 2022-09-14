@@ -128,7 +128,7 @@ func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handl
 }
 
 func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
-	const amount = 300
+	const amount = 100
 	const timeout = 3 * time.Second
 
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "")
