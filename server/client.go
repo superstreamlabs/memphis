@@ -2236,12 +2236,6 @@ func (c *client) processPing() {
 	}
 	c.mu.Unlock()
 
-	if c.kind == CLIENT {
-		if err := c.memphisInfo.updatePingTime(); err != nil {
-			c.srv.Errorf("memphis db ping update error")
-		}
-	}
-
 	if checkInfoChange {
 		opts := srv.getOpts()
 		srv.mu.Lock()
