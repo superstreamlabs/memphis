@@ -97,16 +97,18 @@ func getActiveConnections() ([]models.Connection, error) {
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		connInfo := &ConnzOptions{}
-		conns, _ := s.Connz(connInfo)
-		for _, conn := range conns.Conns {
-			connId := strings.Split(conn.Name, "::")[0]
-			message := strings.TrimSuffix(string(msg), "\r\n")
-			if connId == message {
-				s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("connExists"), true)
-				return
+		go func() {
+			connInfo := &ConnzOptions{}
+			conns, _ := s.Connz(connInfo)
+			for _, conn := range conns.Conns {
+				connId := strings.Split(conn.Name, "::")[0]
+				message := strings.TrimSuffix(string(msg), "\r\n")
+				if connId == message {
+					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("connExists"), true)
+					return
+				}
 			}
-		}
+		}()
 	})
 	if err != nil {
 		return err
