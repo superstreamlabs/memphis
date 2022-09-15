@@ -247,8 +247,16 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if consumerGroupExist {
-		// MaxAckTimeMs / MaxMsgDeliveries update in nats
-
+		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
+			err := s.CreateConsumer(newConsumer, station)
+			if err != nil {
+				serv.Errorf("CreateConsumer error: " + err.Error())
+				respondWithErr(s, reply, err)
+				return
+			}
+			consumerFromGroup.MaxAckTimeMs = newConsumer.MaxAckTimeMs
+			consumerFromGroup.MaxMsgDeliveries = newConsumer.MaxMsgDeliveries
+		}
 	} else {
 		err := s.CreateConsumer(newConsumer, station)
 		if err != nil {
