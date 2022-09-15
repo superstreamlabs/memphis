@@ -28,7 +28,6 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -43,22 +42,12 @@ import (
 
 type ProducersHandler struct{ S *Server }
 
+const (
+	producerObjectName = "Producer"
+)
+
 func validateProducerName(name string) error {
-	if len(name) == 0 {
-		return errors.New("Producer name can not be empty")
-	}
-
-	if len(name) > 32 {
-		return errors.New("Producer name should be under 32 characters")
-	}
-
-	re := regexp.MustCompile("^[a-z0-9_]*$")
-
-	validName := re.MatchString(name)
-	if !validName {
-		return errors.New("Producer name has to include only letters and _")
-	}
-	return nil
+	return validateName(name, producerObjectName)
 }
 
 func validateProducerType(producerType string) error {

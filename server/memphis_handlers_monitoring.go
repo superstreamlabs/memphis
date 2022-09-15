@@ -432,17 +432,13 @@ cleanup:
 		}
 
 		logType := msg.Subject[len(syslogsStreamName)+1:]
-		source := s.memphis.serverID
-		if source == _EMPTY_ {
-			source = "broker"
-		}
 
 		data := string(msg.Data)
 		resMsgs = append(resMsgs, models.Log{
 			MessageSeq: int(msg.Sequence),
 			Type:       logType,
 			Data:       data,
-			Source:     source,
+			Source:     s.getLogSource(),
 			TimeSent:   msg.Time,
 		})
 	}

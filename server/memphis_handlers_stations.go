@@ -28,7 +28,6 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"regexp"
 	"strings"
 	"time"
 
@@ -41,22 +40,12 @@ import (
 
 type StationsHandler struct{ S *Server }
 
+const (
+	stationObjectName = "Station"
+)
+
 func validateStationName(stationName string) error {
-	if len(stationName) == 0 {
-		return errors.New("station name can not be empty")
-	}
-
-	if len(stationName) > 32 {
-		return errors.New("station name should be under 32 characters")
-	}
-
-	re := regexp.MustCompile("^[a-z0-9_]*$")
-
-	validName := re.MatchString(stationName)
-	if !validName {
-		return errors.New("station name has to include only letters, numbers and _")
-	}
-	return nil
+	return validateName(stationName, stationObjectName)
 }
 
 func validateRetentionType(retentionType string) error {

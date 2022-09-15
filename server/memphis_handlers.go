@@ -24,9 +24,11 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -230,4 +232,30 @@ func shouldSendAnalytics() (bool, error) {
 	} else {
 		return false, nil
 	}
+}
+
+func validateName(name, objectType string) error {
+	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
+	tooLongErrStr := fmt.Sprintf("%v should be under 32 characters", objectType)
+	invalidCharErrStr := fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v")
+
+	emptyErr := errors.New(emptyErrStr)
+	tooLongErr := errors.New(tooLongErrStr)
+	invalidCharErr := errors.New(invalidCharErrStr)
+
+	if len(name) == 0 {
+		return emptyErr
+	}
+
+	if len(name) > 32 {
+		return tooLongErr
+	}
+
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+
+	validName := re.MatchString(name)
+	if !validName {
+		return invalidCharErr
+	}
+	return nil
 }
