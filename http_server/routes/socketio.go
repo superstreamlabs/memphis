@@ -67,16 +67,13 @@ func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetail
 	return stations, nil
 }
 
-func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handlers) (models.StationOverviewData, error) {
+func getStationOverviewData(stationName string, h *server.Handlers) (models.StationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := server.IsStationExist(stationName)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
 	if !exist {
-		if s != nil {
-			s.Emit("error", "Station does not exist")
-		}
 		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
@@ -199,7 +196,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 	go socketServer.Serve()
 
 	go func() {
-		for range time.Tick(time.Second * 20) {
+		for range time.Tick(time.Second * 5) {
 			if socketServer.RoomLen("/api", "main_overview_sockets_group") > 0 {
 				data, err := getMainOverviewData(h)
 				if err != nil {
@@ -231,7 +228,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
 					stationName := strings.Split(room, "station_overview_group_")[1]
-					data, err := getStationOverviewData(stationName, nil, h)
+					data, err := getStationOverviewData(stationName, h)
 					if err != nil {
 						serv.Errorf("Error while trying to get station overview data - " + err.Error())
 					} else {
