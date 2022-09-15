@@ -343,11 +343,11 @@ func (s *Server) GetSystemLogs(amount uint64,
 	}
 
 	amount = min(streamInfo.State.Msgs, amount)
-	startSeq := lastKnownSeq - amount
+	startSeq := lastKnownSeq - amount + 1
 
 	if fromLast {
 
-		startSeq = streamInfo.State.LastSeq - amount
+		startSeq = streamInfo.State.LastSeq - amount + 1
 
 		//handle uint wrap around
 		if amount >= streamInfo.State.LastSeq {
