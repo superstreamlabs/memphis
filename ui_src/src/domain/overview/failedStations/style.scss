@@ -51,7 +51,6 @@
                 color: #1d1d1d;
                 justify-content: space-between;
                 width: 100%;
-                cursor: pointer;
                 padding: 10px;
                 height: 35px;
                 align-items: center;
@@ -60,7 +59,7 @@
                     font-weight: 600;
                     cursor: pointer;
                 }
-                .link-row:hover{
+                .link-row:hover {
                     opacity: 0.8;
                 }
                 .dot {

@@ -21,7 +21,7 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext } from 'react';
 import Lottie from 'lottie-react';
 
 import consumePoision from '../../../assets/lotties/consume_poision.json';

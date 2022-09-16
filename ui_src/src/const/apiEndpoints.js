@@ -58,7 +58,5 @@ export const ApiEndpoints = {
     GET_CLUSTER_INFO: '/monitoring/getClusterInfo',
     GET_MAIN_OVERVIEW_DATA: '/monitoring/getMainOverviewData',
     GET_STATION_DATA: '/monitoring/getStationOverviewData',
-
-    //Logs
-    GET_SYS_LOGS: '/logs/getSysLogs'
+    GET_SYS_LOGS: '/monitoring/getSystemLogs'
 };

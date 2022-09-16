@@ -22,53 +22,29 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { CopyBlock, atomOneLight } from 'react-code-blocks';
+import { InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-import { Progress } from 'antd';
 
-import { CODE_EXAMPLE, DOCKER_CODE_EXAMPLE } from '../../../const/SDKExample';
-import { convertBytes, convertSecondsToDate } from '../../../services/valueConvertor';
+import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
-import storageIcon from '../../../assets/images/storageIcon.svg';
-import memoryIcon from '../../../assets/images/memoryIcon.svg';
-import HealthyBadge from '../../../components/healthyBadge';
-import cpuIcon from '../../../assets/images/cpuIcon.svg';
-import SelectComponent from '../../../components/select';
+import TooltipComponent from '../../../components/tooltip/tooltip';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import Modal from '../../../components/modal';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import TooltipComponent from '../../../components/tooltip/tooltip';
+import SdkExample from '../sdkExsample';
 import Auditing from '../auditing';
-import { InfoOutlined } from '@material-ui/icons';
-import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../const/localStorageConsts';
-import CustomTabs from '../../../components/Tabs';
 
-const StationOverviewHeader = (props) => {
+const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const history = useHistory();
     const [retentionValue, setRetentionValue] = useState('');
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
-    const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
-    const [langSelected, setLangSelected] = useState('Go');
-    const [codeExample, setCodeExample] = useState({
-        import: '',
-        connect: '',
-        producer: '',
-        consumer: ''
-    });
-    const [tabValue, setTabValue] = useState('0');
-    const tabs = ['Producer', 'Consumer'];
-    const url = window.location.href;
-    const stationName = url.split('stations/')[1];
-    const handleSelectLang = (e) => {
-        setLangSelected(e);
-        changeDynamicCode(e);
-    };
+
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
             case 'message_age_sec':
@@ -84,22 +60,6 @@ const StationOverviewHeader = (props) => {
                 break;
         }
     }, [stationState?.stationMetaData?.retention_type]);
-
-    const changeDynamicCode = (lang) => {
-        let codeEx = {};
-        codeEx.producer = CODE_EXAMPLE[lang].producer;
-        codeEx.consumer = CODE_EXAMPLE[lang].consumer;
-        let host = process.env.REACT_APP_SANDBOX_ENV
-            ? 'broker.sandbox.memphis.dev'
-            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-            ? 'localhost'
-            : 'memphis-cluster.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
-        codeEx.producer = codeEx.producer.replaceAll('<memphis-host>', host);
-        codeEx.consumer = codeEx.consumer.replaceAll('<memphis-host>', host);
-        codeEx.producer = codeEx.producer.replaceAll('<station_name>', stationName);
-        codeEx.consumer = codeEx.consumer.replaceAll('<station_name>', stationName);
-        setCodeExample(codeEx);
-    };
 
     const returnToStaionsList = () => {
         history.push(pathDomains.stations);
@@ -148,7 +108,7 @@ const StationOverviewHeader = (props) => {
                         </div>
                         <div className="more-details">
                             <p className="title">Total messages</p>
-                            <p className="number">{stationState?.stationSocketData?.total_messages || 0}</p>
+                            <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
                     <TooltipComponent text="Include extra bytes added by memphis." width={'220px'} cursor="pointer">
@@ -198,7 +158,6 @@ const StationOverviewHeader = (props) => {
                         <p>SDK</p>
                         <span
                             onClick={() => {
-                                changeDynamicCode(langSelected);
                                 setSdkModal(true);
                             }}
                         >
@@ -210,70 +169,8 @@ const StationOverviewHeader = (props) => {
                         <span onClick={() => setAuditModal(true)}>View Details {'>'}</span>
                     </div>
                 </div>
-                {/* </div> */}
                 <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
-                    <div className="sdk-details-container">
-                        <div className="select-lan">
-                            <p>Language</p>
-                            <SelectComponent
-                                value={langSelected}
-                                colorType="navy"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                radiusType="semi-round"
-                                width="220px"
-                                height="50px"
-                                options={selectLngOption}
-                                onChange={(e) => handleSelectLang(e)}
-                                dropdownClassName="select-options"
-                            />
-                        </div>
-                        <div className="installation">
-                            <p>Installation</p>
-                            <div className="install-copy">
-                                <CopyBlock
-                                    className="copyBlock"
-                                    text={CODE_EXAMPLE[langSelected].installation}
-                                    showLineNumbers={false}
-                                    theme={atomOneLight}
-                                    wrapLines={true}
-                                    codeBlock
-                                />
-                            </div>
-                        </div>
-                        <div className="tabs">
-                            <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>
-                            {tabValue === '0' && (
-                                <div className="code-example">
-                                    <div className="code-content">
-                                        <CopyBlock
-                                            language={CODE_EXAMPLE[langSelected].langCode}
-                                            text={codeExample.producer}
-                                            showLineNumbers={true}
-                                            theme={atomOneLight}
-                                            wrapLines={true}
-                                            codeBlock
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {tabValue === '1' && (
-                                <div className="code-example">
-                                    <div className="code-content">
-                                        <CopyBlock
-                                            language={CODE_EXAMPLE[langSelected].langCode}
-                                            text={codeExample.consumer}
-                                            showLineNumbers={true}
-                                            theme={atomOneLight}
-                                            wrapLines={true}
-                                            codeBlock
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <SdkExample />
                 </Modal>
                 <Modal
                     header={

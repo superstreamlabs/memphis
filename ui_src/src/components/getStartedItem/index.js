@@ -25,20 +25,22 @@ const GetStartedItem = (props) => {
             <div className="get-started-footer">
                 {!getStartedState.isHiddenButton && (
                     <>
-                        <Button
-                            width={getStartedState?.currentStep === 5 ? '190px' : '129px'}
-                            height="36px"
-                            placeholder={getStartedState?.currentStep === 5 ? 'Launch Dashboard' : 'Next'}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType={'purple'}
-                            fontSize="16px"
-                            fontWeight="bold"
-                            htmlType="submit"
-                            disabled={getStartedState?.nextDisable}
-                            onClick={() => onNext()}
-                            isLoading={getStartedState?.isLoading}
-                        />
+                        <div id="e2e-getstarted-next-btn">
+                            <Button
+                                width={getStartedState?.currentStep === 5 ? '190px' : '129px'}
+                                height="36px"
+                                placeholder={getStartedState?.currentStep === 5 ? 'Launch Dashboard' : 'Next'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType={'purple'}
+                                fontSize="16px"
+                                fontWeight="bold"
+                                htmlType="submit"
+                                disabled={getStartedState?.nextDisable}
+                                onClick={() => onNext()}
+                                isLoading={getStartedState?.isLoading}
+                            />
+                        </div>
                         {getStartedState?.currentStep !== 1 && (
                             <Button
                                 width={'129px'}

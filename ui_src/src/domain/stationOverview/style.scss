@@ -65,4 +65,32 @@
             font-size: 11px;
         }
     }
+    .waiting-placeholder{
+        height: 100%;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        display: flex;
+        top: 0;
+        flex-direction: column;
+        p{
+            margin-top: 21px;
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+        }
+        .des{
+            font-size: 12px;
+            color: #B4B4B4;
+            width: 80%;
+            text-align:-webkit-center;
+            text-align: -moz-center;
+            margin-bottom: 1em;
+        }
+        .button-container{
+            span{
+                font-family: 'InterSemiBold';
+            }
+        }
+    }
 }

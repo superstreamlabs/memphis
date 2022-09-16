@@ -146,20 +146,22 @@ const Login = (props) => {
                                     >
                                         <div className="field name">
                                             <p>Username / Email</p>
-                                            <Input
-                                                placeholder="Type username / email"
-                                                type="text"
-                                                radiusType="semi-round"
-                                                colorType="gray"
-                                                backgroundColorType="none"
-                                                borderColorType="gray"
-                                                width="19vw"
-                                                height="43px"
-                                                minWidth="200px"
-                                                onBlur={handleUserNameChange}
-                                                onChange={handleUserNameChange}
-                                                value={formFields.username}
-                                            />
+                                            <div id="e2e-login-username">
+                                                <Input
+                                                    placeholder="Type username / email"
+                                                    type="text"
+                                                    radiusType="semi-round"
+                                                    colorType="gray"
+                                                    backgroundColorType="none"
+                                                    borderColorType="gray"
+                                                    width="19vw"
+                                                    height="43px"
+                                                    minWidth="200px"
+                                                    onBlur={handleUserNameChange}
+                                                    onChange={handleUserNameChange}
+                                                    value={formFields.username}
+                                                />
+                                            </div>
                                         </div>
                                     </Form.Item>
                                     <Form.Item
@@ -173,7 +175,7 @@ const Login = (props) => {
                                     >
                                         <div className="field password">
                                             <p>Password</p>
-                                            <div id="e2e-tests-password">
+                                            <div id="e2e-login-password">
                                                 <Input
                                                     placeholder="Password"
                                                     type="password"
@@ -192,19 +194,21 @@ const Login = (props) => {
                                         </div>
                                     </Form.Item>
                                     <Form.Item className="button-container">
-                                        <Button
-                                            width="19vw"
-                                            height="43px"
-                                            minWidth="200px"
-                                            placeholder="Sign in"
-                                            colorType="white"
-                                            radiusType="circle"
-                                            backgroundColorType="purple"
-                                            fontSize="12px"
-                                            fontWeight="600"
-                                            isLoading={loadingSubmit}
-                                            onClick={handleSubmit}
-                                        />
+                                        <div id="e2e-login-btn">
+                                            <Button
+                                                width="19vw"
+                                                height="43px"
+                                                minWidth="200px"
+                                                placeholder="Sign in"
+                                                colorType="white"
+                                                radiusType="circle"
+                                                backgroundColorType="purple"
+                                                fontSize="12px"
+                                                fontWeight="600"
+                                                isLoading={loadingSubmit}
+                                                onClick={handleSubmit}
+                                            />
+                                        </div>
                                     </Form.Item>
 
                                     {error && (

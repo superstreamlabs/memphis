@@ -34,20 +34,7 @@ const SysComponents = () => {
 
     return (
         <div className="overview-wrapper sys-components-container">
-            <span className="overview-components-header">
-                System Components
-                <span className="actions-side">
-                    <div className="hover-section">
-                        <div className="action overview">
-                            {/* <Link style={{ cursor: 'pointer' }} to={`${pathDomains.sysLogs}`}>
-                                <span className="link-row" style={{ width: '100px' }}>
-                                    Logs
-                                </span>
-                            </Link> */}
-                        </div>
-                    </div>
-                </span>
-            </span>
+            <span className="overview-components-header">System Components</span>
             <div className="sys-components sys-components-header">
                 <p>Component</p>
                 <p>Pods</p>

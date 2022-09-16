@@ -161,7 +161,7 @@ const Signup = (props) => {
                                     }
                                 ]}
                             >
-                                <div className="field name">
+                                <div className="field name" id="e2e-tests-field-email">
                                     <p>Your email</p>
                                     <Input
                                         placeholder="name@gmail.com"
@@ -188,7 +188,7 @@ const Signup = (props) => {
                                     }
                                 ]}
                             >
-                                <div className="field">
+                                <div className="field" id="e2e-tests-field-fullname">
                                     <p>Full name</p>
                                     <Input
                                         placeholder="Type your name"
@@ -217,7 +217,7 @@ const Signup = (props) => {
                             >
                                 <div className="field password">
                                     <p>Password</p>
-                                    <div id="e2e-tests-password">
+                                    <div id="e2e-tests-field-password">
                                         <Input
                                             placeholder="Password"
                                             type="password"
@@ -248,22 +248,24 @@ const Signup = (props) => {
                                 </div>
                             )}
                             <Form.Item className="button-container">
-                                <Button
-                                    width="276px"
-                                    height="43px"
-                                    placeholder={
-                                        <div className="placeholder-btn">
-                                            <p>Continue</p> <KeyboardArrowRightRounded />
-                                        </div>
-                                    }
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    isLoading={loadingSubmit}
-                                    onClick={handleSubmit}
-                                />
+                                <div id="e2e-tests-signup-btn">
+                                    <Button
+                                        width="276px"
+                                        height="43px"
+                                        placeholder={
+                                            <div className="placeholder-btn">
+                                                <p>Continue</p> <KeyboardArrowRightRounded />
+                                            </div>
+                                        }
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="12px"
+                                        fontWeight="600"
+                                        isLoading={loadingSubmit}
+                                        onClick={handleSubmit}
+                                    />
+                                </div>
                             </Form.Item>
                         </Form>
                         <div className="version">

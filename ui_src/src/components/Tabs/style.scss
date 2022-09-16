@@ -1,5 +1,4 @@
 .tabs-container {
-    
     .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn{
         color: var(--purple) !important;
     }
@@ -9,7 +8,6 @@
     }
 
 }
-
-.ant-tabs-tab:hover{
+.hover .ant-tabs-tab:hover{
     color: var(--purple) !important;
 }

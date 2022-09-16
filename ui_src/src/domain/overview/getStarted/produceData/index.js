@@ -48,17 +48,19 @@ const ProduceData = (props) => {
     }, []);
 
     return (
-        <ProduceConsumeData
-            waitingImage={prodWaiting}
-            waitingTitle={'Waiting for produced data'}
-            successfullTitle={'Success! You created your first producer'}
-            languages={selectLngOption}
-            activeData={'connected_producers'}
-            dataName={'producer_app'}
-            displayScreen={displayScreen}
-            produce
-            screen={(e) => setDisplayScreen(e)}
-        ></ProduceConsumeData>
+        <div id="e2e-getstarted-step3">
+            <ProduceConsumeData
+                waitingImage={prodWaiting}
+                waitingTitle={'Waiting for produced data'}
+                successfullTitle={'Success! You created your first producer'}
+                languages={selectLngOption}
+                activeData={'connected_producers'}
+                dataName={'producer_app'}
+                displayScreen={displayScreen}
+                produce
+                screen={(e) => setDisplayScreen(e)}
+            ></ProduceConsumeData>
+        </div>
     );
 };
 

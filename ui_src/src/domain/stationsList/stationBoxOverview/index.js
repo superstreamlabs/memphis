@@ -30,7 +30,7 @@ import Popover from '@material-ui/core/Popover';
 import { MinusOutlined } from '@ant-design/icons';
 import pathDomains from '../../../router';
 
-import { convertSecondsToDate } from '../../../services/valueConvertor';
+import { convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import Modal from '../../../components/modal';
 import { parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
@@ -110,23 +110,25 @@ const StationBoxOverview = (props) => {
                         <img src={totalMsgIcon} alt="total messages" />
                         <label className="data-labels total">Total messages</label>
                         <p className="data-info">
-                            {props.station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : props?.station?.total_messages}
+                            {props.station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : numberWithCommas(props?.station?.total_messages)}
                         </p>
                     </div>
                     <div className="station-meta">
                         <img src={poisonMsgIcon} alt="poison messages" />
                         <label className="data-labels poison">Poison messages</label>
-                        <p className="data-info">{props?.station?.posion_messages === 0 ? <MinusOutlined /> : props?.station?.posion_messages}</p>
+                        <p className="data-info">{props?.station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(props?.station?.posion_messages)}</p>
                     </div>
-                    <MoreVertIcon
-                        aria-controls="long-button"
-                        aria-haspopup="true"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            handleClickMenu(e);
-                        }}
-                        className="threedots-menu"
-                    />
+                    <div id="e2e-tests-station-menu">
+                        <MoreVertIcon
+                            aria-controls="long-button"
+                            aria-haspopup="true"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleClickMenu(e);
+                            }}
+                            className="threedots-menu"
+                        />
+                    </div>
                 </div>
             </Link>
 

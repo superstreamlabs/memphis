@@ -1,0 +1,46 @@
+.logs-wrapper{
+    display: flex;
+    width: 100%;
+    position: relative;
+    gap: 30px;
+    height: calc(100% - 90px);
+    logs {
+        background: white;
+        box-shadow: 0px 6px 18px rgb(0 0 0 / 6%);
+        border-radius: 8px;
+        height: 100%;
+        width: 450px;
+        min-width:300px;
+        min-height: 400px;
+        list-header{
+            .header-title{
+                font-weight: 600;
+                font-size: 18px;
+                color: #1D1D1D;
+                padding: 25px;
+                line-height: 18px;
+            }
+            .search-input-container{
+                margin-right: 0;
+                display: flex;
+                justify-content: center;
+            }
+        }
+        .logsl {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            width: 100%;
+            align-items: center;
+            margin-top: 10px;
+            height: calc(100% - 90px) !important;
+            overflow: auto;
+            text-align:-webkit-center;
+            text-align: -moz-center;
+            .even .log-payload {
+                background-color: #F9F9FA;
+                border-radius: 4px;
+            }
+        }
+    }
+}

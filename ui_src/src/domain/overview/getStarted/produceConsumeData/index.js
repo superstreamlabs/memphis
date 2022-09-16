@@ -207,23 +207,25 @@ const ProduceConsumeData = (props) => {
                             }}
                         />
                         <div className="waiting-for-data-space"></div>
-                        <Button
-                            width="129px"
-                            height="40px"
-                            placeholder="Skip"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="border: 1px solid #EBEBEB"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            marginBottom="3px"
-                            onClick={() => {
-                                clearInterval(intervalStationDetails);
-                                getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
-                                getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-                            }}
-                        />
+                        <div id="e2e-getstarted-skip">
+                            <Button
+                                width="129px"
+                                height="40px"
+                                placeholder="Skip"
+                                colorType="black"
+                                radiusType="circle"
+                                backgroundColorType="white"
+                                border="border: 1px solid #EBEBEB"
+                                fontSize="14px"
+                                fontWeight="bold"
+                                marginBottom="3px"
+                                onClick={() => {
+                                    clearInterval(intervalStationDetails);
+                                    getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
+                                    getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
             )}

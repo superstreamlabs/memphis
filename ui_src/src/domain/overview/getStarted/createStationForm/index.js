@@ -128,7 +128,7 @@ const CreateStationForm = (props) => {
 
     return (
         <Form name="form" form={creationForm} autoComplete="off" className="create-station-form-getstarted">
-            <div>
+            <div id="e2e-getstarted-step1">
                 <TitleComponent
                     headerTitle="Enter station name"
                     typeTitle="sub-header"

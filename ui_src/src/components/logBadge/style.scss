@@ -4,30 +4,23 @@
     .warn {
         display: flex;
         align-items: center;
-        border-radius: 15px;
+        border-radius: 4px;
         justify-content: center;
         width: 60px;
-        font-weight: normal;
+        font-weight: 600;
         font-size: 12px;
-        p {
-            margin-top: 2px;
-            margin: 0;
-        }
+        height: 25px;
     }
     .info {
-        background-color: rgba(46, 212, 122, 0.1);
-        color: #2ed47a;
+        background-color: rgba(32, 201, 172, 0.1);
+        color: #20C9AC;
     }
     .error {
-        background-color: rgba(247, 104, 91, 0.1);
-        color: #f7685b;
+        background-color: rgba(252, 52, 0, 0.1);
+        color: #FC3400;
     }
     .warn {
-        background-color: #fffbeb;
-        color: #ffb946;
-    }
-    .badge-icon {
-        font-size: 13px;
-        margin-right: 5px;
+        background-color: rgba(255, 160, 67, 0.1);
+        color: #FFA043;
     }
 }

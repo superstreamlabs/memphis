@@ -51,7 +51,8 @@ const Button = (props) => {
         minHeight,
         zIndex,
         border,
-        alignSelf
+        alignSelf,
+        fontFamily = 'Inter'
     } = props;
 
     const handleClick = (e) => {
@@ -86,6 +87,7 @@ const Button = (props) => {
             borderColor,
             fontSize,
             fontWeight,
+            fontFamily,
             opacity,
             minHeight: minHeight,
             minWidth: minWidth || '60px',
