@@ -106,7 +106,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	if err := s.CreateSystemLogsStream(); err != nil {
-		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
+		s.Errorf("Failed to create syslogs stream: " + " " + err.Error())
 	}
 
 	dbInstance, err := db.InitializeDbConnection(s)
