@@ -20,13 +20,20 @@ import './style.scss';
 
 import { BrowserRouter } from 'react-router-dom';
 import ReactDOM from 'react-dom';
-import React, { useEffect } from 'react';
+import React from 'react';
+import { hotjar } from 'react-hotjar';
 
 import reportWebVitals from './reportWebVitals';
 import Store from './hooks/store';
 import App from './App';
 
+const sandboxSiteId = 3089915;
+const hotjarVersion = 6;
+
 function MemphisApp() {
+    if (process.env.REACT_APP_SANDBOX_ENV) {
+        hotjar.initialize(sandboxSiteId, hotjarVersion);
+    }
     return (
         <Store>
             <BrowserRouter>
