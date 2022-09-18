@@ -142,7 +142,7 @@ Read more on [Memphis{dev} Documentation 📃](https://memphis.dev/docs).
 
 We welcome you to our discord server with your questions, doubts and feedback.
 
-<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg" /></a>
+<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg"/></a>
 
 ### Create a bug 🐞 report
 
