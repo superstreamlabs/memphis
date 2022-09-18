@@ -43,6 +43,39 @@
                     }
                 }
             }
+            .img-wrapper{
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+                .img-cloud{
+                    position: relative;
+                    width: 95px;
+                    height: 95px;
+                    border: 1px solid #F4F4F4;
+                    border-radius: 50px;
+                    display: flex;
+                    justify-content: center;
+                    cursor: pointer;
+                    img{
+                        width: 70px;
+                    }
+                    .selected-icon{
+                        position: absolute;
+                        right: 8px;
+                        background: transparent;
+                        top: -4px;
+                        svg {
+                            width: 22px;
+                        }
+                    }
+                }
+                .selected{
+                    background: #E3E0FF;
+                }
+                .img-cloud:hover{
+                   background: #E3E0FF;
+                }
+            }
         }
     }
     .coming-soon-wrapper{

@@ -20,29 +20,19 @@
 // SOFTWARE.
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
-import Copy from '../../../../../assets/images/copy.svg';
-import Copied from '../../../../../assets/images/copied.svg';
 import StatusIndication from '../../../../../components/indication';
-import { Details } from '@material-ui/icons';
+import Copy from '../../../../../components/copy';
 
 const { Panel } = Collapse;
 
 const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
-    const [copied, setCopied] = useState(false);
     const onChange = (key) => {
         setActiveKey(key);
-    };
-    const handleCopy = () => {
-        setCopied(true);
-        navigator.clipboard.writeText(data);
-        setTimeout(() => {
-            setCopied(false);
-        }, 3000);
     };
 
     return (
@@ -62,7 +52,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
             >
                 {message ? (
                     <div className="message">
-                        {message && activeKey.length > 0 && <img src={copied ? Copied : Copy} onClick={() => handleCopy()} className={'copy-icon'} />}
+                        {message && activeKey.length > 0 && <Copy data={data} />}
                         <p>{data}</p>
                     </div>
                 ) : (

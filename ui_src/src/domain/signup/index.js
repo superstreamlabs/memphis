@@ -45,7 +45,7 @@ import pathDomains from '../../router';
 const Signup = (props) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
-    const [signupForm] = Form.useForm(); // form controller
+    const [signupForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
         full_name: '',
@@ -80,7 +80,7 @@ const Signup = (props) => {
     const getSignupFlag = useCallback(async () => {
         const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
         if (!data.exist) {
-            history.push(pathDomains.login);
+            // history.push(pathDomains.login);
         }
         setisLoading(false);
     }, []);
@@ -88,6 +88,7 @@ const Signup = (props) => {
     const getSystemVersion = useCallback(async () => {
         const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
         if (data) {
+            debugger;
             setSystemVersion(data.version);
         }
         setisLoading(false);
@@ -269,7 +270,7 @@ const Signup = (props) => {
                             </Form.Item>
                         </Form>
                         <div className="version">
-                            <p>v0.3.5</p>
+                            <p>v{systemVersion}</p>
                             <img src={betaBadge} />
                         </div>
                     </div>

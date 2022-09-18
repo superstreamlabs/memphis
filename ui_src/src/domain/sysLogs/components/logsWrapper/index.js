@@ -107,9 +107,6 @@ const LogsWrapper = () => {
             if (data) {
                 let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
                 const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-                console.log(data.logs);
-                setDisplayedLog(data.logs[0]);
-                setSelectedRow(data.logs[0].message_seq);
                 setLastMgsSeq(data.logs[0].message_seq);
                 setLogs((users) => [...uniqueItems, ...users]);
             }
