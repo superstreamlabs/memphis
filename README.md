@@ -29,7 +29,7 @@
 
 **[Memphis{dev}](https://memphis.dev)** is a message broker for developers made by devs' that struggled to develop around message brokers. When we couldn't find something that brought answers to our problems, we decided to come up with the solution!
 
-Memphis(dev) enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
+Memphis{dev} enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
 
 Focusing on automatic optimization, schema management, stream processing and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
