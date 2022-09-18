@@ -21,13 +21,14 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext } from 'react';
 
 import stationIdleIcon from '../../../assets/images/stationIdleIcon.svg';
 import liveMessagesIcon from '../../../assets/images/liveMessagesIcon.svg';
 import stationActionIcon from '../../../assets/images/stationActionIcon.svg';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
 import { Context } from '../../../hooks/store';
+import { numberWithCommas } from '../../../services/valueConvertor';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
@@ -44,7 +45,7 @@ const GenericDetails = () => {
                 </div>
                 <div className="data-wrapper">
                     <span>Total stations</span>
-                    <p>{state?.monitor_data?.total_stations}</p>
+                    <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
                 </div>
             </div>
             <div className="overview-wrapper data-box">
@@ -57,7 +58,7 @@ const GenericDetails = () => {
                 </div>
                 <div className="data-wrapper">
                     <span>Total messages</span>
-                    <p> {state?.monitor_data?.total_messages}</p>
+                    <p> {numberWithCommas(state?.monitor_data?.total_messages)}</p>
                 </div>
             </div>
             {/* <div className="overview-wrapper data-box">

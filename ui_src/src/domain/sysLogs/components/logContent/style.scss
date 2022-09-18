@@ -1,0 +1,73 @@
+.log-content-wrapper{
+    background: white;
+    box-shadow: 0px 6px 18px rgb(0 0 0 / 6%);
+    border-radius: 8px;
+    height: 100%;
+    width: calc(100% - 450px);
+    min-width: 830px;
+    min-height: 400px;
+    log-header{
+        display: flex;
+        font-weight: 600;
+        font-size: 18px;
+        height: 73px;
+        border-bottom: 1px solid #F4F4F4 ;
+        padding: 25px;
+        line-height: 18px;
+    }
+    log-payload{
+        display: flex;
+        padding: 15px;
+        align-items: center;
+        position: relative;
+        justify-content: space-between;
+        .log-details{
+            display: flex;
+            .title{
+                font-family: 'InterSemiBold';
+                font-size: 14px;
+                color: #737373;
+                margin-bottom: 10px;
+            }
+            .des{
+                font-weight: 600;
+                font-size: 16px;
+            }
+            .source{
+                width: 150px;
+                border-right: 1px solid gainsboro;
+            }
+            .type{
+                width: 200px;
+                border-right: 1px solid gainsboro;
+                margin-left: 24px;
+            }
+            .date{
+                margin-left: 24px;
+                width: 350px;
+            }
+        }
+    }
+    log-content{
+        margin: 15px;
+        padding: 15px;
+        height: calc(100% - 165px);
+        display: flex;
+        border-top: 1px solid #EFEFEF;
+        border-right: 1px solid #EFEFEF;
+        border-left: 1px solid #EFEFEF;
+        border-bottom-left-radius: 0px !important;
+        border-bottom-right-radius: 0px !important;
+        border-radius: 8px;
+        overflow:auto;
+        color:#84818A;
+        place-content: space-between;
+        .copy-button{
+            cursor: pointer;
+            img{
+                width: 20px;
+
+            }
+        }
+    }
+}

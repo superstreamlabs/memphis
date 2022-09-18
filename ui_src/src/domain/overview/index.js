@@ -67,6 +67,8 @@ function OverView() {
     const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(false);
+    const [creatingProsessd, setCreatingProsessd] = useState(false);
+
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [allStations, setAllStations] = useState([]);
     const [showWelcome, setShowWelcome] = useState(false);
@@ -202,8 +204,9 @@ function OverView() {
                 }}
                 clickOutside={() => modalFlip(false)}
                 open={open}
+                isLoading={creatingProsessd}
             >
-                <CreateStationDetails createStationRef={createStationRef} />
+                <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
             </Modal>
             <Modal
                 header={''}

@@ -22,15 +22,19 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
+import { Space } from 'antd';
 
+import { numberWithCommas } from '../../../../services/valueConvertor';
+import waitingProducer from '../../../../assets/images/waitingProducer.svg';
+import waitingConsumer from '../../../../assets/images/waitingConsumer.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-
-import { StationStoreContext } from '../..';
+import Modal from '../../../../components/modal';
 import StatusIndication from '../../../../components/indication';
 import CustomCollapse from '../components/customCollapse';
 import MultiCollapse from '../components/multiCollapse';
-import { Space } from 'antd';
-import { numberWithCommas } from '../../../../services/valueConvertor';
+import { StationStoreContext } from '../..';
+import Button from '../../../../components/button';
+import SdkExample from '../../sdkExsample';
 
 const ProduceConsumList = (props) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -39,6 +43,8 @@ const ProduceConsumList = (props) => {
     const [cgsList, setCgsList] = useState([]);
     const [producerDetails, setProducerDetails] = useState([]);
     const [cgDetails, setCgDetails] = useState([]);
+    const [openCreateProducer, setOpenCreateProducer] = useState(false);
+    const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
 
     useEffect(() => {
         if (props.producer) {
@@ -172,14 +178,14 @@ const ProduceConsumList = (props) => {
                 <p className="title">{props.producer ? 'Producers' : 'Consumer groups'}</p>
                 {/* <p className="add-connector-button">{props.producer ? 'Add producer' : 'Add consumer'}</p> */}
             </div>
-            {props.producer && (
+            {props.producer && producersList?.length > 0 && (
                 <div className="coulmns-table">
                     <span style={{ width: '100px' }}>Name</span>
                     <span style={{ width: '80px' }}>User</span>
                     <span style={{ width: '35px' }}>Status</span>
                 </div>
             )}
-            {!props.producer && (
+            {!props.producer && cgsList.length > 0 && (
                 <div className="coulmns-table">
                     <span style={{ width: '75px' }}>Name</span>
                     <span style={{ width: '65px', textAlign: 'center' }}>Poison</span>
@@ -237,12 +243,34 @@ const ProduceConsumList = (props) => {
                         </Space>
                     )}
                 </div>
-                {((props.producer && producersList?.length === 0) || (!props.producer && cgsList?.length === 0)) && (
-                    <div className="empty-pub-sub">
-                        <p>Waiting for {props.producer ? 'producers' : 'consumers'}</p>
-                    </div>
-                )}
             </div>
+            {((props.producer && producersList?.length === 0) || (!props.producer && cgsList?.length === 0)) && (
+                <div className="waiting-placeholder">
+                    <img width={62} src={props.producer ? waitingProducer : waitingConsumer} />
+                    <p>Waiting for the 1st {props.producer ? 'producer' : 'consumer'}</p>
+                    {props.producer && <span className="des">A producer is the source application that pushes data to the station</span>}
+                    {!props.producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
+                    <Button
+                        className="open-sdk"
+                        width="200px"
+                        height="37px"
+                        placeholder={`Create your first ${props.producer ? 'producer' : 'consumer'}`}
+                        colorType={'black'}
+                        radiusType="circle"
+                        border={'gray-light'}
+                        backgroundColorType={'none'}
+                        fontSize="12px"
+                        fontFamily="InterSemiBold"
+                        onClick={() => (props.producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
+                    />
+                </div>
+            )}
+            <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
+                <SdkExample showTabs={false} consumer={true} />
+            </Modal>
+            <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateProducer(false)} open={openCreateProducer} displayButtons={false}>
+                <SdkExample showTabs={false} />
+            </Modal>
         </div>
     );
 };

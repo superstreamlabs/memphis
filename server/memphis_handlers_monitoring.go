@@ -207,7 +207,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 	if !exist {
 		serv.Errorf("Station does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
 		return
 	}
 
@@ -332,24 +332,31 @@ func min(x, y uint64) uint64 {
 func (s *Server) GetSystemLogs(amount uint64,
 	timeout time.Duration,
 	fromLast bool,
-	startSeq uint64,
+	lastKnownSeq uint64,
 	filterSubject string) (models.SystemLogsResponse, error) {
 	uid := s.memphis.nuid.Next()
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 
+	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	amount = min(streamInfo.State.Msgs, amount)
+	startSeq := lastKnownSeq - amount + 1
+
 	if fromLast {
-		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
-		if err != nil {
-			return models.SystemLogsResponse{}, err
-		}
-		startSeq = streamInfo.State.LastSeq - amount
+
+		startSeq = streamInfo.State.LastSeq - amount + 1
 
 		//handle uint wrap around
-		if amount > streamInfo.State.LastSeq {
+		if amount >= streamInfo.State.LastSeq {
 			startSeq = 1
 		}
 
-		amount = min(streamInfo.State.Msgs, amount)
+	} else if amount >= lastKnownSeq {
+		startSeq = 1
+		amount = lastKnownSeq
 	}
 
 	cc := ConsumerConfig{
@@ -363,7 +370,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err := s.memphisAddConsumer(syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -425,17 +432,13 @@ cleanup:
 		}
 
 		logType := msg.Subject[len(syslogsStreamName)+1:]
-		source := s.memphis.serverID
-		if source == _EMPTY_ {
-			source = "broker"
-		}
 
 		data := string(msg.Data)
 		resMsgs = append(resMsgs, models.Log{
 			MessageSeq: int(msg.Sequence),
 			Type:       logType,
 			Data:       data,
-			Source:     source,
+			Source:     s.getLogSource(),
 			TimeSent:   msg.Time,
 		})
 	}

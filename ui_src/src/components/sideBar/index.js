@@ -32,6 +32,8 @@ import stationsIconActive from '../../assets/images/stationsIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
+import logsIcon from '../../assets/images/logsIcon.svg';
+import logsActive from '../../assets/images/logsActive.svg';
 import supportIcon from '../../assets/images/supportIcon.svg';
 import accountIcon from '../../assets/images/accountIcon.svg';
 import logoutIcon from '../../assets/images/logoutIcon.svg';
@@ -159,7 +161,20 @@ function SideBar() {
                     </div>
                 </div>
                 <div className="item-wrapper">
-                    <div id="e2e-tests-users-sidebar"></div>
+                    <div id="e2e-tests-users-sidebar">
+                        <Link to={pathDomains.sysLogs}>
+                            <div className="icon">
+                                <div className={state.route === 'logs' ? 'circle-nav-item checked' : 'circle-nav-item'}>
+                                    {state.route === 'logs' ? (
+                                        <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                                    ) : (
+                                        <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
+                                    )}
+                                </div>
+                            </div>
+                            <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
+                        </Link>
+                    </div>
                 </div>
             </div>
             <div id="e2e-tests-settings-btn" className="bottom-icons">
@@ -194,21 +209,21 @@ function SideBar() {
                             }
                         >
                             <Menu.Item key={1} className="customclass">
-                                <div className="item-wrapp">
+                                <div className="item-wrapp" id="e2e-tests-menu-preferences">
                                     <img src={accountIcon} width="15" height="15" alt="accountIcon" />
                                     <p className="item-title">Preferences</p>
                                 </div>
                             </Menu.Item>
                             <Menu.Item key={2}>
                                 <Link to={{ pathname: DOC_URL }} target="_blank">
-                                    <div className="item-wrapp">
+                                    <div className="item-wrapp" id="e2e-tests-menu-support">
                                         <img src={supportIcon} width="15" height="15" alt="supportIcon" />
                                         <p className="item-title">Support</p>
                                     </div>
                                 </Link>
                             </Menu.Item>
                             <Menu.Item key={3}>
-                                <div className="item-wrapp">
+                                <div className="item-wrapp" id="e2e-tests-menu-logout">
                                     <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
                                     <p className="item-title">Log out</p>
                                 </div>

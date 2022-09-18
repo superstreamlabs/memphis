@@ -28,7 +28,6 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"regexp"
 	"strings"
 	"time"
 
@@ -36,26 +35,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type StationsHandler struct{ S *Server }
 
+const (
+	stationObjectName = "Station"
+)
+
 func validateStationName(stationName string) error {
-	if len(stationName) == 0 {
-		return errors.New("station name can not be empty")
-	}
-
-	if len(stationName) > 32 {
-		return errors.New("station name should be under 32 characters")
-	}
-
-	re := regexp.MustCompile("^[a-z0-9_]*$")
-
-	validName := re.MatchString(stationName)
-	if !validName {
-		return errors.New("station name has to include only letters, numbers and _")
-	}
-	return nil
+	return validateName(stationName, stationObjectName)
 }
 
 func validateRetentionType(retentionType string) error {
@@ -447,12 +437,35 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                newStation.ID,
+			"retention_type":     newStation.RetentionType,
+			"retention_value":    newStation.RetentionValue,
+			"storage_type":       newStation.StorageType,
+			"replicas":           newStation.Replicas,
+			"dedup_enabled":      newStation.DedupEnabled,
+			"dedup_window_in_ms": newStation.DedupWindowInMs,
+			"created_by_user":    newStation.CreatedByUser,
+			"creation_date":      newStation.CreationDate,
+			"last_update":        newStation.LastUpdate,
+			"functions":          newStation.Functions,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	if updateResults.MatchedCount > 0 {
+		serv.Warnf("Station with the same name is already exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
+		return
+	}
+
 	message := "Station " + stationName + " has been created"
 	serv.Noticef(message)
 	var auditLogs []interface{}

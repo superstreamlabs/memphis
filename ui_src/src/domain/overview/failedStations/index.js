@@ -33,7 +33,9 @@ const FailedStations = () => {
     const [state, dispatch] = useContext(Context);
     return (
         <div className="overview-wrapper failed-stations-container">
-            <p className="overview-components-header">Stations</p>
+            <p className="overview-components-header" id="e2e-overview-station-list">
+                Stations
+            </p>
             <div className="err-stations-list">
                 <div className="coulmns-table">
                     <span style={{ width: '100px' }}>Name</span>

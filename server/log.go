@@ -28,6 +28,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"memphis-broker/analytics"
 	srvlog "memphis-broker/logger"
 )
 
@@ -262,13 +263,39 @@ func (s *Server) executeLogCall(f func(logger Logger, format string, v ...interf
 }
 
 func (s *Server) createMemphisLoggerFunc() srvlog.HybridLogPublishFunc {
-	logLabelToSubjectMap := map[string]string{"INF": syslogsInfoSubject, "WRN": syslogsWarnSubject, "ERR": syslogsErrSubject}
 	return func(label string, log []byte) {
-		subjectSuffix, ok := logLabelToSubjectMap[label]
-		if !ok {
+		s.sendLogToSubject(label, log)
+		s.sendLogToAnalytics(label, log)
+	}
+}
+
+func (s *Server) sendLogToSubject(label string, log []byte) {
+	logLabelToSubjectMap := map[string]string{"INF": syslogsInfoSubject, "WRN": syslogsWarnSubject, "ERR": syslogsErrSubject}
+	subjectSuffix, ok := logLabelToSubjectMap[label]
+	if !ok {
+		return
+	}
+	subject := syslogsStreamName + "." + subjectSuffix
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
+}
+
+func (s *Server) sendLogToAnalytics(label string, log []byte) {
+	switch label {
+	case "ERR":
+		shouldSend, err := shouldSendAnalytics()
+		if err != nil || !shouldSend {
 			return
 		}
-		subject := syslogsStreamName + "." + subjectSuffix
-		s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
+		analytics.SendErrEvent(s.getLogSource(), string(log))
+	default:
+		return
 	}
+}
+
+func (s *Server) getLogSource() string {
+	source := s.memphis.serverID
+	if source == _EMPTY_ {
+		return "broker"
+	}
+	return source
 }

@@ -148,19 +148,19 @@ const CreateStationDetails = (props) => {
                     replicas: values.replicas
                 };
                 createStation(bodyRequest);
-            } catch (error) {
-                console.log(error);
-            }
+            } catch (error) {}
         }
     };
 
     const createStation = async (bodyRequest) => {
+        props.handleClick(true);
         try {
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
                 history.push(`${pathDomains.stations}/${data.name}`);
             }
         } catch (error) {}
+        props.handleClick(false);
     };
 
     return (
@@ -175,7 +175,7 @@ const CreateStationDetails = (props) => {
                 ]}
                 style={{ height: '70px' }}
             >
-                <div className="station-name">
+                <div className="station-name" id="e2e-createstation-name">
                     <p className="field-title">
                         <span className="required-field-mark">* </span>Station name
                     </p>

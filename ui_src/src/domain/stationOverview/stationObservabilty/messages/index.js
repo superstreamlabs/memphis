@@ -23,21 +23,22 @@ import './style.scss';
 import { message } from 'antd';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { Checkbox } from 'antd';
-import { Space } from 'antd';
+import { InfoOutlined } from '@material-ui/icons';
+import { useHistory } from 'react-router-dom';
+import { Checkbox, Space } from 'antd';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
-import Journey from '../../../../assets/images/journey.svg';
+import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-import CustomTabs from '../../../../components/Tabs';
-import Button from '../../../../components/button';
-import { InfoOutlined } from '@material-ui/icons';
-import { StationStoreContext } from '../..';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
 import MultiCollapse from '../components/multiCollapse';
-import { useHistory } from 'react-router-dom';
 import { httpRequest } from '../../../../services/http';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import CustomTabs from '../../../../components/Tabs';
+import Button from '../../../../components/button';
+import { StationStoreContext } from '../..';
+import pathDomains from '../../../../router';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -208,6 +209,7 @@ const Messages = () => {
             setIgnoreProcced(false);
         }
     };
+
     const handleResend = async () => {
         setResendProcced(true);
         try {
@@ -279,7 +281,12 @@ const Messages = () => {
                 )}
             </div>
             <div className="tabs">
-                <CustomTabs value={tabValue} onChange={handleChangeMenuItem} tabs={tabs}></CustomTabs>
+                <CustomTabs
+                    value={tabValue}
+                    onChange={handleChangeMenuItem}
+                    tabs={tabs}
+                    disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
+                ></CustomTabs>
             </div>
             {tabValue === '0' && stationState?.stationSocketData?.messages?.length > 0 && (
                 <div className="list-wrapper">
@@ -382,8 +389,25 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === '0' && stationState?.stationSocketData?.messages === null && (
-                <div className="empty-messages">
-                    <p>Waiting for messages</p>
+                <div className="waiting-placeholder">
+                    <img width={100} src={waitingMessages} />
+                    <p>No messages yet</p>
+                    <span className="des">Create your 1st producer and start producing data.</span>
+                    {process.env.REACT_APP_SANDBOX_ENV && (
+                        <Button
+                            className="open-sdk"
+                            width="110px"
+                            height="37px"
+                            placeholder="Explore demo"
+                            colorType={'white'}
+                            radiusType="circle"
+                            border={'none'}
+                            backgroundColorType={'purple'}
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => history.go(`${pathDomains.stations}/demo-app`)}
+                        />
+                    )}
                 </div>
             )}
             {tabValue === '1' && stationState?.stationSocketData?.poison_messages?.length === 0 && (

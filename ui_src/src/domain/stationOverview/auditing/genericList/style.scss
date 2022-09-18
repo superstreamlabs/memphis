@@ -36,6 +36,10 @@
                     margin-right: 10px;
                 }
             }
+            .pubSub-row:nth-child(even) {
+                background-color: #f8f8f8;
+                border-radius: 5px;
+            }
         }
     }
     .row-data {

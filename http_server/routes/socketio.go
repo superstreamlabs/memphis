@@ -67,16 +67,13 @@ func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetail
 	return stations, nil
 }
 
-func getStationOverviewData(stationName string, s socketio.Conn, h *server.Handlers) (models.StationOverviewData, error) {
+func getStationOverviewData(stationName string, h *server.Handlers) (models.StationOverviewData, error) {
 	stationName = strings.ToLower(stationName)
 	exist, station, err := server.IsStationExist(stationName)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
 	if !exist {
-		if s != nil {
-			s.Emit("error", "Station does not exist")
-		}
 		return models.StationOverviewData{}, errors.New("Station does not exist")
 	}
 
@@ -186,7 +183,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		s.Join("all_stations_group")
 		return "recv " + msg
 	})
-	socketServer.OnEvent("/api", "get_syslogs", func(s socketio.Conn, msg string) string {
+	socketServer.OnEvent("/api", "register_syslogs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		s.Join("syslogs_group")
 		return "recv " + msg
@@ -223,7 +220,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 				if err != nil {
 					serv.Errorf("Error while trying to get system logs - " + err.Error())
 				} else {
-					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs", data)
+					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs_data", data)
 				}
 			}
 
@@ -231,7 +228,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 			for _, room := range rooms {
 				if strings.HasPrefix(room, "station_overview_group_") && socketServer.RoomLen("/api", room) > 0 {
 					stationName := strings.Split(room, "station_overview_group_")[1]
-					data, err := getStationOverviewData(stationName, nil, h)
+					data, err := getStationOverviewData(stationName, h)
 					if err != nil {
 						serv.Errorf("Error while trying to get station overview data - " + err.Error())
 					} else {

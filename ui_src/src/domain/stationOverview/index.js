@@ -21,19 +21,18 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, createContext, useReducer, useCallback } from 'react';
+import React, { useEffect, useContext, useState, createContext, useReducer } from 'react';
+import { useHistory } from 'react-router-dom';
 
+import { parsingDate } from '../../services/valueConvertor';
 import StationOverviewHeader from './stationOverviewHeader';
 import StationObservabilty from './stationObservabilty';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-
 import Reducer from './hooks/reducer';
-import Loader from '../../components/loader';
-import { useHistory } from 'react-router-dom';
-import { parsingDate } from '../../services/valueConvertor';
 
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);

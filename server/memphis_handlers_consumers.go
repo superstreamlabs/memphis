@@ -31,7 +31,6 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 
-	"regexp"
 	"strings"
 	"time"
 
@@ -39,27 +38,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"k8s.io/utils/strings/slices"
 )
 
 type ConsumersHandler struct{ S *Server }
 
-func validateName(name string) error {
-	if len(name) == 0 {
-		return errors.New("Consumer name can not be empty")
-	}
+const (
+	consumerObjectName = "Consumer"
+)
 
-	if len(name) > 32 {
-		return errors.New("Consumer name/consumer group should be under 32 characters")
-	}
-
-	re := regexp.MustCompile("^[a-z0-9_]*$")
-
-	validName := re.MatchString(name)
-	if !validName {
-		return errors.New("Consumer name/consumer group has to include only letters and _")
-	}
-	return nil
+func validateConsumerName(consumerName string) error {
+	return validateName(consumerName, consumerObjectName)
 }
 
 func validateConsumerType(consumerType string) error {
@@ -123,7 +113,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	name := strings.ToLower(ccr.Name)
-	err := validateName(name)
+	err := validateConsumerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
 		respondWithErr(s, reply, err)
@@ -132,7 +122,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	consumerGroup := strings.ToLower(ccr.ConsumerGroup)
 	if consumerGroup != "" {
-		err = validateName(consumerGroup)
+		err = validateConsumerName(consumerGroup)
 		if err != nil {
 			serv.Warnf(err.Error())
 			respondWithErr(s, reply, err)
@@ -181,33 +171,36 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if !exist {
-		station, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		var created bool
+		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
 			respondWithErr(s, reply, err)
 			return
 		}
 
-		message := "Station " + stationName + " has been created"
-		serv.Noticef(message)
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
-			Message:       message,
-			CreatedByUser: c.memphisInfo.username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("CreateConsumer error: " + err.Error())
-		}
+		if created {
+			message := "Station " + stationName + " has been created"
+			serv.Noticef(message)
+			var auditLogs []interface{}
+			newAuditLog := models.AuditLog{
+				ID:            primitive.NewObjectID(),
+				StationName:   stationName,
+				Message:       message,
+				CreatedByUser: c.memphisInfo.username,
+				CreationDate:  time.Now(),
+				UserType:      "application",
+			}
+			auditLogs = append(auditLogs, newAuditLog)
+			err = CreateAuditLogs(auditLogs)
+			if err != nil {
+				serv.Errorf("CreateConsumer error: " + err.Error())
+			}
 
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+			shouldSendAnalytics, _ := shouldSendAnalytics()
+			if shouldSendAnalytics {
+				analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+			}
 		}
 	}
 
@@ -230,7 +223,6 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	consumerId := primitive.NewObjectID()
 	newConsumer := models.Consumer{
 		ID:               consumerId,
 		Name:             name,
@@ -264,32 +256,49 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	_, err = consumersCollection.InsertOne(context.TODO(), newConsumer)
+	filter := bson.M{"name": newConsumer.Name, "station_id": station.ID, "is_active": true, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                newConsumer.ID,
+			"type":               newConsumer.Type,
+			"connection_id":      newConsumer.ConnectionId,
+			"created_by_user":    newConsumer.CreatedByUser,
+			"consumers_group":    newConsumer.ConsumersGroup,
+			"creation_date":      newConsumer.CreationDate,
+			"max_ack_time_ms":    newConsumer.MaxAckTimeMs,
+			"max_msg_deliveries": newConsumer.MaxMsgDeliveries,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := consumersCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Consumer " + name + " has been created"
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
-		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("CreateConsumer error: " + err.Error())
-	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-create-consumer")
+	if updateResults.MatchedCount > 0 {
+		message := "Consumer " + name + " has been created"
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: c.memphisInfo.username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("CreateConsumer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.SendEvent(c.memphisInfo.username, "user-create-consumer")
+		}
 	}
 
 	respondWithErr(s, reply, nil)

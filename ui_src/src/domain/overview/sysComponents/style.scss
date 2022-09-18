@@ -34,42 +34,4 @@
         height: 25px;
         margin-bottom: 0;
     }
-    .actions-side {
-        display: flex;
-        width: 30px;
-        margin-right: 20px;
-        float: right;
-        .hover-section {
-            align-items: center;
-            display: flex;
-            color: var(--purple);
-        }
-        .link-row {
-            color: var(--purple);
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .action {
-            display: flex;
-            align-items: center;
-            margin-left: 20px;
-            margin-top: 5px;
-        }
-        .overview,
-        .edit {
-            width: 27px;
-            left: 1327px;
-            top: 568px;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .station-menu {
-            .threedots-menu {
-                color: #a9a9a9;
-                margin-top: 0px;
-                margin-left: 10px;
-            }
-        }
-    }
 }

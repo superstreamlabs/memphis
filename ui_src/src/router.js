@@ -26,7 +26,7 @@ const pathDomains = {
     stations: '/stations',
     users: '/users',
     settings: '/settings',
-    sysLogs: '/sysLogs'
+    sysLogs: '/logs'
 };
 
 export default pathDomains;

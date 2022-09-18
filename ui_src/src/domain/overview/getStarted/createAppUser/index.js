@@ -26,15 +26,13 @@ import Lottie from 'lottie-react';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Button from '../../../../components/button';
-import CopyIcon from '../../../../assets/images/copy.svg';
 import Information from '../../../../assets/images/information.svg';
 import UserCheck from '../../../../assets/images/userCheck.svg';
 import userCreator from '../../../../assets/lotties/userCreator.json';
-import ClickableImage from '../../../../components/clickableImage';
 import Input from '../../../../components/Input';
 import { GetStartedStoreContext } from '..';
-import SelectedClipboard from '../../../../assets/images/selectedClipboard.svg';
 import TitleComponent from '../../../../components/titleComponent';
+import Copy from '../../../../components/copy';
 
 const screenEnum = {
     CREATE_USER_PAGE: 0,
@@ -44,8 +42,6 @@ const screenEnum = {
 
 const CreateAppUser = (props) => {
     const { createStationFormRef } = props;
-    const [selectedClipboardUserName, setSelectedClipboardUserName] = useState(false);
-    const [selectedClipboardToken, setSelectedClipboardToken] = useState(false);
     const [isCreatedUser, setCreatedUser] = useState(screenEnum['CREATE_USER_PAGE']);
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
     const [allowEdit, setAllowEdit] = useState(true);
@@ -66,18 +62,6 @@ const CreateAppUser = (props) => {
     const onNext = () => {
         getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
         getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-    };
-
-    const onCopy = async (copyParam) => {
-        navigator.clipboard.writeText(copyParam);
-    };
-
-    const onCopyClick = async (copyValue, setImageState) => {
-        onCopy(copyValue);
-        setImageState(true);
-        setTimeout(() => {
-            setImageState(false);
-        }, 3000);
     };
 
     const handleCreateUser = async () => {
@@ -111,7 +95,7 @@ const CreateAppUser = (props) => {
     };
 
     return (
-        <div className="create-station-form-create-app-user">
+        <div className="create-station-form-create-app-user" id="e2e-getstarted-step2">
             <div>
                 <TitleComponent headerTitle="Enter user name" typeTitle="sub-header" required={true}></TitleComponent>
                 <Input
@@ -155,34 +139,12 @@ const CreateAppUser = (props) => {
                     </div>
                     <div className="container-username-token">
                         <div className="username-container">
-                            <p>Username: {getStartedState.username}</p>
-                            {selectedClipboardUserName ? (
-                                <ClickableImage image={SelectedClipboard} className="copy-icon"></ClickableImage>
-                            ) : (
-                                <ClickableImage
-                                    image={CopyIcon}
-                                    alt="copyIcon"
-                                    className="copy-icon"
-                                    onClick={() => {
-                                        onCopyClick(getStartedState.username, setSelectedClipboardUserName);
-                                    }}
-                                />
-                            )}
+                            <p>Username: {getStartedState?.username}</p>
+                            <Copy data={getStartedState?.username} />
                         </div>
                         <div className="token-container">
                             <p>Connection token: {getStartedState?.connectionCreds}</p>
-                            {selectedClipboardToken ? (
-                                <ClickableImage image={SelectedClipboard} className="copy-icon"></ClickableImage>
-                            ) : (
-                                <ClickableImage
-                                    image={CopyIcon}
-                                    alt="copyIcon"
-                                    className="copy-icon"
-                                    onClick={() => {
-                                        onCopyClick(getStartedState.connectionCreds, setSelectedClipboardToken);
-                                    }}
-                                />
-                            )}
+                            <Copy data={getStartedState?.connectionCreds} />
                         </div>
                     </div>
                 </div>

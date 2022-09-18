@@ -48,17 +48,19 @@ const ConsumeData = (props) => {
     }, []);
 
     return (
-        <ProduceConsumeData
-            waitingImage={consWaiting}
-            waitingTitle={'Waiting to consume messages from the station'}
-            successfullTitle={'Success! You created your first consumer'}
-            languages={selectLngOption}
-            activeData={'connected_cgs'}
-            dataName={'consumer_app'}
-            displayScreen={displayScreen}
-            consume
-            screen={(e) => setDisplayScreen(e)}
-        ></ProduceConsumeData>
+        <div id="e2e-getstarted-step4">
+            <ProduceConsumeData
+                waitingImage={consWaiting}
+                waitingTitle={'Waiting to consume messages from the station'}
+                successfullTitle={'Success! You created your first consumer'}
+                languages={selectLngOption}
+                activeData={'connected_cgs'}
+                dataName={'consumer_app'}
+                displayScreen={displayScreen}
+                consume
+                screen={(e) => setDisplayScreen(e)}
+            ></ProduceConsumeData>
+        </div>
     );
 };
 

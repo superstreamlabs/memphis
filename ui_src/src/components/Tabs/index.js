@@ -24,18 +24,23 @@ import './style.scss';
 import { Tabs } from 'antd';
 import React from 'react';
 
-const { TabPane } = Tabs;
-
 const CustomTabs = (props) => {
-    const { tabs, onChange, value } = props;
+    const { tabs, onChange, value, disabled } = props;
 
     return (
-        <div className="tabs-container">
-            <Tabs value={value} onChange={onChange}>
-                {tabs.map((tab, index) => (
-                    <TabPane key={index} tab={tab} />
-                ))}
-            </Tabs>
+        <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
+            <Tabs
+                value={value}
+                onChange={onChange}
+                items={tabs.map((tab, index) => {
+                    return {
+                        key: tab,
+                        disabled: disabled,
+                        label: tab
+                    };
+                })}
+                disabled={disabled}
+            ></Tabs>
         </div>
     );
 };
