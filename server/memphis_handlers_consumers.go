@@ -254,8 +254,6 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 				respondWithErr(s, reply, err)
 				return
 			}
-			consumerFromGroup.MaxAckTimeMs = newConsumer.MaxAckTimeMs
-			consumerFromGroup.MaxMsgDeliveries = newConsumer.MaxMsgDeliveries
 		}
 	} else {
 		err := s.CreateConsumer(newConsumer, station)
