@@ -231,7 +231,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station)
+	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

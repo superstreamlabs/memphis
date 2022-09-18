@@ -152,10 +152,10 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 	return poisonMessages, nil
 }
 
-func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(station models.Station) (int, error) {
+func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string) (int, error) {
 
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
-		"station_name": station.Name,
+		"station_name": stationName,
 	})
 
 	if err != nil {

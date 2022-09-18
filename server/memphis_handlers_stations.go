@@ -283,11 +283,11 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 		return []models.ExtendedStationDetails{}, nil
 	} else {
 		for _, station := range stations {
-			totalMessages, err := sh.GetTotalMessages(station)
+			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
-			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station)
+			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station.Name)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
@@ -318,6 +318,20 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	if len(stations) == 0 {
 		return []models.ExtendedStation{}, nil
 	} else {
+		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		for i := 0; i < len(stations); i++ {
+			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStation{}, err
+			}
+			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStation{}, err
+			}
+
+			stations[i].TotalMessages = totalMessages
+			stations[i].PoisonMessages = poisonMessages
+		}
 		return stations, nil
 	}
 }
@@ -595,8 +609,8 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 	return
 }
 
-func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
-	totalMessages, err := sh.S.GetTotalMessagesInStation(station)
+func (sh StationsHandler) GetTotalMessages(stationName string) (int, error) {
+	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
 	return totalMessages, err
 }
 

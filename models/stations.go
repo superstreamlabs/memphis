@@ -84,12 +84,14 @@ type ExtendedStation struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
+	TotalMessages   int                `json:"total_messages"`
+	PoisonMessages  int                `json:"posion_messages"`
 }
 
 type ExtendedStationDetails struct {
-	Station 		Station 			 `json:"station"`
-	TotalMessages  	int                  `json:"total_messages"`
-	PoisonMessages 	int 				 `json:"posion_messages"`
+	Station        Station `json:"station"`
+	TotalMessages  int     `json:"total_messages"`
+	PoisonMessages int     `json:"posion_messages"`
 }
 
 type GetStationSchema struct {

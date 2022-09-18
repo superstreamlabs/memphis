@@ -89,7 +89,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	totalMessages, err := h.Stations.GetTotalMessages(station)
+	totalMessages, err := h.Stations.GetTotalMessages(station.Name)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}

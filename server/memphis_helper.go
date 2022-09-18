@@ -347,8 +347,8 @@ func (s *Server) RemoveStream(streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) GetTotalMessagesInStation(station models.Station) (int, error) {
-	streamInfo, err := s.memphisStreamInfo(station.Name)
+func (s *Server) GetTotalMessagesInStation(stationName string) (int, error) {
+	streamInfo, err := s.memphisStreamInfo(stationName)
 	if err != nil {
 		return 0, err
 	}
