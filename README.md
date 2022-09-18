@@ -108,22 +108,24 @@ docker compose -f docker-compose.yml -p memphis up
 
 ## Local access
 ### Via Kubernetes
-```shell
 To access Memphis UI from localhost, run the below commands:
-  1. kubectl port-forward service/memphis-ui 9000:80 --namespace memphis > /dev/null &
-
-To access Memphis using CLI or SDK from localhost, run the below commands:
-  2. kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis > /dev/null &
-
-Dashboard: http://localhost:9000
-Memphis broker: localhost:6666
+```shell
+kubectl port-forward service/memphis-ui 9000:80 --namespace memphis > /dev/null &
 ```
+
+To access Memphis using CLI or SDK from localhost, run the below commands:</br>
+```shell
+kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis > /dev/null &
+```
+Dashboard: http://localhost:9000
+Memphis broker: http://localhost:6666
+
 **For Production Environments**
 Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer / nodeport
 
 ### Via Docker
 UI - http://localhost:9000<br>
-Broker - localhost:6666<br>
+Broker - http://localhost:6666<br>
 
 ## Beta
 Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing, schema registry and inline processing as well as making more SDKs and supporting materials.
@@ -164,8 +166,10 @@ Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Co
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):<br><br>
-<img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://avatars.githubusercontent.com/u/86390740?s=60&v=4" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://avatars.githubusercontent.com/u/24862253?s=120&v=4" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
+Thanks goes to these wonderful people ❤:<br><br>
+ <a href = "https://github.com/memphisdev/memphis-broker/graphs/contributors">
+   <img src = "https://contrib.rocks/image?repo=memphisdev/memphis-broker"/>
+ </a>
 
 ## License
 Please check out [License](./LICENSE) to read the full text.
