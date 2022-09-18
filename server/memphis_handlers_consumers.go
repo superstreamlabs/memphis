@@ -224,7 +224,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	newConsumer := models.Consumer{
-		ID:               consumerId,
+		ID:               primitive.NewObjectID(),
 		Name:             name,
 		StationId:        station.ID,
 		Type:             consumerType,
