@@ -24,9 +24,11 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +36,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Handlers struct {
@@ -41,14 +44,12 @@ type Handlers struct {
 	Consumers  ConsumersHandler
 	AuditLogs  AuditLogsHandler
 	Stations   StationsHandler
-	Factories  FactoriesHandler
 	Monitoring MonitoringHandler
 	PoisonMsgs PoisonMessagesHandler
 }
 
 var usersCollection *mongo.Collection
 var imagesCollection *mongo.Collection
-var factoriesCollection *mongo.Collection
 var stationsCollection *mongo.Collection
 var connectionsCollection *mongo.Collection
 var producersCollection *mongo.Collection
@@ -60,22 +61,24 @@ var serv *Server
 var configuration = conf.GetConfig()
 
 type srvMemphis struct {
-	nuid     *nuid.NUID
-	dbClient *mongo.Client
-	dbCtx    context.Context
-	dbCancel context.CancelFunc
+	serverID               string
+	nuid                   *nuid.NUID
+	dbClient               *mongo.Client
+	dbCtx                  context.Context
+	dbCancel               context.CancelFunc
+	activateSysLogsPubFunc func()
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	serv = s
-	serv.memphis.dbClient = dbInstance.Client
-	serv.memphis.dbCtx = dbInstance.Ctx
-	serv.memphis.dbCancel = dbInstance.Cancel
-	serv.memphis.nuid = nuid.New()
+	s.memphis.dbClient = dbInstance.Client
+	s.memphis.dbCtx = dbInstance.Ctx
+	s.memphis.dbCancel = dbInstance.Cancel
+	s.memphis.nuid = nuid.New()
+	s.memphis.serverID = configuration.SERVER_NAME
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
-	factoriesCollection = db.GetCollection("factories", dbInstance.Client)
 	stationsCollection = db.GetCollection("stations", dbInstance.Client)
 	connectionsCollection = db.GetCollection("connections", dbInstance.Client)
 	producersCollection = db.GetCollection("producers", dbInstance.Client)
@@ -84,12 +87,9 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 
-	mod := mongo.IndexModel{
-		Keys: bson.M{
-			"creation_date": -1,
-		}, Options: nil,
-	}
-	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mod)
+	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys: bson.M{"creation_date": -1}, Options: nil,
+	})
 
 	s.initializeSDKHandlers()
 }
@@ -113,24 +113,6 @@ func IsUserExist(username string) (bool, models.User, error) {
 		return false, user, err
 	}
 	return true, user, nil
-}
-
-func IsFactoryExist(factoryName string) (bool, models.Factory, error) {
-	filter := bson.M{
-		"name": factoryName,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	}
-	var factory models.Factory
-	err := factoriesCollection.FindOne(context.TODO(), filter).Decode(&factory)
-	if err == mongo.ErrNoDocuments {
-		return false, factory, nil
-	} else if err != nil {
-		return false, factory, err
-	}
-	return true, factory, nil
 }
 
 func IsStationExist(stationName string) (bool, models.Station, error) {
@@ -187,37 +169,11 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, error) {
+func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, bool, error) {
 	var newStation models.Station
-
-	// create default factory
-	var factoryId primitive.ObjectID
-	exist, factory, err := IsFactoryExist("melvis")
-	if err != nil {
-		return newStation, err
-	}
-	if !exist {
-		factoryId = primitive.NewObjectID()
-		newFactory := models.Factory{
-			ID:            factoryId,
-			Name:          "melvis",
-			Description:   "",
-			CreatedByUser: username,
-			CreationDate:  time.Now(),
-		}
-
-		_, err := factoriesCollection.InsertOne(context.TODO(), newFactory)
-		if err != nil {
-			return newStation, err
-		}
-	} else {
-		factoryId = factory.ID
-	}
-
 	newStation = models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
-		FactoryId:       factoryId,
 		RetentionType:   "message_age_sec",
 		RetentionValue:  604800,
 		StorageType:     "file",
@@ -230,17 +186,37 @@ func CreateDefaultStation(s *Server, stationName string, username string) (model
 		Functions:       []models.Function{},
 	}
 
-	err = s.CreateStream(newStation)
+	err := s.CreateStream(newStation)
 	if err != nil {
-		return newStation, err
+		return newStation, false, err
 	}
 
-	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                newStation.ID,
+			"retention_type":     newStation.RetentionType,
+			"retention_value":    newStation.RetentionValue,
+			"storage_type":       newStation.StorageType,
+			"replicas":           newStation.Replicas,
+			"dedup_enabled":      newStation.DedupEnabled,
+			"dedup_window_in_ms": newStation.DedupWindowInMs,
+			"created_by_user":    newStation.CreatedByUser,
+			"creation_date":      newStation.CreationDate,
+			"last_update":        newStation.LastUpdate,
+			"functions":          newStation.Functions,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		return newStation, err
+		return newStation, false, err
+	}
+	if updateResults.MatchedCount > 0 {
+		return newStation, false, nil
 	}
 
-	return newStation, nil
+	return newStation, true, nil
 }
 
 func shouldSendAnalytics() (bool, error) {
@@ -256,4 +232,30 @@ func shouldSendAnalytics() (bool, error) {
 	} else {
 		return false, nil
 	}
+}
+
+func validateName(name, objectType string) error {
+	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
+	tooLongErrStr := fmt.Sprintf("%v should be under 32 characters", objectType)
+	invalidCharErrStr := fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v")
+
+	emptyErr := errors.New(emptyErrStr)
+	tooLongErr := errors.New(tooLongErrStr)
+	invalidCharErr := errors.New(invalidCharErrStr)
+
+	if len(name) == 0 {
+		return emptyErr
+	}
+
+	if len(name) > 32 {
+		return tooLongErr
+	}
+
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+
+	validName := re.MatchString(name)
+	if !validName {
+		return invalidCharErr
+	}
+	return nil
 }

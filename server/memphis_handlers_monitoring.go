@@ -24,13 +24,16 @@ package server
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"memphis-broker/analytics"
-	"net/http"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -82,26 +85,8 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		uiAddress := "http://ui"
-		if configuration.DEV_ENV != "" {
-			uiAddress = "http://localhost:9000"
-		}
-		_, err := http.Get(uiAddress)
-		if err != nil {
-			components = append(components, models.SystemComponent{
-				Component:   "ui",
-				DesiredPods: 1,
-				ActualPods:  0,
-			})
-		} else {
-			components = append(components, models.SystemComponent{
-				Component:   "ui",
-				DesiredPods: 1,
-				ActualPods:  1,
-			})
-		}
 
-		err = serv.memphis.dbClient.Ping(context.TODO(), nil)
+		err := serv.memphis.dbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
@@ -117,7 +102,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		components = append(components, models.SystemComponent{
-			Component:   "broker",
+			Component:   "memphis-broker",
 			DesiredPods: 1,
 			ActualPods:  1,
 		})
@@ -136,13 +121,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		for _, d := range deploymentsList.Items {
-			if !strings.Contains(d.GetName(), "busybox") { // TODO remove it when busybox is getting fixed
-				components = append(components, models.SystemComponent{
-					Component:   d.GetName(),
-					DesiredPods: int(*d.Spec.Replicas),
-					ActualPods:  int(d.Status.ReadyReplicas),
-				})
-			}
+			components = append(components, models.SystemComponent{
+				Component:   d.GetName(),
+				DesiredPods: int(*d.Spec.Replicas),
+				ActualPods:  int(d.Status.ReadyReplicas),
+			})
 		}
 
 		statefulsetsClient := clientset.AppsV1().StatefulSets(configuration.K8S_NAMESPACE)
@@ -224,7 +207,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 	if !exist {
 		serv.Errorf("Station does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
 		return
 	}
 
@@ -248,7 +231,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station)
+	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -297,4 +280,172 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
+	const amount = 100
+	const timeout = 3 * time.Second
+
+	var request models.SystemLogsRequest
+	ok := utils.Validate(c, &request, false, nil)
+	if !ok {
+		return
+	}
+
+	startSeq := uint64(request.StartIdx)
+	getLast := false
+	if request.StartIdx == -1 {
+		getLast = true
+	}
+
+	filterSubject, filterSubjectSuffix := _EMPTY_, _EMPTY_
+	switch request.LogType {
+	case "err":
+		filterSubjectSuffix = syslogsErrSubject
+	case "wrn":
+		filterSubjectSuffix = syslogsWarnSubject
+	case "inf":
+		filterSubjectSuffix = syslogsInfoSubject
+	}
+
+	if filterSubjectSuffix != _EMPTY_ {
+		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
+	}
+
+	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject)
+	if err != nil {
+		serv.Errorf("GetSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, response)
+}
+
+func min(x, y uint64) uint64 {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func (s *Server) GetSystemLogs(amount uint64,
+	timeout time.Duration,
+	fromLast bool,
+	lastKnownSeq uint64,
+	filterSubject string) (models.SystemLogsResponse, error) {
+	uid := s.memphis.nuid.Next()
+	durableName := "$memphis_fetch_logs_consumer_" + uid
+
+	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	amount = min(streamInfo.State.Msgs, amount)
+	startSeq := lastKnownSeq - amount + 1
+
+	if fromLast {
+
+		startSeq = streamInfo.State.LastSeq - amount + 1
+
+		//handle uint wrap around
+		if amount >= streamInfo.State.LastSeq {
+			startSeq = 1
+		}
+
+	} else if amount >= lastKnownSeq {
+		startSeq = 1
+		amount = lastKnownSeq
+	}
+
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: DeliverByStartSequence,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+	}
+
+	if filterSubject != _EMPTY_ {
+		cc.FilterSubject = filterSubject
+	}
+
+	err = s.memphisAddConsumer(syslogsStreamName, &cc)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, syslogsStreamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+
+	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				s.Errorf(err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+
+	var msgs []StoredMsg
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	sub.close()
+	err = s.RemoveConsumer(syslogsStreamName, durableName)
+	if err != nil {
+		return models.SystemLogsResponse{}, err
+	}
+
+	var resMsgs []models.Log
+	for _, msg := range msgs {
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
+
+		logType := msg.Subject[len(syslogsStreamName)+1:]
+
+		data := string(msg.Data)
+		resMsgs = append(resMsgs, models.Log{
+			MessageSeq: int(msg.Sequence),
+			Type:       logType,
+			Data:       data,
+			Source:     s.getLogSource(),
+			TimeSent:   msg.Time,
+		})
+	}
+
+	sort.Slice(resMsgs, func(i, j int) bool {
+		return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
+	})
+
+	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }

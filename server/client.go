@@ -1967,7 +1967,7 @@ func (c *client) authViolation() {
 			ErrAuthentication.Error(),
 			c.opts.Username)
 	} else {
-		c.Errorf(ErrAuthentication.Error())
+		c.Warnf(ErrAuthentication.Error())
 	}
 	if c.isMqtt() {
 		c.mqttEnqueueConnAck(mqttConnAckRCNotAuthorized, false)
@@ -2235,12 +2235,6 @@ func (c *client) processPing() {
 		checkInfoChange = !c.flags.isSet(firstPongSent)
 	}
 	c.mu.Unlock()
-
-	if c.kind == CLIENT {
-		if err := c.memphisInfo.updatePingTime(); err != nil {
-			c.srv.Errorf("memphis db ping update error")
-		}
-	}
 
 	if checkInfoChange {
 		opts := srv.getOpts()

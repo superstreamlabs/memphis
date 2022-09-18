@@ -1,0 +1,70 @@
+.loginContainers {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: white;
+    min-width: 800px;
+    overflow: auto;
+    .desktop-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: 50% 50%;
+        min-height: 600px;
+        .desktop-content {
+            position: relative;
+            display: grid;
+            grid-template-rows: 25% 25% 50%;
+            .logoImg {
+                padding: 50px;
+                img {
+                    width: 175px;
+                    height: auto;
+                }
+            }
+            .title {
+                font-size: 48px;
+                color: var(--blue);
+                font-weight: 600;
+                margin-bottom: 20px;
+                p {
+                    display: flex;
+                    margin: 5px;
+                    justify-content: center;
+                }
+            }
+            .login-form {
+                justify-self: center;
+                .field {
+                    p {
+                        font-size: 12px;
+                        font-weight: 400;
+                        color: var(--blue);
+                        margin-bottom: 8px;
+                    }
+                }
+                .button-container {
+                    padding-top: 20px;
+                }
+                .ant-form-item-control {
+                    margin: 0;
+                }
+                .ant-form-item-explain-error{
+                    min-width: 195px;
+                }
+            }
+        }
+        .brand-shapes {
+            overflow: hidden;
+        }
+    }
+    .error-message {
+        width: 21vw;
+    }
+}
+
+.styles_loading__Z65VQ {
+    height: 40px !important;
+    padding-top: 10px;
+}

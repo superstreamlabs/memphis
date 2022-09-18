@@ -1,0 +1,57 @@
+.users-container {
+    width: calc(100% - 70px);
+    position: absolute;
+    padding: 1vw;
+    min-width: 700px;
+    height: 100%;
+    .add-search-user {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 25px;
+    }
+    .users-list-container {
+        margin-top: 30px;
+        .users-list-header {
+            display: flex;
+            position: relative;
+            height: 20px;
+            p {
+                position: absolute;
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .user-name-title {
+                padding-left: 45px;
+            }
+            .type-title {
+                padding-left: 350px;
+            }
+            .creation-date-title {
+                padding-left: 700px;
+            }
+        }
+        .users-list {
+            height: calc(95vh - 140px);
+            overflow: auto;
+            margin-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 3px;
+        }
+    }
+    ::-webkit-scrollbar-thumb {
+        display: none;
+    }
+}
+.user-details-modal {
+    font-size: 14px;
+    p {
+        font-weight: 600;
+    }
+    span {
+        font-weight: 400;
+    }
+    .userName {
+        color: var(--purple);
+    }
+}

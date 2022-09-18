@@ -1,0 +1,72 @@
+.stations-details-container {
+    width: calc(100% - 70px);
+    position: absolute;
+    padding: 1vw;
+    min-width: 700px;
+    overflow: auto;
+    height: 100%;
+    .stations-details-header {
+        height: 75px;
+        display: flex;
+        justify-content: space-between;
+        .left-side {
+            .num-stations {
+                color: #b4b4b4;
+                font-weight: 400;
+                font-size: 24px;
+            }
+        }
+        .right-side {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            .search-input-container {
+                margin-right: 0;
+            }
+            .filter-container {
+                margin-left: 15px;
+                margin-right: 15px;
+            }
+            .search-icon .anticon svg {
+                height: 16.5px;
+                width: 16.5px;
+                margin-right: 5px;
+                margin-left: 10px;
+                color: '#818C99';
+                opacity: 1;
+            }
+        }
+    }
+    .stations-content {
+        height: calc(100% - 80px);
+        padding: 3px 3px 2px 3px;
+        position: relative;
+        overflow: auto;
+        .no-station-to-display {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: center;
+            color: #a9a9a9;
+            img {
+                margin-bottom: 30px;
+            }
+            p {
+                font-weight: 600;
+                font-size: 18px;
+                line-height: 22px;
+            }
+            .sub-title {
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 17px;
+                margin-bottom: 60px;
+            }
+        }
+    }
+    ::-webkit-scrollbar-thumb {
+        display: none;
+    }
+}

@@ -1,0 +1,32 @@
+.stations-placeholder {
+    height: calc(100%);
+    text-align: center;
+    align-items: center;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: -40px;
+    .stations-icon {
+        width: 120px;
+    }
+
+    .header-empty-stations {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1d1d1d;
+        line-height: 24px;
+    }
+
+    .header-empty-description {
+        font-size: 13px;
+        font-family: 'InterSemiBold';
+        color: #8f8f8f;
+        width: 400px;
+        margin: 0;
+    }
+}
+.add-more{
+    margin-top: 50px;
+}
+    

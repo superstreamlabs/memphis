@@ -1,0 +1,40 @@
+.custom-collapse {
+    position: relative;
+    .collapse-arrow{
+        transition: transform .4s;
+    }
+    .open{
+        transform: rotate(180deg);
+    }
+    status{
+        display: flex;
+    }
+    content {
+        display: flex;
+        justify-content: space-between;
+        p{
+            font-weight: 400;
+            font-size: 12px;
+            color: #84818A;
+        }
+        span {
+            font-size: 12px;
+            color: #1d1d1d;
+            font-family: 'InterSemiBold';
+        }
+    }
+    
+    .message{
+        font-size: 11px;
+        color: #84818A;
+        font-weight: 400;
+        img{
+            cursor: pointer;
+            width: 16px !important;
+            position: absolute;
+            top: 15px;
+            right: 40px;
+        }
+        
+    }
+}

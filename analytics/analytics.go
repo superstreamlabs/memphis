@@ -129,3 +129,21 @@ func SendEvent(userId, eventName string) {
 		Event:      eventName,
 	})
 }
+
+func SendErrEvent(origin, errMsg string) {
+	distinctId := deploymentId
+	if configuration.DEV_ENV != "" {
+		distinctId = "dev"
+	} else if configuration.SANDBOX_ENV == "true" {
+		distinctId = "sandbox"
+	}
+
+	p := posthog.NewProperties()
+	p.Set("err_log", errMsg)
+	p.Set("err_source", origin)
+	AnalyticsClient.Enqueue(posthog.Capture{
+		DistinctId: distinctId,
+		Event:      "error",
+		Properties: p,
+	})
+}

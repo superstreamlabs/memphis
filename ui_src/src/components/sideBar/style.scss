@@ -1,0 +1,187 @@
+.sidebar-container {
+    width: 70px;
+    height: 100vh;
+    position: relative;
+    text-align: center;
+    background: white;
+
+    .upper-icons {
+        .logoimg {
+            margin-top: 1vh;
+            margin-bottom: 5vh;
+        }
+        .item-wrapper {
+            p {
+                font-size: 80%;
+                color: var(--gray);
+                font-weight: 600;
+            }
+            .checked {
+                color: var(--purple);
+            }
+        }
+    }
+
+    .sandboxUserImg {
+        border-radius: 50%;
+    }
+
+    .bottom-icons {
+        position: absolute;
+        bottom: 10px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        place-items: center;
+        .sub-icon-wrapper {
+            width: 35px;
+            height: 35px;
+            background: #ffffff;
+            box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+        }
+        .sub-icon-wrapper:hover {
+            opacity: 0.8;
+        }
+
+        .ant-menu-vertical {
+            background: transparent !important;
+            border: unset !important;
+            width: 100%;
+        }
+        .app-menu {
+            i {
+                display: none;
+            }
+            .ant-menu-submenu-title {
+                text-overflow: unset;
+                padding: 2px;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                background: transparent;
+            }
+            .ant-menu-item-icon {
+                position: absolute;
+                display: flex;
+                place-content: center;
+            }
+        }
+        version{
+                background: rgba(132, 129, 138, 0.1);
+                border-radius: 4px;
+                width: 80%;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                p {
+                margin: 0;
+                font-size: 12px;
+                font-family: 'InterSemiBold';
+                }
+        }
+    }
+
+    .circle-nav-item {
+        img {
+            width: 20px;
+        }
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    .checked {
+        color: var(--white);
+    }
+
+    .support {
+        background: var(--purple);
+        color: var(--white);
+    }
+}
+.header-menu {
+    border-bottom: 0.5px solid #e9e9e9;
+    display: flex;
+    height: 55px;
+    align-items: center;
+    padding-left: 15px;
+    p {
+        margin: 0;
+        font-size: 12px;
+        color: #000000;
+    }
+    .company-logo {
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--gray);
+        border-radius: 20px;
+        position: relative;
+        align-items: center;
+        display: flex;
+        justify-content: center;
+        margin-right: 10px;
+    }
+}
+.item-wrapp {
+    display: flex;
+    align-items: center;
+    img {
+        margin-right: 10px;
+    }
+    p {
+        margin: 0;
+        font-size: 12px;
+        color: #000000;
+    }
+}
+.item-wrapp .item-title:hover {
+    opacity: 0.8;
+}
+.ant-menu-item a:hover{
+    p{
+        opacity: 0.8;
+    }
+
+}
+
+.ant-menu-submenu > .ant-menu {
+    border-radius: 8px;
+    border: 1px solid var(--gray);
+    width: 12vw;
+    min-width: 220px;
+}
+
+.ant-menu-vertical .ant-menu-item {
+    line-height: unset !important;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    background: transparent;
+}
+
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+    background-color: unset;
+}
+
+.ant-menu-item-group-list {
+    height: 120px;
+    padding-top: 10px !important;
+}
+
+.installation-icon-wrapper{
+    width: 40px;
+    height: 40px;
+    background: rgba(101, 87, 255, 0.1);
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    img {
+        width: 20px;
+    }
+}

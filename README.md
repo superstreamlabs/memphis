@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-<h1>A powerful messaging platform for modern developers</h1>
+<h1>Real-Time Data Processing Platform</h1>
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png">
 
@@ -24,12 +24,12 @@
 </p>
 
 <p align="center">
-<a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a> <a href=""><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/LICENSE"><img src="https://img.shields.io/github/license/memphisdev/memphis-broker?color=ffc633" alt="License"></a> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"> <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
+<a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a> <a href=""><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> <a href="https://github.com/memphisdev/memphis-broker/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"></a> <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"> <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
 **[Memphis{dev}](https://memphis.dev)** is a message broker for developers made by devs' that struggled to develop around message brokers. When we couldn't find something that brought answers to our problems, we decided to come up with the solution!
 
-Memphis(dev) enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
+Memphis{dev} enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
 
 Focusing on automatic optimization, schema management, stream processing and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
@@ -40,11 +40,12 @@ Dashboard             |  Station (Topic) overview|  CLI
 <img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
 
 ## ⭐️ Why
-Working with data streaming is DIFFICULT.<br><br>
+Working with data streaming is HARD.<br>
+
 As a developer, you need to build a dedicated pipeline for each data source,<br>
-work with schemas, formats, serializations, analyse each source individually,<br>
+work with schemas, formats, serializations, analyze each source individually,<br>
 enrich the data with other sources, constantly change APIs, and scale for better performance 🥵.<br>
-Beside that, it constantly crashes and it requires adaptation to different rate limits.<br>
+Besides that, it constantly crashes and requires adaptation to different rate limits.<br>
 **It takes time and resources that you probably don't have.**<br>
 
 Message broker acts as the middleman and supports streaming architecture,<br>
@@ -65,7 +66,7 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**v0.3.0**
+**v0.3.6**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
@@ -78,12 +79,12 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 ## 🚀 Getting Started
 [Sandbox](https://sandbox.memphis.dev)<br>
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
-Helm for Kubernetes
+Helm for Kubernetes☸
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ --force-update && \
 helm install my-memphis memphis/memphis --create-namespace --namespace memphis
 ```
-Docker Compose
+Docker🐳 Compose
 ```shell
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
 docker compose -f docker-compose.yml -p memphis up
@@ -101,28 +102,30 @@ docker compose -f docker-compose.yml -p memphis up
 ## High-Level Architecture
 
 <p align="center">
-<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/180664120-abd5e178-9cfe-4ab3-8722-b130fbcc6294.png">
+<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/189114863-53acd72c-7d0c-4c1a-b0f1-811636aa15fc.jpeg">
+
 </p>
 
 ## Local access
 ### Via Kubernetes
-```shell
 To access Memphis UI from localhost, run the below commands:
-  1. kubectl port-forward service/memphis-ui 9000:80 --namespace memphis > /dev/null &
-
-To access Memphis using CLI or SDK from localhost, run the below commands:
-  2. kubectl port-forward service/memphis-cluster 7766:7766 6666:6666 5555:5555 --namespace memphis > /dev/null &
-
-Dashboard: http://localhost:9000
-Memphis broker: localhost:5555 (Management Port) / 7766 (Data Port) / 6666 (TCP Port)
+```shell
+kubectl port-forward service/memphis-ui 9000:80 --namespace memphis > /dev/null &
 ```
+
+To access Memphis using CLI or SDK from localhost, run the below commands:</br>
+```shell
+kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis > /dev/null &
+```
+Dashboard: http://localhost:9000
+Memphis broker: http://localhost:6666
+
 **For Production Environments**
 Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer / nodeport
 
 ### Via Docker
-Dashboard - http://localhost:9000<br>
-Broker - localhost:7766<br>
-Control-Plane - localhost:5555/6666<br>
+UI - http://localhost:9000<br>
+Broker - http://localhost:6666<br>
 
 ## Beta
 Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing, schema registry and inline processing as well as making more SDKs and supporting materials.
@@ -131,26 +134,26 @@ How does it affect you? Well... mostly it doesn't.<br>
 (a) The core of memphis broker is highly stable<br>
 (b) We learn and fix fast<br><br>
 But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
-Read more on https://memphis.dev/docs
+Read more on [Memphis{dev} Documentation 📃](https://memphis.dev/docs).
 
-## Support
+## Support 🙋‍♂️🤝
 
-### Ask a question about Memphis{dev} or something related to us:
+### Ask a question ❓ about Memphis{dev} or something related to us:
 
 We welcome you to our discord server with your questions, doubts and feedback.
 
-<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg" /></a>
+<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg"/></a>
 
-### Create a bug report
+### Create a bug 🐞 report
 
 If you see an error message or run into an issue, please [create bug report](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20bug&template=bug_report.md&title=). This effort is valued and it will help all Memphis{dev} users.
 
 
-### Submit a feature request
+### Submit a feature 💡 request 
 
 If you have an idea, or you think that we're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
 
-If an issue with similar feature request already exists, don't forget to leave a "+1".
+If an issue❗with similar feature request already exists, don't forget to leave a "+1".
 If you add some more information such as your thoughts and vision about the feature, your comments will be embraced warmly :)
 
 ## Contributing
@@ -163,8 +166,10 @@ Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Co
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):<br><br>
-<img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Alon+Avrahami.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Ariel+Bar.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Arjun+Anjaria.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Carlos+Gasperi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Daniel+Eliyahu.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Itay+Katz.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Jim+Doty.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Nikita+Aizenberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Rado+Marina.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"><img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Raghav+Ramesh.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Tal+Goldberg.jpg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://memphis-public-files.s3.eu-central-1.amazonaws.com/contributors-images/Yehuda+Mizrahi.jpeg" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://avatars.githubusercontent.com/u/86390740?s=60&v=4" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;"> <img src="https://avatars.githubusercontent.com/u/24862253?s=120&v=4" width="60" height="60" style="border-radius: 25px; border: 2px solid #61DFC6;">
+Thanks goes to these wonderful people ❤:<br><br>
+ <a href = "https://github.com/memphisdev/memphis-broker/graphs/contributors">
+   <img src = "https://contrib.rocks/image?repo=memphisdev/memphis-broker"/>
+ </a>
 
-## License
+## License 📃
 Please check out [License](./LICENSE) to read the full text.

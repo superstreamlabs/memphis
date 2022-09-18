@@ -1,0 +1,19 @@
+.search-input-container {
+    position: relative;
+    z-index: 2;
+    margin-right: 30px;
+    align-self: center;
+}
+
+.search-input-container Input {
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.search-icon {
+    margin-left: 13px;
+    margin-right: 5px;
+    img {
+        width: 13px;
+    }
+}

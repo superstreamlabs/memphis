@@ -28,7 +28,6 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"regexp"
 	"strings"
 	"time"
 
@@ -36,26 +35,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type StationsHandler struct{ S *Server }
 
+const (
+	stationObjectName = "Station"
+)
+
 func validateStationName(stationName string) error {
-	if len(stationName) == 0 {
-		return errors.New("station name can not be empty")
-	}
-
-	if len(stationName) > 32 {
-		return errors.New("station name should be under 32 characters")
-	}
-
-	re := regexp.MustCompile("^[a-z0-9_]*$")
-
-	validName := re.MatchString(stationName)
-	if !validName {
-		return errors.New("station name has to include only letters, numbers and _")
-	}
-	return nil
+	return validateName(stationName, stationObjectName)
 }
 
 func validateRetentionType(retentionType string) error {
@@ -146,37 +136,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	factoryName := strings.ToLower(csr.FactoryName)
-	exist, factory, err := IsFactoryExist(factoryName)
-	if err != nil {
-		serv.Errorf("Server Error" + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	if !exist { // create this factory
-		err := validateFactoryName(factoryName)
-		if err != nil {
-			serv.Warnf(err.Error())
-			respondWithErr(s, reply, err)
-			return
-		}
-
-		factory = models.Factory{
-			ID:            primitive.NewObjectID(),
-			Name:          factoryName,
-			Description:   "",
-			CreatedByUser: c.memphisInfo.username,
-			CreationDate:  time.Now(),
-			IsDeleted:     false,
-		}
-		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
-		if err != nil {
-			serv.Errorf("CreateStation error: " + err.Error())
-			respondWithErr(s, reply, err)
-			return
-		}
-	}
-
 	var retentionType string
 	var retentionValue int
 	if csr.RetentionType != "" {
@@ -220,7 +179,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
-		FactoryId:       factory.ID,
 		CreatedByUser:   c.memphisInfo.username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
@@ -301,6 +259,44 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, station)
 }
 
+func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails, error) {
+	var exStations []models.ExtendedStationDetails
+	var stations []models.Station
+
+	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"$or", []interface{}{
+			bson.D{{"is_deleted", false}},
+			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
+		}}}}},
+	})
+
+	if err != nil {
+		return []models.ExtendedStationDetails{}, err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return []models.ExtendedStationDetails{}, err
+	}
+
+	if len(stations) == 0 {
+		return []models.ExtendedStationDetails{}, nil
+	} else {
+		for _, station := range stations {
+			totalMessages, err := sh.GetTotalMessages(station.Name)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station.Name)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+		}
+		return exStations, nil
+	}
+}
+
 func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
@@ -308,10 +304,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "factories"}, {"localField", "factory_id"}, {"foreignField", "_id"}, {"as", "factory"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$factory"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"factory_id", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"factory_name", "$factory.name"}}}},
-		bson.D{{"$project", bson.D{{"factory", 0}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
 
 	if err != nil {
@@ -325,8 +318,34 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	if len(stations) == 0 {
 		return []models.ExtendedStation{}, nil
 	} else {
+		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		for i := 0; i < len(stations); i++ {
+			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStation{}, err
+			}
+			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStation{}, err
+			}
+
+			stations[i].TotalMessages = totalMessages
+			stations[i].PoisonMessages = poisonMessages
+		}
 		return stations, nil
 	}
+}
+
+func (sh StationsHandler) GetStations(c *gin.Context) {
+	stations, err := sh.GetStationsDetails()
+	if err != nil {
+		serv.Errorf("GetStations error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, gin.H{
+		"stations": stations,
+	})
 }
 
 func (sh StationsHandler) GetAllStations(c *gin.Context) {
@@ -372,36 +391,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	factoryName := strings.ToLower(body.FactoryName)
-	exist, factory, err := IsFactoryExist(factoryName)
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist { // create this factory
-		err := validateFactoryName(factoryName)
-		if err != nil {
-			serv.Warnf(err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-
-		factory = models.Factory{
-			ID:            primitive.NewObjectID(),
-			Name:          factoryName,
-			Description:   "",
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			IsDeleted:     false,
-		}
-		_, err = factoriesCollection.InsertOne(context.TODO(), factory)
-		if err != nil {
-			serv.Errorf("CreateStation error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
-
 	var retentionType string
 	if body.RetentionType != "" && body.RetentionValue > 0 {
 		retentionType = strings.ToLower(body.RetentionType)
@@ -416,10 +405,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.RetentionValue = 604800 // 1 week
 	}
 
-	var storageType string
 	if body.StorageType != "" {
-		storageType = strings.ToLower(body.StorageType)
-		err = validateStorageType(storageType)
+		body.StorageType = strings.ToLower(body.StorageType)
+		err = validateStorageType(body.StorageType)
 		if err != nil {
 			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -443,10 +431,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
-		FactoryId:       factory.ID,
 		RetentionType:   retentionType,
 		RetentionValue:  body.RetentionValue,
-		StorageType:     storageType,
+		StorageType:     body.StorageType,
 		Replicas:        body.Replicas,
 		DedupEnabled:    body.DedupEnabled,
 		DedupWindowInMs: body.DedupWindowInMs,
@@ -464,12 +451,35 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                newStation.ID,
+			"retention_type":     newStation.RetentionType,
+			"retention_value":    newStation.RetentionValue,
+			"storage_type":       newStation.StorageType,
+			"replicas":           newStation.Replicas,
+			"dedup_enabled":      newStation.DedupEnabled,
+			"dedup_window_in_ms": newStation.DedupWindowInMs,
+			"created_by_user":    newStation.CreatedByUser,
+			"creation_date":      newStation.CreationDate,
+			"last_update":        newStation.LastUpdate,
+			"functions":          newStation.Functions,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	if updateResults.MatchedCount > 0 {
+		serv.Warnf("Station with the same name is already exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
+		return
+	}
+
 	message := "Station " + stationName + " has been created"
 	serv.Noticef(message)
 	var auditLogs []interface{}
@@ -599,8 +609,8 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 	return
 }
 
-func (sh StationsHandler) GetTotalMessages(station models.Station) (int, error) {
-	totalMessages, err := sh.S.GetTotalMessagesInStation(station)
+func (sh StationsHandler) GetTotalMessages(stationName string) (int, error) {
+	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
 	return totalMessages, err
 }
 
@@ -849,7 +859,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	connectionIdHeader := hdr["connectionId"]
-	producedByHeader := hdr["producedBy"]
+	producedByHeader := strings.ToLower(hdr["producedBy"])
 
 	if connectionIdHeader == "" || producedByHeader == "" {
 		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")

@@ -25,7 +25,6 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/http_server/routes"
 	"memphis-broker/server"
-	"memphis-broker/socketio"
 )
 
 func InitializeHttpServer(s *server.Server) {
@@ -36,13 +35,11 @@ func InitializeHttpServer(s *server.Server) {
 		Consumers:  server.ConsumersHandler{S: s},
 		AuditLogs:  server.AuditLogsHandler{},
 		Stations:   server.StationsHandler{S: s},
-		Factories:  server.FactoriesHandler{S: s},
 		Monitoring: server.MonitoringHandler{S: s},
 		PoisonMsgs: server.PoisonMessagesHandler{S: s},
 	}
 
-	httpServer := routes.InitializeHttpRoutes(&handlers)
-	socketioServer := socketio.InitializeSocketio(httpServer, &handlers)
+	httpServer, socketioServer := routes.InitializeHttpRoutes(&handlers)
 
 	defer socketioServer.Close()
 	httpServer.Run("0.0.0.0:" + configuration.HTTP_PORT)

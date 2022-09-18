@@ -1,0 +1,26 @@
+.log-badge-container {
+    .info,
+    .error,
+    .warn {
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+        justify-content: center;
+        width: 60px;
+        font-weight: 600;
+        font-size: 12px;
+        height: 25px;
+    }
+    .info {
+        background-color: rgba(32, 201, 172, 0.1);
+        color: #20C9AC;
+    }
+    .error {
+        background-color: rgba(252, 52, 0, 0.1);
+        color: #FC3400;
+    }
+    .warn {
+        background-color: rgba(255, 160, 67, 0.1);
+        color: #FFA043;
+    }
+}

@@ -1,0 +1,115 @@
+.installation-command{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .steps{
+        a{
+            color: var(--purple);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .step-wrapper{
+            padding-bottom: 30px;
+            .step-title{
+                font-family: 'InterSemiBold';
+                font-size: 18px;
+                padding-bottom: 15px;
+                span{
+                    font-family: 'InterSemiBold';
+                    font-size: 18px;
+                    a{
+                        font-family: 'InterSemiBold';
+                        font-size: 18px;
+                    }
+                }
+            }
+            .step-command{
+                border: 1px solid #D8D8D8;
+                border-radius: 4px;     
+                padding: 16px;
+                display: flex;
+                justify-content: space-between;
+                width: 95%;
+                span{
+                    font-weight: 400;
+                    font-size: 12px;
+                    white-space:pre-wrap;
+                }
+                img{
+                    cursor: pointer;
+                    svg{
+                        color: aqua;
+                    }
+                }
+            }
+            .img-wrapper{
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+                .img-cloud{
+                    position: relative;
+                    width: 95px;
+                    height: 95px;
+                    border: 1px solid #F4F4F4;
+                    border-radius: 50px;
+                    display: flex;
+                    justify-content: center;
+                    cursor: pointer;
+                    img{
+                        width: 70px;
+                    }
+                    .selected-icon{
+                        position: absolute;
+                        right: 8px;
+                        background: transparent;
+                        top: -4px;
+                        svg {
+                            width: 22px;
+                        }
+                    }
+                }
+                .selected{
+                    background: #E3E0FF;
+                }
+                .img-cloud:hover{
+                   background: #E3E0FF;
+                }
+            }
+        }
+    }
+    .coming-soon-wrapper{
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        img{
+            width: 90px;
+        }
+        p{
+            font-size: 18px;
+            color: var(--purple);
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    }
+    .link-wrapper{
+        display: flex;
+        cursor: pointer;
+        padding-bottom: 12px;
+        img{
+            margin-right: 8px;
+        }
+        p{
+            color: var(--purple);
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+        }
+        svg{
+            color: #7C7C7C;
+            width: 16px;
+        }
+    }
+}

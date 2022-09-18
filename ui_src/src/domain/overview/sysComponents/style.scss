@@ -1,0 +1,37 @@
+.sys-components-container {
+    height: 47.5%;
+    padding: 15px;
+    min-width: 280px;
+    min-height: 250px;
+    p {
+        margin-bottom: 0px;
+    }
+    .sys-components-header {
+        margin-top: 15px;
+        color: #979797;
+        display: grid;
+        grid-template-columns: 34% 33% 33%;
+        padding-left: 10px;
+        padding-bottom: 10px;
+        height: 30px;
+    }
+    .component-list {
+        overflow-y: scroll;
+        height: calc(100% - 70px);
+        .sys-components {
+            display: grid;
+            grid-template-columns: 34% 33% 33%;
+            padding-top: 7px;
+            padding-bottom: 7px;
+            padding-left: 10px;
+            align-items: center;
+        }
+    }
+    .overview-components-header {
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+        height: 25px;
+        margin-bottom: 0;
+    }
+}

@@ -1,5 +1,5 @@
 {
-    "HTTP_PORT": "5555",
+    "HTTP_PORT": "9000",
     "MONGO_URL": "mongodb://mongo:27017/maindb?retryWrites=true&w=majority",
     "DB_NAME": "maindb",
     "JWT_EXPIRES_IN_MINUTES": 15,
