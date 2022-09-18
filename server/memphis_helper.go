@@ -76,7 +76,7 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
 	reply := s.getJsApiReplySubject()
 
-	timeout := time.After(4 * time.Second)
+	timeout := time.After(20 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
