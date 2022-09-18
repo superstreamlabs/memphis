@@ -45,7 +45,7 @@ node {
       dir ('memphis-docker'){
         git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
       }
-        sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis up -d"
+        sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -58,7 +58,7 @@ node {
     }
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev.yml -p memphis down"
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
       sh "docker volume prune -f"
     }
 
