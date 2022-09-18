@@ -29,7 +29,7 @@
 
 **[Memphis{dev}](https://memphis.dev)** is a message broker for developers made by devs' that struggled to develop around message brokers. When we couldn't find something that brought answers to our problems, we decided to come up with the solution!
 
-Memphis(dev) enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
+Memphis{dev} enables devs to achieve all other message brokers' benefits in a fraction of the time.<br>
 
 Focusing on automatic optimization, schema management, stream processing and troubleshooting abilities. All under the same hood.
 Utilizing NATS core.
@@ -79,12 +79,12 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 ## 🚀 Getting Started
 [Sandbox](https://sandbox.memphis.dev)<br>
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
-Helm for Kubernetes
+Helm for Kubernetes☸
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ --force-update && \
 helm install my-memphis memphis/memphis --create-namespace --namespace memphis
 ```
-Docker Compose
+Docker🐳 Compose
 ```shell
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
 docker compose -f docker-compose.yml -p memphis up
@@ -134,26 +134,26 @@ How does it affect you? Well... mostly it doesn't.<br>
 (a) The core of memphis broker is highly stable<br>
 (b) We learn and fix fast<br><br>
 But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
-Read more on https://memphis.dev/docs
+Read more on [Memphis{dev} Documentation 📃](https://memphis.dev/docs).
 
-## Support
+## Support 🙋‍♂️🤝
 
-### Ask a question about Memphis{dev} or something related to us:
+### Ask a question ❓ about Memphis{dev} or something related to us:
 
 We welcome you to our discord server with your questions, doubts and feedback.
 
-<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg" /></a>
+<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg"/></a>
 
-### Create a bug report
+### Create a bug 🐞 report
 
 If you see an error message or run into an issue, please [create bug report](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20bug&template=bug_report.md&title=). This effort is valued and it will help all Memphis{dev} users.
 
 
-### Submit a feature request
+### Submit a feature 💡 request 
 
 If you have an idea, or you think that we're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
 
-If an issue with similar feature request already exists, don't forget to leave a "+1".
+If an issue❗with similar feature request already exists, don't forget to leave a "+1".
 If you add some more information such as your thoughts and vision about the feature, your comments will be embraced warmly :)
 
 ## Contributing
@@ -171,5 +171,5 @@ Thanks goes to these wonderful people ❤:<br><br>
    <img src = "https://contrib.rocks/image?repo=memphisdev/memphis-broker"/>
  </a>
 
-## License
+## License 📃
 Please check out [License](./LICENSE) to read the full text.
