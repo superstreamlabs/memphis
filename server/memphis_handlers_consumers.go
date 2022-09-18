@@ -224,24 +224,30 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	newConsumer := models.Consumer{
-		ID:             primitive.NewObjectID(),
-		Name:           name,
-		StationId:      station.ID,
-		Type:           consumerType,
-		ConnectionId:   connectionIdObj,
-		CreatedByUser:  connection.CreatedByUser,
-		ConsumersGroup: consumerGroup,
-		IsActive:       true,
-		CreationDate:   time.Now(),
-		IsDeleted:      false,
+		ID:               consumerId,
+		Name:             name,
+		StationId:        station.ID,
+		Type:             consumerType,
+		ConnectionId:     connectionIdObj,
+		CreatedByUser:    connection.CreatedByUser,
+		ConsumersGroup:   consumerGroup,
+		IsActive:         true,
+		CreationDate:     time.Now(),
+		IsDeleted:        false,
+		MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
+		MaxMsgDeliveries: ccr.MaxMsgDeliveries,
 	}
 
 	if consumerGroupExist {
-		newConsumer.MaxAckTimeMs = consumerFromGroup.MaxAckTimeMs
-		newConsumer.MaxMsgDeliveries = consumerFromGroup.MaxMsgDeliveries
+		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
+			err := s.CreateConsumer(newConsumer, station)
+			if err != nil {
+				serv.Errorf("CreateConsumer error: " + err.Error())
+				respondWithErr(s, reply, err)
+				return
+			}
+		}
 	} else {
-		newConsumer.MaxAckTimeMs = int64(ccr.MaxAckTimeMillis)
-		newConsumer.MaxMsgDeliveries = ccr.MaxMsgDeliveries
 		err := s.CreateConsumer(newConsumer, station)
 		if err != nil {
 			serv.Errorf("CreateConsumer error: " + err.Error())
