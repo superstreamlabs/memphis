@@ -33,9 +33,11 @@
             width: 100%;
             display: flex;
             justify-content: space-between;
-            color: #979797;
+            color: #737373;
             padding: 10px;
             span {
+                font-family: 'InterSemiBold';
+                font-size: 14px;
                 display: flex;
                 align-items: center;
                 height: 10px;
@@ -54,12 +56,34 @@
                 padding: 10px;
                 height: 35px;
                 align-items: center;
-                .link-row {
-                    color: var(--purple);
-                    font-weight: 600;
-                    cursor: pointer;
+                .station-details{
+                    font-family: 'InterSemiBold';
+                    font-size: 14px;
                 }
-                .link-row:hover {
+                .station-creation{
+                    font-weight: 400;
+                    font-size: 12px;
+                    color: rgba(74, 73, 92, 0.8);
+                }
+                .staion-link {
+                    font-family: 'InterSemiBold';
+                    font-size: 14px;
+                    cursor: pointer;
+                    width: 120px;
+                    border: 0.8px solid #F3F3F3;
+                    border-radius: 4px;
+                    height: 23px;
+                    display: flex;
+                    justify-content: center;
+                    span{
+                        font-family: 'InterSemiBold';
+                        font-size: 14px;
+                    }
+                    img {
+                        width: 16px;
+                    }
+                }
+                .staion-link:hover {
                     opacity: 0.8;
                 }
                 .dot {

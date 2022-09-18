@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.9899dbd1.css",
-    "main.js": "/static/js/main.602c230b.js",
+    "main.css": "/static/css/main.3343f324.css",
+    "main.js": "/static/js/main.81328f84.js",
     "react-syntax-highlighter/refractor-core-import.js": "/static/js/react-syntax-highlighter/refractor-core-import.ab66c43a.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/static/js/react-syntax-highlighter_languages_refractor_abap.20a78891.chunk.js",
     "react-syntax-highlighter_languages_refractor_actionscript.js": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.21ece32e.chunk.js",
@@ -205,6 +205,7 @@
     "static/media/warning.svg": "/static/media/warning.e3345b6b5b3b23a6775c863e2e701cd9.svg",
     "static/media/videoIcon.svg": "/static/media/videoIcon.9ecec4435f899d20018c52f88070c99f.svg",
     "static/media/docsPurple.svg": "/static/media/docsPurple.1a4b8c526e404f0a0e47cc137aa46d79.svg",
+    "static/media/staionLink.svg": "/static/media/staionLink.ae96d46470645bedb82748d847dabdad.svg",
     "static/media/docsLogo.svg": "/static/media/docsLogo.47318fe8ea2ef1cfe195bd21d8a3b4f5.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.2d046e47b29166b55662a6b110c616bb.svg",
     "static/media/accountIcon.svg": "/static/media/accountIcon.30f24a8d117059fa776baf9c1569f690.svg",
@@ -222,7 +223,7 @@
     "static/media/arrow.svg": "/static/media/arrow.6b3ca97d4cff7959d817b333ac99213e.svg"
   },
   "entrypoints": [
-    "static/css/main.9899dbd1.css",
-    "static/js/main.602c230b.js"
+    "static/css/main.3343f324.css",
+    "static/js/main.81328f84.js"
   ]
 }

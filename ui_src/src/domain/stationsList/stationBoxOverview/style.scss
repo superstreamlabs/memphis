@@ -10,7 +10,7 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
-
+    min-width:1000px;
     .data-labels {
         color: #84818a;
         font-size: 12px;
@@ -51,7 +51,6 @@
         }
     }
     .left-section {
-        width: 22%;
         .station-name {
             font-size: 17px;
             font-weight: 600;
@@ -60,7 +59,6 @@
         }
     }
     .middle-section {
-        width: 11.5%;
         border-left: 1px solid #e9e9e9;
         justify-content: space-between;
         padding-left: 20px;

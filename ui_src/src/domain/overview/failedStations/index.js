@@ -22,15 +22,22 @@
 import './style.scss';
 
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 
+import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
+import OverflowTip from '../../../components/tooltip/overflowtip';
+import staionLink from '../../../assets/images/staionLink.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
-import { parsingDate } from '../../../services/valueConvertor';
-import OverflowTip from '../../../components/tooltip/overflowtip';
 
 const FailedStations = () => {
     const [state, dispatch] = useContext(Context);
+    const history = useHistory();
+
+    const goToStation = (stationName) => {
+        history.push(`${pathDomains.stations}/${stationName}`);
+    };
+
     return (
         <div className="overview-wrapper failed-stations-container">
             <p className="overview-components-header" id="e2e-overview-station-list">
@@ -40,27 +47,30 @@ const FailedStations = () => {
                 <div className="coulmns-table">
                     <span style={{ width: '100px' }}>Name</span>
                     <span style={{ width: '200px' }}>Creation date</span>
-                    <span style={{ width: '100px' }}>Created by</span>
-                    <span style={{ width: '100px' }}></span>
+                    <span style={{ width: '120px' }}>Total messages</span>
+                    <span style={{ width: '120px' }}>Poison messages</span>
+                    <span style={{ width: '120px' }}></span>
                 </div>
                 <div className="rows-wrapper">
                     {state?.monitor_data?.stations?.map((station, index) => {
                         return (
                             <div className="stations-row" key={index}>
-                                <OverflowTip text={station.name} width={'100px'}>
+                                <OverflowTip className="station-details" text={station.name} width={'100px'}>
                                     {station.name}
                                 </OverflowTip>
-                                <OverflowTip text={parsingDate(station.creation_date)} width={'200px'}>
+                                <OverflowTip className="station-creation" text={parsingDate(station.creation_date)} width={'200px'}>
                                     {parsingDate(station.creation_date)}
                                 </OverflowTip>
-                                <OverflowTip text={station.created_by_user} width={'100px'}>
-                                    {station.created_by_user}
-                                </OverflowTip>
-                                <Link style={{ cursor: 'pointer' }} to={`${pathDomains.stations}/${station.name}`}>
-                                    <span className="link-row" style={{ width: '100px' }}>
-                                        Go to station
-                                    </span>
-                                </Link>
+                                <span className="station-details" style={{ width: '120px' }}>
+                                    {numberWithCommas(station.total_messages)}
+                                </span>
+                                <span className="station-details" style={{ width: '120px' }}>
+                                    {numberWithCommas(station.posion_messages)}
+                                </span>
+                                <div className="staion-link" onClick={() => goToStation(station.name)}>
+                                    <span>View Station</span>
+                                    <img src={staionLink} />
+                                </div>
                             </div>
                         );
                     })}
