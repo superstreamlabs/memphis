@@ -127,7 +127,7 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest Logs ({logs?.length})</p>
+                    <p className="header-title">Latest Logs</p>
                     {/* {logs?.length > 0 && (
                         <SearchInput
                             placeholder="Search log..."

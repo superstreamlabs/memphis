@@ -76,9 +76,9 @@ node {
 	  
 
     stage('Open port forwarding to memphis service') {
-      sh(script: """until kubectl get pods --selector=app=memphis-ui -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
-      sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis-$unique_id &"
-      sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis-$unique_id &"
+      sh(script: """until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
+      // sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis-$unique_id &"
+      sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis-$unique_id &"
     }
 
     stage('Tests - Run e2e tests over kubernetes') {
@@ -89,7 +89,7 @@ node {
     stage('Tests - Uninstall helm') {
       sh "helm uninstall memphis-tests -n memphis-$unique_id"
       sh "kubectl delete ns memphis-$unique_id &"
-      sh(script: """/usr/sbin/lsof -i :5555,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
+      sh(script: """/usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
     }
 
     if (env.BRANCH_NAME ==~ /(master)/) {
