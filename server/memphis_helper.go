@@ -76,7 +76,7 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
 	reply := s.getJsApiReplySubject()
 
-	timeout := time.After(4 * time.Second)
+	timeout := time.After(20 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
@@ -173,10 +173,36 @@ const (
 	syslogsErrSubject  = "err"
 )
 
-func (s *Server) CreateSystemLogsStream() error {
+func (s *Server) memphisClusterReady() {
+	if !s.memphis.mcrReported {
+		s.memphis.mcrReported = true
+		close(s.memphis.mcr)
+	}
+}
+
+func (s *Server) CreateSystemLogsStream() {
+	if s.JetStreamIsClustered() {
+		if !s.memphis.logStreamCreated {
+			timeout := time.NewTimer(2 * time.Minute)
+			select {
+			case <-timeout.C:
+				s.Fatalf("Failed to create syslogs stream: cluster readiness timeout")
+			case <-s.memphis.mcr:
+				timeout.Stop()
+				s.memphis.logStreamCreated = true
+			}
+
+			if !s.JetStreamIsLeader() {
+				return
+			}
+		}
+
+	}
+
 	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 	if err != nil {
-		return err
+		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
+
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
 
@@ -190,14 +216,14 @@ func (s *Server) CreateSystemLogsStream() error {
 		Storage:      FileStorage,
 	})
 
-	if err == nil {
-		if s.memphis.activateSysLogsPubFunc == nil {
-			return errors.New("publish activation func is not initialised")
-		}
-		s.memphis.activateSysLogsPubFunc()
+	if err != nil {
+		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
 	}
 
-	return err
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("publish activation func is not initialised")
+	}
+	s.memphis.activateSysLogsPubFunc()
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {

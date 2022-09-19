@@ -146,7 +146,7 @@ const GetStarted = (props) => {
         <GetStartedStoreContext.Provider value={[getStartedState, getStartedDispatch]}>
             <div className="getstarted-container">
                 <h1 className="getstarted-header">Let's get you started</h1>
-                <p className="getstarted-header-description">Setup your account details to get more from the platform</p>
+                <p className="getstarted-header-description">Your real-time journey starts here</p>
                 <div className="sub-getstarted-container">
                     <div className="side-step">
                         <SideStepList />
