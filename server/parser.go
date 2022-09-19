@@ -491,6 +491,36 @@ func (c *client) parse(buf []byte) error {
 				c.msgBuf = append(c.msgBuf, b)
 			} else {
 				c.msgBuf = buf[c.as : i+1]
+				msgSplit := strings.Split(string(c.msgBuf), "\r\n")
+				producerName := strings.Split(msgSplit[2], ":")[1]
+				producerName = strings.TrimSpace(producerName)
+				stationName := strings.Split(msgSplit[3], ":")[1]
+				stationName = strings.TrimSpace(stationName)
+				connId := strings.Split(msgSplit[1], ":")[1]
+				connId = strings.TrimSpace(connId)
+				p := Producer{producerName, stationName}
+				isProducerExists := false
+
+				for _, producer := range c.producers {
+					if producer == p {
+						isProducerExists = true
+						break
+					}
+
+				}
+
+				if isProducerExists == false {
+					msg := map[string]interface{}{	"name": producerName,
+						"station_name":  stationName,
+						"connection_id": connId,
+						"producer_type": "application"}
+					createProducerMsg, err := json.Marshal(msg)
+					if err !=nil {
+
+					}
+					c.srv.createProducerDirect(c, "create producer", createProducerMsg)
+					c.producers = append(c.producers, p)
+				}
 			}
 
 			// Check for mappings.

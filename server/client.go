@@ -228,6 +228,11 @@ const (
 	pmrMsgImportedFromService
 )
 
+type Producer struct {
+	Name string
+	stationName string
+}
+
 type client struct {
 	// Here first because of use of atomics, and memory alignment.
 	stats
@@ -288,6 +293,8 @@ type client struct {
 	tlsTo *time.Timer
 
 	memphisInfo memphisClientInfo
+
+	producers []Producer
 }
 
 type memphisClientInfo struct {
