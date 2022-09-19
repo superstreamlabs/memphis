@@ -32,10 +32,10 @@ node {
     //////////////  SANDBOX  //////////////
     ///////////////////////////////////////
     stage('Remove memphis'){
-			sh "aws eks --region eu-central-1 update-kubeconfig --name sandbox-cluster"
-			sh "helm uninstall my-memphis -n memphis"
-			sh "kubectl delete ns memphis"
-		}
+      sh "aws eks --region eu-central-1 update-kubeconfig --name sandbox-cluster"
+      sh "helm uninstall my-memphis -n memphis"
+      sh "kubectl delete ns memphis"
+   }
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
       sh "aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml ."
@@ -49,7 +49,7 @@ node {
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch
       	}
       	sh "helm upgrade --atomic --install my-memphis memphis-infra/kubernetes/helm/memphis --set cluster.enabled='true',analytics='false',sandbox='true' --create-namespace --namespace memphis"
-				sh "rm -rf memphis-infra"
+	sh "rm -rf memphis-infra"
       }
       
 	  
