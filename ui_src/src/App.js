@@ -47,7 +47,6 @@ import Users from './domain/users';
 import Login from './domain/login';
 import Signup from './domain/signup';
 
-
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
@@ -175,6 +174,19 @@ const App = withRouter(() => {
                                     content={
                                         <div>
                                             <StationOverview />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.stations}/:id/:id`}
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <MessageJourney />
                                         </div>
                                     }
                                 ></AppWrapper>
