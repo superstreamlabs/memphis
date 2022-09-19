@@ -105,10 +105,6 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	if err := s.CreateSystemLogsStream(); err != nil {
-		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
-	}
-
 	dbInstance, err := db.InitializeDbConnection(s)
 	if err != nil {
 		s.Errorf("Failed initializing db connection:" + " " + err.Error())
@@ -121,6 +117,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
+	go s.CreateSystemLogsStream()
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
