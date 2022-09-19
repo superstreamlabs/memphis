@@ -28,7 +28,8 @@
                 "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here", 
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "MAILCHIMP_KEY":  "50afc29f5c1fda04bf10bdc4009a986c-us9",
-                "MAILCHIMP_LIST_ID": "506751f7f5"
+                "MAILCHIMP_LIST_ID": "506751f7f5",
+                "SANDBOX_ENV": "false"
             }
         }
     ]

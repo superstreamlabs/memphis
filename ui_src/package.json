@@ -22,6 +22,7 @@
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.5",
     "react-google-login": "^5.2.2",
+    "react-hotjar": "^5.0.0",
     "react-responsive": "^9.0.0-beta.6",
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.0",
