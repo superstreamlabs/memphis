@@ -19,15 +19,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const pathDomains = {
-    login: '/login',
-    signup: '/signup',
-    overview: '/overview',
-    stations: '/stations',
-    users: '/users',
-    schemas: '/schemas',
-    settings: '/settings',
-    sysLogs: '/logs'
-};
+import './style.scss';
 
-export default pathDomains;
+import { CheckBox } from '@material-ui/icons';
+import React from 'react';
+import usedIcond from '../../../../assets/images/usedIcon.svg';
+import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
+
+function SchemaBox() {
+    return (
+        <div className="schema-box-wrapper">
+            <header is="x3d">
+                <CheckBox />
+                <div className="schema-id">
+                    <p>1D1F1R2T3W</p>
+                </div>
+                <div className="is-used">
+                    <img src={usedIcond} />
+                </div>
+                <div className="menu">
+                    <p>***</p>
+                </div>
+            </header>
+            <title is="x3d"></title>
+        </div>
+    );
+}
+
+export default SchemaBox;

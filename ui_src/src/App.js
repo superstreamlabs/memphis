@@ -46,7 +46,7 @@ import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
 import Signup from './domain/signup';
-
+import SchemaManagment from './domain/schema';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
@@ -175,6 +175,19 @@ const App = withRouter(() => {
                                     content={
                                         <div>
                                             <StationOverview />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <PrivateRoute
+                            exact
+                            path={pathDomains.schemas}
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <SchemaManagment />
                                         </div>
                                     }
                                 ></AppWrapper>
