@@ -78,7 +78,7 @@ const StationBoxOverview = (props) => {
             <Link className="station-box-container" to={`${pathDomains.stations}/${props.station.station.name}`}>
                 <div className="left-section">
                     <p className="station-name">{props.station?.station?.name}</p>
-                    <label className="data-labels">Created: {parsingDate(props.station.station.creation_date)}</label>
+                    <label className="data-labels">Created at {parsingDate(props.station.station.creation_date)}</label>
                 </div>
                 <div className="middle-section">
                     <div className="station-created">
