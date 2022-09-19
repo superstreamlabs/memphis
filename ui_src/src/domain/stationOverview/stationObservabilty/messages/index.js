@@ -57,18 +57,16 @@ const Messages = () => {
     const history = useHistory();
 
     useEffect(() => {
-        if (stationState?.stationSocketData?.messages?.length > 0 && Object.keys(messageDetails).length === 0) {
-            getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq);
-        } else if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) {
-            getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq);
+        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 'All')) {
+            getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, false);
         }
         if (tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
-            getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null);
+            getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, false);
         }
     }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages]);
 
-    const getMessageDetails = async (isPoisonMessage, messageId = null, message_seq = null) => {
-        setLoadMessageData(true);
+    const getMessageDetails = async (isPoisonMessage, messageId = null, message_seq = null, loadMessage) => {
+        setLoadMessageData(loadMessage);
         try {
             const data = await httpRequest(
                 'GET',
@@ -152,7 +150,7 @@ const Messages = () => {
 
     const onSelectedRow = (isPoisonMessage, id, rowIndex) => {
         setSelectedRowIndex(rowIndex);
-        getMessageDetails(isPoisonMessage, isPoisonMessage ? id : null, isPoisonMessage ? null : id);
+        getMessageDetails(isPoisonMessage, isPoisonMessage ? id : null, isPoisonMessage ? null : id, false);
     };
 
     const onCheckedAll = (e) => {
@@ -175,11 +173,11 @@ const Messages = () => {
     };
 
     const handleChangeMenuItem = (newValue) => {
-        if (newValue === '0' && stationState?.stationSocketData?.messages?.length > 0) {
-            getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq);
+        if (newValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) {
+            getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
-        if (newValue === '1' && stationState?.stationSocketData?.poison_messages?.length > 0) {
-            getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null);
+        if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+            getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
         setSelectedRowIndex(0);
@@ -301,9 +299,7 @@ const Messages = () => {
                                         key={id}
                                         onClick={() => onSelectedRow(false, message.message_seq, id)}
                                     >
-                                        <OverflowTip text={message?.data} width={'300px'}>
-                                            {message?.data}
-                                        </OverflowTip>
+                                        <span className="preview-message">{message?.data}</span>
                                     </div>
                                 );
                             })}
@@ -314,9 +310,7 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    {!loadMessageData && (
-                                        <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                                    )}
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                         </div>
@@ -350,9 +344,7 @@ const Messages = () => {
                                                 name={message._id}
                                             />
                                         )}
-                                        <OverflowTip text={message.message.data} width={'300px'}>
-                                            {message.message.data}
-                                        </OverflowTip>
+                                        <span className="preview-message">{message?.message.data}</span>
                                     </div>
                                 );
                             })}
@@ -363,9 +355,7 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    {!loadMessageData && (
-                                        <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                                    )}
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                             <Button

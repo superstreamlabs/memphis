@@ -121,10 +121,18 @@
                     margin-top: 1%;
                     border-radius: 5px;
                     cursor: pointer;
-                    div {
-                        margin-left: 15px;
+                    .ant-checkbox-wrapper{
+                        margin-right: 12px;
+                        margin-left: 3px;
+                    }
+                    .preview-message {
+                        width: 300px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
                         cursor: pointer !important;
                     }
+                    
                 }
                 .selected {
                     padding-left: 5px;            
