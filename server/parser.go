@@ -25,10 +25,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/textproto"
 	"strings"
+	"time"
 )
 
 type parserState int
@@ -140,6 +142,64 @@ const (
 	OP_INFO
 	INFO_ARG
 )
+
+func isProducerExists(c *client, msgBuf []byte) error {
+	msgSplit := strings.Split(string(msgBuf), "\r\n")
+	producerName := strings.Split(msgSplit[2], ":")[1]
+	producerName = strings.TrimSpace(producerName)
+	stationName := strings.Split(msgSplit[3], ":")[1]
+	stationName = strings.TrimSpace(stationName)
+	connId := strings.Split(msgSplit[1], ":")[1]
+	connId = strings.TrimSpace(connId)
+	p := Producer{producerName, stationName}
+	isProducerExists := false
+
+	for _, producer := range c.producers {
+		if producer == p {
+			isProducerExists = true
+			break
+		}
+
+	}
+
+	if isProducerExists == false {
+		msg := map[string]interface{}{"name": producerName,
+			"station_name":  stationName,
+			"connection_id": connId,
+			"producer_type": "application"}
+		createProducerMsg, err := json.Marshal(msg)
+		if err != nil {
+			return err
+
+		}
+		errChan := make(chan error, 1)
+
+		go func() {
+			err := c.srv.createProducerDirectIntern(c, "create producer", createProducerMsg)
+			if err != nil {
+				errChan <- err
+			}
+
+		}()
+		timeout := time.After(10 * time.Second)
+		select {
+		case err = <-errChan:
+			if err != nil {
+				return err
+			}
+		case <-timeout:
+			return errors.New("timeout")
+		}
+
+		if err == nil {
+			c.producers = append(c.producers, p)
+		}
+
+	}
+
+	return nil
+
+}
 
 func (c *client) parse(buf []byte) error {
 	// Branch out to mqtt clients. c.mqtt is immutable, but should it become
@@ -491,35 +551,12 @@ func (c *client) parse(buf []byte) error {
 				c.msgBuf = append(c.msgBuf, b)
 			} else {
 				c.msgBuf = buf[c.as : i+1]
-				msgSplit := strings.Split(string(c.msgBuf), "\r\n")
-				producerName := strings.Split(msgSplit[2], ":")[1]
-				producerName = strings.TrimSpace(producerName)
-				stationName := strings.Split(msgSplit[3], ":")[1]
-				stationName = strings.TrimSpace(stationName)
-				connId := strings.Split(msgSplit[1], ":")[1]
-				connId = strings.TrimSpace(connId)
-				p := Producer{producerName, stationName}
-				isProducerExists := false
 
-				for _, producer := range c.producers {
-					if producer == p {
-						isProducerExists = true
-						break
+				if strings.Contains(string(c.msgBuf), "producedBy") {
+					err := isProducerExists(c, c.msgBuf)
+					if err != nil {
+						goto parseErr
 					}
-
-				}
-
-				if isProducerExists == false {
-					msg := map[string]interface{}{	"name": producerName,
-						"station_name":  stationName,
-						"connection_id": connId,
-						"producer_type": "application"}
-					createProducerMsg, err := json.Marshal(msg)
-					if err !=nil {
-
-					}
-					c.srv.createProducerDirect(c, "create producer", createProducerMsg)
-					c.producers = append(c.producers, p)
 				}
 			}
 

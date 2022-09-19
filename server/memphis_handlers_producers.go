@@ -214,6 +214,163 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	return
 }
 
+
+func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte) error {
+	var cpr createProducerRequest
+	if err := json.Unmarshal(msg, &cpr); err != nil {
+		s.Warnf("failed creating producer: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+	name := strings.ToLower(cpr.Name)
+	err := validateProducerName(name)
+	if err != nil {
+		serv.Warnf(err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+
+	producerType := strings.ToLower(cpr.ProducerType)
+	err = validateProducerType(producerType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+
+	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
+	if err != nil {
+		serv.Warnf("Connection id is not valid")
+		respondWithErr(s, reply, err)
+		return err
+	}
+	exist, connection, err := IsConnectionExist(connectionIdObj)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+	if !exist {
+		serv.Warnf("Connection id was not found")
+		respondWithErr(s, reply, errors.New("memphis: connection id was not found"))
+		return errors.New("memphis: connection id was not found")
+	}
+	if !connection.IsActive {
+		serv.Warnf("Connection is not active")
+		respondWithErr(s, reply, errors.New("memphis: connection id is not active"))
+		return errors.New("memphis: connection id is not active")
+	}
+
+	stationName := strings.ToLower(cpr.StationName)
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+	if !exist {
+		var created bool
+		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		if err != nil {
+			serv.Errorf("creating default station error: " + err.Error())
+			respondWithErr(s, reply, err)
+			return err
+		}
+
+		if created {
+			message := "Station " + stationName + " has been created"
+			serv.Noticef(message)
+			var auditLogs []interface{}
+			newAuditLog := models.AuditLog{
+				ID:            primitive.NewObjectID(),
+				StationName:   stationName,
+				Message:       message,
+				CreatedByUser: c.memphisInfo.username,
+				CreationDate:  time.Now(),
+				UserType:      "application",
+			}
+			auditLogs = append(auditLogs, newAuditLog)
+			err = CreateAuditLogs(auditLogs)
+			if err != nil {
+				serv.Errorf("CreateProducer error: " + err.Error())
+			}
+
+			shouldSendAnalytics, _ := shouldSendAnalytics()
+			if shouldSendAnalytics {
+				analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+			}
+		}
+	}
+
+	exist, _, err = IsProducerExist(name, station.ID)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+	if exist {
+		serv.Warnf("Producer name has to be unique per station")
+		respondWithErr(s, reply, errors.New("memphis: producer name has to be unique per station"))
+		return errors.New("memphis: producer name has to be unique per station")
+	}
+
+	newProducer := models.Producer{
+		ID:            primitive.NewObjectID(),
+		Name:          name,
+		StationId:     station.ID,
+		Type:          producerType,
+		ConnectionId:  connectionIdObj,
+		CreatedByUser: connection.CreatedByUser,
+		IsActive:      true,
+		CreationDate:  time.Now(),
+		IsDeleted:     false,
+	}
+
+	filter := bson.M{"name": newProducer.Name, "station_id": station.ID, "is_active": true, "is_deleted": false}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":             newProducer.ID,
+			"type":            newProducer.Type,
+			"connection_id":   newProducer.ConnectionId,
+			"created_by_user": newProducer.CreatedByUser,
+			"creation_date":   newProducer.CreationDate,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return err
+	}
+
+	if updateResults.MatchedCount > 0 {
+		message := "Producer " + name + " has been created"
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: c.memphisInfo.username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("CreateProducer error: " + err.Error())
+		}
+
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.SendEvent(c.memphisInfo.username, "user-create-producer")
+		}
+	}
+
+	return err
+}
+
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	var producers []models.ExtendedProducer
 	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
