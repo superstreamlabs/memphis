@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.3343f324.css",
-    "main.js": "/static/js/main.2604f72e.js",
+    "main.js": "/static/js/main.d288265e.js",
     "react-syntax-highlighter/refractor-core-import.js": "/static/js/react-syntax-highlighter/refractor-core-import.ab66c43a.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/static/js/react-syntax-highlighter_languages_refractor_abap.20a78891.chunk.js",
     "react-syntax-highlighter_languages_refractor_actionscript.js": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.21ece32e.chunk.js",
@@ -224,6 +224,6 @@
   },
   "entrypoints": [
     "static/css/main.3343f324.css",
-    "static/js/main.2604f72e.js"
+    "static/js/main.d288265e.js"
   ]
 }
