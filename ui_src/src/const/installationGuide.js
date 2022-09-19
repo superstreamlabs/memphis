@@ -51,14 +51,14 @@ export const INSTALLATION_GUIDE = {
                 title: (
                     <span>
                         Step 3 - Open memphis{' '}
-                        <a href="http://localhost:5555" target="_blank">
+                        <a href="http://localhost:9000" target="_blank">
                             UI
                         </a>
                     </span>
                 ),
                 command: (
-                    <a href="http://localhost:5555" target="_blank">
-                        http://localhost:5555
+                    <a href="http://localhost:9000" target="_blank">
+                        http://localhost:9000
                     </a>
                 ),
                 icon: 'link'
@@ -81,14 +81,14 @@ export const INSTALLATION_GUIDE = {
                 title: (
                     <span>
                         Step 2 - Open memphis{' '}
-                        <a href="http://localhost:5555" target="_blank">
+                        <a href="http://localhost:9000" target="_blank">
                             UI
                         </a>
                     </span>
                 ),
                 command: (
-                    <a href="http://localhost:5555" target="_blank">
-                        http://localhost:5555
+                    <a href="http://localhost:9000" target="_blank">
+                        http://localhost:9000
                     </a>
                 ),
                 icon: 'link'
