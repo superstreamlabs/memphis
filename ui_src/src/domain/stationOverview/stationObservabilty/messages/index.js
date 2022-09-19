@@ -52,17 +52,17 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const [tabValue, setTabValue] = useState('0');
+    const [tabValue, setTabValue] = useState('All');
     const tabs = ['All', 'Dead-letter'];
     const history = useHistory();
 
     useEffect(() => {
         if (stationState?.stationSocketData?.messages?.length > 0 && Object.keys(messageDetails).length === 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq);
-        } else if (tabValue === '0' && stationState?.stationSocketData?.messages?.length > 0) {
+        } else if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq);
         }
-        if (tabValue === '1' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+        if (tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null);
         }
     }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages]);
@@ -75,12 +75,8 @@ const Messages = () => {
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isPoisonMessage}&message_id=${messageId}&message_seq=${message_seq}`
             );
             arrangeData(data);
-            setTimeout(() => {
-                setLoadMessageData(false);
-            }, 1000);
-        } catch (error) {
-            setLoadMessageData(false);
-        }
+        } catch (error) {}
+        setLoadMessageData(false);
     };
 
     const arrangeData = (data) => {
@@ -236,20 +232,20 @@ const Messages = () => {
             <div className="header">
                 <div className="left-side">
                     <p className="title">Station</p>
-                    {tabValue === '0' && stationState?.stationSocketData?.messages?.length > 0 && (
+                    {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
                         <div className="messages-amount">
                             <InfoOutlined />
                             <p>Showing last {stationState?.stationSocketData?.messages?.length} messages</p>
                         </div>
                     )}
-                    {tabValue === '1' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                    {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <div className="messages-amount">
                             <InfoOutlined />
                             <p>Showing last {stationState?.stationSocketData?.poison_messages?.length} messages</p>
                         </div>
                     )}
                 </div>
-                {tabValue === '1' && (
+                {tabValue === 'Dead-letter' && (
                     <div className="right-side">
                         <Button
                             width="80px"
@@ -288,7 +284,7 @@ const Messages = () => {
                     disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
                 ></CustomTabs>
             </div>
-            {tabValue === '0' && stationState?.stationSocketData?.messages?.length > 0 && (
+            {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
@@ -318,14 +314,16 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    {!loadMessageData && (
+                                        <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    )}
                                 </Space>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-            {tabValue === '1' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
@@ -343,7 +341,7 @@ const Messages = () => {
                                         key={id}
                                         onClick={() => onSelectedRow(true, message._id, id)}
                                     >
-                                        {tabValue === '1' && (
+                                        {tabValue === 'Dead-letter' && (
                                             <Checkbox
                                                 key={message._id}
                                                 checked={isCheck.includes(message._id)}
@@ -365,7 +363,9 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    {!loadMessageData && (
+                                        <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    )}
                                 </Space>
                             </div>
                             <Button
@@ -388,7 +388,7 @@ const Messages = () => {
                     </div>
                 </div>
             )}
-            {tabValue === '0' && stationState?.stationSocketData?.messages === null && (
+            {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder">
                     <img width={100} src={waitingMessages} />
                     <p>No messages yet</p>
@@ -410,7 +410,7 @@ const Messages = () => {
                     )}
                 </div>
             )}
-            {tabValue === '1' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
+            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
                 <div className="empty-messages">
                     <p>Congrats, No messages in your station's dead-letter, yet ;)</p>
                 </div>
