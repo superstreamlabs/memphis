@@ -384,19 +384,9 @@ const Messages = () => {
                     <p>No messages yet</p>
                     <span className="des">Create your 1st producer and start producing data.</span>
                     {process.env.REACT_APP_SANDBOX_ENV && (
-                        <Button
-                            className="open-sdk"
-                            width="110px"
-                            height="37px"
-                            placeholder="Explore demo"
-                            colorType={'white'}
-                            radiusType="circle"
-                            border={'none'}
-                            backgroundColorType={'purple'}
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => history.go(`${pathDomains.stations}/demo-app`)}
-                        />
+                        <a className="explore-button" href={`${pathDomains.stations}/demo-app`} target="_parent">
+                            Explore demo
+                        </a>
                     )}
                 </div>
             )}
