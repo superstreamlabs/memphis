@@ -176,25 +176,19 @@ func isProducerExists(c *client, msgBuf []byte) error {
 
 		go func() {
 			err := c.srv.createProducerDirectIntern(c, "create producer", createProducerMsg)
-			if err != nil {
-				errChan <- err
-			}
+			errChan <- err
 
 		}()
 		timeout := time.After(10 * time.Second)
 		select {
 		case err = <-errChan:
-			if err != nil {
-				return err
+			if err == nil {
+				c.producers = append(c.producers, p)
 			}
+			return err
 		case <-timeout:
 			return errors.New("timeout")
 		}
-
-		if err == nil {
-			c.producers = append(c.producers, p)
-		}
-
 	}
 
 	return nil
@@ -552,10 +546,10 @@ func (c *client) parse(buf []byte) error {
 			} else {
 				c.msgBuf = buf[c.as : i+1]
 
-				if strings.Contains(string(c.msgBuf), "producedBy") {
+				if strings.Contains(string(c.msgBuf), "stationName") {
 					err := isProducerExists(c, c.msgBuf)
 					if err != nil {
-						goto parseErr
+						c.sendErr(err.Error())
 					}
 				}
 			}
