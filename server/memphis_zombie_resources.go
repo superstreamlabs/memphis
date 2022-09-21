@@ -82,6 +82,31 @@ func removeOldPoisonMsgs() error {
 	return nil
 }
 
+func (srv *Server) removeRedundantStations() error {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(nil, bson.M{"is_deleted": false})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(nil, &stations); err != nil {
+		return err
+	}
+
+	redundant := make([]string, 0, len(stations))
+	for _, s := range stations {
+		_, err = srv.memphisStreamInfo(s.Name)
+		if IsNatsErr(err, JSStreamNotFoundErr) {
+			redundant = append(redundant, s.Name)
+		}
+	}
+
+	_, err = stationsCollection.UpdateMany(nil,
+		bson.M{"name": bson.M{"$in": redundant}},
+		bson.M{"$set": bson.M{"is_deleted": true}})
+	return err
+}
+
 func getActiveConnections() ([]models.Connection, error) {
 	var connections []models.Connection
 	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true})
@@ -120,6 +145,7 @@ func (s *Server) KillZombieResources() {
 	respCh := make(chan []byte)
 
 	for range time.Tick(time.Second * 30) {
+		s.Debugf("Killing Zombie resources iteration")
 		var zombieConnections []primitive.ObjectID
 		connections, err := getActiveConnections()
 		if err != nil {
@@ -170,6 +196,10 @@ func (s *Server) KillZombieResources() {
 
 		err = removeOldPoisonMsgs()
 		if err != nil {
+			serv.Errorf("KillZombieResources error: " + err.Error())
+		}
+
+		if err = s.removeRedundantStations(); err != nil {
 			serv.Errorf("KillZombieResources error: " + err.Error())
 		}
 	}
