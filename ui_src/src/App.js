@@ -36,6 +36,7 @@ import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SandboxLogin from './domain/sandboxLogin';
 import { useHistory } from 'react-router-dom';
+import SchemaManagment from './domain/schema';
 import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
@@ -46,7 +47,6 @@ import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
 import Signup from './domain/signup';
-import SchemaManagment from './domain/schema';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
@@ -175,6 +175,19 @@ const App = withRouter(() => {
                                     content={
                                         <div>
                                             <StationOverview />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.stations}/:id/:id`}
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <MessageJourney />
                                         </div>
                                     }
                                 ></AppWrapper>

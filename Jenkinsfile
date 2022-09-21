@@ -3,9 +3,7 @@ def imageName = "memphis-broker"
 def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
 def repoUrlPrefix = "memphisos"
 def test_suffix = "test"
-
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
-
 node {
   git credentialsId: 'main-github', url: gitURL, branch: gitBranch
   def versionTag = readFile "./version.conf"
@@ -17,7 +15,7 @@ node {
       sh 'docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW'
       }
     }
-	  
+
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl config use-context minikube"
       sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
@@ -73,7 +71,7 @@ node {
             sh "helm upgrade --atomic --install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
       	}
     }
-	  
+
 
     stage('Open port forwarding to memphis service') {
       sh(script: """until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
@@ -97,7 +95,7 @@ node {
       	sh "rm -rf memphis-e2e-tests"
     	}
     }
-	  
+
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
     ////////////////////////////////////////
@@ -112,8 +110,8 @@ node {
 	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
       }
     }
-	  
-	  
+
+
     //////////////////////////////////////
     //////////////  MASTER  //////////////
     //////////////////////////////////////
@@ -126,11 +124,11 @@ node {
           sh "rm -rf memphis-k8s"
 	}
       }
-	  
+
     //////////////////////////////////////////////////////////
     //////////////  Checkout to version branch  //////////////
     //////////////////////////////////////////////////////////
-	  
+
       if (env.BRANCH_NAME ==~ /(latest)/) {
     	stage('checkout to version branch'){
 	    withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
@@ -140,10 +138,8 @@ node {
   	  }
 	}
       }  
-	
-	  
+
     notifySuccessful()
-	  
   } catch (e) {
       currentBuild.result = "FAILED"
       sh "kubectl delete ns memphis-$unique_id &"
@@ -152,7 +148,6 @@ node {
       throw e
   }
 }
-
 def notifySuccessful() {
   emailext (
       subject: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
@@ -161,7 +156,6 @@ def notifySuccessful() {
       recipientProviders: [[$class: 'DevelopersRecipientProvider']]
     )
 }
-
 def notifyFailed() {
   emailext (
       subject: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
