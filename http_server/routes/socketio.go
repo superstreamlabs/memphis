@@ -31,6 +31,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 )
@@ -133,14 +134,10 @@ func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
 
 func ginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, Content-Length, X-CSRF-Token, Token, session, Origin, Host, Connection, Accept-Encoding, Accept-Language, X-Requested-With")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
-
 		c.Request.Header.Del("Origin")
 		c.Next()
 	}
@@ -190,7 +187,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 	})
 
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
-		serv.Errorf("An error occured during a socket connection " + e.Error())
+		serv.Warnf("An error occured during a socket connection " + e.Error())
 	})
 
 	go socketServer.Serve()
@@ -251,6 +248,17 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 	}()
 
 	socketIoRouter := router.Group("/api/socket.io")
+	socketIoRouter.Use(cors.New(cors.Config{
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		AllowMethods:     []string{"POST", "OPTIONS", "GET", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "Content-Length", "X-CSRF-Token", "Token", "session", "Origin", "Host", "Connection", "Accept-Encoding", "Accept-Language", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowWildcard:    true,
+		AllowWebSockets:  true,
+	}))
 	socketIoRouter.Use(ginMiddleware())
 	socketIoRouter.Use(middlewares.Authenticate)
 
