@@ -153,8 +153,8 @@ func isProducerExists(c *client, msgBuf []byte) error {
 	connId = strings.TrimSpace(connId)
 	p := Producer{producerName, stationName}
 
-	c.msgBuf = []byte(strings.ReplaceAll(string(msgBuf), msgSplit[3]+"\r\n", ""))
-
+	stationNameKeyValue := strings.Split(msgSplit[3], ":")[0] + ":" + strings.Split(msgSplit[3], ":")[1]
+	c.msgBuf = bytes.ReplaceAll(msgBuf, []byte(stationNameKeyValue), []byte(""))
 	isProducerExists := false
 
 	for _, producer := range c.producers {

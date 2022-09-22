@@ -229,7 +229,7 @@ const (
 )
 
 type Producer struct {
-	Name string
+	Name        string
 	stationName string
 }
 
