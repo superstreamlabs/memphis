@@ -243,7 +243,8 @@ func shouldSendAnalytics() (bool, error) {
 func validateName(name, objectType string) error {
 	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
 	tooLongErrStr := fmt.Sprintf("%v should be under 32 characters", objectType)
-	invalidCharErrStr := fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v")
+	invalidCharErrStr :=
+		fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v", objectType)
 
 	emptyErr := errors.New(emptyErrStr)
 	tooLongErr := errors.New(tooLongErrStr)
@@ -257,7 +258,7 @@ func validateName(name, objectType string) error {
 		return tooLongErr
 	}
 
-	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+	re := regexp.MustCompile("^[a-z0-9_-]*$")
 
 	validName := re.MatchString(name)
 	if !validName {
