@@ -25,7 +25,7 @@ Whether it’s coding, user interface design, graphic design, writing, or organi
 &#x20; 4\. Run a local memphis-mongodb using docker
 
 ```
-curl -s https://memphisdev.github.io/memphis-docker/docker-compose-mongo.yml -o docker-compose-mongo.yml && docker compose -f docker-compose-mongo.yml -p memphis up
+curl -LGO https://raw.githubusercontent.com/memphisdev/memphis-docker/master/docker-compose-mongo.yml && docker-compose -f docker-compose-mongo.yml -p memphis up
 ```
 
 &#x20; 5\. Install broker dependencies - enter the cloned directory and run
