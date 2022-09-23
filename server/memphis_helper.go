@@ -111,7 +111,7 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(station models.Station) error {
+func (s *Server) CreateStream(sn StationName, station models.Station) error {
 	var maxMsgs int
 	if station.RetentionType == "messages" && station.RetentionValue > 0 {
 		maxMsgs = station.RetentionValue
@@ -149,8 +149,8 @@ func (s *Server) CreateStream(station models.Station) error {
 
 	return s.
 		memphisAddStream(&StreamConfig{
-			Name:         station.Name,
-			Subjects:     []string{station.Name + ".>"},
+			Name:         sn.Intern(),
+			Subjects:     []string{sn.Intern() + ".>"},
 			Retention:    LimitsPolicy,
 			MaxConsumers: -1,
 			MaxMsgs:      int64(maxMsgs),
@@ -270,7 +270,12 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
 
-	err := s.memphisAddConsumer(station.Name, &ConsumerConfig{
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return err
+	}
+
+	err = s.memphisAddConsumer(stationName.Intern(), &ConsumerConfig{
 		Durable:       consumerName,
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
@@ -314,7 +319,11 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 	return resp.ToError()
 }
 
-func (s *Server) RemoveConsumer(streamName string, cn string) error {
+func (s *Server) RemoveConsumer(stationName StationName, cn string) error {
+	return s.memphisRemoveConsumer(stationName.Intern(), cn)
+}
+
+func (s *Server) memphisRemoveConsumer(streamName, cn string) error {
 	requestSubject := fmt.Sprintf(JSApiConsumerDeleteT, streamName, cn)
 
 	rawResp, err := s.jsApiRequest(requestSubject, kindDeleteConsumer, []byte(_EMPTY_))
@@ -332,8 +341,8 @@ func (s *Server) RemoveConsumer(streamName string, cn string) error {
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(stationName, cgName string) (*ConsumerInfo, error) {
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName, cgName)
+func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInfo, error) {
+	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
 
 	rawResp, err := s.jsApiRequest(requestSubject, kindConsumerInfo, []byte(_EMPTY_))
 	if err != nil {
@@ -373,8 +382,8 @@ func (s *Server) RemoveStream(streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) GetTotalMessagesInStation(stationName string) (int, error) {
-	streamInfo, err := s.memphisStreamInfo(stationName)
+func (s *Server) GetTotalMessagesInStation(stationName StationName) (int, error) {
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
 	if err != nil {
 		return 0, err
 	}
@@ -399,6 +408,7 @@ func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
 	return messagesCounter, nil
 }
 
+// low level call, call only with internal station name (i.e stream name)!
 func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
@@ -424,7 +434,12 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 }
 
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
-	streamInfo, err := s.memphisStreamInfo(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return 0, err
+	}
+
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
 	if err != nil || streamInfo.State.Bytes == 0 {
 		return 0, err
 	}
@@ -458,7 +473,11 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 }
 
 func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
-	streamInfo, err := s.memphisStreamInfo(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return []models.MessageDetails{}, err
+	}
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
@@ -472,8 +491,8 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	msgs, err := s.memphisGetMsgs(station.Name+".final",
-		station.Name,
+	msgs, err := s.memphisGetMsgs(stationName.Intern()+".final",
+		stationName.Intern(),
 		startSequence,
 		messagesToFetch,
 		5*time.Second)
@@ -601,7 +620,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 cleanup:
 	timer.Stop()
 	sub.close()
-	err = s.RemoveConsumer(streamName, durableName)
+	err = s.memphisRemoveConsumer(streamName, durableName)
 	if err != nil {
 		return nil, err
 	}
@@ -609,7 +628,11 @@ cleanup:
 	return msgs, nil
 }
 
-func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
+func (s *Server) GetMessage(stationName StationName, msgSeq uint64) (*StoredMsg, error) {
+	return s.memphisGetMessage(stationName.Intern(), msgSeq)
+}
+
+func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
 	requestSubject := fmt.Sprintf(JSApiMsgGetT, streamName)
 
 	request := JSApiMsgGetRequest{Seq: msgSeq}

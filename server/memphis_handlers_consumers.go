@@ -163,7 +163,13 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	stationName := strings.ToLower(ccr.StationName)
+	stationName, err := StationNameFromStr(ccr.StationName)
+	if err != nil {
+		serv.Errorf("CreateConsumer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateConsumer error: " + err.Error())
@@ -180,12 +186,12 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		}
 
 		if created {
-			message := "Station " + stationName + " has been created"
+			message := "Station " + stationName.Ext() + " has been created"
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				ID:            primitive.NewObjectID(),
-				StationName:   stationName,
+				StationName:   stationName.Ext(),
 				Message:       message,
 				CreatedByUser: c.memphisInfo.username,
 				CreationDate:  time.Now(),
@@ -283,7 +289,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
+			StationName:   stationName.Ext(),
 			Message:       message,
 			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
@@ -335,7 +341,7 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
+func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
 	var cgs []models.Cg
 	var consumers []models.ExtendedConsumer
 
@@ -405,7 +411,7 @@ func (ch ConsumersHandler) GetCgsByStation(station models.Station) ([]models.Cg,
 			cg.IsActive = false
 			cg.IsDeleted = true
 		} else { // not deleted
-			cgInfo, err := ch.S.GetCgInfo(station.Name, cg.Name)
+			cgInfo, err := ch.S.GetCgInfo(stationName, cg.Name)
 			if err != nil {
 				return cgs, cgs, cgs, err
 			}
@@ -461,7 +467,13 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		return
 	}
 
-	exist, station, err := IsStationExist(body.StationName)
+	sn, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	exist, station, err := IsStationExist(sn)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -509,7 +521,14 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(dcr.StationName)
+
+	stationName, err := StationNameFromStr(dcr.StationName)
+	if err != nil {
+		serv.Errorf("DestroyConsumer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	name := strings.ToLower(dcr.ConsumerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
@@ -574,7 +593,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
