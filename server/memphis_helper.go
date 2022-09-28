@@ -349,6 +349,7 @@ func (s *Server) memphisRemoveConsumer(streamName, cn string) error {
 }
 
 func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInfo, error) {
+	cgName = replaceDelimiters(cgName)
 	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
 
 	rawResp, err := s.jsApiRequest(requestSubject, kindConsumerInfo, []byte(_EMPTY_))
