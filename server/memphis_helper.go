@@ -248,6 +248,10 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 	return resp.ToError()
 }
 
+func getInternalConsumerName(cn string) string {
+	return replaceDelimiters(cn)
+}
+
 func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
@@ -255,6 +259,8 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	} else {
 		consumerName = consumer.Name
 	}
+
+	consumerName = getInternalConsumerName(consumerName)
 
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
@@ -281,7 +287,7 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		AckPolicy:     AckExplicit,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
 		MaxDeliver:    MaxMsgDeliveries,
-		FilterSubject: station.Name + ".final",
+		FilterSubject: stationName.Intern() + ".final",
 		ReplayPolicy:  ReplayInstant,
 		MaxAckPending: -1,
 		HeadersOnly:   false,
@@ -320,6 +326,7 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 }
 
 func (s *Server) RemoveConsumer(stationName StationName, cn string) error {
+	cn = getInternalConsumerName(cn)
 	return s.memphisRemoveConsumer(stationName.Intern(), cn)
 }
 
