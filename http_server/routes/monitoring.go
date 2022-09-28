@@ -34,4 +34,5 @@ func InitializeMonitoringRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	monitoringRoutes.GET("/getMainOverviewData", monitoringHandler.GetMainOverviewData)
 	monitoringRoutes.GET("/getStationOverviewData", monitoringHandler.GetStationOverviewData)
 	monitoringRoutes.GET("/getSystemLogs", monitoringHandler.GetSystemLogs)
+	monitoringRoutes.GET("/getSystemLogsFile", monitoringHandler.GetSystemLogsFile)
 }

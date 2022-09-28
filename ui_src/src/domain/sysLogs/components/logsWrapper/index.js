@@ -66,6 +66,20 @@ const LogsWrapper = () => {
                 setSeqNum(message_seq);
                 setLogs((users) => [...users, ...data.logs]);
             }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const downloadLogs = async () => {
+        try {
+            const response = await httpRequest('GET', `${ApiEndpoints.DOWNLOAD_SYS_LOGS}`, {}, {}, {}, true, 0);
+            const url = window.URL.createObjectURL(new Blob([response]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `logs.log`);
+            document.body.appendChild(link);
+            link.click();
         } catch (error) {}
     };
 
@@ -127,7 +141,7 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest Logs</p>
+                    <p className="header-title">Latest Logs ({logs?.length})</p>
                     {/* {logs?.length > 0 && (
                         <SearchInput
                             placeholder="Search log..."
@@ -155,6 +169,12 @@ const LogsWrapper = () => {
                     )}
                     components={!stopLoad ? { Footer } : {}}
                 />
+
+                {logs?.length > 0 &&
+                    logs?.map((value, index) => {
+                        return;
+                    })}
+                {/* <button onClick={downloadLogs}>download logs</button> */}
             </logs>
             <LogContent displayedLog={displayedLog} />
         </div>
