@@ -324,19 +324,19 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	c.IndentedJSON(200, response)
 }
 
-func (mh MonitoringHandler) GetSystemLogsFile(c *gin.Context) {
+func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 	const amount = 100
 	const timeout = 3 * time.Second
 
 	response, err := mh.S.GetSystemLogs(amount, timeout, false, 0, _EMPTY_, true)
 	if err != nil {
-		serv.Errorf("GetSystemLogsFile error: " + err.Error())
+		serv.Errorf("DownloadSystemLogs error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if err != nil {
-		serv.Errorf("GetSystemLogsFile error: " + err.Error())
+		serv.Errorf("DownloadSystemLogs error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

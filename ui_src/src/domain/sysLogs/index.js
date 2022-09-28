@@ -51,7 +51,7 @@ const SysLogs = () => {
     return (
         <div className="logs-container">
             <header is="3xd">
-                <h1 className="logs-header-h1">System Logs </h1>
+                <h1 className="main-header-h1">System Logs </h1>
                 <Button
                     className="modal-btn"
                     width="160px"

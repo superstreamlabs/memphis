@@ -71,18 +71,6 @@ const LogsWrapper = () => {
         }
     };
 
-    const downloadLogs = async () => {
-        try {
-            const response = await httpRequest('GET', `${ApiEndpoints.DOWNLOAD_SYS_LOGS}`, {}, {}, {}, true, 0);
-            const url = window.URL.createObjectURL(new Blob([response]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `logs.log`);
-            document.body.appendChild(link);
-            link.click();
-        } catch (error) {}
-    };
-
     const loadMore = useCallback(() => {
         return setTimeout(() => {
             getLogs();
@@ -141,7 +129,7 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest Logs ({logs?.length})</p>
+                    <p className="header-title">Latest Logs</p>
                     {/* {logs?.length > 0 && (
                         <SearchInput
                             placeholder="Search log..."
@@ -174,7 +162,6 @@ const LogsWrapper = () => {
                     logs?.map((value, index) => {
                         return;
                     })}
-                {/* <button onClick={downloadLogs}>download logs</button> */}
             </logs>
             <LogContent displayedLog={displayedLog} />
         </div>
