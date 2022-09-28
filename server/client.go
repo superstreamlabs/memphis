@@ -230,7 +230,7 @@ const (
 
 type Producer struct {
 	Name        string
-	stationName string
+	StationName string
 }
 
 type client struct {
