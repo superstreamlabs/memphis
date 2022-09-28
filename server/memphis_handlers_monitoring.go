@@ -325,10 +325,9 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
-	const amount = 100
-	const timeout = 3 * time.Second
+	const timeout = 20 * time.Second
 
-	response, err := mh.S.GetSystemLogs(amount, timeout, false, 0, _EMPTY_, true)
+	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
 	if err != nil {
 		serv.Errorf("DownloadSystemLogs error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
