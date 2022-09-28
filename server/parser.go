@@ -143,58 +143,63 @@ const (
 	INFO_ARG
 )
 
-func isProducerExists(c *client, msgBuf []byte) error {
-	msgSplit := strings.Split(string(msgBuf), "\r\n")
-	producerName := strings.Split(msgSplit[2], ":")[1]
-	producerName = strings.TrimSpace(producerName)
-	stationName := strings.Split(msgSplit[3], ":")[1]
-	stationName = strings.TrimSpace(stationName)
-	connId := strings.Split(msgSplit[1], ":")[1]
-	connId = strings.TrimSpace(connId)
-	p := Producer{producerName, stationName}
+var errorProducerAlreadyExists = errors.New("producer already exists")
 
-	stationNameKeyValue := strings.Split(msgSplit[3], ":")[0] + ":" + strings.Split(msgSplit[3], ":")[1]
-	c.msgBuf = bytes.ReplaceAll(msgBuf, []byte(stationNameKeyValue), []byte(""))
-	isProducerExists := false
+func createProducerIfNeeded(c *client, msgBuf []byte) error {
+	var p Producer
+	errChan := make(chan error, 1)
+	go func() {
+		if strings.Contains(string(c.msgBuf), "stationName") {
+			msgSplit := strings.Split(string(msgBuf), "\r\n")
+			producerName := strings.Split(msgSplit[2], ":")[1]
+			producerName = strings.TrimSpace(producerName)
+			stationName := strings.Split(msgSplit[3], ":")[1]
+			stationName = strings.TrimSpace(stationName)
+			connId := c.memphisInfo.connectionId
+			p = Producer{producerName, stationName}
+			stationNameKeyValue := strings.Split(msgSplit[3], ":")[0] + ":" + strings.Split(msgSplit[3], ":")[1]
+			c.msgBuf = bytes.ReplaceAll(msgBuf, []byte(stationNameKeyValue+"\r\n"), []byte(""))
+			c.pa.hdr = len(msgSplit[0] + "\r\n" + msgSplit[1] + "\r\n" + msgSplit[2] + "\r\n")
+			c.pa.size = int(len(c.msgBuf))
+			isProducerExists := false
 
-	for _, producer := range c.producers {
-		if producer == p {
-			isProducerExists = true
-			break
-		}
+			for _, producer := range c.producers {
+				if producer == p {
+					isProducerExists = true
+					errChan <- errorProducerAlreadyExists
+					return
+				}
 
-	}
-
-	if isProducerExists == false {
-		msg := map[string]interface{}{"name": producerName,
-			"station_name":  stationName,
-			"connection_id": connId,
-			"producer_type": "application"}
-		createProducerMsg, err := json.Marshal(msg)
-		if err != nil {
-			return err
-
-		}
-		errChan := make(chan error, 1)
-
-		go func() {
-			err := c.srv.createProducerDirectIntern(c, "create producer", createProducerMsg)
-			errChan <- err
-
-		}()
-		timeout := time.After(10 * time.Second)
-		select {
-		case err = <-errChan:
-			if err == nil {
-				c.producers = append(c.producers, p)
 			}
-			return err
-		case <-timeout:
-			return errors.New("timeout")
-		}
-	}
+			if isProducerExists == false {
+				msg := map[string]interface{}{"name": producerName,
+					"station_name":  stationName,
+					"connection_id": connId,
+					"producer_type": "application"}
+				createProducerMsg, err := json.Marshal(msg)
+				if err != nil {
+					errChan <- err
+					return
 
-	return nil
+				}
+				err = c.srv.createProducerDirectIntern(c, "create producer", createProducerMsg)
+				errChan <- err
+			}
+		}
+
+	}()
+	timeout := time.After(10 * time.Second)
+	select {
+	case err := <-errChan:
+		if err == nil {
+			c.producers = append(c.producers, p)
+		} else if err == errorProducerAlreadyExists {
+			err = nil
+		}
+		return err
+	case <-timeout:
+		return errors.New("timeout")
+	}
 
 }
 
@@ -548,19 +553,9 @@ func (c *client) parse(buf []byte) error {
 				c.msgBuf = append(c.msgBuf, b)
 			} else {
 				c.msgBuf = buf[c.as : i+1]
-
-				if strings.Contains(string(c.msgBuf), "stationName") {
-					start := time.Now()
-					fmt.Println("start", start)
-
-					err := isProducerExists(c, c.msgBuf)
-					if err != nil {
-						c.sendErr(err.Error())
-					}
-					end := time.Now()
-					fmt.Println("end", end)
-
-					fmt.Println("sub", end.Sub(start))
+				err := createProducerIfNeeded(c, c.msgBuf)
+				if err != nil {
+					c.sendErr(err.Error())
 				}
 			}
 
