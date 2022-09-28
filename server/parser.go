@@ -185,6 +185,9 @@ func createProducerIfNeeded(c *client, msgBuf []byte) error {
 				err = c.srv.createProducerDirectIntern(c, "create producer", createProducerMsg)
 				errChan <- err
 			}
+		}else {
+			errChan <- nil
+			return 
 		}
 
 	}()
