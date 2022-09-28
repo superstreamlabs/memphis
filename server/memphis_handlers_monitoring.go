@@ -22,6 +22,8 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -312,7 +314,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
 	}
 
-	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject)
+	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
 		serv.Errorf("GetSystemLogs error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -320,6 +322,32 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
+	const timeout = 20 * time.Second
+
+	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
+	if err != nil {
+		serv.Errorf("DownloadSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if err != nil {
+		serv.Errorf("DownloadSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	b := new(bytes.Buffer)
+	datawriter := bufio.NewWriter(b)
+
+	for _, log := range response.Logs {
+		_, _ = datawriter.WriteString(log.Data + "\n")
+	}
+
+	datawriter.Flush()
+	c.Writer.Write(b.Bytes())
 }
 
 func min(x, y uint64) uint64 {
@@ -333,7 +361,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 	timeout time.Duration,
 	fromLast bool,
 	lastKnownSeq uint64,
-	filterSubject string) (models.SystemLogsResponse, error) {
+	filterSubject string,
+	getAll bool) (models.SystemLogsResponse, error) {
 	uid := s.memphis.nuid.Next()
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 
@@ -345,8 +374,18 @@ func (s *Server) GetSystemLogs(amount uint64,
 	amount = min(streamInfo.State.Msgs, amount)
 	startSeq := lastKnownSeq - amount + 1
 
-	if fromLast {
-
+	if getAll {
+		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
+		startSeq = streamInfo.State.FirstSeq
+		amount = streamInfo.State.Msgs
+	} else if fromLast {
+		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
 		startSeq = streamInfo.State.LastSeq - amount + 1
 
 		//handle uint wrap around
@@ -443,9 +482,15 @@ cleanup:
 		})
 	}
 
-	sort.Slice(resMsgs, func(i, j int) bool {
-		return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
-	})
+	if getAll {
+		sort.Slice(resMsgs, func(i, j int) bool {
+			return resMsgs[i].TimeSent.Before(resMsgs[j].TimeSent)
+		})
+	} else {
+		sort.Slice(resMsgs, func(i, j int) bool {
+			return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
+		})
+	}
 
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }

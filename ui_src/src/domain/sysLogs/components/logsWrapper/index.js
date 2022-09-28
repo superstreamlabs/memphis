@@ -66,7 +66,9 @@ const LogsWrapper = () => {
                 setSeqNum(message_seq);
                 setLogs((users) => [...users, ...data.logs]);
             }
-        } catch (error) {}
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     const loadMore = useCallback(() => {

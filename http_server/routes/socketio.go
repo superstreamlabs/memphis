@@ -129,7 +129,7 @@ func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
 
-	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "")
+	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "", false)
 }
 
 func ginMiddleware() gin.HandlerFunc {
