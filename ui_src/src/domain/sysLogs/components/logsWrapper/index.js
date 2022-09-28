@@ -157,11 +157,6 @@ const LogsWrapper = () => {
                     )}
                     components={!stopLoad ? { Footer } : {}}
                 />
-
-                {logs?.length > 0 &&
-                    logs?.map((value, index) => {
-                        return;
-                    })}
             </logs>
             <LogContent displayedLog={displayedLog} />
         </div>
