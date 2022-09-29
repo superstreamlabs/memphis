@@ -1,32 +1,50 @@
 .create-produce-data {
-    height: calc(100%);
     position: relative;
+    height: 100%;
     margin-right: 20px;
     overflow-y: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
-   p{
-    margin: 0;
-    font-weight: 600;
-    font-size: 16px;
-   }
+
+    .image-waiting-successful {
+        margin-top: 10px;
+        margin-bottom: 15px;
+        width: 150px;
+        height: 150px;
+    }
+    .waiting-for-data-btn {
+        display: flex;
+        justify-content: center;
+        .waiting-for-data-space {
+            width: 20px;
+        }
+    }
+    p {
+        margin: 0;
+        font-weight: 600;
+        font-size: 16px;
+    }
     .code-snippet {
         position: relative;
-        height: calc(100% - 30px);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        height: 100%;
         .code-example {
-            height: calc(100% - 170px);
             position: relative;
+
+            height: calc(100% - 200px);
+            // background-color: aquamarine;
             .code-content {
                 border: 1px solid var(--gray);
                 box-sizing: border-box;
                 border-radius: 4px;
                 overflow: auto;
                 position: relative;
-                height: calc(100% - 25px);
+                height: calc(100% - 50px);
+                // height: calc(100% - 100px);
+                // height: calc(100% - 250px);
                 p {
                     margin: 0;
                     white-space: pre-line;
@@ -42,7 +60,7 @@
             height: 50px;
             display: flex;
             align-items: center;
-            padding-right:3px
+            padding-right: 3px;
         }
     }
 
@@ -68,6 +86,7 @@
 
     .data-waiting-container,
     .successfully-container {
+        height: 350px;
         .waiting-for-data-btn {
             display: flex;
             .waiting-for-data-space {
@@ -105,4 +124,9 @@
             box-shadow: none;
         }
     }
+}
+
+.produce-consume-data {
+    height: 100%;
+    position: relative;
 }

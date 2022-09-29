@@ -1,69 +1,51 @@
 .side-step-container {
-    display: flex;
-    height: 48px;
-    border-radius: 4px;
-    justify-content: space-between;
-    align-items: flex-end;
-
-    .number-name-container {
+    margin-left: 40px;
+    margin-right: 40px;
+    position: relative;
+    .sidebar-image {
+        height: 20px;
+    }
+    .side-step-header {
         display: flex;
+        .step-name-completed {
+            display: flex;
+            align-items: center;
+            .step-name {
+                font-weight: 700;
+                font-size: 15px;
+                margin-bottom: 0px;
+                padding-left: 10px;
+            }
+            .completed {
+                margin-left: 5px;
+                height: 15px;
+                width: 15px;
+            }
+        }
+    }
+    .side-step-body {
         margin-left: 12px;
-
-        .step-name {
-            font-weight: 600;
-            font-size: 15px;
-            line-height: 20px;
-            color: #747474;
-        }
-
-        .curr-step-name {
-            color: #2e2c34;
-        }
-
-        .step-number-container {
-            width: 21px;
-            height: 21.3px;
-            margin-right: 16px;
-            background: #ebebeb;
-            border-radius: 50%;
-            .step-number {
-                font-weight: 600;
-                font-size: 12px;
-                line-height: 15px;
-                text-align: center;
-                color: #000000;
-                padding: 3.14815px 5.03704px;
-            }
-            .done-image {
-                padding: 0px;
-                align-self: center;
-                margin-right: 16px;
-                width: 21px;
-                height: 21.3px;
-                top: 0px;
-                left: 0px;
+        margin-top: 10px;
+        .step-description {
+            min-height: 66px;
+            padding-left: 20px;
+            // margin-top: 5px;
+            font-weight: 400;
+            font-size: 14px;
+            color: #667085;
+            a {
+                color: #6557ff;
                 cursor: pointer;
-                vertical-align: middle;
             }
         }
     }
-    .step-number-white {
-        background-color: white !important;
+    .border {
+        border-left: 1px solid #efeef2;
     }
-
-    .arrow-container {
-        align-self: center;
-        margin-right: 15px;
+    .border-completed {
+        border-left: 1px solid #6557ff;
     }
 }
-.curr-step {
-    background-color: #f0eeff;
-}
-
 .cursor-allowed {
     cursor: pointer;
-}
-
-.cursor-blocked {
-    cursor: not-allowed;
 }

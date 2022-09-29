@@ -1,4 +1,23 @@
 .create-station-form-getstarted {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    .station-name-section {
+        height: 150px;
+        justify-content: space-between;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 20px;
+    }
+    .retention-type-section {
+        height: 230px;
+        justify-content: space-between;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 20px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
     .field-title {
         display: flex;
         font-weight: 400;
@@ -8,8 +27,20 @@
     .storage-replicas-container {
         display: flex;
         width: 100%;
+        height: 130px;
+        .storage-container {
+            justify-content: space-between;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
+        .replicas-container {
+            justify-content: space-between;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
     }
-
     .header-getstarted-form {
         width: 168px;
         height: 29px;
@@ -17,7 +48,6 @@
         font-weight: 600;
         font-size: 24px;
         line-height: 29px;
-
         color: #1d1d1d;
     }
 

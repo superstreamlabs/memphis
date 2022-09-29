@@ -24,7 +24,9 @@ import Lottie from 'lottie-react';
 import { CopyBlock, atomOneLight } from 'react-code-blocks';
 import SelectComponent from '../../../../components/select';
 import Button from '../../../../components/button';
-import successProdCons from '../../../../assets/lotties/successProdCons.json';
+import successProd from '../../../../assets/images/dataProduced.svg';
+import successCons from '../../../../assets/images/stationsIconActive.svg';
+
 import { GetStartedStoreContext } from '..';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -186,52 +188,108 @@ const ProduceConsumeData = (props) => {
                 </div>
             )}
             {currentPhase === produceConsumeScreenEnum['DATA_WAITING'] && (
-                <div className="data-waiting-container">
-                    <Lottie className="image-waiting-successful" animationData={waitingImage} loop={true} />
-                    <TitleComponent headerTitle={waitingTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
-                    <div className="waiting-for-data-btn">
-                        <Button
-                            width="129px"
-                            height="40px"
-                            placeholder="Back"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="black"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            marginBottom="3px"
-                            onClick={() => {
-                                clearInterval(intervalStationDetails);
-                                screen(produceConsumeScreenEnum['DATA_SNIPPET']);
-                            }}
+                <div className="code-snippet">
+                    <div className="lang">
+                        <p>Language</p>
+                        <SelectComponent
+                            initialValue={langSelected}
+                            value={langSelected}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            radiusType="semi-round"
+                            width="450px"
+                            height="50px"
+                            options={props.languages}
+                            onChange={(e) => handleSelectLang(e)}
+                            dropdownClassName="select-options"
+                            disabled
                         />
-                        <div className="waiting-for-data-space"></div>
-                        <div id="e2e-getstarted-skip">
+                    </div>
+                    <div className="installation">
+                        <p>Installation</p>
+                        <div className="install-copy">
+                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                        </div>
+                    </div>
+                    <div className="data-waiting-container">
+                        <img className="image-waiting-successful" src={waitingImage} alt={true} />
+                        <TitleComponent headerTitle={waitingTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
+                        <div className="waiting-for-data-btn">
                             <Button
                                 width="129px"
                                 height="40px"
-                                placeholder="Skip"
-                                colorType="black"
+                                placeholder="Back"
+                                colorType="white"
                                 radiusType="circle"
-                                backgroundColorType="white"
-                                border="gray-light"
+                                backgroundColorType="black"
+                                border="gray"
                                 fontSize="14px"
                                 fontWeight="bold"
                                 marginBottom="3px"
                                 onClick={() => {
                                     clearInterval(intervalStationDetails);
-                                    getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
-                                    getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+                                    screen(produceConsumeScreenEnum['DATA_SNIPPET']);
                                 }}
                             />
+                            <div className="waiting-for-data-space"></div>
+                            <div id="e2e-getstarted-skip">
+                                <Button
+                                    width="129px"
+                                    height="40px"
+                                    placeholder="Skip"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    border="gray"
+                                    fontSize="14px"
+                                    fontWeight="bold"
+                                    marginBottom="3px"
+                                    onClick={() => {
+                                        clearInterval(intervalStationDetails);
+                                        getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
+                                        getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
             {currentPhase === produceConsumeScreenEnum['DATA_RECIEVED'] && (
-                <div className="successfully-container">
-                    <Lottie className="image-waiting-successful" animationData={successProdCons} loop={true} />
-                    <TitleComponent headerTitle={successfullTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
+                <div className="code-snippet">
+                    <div className="lang">
+                        <p>Language</p>
+                        <SelectComponent
+                            initialValue={langSelected}
+                            value={langSelected}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            radiusType="semi-round"
+                            width="450px"
+                            height="50px"
+                            options={props.languages}
+                            onChange={(e) => handleSelectLang(e)}
+                            dropdownClassName="select-options"
+                            disabled
+                        />
+                    </div>
+                    <div className="installation">
+                        <p>Installation</p>
+                        <div className="install-copy">
+                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                        </div>
+                    </div>
+                    <div className="successfully-container">
+                        {props.produce ? (
+                            <img className="image-waiting-successful" src={successProd} alt={''} />
+                        ) : (
+                            <img className="image-waiting-successful" src={successCons} alt={''} />
+                        )}
+
+                        <TitleComponent headerTitle={successfullTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
+                    </div>
                 </div>
             )}
         </div>

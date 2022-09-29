@@ -24,11 +24,12 @@ import axios from 'axios';
 
 import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE } from '../config';
 import { ApiEndpoints } from '../const/apiEndpoints';
-import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_EXPIRED_TOKEN } from '../const/localStorageConsts.js';
+import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_EXPIRED_TOKEN, LOCAL_STORAGE_SKIP_GET_STARTED } from '../const/localStorageConsts.js';
 import pathDomains from '../router';
 import AuthService from './auth';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0) {
+    let isSkipGetStarted;
     if (authNeeded) {
         const token = localStorage.getItem(LOCAL_STORAGE_TOKEN);
         headers['Authorization'] = 'Bearer ' + token;
@@ -60,7 +61,9 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             window.location.pathname !== pathDomains.signup &&
             err?.response?.status === AUTHENTICATION_ERROR_STATUS_CODE
         ) {
+            localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
             localStorage.clear();
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
             window.location.assign('/login');
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
@@ -86,6 +89,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
 }
 
 export async function handleRefreshTokenRequest() {
+    let isSkipGetStarted;
     const HTTP = axios.create({
         withCredentials: true
     });
@@ -102,7 +106,9 @@ export async function handleRefreshTokenRequest() {
         }
         return true;
     } catch (err) {
+        localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
         localStorage.clear();
+        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
         window.location.assign('/login');
         return false;
     }

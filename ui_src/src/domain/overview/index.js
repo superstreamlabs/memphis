@@ -28,7 +28,8 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_WELCOME_MESSAGE
+    LOCAL_STORAGE_WELCOME_MESSAGE,
+    LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
 import CreateStationDetails from '../../components/createStationDetails';
 import discordLogo from '../../assets/images/discordLogo.svg';
@@ -139,7 +140,8 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-            {!isLoading && (
+
+            {!isLoading && (stationsOfUser.length !== 0 || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true') ? (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -173,23 +175,19 @@ function OverView() {
                         />
                     </div>
                     <div className="overview-components">
-                        {stationsOfUser.length === 0 ? (
-                            <div className="left-side">
-                                <GetStarted />
-                            </div>
-                        ) : (
-                            <div className="left-side">
-                                <GenericDetails />
-                                <FailedStations />
-                                <Throughput />
-                            </div>
-                        )}
+                        <div className="left-side">
+                            <GenericDetails />
+                            <FailedStations />
+                            <Throughput />
+                        </div>
                         <div className="right-side">
                             <Resources />
                             <SysComponents />
                         </div>
                     </div>
                 </div>
+            ) : (
+                <GetStarted username={username} />
             )}
             <Modal
                 header="Your station details"
