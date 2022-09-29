@@ -194,7 +194,7 @@ func createProducerIfNeeded(c *client, msgBuf []byte) error {
 	timeout := time.After(10 * time.Second)
 	select {
 	case err := <-errChan:
-		if err == nil {
+		if err == nil && (p != Producer{}) {
 			c.producers = append(c.producers, p)
 		} else if err == errorProducerAlreadyExists {
 			err = nil

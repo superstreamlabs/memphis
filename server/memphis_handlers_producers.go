@@ -66,14 +66,12 @@ func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte)
 	var cpr createProducerRequest
 	if err := json.Unmarshal(msg, &cpr); err != nil {
 		s.Warnf("failed creating producer: %v", err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 
@@ -81,30 +79,25 @@ func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte)
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
-		respondWithErr(s, reply, err)
 		return err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		respondWithErr(s, reply, errors.New("memphis: connection id was not found"))
 		return errors.New("memphis: connection id was not found")
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		respondWithErr(s, reply, errors.New("memphis: connection id is not active"))
 		return errors.New("memphis: connection id is not active")
 	}
 
@@ -112,7 +105,6 @@ func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 	if !exist {
@@ -120,7 +112,6 @@ func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte)
 		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
-			respondWithErr(s, reply, err)
 			return err
 		}
 
@@ -152,12 +143,10 @@ func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte)
 	exist, _, err = IsProducerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 	if exist {
 		serv.Warnf("Producer name has to be unique per station")
-		respondWithErr(s, reply, errors.New("memphis: producer name has to be unique per station"))
 		return errors.New("memphis: producer name has to be unique per station")
 	}
 
@@ -187,7 +176,6 @@ func (s *Server) createProducerDirectIntern(c *client, reply string, msg []byte)
 	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
 		return err
 	}
 
