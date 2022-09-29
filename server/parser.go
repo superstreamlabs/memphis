@@ -169,8 +169,8 @@ func createProducerIfNeeded(c *client, msgBuf []byte) error {
 					errChan <- errorProducerAlreadyExists
 					return
 				}
-
 			}
+			
 			if isProducerExists == false {
 				msg := map[string]interface{}{"name": producerName,
 					"station_name":  stationName,
@@ -185,11 +185,10 @@ func createProducerIfNeeded(c *client, msgBuf []byte) error {
 				err = c.srv.createProducerDirectIntern(c, "create producer", createProducerMsg)
 				errChan <- err
 			}
-		}else {
+		} else {
 			errChan <- nil
-			return 
+			return
 		}
-
 	}()
 	timeout := time.After(10 * time.Second)
 	select {
@@ -203,7 +202,6 @@ func createProducerIfNeeded(c *client, msgBuf []byte) error {
 	case <-timeout:
 		return errors.New("timeout")
 	}
-
 }
 
 func (c *client) parse(buf []byte) error {
