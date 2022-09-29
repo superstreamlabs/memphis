@@ -59,6 +59,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
 	cgName := message["consumer"].(string)
+	cgName = revertDelimiters(cgName)
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
