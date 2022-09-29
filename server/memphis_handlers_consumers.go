@@ -277,7 +277,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if updateResults.MatchedCount > 0 {
+	if updateResults.MatchedCount == 0 {
 		message := "Consumer " + name + " has been created"
 		serv.Noticef(message)
 		var auditLogs []interface{}
