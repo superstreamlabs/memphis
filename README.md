@@ -117,7 +117,7 @@ To access Memphis using CLI or SDK from localhost, run the below commands:</br>
 ```shell
 kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis > /dev/null &
 ```
-Dashboard: http://localhost:9000
+Dashboard: http://localhost:9000</br>
 Memphis broker: http://localhost:6666
 
 **For Production Environments**
