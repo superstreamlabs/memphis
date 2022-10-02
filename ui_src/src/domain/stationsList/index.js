@@ -27,6 +27,7 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import StationBoxOverview from './stationBoxOverview';
 import { httpRequest } from '../../services/http';
 import Button from '../../components/button';
+import Filter from '../../components/filter';
 import { Context } from '../../hooks/store';
 import SearchInput from '../../components/searchInput';
 import pathDomains from '../../router';
@@ -160,6 +161,7 @@ const StationsList = () => {
                             onChange={handleSearch}
                             value={searchInput}
                         />
+                        <Filter />
                         <Button
                             className="modal-btn"
                             width="180px"

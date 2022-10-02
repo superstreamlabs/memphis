@@ -1,0 +1,121 @@
+.Menu.MuiPopover-paper {
+    width: 250px !important;
+    padding: 10px 0px 0px 10px;
+    // margin-top: 30px;
+}
+.filter-container {
+    height: 40px;
+    width: 115px;
+    background: #ffffff;
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12);
+    border-radius: 32px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    padding-left: 10px;
+    cursor: pointer;
+
+    .filter-counter {
+        background: #6557ff;
+        color: white;
+        height: 16px;
+        width: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 5px;
+        font-size: 10px;
+        border-radius: 50%;
+    }
+}
+
+.filter-collapse {
+    position: relative;
+    .filter-header {
+        margin-bottom: 0;
+        font-weight: 600;
+        font-size: 16px;
+    }
+    .collapse-header {
+        display: flex;
+        align-items: center;
+        .title {
+            font-weight: 500;
+            font-size: 14px;
+            color: #2e2c34;
+            margin-bottom: 0;
+            margin-right: 10px;
+        }
+    }
+    .collapse-body {
+        .label {
+            margin-bottom: 5px;
+
+            label {
+                padding: 3px 6px 3px 6px;
+                border-radius: 4px;
+            }
+        }
+        .circle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            .circle-letter {
+                font-weight: 600;
+                border-radius: 50%;
+                width: 22px;
+                align-items: center;
+                margin-bottom: 0;
+                text-align: center;
+                margin-right: 5px;
+                margin-left: 5px;
+            }
+            label {
+                font-weight: 400;
+            }
+        }
+    }
+    .collapse-footer {
+        display: flex;
+        justify-content: space-evenly;
+        margin-bottom: 10px;
+    }
+    .collapse-arrow {
+        transition: transform 0.4s;
+    }
+    .open {
+        transform: rotate(180deg);
+    }
+    status {
+        display: flex;
+    }
+    content {
+        // display: flex;
+        // justify-content: space-between;
+        // p {
+        //     font-weight: 400;
+        //     font-size: 12px;
+        //     color: #84818a;
+        // }
+        // span {
+        //     font-size: 12px;
+        //     color: #1d1d1d;
+        //     font-family: 'InterSemiBold';
+        // }
+    }
+
+    .message {
+        font-size: 11px;
+        color: #84818a;
+        font-weight: 400;
+        img {
+            cursor: pointer;
+            width: 16px !important;
+            position: absolute;
+            top: 15px;
+            right: 40px;
+        }
+    }
+}
