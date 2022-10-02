@@ -676,6 +676,19 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	return messages, nil
 }
 
+func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+	if sh.S.JetStreamIsClustered() {
+		leader, followers, err := sh.S.GetLeaderAndFollowers(station)
+		if err != nil {
+			return "", []string{}, err
+		}
+
+		return leader, followers, nil
+	} else {
+		return "broker-0", []string{}, nil
+	}
+}
+
 func getCgStatus(members []models.CgMember) (bool, bool) {
 	deletedCount := 0
 	for _, member := range members {
