@@ -54,6 +54,7 @@
     }
     .installation {
         .install-copy {
+            width: 450px;
             border: 1px solid var(--gray);
             box-sizing: border-box;
             border-radius: 4px;
@@ -86,7 +87,7 @@
 
     .data-waiting-container,
     .successfully-container {
-        height: 350px;
+        height: calc(100% - 200px);
         .waiting-for-data-btn {
             display: flex;
             .waiting-for-data-space {

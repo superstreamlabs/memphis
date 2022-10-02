@@ -21,38 +21,31 @@
 
 import './style.scss';
 
-import { Radio } from 'antd';
+import { InputNumber } from 'antd';
 import React from 'react';
 
-const RadioButton = (props) => {
-    const { options = [], radioValue, onChange, optionType, disabled, fontFamily } = props;
+import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
+import ArrowDropUpRounded from '@material-ui/icons/ArrowDropUpRounded';
 
+const InputNumberComponent = ({ min, max, onChange, value, placeholder, disabled }) => {
     const handleChange = (e) => {
         onChange(e);
     };
 
-    const fieldProps = {
-        onChange: handleChange,
-        value: radioValue
-    };
-
     return (
-        <div className="radio-button">
-            <Radio.Group
-                {...fieldProps}
-                className="radio-group"
-                optionType={optionType ? optionType : null}
-                disabled={disabled}
-                defaultValue={radioValue || options[0]?.value}
-            >
-                {options.map((option) => (
-                    <Radio key={option.id} value={option.value}>
-                        <span style={{ fontFamily: fontFamily }}>{option.label}</span>
-                    </Radio>
-                ))}
-            </Radio.Group>
-        </div>
+        <InputNumber
+            bordered={false}
+            min={min}
+            max={max}
+            keyboard={true}
+            onChange={(e) => handleChange(e)}
+            value={value}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="input-number-wrapper"
+            controls={{ downIcon: <ArrowDropDownRounded />, upIcon: <ArrowDropUpRounded /> }}
+        />
     );
 };
 
-export default RadioButton;
+export default InputNumberComponent;

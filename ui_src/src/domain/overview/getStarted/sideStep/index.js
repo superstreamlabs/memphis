@@ -88,7 +88,7 @@ const SideStep = (props) => {
                 {getIcon()}
                 <div className="step-name-completed">
                     <p className={currentStep === stepNumber ? 'step-name curr-step-name' : 'step-name'}>{stepName}</p>
-                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt=""></img>}
+                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt="completed"></img>}
                 </div>
             </div>
             <div className={completedSteps >= stepNumber ? 'side-step-body border-completed' : 'side-step-body border'}>

@@ -31,7 +31,7 @@
         border-radius: 4px;
         margin-top: 50px;
         width: calc(100% - 20px);
-        height: 250px;
+        height: 180px;
         .user-details-container {
             height: 44px;
             display: flex;
@@ -49,11 +49,10 @@
         }
 
         .container-username-token {
-            font-weight: 500;
-            font-size: 14px;
+            font-size: 16px;
             margin-left: 20px;
             color: #2e2c34;
-            height: 90px;
+            height: calc(100% - 45px);
             display: flex;
             flex-direction: column;
             justify-content: space-evenly;
@@ -65,11 +64,11 @@
 
                 p {
                     margin: 0;
+                    font-family: 'InterSemiBold';
                 }
 
-                .copy-icon {
-                    padding: 7;
-                    height: 50;
+                img {
+                    margin-left:10px
                 }
             }
         }
@@ -85,7 +84,7 @@
         }
         .information {
             font-weight: 400;
-            font-size: 12px;
+            font-size: 14px;
             color: #b4b4b4;
             margin: 0;
         }

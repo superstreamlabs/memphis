@@ -2,6 +2,7 @@
     margin-left: 40px;
     margin-right: 40px;
     position: relative;
+    width: 75%;
     .sidebar-image {
         height: 20px;
     }
@@ -40,7 +41,7 @@
         }
     }
     .border {
-        border-left: 1px solid #efeef2;
+        border-left: 1px solid rgba(74, 73, 92, 0.2);
     }
     .border-completed {
         border-left: 1px solid #6557ff;

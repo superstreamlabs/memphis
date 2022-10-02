@@ -19,18 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import './style.scss';
+
 import React, { useState, useEffect, useContext } from 'react';
 import Lottie from 'lottie-react';
 import { CopyBlock, atomOneLight } from 'react-code-blocks';
+
 import SelectComponent from '../../../../components/select';
 import Button from '../../../../components/button';
 import successProd from '../../../../assets/images/dataProduced.svg';
 import successCons from '../../../../assets/images/stationsIconActive.svg';
-
 import { GetStartedStoreContext } from '..';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import './style.scss';
 import TitleComponent from '../../../../components/titleComponent';
 import { CODE_EXAMPLE } from '../../../../const/SDKExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
@@ -159,7 +160,7 @@ const ProduceConsumeData = (props) => {
                             backgroundColorType="none"
                             borderColorType="gray"
                             radiusType="semi-round"
-                            width="450px"
+                            width="250px"
                             height="50px"
                             options={props.languages}
                             onChange={(e) => handleSelectLang(e)}
@@ -198,7 +199,7 @@ const ProduceConsumeData = (props) => {
                             backgroundColorType="none"
                             borderColorType="gray"
                             radiusType="semi-round"
-                            width="450px"
+                            width="250px"
                             height="50px"
                             options={props.languages}
                             onChange={(e) => handleSelectLang(e)}
@@ -267,7 +268,7 @@ const ProduceConsumeData = (props) => {
                             backgroundColorType="none"
                             borderColorType="gray"
                             radiusType="semi-round"
-                            width="450px"
+                            width="250px"
                             height="50px"
                             options={props.languages}
                             onChange={(e) => handleSelectLang(e)}

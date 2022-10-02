@@ -185,6 +185,7 @@ const GetStarted = (props) => {
                         <Button
                             width="120px"
                             height="36px"
+                            fontFamily="InterSemiBold"
                             placeholder="Skip for now"
                             radiusType="circle"
                             backgroundColorType="none"
