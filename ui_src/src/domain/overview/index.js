@@ -73,6 +73,22 @@ function OverView() {
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [allStations, setAllStations] = useState([]);
     const [showWelcome, setShowWelcome] = useState(false);
+    const [dataSentences, setDataSentences] = useState([
+        `“Data is the new oil.” — Clive Humby`,
+        `“With data collection, ‘the sooner the better’ is always the best answer.” — Marissa Mayer`,
+        `“Data are just summaries of thousands of stories – tell a few of those stories to help make the data meaningful.” — Chip and Dan Heath`,
+        `“Data really powers everything that we do.” — Jeff Weiner`,
+        `“Without big data, you are blind and deaf and in the middle of a freeway.” — Geoffrey Moore`
+    ]);
+    const [dataSentence, setDataSentence] = useState(dataSentences[0]);
+
+    const getRandomInt = (max) => {
+        return Math.floor(Math.random() * max);
+    };
+
+    const generateSentence = () => {
+        setDataSentence(dataSentences[getRandomInt(5)]);
+    };
 
     const getOverviewData = async () => {
         setisLoading(true);
@@ -98,6 +114,7 @@ function OverView() {
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))
                 : capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME))
         );
+        generateSentence();
     }, []);
 
     useEffect(() => {
@@ -187,7 +204,7 @@ function OverView() {
                     </div>
                 </div>
             ) : (
-                <GetStarted username={username} />
+                <GetStarted username={username} dataSentence={dataSentence} />
             )}
             <Modal
                 header="Your station details"

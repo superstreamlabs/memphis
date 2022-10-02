@@ -32,12 +32,10 @@ import GrayAppUserIcon from '../../../../assets/images/grayAppUserIcon.svg';
 import GrayProduceDataImg from '../../../../assets/images/grayProduceDataImg.svg';
 import GrayConsumeDataImg from '../../../../assets/images/grayConsumeDataImg.svg';
 import GrayfinishStep from '../../../../assets/images/grayFinish.svg';
-import verticalLine from '../../../../assets/images/verticalLine.svg';
 import CompletedStep from '../../../../assets/images/completedStep.svg';
-import purpleVerticalLine from '../../../../assets/images/purpleVerticalLine.svg';
 
 const SideStep = (props) => {
-    const { stepNumber, stepName, currentStep, completedSteps } = props;
+    const { stepNumber, stepName, currentStep, completedSteps, stepsDescription } = props;
 
     const getDocLink = () => {
         switch (stepNumber) {
@@ -90,13 +88,14 @@ const SideStep = (props) => {
                 {getIcon()}
                 <div className="step-name-completed">
                     <p className={currentStep === stepNumber ? 'step-name curr-step-name' : 'step-name'}>{stepName}</p>
-                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt={verticalLine}></img>}
+                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt=""></img>}
                 </div>
             </div>
             <div className={completedSteps >= stepNumber ? 'side-step-body border-completed' : 'side-step-body border'}>
                 {stepNumber !== 5 && (
                     <p className={currentStep === stepNumber ? 'step-description curr-step-name' : 'step-description'}>
-                        Lorem Ipsum is simply dummy text of the printing and typesetting industry.{' '}
+                        {stepsDescription}
+                        {'. '}
                         <a href={getDocLink()} target="_blank" rel="noopener noreferrer">
                             Learn more
                         </a>

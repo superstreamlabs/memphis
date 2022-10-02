@@ -102,6 +102,21 @@ const GetStarted = (props) => {
     const createStationFormRef = useRef(null);
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
 
+    const getStepsDescription = (stepNumber) => {
+        switch (stepNumber) {
+            case 1:
+                return 'A station is a distributed unit that stores the produced data';
+            case 2:
+                return 'Each data producer/consumer has to have a username and a connection-token';
+            case 3:
+                return 'A producer is the source application/service that pushes data or messages to the broker or station';
+            case 4:
+                return 'A consumer is the application/service that consume data or messages from the broker or station';
+            case 5:
+                return 'Congratulations - You’ve created your first broker app';
+        }
+    };
+
     const SideStepList = () => {
         return (
             <div className="sidebar-component">
@@ -112,6 +127,7 @@ const GetStarted = (props) => {
                             currentStep={getStartedState?.currentStep}
                             stepNumber={index + 1}
                             stepName={value.stepName}
+                            stepsDescription={getStepsDescription(index + 1)}
                             completedSteps={getStartedState?.completedSteps}
                             onSideBarClick={(e) => getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: e })}
                         />
@@ -158,11 +174,11 @@ const GetStarted = (props) => {
                 <div className="sidebar-section">
                     <div className="welcome-section">
                         <p className="getstarted-welcome">Welcome, {username}</p>
-                        <p className="getstarted-description">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+                        <p className="getstarted-description">{props.dataSentence}</p>
                     </div>
                     <div className="getstarted-message-container">
                         <p className="getstarted-message">Let’s get you started</p>
-                        <p className="getstarted-message-description">Setup your account details to get more form the platform</p>
+                        <p className="getstarted-message-description">Your streaming journey with Memphis starts here</p>
                     </div>
                     <SideStepList />
                     <div className="skip-btn">
@@ -187,7 +203,7 @@ const GetStarted = (props) => {
                         <GetStartedItem
                             headerImage={GetStartedIcon}
                             headerTitle="Create Station"
-                            headerDescription="Station is the object that stores data"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
                         >
@@ -198,7 +214,7 @@ const GetStarted = (props) => {
                         <GetStartedItem
                             headerImage={AppUserIcon}
                             headerTitle="Create user"
-                            headerDescription="User of type application is for connecting apps"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
                         >
@@ -209,7 +225,7 @@ const GetStarted = (props) => {
                         <GetStartedItem
                             headerImage={ProduceDataImg}
                             headerTitle="Produce data"
-                            headerDescription="Choose your preferred SDK, copy and paste the code to your IDE, and run your app to produce data to memphis station"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
                         >
@@ -220,7 +236,7 @@ const GetStarted = (props) => {
                         <GetStartedItem
                             headerImage={ConsumeDataImg}
                             headerTitle="Consume data"
-                            headerDescription="Choose your preferred SDK, copy and paste the code to your IDE, and run your app to consume data from memphis station"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
                         >
@@ -231,7 +247,7 @@ const GetStarted = (props) => {
                         <GetStartedItem
                             headerImage={finishStep}
                             headerTitle="You are ready to roll"
-                            headerDescription="Congratulations - You’ve created your first broker app"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
                             style={finishStyle}
