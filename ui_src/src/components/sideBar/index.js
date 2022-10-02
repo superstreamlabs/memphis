@@ -102,24 +102,6 @@ function SideBar() {
         }
     };
 
-    const items = [
-        {
-            key: 'subMenu',
-            icon: (
-                <div className="sub-icon-wrapper">
-                    <img
-                        className="sandboxUserImg"
-                        src={localStorage.getItem('profile_pic') || botUrl} // profile_pic is available only in sandbox env
-                        referrerPolicy="no-referrer"
-                        width={localStorage.getItem('profile_pic') ? 35 : 25}
-                        height={localStorage.getItem('profile_pic') ? 35 : 25}
-                        alt="bot"
-                    ></img>
-                </div>
-            )
-        }
-    ];
-
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
@@ -196,8 +178,8 @@ function SideBar() {
                 </div>
             </div>
             <div id="e2e-tests-settings-btn" className="bottom-icons">
-                <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click" items={items}>
-                    {/* <SubMenu
+                <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click">
+                    <SubMenu
                         key="subMenu"
                         icon={
                             <div className="sub-icon-wrapper">
@@ -247,7 +229,7 @@ function SideBar() {
                                 </div>
                             </Menu.Item>
                         </Menu.ItemGroup>
-                    </SubMenu> */}
+                    </SubMenu>
                 </Menu>
                 <version is="x3d">
                     <p>v{systemVersion}</p>

@@ -39,6 +39,7 @@ import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
+import CheckboxComponent from '../../../../components/checkBox';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -309,8 +310,8 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse header="Details" status={false} data={messageDetails.details} />
+                                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                         </div>
@@ -321,7 +322,8 @@ const Messages = () => {
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
-                            <Checkbox checked={isCheckAll} id="selectAll" onChange={onCheckedAll} name="selectAll" />
+                            <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
+
                             <p>Message</p>
                         </div>
                         <p className="right-coulmn">Details</p>
@@ -336,8 +338,7 @@ const Messages = () => {
                                         onClick={() => onSelectedRow(true, message._id, id)}
                                     >
                                         {tabValue === 'Dead-letter' && (
-                                            <Checkbox
-                                                key={message._id}
+                                            <CheckboxComponent
                                                 checked={isCheck.includes(message._id)}
                                                 id={message._id}
                                                 onChange={handleCheckedClick}
@@ -354,8 +355,8 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse header="Details" status={false} data={messageDetails.details} />
+                                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                             <Button

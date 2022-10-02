@@ -10,6 +10,9 @@
         margin-top: 25px;
         gap: 10px;
         justify-content: flex-end;
+        .search-input-container{
+            margin-right: 0;
+        }
     }
 
     .schema-list {
@@ -55,3 +58,6 @@
     max-height: calc(74%);
 }
 
+.ant-drawer-header{
+    border-bottom-color: #ECECEC;
+}

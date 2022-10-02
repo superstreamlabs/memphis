@@ -238,7 +238,7 @@ const ProduceConsumList = (props) => {
                     {props.producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
                     {!props.producer && cgsList?.length > 0 && (
                         <Space direction="vertical">
-                            <CustomCollapse status={false} header="Details" defaultOpen={true} data={cgDetails.details} />
+                            <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
                             <MultiCollapse header="Consumers" data={cgDetails.consumers} />
                         </Space>
                     )}

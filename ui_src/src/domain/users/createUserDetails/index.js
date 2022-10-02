@@ -147,7 +147,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                 height="40px"
                                 options={userTypeOptions}
                                 onChange={(e) => handleSelectUserType(e)}
-                                dropdownClassName="select-options"
+                                popupClassName="select-options"
                             />
                         </Form.Item>
                     </div>

@@ -161,7 +161,7 @@ const ProduceConsumeData = (props) => {
                             height="50px"
                             options={props.languages}
                             onChange={(e) => handleSelectLang(e)}
-                            dropdownClassName="select-options"
+                            popupClassName="select-options"
                         />
                     </div>
                     <div className="installation">

@@ -1,0 +1,44 @@
+.select-version-container{
+    .select{
+    }
+}
+.select-version-options{
+    background: #FFFFFF;
+    border: 1px solid #F0F0F0;
+    box-shadow: 0px 10px 10px rgba(16, 10, 85, 0.1);
+    border-radius: 8px;
+    width: 300px !important;
+    .schema-name{
+        font-weight: 600;
+        font-size: 16px;
+        margin: 0;
+    }
+    .scheme-details{
+        font-size: 12px;
+        font-family: 'InterSemiBold';
+        color: #8F8F8F;
+        display: flex;
+        align-items:center;
+        p{
+            margin: 0;
+            margin-right: 8px;
+        }
+        svg {
+            margin-right: 8px;
+            font-size: 8px;
+        }
+    }
+    .ant-select-item-option{
+        margin: 8px;
+        border-radius: 8px;
+    }
+    .ant-select-item-option-active:not(.ant-select-item-option-disabled){
+        background: rgba(101, 87, 255, 0.1);
+        border-radius: 8px;
+        margin: 8px;
+    }
+    .ant-select-item-option-content{
+        display: flex;
+        flex-direction: column;
+    }
+}

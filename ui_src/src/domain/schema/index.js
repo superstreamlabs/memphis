@@ -35,7 +35,216 @@ import SchemaBox from './components/schemaBox';
 
 function SchemaManagment() {
     const [state, dispatch] = useContext(Context);
-    const [schemaList, setSchemaList] = useState([{ d: 1 }]);
+    const [isCheck, setIsCheck] = useState([]);
+    const [isCheckAll, setIsCheckAll] = useState(false);
+    const [schemaList, setSchemaList] = useState([
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock1',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock2',
+            used: true,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock3',
+            used: true,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: true,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: false,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock1',
+            used: true,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        },
+        {
+            id: 'jhjhjkhkjhkj',
+            name: 'schema_mock',
+            used: true,
+            type: 'avro',
+            created_by: 'avraham',
+            tags: [
+                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
+                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
+                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
+                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+            ],
+            creation_date: '2022-09-21T14:28:02.539503+03:00',
+            versions: [
+                { id: 1, label: '1.0', name: 'schema_mock2', created_by: 'avraham' },
+                { id: 2, label: '2.0', name: 'schema_mock1', created_by: 'avraham' }
+            ]
+        }
+    ]);
     const [isLoading, setisLoading] = useState(false);
 
     const getSchemas = async () => {
@@ -55,6 +264,24 @@ function SchemaManagment() {
         getSchemas();
     }, []);
 
+    const onCheckedAll = (e) => {
+        setIsCheckAll(!isCheckAll);
+        setIsCheck(schemaList.map((li) => li.id));
+        if (isCheckAll) {
+            setIsCheck([]);
+        }
+    };
+
+    const handleCheckedClick = (e) => {
+        const { id, checked } = e.target;
+        setIsCheck([...isCheck, id]);
+        if (!checked) {
+            setIsCheck(isCheck.filter((item) => item !== id));
+        }
+        if (isCheck.length === 1 && !checked) {
+            setIsCheckAll(false);
+        }
+    };
     return (
         <div className="schema-container">
             <h1 className="main-header-h1">Schema</h1>
@@ -128,11 +355,7 @@ function SchemaManagment() {
                     </div>
                 )}
                 {schemaList.map((schema, index) => {
-                    return (
-                        <div>
-                            <SchemaBox />
-                        </div>
-                    );
+                    return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.id)} handleCheckedClick={handleCheckedClick} />;
                 })}
                 {!isLoading && schemaList.length === 0 && (
                     <div className="no-schema-to-display">

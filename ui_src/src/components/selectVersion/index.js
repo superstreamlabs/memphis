@@ -24,75 +24,43 @@ import './style.scss';
 import { Select } from 'antd';
 import React from 'react';
 
-import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
 import Arrow from '../../assets/images/arrow.svg';
+import { FiberManualRecord } from '@material-ui/icons';
 
 const { Option } = Select;
 
-const SelectComponent = (props) => {
-    const {
-        options = [],
-        width,
-        onChange,
-        colorType,
-        value,
-        backgroundColorType,
-        borderColorType,
-        popupClassName,
-        boxShadowsType,
-        radiusType,
-        size,
-        dropdownStyle,
-        height,
-        customOptions,
-        disabled
-    } = props;
-
+const SelectVersion = ({ options, onChange, value }) => {
     const handleChange = (e) => {
         onChange(e);
     };
 
-    const color = getFontColor(colorType);
-    const backgroundColor = getBackgroundColor(backgroundColorType);
-    const borderColor = getBorderColor(borderColorType);
-    const boxShadow = getBoxShadows(boxShadowsType);
-    const borderRadius = getBorderRadius(radiusType);
-
-    const fieldProps = {
-        onChange: handleChange,
-        disabled,
-        style: {
-            width,
-            color,
-            backgroundColor,
-            boxShadow,
-            borderColor,
-            borderRadius,
-            height: height || '40px'
-        }
-    };
-
     return (
-        <div className="select-container">
+        <div className="select-version-container">
             <Select
-                {...fieldProps}
                 className="select"
-                size={size}
-                popupClassName={popupClassName}
                 value={value}
+                bordered={false}
                 suffixIcon={<img src={Arrow} alt="select-arrow" />}
-                dropdownStyle={dropdownStyle}
+                onChange={handleChange}
+                // open
+                placement="bottomRight"
+                popupClassName="select-version-options"
             >
-                {customOptions && options}
-                {!customOptions &&
-                    options.map((option) => (
-                        <Option key={option?.id || option} disabled={option?.disabled || false}>
-                            {option?.name || option}
+                {options.map((option) => {
+                    return (
+                        <Option key={option?.id}>
+                            <p className="schema-name">{option?.name}</p>
+                            <div className="scheme-details">
+                                <p>Version : {option?.label}</p>
+                                <FiberManualRecord />
+                                <p>Created by {option?.created_by}</p>
+                            </div>
                         </Option>
-                    ))}
+                    );
+                })}
             </Select>
         </div>
     );
 };
 
-export default SelectComponent;
+export default SelectVersion;

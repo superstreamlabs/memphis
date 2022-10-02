@@ -21,28 +21,70 @@
 
 import './style.scss';
 
-import { CheckBox } from '@material-ui/icons';
-import React from 'react';
+import React, { useState } from 'react';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
+import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
+import CheckboxComponent from '../../../../components/checkBox';
+import { parsingDate } from '../../../../services/valueConvertor';
+import Tag from '../../../../components/tag';
+import { Drawer, Button, Space } from 'antd';
+import SchemaDetails from '../schemaDetails';
+import TagsList from '../../../../components/tagsList';
 
-function SchemaBox() {
+function SchemaBox({ schema, handleCheckedClick, isCheck }) {
+    const [open, setOpen] = useState(false);
+    const [size, setSize] = useState();
+
+    const openSchemaDetails = () => {
+        setSize('large');
+        setOpen(true);
+    };
+
+    const onClose = () => {
+        setOpen(false);
+    };
     return (
-        <div className="schema-box-wrapper">
-            <header is="x3d">
-                <CheckBox />
-                <div className="schema-id">
-                    <p>1D1F1R2T3W</p>
-                </div>
-                <div className="is-used">
-                    <img src={usedIcond} />
-                </div>
-                <div className="menu">
-                    <p>***</p>
-                </div>
-            </header>
-            <title is="x3d"></title>
-        </div>
+        <>
+            <div onClick={openSchemaDetails} key={schema.name} className="schema-box-wrapper">
+                <header is="x3d">
+                    <div className="header-wrapper">
+                        <CheckboxComponent checked={isCheck} id={schema.id} onChange={handleCheckedClick} name={schema.id} />
+                        <div className="schema-name">
+                            <p>{schema.name}</p>
+                        </div>
+                        <div className="is-used">
+                            <img src={schema.used ? usedIcond : notUsedIcond} />
+                            {schema.used && <p className="used">Used</p>}
+                            {!schema.used && <p className="not-used"> Not Used</p>}
+                        </div>
+                        <div className="menu">
+                            <p>***</p>
+                        </div>
+                    </div>
+                </header>
+                <type is="x3d">
+                    <div>
+                        <p>Type : </p>
+                        <span>{schema.type}</span>
+                    </div>
+                    <div>
+                        <p>Created by : </p>
+                        <span>{schema.created_by}</span>
+                    </div>
+                </type>
+                <tags is="x3d">
+                    <TagsList tags={schema.tags} />
+                </tags>
+                <date is="x3d">
+                    <img src={createdDateIcon} />
+                    <p>{parsingDate(schema.creation_date)}</p>
+                </date>
+            </div>
+            <Drawer title={schema?.name} placement="right" size={'large'} onClose={onClose} open={open} maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}>
+                <SchemaDetails schema={schema} />
+            </Drawer>
+        </>
     );
 }
 
