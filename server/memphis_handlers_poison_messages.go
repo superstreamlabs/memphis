@@ -56,12 +56,14 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 
-	stationName := message["stream"].(string)
+	streamName := message["stream"].(string)
+	stationName := StationNameFromStreamName(streamName)
 	cgName := message["consumer"].(string)
+	cgName = revertDelimiters(cgName)
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
-	poisonMessageContent, err := s.GetMessage(stationName, uint64(messageSeq))
+	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
@@ -109,7 +111,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		DeliveriesCount: int(deliveriesCount),
 	}
 	filter := bson.M{
-		"station_name":      stationName,
+		"station_name":      stationName.Ext(),
 		"message_seq":       int(messageSeq),
 		"producer.name":     producedByHeader,
 		"message.time_sent": poisonMessageContent.Time,
@@ -184,9 +186,9 @@ func RemovePoisonMsgsByStation(stationName string) error {
 	return nil
 }
 
-func RemovePoisonedCg(stationName, cgName string) error {
+func RemovePoisonedCg(stationName StationName, cgName string) error {
 	_, err := poisonMessagesCollection.UpdateMany(context.TODO(),
-		bson.M{"station_name": stationName},
+		bson.M{"station_name": stationName.Ext()},
 		bson.M{"$pull": bson.M{"poisoned_cgs": bson.M{"cg_name": cgName}}},
 	)
 	if err != nil {
@@ -207,10 +209,10 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	return int(count), nil
 }
 
-func GetPoisonedCgsByMessage(stationName string, message models.MessageDetails) ([]models.PoisonedCg, error) {
+func GetPoisonedCgsByMessage(stationNameExt string, message models.MessageDetails) ([]models.PoisonedCg, error) {
 	var poisonMessage models.PoisonMessage
 	err := poisonMessagesCollection.FindOne(context.TODO(), bson.M{
-		"station_name":      stationName,
+		"station_name":      stationNameExt,
 		"message_seq":       message.MessageSeq,
 		"producer.name":     message.ProducedBy,
 		"message.time_sent": message.TimeSent,

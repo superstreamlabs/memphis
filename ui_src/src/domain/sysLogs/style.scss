@@ -4,10 +4,12 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-    p{
+    p {
         margin: 0;
     }
-    header{
+    header {
         margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
     }
 }

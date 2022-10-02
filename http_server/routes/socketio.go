@@ -69,8 +69,12 @@ func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetail
 }
 
 func getStationOverviewData(stationName string, h *server.Handlers) (models.StationOverviewData, error) {
-	stationName = strings.ToLower(stationName)
-	exist, station, err := server.IsStationExist(stationName)
+	sn, err := server.StationNameFromStr(stationName)
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
+	exist, station, err := server.IsStationExist(sn)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -82,7 +86,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(sn, station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -129,7 +133,7 @@ func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
 
-	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "")
+	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "", false)
 }
 
 func ginMiddleware() gin.HandlerFunc {

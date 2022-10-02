@@ -29,6 +29,7 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/models"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -121,7 +122,8 @@ func IsUserExist(username string) (bool, models.User, error) {
 	return true, user, nil
 }
 
-func IsStationExist(stationName string) (bool, models.Station, error) {
+func IsStationExist(sn StationName) (bool, models.Station, error) {
+	stationName := sn.Ext()
 	filter := bson.M{
 		"name": stationName,
 		"$or": []interface{}{
@@ -175,8 +177,9 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, bool, error) {
+func CreateDefaultStation(s *Server, sn StationName, username string) (models.Station, bool, error) {
 	var newStation models.Station
+	stationName := sn.Ext()
 	newStation = models.Station{
 		ID:              primitive.NewObjectID(),
 		Name:            stationName,
@@ -192,7 +195,7 @@ func CreateDefaultStation(s *Server, stationName string, username string) (model
 		Functions:       []models.Function{},
 	}
 
-	err := s.CreateStream(newStation)
+	err := s.CreateStream(sn, newStation)
 	if err != nil {
 		return newStation, false, err
 	}
@@ -243,11 +246,13 @@ func shouldSendAnalytics() (bool, error) {
 func validateName(name, objectType string) error {
 	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
 	tooLongErrStr := fmt.Sprintf("%v should be under 32 characters", objectType)
-	invalidCharErrStr := fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v")
+	invalidCharErrStr := fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v", objectType)
+	firstLetterErrStr := fmt.Sprintf("%v name can not start or end with non alphanumeric character", objectType)
 
 	emptyErr := errors.New(emptyErrStr)
 	tooLongErr := errors.New(tooLongErrStr)
 	invalidCharErr := errors.New(invalidCharErrStr)
+	firstLetterErr := errors.New(firstLetterErrStr)
 
 	if len(name) == 0 {
 		return emptyErr
@@ -263,5 +268,23 @@ func validateName(name, objectType string) error {
 	if !validName {
 		return invalidCharErr
 	}
+
+	if name[0:1] == "." || name[0:1] == "-" || name[0:1] == "_" || name[len(name)-1:] == "." || name[len(name)-1:] == "-" || name[len(name)-1:] == "_" {
+		return firstLetterErr
+	}
+
 	return nil
+}
+
+const (
+	delimiterToReplace   = "."
+	delimiterReplacement = "#"
+)
+
+func replaceDelimiters(name string) string {
+	return strings.Replace(name, delimiterToReplace, delimiterReplacement, -1)
+}
+
+func revertDelimiters(name string) string {
+	return strings.Replace(name, delimiterReplacement, delimiterToReplace, -1)
 }
