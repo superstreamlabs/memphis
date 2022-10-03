@@ -56,6 +56,6 @@ type RemoveTagSchema struct {
 	EntityName string `json:"entity_name"`
 }
 
-type GetAllTagsSchema struct {
+type GetTagsSchema struct {
 	EntityType string `json:"entity_type" bsom:"entity_type"`
 }

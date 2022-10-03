@@ -30,7 +30,7 @@ import (
 func InitializeTagsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	tagsHandler := h.Tags
 	tagsRoutes := router.Group("/tags")
-	tagsRoutes.GET("/getTags", tagsHandler.GetAllTags)
+	tagsRoutes.GET("/getTags", tagsHandler.GetTags)
 	tagsRoutes.DELETE("/removeTag", tagsHandler.RemoveTag)
 	tagsRoutes.POST("/createTag", tagsHandler.CreateTag)
 }

@@ -393,8 +393,8 @@ func (th TagsHandler) GetTagsByUser(user_id primitive.ObjectID) ([]models.Tag, e
 	return tags, nil
 }
 
-func (th TagsHandler) GetAllTags(c *gin.Context) {
-	var body models.GetAllTagsSchema
+func (th TagsHandler) GetTags(c *gin.Context) {
+	var body models.GetTagsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -405,52 +405,52 @@ func (th TagsHandler) GetAllTags(c *gin.Context) {
 	case "stations":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	case "users":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"users": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	case "schemas":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	default:
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{})
 		if err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetAllTags error: " + err.Error())
+			serv.Errorf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
