@@ -374,6 +374,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 func (th TagsHandler) GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
 	var tags []models.Tag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": station_id})
+
 	if err != nil {
 		return tags, err
 	}
