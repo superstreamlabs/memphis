@@ -74,6 +74,8 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 }
 
 func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
+	s.memphis.jsApiReqsMu.Lock()
+	defer s.memphis.jsApiReqsMu.Unlock()
 	reply := s.getJsApiReplySubject()
 
 	timeout := time.After(5 * time.Second)
