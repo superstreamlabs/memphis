@@ -23,7 +23,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strings"
@@ -47,16 +46,16 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	name = strings.ToLower(name)
 	err := validateTagName(name)
 	if err != nil {
-		serv.Warnf("failed creating a tag: %v", err.Error())
+		serv.Errorf("Failed creating a tag: %v", err.Error())
 		return
 	}
 	exist, _, err := IsTagExist(name)
 	if err != nil {
-		serv.Warnf("failed creating a tag: %v", err.Error())
+		serv.Errorf("Failed creating a tag: %v", err.Error())
 		return
 	}
 	if exist {
-		serv.Warnf("Tag with that name already exists")
+		serv.Errorf("Tag with that name already exists")
 		return
 	}
 	var newTag models.Tag
@@ -65,35 +64,40 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	userArr := []primitive.ObjectID{}
 	switch from {
 	case "station":
-		exist, station, err := IsStationExist(from_name)
+		station_name, err := StationNameFromStr(from_name)
 		if err != nil {
-			serv.Warnf("failed creating a tag: %v", err.Error())
+			serv.Errorf("Failed creating a tag: %v", err.Error())
+			return
+		}
+		exist, station, err := IsStationExist(station_name)
+		if err != nil {
+			serv.Errorf("Failed creating a tag: %v", err.Error())
 			return
 		}
 		if !exist {
-			serv.Warnf("Station with this name does not exist")
+			serv.Errorf("Station with this name does not exist")
 			return
 		}
 		stationArr = append(stationArr, station.ID)
 	case "schema":
 		exist, schema, err := IsSchemaExist(from_name)
 		if err != nil {
-			serv.Warnf("failed creating a tag: %v", err.Error())
+			serv.Errorf("Failed creating a tag: %v", err.Error())
 			return
 		}
 		if !exist {
-			serv.Warnf("Schema with this name does not exist")
+			serv.Errorf("Schema with this name does not exist")
 			return
 		}
 		schemaArr = append(schemaArr, schema.ID)
 	case "user":
 		exist, user, err := IsUserExist(from_name)
 		if err != nil {
-			serv.Warnf("failed creating a tag: %v", err.Error())
+			serv.Errorf("Failed creating a tag: %v", err.Error())
 			return
 		}
 		if !exist {
-			serv.Warnf("User with this name does not exist")
+			serv.Errorf("User with this name does not exist")
 			return
 		}
 		userArr = append(userArr, user.ID)
@@ -109,7 +113,7 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	}
 	_, err = tagsCollection.InsertOne(context.TODO(), newTag)
 	if err != nil {
-		serv.Warnf("failed creating a tag: %v", err.Error())
+		serv.Errorf("Failed creating a tag: %v", err.Error())
 		return
 	}
 }
@@ -118,12 +122,12 @@ func AddTag(name string, to string, to_name string, background_color string, tex
 	name = strings.ToLower(name)
 	err := validateTagName(name)
 	if err != nil {
-		serv.Warnf("failed creating a tag: %v", err.Error())
+		serv.Errorf("Failed creating a tag: %v", err.Error())
 		return
 	}
 	exist, tag, err := IsTagExist(name)
 	if err != nil {
-		serv.Warnf("failed creating a tag: %v", err.Error())
+		serv.Errorf("Failed creating a tag: %v", err.Error())
 		return
 	}
 	if !exist {
@@ -132,120 +136,126 @@ func AddTag(name string, to string, to_name string, background_color string, tex
 	}
 	switch to {
 	case "station":
-		exist, station, err := IsStationExist(to_name)
+		station_name, err := StationNameFromStr(to_name)
 		if err != nil {
-			serv.Warnf("failed creating a tag: %v", err.Error())
+			serv.Errorf("Failed creating a tag: %v", err.Error())
+			return
+		}
+		exist, station, err := IsStationExist(station_name)
+		if err != nil {
+			serv.Errorf("Failed creating a tag: %v", err.Error())
 			return
 		}
 		if !exist {
-			serv.Warnf("Station with this name does not exist")
+			serv.Errorf("Station with this name does not exist")
 			return
 		}
 		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"stations": station.ID}})
 		if err != nil {
-			serv.Warnf("failed adding tag: %v", err.Error())
+			serv.Errorf("Failed adding tag: %v", err.Error())
 			return
 		}
 
 	case "schema":
 		exist, schema, err := IsSchemaExist(to_name)
 		if err != nil {
-			serv.Warnf("failed creating a tag: %v", err.Error())
+			serv.Errorf("Failed creating a tag: %v", err.Error())
 			return
 		}
 		if !exist {
-			serv.Warnf("Schema with this name does not exist")
+			serv.Errorf("Schema with this name does not exist")
 			return
 		}
 		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"schemas": schema.ID}})
 		if err != nil {
-			serv.Warnf("failed adding tag: %v", err.Error())
+			serv.Errorf("Failed adding tag: %v", err.Error())
 			return
 		}
 	case "user":
 		exist, user, err := IsUserExist(to_name)
 		if err != nil {
-			serv.Warnf("failed creating a tag: %v", err.Error())
+			serv.Errorf("Failed creating a tag: %v", err.Error())
 			return
 		}
 		if !exist {
-			serv.Warnf("User with this name does not exist")
+			serv.Errorf("User with this name does not exist")
 			return
 		}
 		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"users": user.ID}})
 		if err != nil {
-			serv.Warnf("failed adding tag: %v", err.Error())
+			serv.Errorf("Failed adding tag: %v", err.Error())
 			return
 		}
 	}
 }
 
-func DeleteTagsByStation(station_name string) {
+func DeleteTagsByStation(name string) {
+	station_name, err := StationNameFromStr(name)
+	if err != nil {
+		serv.Errorf("Failed creating a tag: %v", err.Error())
+		return
+	}
 	exist, station, err := IsStationExist(station_name)
 	if err != nil {
-		serv.Warnf("failed deleting tags: %v", err.Error())
+		serv.Errorf("Failed deleting tags: %v", err.Error())
 		return
 	}
 	if !exist {
-		serv.Warnf("Station with this name does not exist")
+		serv.Errorf("Station with this name does not exist")
 		return
 	}
 	_, err = tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"stations": station.ID}})
 	if err != nil {
-		serv.Warnf("failed deleting tags: %v", err.Error())
+		serv.Errorf("Failed deleting tags: %v", err.Error())
 		return
 	}
 }
 
-func DeleteTagsBySchema(schema_name string) {
-	exist, schema, err := IsSchemaExist(schema_name)
+func DeleteTagsBySchema(name string) {
+	exist, schema, err := IsSchemaExist(name)
 	if err != nil {
-		serv.Warnf("failed deleting tags: %v", err.Error())
+		serv.Errorf("Failed deleting tags: %v", err.Error())
 		return
 	}
 	if !exist {
-		serv.Warnf("Schema with this name does not exist")
+		serv.Errorf("Schema with this name does not exist")
 		return
 	}
 	_, err = tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"schemas": schema.ID}})
 	if err != nil {
-		serv.Warnf("failed deleting tags: %v", err.Error())
+		serv.Errorf("Failed deleting tags: %v", err.Error())
 		return
 	}
 }
 
-func DeleteTagsByUser(user_name string) {
-	exist, user, err := IsUserExist(user_name)
+func DeleteTagsByUser(name string) {
+	exist, user, err := IsUserExist(name)
 	if err != nil {
-		serv.Warnf("failed deleting tags: %v", err.Error())
+		serv.Errorf("Failed deleting tags: %v", err.Error())
 		return
 	}
 	if !exist {
-		serv.Warnf("User with this name does not exist")
+		serv.Errorf("User with this name does not exist")
 		return
 	}
 	_, err = tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"users": user.ID}})
 	if err != nil {
-		serv.Warnf("failed deleting tags: %v", err.Error())
+		serv.Errorf("Failed deleting tags: %v", err.Error())
 		return
 	}
 }
 
-func checkIfEmptyAndDelete(name string) error {
-	exist, tag, err := IsTagExist(name)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		return errors.New("Tag with this name does not exist")
-	}
-	if len(tag.Schemas) == 0 && len(tag.Stations) == 0 && len(tag.Users) == 0 {
-		_, err = tagsCollection.DeleteOne(context.TODO(), bson.M{"_id": tag.ID})
-		if err != nil {
-			return err
+func checkIfEmptyAndDelete(name string) {
+	exist, tag, _ := IsTagExist(name)
+	if exist {
+
+		if len(tag.Schemas) == 0 && len(tag.Stations) == 0 && len(tag.Users) == 0 {
+			_, err := tagsCollection.DeleteOne(context.TODO(), bson.M{"_id": tag.ID})
+			if err != nil {
+				serv.Warnf("Delete tag error:" + err.Error())
+			}
 		}
 	}
-	return nil
 }
 
 func (th TagsHandler) CreateTag(c *gin.Context) {
@@ -257,7 +267,7 @@ func (th TagsHandler) CreateTag(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	err := validateTagName(name)
 	if err != nil {
-		serv.Warnf("failed creating tag: %v", err.Error())
+		serv.Errorf("Failed creating tag: %v", err.Error())
 		return
 	}
 }
@@ -288,7 +298,13 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	}
 	switch body.From {
 	case "station":
-		exist, station, err := IsStationExist(body.FromName)
+		station_name, err := StationNameFromStr(body.FromName)
+		if err != nil {
+			serv.Errorf("RemoveTag error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		exist, station, err := IsStationExist(station_name)
 		if err != nil {
 			serv.Errorf("RemoveTag error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -351,11 +367,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		return
 	}
 
-	err = checkIfEmptyAndDelete(name)
-	if err != nil {
-		serv.Warnf("failed deleting tag: %v", err.Error())
-		return
-	}
+	checkIfEmptyAndDelete(name)
 	c.IndentedJSON(200, []string{})
 }
 
