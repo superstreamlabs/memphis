@@ -48,6 +48,7 @@ const StationsList = () => {
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [filterTerms, setFilterTerms] = useState([]);
 
     const createStationRef = useRef(null);
 
@@ -62,9 +63,14 @@ const StationsList = () => {
     }, [searchInput]);
 
     useEffect(() => {
+        handleFilter();
+    }, [filterTerms]);
+
+    useEffect(() => {
         if (searchInput !== '' && searchInput.length >= 2) {
             setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
         } else setFilteredList(stationsList);
+        handleFilter();
     }, [stationsList]);
 
     const getAllStations = async () => {
@@ -85,6 +91,14 @@ const StationsList = () => {
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
+    };
+
+    const handleFilter = () => {
+        const createdBy = [];
+        filterTerms[1]?.fields.forEach((item) => {
+            if (item.checked === true) createdBy.push(item.name);
+        });
+        setFilteredList(stationsList.filter((station) => station.station.created_by_user.includes(createdBy)));
     };
 
     const handleRegisterToStation = useCallback(() => {
@@ -161,7 +175,7 @@ const StationsList = () => {
                             onChange={handleSearch}
                             value={searchInput}
                         />
-                        <Filter />
+                        <Filter filtersUpdated={(e) => setFilterTerms(e)} />
                         <Button
                             className="modal-btn"
                             width="180px"

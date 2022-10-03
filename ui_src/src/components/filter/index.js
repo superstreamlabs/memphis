@@ -105,12 +105,12 @@ const Filter = (props) => {
             type: 'circle',
             fields: [
                 {
-                    name: 'Avraham',
+                    name: 'sveta@memphis.dev',
                     color: '#FFC633',
                     checked: false
                 },
                 {
-                    name: 'Sveta',
+                    name: 'root',
                     color: 'yellowGreen',
                     checked: false
                 }
@@ -132,6 +132,7 @@ const Filter = (props) => {
             });
         });
         setFilterCounter(counter);
+        props.filtersUpdated(filterFields);
         handleCloseMenu();
     };
 
@@ -161,12 +162,12 @@ const Filter = (props) => {
             {filtersConter > 0 && <div className="filter-counter">{filtersConter}</div>}
             <Popover id="long-menu" classes={{ paper: 'Menu c' }} anchorEl={anchorEl} onClose={handleCloseMenu} open={open}>
                 <CustomCollapse
-                    status={true}
                     header="Details"
                     data={filterFields}
                     onCheck={(filterGroup, filterField) => handleCheck(filterGroup, filterField)}
                     cancel={handleCancel}
                     confirm={handleConfirm}
+                    defaultOpen={true}
                 />
             </Popover>
         </div>

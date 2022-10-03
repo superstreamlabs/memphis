@@ -23,66 +23,143 @@ import './style.scss';
 import React, { useState, useEffect } from 'react';
 import { Collapse } from 'antd';
 import { Checkbox } from 'antd';
+import { Divider } from 'antd';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
-import StatusIndication from '../../components/indication';
-import Copy from '../../components/copy';
 import Button from '../button';
+
+// const CustomCollapse = (props) => {
+//     const [activeKey, setActiveKey] = useState(props.defaultOpen ? ['1'] : []);
+//     const onChange = (key) => {
+//         setActiveKey(key);
+//     };
+
+//     return (
+//         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="filter-collapse">
+//             <p className="filter-header">Filter</p>
+//             {props.data.map((filterGroup, filterGroupIndex = 0) => {
+//                 return (
+//                     <Panel
+//                         showArrow={false}
+//                         header={
+//                             <div className="collapse-header">
+//                                 <p className="title">{filterGroup.value}</p>
+//                                 <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+//                             </div>
+//                         }
+//                         key={filterGroup.name}
+//                     >
+//                         <div className="collapse-body">
+//                             {filterGroup.type === 'label' &&
+//                                 filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+//                                     return (
+//                                         <div className="label" key={filterField.name}>
+//                                             <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
+
+//                                             <label style={{ color: filterField.color, backgroundColor: filterField.background }}>{filterField.name}</label>
+//                                         </div>
+//                                     );
+//                                 })}
+//                             {filterGroup.type === 'circle' &&
+//                                 filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+//                                     return (
+//                                         <div className="circle" key={filterField.name}>
+//                                             <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
+//                                             <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
+//                                                 {filterField.name[0]}
+//                                             </p>
+//                                             <label>{filterField.name}</label>
+//                                         </div>
+//                                     );
+//                                 })}
+//                         </div>
+//                     </Panel>
+//                 );
+//             })}
+//             <div className="collapse-footer">
+//                 <Button
+//                     width={'100px'}
+//                     height="26px"
+//                     placeholder={'Cancle'}
+//                     colorType="black"
+//                     radiusType="circle"
+//                     backgroundColorType={'white'}
+//                     border={'gray'}
+//                     fontSize="12px"
+//                     fontWeight="bold"
+//                     htmlType="submit"
+//                     onClick={() => props.cancel()}
+//                 />
+//                 <Button
+//                     width={'100px'}
+//                     height="26px"
+//                     placeholder={'Confirm'}
+//                     colorType="white"
+//                     radiusType="circle"
+//                     backgroundColorType={'purple'}
+//                     fontSize="12px"
+//                     fontWeight="bold"
+//                     htmlType="submit"
+//                     onClick={() => props.confirm()}
+//                 />
+//             </div>
+//         </Collapse>
+//     );
+// };
 
 const { Panel } = Collapse;
 
 const CustomCollapse = (props) => {
-    const [activeKey, setActiveKey] = useState(props.defaultOpen ? ['1'] : []);
+    const [activeKey, setActiveKey] = useState(['0']);
     const onChange = (key) => {
         setActiveKey(key);
     };
 
-    useEffect(() => {
-        // console.log(props.data);
-    }, []);
-
     return (
-        <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="filter-collapse">
-            <p className="filter-header">Filter</p>
-            {props.data.map((filterGroup, filterGroupIndex = 0) => {
-                return (
-                    <Panel
-                        showArrow={false}
-                        header={
-                            <div className="collapse-header">
-                                <p className="title">{filterGroup.value}</p>
-                                <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
-                            </div>
-                        }
-                        key={filterGroup.name}
-                    >
-                        <div className="collapse-body">
-                            {filterGroup.type === 'label' &&
-                                filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
-                                    return (
-                                        <div className="label" key={filterField.name}>
-                                            <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
-
-                                            <label style={{ color: filterField.color, backgroundColor: filterField.background }}>{filterField.name}</label>
-                                        </div>
-                                    );
-                                })}
-                            {filterGroup.type === 'circle' &&
-                                filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
-                                    return (
-                                        <div className="circle" key={filterField.name}>
-                                            <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
-                                            <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
-                                                {filterField.name[0]}
-                                            </p>
-                                            <label>{filterField.name}</label>
-                                        </div>
-                                    );
-                                })}
+        <Collapse ghost defaultActiveKey={['0']} onChange={onChange} className="custom-collapse-filter">
+            <div className="collapse-header">Filter</div>
+            {props.data.map((filterGroup, filterGroupIndex = 0) => (
+                <Panel
+                    header={
+                        <div className="filter-header">
+                            <label className="title">{filterGroup.value}</label>
+                            <img
+                                className={activeKey?.includes(filterGroupIndex.toString()) ? 'collapse-arrow open' : 'collapse-arrow'}
+                                src={CollapseArrow}
+                                alt="collapse-arrow"
+                            />
                         </div>
-                    </Panel>
-                );
-            })}
+                    }
+                    key={`${filterGroupIndex}`}
+                    showArrow={false}
+                >
+                    {filterGroup.type === 'label' &&
+                        filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                            return (
+                                <div className="label-container" key={filterField.name}>
+                                    <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
+
+                                    <label className="label" style={{ color: filterField.color, backgroundColor: filterField.background }}>
+                                        {filterField.name}
+                                    </label>
+                                </div>
+                            );
+                        })}
+                    {filterGroup.type === 'circle' &&
+                        filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                            return (
+                                <div className="circle-container" key={filterField.name}>
+                                    <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
+                                    <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
+                                        {filterField.name[0].toUpperCase()}
+                                    </p>
+                                    <label>{filterField.name}</label>
+                                </div>
+                            );
+                        })}
+                    {filterGroupIndex + 1 < props?.data?.length && <Divider />}
+                </Panel>
+            ))}
             <div className="collapse-footer">
                 <Button
                     width={'100px'}
@@ -96,7 +173,6 @@ const CustomCollapse = (props) => {
                     fontWeight="bold"
                     htmlType="submit"
                     onClick={() => props.cancel()}
-                    // isLoading={getStartedState?.isLoading}
                 />
                 <Button
                     width={'100px'}
@@ -109,11 +185,9 @@ const CustomCollapse = (props) => {
                     fontWeight="bold"
                     htmlType="submit"
                     onClick={() => props.confirm()}
-                    // isLoading={getStartedState?.isLoading}
                 />
             </div>
         </Collapse>
     );
 };
-
 export default CustomCollapse;
