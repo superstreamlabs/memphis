@@ -30,7 +30,6 @@ import (
 	"memphis-broker/models"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,7 +71,6 @@ type srvMemphis struct {
 	mcrReported            bool
 	mcr                    chan struct{} // memphis cluster ready
 	logStreamCreated       bool
-	jsApiReqsMu            sync.Mutex
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {

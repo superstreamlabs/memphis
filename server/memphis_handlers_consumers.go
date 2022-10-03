@@ -27,7 +27,6 @@ import (
 	"errors"
 	"sort"
 
-	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -108,10 +107,8 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequest
 	if err := json.Unmarshal(msg, &ccr); err != nil {
-		s.Warnf("failed creating consumer: %v", err.Error())
-		fmt.Println(err)
-		fmt.Println(msg)
-		fmt.Println(string(msg))
+		s.Errorf("Failed creating consumer: %v", err.Error())
+		s.Errorf(string(msg))
 		respondWithErr(s, reply, err)
 		return
 	}
