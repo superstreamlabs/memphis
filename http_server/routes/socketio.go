@@ -114,6 +114,11 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
+	tags, err := h.Tags.GetTagsByStation(station.ID)
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
 	return models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,
@@ -126,6 +131,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+		Tags:                  tags,
 	}, nil
 }
 

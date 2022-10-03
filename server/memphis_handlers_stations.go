@@ -108,6 +108,8 @@ func removeStationResources(s *Server, station models.Station) error {
 		return err
 	}
 
+	DeleteTagsByStation(station.Name)
+
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
@@ -529,6 +531,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-create-station")
 	}
 
+	if len(body.Tags) > 0 {
+		for _, tag := range body.Tags {
+			AddTag(tag.Name, tag.From, newStation.Name, tag.ColorBG, tag.ColorTXT)
+		}
+	}
 	c.IndentedJSON(200, newStation)
 }
 

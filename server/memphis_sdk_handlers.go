@@ -49,6 +49,13 @@ type destroyProducerRequest struct {
 	ProducerName string `json:"name"`
 }
 
+type creatTagRequest struct {
+	Name   string `json:"name"`
+	From   string `json:"from"`
+	FromID string `json:"from_id"`
+	Color  string `json:"color"`
+}
+
 type createConsumerRequest struct {
 	Name             string `json:"name"`
 	StationName      string `json:"station_name"`

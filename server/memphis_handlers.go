@@ -47,6 +47,7 @@ type Handlers struct {
 	Stations   StationsHandler
 	Monitoring MonitoringHandler
 	PoisonMsgs PoisonMessagesHandler
+	Tags       TagsHandler
 }
 
 var usersCollection *mongo.Collection
@@ -58,6 +59,8 @@ var consumersCollection *mongo.Collection
 var systemKeysCollection *mongo.Collection
 var auditLogsCollection *mongo.Collection
 var poisonMessagesCollection *mongo.Collection
+var schemasCollection *mongo.Collection
+var tagsCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -93,6 +96,8 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
+	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
+	tagsCollection = db.GetCollection("tags", dbInstance.Client)
 
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
@@ -139,6 +144,38 @@ func IsStationExist(sn StationName) (bool, models.Station, error) {
 		return false, station, err
 	}
 	return true, station, nil
+}
+
+func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
+	filter := bson.M{
+		"name": schemaName,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	}
+	var schema models.Schema
+	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
+	if err == mongo.ErrNoDocuments {
+		return false, schema, nil
+	} else if err != nil {
+		return false, schema, err
+	}
+	return true, schema, nil
+}
+
+func IsTagExist(tagName string) (bool, models.Tag, error) {
+	filter := bson.M{
+		"name": tagName,
+	}
+	var tag models.Tag
+	err := tagsCollection.FindOne(context.TODO(), filter).Decode(&tag)
+	if err == mongo.ErrNoDocuments {
+		return false, tag, nil
+	} else if err != nil {
+		return false, tag, err
+	}
+	return true, tag, nil
 }
 
 func IsConnectionExist(connectionId primitive.ObjectID) (bool, models.Connection, error) {

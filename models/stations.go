@@ -99,13 +99,14 @@ type GetStationSchema struct {
 }
 
 type CreateStationSchema struct {
-	Name            string `json:"name" binding:"required,min=1,max=32"`
-	RetentionType   string `json:"retention_type"`
-	RetentionValue  int    `json:"retention_value"`
-	Replicas        int    `json:"replicas"`
-	StorageType     string `json:"storage_type"`
-	DedupEnabled    bool   `json:"dedup_enabled"`
-	DedupWindowInMs int    `json:"dedup_window_in_ms" binding:"min=0"`
+	Name            string         `json:"name" binding:"required,min=1,max=32"`
+	RetentionType   string         `json:"retention_type"`
+	RetentionValue  int            `json:"retention_value"`
+	Replicas        int            `json:"replicas"`
+	StorageType     string         `json:"storage_type"`
+	DedupEnabled    bool           `json:"dedup_enabled"`
+	DedupWindowInMs int            `json:"dedup_window_in_ms" binding:"min=0"`
+	Tags            []AddTagSchema `json:"tags"`
 }
 
 type AckPoisonMessagesSchema struct {
