@@ -92,6 +92,7 @@ type ExtendedStationDetails struct {
 	Station        Station `json:"station"`
 	TotalMessages  int     `json:"total_messages"`
 	PoisonMessages int     `json:"posion_messages"`
+	Tags           []Tag   `json:"tags" bson:"tags"`
 }
 
 type GetStationSchema struct {

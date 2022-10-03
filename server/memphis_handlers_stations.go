@@ -312,6 +312,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
+		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
@@ -321,7 +322,11 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+			tags, err := tagsHandler.GetTagsByStation(station.ID)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
 		}
 		return exStations, nil
 	}
