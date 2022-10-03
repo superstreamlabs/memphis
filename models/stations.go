@@ -86,13 +86,14 @@ type ExtendedStation struct {
 	Functions       []Function         `json:"functions" bson:"functions"`
 	TotalMessages   int                `json:"total_messages"`
 	PoisonMessages  int                `json:"posion_messages"`
+	Tags            []Tag              `json:"tags"`
 }
 
 type ExtendedStationDetails struct {
 	Station        Station `json:"station"`
 	TotalMessages  int     `json:"total_messages"`
 	PoisonMessages int     `json:"posion_messages"`
-	Tags           []Tag   `json:"tags" bson:"tags"`
+	Tags           []Tag   `json:"tags"`
 }
 
 type GetStationSchema struct {

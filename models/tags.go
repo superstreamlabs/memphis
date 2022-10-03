@@ -36,26 +36,26 @@ type Tag struct {
 }
 
 type AddTagSchema struct {
-	Name     string `json:"name" binding:"required,min=1,max=32"`
-	ColorBG  string `json:"color_bg"`
-	ColorTXT string `json:"color_txt"`
-	From     string `json:"from"`
+	Name       string `json:"name" binding:"required,min=1,max=20"`
+	ColorBG    string `json:"color_bg"`
+	ColorTXT   string `json:"color_txt"`
+	EntityType string `json:"entity_type"`
 }
 
 type CreateTagSchema struct {
-	Name     string `json:"name" binding:"required,min=1,max=32"`
-	ColorBG  string `json:"color_bg"`
-	ColorTXT string `json:"color_txt"`
-	From     string `json:"from"`
-	FromName string `json:"from_name"`
+	Name       string `json:"name" binding:"required,min=1,max=32"`
+	ColorBG    string `json:"color_bg"`
+	ColorTXT   string `json:"color_txt"`
+	EntityType string `json:"entity_type"`
+	EntityName string `json:"entity_name"`
 }
 
 type RemoveTagSchema struct {
-	Name     string `json:"name"`
-	From     string `json:"from"`
-	FromName string `json:"from_name"`
+	Name       string `json:"name"`
+	EntityType string `json:"entity_type"`
+	EntityName string `json:"entity_name"`
 }
 
 type GetAllTagsSchema struct {
-	From string `form:"from" bson:"from"`
+	EntityType string `json:"entity_type" bsom:"entity_type"`
 }

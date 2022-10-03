@@ -39,16 +39,8 @@ const (
 	tagObjectName = "Tag"
 )
 
-func validateTagName(name string) error {
-	return validateName(name, tagObjectName)
-}
-
 func CreateTag(name string, from string, from_name string, background_color string, text_color string) error {
 	name = strings.ToLower(name)
-	err := validateTagName(name)
-	if err != nil {
-		return err
-	}
 	exist, _, err := IsTagExist(name)
 	if err != nil {
 		return err
@@ -111,10 +103,6 @@ func CreateTag(name string, from string, from_name string, background_color stri
 
 func AddTag(name string, to string, to_name string, background_color string, text_color string) error {
 	name = strings.ToLower(name)
-	err := validateTagName(name)
-	if err != nil {
-		return err
-	}
 	exist, tag, err := IsTagExist(name)
 	if err != nil {
 		return err
@@ -248,13 +236,7 @@ func (th TagsHandler) CreateTag(c *gin.Context) {
 		return
 	}
 	name := strings.ToLower(body.Name)
-	err := validateTagName(name)
-	if err != nil {
-		serv.Errorf("Failed creating tag: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	err = AddTag(body.Name, body.From, body.FromName, body.ColorBG, body.ColorTXT)
+	err := AddTag(name, body.EntityType, body.EntityName, body.ColorBG, body.ColorTXT)
 	if err != nil {
 		serv.Errorf("Failed creating tag: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -270,12 +252,6 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		return
 	}
 	name := strings.ToLower(body.Name)
-	err := validateTagName(name)
-	if err != nil {
-		serv.Errorf("RemoveTag error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	exist, tag, err := IsTagExist(name)
 	if err != nil {
 		serv.Errorf("RemoveTag error: " + err.Error())
@@ -287,9 +263,9 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	switch body.From {
+	switch body.EntityType {
 	case "station":
-		station_name, err := StationNameFromStr(body.FromName)
+		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
 			serv.Errorf("RemoveTag error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -315,7 +291,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		}
 
 	case "schema":
-		exist, schema, err := IsSchemaExist(body.FromName)
+		exist, schema, err := IsSchemaExist(body.EntityName)
 		if err != nil {
 			serv.Errorf("RemoveTag error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -334,7 +310,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 			return
 		}
 	case "user":
-		exist, user, err := IsUserExist(body.FromName)
+		exist, user, err := IsUserExist(body.EntityName)
 		if err != nil {
 			serv.Errorf("RemoveTag error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -423,7 +399,7 @@ func (th TagsHandler) GetAllTags(c *gin.Context) {
 	if !ok {
 		return
 	}
-	from := strings.ToLower(body.From)
+	from := strings.ToLower(body.EntityType)
 	var tags []models.Tag
 	switch from {
 	case "stations":

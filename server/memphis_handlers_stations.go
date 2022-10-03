@@ -354,6 +354,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		return []models.ExtendedStation{}, nil
 	} else {
 		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		tagsHandler := TagsHandler{S: sh.S}
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
 			if err != nil {
@@ -363,9 +364,14 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			if err != nil {
 				return []models.ExtendedStation{}, err
 			}
+			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
+			if err != nil {
+				return []models.ExtendedStation{}, err
+			}
 
 			stations[i].TotalMessages = totalMessages
 			stations[i].PoisonMessages = poisonMessages
+			stations[i].Tags = tags
 		}
 		return stations, nil
 	}
@@ -535,10 +541,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if shouldSendAnalytics {
 		analytics.SendEvent(user.Username, "user-create-station")
 	}
-
 	if len(body.Tags) > 0 {
 		for _, tag := range body.Tags {
-			err = AddTag(tag.Name, tag.From, newStation.Name, tag.ColorBG, tag.ColorTXT)
+			err = AddTag(tag.Name, tag.EntityType, newStation.Name, tag.ColorBG, tag.ColorTXT)
 			if err != nil {
 				serv.Errorf("Failed creating tag: %v", err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
