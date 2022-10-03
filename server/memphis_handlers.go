@@ -40,12 +40,14 @@ import (
 )
 
 type Handlers struct {
-	Producers  ProducersHandler
-	Consumers  ConsumersHandler
-	AuditLogs  AuditLogsHandler
-	Stations   StationsHandler
-	Monitoring MonitoringHandler
-	PoisonMsgs PoisonMessagesHandler
+	Producers  		ProducersHandler
+	Consumers  		ConsumersHandler
+	AuditLogs  		AuditLogsHandler
+	Stations   		StationsHandler
+	Monitoring 		MonitoringHandler
+	PoisonMsgs 		PoisonMessagesHandler
+	Schemas    		SchemasHandler
+	SchemasVersions SchemasVersionsHandler
 }
 
 var usersCollection *mongo.Collection
@@ -57,6 +59,8 @@ var consumersCollection *mongo.Collection
 var systemKeysCollection *mongo.Collection
 var auditLogsCollection *mongo.Collection
 var poisonMessagesCollection *mongo.Collection
+var schemasCollection *mongo.Collection
+var schemasVersionCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -92,6 +96,8 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
 	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
+	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
+	schemasVersionCollection = db.GetCollection("schemas_versions", dbInstance.Client)
 
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
@@ -173,6 +179,24 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 		return false, producer, err
 	}
 	return true, producer, nil
+}
+
+func IsSchemaExist(schemaName string) (bool, models.SchemaVersion, error) {
+	filter := bson.M{
+		"name": schemaName,
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	}
+	var schema models.SchemaVersion
+	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
+	if err == mongo.ErrNoDocuments {
+		return false, schema, nil
+	} else if err != nil {
+		return false, schema, err
+	}
+	return true, schema, nil
 }
 
 func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, bool, error) {

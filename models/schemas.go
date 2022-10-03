@@ -23,22 +23,29 @@ package models
 
 import (
 	"time"
-
+	
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Schema struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id"`
-	Name      string             `json:"name" bson:"name"`
-	Type      string             `json:"type" bson:"type"`
-	Versions  []SchemaVersion    `json:"versions" bson:"versions"`
-	IsDeleted bool               `json:"is_deleted" bson:"is_deleted"`
+	ID        	primitive.ObjectID 		`json:"id" bson:"_id"`
+	Name      	string             		`json:"name" bson:"name"`
+	Type      	string             		`json:"type" bson:"type"`
+	Versions  	[]primitive.ObjectID    `json:"versions" bson:"versions"`
+	IsDeleted 	bool               		`json:"is_deleted" bson:"is_deleted"`
 }
 
 type SchemaVersion struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	VersionNumber string             `json:"version_number" bson:"version_number"`
-	Active        bool               `json:"active" bson:"active"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	ID            primitive.ObjectID 	`json:"id" bson:"_id"`
+	VersionNumber int             		`json:"version_number" bson:"version_number"`
+	Active        bool               	`json:"active" bson:"active"`
+	CreatedByUser string             	`json:"created_by_user" bson:"created_by_user"`
+	CreationDate  time.Time          	`json:"creation_date" bson:"creation_date"`
+	SchemaContent string		 		`json:"schema_content" bson:"schema_content"`
+}
+
+type CreateNewSchema struct {
+	Name            string 				`json:"name" binding:"required,min=1,max=32"`
+	Type   			string 				`json:"type"`
+	SchemaContent  	string 				`json:"schema_content"`
 }
