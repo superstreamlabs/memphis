@@ -533,7 +533,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	if len(body.Tags) > 0 {
 		for _, tag := range body.Tags {
-			AddTag(tag.Name, tag.From, newStation.Name, tag.ColorBG, tag.ColorTXT)
+			err = AddTag(tag.Name, tag.From, newStation.Name, tag.ColorBG, tag.ColorTXT)
+			if err != nil {
+				serv.Errorf("Failed creating tag: %v", err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 		}
 	}
 	c.IndentedJSON(200, newStation)

@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strings"
@@ -42,21 +43,18 @@ func validateTagName(name string) error {
 	return validateName(name, tagObjectName)
 }
 
-func CreateTag(name string, from string, from_name string, background_color string, text_color string) {
+func CreateTag(name string, from string, from_name string, background_color string, text_color string) error {
 	name = strings.ToLower(name)
 	err := validateTagName(name)
 	if err != nil {
-		serv.Errorf("Failed creating a tag: %v", err.Error())
-		return
+		return err
 	}
 	exist, _, err := IsTagExist(name)
 	if err != nil {
-		serv.Errorf("Failed creating a tag: %v", err.Error())
-		return
+		return err
 	}
 	if exist {
-		serv.Errorf("Tag with that name already exists")
-		return
+		return errors.New("Tag with that name already exists")
 	}
 	var newTag models.Tag
 	stationArr := []primitive.ObjectID{}
@@ -66,39 +64,32 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	case "station":
 		station_name, err := StationNameFromStr(from_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		exist, station, err := IsStationExist(station_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		if !exist {
-			serv.Errorf("Station with this name does not exist")
-			return
+			return errors.New("Station with this name does not exist")
 		}
 		stationArr = append(stationArr, station.ID)
 	case "schema":
 		exist, schema, err := IsSchemaExist(from_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		if !exist {
-			serv.Errorf("Schema with this name does not exist")
-			return
+			return errors.New("Schema with this name does not exist")
 		}
 		schemaArr = append(schemaArr, schema.ID)
 	case "user":
 		exist, user, err := IsUserExist(from_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		if !exist {
-			serv.Errorf("User with this name does not exist")
-			return
+			return errors.New("User with this name does not exist")
 		}
 		userArr = append(userArr, user.ID)
 	}
@@ -113,80 +104,72 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	}
 	_, err = tagsCollection.InsertOne(context.TODO(), newTag)
 	if err != nil {
-		serv.Errorf("Failed creating a tag: %v", err.Error())
-		return
+		return err
 	}
+	return nil
 }
 
-func AddTag(name string, to string, to_name string, background_color string, text_color string) {
+func AddTag(name string, to string, to_name string, background_color string, text_color string) error {
 	name = strings.ToLower(name)
 	err := validateTagName(name)
 	if err != nil {
-		serv.Errorf("Failed creating a tag: %v", err.Error())
-		return
+		return err
 	}
 	exist, tag, err := IsTagExist(name)
 	if err != nil {
-		serv.Errorf("Failed creating a tag: %v", err.Error())
-		return
+		return err
 	}
 	if !exist {
-		CreateTag(name, to, to_name, background_color, text_color)
-		return
+		err = CreateTag(name, to, to_name, background_color, text_color)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	switch to {
 	case "station":
 		station_name, err := StationNameFromStr(to_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		exist, station, err := IsStationExist(station_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		if !exist {
-			serv.Errorf("Station with this name does not exist")
-			return
+			return errors.New("Station with this name does not exist")
 		}
 		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"stations": station.ID}})
 		if err != nil {
-			serv.Errorf("Failed adding tag: %v", err.Error())
-			return
+			return err
 		}
 
 	case "schema":
 		exist, schema, err := IsSchemaExist(to_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		if !exist {
-			serv.Errorf("Schema with this name does not exist")
-			return
+			return errors.New("Schema with this name does not exist")
 		}
 		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"schemas": schema.ID}})
 		if err != nil {
-			serv.Errorf("Failed adding tag: %v", err.Error())
-			return
+			return err
 		}
 	case "user":
 		exist, user, err := IsUserExist(to_name)
 		if err != nil {
-			serv.Errorf("Failed creating a tag: %v", err.Error())
-			return
+			return err
 		}
 		if !exist {
-			serv.Errorf("User with this name does not exist")
-			return
+			return errors.New("User with this name does not exist")
 		}
 		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"users": user.ID}})
 		if err != nil {
-			serv.Errorf("Failed adding tag: %v", err.Error())
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func DeleteTagsByStation(name string) {
@@ -268,8 +251,16 @@ func (th TagsHandler) CreateTag(c *gin.Context) {
 	err := validateTagName(name)
 	if err != nil {
 		serv.Errorf("Failed creating tag: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	err = AddTag(body.Name, body.From, body.FromName, body.ColorBG, body.ColorTXT)
+	if err != nil {
+		serv.Errorf("Failed creating tag: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, []string{})
 }
 
 func (th TagsHandler) RemoveTag(c *gin.Context) {
@@ -427,18 +418,66 @@ func (th TagsHandler) GetTagsByUser(user_id primitive.ObjectID) ([]models.Tag, e
 }
 
 func (th TagsHandler) GetAllTags(c *gin.Context) {
-	var tags []models.Tag
-	cursor, err := tagsCollection.Find(context.TODO(), bson.M{})
-	if err != nil {
-		serv.Errorf("GetAllTags error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	var body models.GetAllTagsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
 		return
 	}
+	from := strings.ToLower(body.From)
+	var tags []models.Tag
+	switch from {
+	case "stations":
+		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": bson.M{"$not": bson.M{"$size": 0}}})
+		if err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 
-	if err = cursor.All(context.TODO(), &tags); err != nil {
-		serv.Errorf("GetAllTags error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		if err = cursor.All(context.TODO(), &tags); err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	case "users":
+		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"users": bson.M{"$not": bson.M{"$size": 0}}})
+		if err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if err = cursor.All(context.TODO(), &tags); err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	case "schemas":
+		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": bson.M{"$not": bson.M{"$size": 0}}})
+		if err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if err = cursor.All(context.TODO(), &tags); err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	default:
+		cursor, err := tagsCollection.Find(context.TODO(), bson.M{})
+		if err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		if err = cursor.All(context.TODO(), &tags); err != nil {
+			serv.Errorf("GetAllTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	if len(tags) == 0 {

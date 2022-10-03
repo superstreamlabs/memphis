@@ -55,3 +55,7 @@ type RemoveTagSchema struct {
 	From     string `json:"from"`
 	FromName string `json:"from_name"`
 }
+
+type GetAllTagsSchema struct {
+	From string `form:"from" bson:"from"`
+}
