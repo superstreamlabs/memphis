@@ -319,9 +319,12 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 	err = json.Unmarshal(rawResp, &resp)
 	if err != nil {
 		s.Errorf("ConsumerCreate json response unmarshal error")
+		fmt.Println(err)
+		fmt.Println(string(rawResp))
 		return err
 	}
 
+	fmt.Println(string(rawResp))
 	return resp.ToError()
 }
 
@@ -361,9 +364,12 @@ func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInf
 	err = json.Unmarshal(rawResp, &resp)
 	if err != nil {
 		s.Errorf("ConsumerInfo json response unmarshal error")
+		fmt.Println(err)
+		fmt.Println(string(rawResp))
 		return nil, err
 	}
 
+	fmt.Println(string(rawResp))
 	err = resp.ToError()
 	if err != nil {
 		return nil, err
@@ -430,9 +436,12 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 	err = json.Unmarshal(rawResp, &resp)
 	if err != nil {
 		s.Errorf("StreamInfo json response unmarshal error")
+		fmt.Println(err)
+		fmt.Println(string(rawResp))
 		return nil, err
 	}
 
+	fmt.Println(string(rawResp))
 	err = resp.ToError()
 	if err != nil {
 		return nil, err

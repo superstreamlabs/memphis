@@ -27,10 +27,10 @@ import (
 	"errors"
 	"sort"
 
+	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-
 	"strings"
 	"time"
 
@@ -109,6 +109,9 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequest
 	if err := json.Unmarshal(msg, &ccr); err != nil {
 		s.Warnf("failed creating consumer: %v", err.Error())
+		fmt.Println(err)
+		fmt.Println(msg)
+		fmt.Println(string(msg))
 		respondWithErr(s, reply, err)
 		return
 	}
