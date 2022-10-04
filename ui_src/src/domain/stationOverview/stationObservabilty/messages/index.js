@@ -57,10 +57,10 @@ const Messages = () => {
     const history = useHistory();
 
     useEffect(() => {
-        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === '0')) {
+        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 0)) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, false);
         }
-        if (tabValue === 2 && stationState?.stationSocketData?.poison_messages?.length > 0) {
+        if (tabValue === 1 && stationState?.stationSocketData?.poison_messages?.length > 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, false);
         }
     }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages]);
