@@ -25,22 +25,25 @@ import { Tabs } from 'antd';
 import React from 'react';
 
 const CustomTabs = (props) => {
-    const { tabs, onChange, value, disabled } = props;
+    const { onChange, disabled, items } = props;
 
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
             <Tabs
-                value={value}
-                onChange={onChange}
-                items={tabs.map((tab, index) => {
+                items={items.map((item, i) => {
                     return {
-                        key: tab,
-                        disabled: disabled,
-                        label: tab
+                        label: (
+                            <span className="tab">
+                                <label>{item}</label>
+                                {props?.badge && props?.badge[i] && <label className="badge">{props?.badge[i]}</label>}
+                            </span>
+                        ),
+                        key: i
                     };
                 })}
+                onChange={onChange}
                 disabled={disabled}
-            ></Tabs>
+            />
         </div>
     );
 };

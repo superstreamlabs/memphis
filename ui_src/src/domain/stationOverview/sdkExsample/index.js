@@ -39,7 +39,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         consumer: ''
     });
     const tabs = ['Producer', 'Consumer'];
-    const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
+    const [tabValue, setTabValue] = useState(consumer ? 1 : 0);
 
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
@@ -100,8 +100,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 </div>
             </div>
             <div className="tabs">
-                {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>}
-                {tabValue === 'Producer' && (
+                {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} items={tabs}></CustomTabs>}
+                {tabValue === 0 && (
                     <div className="code-example">
                         <div className="code-content">
                             <CopyBlock
@@ -116,7 +116,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                     </div>
                 )}
 
-                {tabValue === 'Consumer' && (
+                {tabValue === 1 && (
                     <div className="code-example">
                         <div className="code-content">
                             <CopyBlock

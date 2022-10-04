@@ -52,15 +52,15 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const [tabValue, setTabValue] = useState('All');
+    const [tabValue, setTabValue] = useState(0);
     const tabs = ['All', 'Dead-letter'];
     const history = useHistory();
 
     useEffect(() => {
-        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 'All')) {
+        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === '0')) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, false);
         }
-        if (tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+        if (tabValue === 2 && stationState?.stationSocketData?.poison_messages?.length > 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, false);
         }
     }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages]);
@@ -173,10 +173,10 @@ const Messages = () => {
     };
 
     const handleChangeMenuItem = (newValue) => {
-        if (newValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) {
+        if (newValue === 0 && stationState?.stationSocketData?.messages?.length > 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
-        if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+        if (newValue === 1 && stationState?.stationSocketData?.poison_messages?.length > 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
@@ -230,20 +230,20 @@ const Messages = () => {
             <div className="header">
                 <div className="left-side">
                     <p className="title">Station</p>
-                    {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
+                    {tabValue === 0 && stationState?.stationSocketData?.messages?.length > 0 && (
                         <div className="messages-amount">
                             <InfoOutlined />
                             <p>Showing last {stationState?.stationSocketData?.messages?.length} messages</p>
                         </div>
                     )}
-                    {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                    {tabValue === 1 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <div className="messages-amount">
                             <InfoOutlined />
                             <p>Showing last {stationState?.stationSocketData?.poison_messages?.length} messages</p>
                         </div>
                     )}
                 </div>
-                {tabValue === 'Dead-letter' && (
+                {tabValue === 1 && (
                     <div className="right-side">
                         <Button
                             width="80px"
@@ -276,13 +276,13 @@ const Messages = () => {
             </div>
             <div className="tabs">
                 <CustomTabs
-                    value={tabValue}
-                    onChange={handleChangeMenuItem}
-                    tabs={tabs}
+                    items={tabs}
+                    badge={stationState?.stationSocketData?.poison_messages?.length && [null, stationState?.stationSocketData?.poison_messages?.length]}
                     disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
+                    onChange={handleChangeMenuItem}
                 ></CustomTabs>
             </div>
-            {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
+            {tabValue === 0 && stationState?.stationSocketData?.messages?.length > 0 && (
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
@@ -317,7 +317,7 @@ const Messages = () => {
                     </div>
                 </div>
             )}
-            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+            {tabValue === 1 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
@@ -335,7 +335,7 @@ const Messages = () => {
                                         key={id}
                                         onClick={() => onSelectedRow(true, message._id, id)}
                                     >
-                                        {tabValue === 'Dead-letter' && (
+                                        {tabValue === 1 && (
                                             <Checkbox
                                                 key={message._id}
                                                 checked={isCheck.includes(message._id)}
@@ -378,7 +378,7 @@ const Messages = () => {
                     </div>
                 </div>
             )}
-            {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
+            {tabValue === 0 && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder">
                     <img width={100} src={waitingMessages} />
                     <p>No messages yet</p>
@@ -390,7 +390,7 @@ const Messages = () => {
                     )}
                 </div>
             )}
-            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
+            {tabValue === 1 && stationState?.stationSocketData?.poison_messages?.length === 0 && (
                 <div className="empty-messages">
                     <p>Congrats, No messages in your station's dead-letter, yet ;)</p>
                 </div>
