@@ -277,7 +277,7 @@ const Messages = () => {
             <div className="tabs">
                 <CustomTabs
                     items={tabs}
-                    badge={stationState?.stationSocketData?.poison_messages?.length && [null, stationState?.stationSocketData?.poison_messages?.length]}
+                    badge={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
                     disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
                     onChange={handleChangeMenuItem}
                 ></CustomTabs>
