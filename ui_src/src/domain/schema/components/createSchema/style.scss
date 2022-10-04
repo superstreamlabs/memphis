@@ -1,0 +1,33 @@
+.create-schema-wrapper{
+    width: calc(100% - 70px);
+    position: absolute;
+    padding: 1vw;
+    min-width: 700px;
+    height: 100%;
+    .header{
+        width: 600px;
+        .flex-title{
+            display: flex;
+            p{
+                font-weight: 600;
+                font-size: 24px;
+                margin: 0;
+            }
+            img{
+                margin-right: 10px;
+            }
+        }
+        span{
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 20px;
+            color: #667085;
+            a{
+                color: var(--purple);
+                font-weight: 600;
+                text-decoration-line: underline;
+                margin-left: 5px;
+            }
+        }
+    }
+}

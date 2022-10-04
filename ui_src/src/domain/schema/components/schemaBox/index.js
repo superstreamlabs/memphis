@@ -21,16 +21,17 @@
 
 import './style.scss';
 
+import { Drawer, Button, Space } from 'antd';
 import React, { useState } from 'react';
-import usedIcond from '../../../../assets/images/usedIcon.svg';
+
 import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
-import CheckboxComponent from '../../../../components/checkBox';
 import { parsingDate } from '../../../../services/valueConvertor';
-import Tag from '../../../../components/tag';
-import { Drawer, Button, Space } from 'antd';
-import SchemaDetails from '../schemaDetails';
+import CheckboxComponent from '../../../../components/checkBox';
+import usedIcond from '../../../../assets/images/usedIcon.svg';
 import TagsList from '../../../../components/tagsList';
+import Tag from '../../../../components/tag';
+import SchemaDetails from '../schemaDetails';
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     const [open, setOpen] = useState(false);
@@ -41,7 +42,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
         setOpen(true);
     };
 
-    const onClose = () => {
+    const closeDrawer = () => {
         setOpen(false);
     };
     return (
@@ -81,8 +82,8 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     <p>{parsingDate(schema.creation_date)}</p>
                 </date>
             </div>
-            <Drawer title={schema?.name} placement="right" size={'large'} onClose={onClose} open={open} maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}>
-                <SchemaDetails schema={schema} />
+            <Drawer title={schema?.name} placement="right" size={'large'} onClose={closeDrawer} open={open} maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}>
+                <SchemaDetails schema={schema} closeDrawer={() => closeDrawer()} />
             </Drawer>
         </>
     );

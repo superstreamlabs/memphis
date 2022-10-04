@@ -21,31 +21,41 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import Editor, { DiffEditor } from '@monaco-editor/react';
+import React, { useEffect, useState } from 'react';
 
-import typeIcon from '../../../../assets/images/typeIcon.svg';
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
-import { Add } from '@material-ui/icons';
-import RadioButton from '../../../../components/radioButton';
+import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
 import SelectVersion from '../../../../components/selectVersion';
+import typeIcon from '../../../../assets/images/typeIcon.svg';
+import RadioButton from '../../../../components/radioButton';
 import TagsList from '../../../../components/tagsList';
+import Button from '../../../../components/button';
 
-function SchemaDetails({ schema }) {
+const formatOption = [
+    {
+        id: 1,
+        value: 0,
+        label: 'Code'
+    },
+    {
+        id: 2,
+        value: 1,
+        label: 'Table'
+    }
+];
+
+function SchemaDetails({ schema, closeDrawer }) {
     const [passwordType, setPasswordType] = useState(0);
-    const [versionSelected, setVersionSelected] = useState(`Version ${schema?.versions[0]?.label}`);
+    const [versionSelected, setVersionSelected] = useState();
+    const [currentVersion, setCurrentversion] = useState();
+    const [updated, setUpdated] = useState(false);
 
-    const passwordOptions = [
-        {
-            id: 1,
-            value: 0,
-            label: 'Code'
-        },
-        {
-            id: 2,
-            value: 1,
-            label: 'Table'
-        }
-    ];
+    useEffect(() => {
+        let index = schema?.versions?.findIndex((version) => version?.active === true);
+        setCurrentversion(schema?.versions[index]);
+        setVersionSelected(schema?.versions[index]);
+    }, []);
 
     const passwordTypeChange = (e) => {
         setPasswordType(e.target.value);
@@ -53,7 +63,7 @@ function SchemaDetails({ schema }) {
 
     const handleSelectVersion = (e) => {
         let index = schema.versions?.findIndex((version) => version.id === Number(e));
-        setVersionSelected(`Version ${schema.versions[index].label}`);
+        setVersionSelected(schema.versions[index]);
     };
 
     return (
@@ -76,11 +86,101 @@ function SchemaDetails({ schema }) {
             <div className="schema-fields">
                 <div className="left">
                     <p>Schema</p>
-                    <RadioButton options={passwordOptions} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} />
+                    {/* <RadioButton options={formatOption} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} /> */}
                 </div>
-                <SelectVersion value={versionSelected} options={schema.versions} onChange={(e) => handleSelectVersion(e)} />
+                <SelectVersion value={versionSelected?.version_number} options={schema.versions} onChange={(e) => handleSelectVersion(e)} />
             </div>
-            <div className="schema-content"></div>
+            <div className="schema-content">
+                {versionSelected?.active && (
+                    <Editor
+                        options={{
+                            minimap: { enabled: false },
+                            scrollbar: { verticalScrollbarSize: 0 },
+                            scrollBeyondLastLine: false,
+                            roundedSelection: false,
+                            formatOnPaste: true,
+                            formatOnType: true
+                        }}
+                        language="json"
+                        value={versionSelected?.schema}
+                        onChange={() => setUpdated(true)}
+                    />
+                )}
+                {!versionSelected?.active && (
+                    <DiffEditor
+                        height="90%"
+                        language="json"
+                        original={currentVersion?.schema}
+                        modified={versionSelected?.schema}
+                        options={{
+                            renderSideBySide: false,
+                            scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                            scrollBeyondLastLine: false,
+                            scrollBeyondLastColumn: false
+                        }}
+                    />
+                )}
+            </div>
+            <div className="used-stations">
+                <p className="title">Used by stations</p>
+                <div className="stations-list">
+                    {schema.stations?.map((station, index) => {
+                        return (
+                            <div className="station-wrapper" key={index}>
+                                <p>{station}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            <div className="footer">
+                <div>
+                    {!versionSelected?.active && (
+                        <Button
+                            width="111px"
+                            height="34px"
+                            placeholder={
+                                <div className="placeholder-button">
+                                    <img src={scrollBackIcon} />
+                                    <p>Roll back</p>
+                                </div>
+                            }
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            // onClick={() => addUserModalFlip(true)}
+                        />
+                    )}
+                </div>
+                <div className="left-side">
+                    <Button
+                        width="111px"
+                        height="34px"
+                        placeholder={'close'}
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        border="gray-light"
+                        fontSize="12px"
+                        fontWeight="600"
+                        onClick={() => closeDrawer()}
+                    />
+                    <Button
+                        width="111px"
+                        height="34px"
+                        placeholder={'Update'}
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="12px"
+                        fontWeight="600"
+                        disabled={!updated}
+                        // onClick={() => addUserModalFlip(true)}
+                    />
+                </div>
+            </div>
         </schema-details>
     );
 }

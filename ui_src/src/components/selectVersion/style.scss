@@ -1,5 +1,8 @@
 .select-version-container{
     .select{
+        .ant-select-selector .scheme-details {
+            display: none;
+        }
     }
 }
 .select-version-options{
@@ -32,7 +35,7 @@
         margin: 8px;
         border-radius: 8px;
     }
-    .ant-select-item-option-active:not(.ant-select-item-option-disabled){
+    .ant-select-item-option-selected:not(.ant-select-item-option-disabled){
         background: rgba(101, 87, 255, 0.1);
         border-radius: 8px;
         margin: 8px;

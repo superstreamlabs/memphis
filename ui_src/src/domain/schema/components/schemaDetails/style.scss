@@ -58,4 +58,55 @@ schema-details {
            }
         }
     }
+    .schema-content{
+        border: 1px solid #D8D8D8;
+        border-radius: 4px;
+        padding-top: 25px;
+        padding-right: 25px;
+        margin: 14px 28px;
+        height: 450px;
+    }
+    .used-stations{
+        padding: 16px 30px;
+        height: calc(100% - 700px);
+        .title{
+            font-weight: 600;
+            font-size: 18px;
+            margin-right: 15px;
+        }
+        .stations-list{
+            position: relative;
+            display: inline-flex;
+            overflow-y: auto;
+            gap: 16px;
+            margin-top: 20px;
+            align-content: flex-start;
+            flex-wrap: wrap;
+            height: calc(100% - 30px);
+            .station-wrapper{
+                padding: 5px 20px;
+                border-radius: 30px;
+                background: rgba(0, 16, 61, 0.06);
+                p{
+                    font-size: 15px;
+                    font-family: 'InterSemiBold';
+                }
+            }
+        }
+    }
+    .footer{
+        padding: 16px 30px;
+        display: flex;
+        justify-content: space-between;
+        .placeholder-button{
+            display: flex;
+            width: 72px;
+            justify-content: space-between;
+        }
+        .left-side{
+            display: flex;
+            width: 232px;
+            justify-content: space-between;
+        }
+    }
 }

@@ -6,7 +6,18 @@
         background: var(--purple);
         border-radius: 10px;
     }
-
+    .badge {
+        background-color: #f7685b;
+        color: #ffffff;
+        font-size: 9px;
+        align-items: center;
+        border-radius: 50px;
+        padding-right: 6px;
+        padding-left: 5px;
+        margin-left: 5px;
+        height: 14px;
+        margin-top: 2px;
+    }
 }
 .hover .ant-tabs-tab:hover{
     color: var(--purple) !important;

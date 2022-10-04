@@ -42,18 +42,18 @@ const SelectVersion = ({ options, onChange, value }) => {
                 bordered={false}
                 suffixIcon={<img src={Arrow} alt="select-arrow" />}
                 onChange={handleChange}
-                // open
                 placement="bottomRight"
                 popupClassName="select-version-options"
             >
-                {options.map((option) => {
+                {options.map((option, index) => {
                     return (
-                        <Option key={option?.id}>
-                            <p className="schema-name">{option?.name}</p>
+                        <Option key={option?.id} value={option?.version_number}>
+                            <p className="schema-name">Version {option?.version_number}</p>
                             <div className="scheme-details">
-                                <p>Version : {option?.label}</p>
-                                <FiberManualRecord />
-                                <p>Created by {option?.created_by}</p>
+                                <p>Created by {option?.created_by_user}</p>
+                                {(option.active || index === 0) && <FiberManualRecord />}
+                                {option.active && <p>Current</p>}
+                                {index === 0 && <p>Latest</p>}
                             </div>
                         </Option>
                     );
