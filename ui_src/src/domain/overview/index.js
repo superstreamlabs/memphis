@@ -204,7 +204,9 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null && <GetStarted username={username} dataSentence={dataSentence} />}
+            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') && (
+                <GetStarted username={username} dataSentence={dataSentence} />
+            )}
             <Modal
                 header="Your station details"
                 height="460px"
