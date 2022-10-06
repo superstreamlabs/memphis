@@ -25,7 +25,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_LOGIN } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
 import betaFullLogo from '../../assets/images/betaFullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import sharps from '../../assets/images/sharps.svg';
