@@ -75,7 +75,7 @@ function OverView() {
     const createStationRef = useRef(null);
     const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
     const [username, SetUsername] = useState('');
-    const [isLoading, setisLoading] = useState(false);
+    const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
 
     const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -120,17 +120,17 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        // state.socket?.on('main_overview_data', (data) => {
-        //     data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        //     dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-        // });
-        // setTimeout(() => {
-        //     state.socket?.emit('register_main_overview_data');
-        //     setisLoading(false);
-        // }, 1000);
-        // return () => {
-        //     state.socket?.emit('deregister');
-        // };
+        state.socket?.on('main_overview_data', (data) => {
+            data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+            dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+        });
+        setTimeout(() => {
+            state.socket?.emit('register_main_overview_data');
+            setisLoading(false);
+        }, 1000);
+        return () => {
+            state.socket?.emit('deregister');
+        };
     }, [state.socket]);
 
     const setBotImage = (botId) => {
@@ -149,8 +149,8 @@ function OverView() {
             return;
         }
     };
+    console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED));
 
-    const stationsOfUser = allStations.filter((station) => station.created_by_user === localStorage.getItem(LOCAL_STORAGE_USER_NAME));
     return (
         <div className="overview-container">
             {isLoading && (
@@ -159,7 +159,7 @@ function OverView() {
                 </div>
             )}
 
-            {!isLoading && (stationsOfUser.length !== 0 || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true') ? (
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -204,9 +204,9 @@ function OverView() {
                         </div>
                     </div>
                 </div>
-            ) : (
-                <GetStarted username={username} dataSentence={dataSentence} />
             )}
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null && <GetStarted username={username} dataSentence={dataSentence} />}
+
             <Modal
                 header="Your station details"
                 height="460px"

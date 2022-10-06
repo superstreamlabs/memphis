@@ -96,11 +96,10 @@ const initialState = {
     actualPods: null
 };
 
-const GetStarted = (props) => {
-    const history = useHistory();
-    const { username } = props;
-    const createStationFormRef = useRef(null);
+const GetStarted = ({ username, dataSentence }) => {
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
+    const history = useHistory();
+    const createStationFormRef = useRef(null);
 
     const getStepsDescription = (stepNumber) => {
         switch (stepNumber) {
@@ -145,9 +144,17 @@ const GetStarted = (props) => {
         getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep - 1 });
     };
 
+    const getOverviewData = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
+            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
+            indexOfBrokerComponent = indexOfBrokerComponent || 1;
+            getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
+        } catch (error) {}
+    };
+
     useEffect(() => {
         getOverviewData();
-        return;
     }, []);
 
     useEffect(() => {
@@ -159,22 +166,13 @@ const GetStarted = (props) => {
         return;
     }, [getStartedState?.currentStep]);
 
-    const getOverviewData = async () => {
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
-            indexOfBrokerComponent = indexOfBrokerComponent || 1;
-            getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
-        } catch (error) {}
-    };
-
     return (
         <GetStartedStoreContext.Provider value={[getStartedState, getStartedDispatch]}>
             <div className="getstarted-container">
                 <div className="sidebar-section">
                     <div className="welcome-section">
                         <p className="getstarted-welcome">Welcome, {username}</p>
-                        <p className="getstarted-description">{props.dataSentence}</p>
+                        <p className="getstarted-description">{dataSentence}</p>
                     </div>
                     <div className="getstarted-message-container">
                         <p className="getstarted-message">Let’s get you started</p>

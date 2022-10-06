@@ -32,11 +32,9 @@ import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import { LOCAL_STORAGE_ALLOW_ANALYTICS } from '../../../../const/localStorageConsts';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../../const/localStorageConsts';
 
-const Finish = (props) => {
-    const { createStationFormRef } = props;
-
+const Finish = ({ createStationFormRef }) => {
     const history = useHistory();
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
     const [allowAnalytics, setAllowAnalytics] = useState(false);
@@ -52,8 +50,10 @@ const Finish = (props) => {
 
     const onFinish = (e) => {
         e.preventDefault();
+        getStartedDispatch({ type: 'INITIAL_STATE', payload: {} });
         doneNextSteps();
         history.push(`${pathDomains.stations}/${getStartedState.stationName}`);
+        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
     };
 
     const doneNextSteps = async () => {

@@ -62,8 +62,7 @@ const storageOptions = [
     }
 ];
 
-const CreateStationForm = (props) => {
-    const { createStationFormRef } = props;
+const CreateStationForm = ({ createStationFormRef }) => {
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
@@ -145,7 +144,7 @@ const CreateStationForm = (props) => {
                         }
                     ]}
                     style={{ height: '50px' }}
-                    initialValue={getStartedState?.formFieldsCreateStation.name}
+                    initialValue={getStartedState?.formFieldsCreateStation?.name}
                 >
                     <Input
                         placeholder="Type station name"
@@ -158,7 +157,7 @@ const CreateStationForm = (props) => {
                         height="40px"
                         onBlur={(e) => updateFormState('name', e.target.value)}
                         onChange={(e) => updateFormState('name', e.target.value)}
-                        value={getStartedState?.formFieldsCreateStation.name}
+                        value={getStartedState?.formFieldsCreateStation?.name}
                         disabled={!allowEdit}
                     />
                 </Form.Item>
@@ -169,11 +168,11 @@ const CreateStationForm = (props) => {
                     typeTitle="sub-header"
                     headerDescription="By which criteria messages will be expelled from the station"
                 ></TitleComponent>
-                <Form.Item name="retention_type" initialValue={getStartedState?.formFieldsCreateStation.retention_type}>
+                <Form.Item name="retention_type" initialValue={getStartedState?.formFieldsCreateStation?.retention_type}>
                     <RadioButton
                         className="radio-button"
                         options={retanionOptions}
-                        radioValue={getStartedState?.formFieldsCreateStation.retention_type}
+                        radioValue={getStartedState?.formFieldsCreateStation?.retention_type}
                         optionType="button"
                         fontFamily="InterSemiBold"
                         style={{ marginRight: '20px', content: '' }}
@@ -182,7 +181,7 @@ const CreateStationForm = (props) => {
                     />
                 </Form.Item>
 
-                {getStartedState?.formFieldsCreateStation.retention_type === 'message_age_sec' && (
+                {getStartedState?.formFieldsCreateStation?.retention_type === 'message_age_sec' && (
                     <div className="time-value">
                         <div className="days-section">
                             <Form.Item name="days" initialValue={getStartedState?.formFieldsCreateStation?.days}>
@@ -241,7 +240,7 @@ const CreateStationForm = (props) => {
                         </div>
                     </div>
                 )}
-                {getStartedState?.formFieldsCreateStation.retention_type === 'bytes' && (
+                {getStartedState?.formFieldsCreateStation?.retention_type === 'bytes' && (
                     <div className="retention-type">
                         <Form.Item name="retentionSizeValue" initialValue={getStartedState?.formFieldsCreateStation?.retentionSizeValue}>
                             <Input
@@ -262,7 +261,7 @@ const CreateStationForm = (props) => {
                         <p>bytes</p>
                     </div>
                 )}
-                {getStartedState?.formFieldsCreateStation.retention_type === 'messages' && (
+                {getStartedState?.formFieldsCreateStation?.retention_type === 'messages' && (
                     <div className="retention-type">
                         <Form.Item name="retentionMessagesValue" initialValue={getStartedState?.formFieldsCreateStation?.retentionMessagesValue}>
                             <Input

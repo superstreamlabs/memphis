@@ -44,6 +44,8 @@
     }
     .border-completed {
         border-left: 1px solid #6557ff;
+        height: calc(100% - 50px);
+
     }
 }
 .cursor-allowed {
