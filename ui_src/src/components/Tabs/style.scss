@@ -9,7 +9,7 @@
     .badge {
         background-color: #f7685b;
         color: #ffffff;
-        font-size: 9px;
+        font-size: 12px;
         align-items: center;
         border-radius: 50px;
         padding-right: 6px;
@@ -19,6 +19,8 @@
         margin-top: 2px;
     }
 }
+
 .hover .ant-tabs-tab:hover{
     color: var(--purple) !important;
 }
+

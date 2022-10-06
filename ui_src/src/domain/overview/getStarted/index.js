@@ -32,12 +32,16 @@ import ProduceData from './produceData';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
-import ProduceDataImg from '../../../assets/images/produceData.svg';
-import ConsumeDataImg from '../../../assets/images/consumeData.svg';
-import finishStep from '../../../assets/lotties/finishStep.json';
+import ProduceDataImg from '../../../assets/images/emptyStation.svg';
+import ConsumeDataImg from '../../../assets/images/fullStation.svg';
+import finishStep from '../../../assets/images/readyToRoll.svg';
 import Finish from './finish';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
+import Button from '../../../components/button';
+import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
+import pathDomains from '../../../router';
+import { useHistory } from 'react-router-dom';
 
 const steps = [{ stepName: 'Create Station' }, { stepName: 'Create App user' }, { stepName: 'Produce data' }, { stepName: 'Consume data' }, { stepName: 'Finish' }];
 
@@ -92,23 +96,44 @@ const initialState = {
     actualPods: null
 };
 
-const GetStarted = (props) => {
-    const createStationFormRef = useRef(null);
+const GetStarted = ({ username, dataSentence }) => {
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
+    const history = useHistory();
+    const createStationFormRef = useRef(null);
+
+    const getStepsDescription = (stepNumber) => {
+        switch (stepNumber) {
+            case 1:
+                return 'A station is a distributed unit that stores the produced data';
+            case 2:
+                return 'Each data producer/consumer has to have a username and a connection-token';
+            case 3:
+                return 'A producer is the source application/service that pushes data or messages to the broker or station';
+            case 4:
+                return 'A consumer is the application/service that consume data or messages from the broker or station';
+            case 5:
+                return 'Congratulations - You’ve created your first broker app';
+        }
+    };
 
     const SideStepList = () => {
-        return steps.map((value, index) => {
-            return (
-                <SideStep
-                    key={index}
-                    currentStep={getStartedState?.currentStep}
-                    stepNumber={index + 1}
-                    stepName={value.stepName}
-                    completedSteps={getStartedState?.completedSteps}
-                    onSideBarClick={(e) => getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: e })}
-                />
-            );
-        });
+        return (
+            <div className="sidebar-component">
+                {steps.map((value, index) => {
+                    return (
+                        <SideStep
+                            key={index}
+                            currentStep={getStartedState?.currentStep}
+                            stepNumber={index + 1}
+                            stepName={value.stepName}
+                            stepsDescription={getStepsDescription(index + 1)}
+                            completedSteps={getStartedState?.completedSteps}
+                            onSideBarClick={(e) => getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: e })}
+                        />
+                    );
+                })}
+            </div>
+        );
     };
 
     const onNext = () => {
@@ -119,9 +144,17 @@ const GetStarted = (props) => {
         getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep - 1 });
     };
 
+    const getOverviewData = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
+            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
+            indexOfBrokerComponent = indexOfBrokerComponent || 1;
+            getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
+        } catch (error) {}
+    };
+
     useEffect(() => {
         getOverviewData();
-        return;
     }, []);
 
     useEffect(() => {
@@ -133,82 +166,95 @@ const GetStarted = (props) => {
         return;
     }, [getStartedState?.currentStep]);
 
-    const getOverviewData = async () => {
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components?.findIndex((item) => item.component.includes('broker'));
-            indexOfBrokerComponent = indexOfBrokerComponent || 1;
-            getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
-        } catch (error) {}
-    };
-
     return (
         <GetStartedStoreContext.Provider value={[getStartedState, getStartedDispatch]}>
             <div className="getstarted-container">
-                <h1 className="getstarted-header">Let's get you started</h1>
-                <p className="getstarted-header-description">Your real-time journey starts here</p>
-                <div className="sub-getstarted-container">
-                    <div className="side-step">
-                        <SideStepList />
+                <div className="sidebar-section">
+                    <div className="welcome-section">
+                        <p className="getstarted-welcome">Welcome, {username}</p>
+                        <p className="getstarted-description">{dataSentence}</p>
                     </div>
-                    <div className="getstarted-item">
-                        {getStartedState?.currentStep === 1 && (
-                            <GetStartedItem
-                                headerImage={GetStartedIcon}
-                                headerTitle="Create Station"
-                                headerDescription="Station is the object that stores data"
-                                onNext={onNext}
-                                onBack={onBack}
-                            >
-                                <CreateStationForm createStationFormRef={createStationFormRef} />
-                            </GetStartedItem>
-                        )}
-                        {getStartedState?.currentStep === 2 && (
-                            <GetStartedItem
-                                headerImage={AppUserIcon}
-                                headerTitle="Create application user"
-                                headerDescription="User of type application is for connecting apps"
-                                onNext={onNext}
-                                onBack={onBack}
-                            >
-                                <CreateAppUser createStationFormRef={createStationFormRef} />
-                            </GetStartedItem>
-                        )}
-                        {getStartedState?.currentStep === 3 && (
-                            <GetStartedItem
-                                headerImage={ProduceDataImg}
-                                headerTitle="Create producer"
-                                headerDescription="Choose your preferred SDK, copy and paste the code to your IDE, and run your app to produce data to memphis station"
-                                onNext={onNext}
-                                onBack={onBack}
-                            >
-                                <ProduceData createStationFormRef={createStationFormRef} />
-                            </GetStartedItem>
-                        )}
-                        {getStartedState?.currentStep === 4 && (
-                            <GetStartedItem
-                                headerImage={ConsumeDataImg}
-                                headerTitle="Create consumer"
-                                headerDescription="Choose your preferred SDK, copy and paste the code to your IDE, and run your app to consume data from memphis station"
-                                onNext={onNext}
-                                onBack={onBack}
-                            >
-                                <ConsumeData createStationFormRef={createStationFormRef} />
-                            </GetStartedItem>
-                        )}
-                        {getStartedState?.currentStep === 5 && (
-                            <GetStartedItem
-                                headerImage={finishStep}
-                                headerTitle="You are ready to roll"
-                                headerDescription="Congratulations - You’ve created your first broker app"
-                                onNext={onNext}
-                                onBack={onBack}
-                                style={finishStyle}
-                            >
-                                <Finish createStationFormRef={createStationFormRef} />
-                            </GetStartedItem>
-                        )}
+                    <div className="getstarted-message-container">
+                        <p className="getstarted-message">Let’s get you started</p>
+                        <p className="getstarted-message-description">Your streaming journey with Memphis starts here</p>
                     </div>
+                    <SideStepList />
+                    <div className="skip-btn">
+                        <Button
+                            width="120px"
+                            height="36px"
+                            fontFamily="InterSemiBold"
+                            placeholder="Skip for now"
+                            radiusType="circle"
+                            backgroundColorType="none"
+                            border="gray"
+                            fontSize="14px"
+                            boxShadow="gray"
+                            onClick={() => {
+                                localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+                                history.push(pathDomains.overview);
+                            }}
+                        />
+                    </div>
+                </div>
+                <div className="steps-section">
+                    {getStartedState?.currentStep === 1 && (
+                        <GetStartedItem
+                            headerImage={GetStartedIcon}
+                            headerTitle="Create Station"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
+                            onNext={onNext}
+                            onBack={onBack}
+                        >
+                            <CreateStationForm createStationFormRef={createStationFormRef} />
+                        </GetStartedItem>
+                    )}
+                    {getStartedState?.currentStep === 2 && (
+                        <GetStartedItem
+                            headerImage={AppUserIcon}
+                            headerTitle="Create user"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
+                            onNext={onNext}
+                            onBack={onBack}
+                        >
+                            <CreateAppUser createStationFormRef={createStationFormRef} />
+                        </GetStartedItem>
+                    )}
+                    {getStartedState?.currentStep === 3 && (
+                        <GetStartedItem
+                            headerImage={ProduceDataImg}
+                            headerTitle="Produce data"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
+                            onNext={onNext}
+                            onBack={onBack}
+                        >
+                            <ProduceData createStationFormRef={createStationFormRef} />
+                        </GetStartedItem>
+                    )}
+                    {getStartedState?.currentStep === 4 && (
+                        <GetStartedItem
+                            headerImage={ConsumeDataImg}
+                            headerTitle="Consume data"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
+                            onNext={onNext}
+                            onBack={onBack}
+                        >
+                            <ConsumeData createStationFormRef={createStationFormRef} />
+                        </GetStartedItem>
+                    )}
+                    {getStartedState?.currentStep === 5 && (
+                        <GetStartedItem
+                            headerImage={finishStep}
+                            headerTitle="You are ready to roll"
+                            headerDescription={getStepsDescription(getStartedState?.currentStep)}
+                            onNext={onNext}
+                            onBack={onBack}
+                            style={finishStyle}
+                            finish
+                        >
+                            <Finish createStationFormRef={createStationFormRef} />
+                        </GetStartedItem>
+                    )}
                 </div>
             </div>
         </GetStartedStoreContext.Provider>

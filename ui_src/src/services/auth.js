@@ -32,7 +32,8 @@ import {
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_NAMESPACE,
     LOCAL_STORAGE_WELCOME_MESSAGE,
-    LOCAL_STORAGE_FULL_NAME
+    LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 
@@ -59,7 +60,9 @@ const AuthService = (function () {
     };
 
     const logout = () => {
+        const isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
         localStorage.clear();
+        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
         window.location.assign(pathDomains.login);
     };
 

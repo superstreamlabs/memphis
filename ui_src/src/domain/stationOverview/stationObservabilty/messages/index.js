@@ -279,6 +279,7 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
+                    length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
                     disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
                 ></CustomTabs>
             </div>
