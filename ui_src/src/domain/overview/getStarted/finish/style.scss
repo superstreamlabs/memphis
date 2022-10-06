@@ -1,13 +1,14 @@
 .finish-container {
     display: flex;
     flex-direction: column;
-    height: calc(100% - 350px);
     align-items: center;
     justify-content: space-between;
     .btn-container {
         display: flex;
         flex-direction: column;
         align-items: center;
+        margin-top: 20px;
+        margin-bottom: 20px;
         .allow-analytics {
             display: flex;
             p {

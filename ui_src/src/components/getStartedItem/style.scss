@@ -45,7 +45,8 @@
             }
         }
         .finish {
-            margin-top: 40%;
+            margin-top: 10%;
+            height: 350px !important;
         }
         .get-started-header {
             padding-left: 3px;
@@ -53,6 +54,13 @@
         }
         .get-started-body {
             height: calc(100% - 150px);
+            padding-top: 30px;
+            padding-left: 3px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .get-started-body-finish {
+            height: calc(100% - 450px);
             padding-top: 30px;
             padding-left: 3px;
             overflow-y: auto;

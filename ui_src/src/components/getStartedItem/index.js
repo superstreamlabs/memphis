@@ -34,7 +34,7 @@ const GetStartedItem = (props) => {
                             <p className="header-title">{headerTitle}</p>
                             <p className="header-description">{headerDescription}</p>
                         </div>
-                        <div className="get-started-body">{children}</div>
+                        <div className="get-started-body-finish">{children}</div>
                     </div>
                 </>
             )}
