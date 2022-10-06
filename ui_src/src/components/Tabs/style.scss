@@ -1,21 +1,15 @@
 .tabs-container {
-    .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn{
         color: var(--purple) !important;
     }
-    .ant-tabs-ink-bar {
+    .ant-tabs-ink-bar{
         background: var(--purple);
         border-radius: 10px;
     }
-}
-.hover .ant-tabs-tab:hover {
-    color: var(--purple) !important;
-}
-.tab {
-    display: flex;
     .badge {
         background-color: #f7685b;
         color: #ffffff;
-        font-size: 9px;
+        font-size: 12px;
         align-items: center;
         border-radius: 50px;
         padding-right: 6px;
@@ -25,3 +19,8 @@
         margin-top: 2px;
     }
 }
+
+.hover .ant-tabs-tab:hover{
+    color: var(--purple) !important;
+}
+

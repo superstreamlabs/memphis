@@ -122,6 +122,36 @@ const StationOverviewHeader = () => {
                             </div>
                         </div>
                     </TooltipComponent>
+                    {/* <div className="details-wrapper">
+                        <div className="icon">
+                            <img src={memoryIcon} width={24} height={24} alt="memoryIcon" />
+                        </div>
+                        <div className="more-details">
+                            <p className="number">20Mb/80Mb</p>
+                            <Progress showInfo={false} status={(20 / 80) * 100 > 60 ? 'exception' : 'success'} percent={(20 / 80) * 100} size="small" />
+                            <p className="title">Mem</p>
+                        </div>
+                    </div> */}
+                    {/* <div className="details-wrapper">
+                        <div className="icon">
+                            <img src={cpuIcon} width={22} height={22} alt="cpuIcon" />
+                        </div>
+                        <div className="more-details">
+                            <p className="number">50%</p>
+                            <Progress showInfo={false} status={(35 / 100) * 100 > 60 ? 'exception' : 'success'} percent={(35 / 100) * 100} size="small" />
+                            <p className="title">CPU</p>
+                        </div>
+                    </div> */}
+                    {/* <div className="details-wrapper">
+                        <div className="icon">
+                            <img src={storageIcon} width={30} height={30} alt="storageIcon" />
+                        </div>
+                        <div className="more-details">
+                            <p className="number">{60}Mb/100Mb</p>
+                            <Progress showInfo={false} status={(60 / 100) * 100 > 60 ? 'exception' : 'success'} percent={(60 / 100) * 100} size="small" />
+                            <p className="title">Storage</p>
+                        </div>
+                    </div> */}
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
