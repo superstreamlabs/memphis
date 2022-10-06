@@ -149,7 +149,6 @@ function OverView() {
             return;
         }
     };
-    console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED));
 
     return (
         <div className="overview-container">
@@ -206,7 +205,6 @@ function OverView() {
                 </div>
             )}
             {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null && <GetStarted username={username} dataSentence={dataSentence} />}
-
             <Modal
                 header="Your station details"
                 height="460px"
