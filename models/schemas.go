@@ -23,29 +23,52 @@ package models
 
 import (
 	"time"
-	
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Schema struct {
-	ID        	primitive.ObjectID 		`json:"id" bson:"_id"`
-	Name      	string             		`json:"name" bson:"name"`
-	Type      	string             		`json:"type" bson:"type"`
-	Versions  	[]primitive.ObjectID    `json:"versions" bson:"versions"`
-	IsDeleted 	bool               		`json:"is_deleted" bson:"is_deleted"`
+	ID        primitive.ObjectID   `json:"id" bson:"_id"`
+	Name      string               `json:"name" bson:"name"`
+	Type      string               `json:"type" bson:"type"`
+	Versions  []primitive.ObjectID `json:"versions" bson:"versions"`
+	IsDeleted bool                 `json:"is_deleted" bson:"is_deleted"`
 }
 
 type SchemaVersion struct {
-	ID            primitive.ObjectID 	`json:"id" bson:"_id"`
-	VersionNumber int             		`json:"version_number" bson:"version_number"`
-	Active        bool               	`json:"active" bson:"active"`
-	CreatedByUser string             	`json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          	`json:"creation_date" bson:"creation_date"`
-	SchemaContent string		 		`json:"schema_content" bson:"schema_content"`
+	ID            primitive.ObjectID `json:"id" bson:"_id"`
+	VersionNumber int                `json:"version_number" bson:"version_number"`
+	Active        bool               `json:"active" bson:"active"`
+	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	SchemaContent string             `json:"schema_content" bson:"schema_content"`
 }
 
 type CreateNewSchema struct {
-	Name            string 				`json:"name" binding:"required,min=1,max=32"`
-	Type   			string 				`json:"type"`
-	SchemaContent  	string 				`json:"schema_content"`
+	Name          string `json:"name" binding:"required,min=1,max=32"`
+	Type          string `json:"type"`
+	SchemaContent string `json:"schema_content"`
+}
+
+type ExtendedSchema struct {
+	ID            primitive.ObjectID `json:"id"`
+	Name          string             `json:"name"`
+	Type          string             `json:"type"`
+	CreatedByUser string             `json:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date"`
+}
+
+type ExtendedDetailsSchema struct {
+	ID            primitive.ObjectID `json:"id"`
+	SchemaName    string             `json:"schema_name"`
+	VersionNumber int                `json:"version_number"`
+	Active        bool               `json:"active"`
+	CreatedByUser string             `json:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date"`
+	SchemaContent string             `json:"schema_content"`
+}
+
+type GetSchemaDetailsByVersionNumber struct {
+	VersionNumber int    `form:"version_number" json:"version_number"`
+	SchemaName    string `form:"schema_name" json:"schema_name"`
 }

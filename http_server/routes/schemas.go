@@ -10,4 +10,6 @@ func InitializeSchemasRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	schemasHandler := h.Schemas
 	schemasRoutes := router.Group("/schemas")
 	schemasRoutes.POST("/createNewSchema", schemasHandler.CreateNewSchema)
+	schemasRoutes.GET("/getAllSchemas", schemasHandler.GetAllSchemas)
+	schemasRoutes.GET("/getSchemaDetails", schemasHandler.GetSchemaDetails)
 }
