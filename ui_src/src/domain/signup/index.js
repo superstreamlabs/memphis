@@ -22,7 +22,6 @@
 import './style.scss';
 
 import React, { useState, useContext, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
