@@ -42,6 +42,10 @@
                 background: rgba(212, 208, 253, 0.3);
                 color: #6557ff;
             }
+            .disabled {
+                opacity: 50%;
+                cursor: not-allowed;
+            }
         }
     }
 

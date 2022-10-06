@@ -32,7 +32,7 @@ import EditProfileColor from '../../assets/images/setting/editProfileColor.svg';
 import EditProfileGray from '../../assets/images/setting/editProfileGray.svg';
 import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
 import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
-
+import NotificationGray from '../../assets/images/setting/notificationGray.svg';
 import Integrations from './integrations';
 import Profile from './profile';
 import Alerts from './alerts';
@@ -51,6 +51,8 @@ function Users() {
                 return <Alerts />;
             case 'intergrations':
                 return <Integrations />;
+            case 'notifications':
+                return;
             default:
                 return;
         }
@@ -72,9 +74,13 @@ function Users() {
                         <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} />
                         Cluster configuration
                     </div>
-                    <div className={selectedMenuItem === 'intergrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('intergrations')}>
+                    <div className="menu-item disabled">
                         <img src={selectedMenuItem === 'intergrations' ? IntegrationColor : IntegrationGray} />
                         Intergrations
+                    </div>
+                    <div className="menu-item disabled">
+                        <img src={selectedMenuItem === 'notifications' ? NotificationGray : NotificationGray} />
+                        Notifications
                     </div>
                 </div>
             </div>
