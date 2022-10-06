@@ -68,11 +68,11 @@ type ExtendedSchemaDetails struct {
 	SchemaContent string             `json:"schema_content"`
 }
 
-type GetSchemaDetailsByVersionNumber struct {
-	VersionNumber int    `form:"version_number" json:"version_number"`
-	SchemaName    string `form:"schema_name" json:"schema_name"`
+type GetSchemaDetails struct {
+	VersionNumber int    			 `form:"version_number" json:"version_number"`
+	SchemaName    string 			 `form:"schema_name" json:"schema_name"`
 }
 
 type RemoveSchema struct {
-	SchemaName    string `json:"schema_name"`
+	SchemaName string 				 `json:"schema_name"`
 }

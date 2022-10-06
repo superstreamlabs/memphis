@@ -63,9 +63,8 @@ func validateSchemaContent(schemaContent string) error {
 	}
 }
 
-func (sh SchemasHandler) GetSchemaDetailsByVersionNumber(schemaName string, versionNumber int) (models.SchemaVersion, error) {
+func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string, versionNumber int) (models.SchemaVersion, error) {
 	var schema models.Schema
-
 	err := schemasCollection.FindOne(context.TODO(), bson.M{
 		"name": schemaName,
 	}).Decode(&schema)
@@ -73,7 +72,6 @@ func (sh SchemasHandler) GetSchemaDetailsByVersionNumber(schemaName string, vers
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
-
 	var schemaVersion models.SchemaVersion
 	filter := bson.M{
 		"version_number": versionNumber,
@@ -111,6 +109,9 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 		for _, version := range schema.Versions {
 			filter := bson.M{"_id": version}
 			err = schemasVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
+			if err != nil {
+				return []models.ExtendedSchema{}, err
+			}
 			if schemaVersion.VersionNumber == 1 {
 				extSchema := models.ExtendedSchema{
 					ID:            schema.ID,
@@ -120,9 +121,6 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 					CreationDate:  schemaVersion.CreationDate,
 				}
 				extednedSchemas = append(extednedSchemas, extSchema)
-				if err != nil {
-					return []models.ExtendedSchema{}, err
-				}
 			}
 		}
 
@@ -198,8 +196,6 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	exist, _, err := IsSchemaExist(schemaName)
 	if exist {
 		serv.Warnf("Schema with that name already exists")
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
 	}
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -207,10 +203,9 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("CreateStation error: " + err.Error())
+		serv.Errorf("CreateNewSchema error: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-
 	schemaType := strings.ToLower(body.Type)
 	err = validateSchemaType(schemaType)
 
@@ -238,7 +233,6 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	var active bool
 	if versionNumber == 1 {
 		active = true
-
 	} else {
 		active = false
 	}
@@ -329,13 +323,13 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 }
 
 func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
-	var body models.GetSchemaDetailsByVersionNumber
+	var body models.GetSchemaDetails
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 	schemaName := strings.ToLower(body.SchemaName)
-	schemaDetails, err := sh.GetSchemaDetailsByVersionNumber(schemaName, body.VersionNumber)
+	schemaDetails, err := sh.GetSchemaDetailsBySchemaName(schemaName, body.VersionNumber)
 
 	if err != nil {
 		serv.Errorf("GetSchemaDetails error: " + err.Error())
