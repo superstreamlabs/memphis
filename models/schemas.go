@@ -58,7 +58,7 @@ type ExtendedSchema struct {
 	CreationDate  time.Time          `json:"creation_date"`
 }
 
-type ExtendedDetailsSchema struct {
+type ExtendedSchemaDetails struct {
 	ID            primitive.ObjectID `json:"id"`
 	SchemaName    string             `json:"schema_name"`
 	VersionNumber int                `json:"version_number"`
@@ -71,4 +71,8 @@ type ExtendedDetailsSchema struct {
 type GetSchemaDetailsByVersionNumber struct {
 	VersionNumber int    `form:"version_number" json:"version_number"`
 	SchemaName    string `form:"schema_name" json:"schema_name"`
+}
+
+type RemoveSchema struct {
+	SchemaName    string `json:"schema_name"`
 }
