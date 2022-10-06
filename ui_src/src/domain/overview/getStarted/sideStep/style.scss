@@ -1,8 +1,8 @@
 .side-step-container {
     margin-left: 40px;
-    margin-right: 40px;
+    margin-right: 20px;
     position: relative;
-    width: 75%;
+    width: 82%;
     .sidebar-image {
         height: 20px;
     }
@@ -28,9 +28,7 @@
         margin-left: 12px;
         margin-top: 10px;
         .step-description {
-            min-height: 66px;
             padding-left: 20px;
-            // margin-top: 5px;
             font-weight: 400;
             font-size: 14px;
             color: #667085;
@@ -42,6 +40,7 @@
     }
     .border {
         border-left: 1px solid rgba(74, 73, 92, 0.2);
+        height: calc(100% - 50px);
     }
     .border-completed {
         border-left: 1px solid #6557ff;

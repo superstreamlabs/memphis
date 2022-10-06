@@ -91,7 +91,7 @@ const SideStep = (props) => {
                     {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt="completed"></img>}
                 </div>
             </div>
-            <div className={completedSteps >= stepNumber ? 'side-step-body border-completed' : 'side-step-body border'}>
+            <div className={completedSteps >= stepNumber ? 'side-step-body border-completed' : stepNumber !== 5 ? 'side-step-body border' : 'side-step-body'}>
                 {stepNumber !== 5 && (
                     <p className={currentStep === stepNumber ? 'step-description curr-step-name' : 'step-description'}>
                         {stepsDescription}

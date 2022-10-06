@@ -2,21 +2,17 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+    max-height: 500px;
     .station-name-section {
-        height: 150px;
         justify-content: space-between;
         display: flex;
         flex-direction: column;
-        padding-bottom: 20px;
     }
     .retention-type-section {
-        height: 230px;
         justify-content: space-between;
         display: flex;
         flex-direction: column;
-        padding-bottom: 20px;
-        margin-top: 20px;
-        margin-bottom: 20px;
     }
     .field-title {
         display: flex;
@@ -27,18 +23,15 @@
     .storage-replicas-container {
         display: flex;
         width: 100%;
-        height: 130px;
         .storage-container {
             justify-content: space-between;
             display: flex;
             flex-direction: column;
-            padding-bottom: 20px;
         }
         .replicas-container {
             justify-content: space-between;
             display: flex;
             flex-direction: column;
-            padding-bottom: 20px;
         }
     }
     .header-getstarted-form {

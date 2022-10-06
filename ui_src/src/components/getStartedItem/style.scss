@@ -19,10 +19,8 @@
     }
     .get-started-top {
         height: calc(100% - 120px);
-        width: 75%;
         position: relative;
-        // padding: 60px 0px 0px 60px;
-        padding-left: 60px;
+        padding-left: 40px;
         .get-started-top-header {
             height: 150px;
             display: flex;
@@ -54,7 +52,7 @@
         }
         .get-started-body {
             height: calc(100% - 150px);
-            padding-top: 30px;
+            padding-top: 20px;
             padding-left: 3px;
             overflow-y: auto;
             position: relative;
@@ -74,13 +72,13 @@
         }
     }
     .get-started-footer {
-        height: 100px;
+        height: 80px;
         display: flex;
         flex-direction: row-reverse;
         align-items: center;
         justify-content: space-between;
         border-top: 1px solid #e9e9e9;
-        margin-left: 60px;
-        margin-right: 60px;
+        margin-left: 40px;
+        margin-right: 40px;
     }
 }

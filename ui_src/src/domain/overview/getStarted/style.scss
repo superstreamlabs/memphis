@@ -3,17 +3,19 @@
     height: 100%;
     width: 100%;
     .sidebar-component {
-        height: calc(100% - 350px);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-evenly;
         position: relative;
         overflow-y: scroll;
+        padding-top: 10px;
+        height: calc(100% - 310px);
+        overflow: scroll;
+        display: grid;
     }
     .sidebar-section {
         width: 30%;
         height: 100%;
-
+        display: flex;
+        position: relative;
+        flex-direction: column;
         .welcome-section {
             height: 150px;
             border-bottom: 1px solid #efeef2;
@@ -35,8 +37,9 @@
             }
         }
         .getstarted-message-container {
-            height: 100px;
-            padding: 30px 40px 30px 40px;
+            height: 80px;
+            padding-top: 20px;
+            padding-left: 40px;
             .getstarted-message {
                 font-weight: 600;
                 font-size: 16px;
@@ -52,8 +55,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            // margin-top: 15px;
-            height: 100px;
+            height: 80px;
         }
     }
     .steps-section {

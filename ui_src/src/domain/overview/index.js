@@ -120,18 +120,17 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        state.socket?.on('main_overview_data', (data) => {
-            data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-            dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-        });
-
-        setTimeout(() => {
-            state.socket?.emit('register_main_overview_data');
-            setisLoading(false);
-        }, 1000);
-        return () => {
-            state.socket?.emit('deregister');
-        };
+        // state.socket?.on('main_overview_data', (data) => {
+        //     data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+        //     dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+        // });
+        // setTimeout(() => {
+        //     state.socket?.emit('register_main_overview_data');
+        //     setisLoading(false);
+        // }, 1000);
+        // return () => {
+        //     state.socket?.emit('deregister');
+        // };
     }, [state.socket]);
 
     const setBotImage = (botId) => {
