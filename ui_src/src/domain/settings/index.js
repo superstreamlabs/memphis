@@ -26,38 +26,59 @@ import { Divider } from 'antd';
 
 import CustomTabs from '../../components/Tabs';
 import { Context } from '../../hooks/store';
+import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
+import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
+import EditProfileColor from '../../assets/images/setting/editProfileColor.svg';
+import EditProfileGray from '../../assets/images/setting/editProfileGray.svg';
+import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
+import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
+
 import Integrations from './integrations';
 import Profile from './profile';
 import Alerts from './alerts';
 
 function Users() {
-    const [value, setValue] = useState(0);
-    // const tabs = ['Profile', 'Integrations', 'Alerts'];
-    const tabs = ['Profile'];
+    const [selectedMenuItem, selectMenuItem] = useState('editProfile');
     const [state, dispatch] = useContext(Context);
 
-    useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: '' });
-    }, []);
+    useEffect(() => {}, []);
 
-    const handleChangeMenuItem = (_, newValue) => {
-        setValue(newValue);
+    const getComponent = () => {
+        switch (selectedMenuItem) {
+            case 'editProfile':
+                return <Profile />;
+            case 'clusterConfiguration':
+                return <Alerts />;
+            case 'intergrations':
+                return <Integrations />;
+            default:
+                return;
+        }
     };
-
     return (
-        <div className="preferences-container">
-            <h1 className="main-header-h1">Preferences</h1>
-            {/* <div className="preferences-panel-tabs">
-                <div>
-                    <CustomTabs value={value} onChange={handleChangeMenuItem} tabs={tabs}></CustomTabs>
-                    <Divider />
+        <div className="setting-container">
+            <div className="menu-container">
+                <p className="header">My account</p>
+                <p className="sub-header">Update and manage your account</p>
+                <div className="side-menu">
+                    <div className={selectedMenuItem === 'editProfile' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('editProfile')}>
+                        <img src={selectedMenuItem === 'editProfile' ? EditProfileColor : EditProfileGray} />
+                        Edit Profile
+                    </div>
+                    <div
+                        className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
+                        onClick={() => selectMenuItem('clusterConfiguration')}
+                    >
+                        <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} />
+                        Cluster configuration
+                    </div>
+                    <div className={selectedMenuItem === 'intergrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('intergrations')}>
+                        <img src={selectedMenuItem === 'intergrations' ? IntegrationColor : IntegrationGray} />
+                        Intergrations
+                    </div>
                 </div>
-            </div> */}
-            <div className="tabs-body">
-                {value === 0 && <Profile />}
-                {value === 1 && <Integrations />}
-                {value === 2 && <Alerts />}
             </div>
+            <div className="setting-items">{getComponent()}</div>
         </div>
     );
 }

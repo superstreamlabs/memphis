@@ -1,61 +1,125 @@
 .profile-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    justify-content: space-around;
-    .profile-sections {
-        .avatar-section {
+    .title {
+        font-weight: 500;
+        font-size: 14px;
+        color: #2e2c34;
+        margin-bottom: 10px;
+    }
+    .header {
+        margin-bottom: 30px;
+        .main-header {
+            font-weight: 600;
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+        .sub-header {
+            font-weight: 400;
+            font-size: 12px;
+            color: rgba(74, 73, 92, 0.8);
+        }
+    }
+    .avatar-section {
+        margin-bottom: 30px;
+        .avatar-images {
             display: flex;
-            .sub-icon-wrapper {
+            .avatar-img {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #ffffff;
+                box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
+                border-radius: 8px;
+                border: 1px solid #e4e4e4;
+                height: 60px;
+                width: 60px;
+                margin-right: 10px;
                 cursor: pointer;
-                margin-right: 23px;
-                width: 35px;
-                height: 35px;
-                background: #ffffff;
-                box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .sub-icon-wrapper-sandbox {
-                cursor: not-allowed;
-                margin-right: 23px;
-                width: 35px;
-                height: 35px;
-                background: #ffffff;
-                box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .sub-icon-wrapper-border {
-                border: #6557ff 1px solid;
-            }
-            .sub-icon-wrapper:hover{
-                opacity: 0.6;
+                img {
+                    height: 40px;
+                    width: 40px;
+                }
             }
         }
-        .warning {
+    }
+    .company-logo-section {
+        .company-logo {
             display: flex;
-            img {
-                margin-right: 15px;
+            align-items: center;
+
+            .company-logo-right {
+                margin-left: 20px;
+                .update-remove-logo {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    width: 370px;
+                }
+                .company-logo-description {
+                    font-weight: 400;
+                    font-size: 12px;
+                    color: rgba(74, 73, 92, 0.8);
+                }
             }
         }
+    }
+    // display: flex;
+    // flex-direction: column;
+    // height: 100%;
+    // justify-content: space-around;
+    // .profile-sections {
+    //     .avatar-section {
+    //         display: flex;
+    //         .sub-icon-wrapper {
+    //             cursor: pointer;
+    //             margin-right: 23px;
+    //             width: 35px;
+    //             height: 35px;
+    //             background: #ffffff;
+    //             box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
+    //             border-radius: 50%;
+    //             display: flex;
+    //             align-items: center;
+    //             justify-content: center;
+    //         }
+    //         .sub-icon-wrapper-sandbox {
+    //             cursor: not-allowed;
+    //             margin-right: 23px;
+    //             width: 35px;
+    //             height: 35px;
+    //             background: #ffffff;
+    //             box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
+    //             border-radius: 50%;
+    //             display: flex;
+    //             align-items: center;
+    //             justify-content: center;
+    //         }
+    //         .sub-icon-wrapper-border {
+    //             border: #6557ff 1px solid;
+    //         }
+    //         .sub-icon-wrapper:hover{
+    //             opacity: 0.6;
+    //         }
+    //     }
+    //     .warning {
+    //         display: flex;
+    //         img {
+    //             margin-right: 15px;
+    //         }
+    //     }
 
-        .sandboxUserImg {
-            border-radius: 50%;
-        }
-    }
-    .company-logo {
-        height: 170px;
-    }
-    .analytics {
-        display: flex;
-        p {
-            margin-right: 20px;
-            margin-bottom: 0px;
-        }
-    }
+    //     .sandboxUserImg {
+    //         border-radius: 50%;
+    //     }
+    // }
+    // .company-logo {
+    //     height: 170px;
+    // }
+    // .analytics {
+    //     display: flex;
+    //     p {
+    //         margin-right: 20px;
+    //         margin-bottom: 0px;
+    //     }
+    // }
 }
