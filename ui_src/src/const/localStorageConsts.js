@@ -34,3 +34,4 @@ export const LOCAL_STORAGE_ENV = 'env';
 export const LOCAL_STORAGE_NAMESPACE = 'namespace';
 export const LOCAL_STORAGE_WELCOME_MESSAGE = 'welcome_message';
 export const LOCAL_STORAGE_SKIP_GET_STARTED = 'local_storage_skip_get_started';
+export const LOCAL_STORAGE_LOGIN = 'local_storage_login';

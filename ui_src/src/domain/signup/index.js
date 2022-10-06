@@ -22,14 +22,17 @@
 import './style.scss';
 
 import React, { useState, useContext, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import { Form } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_LOGIN } from '../../const/localStorageConsts';
 import betaFullLogo from '../../assets/images/betaFullLogo.svg';
 import betaBadge from '../../assets/images/betaBadge.svg';
+import signupInfo from '../../assets/images/signupInfo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import signup from '../../assets/images/signup.svg';
 import { httpRequest } from '../../services/http';
@@ -39,6 +42,7 @@ import Button from '../../components/button';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
+import Tooltip from '../../components/tooltip/tooltip';
 import { SOCKET_URL } from '../../config';
 import pathDomains from '../../router';
 
@@ -79,7 +83,7 @@ const Signup = (props) => {
 
     const getSignupFlag = useCallback(async () => {
         const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
-        if (!data.exist) {
+        if (!data.exist || localStorage.getItem(LOCAL_STORAGE_LOGIN) === 'true') {
             history.push(pathDomains.login);
         }
         setisLoading(false);
@@ -268,6 +272,19 @@ const Signup = (props) => {
                                 </div>
                             </Form.Item>
                         </Form>
+                        <div
+                            className="signin-with-root"
+                            onClick={() => {
+                                localStorage.setItem(LOCAL_STORAGE_LOGIN, 'true');
+                                history.push(pathDomains.login);
+                            }}
+                        >
+                            <label>Sign in with root</label>
+                            <Tooltip text="Sign in with Memphis root user" arrow>
+                                <img src={signupInfo} />
+                            </Tooltip>
+                        </div>
+
                         <div className="version">
                             <p>v{systemVersion}</p>
                             <img src={betaBadge} />
