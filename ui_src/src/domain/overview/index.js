@@ -149,7 +149,7 @@ function OverView() {
             return;
         }
     };
-    console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED));
+
     return (
         <div className="overview-container">
             {isLoading && (

@@ -66,7 +66,6 @@ const Login = (props) => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
             if (data.exist && localStorage.getItem(LOCAL_STORAGE_LOGIN) === null && localStorage.getItem(LOCAL_STORAGE_LOGIN) !== 'true') {
-                localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, false);
                 history.push(pathDomains.signup);
             }
             setIsSignup();
