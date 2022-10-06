@@ -29,7 +29,7 @@ import { useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import { Form } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_LOGIN } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
 import betaFullLogo from '../../assets/images/betaFullLogo.svg';
 import betaBadge from '../../assets/images/betaBadge.svg';
 import signupInfo from '../../assets/images/signupInfo.svg';
@@ -83,7 +83,7 @@ const Signup = (props) => {
 
     const getSignupFlag = useCallback(async () => {
         const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
-        if (!data.exist || localStorage.getItem(LOCAL_STORAGE_LOGIN) === 'true') {
+        if (!data.exist || state.skipSignup) {
             history.push(pathDomains.login);
         }
         setisLoading(false);
@@ -275,7 +275,7 @@ const Signup = (props) => {
                         <div
                             className="signin-with-root"
                             onClick={() => {
-                                localStorage.setItem(LOCAL_STORAGE_LOGIN, 'true');
+                                dispatch({ type: 'SKIP_SIGNUP', payload: true });
                                 history.push(pathDomains.login);
                             }}
                         >
