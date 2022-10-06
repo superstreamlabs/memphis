@@ -44,8 +44,37 @@ const (
 	stationObjectName = "Station"
 )
 
-func validateStationName(stationName string) error {
-	return validateName(stationName, stationObjectName)
+type StationName struct {
+	internal string
+	external string
+}
+
+func (sn StationName) Ext() string {
+	return sn.external
+}
+
+func (sn StationName) Intern() string {
+	return sn.internal
+}
+
+func StationNameFromStr(name string) (StationName, error) {
+	extern := strings.ToLower(name)
+
+	err := validateName(extern, stationObjectName)
+	if err != nil {
+		return StationName{}, err
+	}
+
+	intern := replaceDelimiters(name)
+
+	return StationName{internal: intern, external: extern}, nil
+}
+
+func StationNameFromStreamName(streamName string) StationName {
+	intern := streamName
+	extern := revertDelimiters(intern)
+
+	return StationName{internal: intern, external: extern}
 }
 
 func validateRetentionType(retentionType string) error {
@@ -115,8 +144,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(csr.StationName)
-	err := validateStationName(stationName)
+	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf(err.Error())
 		respondWithErr(s, reply, err)
@@ -178,7 +206,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
-		Name:            stationName,
+		Name:            stationName.Ext(),
 		CreatedByUser:   c.memphisInfo.username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
@@ -192,7 +220,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		Functions:       []models.Function{},
 	}
 
-	err = s.CreateStream(newStation)
+	err = s.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
 		respondWithErr(s, reply, err)
@@ -205,13 +233,13 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName + " has been created"
+	message := "Station " + stationName.Ext() + " has been created"
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
@@ -366,8 +394,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	stationName := strings.ToLower(body.Name)
-	err := validateStationName(stationName)
+	stationName, err := StationNameFromStr(body.Name)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -430,7 +457,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
-		Name:            stationName,
+		Name:            stationName.Ext(),
 		RetentionType:   retentionType,
 		RetentionValue:  body.RetentionValue,
 		StorageType:     body.StorageType,
@@ -444,7 +471,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		IsDeleted:       false,
 	}
 
-	err = sh.S.CreateStream(newStation)
+	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -480,12 +507,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	message := "Station " + stationName + " has been created"
+	message := "Station " + stationName.Ext() + " has been created"
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
@@ -515,7 +542,13 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	stationName := strings.ToLower(body.StationName)
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
@@ -557,7 +590,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
-	serv.Noticef("Station " + stationName + " has been deleted")
+	serv.Noticef("Station " + stationName.Ext() + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -568,7 +601,13 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(dsr.StationName)
+	stationName, err := StationNameFromStr(dsr.StationName)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
@@ -590,7 +629,7 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 
 	_, err = stationsCollection.UpdateOne(context.TODO(),
 		bson.M{
-			"name": stationName,
+			"name": stationName.Ext(),
 			"$or": []interface{}{
 				bson.M{"is_deleted": false},
 				bson.M{"is_deleted": bson.M{"$exists": false}},
@@ -604,12 +643,16 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 		return
 	}
 
-	serv.Noticef("Station " + stationName + " has been deleted")
+	serv.Noticef("Station " + stationName.Ext() + " has been deleted")
 	respondWithErr(s, reply, nil)
 	return
 }
 
-func (sh StationsHandler) GetTotalMessages(stationName string) (int, error) {
+func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
+	stationName, err := StationNameFromStr(stationNameExt)
+	if err != nil {
+		return 0, err
+	}
 	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
 	return totalMessages, err
 }
@@ -659,7 +702,11 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		return poisonMessage, err
 	}
 
-	exist, station, err := IsStationExist(poisonMessage.StationName)
+	stationName, err := StationNameFromStr(poisonMessage.StationName)
+	if err != nil {
+		return poisonMessage, err
+	}
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		return poisonMessage, err
 	}
@@ -688,7 +735,11 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 
 		isActive, isDeleted := getCgStatus(cgMembers)
 
-		cgInfo, err := sh.S.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
+		stationName, err := StationNameFromStr(poisonMessage.StationName)
+		if err != nil {
+			return poisonMessage, err
+		}
+		cgInfo, err := sh.S.GetCgInfo(stationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
@@ -783,8 +834,10 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	for _, msg := range msgs {
+		stationName := replaceDelimiters(msg.StationName)
 		for _, cg := range msg.PoisonedCgs {
-			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
+			cgName := replaceDelimiters(cg.CgName)
+			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data))
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -831,7 +884,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		c.IndentedJSON(200, poisonMessage)
 		return
 	}
-	stationName := strings.ToLower(body.StationName)
+
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Errorf("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if !exist {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
@@ -868,7 +928,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-	poisonedCgs, err := GetPoisonedCgsByMessage(stationName, models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
+	poisonedCgs, err := GetPoisonedCgsByMessage(stationName.Ext(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -883,7 +943,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName, cg.CgName)
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
 		if err != nil {
 			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

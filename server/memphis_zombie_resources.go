@@ -95,7 +95,8 @@ func (srv *Server) removeRedundantStations() error {
 
 	redundant := make([]string, 0, len(stations))
 	for _, s := range stations {
-		_, err = srv.memphisStreamInfo(s.Name)
+		stationName, _ := StationNameFromStr(s.Name)
+		_, err = srv.memphisStreamInfo(stationName.Intern())
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			redundant = append(redundant, s.Name)
 		}
