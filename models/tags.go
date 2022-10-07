@@ -35,25 +35,29 @@ type Tag struct {
 	Schemas  []primitive.ObjectID `json:"schemas" bson:"schemas"`
 }
 
-type AddTagSchema struct {
+type AddTagToEntitySchema struct {
 	Name       string `json:"name" binding:"required,min=1,max=20"`
 	ColorBG    string `json:"color_bg"`
 	ColorTXT   string `json:"color_txt"`
 	EntityType string `json:"entity_type"`
 }
 
-type CreateTagSchema struct {
-	Name       string `json:"name" binding:"required,min=1,max=32"`
-	ColorBG    string `json:"color_bg"`
-	ColorTXT   string `json:"color_txt"`
-	EntityType string `json:"entity_type"`
-	EntityName string `json:"entity_name"`
+type CreateTag struct {
+	Name     string `json:"name" binding:"required,min=1,max=20"`
+	ColorBG  string `json:"color_bg"`
+	ColorTXT string `json:"color_txt"`
 }
 
-type RemoveTagSchema struct {
-	Name       string `json:"name"`
-	EntityType string `json:"entity_type"`
-	EntityName string `json:"entity_name"`
+type CreateTagSchema struct {
+	Tags       []CreateTag `json:"tags"`
+	EntityType string      `json:"entity_type"`
+	EntityName string      `json:"entity_name"`
+}
+
+type RemoveTagsSchema struct {
+	Names      []string `json:"names"`
+	EntityType string   `json:"entity_type"`
+	EntityName string   `json:"entity_name"`
 }
 
 type GetTagsSchema struct {

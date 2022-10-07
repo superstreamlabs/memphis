@@ -268,6 +268,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	if !ok {
 		return
 	}
+	tagsHandler := TagsHandler{S: sh.S}
 
 	var station models.Station
 	err := stationsCollection.FindOne(context.TODO(), bson.M{
@@ -285,6 +286,13 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	station.Tags = tags
 
 	c.IndentedJSON(200, station)
 }
@@ -543,7 +551,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 	if len(body.Tags) > 0 {
 		for _, tag := range body.Tags {
-			err = AddTag(tag.Name, tag.EntityType, newStation.Name, tag.ColorBG, tag.ColorTXT)
+			err = AddTagToEntity(tag.Name, tag.EntityType, newStation.Name, tag.ColorBG, tag.ColorTXT)
 			if err != nil {
 				serv.Errorf("Failed creating tag: %v", err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

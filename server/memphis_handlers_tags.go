@@ -101,7 +101,7 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	return nil
 }
 
-func AddTag(name string, to string, to_name string, background_color string, text_color string) error {
+func AddTagToEntity(name string, to string, to_name string, background_color string, text_color string) error {
 	name = strings.ToLower(name)
 	exist, tag, err := IsTagExist(name)
 	if err != nil {
@@ -229,112 +229,115 @@ func checkIfEmptyAndDelete(name string) {
 	}
 }
 
-func (th TagsHandler) CreateTag(c *gin.Context) {
+func (th TagsHandler) CreateTags(c *gin.Context) {
 	var body models.CreateTagSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	name := strings.ToLower(body.Name)
-	err := AddTag(name, body.EntityType, body.EntityName, body.ColorBG, body.ColorTXT)
-	if err != nil {
-		serv.Errorf("Failed creating tag: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	for _, tag := range body.Tags {
+		name := strings.ToLower(tag.Name)
+		err := AddTagToEntity(name, body.EntityType, body.EntityName, tag.ColorBG, tag.ColorTXT)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 	c.IndentedJSON(200, []string{})
 }
 
-func (th TagsHandler) RemoveTag(c *gin.Context) {
-	var body models.RemoveTagSchema
+func (th TagsHandler) RemoveTags(c *gin.Context) {
+	var body models.RemoveTagsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	name := strings.ToLower(body.Name)
-	exist, tag, err := IsTagExist(name)
-	if err != nil {
-		serv.Errorf("RemoveTag error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Errorf("Tag with this name does not exist")
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	switch body.EntityType {
-	case "station":
-		station_name, err := StationNameFromStr(body.EntityName)
-		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		exist, station, err := IsStationExist(station_name)
-		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if !exist {
-			serv.Errorf("Station with this name does not exist")
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-			bson.M{"$pull": bson.M{"stations": station.ID}})
-		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+	for _, tagName := range body.Names {
+		name := strings.ToLower(tagName)
+		exist, tag, err := IsTagExist(name)
 
-	case "schema":
-		exist, schema, err := IsSchemaExist(body.EntityName)
 		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
+			serv.Errorf("RemoveTags error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		if !exist {
-			serv.Errorf("Schema with this name does not exist")
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			c.IndentedJSON(200, []string{})
 			return
 		}
-		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-			bson.M{"$pull": bson.M{"schemas": schema.ID}})
-		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	case "user":
-		exist, user, err := IsUserExist(body.EntityName)
-		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if !exist {
-			serv.Errorf("User with this name does not exist")
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-			bson.M{"$pull": bson.M{"users": user.ID}})
-		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	default:
-		serv.Errorf("RemoveTag error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+		switch body.EntityType {
+		case "station":
+			station_name, err := StationNameFromStr(body.EntityName)
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			exist, station, err := IsStationExist(station_name)
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			if !exist {
+				serv.Errorf("Station with this name does not exist")
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
+				bson.M{"$pull": bson.M{"stations": station.ID}})
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 
-	checkIfEmptyAndDelete(name)
+		case "schema":
+			exist, schema, err := IsSchemaExist(body.EntityName)
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			if !exist {
+				serv.Errorf("Schema with this name does not exist")
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
+				bson.M{"$pull": bson.M{"schemas": schema.ID}})
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		case "user":
+			exist, user, err := IsUserExist(body.EntityName)
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			if !exist {
+				serv.Errorf("User with this name does not exist")
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
+				bson.M{"$pull": bson.M{"users": user.ID}})
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		default:
+			serv.Errorf("RemoveTags error")
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		checkIfEmptyAndDelete(name)
+	}
 	c.IndentedJSON(200, []string{})
 }
 
