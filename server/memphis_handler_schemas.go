@@ -63,14 +63,14 @@ func validateSchemaContent(schemaContent string) error {
 	}
 }
 
-func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string, versionNumber int) (models.SchemaVersion, error) {
+func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string, versionNumber int) (models.ExtendedSchemaDetails, error) {
 	var schema models.Schema
 	err := schemasCollection.FindOne(context.TODO(), bson.M{
 		"name": schemaName,
 	}).Decode(&schema)
 
 	if err != nil {
-		return models.SchemaVersion{}, err
+		return models.ExtendedSchemaDetails{}, err
 	}
 	var schemaVersion models.SchemaVersion
 	filter := bson.M{
@@ -82,9 +82,19 @@ func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string, version
 
 	err = schemasVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
 	if err != nil {
-		return schemaVersion, err
+		return models.ExtendedSchemaDetails{}, err
 	}
-	return schemaVersion, nil
+
+	extedndedSchemaDetails := models.ExtendedSchemaDetails{
+		ID:            schema.ID,
+		SchemaName:    schema.Name,
+		VersionNumber: schemaVersion.VersionNumber,
+		Active:        schemaVersion.Active,
+		CreatedByUser: schemaVersion.CreatedByUser,
+		Type:          schema.Type,
+		SchemaContent: schemaVersion.SchemaContent,
+	}
+	return extedndedSchemaDetails, nil
 }
 
 func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
@@ -336,16 +346,7 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	extedndedSchemaDetails := models.ExtendedSchemaDetails{
-		ID:            schemaDetails.ID,
-		SchemaName:    schemaName,
-		VersionNumber: schemaDetails.VersionNumber,
-		Active:        schemaDetails.Active,
-		CreatedByUser: schemaDetails.CreatedByUser,
-		CreationDate:  schemaDetails.CreationDate,
-		SchemaContent: schemaDetails.SchemaContent,
-	}
-	c.IndentedJSON(200, extedndedSchemaDetails)
+	c.IndentedJSON(200, schemaDetails)
 }
 
 func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
