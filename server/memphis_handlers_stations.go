@@ -270,7 +270,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	}
 	tagsHandler := TagsHandler{S: sh.S}
 
-	var station models.Station
+	var station models.GetStation
 	err := stationsCollection.FindOne(context.TODO(), bson.M{
 		"name": body.StationName,
 		"$or": []interface{}{
@@ -528,6 +528,17 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	if len(body.Tags) > 0 {
+		for _, tag := range body.Tags {
+			err = AddTagToEntity(tag.Name, tag.EntityType, newStation.Name, tag.ColorBG, tag.ColorTXT)
+			if err != nil {
+				serv.Errorf("Failed creating tag: %v", err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+	}
+
 	message := "Station " + stationName.Ext() + " has been created"
 	serv.Noticef(message)
 	var auditLogs []interface{}
@@ -549,16 +560,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if shouldSendAnalytics {
 		analytics.SendEvent(user.Username, "user-create-station")
 	}
-	if len(body.Tags) > 0 {
-		for _, tag := range body.Tags {
-			err = AddTagToEntity(tag.Name, tag.EntityType, newStation.Name, tag.ColorBG, tag.ColorTXT)
-			if err != nil {
-				serv.Errorf("Failed creating tag: %v", err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-		}
-	}
+
 	c.IndentedJSON(200, newStation)
 }
 
