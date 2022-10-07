@@ -29,10 +29,10 @@ import Warning from '../../../assets/images/warning.svg';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import Input from '../../../components/Input';
+import RadioButton from '../../../components/radioButton';
+import { Checkbox } from 'antd';
+
 import ImgLoader from './imgLoader';
-import Bot1 from '../../../assets/images/bots/1.svg';
-import Bot2 from '../../../assets/images/bots/2.svg';
-import Bot3 from '../../../assets/images/bots/3.svg';
 import Avatar1 from '../../../assets/images/bots/avatar1.svg';
 import Avatar2 from '../../../assets/images/bots/avatar2.svg';
 import Avatar3 from '../../../assets/images/bots/avatar3.svg';
@@ -55,7 +55,8 @@ function Profile() {
     const [state, dispatch] = useContext(Context);
     const [avatar, setAvatar] = useState('1');
     const [open, modalFlip] = useState(false);
-    const [allowAnalytics, setAllowAnalytics] = useState(false);
+    const [allowAnalytics, setAllowAnalytics] = useState(true);
+    const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
 
     useEffect(() => {
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
@@ -183,6 +184,48 @@ function Profile() {
                 </div>
             </div>
             <Divider />
+            <div className="analytics-section">
+                <p className="title">Analytics</p>
+                <label className="analytics-description">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</label>
+                <div className="radioButton-section">
+                    <RadioButton
+                        options={[
+                            { id: 0, value: true, label: 'Allow Analytics' },
+                            { id: 1, value: false, label: 'Don’t allow any analytics' }
+                        ]}
+                        radioValue={allowAnalytics}
+                        onChange={(e) => setAllowAnalytics(e.target.value)}
+                        labelType
+                    />
+                </div>
+            </div>
+            <Divider />
+            <div className="delete-account-section">
+                <p className="title">Delete your account</p>
+                <label className="delete-account-description">
+                    When you delete your account, you lose access to Front account services, and we permanently delete your personal data. You can cancel the deletion for
+                    14 days.
+                </label>
+                <div className="delete-account-checkbox">
+                    <Checkbox checked={checkboxdeleteAccount} onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)} name="delete-account" />
+                    <p onClick={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}>Confirm that I want to delete my account.</p>
+                </div>
+                <Button
+                    className="modal-btn"
+                    width="200px"
+                    height="36px"
+                    placeholder="Delete Account"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="red"
+                    border="red"
+                    boxShadowsType="red"
+                    fontSize="14px"
+                    fontWeight="600"
+                    aria-haspopup="true"
+                    // onClick={() => modalFlip(true)}
+                />
+            </div>
             {/* <Modal
                 header="Remove user"
                 height="120px"
