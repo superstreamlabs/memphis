@@ -37,8 +37,7 @@ func InitializeHttpServer(s *server.Server) {
 		Stations:   server.StationsHandler{S: s},
 		Monitoring: server.MonitoringHandler{S: s},
 		PoisonMsgs: server.PoisonMessagesHandler{S: s},
-		Schemas: server.SchemasHandler{S: s},
-		SchemasVersions: server.SchemasVersionsHandler{S: s},
+		Schemas:    server.SchemasHandler{S: s},
 	}
 
 	httpServer, socketioServer := routes.InitializeHttpRoutes(&handlers)

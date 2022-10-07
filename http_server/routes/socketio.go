@@ -68,7 +68,7 @@ func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetail
 	return stations, nil
 }
 
-func getSchemasOverviewData(h *server.Handlers) ([]models.ExtendedSchema, error){
+func getSchemasOverviewData(h *server.Handlers) ([]models.ExtendedSchema, error) {
 	schemas, err := h.Schemas.GetAllSchemasDetails()
 	if err != nil {
 		return schemas, err
@@ -265,7 +265,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 						socketServer.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
 					}
 				}
-				
 			}
 		}
 	}()

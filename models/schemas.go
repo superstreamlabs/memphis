@@ -28,11 +28,10 @@ import (
 )
 
 type Schema struct {
-	ID        primitive.ObjectID   `json:"id" bson:"_id"`
-	Name      string               `json:"name" bson:"name"`
-	Type      string               `json:"type" bson:"type"`
-	Versions  []primitive.ObjectID `json:"versions" bson:"versions"`
-	IsDeleted bool                 `json:"is_deleted" bson:"is_deleted"`
+	ID       primitive.ObjectID   `json:"id" bson:"_id"`
+	Name     string               `json:"name" bson:"name"`
+	Type     string               `json:"type" bson:"type"`
+	Versions []primitive.ObjectID `json:"versions" bson:"versions"`
 }
 
 type SchemaVersion struct {
@@ -56,23 +55,20 @@ type ExtendedSchema struct {
 	Type          string             `json:"type"`
 	CreatedByUser string             `json:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date"`
-}
-
-type ExtendedSchemaDetails struct {
-	ID            primitive.ObjectID `json:"id"`
-	SchemaName    string             `json:"schema_name"`
-	VersionNumber int                `json:"version_number"`
-	Active        bool               `json:"active"`
-	CreatedByUser string             `json:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date"`
 	SchemaContent string             `json:"schema_content"`
 }
 
+type ExtendedSchemaDetails struct {
+	ID         primitive.ObjectID `json:"id"`
+	SchemaName string             `json:"schema_name"`
+	Type       string             `json:"type"`
+	Versions   []SchemaVersion    `json:"schema_version"`
+}
+
 type GetSchemaDetails struct {
-	VersionNumber int    			 `form:"version_number" json:"version_number"`
-	SchemaName    string 			 `form:"schema_name" json:"schema_name"`
+	SchemaName string `form:"schema_name" json:"schema_name"`
 }
 
 type RemoveSchema struct {
-	SchemaName string 				 `json:"schema_name"`
+	SchemaName string `json:"schema_name"`
 }
