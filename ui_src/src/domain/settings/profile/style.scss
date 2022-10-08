@@ -54,7 +54,12 @@
         .company-logo {
             display: flex;
             align-items: center;
-
+            .logoimg {
+                border: 1px solid #dddddd;
+                border-radius: 8px;
+                height: 100px;
+                width: 100px;
+            }
             .company-logo-right {
                 margin-left: 20px;
                 .update-remove-logo {

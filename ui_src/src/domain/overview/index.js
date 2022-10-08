@@ -73,7 +73,7 @@ function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
     const createStationRef = useRef(null);
-    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
+    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);

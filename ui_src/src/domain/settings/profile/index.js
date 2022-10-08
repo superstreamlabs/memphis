@@ -22,21 +22,16 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME } from '../../../const/localStorageConsts';
-import { LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
-import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
-import RadioButton from '../../../components/radioButton';
-import { Checkbox } from 'antd';
-import { Upload, message } from 'antd';
-import ImgLoader from './imgLoader';
-
 import pathDomains from '../../../router';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
+import { Checkbox, Divider, Upload, message } from 'antd';
+import RadioButton from '../../../components/radioButton';
+import Button from '../../../components/button';
 import Modal from '../../../components/modal';
-import { Divider } from 'antd';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from '../../../services/http';
+import Logo from '../../../assets/images/logo.svg';
 
 function Profile() {
     const [userName, setUserName] = useState('');
@@ -46,31 +41,104 @@ function Profile() {
     const [allowAnalytics, setAllowAnalytics] = useState();
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
 
+    function getBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    }
+
+    const [loading, setLoading] = useState(false);
+    const [previewVisible, setpreviewVisible] = useState(false);
+    const [previewTitle, setpreviewTitle] = useState('');
+    const [previewImage, setpreviewImage] = useState('');
+    const [fileList, updateFileList] = useState(
+        localStorage.getItem(LOCAL_STORAGE_COMPANY_LOGO)
+            ? [
+                  {
+                      uid: '1',
+                      name: 'company_logo',
+                      status: 'done',
+                      url: localStorage.getItem(LOCAL_STORAGE_COMPANY_LOGO)
+                  }
+              ]
+            : []
+    );
+
+    const uploadLogo = async ({ file, onSuccess, onError }) => {
+        let dataImg = new FormData();
+        dataImg.append('file', file);
+        try {
+            const data = await httpRequest('PUT', ApiEndpoints.EDIT_COMPANY_LOGO, dataImg);
+            localStorage.setItem(LOCAL_STORAGE_COMPANY_LOGO, data.image);
+            dispatch({ type: 'SET_COMPANY_LOGO', payload: data.image });
+            onSuccess('ok');
+        } catch (err) {
+            onError('error');
+        }
+    };
+    const deleteLogo = async ({ onSuccess, onError }) => {
+        try {
+            await httpRequest('DELETE', ApiEndpoints.REMOVE_COMPANY_LOGO);
+            localStorage.setItem(LOCAL_STORAGE_COMPANY_LOGO, '');
+            dispatch({ type: 'SET_COMPANY_LOGO', payload: '' });
+            onSuccess('ok');
+        } catch (err) {
+            onError('error');
+        }
+    };
+    const handleCancel = () => {
+        setpreviewVisible(false);
+    };
+
+    const uploadProps = {
+        beforeUpload: (file) => {
+            const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+            if (!isJpgOrPng) {
+                message.error('JPG/PNG format required', 3);
+            }
+            return isJpgOrPng;
+        },
+        customRequest: (file) => uploadLogo(file),
+        onChange(info) {
+            let fileList = info.fileList.filter((file) => !!file.status);
+            fileList = fileList.slice(-1);
+            updateFileList(fileList);
+            handleMessage(info.file);
+        },
+        onRemove: (file) => {
+            deleteLogo(file);
+        }
+    };
+
+    const handleMessage = (file) => {
+        if (file.response === 'ok' && file.status === 'done') {
+            message.success(`Done uploading ${file.name} file`, 3);
+        } else if (file.response === 'error' && file.status === 'done') {
+            message.error(`${file.name} file upload failed`, 3);
+        }
+        if (file.response === 'ok' && file.status === 'removed') {
+            message.success(`Removed uploading ${file.name} file`, 3);
+        } else if (file.response === 'error' && file.status === 'removed') {
+            message.error(`${file.name} file upload failed`, 3);
+        }
+    };
+
+    const onPreview = async (file) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj);
+        }
+        setpreviewVisible(true);
+        setpreviewImage(file.url || file.preview);
+        setpreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
+    };
     useEffect(() => {
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
         setAvatar(localStorage.getItem('profile_pic') || state?.userData?.avatar_id || Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID))); // profile_pic is available only in sandbox env
         setAllowAnalytics(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) === 'false' ? false : true);
     }, []);
-
-    const props = {
-        name: 'file',
-        action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-        headers: {
-            authorization: 'authorization-text'
-        },
-
-        onChange(info) {
-            if (info.file.status !== 'uploading') {
-                console.log(info.file, info.fileList);
-            }
-
-            if (info.file.status === 'done') {
-                message.success(`${info.file.name} file uploaded successfully`);
-            } else if (info.file.status === 'error') {
-                message.error(`${info.file.name} file upload failed.`);
-            }
-        }
-    };
 
     const removeMyUser = async () => {
         try {
@@ -133,22 +201,23 @@ function Profile() {
             <div className="company-logo-section">
                 <p className="title">Company Logo</p>
                 <div className="company-logo">
-                    <ImgLoader />
+                    <img className="logoimg" src={state?.companyLogo || Logo} alt="companyLogo" />
                     <div className="company-logo-right">
                         <div className="update-remove-logo">
-                            <Button
-                                className="modal-btn"
-                                width="160px"
-                                height="36px"
-                                placeholder="Upload New"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="14px"
-                                fontWeight="600"
-                                aria-haspopup="true"
-                                // onClick={() => modalFlip(true)}
-                            />
+                            <Upload name="avatar" {...uploadProps} showUploadList={false} onPreview={onPreview} fileList={fileList}>
+                                <Button
+                                    className="modal-btn"
+                                    width="160px"
+                                    height="36px"
+                                    placeholder="Upload New"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="14px"
+                                    fontWeight="600"
+                                    aria-haspopup="true"
+                                />
+                            </Upload>
                             <Button
                                 className="modal-btn"
                                 width="200px"
@@ -162,7 +231,7 @@ function Profile() {
                                 fontSize="14px"
                                 fontWeight="600"
                                 aria-haspopup="true"
-                                // onClick={() => modalFlip(true)}
+                                onClick={() => deleteLogo(fileList[0])}
                             />
                         </div>
                         <label className="company-logo-description">Logo must be 200x200 pixel and size is less than 5mb</label>
