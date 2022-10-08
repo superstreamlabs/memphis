@@ -23,7 +23,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strings"
@@ -40,7 +39,7 @@ const (
 	tagObjectName = "Tag"
 )
 
-func CreateTag(name string, from string, from_name string, background_color string, text_color string) error {
+func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, background_color string, text_color string) error {
 	name = strings.ToLower(name)
 	exist, _, err := IsTagExist(name)
 	if err != nil {
@@ -53,38 +52,13 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	stationArr := []primitive.ObjectID{}
 	schemaArr := []primitive.ObjectID{}
 	userArr := []primitive.ObjectID{}
-	switch from {
+	switch entity_type {
 	case "station":
-		station_name, err := StationNameFromStr(from_name)
-		if err != nil {
-			return err
-		}
-		exist, station, err := IsStationExist(station_name)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return errors.New("Station does not exist")
-		}
-		stationArr = append(stationArr, station.ID)
+		stationArr = append(stationArr, entity_id)
 		// case "schema":
-		// 	exist, schema, err := IsSchemaExist(from_name)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if !exist {
-		// 		return errors.New("Schema with this name does not exist")
-		// 	}
-		// 	schemaArr = append(schemaArr, schema.ID)
+		// 	schemaArr = append(schemaArr, entity_id)
 		// case "user":
-		// 	exist, user, err := IsUserExist(from_name)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if !exist {
-		// 		return errors.New("User with this name does not exist")
-		// 	}
-		// 	userArr = append(userArr, user.ID)
+		// 	userArr = append(userArr, entity_id)
 	}
 	newTag = models.Tag{
 		ID:       primitive.NewObjectID(),
@@ -116,23 +90,12 @@ func CreateTag(name string, from string, from_name string, background_color stri
 	return nil
 }
 
-func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_name string) error {
+func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id primitive.ObjectID) error {
 	if len(tags) == 0 {
 		return nil
 	}
 	switch entity_type {
 	case "station":
-		station_name, err := StationNameFromStr(entity_name)
-		if err != nil {
-			return err
-		}
-		exist, station, err := IsStationExist(station_name)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return errors.New("Station does not exist")
-		}
 		for _, tagToCreate := range tags {
 			name := strings.ToLower(tagToCreate.Name)
 			exist, tag, err := IsTagExist(name)
@@ -140,26 +103,19 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_name st
 				return err
 			}
 			if !exist {
-				err = CreateTag(name, entity_type, entity_name, tag.ColorBG, tag.ColorTXT)
+				err = CreateTag(name, entity_type, entity_id, tag.ColorBG, tag.ColorTXT)
 				if err != nil {
 					return err
 				}
 				return nil
 			}
-			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"stations": station.ID}})
+			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"stations": entity_id}})
 			if err != nil {
 				return err
 			}
 		}
 
 		// case "schema":
-		// 	exist, schema, err := IsSchemaExist(to_name)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if !exist {
-		// 		return errors.New("Schema with this name does not exist")
-		// 	}
 		// for _, tagToCreate := range tags {
 		// 	name := strings.ToLower(tagToCreate.Name)
 		// 	exist, tag, err := IsTagExist(name)
@@ -167,7 +123,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_name st
 		// 		return err
 		// 	}
 		// 	if !exist {
-		// 		err = CreateTag(name, entity_type, entity_name, tag.ColorBG, tag.ColorTXT)
+		// 		err = CreateTag(name, entity_type, entity_id, tag.ColorBG, tag.ColorTXT)
 		// 		if err != nil {
 		// 			return err
 		// 		}
@@ -179,13 +135,6 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_name st
 		// 	}
 		// }
 		// case "user":
-		// 	exist, user, err := IsUserExist(to_name)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if !exist {
-		// 		return errors.New("User with this name does not exist")
-		// 	}
 		// for _, tagToCreate := range tags {
 		// 	name := strings.ToLower(tagToCreate.Name)
 		// 	exist, tag, err := IsTagExist(name)
@@ -193,7 +142,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_name st
 		// 		return err
 		// 	}
 		// 	if !exist {
-		// 		err = CreateTag(name, entity_type, entity_name, tag.ColorBG, tag.ColorTXT)
+		// 		err = CreateTag(name, entity_type, entity_id, tag.ColorBG, tag.ColorTXT)
 		// 		if err != nil {
 		// 			return err
 		// 		}
@@ -251,7 +200,24 @@ func (th TagsHandler) CreateTags(c *gin.Context) {
 	if !ok {
 		return
 	}
-	err := AddTagsToEntity(body.Tags, body.EntityType, body.EntityName)
+	station_name, err := StationNameFromStr(body.EntityName)
+	if err != nil {
+		serv.Errorf("RemoveTags error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	exist, station, err := IsStationExist(station_name)
+	if err != nil {
+		serv.Errorf("RemoveTags error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, station does not exist"})
+		return
+	}
+	err = AddTagsToEntity(body.Tags, body.EntityType, station.ID)
 	if err != nil {
 		serv.Errorf("Failed creating tag: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
