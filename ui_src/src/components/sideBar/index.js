@@ -58,7 +58,7 @@ const Desktop = ({ children }) => {
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
-    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
+    const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
 
     const getCompanyLogo = useCallback(async () => {
@@ -86,11 +86,11 @@ function SideBar() {
     }, []);
 
     useEffect(() => {
-        setBotImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
+        setAvatarImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
     }, [state]);
 
-    const setBotImage = (botId) => {
-        SetBotUrl(require(`../../assets/images/bots/${botId}.svg`));
+    const setAvatarImage = (avatarId) => {
+        SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
     const handleClick = async (e) => {
@@ -185,11 +185,11 @@ function SideBar() {
                             <div className="sub-icon-wrapper">
                                 <img
                                     className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || botUrl} // profile_pic is available only in sandbox env
+                                    src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 35 : 25}
                                     height={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    alt="bot"
+                                    alt="avatar"
                                 ></img>
                             </div>
                         }

@@ -35,7 +35,8 @@ import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
 import NotificationGray from '../../assets/images/setting/notificationGray.svg';
 import Integrations from './integrations';
 import Profile from './profile';
-import Alerts from './alerts';
+import Alerts from './clusterConfiguration';
+import ClusterConfiguration from './clusterConfiguration';
 
 function Users() {
     const [selectedMenuItem, selectMenuItem] = useState('editProfile');
@@ -48,7 +49,7 @@ function Users() {
             case 'editProfile':
                 return <Profile />;
             case 'clusterConfiguration':
-                return <Alerts />;
+                return <ClusterConfiguration />;
             case 'intergrations':
                 return <Integrations />;
             case 'notifications':
@@ -68,8 +69,9 @@ function Users() {
                         Edit Profile
                     </div>
                     <div
-                        className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
-                        onClick={() => selectMenuItem('clusterConfiguration')}
+                        className="menu-item disabled"
+                        //  className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
+                        //  onClick={() => selectMenuItem('clusterConfiguration')}
                     >
                         <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} />
                         Cluster configuration
