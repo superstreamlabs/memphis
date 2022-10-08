@@ -202,19 +202,19 @@ func (th TagsHandler) CreateTags(c *gin.Context) {
 	}
 	station_name, err := StationNameFromStr(body.EntityName)
 	if err != nil {
-		serv.Errorf("RemoveTags error: " + err.Error())
+		serv.Errorf("CreateTags error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, station, err := IsStationExist(station_name)
 	if err != nil {
-		serv.Errorf("RemoveTags error: " + err.Error())
+		serv.Errorf("CreateTags error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
 		serv.Warnf("Station does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, station does not exist"})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not create tags, station does not exist"})
 		return
 	}
 	err = AddTagsToEntity(body.Tags, body.EntityType, station.ID)
