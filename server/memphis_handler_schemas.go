@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type SchemasHandler struct{ S *Server }
@@ -41,20 +42,19 @@ func validateSchemaType(schemaType string) error {
 }
 
 func validateSchemaContent(schemaContent, schemaType string) error {
+	invalidSchemaContentErrStr := fmt.Sprintf("Your Schema is invalid")
+	invalidSchemaContentErr := errors.New(invalidSchemaContentErrStr)
 	switch schemaType {
 	case "protobuf":
 		if strings.Contains(schemaContent, "syntax") {
 			return nil
+		} else {
+			return invalidSchemaContentErr
 		}
-		break
 	case "json":
 		break
 	case "avro":
 		break
-	default:
-		invalidSchemaContentErrStr := fmt.Sprintf("%v Your Schema is invalid")
-		invalidSchemaContentErr := errors.New(invalidSchemaContentErrStr)
-		return invalidSchemaContentErr
 	}
 	return nil
 }
@@ -67,7 +67,10 @@ func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models
 	}
 	var schemaVersion []models.SchemaVersion
 	filter := bson.M{"_id": bson.M{"$in": schema.Versions}}
-	cursor, err := schemaVersionCollection.Find(context.TODO(), filter)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"creation_date": -1})
+
+	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
@@ -88,48 +91,27 @@ func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models
 }
 
 func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
-	var schemas []models.Schema
+	var schemas []models.ExtendedSchema
 	cursor, err := schemasCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{
-			bson.D{{"is_deleted", false}},
-			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
-		}}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$versions"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "versions"}, {"foreignField", "_id"}, {"as", "extendedSchema"}}}},
+		bson.D{{"$match", bson.D{{"extendedSchema.version_number", 1}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$extendedSchema"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}}}},
+		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 	})
 
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
+
 	if err = cursor.All(context.TODO(), &schemas); err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-
-	var schemaVersion models.SchemaVersion
-	var extednedSchemas []models.ExtendedSchema
-	for _, schema := range schemas {
-		for _, version := range schema.Versions {
-			filter := bson.M{"_id": version}
-			err = schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
-			if err != nil {
-				return []models.ExtendedSchema{}, err
-			}
-			if schemaVersion.VersionNumber == 1 {
-				extSchema := models.ExtendedSchema{
-					ID:            schema.ID,
-					Name:          schema.Name,
-					Type:          schema.Type,
-					CreatedByUser: schemaVersion.CreatedByUser,
-					CreationDate:  schemaVersion.CreationDate,
-				}
-				extednedSchemas = append(extednedSchemas, extSchema)
-			}
-		}
-
-	}
-
-	if len(extednedSchemas) == 0 {
+	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
 	} else {
-		return extednedSchemas, nil
+		return schemas, nil
 	}
 }
 
