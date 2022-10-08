@@ -108,7 +108,7 @@ func removeStationResources(s *Server, station models.Station) error {
 		return err
 	}
 
-	DeleteTagsByStation(station.Name)
+	DeleteTagsByStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
@@ -270,7 +270,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	}
 	tagsHandler := TagsHandler{S: sh.S}
 
-	var station models.GetStation
+	var station models.GetStationResponseSchema
 	err := stationsCollection.FindOne(context.TODO(), bson.M{
 		"name": body.StationName,
 		"$or": []interface{}{
@@ -529,13 +529,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		for _, tag := range body.Tags {
-			err = AddTagToEntity(tag.Name, tag.EntityType, newStation.Name, tag.ColorBG, tag.ColorTXT)
-			if err != nil {
-				serv.Errorf("Failed creating tag: %v", err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+		err = AddTagsToEntity(body.Tags, "station", newStation.Name)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
 		}
 	}
 

@@ -71,7 +71,7 @@ type Station struct {
 	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
-type GetStation struct {
+type GetStationResponseSchema struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
 	RetentionType   string             `json:"retention_type" bson:"retention_type"`
@@ -118,14 +118,14 @@ type GetStationSchema struct {
 }
 
 type CreateStationSchema struct {
-	Name            string                 `json:"name" binding:"required,min=1,max=32"`
-	RetentionType   string                 `json:"retention_type"`
-	RetentionValue  int                    `json:"retention_value"`
-	Replicas        int                    `json:"replicas"`
-	StorageType     string                 `json:"storage_type"`
-	DedupEnabled    bool                   `json:"dedup_enabled"`
-	DedupWindowInMs int                    `json:"dedup_window_in_ms" binding:"min=0"`
-	Tags            []AddTagToEntitySchema `json:"tags"`
+	Name            string      `json:"name" binding:"required,min=1,max=32"`
+	RetentionType   string      `json:"retention_type"`
+	RetentionValue  int         `json:"retention_value"`
+	Replicas        int         `json:"replicas"`
+	StorageType     string      `json:"storage_type"`
+	DedupEnabled    bool        `json:"dedup_enabled"`
+	DedupWindowInMs int         `json:"dedup_window_in_ms" binding:"min=0"`
+	Tags            []CreateTag `json:"tags"`
 }
 
 type AckPoisonMessagesSchema struct {
