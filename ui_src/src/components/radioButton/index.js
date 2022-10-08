@@ -25,7 +25,7 @@ import { Radio, Space } from 'antd';
 import React from 'react';
 
 const RadioButton = (props) => {
-    const { options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily } = props;
+    const { options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper } = props;
 
     const handleChange = (e) => {
         onChange(e);
@@ -46,9 +46,13 @@ const RadioButton = (props) => {
                 defaultValue={radioValue || options[0]?.value}
             >
                 {options.map((option) => (
-                    <Radio key={option.id} value={option.value} disabled={option.disabled || false} className="radio-wrapper">
-                        <span style={{ fontFamily: fontFamily }}>{option.label}</span>
-                        {option.description || null}
+                    <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
+                        <div className={radioWrapper || 'radio-wrapper'}>
+                            <span className="label" style={{ fontFamily: fontFamily }}>
+                                {option.label}
+                            </span>
+                            {option.description && <span className="des">{option.description}</span>}
+                        </div>
                     </Radio>
                 ))}
             </Radio.Group>

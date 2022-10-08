@@ -59,9 +59,9 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                             {schema.used && <p className="used">Used</p>}
                             {!schema.used && <p className="not-used"> Not Used</p>}
                         </div>
-                        <div className="menu">
+                        {/* <div className="menu">
                             <p>***</p>
-                        </div>
+                        </div> */}
                     </div>
                 </header>
                 <type is="x3d">

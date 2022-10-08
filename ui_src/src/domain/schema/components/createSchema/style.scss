@@ -7,6 +7,7 @@
     .header{
         width: 600px;
         .flex-title{
+            margin-bottom:10px;
             display: flex;
             p{
                 font-weight: 600;
@@ -18,15 +19,78 @@
             }
         }
         span{
-            font-weight: 400;
-            font-size: 14px;
-            line-height: 20px;
-            color: #667085;
+            font-size: 12px;
+            color: #B4B4B4;
             a{
                 color: var(--purple);
                 font-weight: 600;
                 text-decoration-line: underline;
                 margin-left: 5px;
+            }
+        }
+    }
+    .create-schema-form{
+        margin-top: 20px;
+        display: flex;
+        height: calc(100% - 160px);
+        position: relative;
+        .left-side{
+            width: 50%;
+            .schema-field{
+                .field-title{
+                    font-family: 'InterSemiBold';
+                    font-size: 16px;  
+                }
+                .schema-type{
+                    display: flex;
+                    flex-direction: column;
+                    margin-bottom: 10px;
+                    .label{
+                        font-family: 'InterSemiBold';
+                        font-size: 14px;
+                        color: #1D1D1D;
+                    }
+                    .des{
+                        margin-top: 5px;
+                        font-size: 12px;
+                        color: #B4B4B4;
+                        a{
+                            color: var(--purple);
+                            font-weight: 600;
+                            text-decoration-line: underline;
+                            margin-left: 5px;
+                        }
+                    }
+                }
+            }
+        }
+        .right-side{
+            width: 50%;
+            height: 100%;
+            position: relative;
+            .ant-form-item {
+                position: relative;
+                height: 100%;
+            }
+            .ant-row, .ant-form-item-control-input, .ant-form-item-control-input-content{
+                height: 100%;
+            }
+            .schema-field{
+                position: relative;
+                height: 100%;
+                .field-title{
+                    font-family: 'InterSemiBold';
+                    font-size: 24px;  
+                }
+                .editor{
+                    background: #FFFFFF;
+                    border: 1px solid #D8D8D8;
+                    border-radius: 4px;
+                    width: 100%;
+                    height: calc(100% - 100px);
+                    position: relative;
+                    padding-top:20px;
+                }
             }
         }
     }

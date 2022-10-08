@@ -27,6 +27,8 @@
                 display: flex;
                 font-family: 'InterSemiBold';
                 font-size: 12px;
+                width: 100px;
+                place-content:end;
                 img {
                     width: 14px;
                     margin-right: 5px;

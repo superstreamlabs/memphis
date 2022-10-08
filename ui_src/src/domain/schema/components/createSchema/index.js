@@ -28,6 +28,7 @@ import Input from '../../../../components/Input';
 import { Form } from 'antd';
 import TagsList from '../../../../components/tagsList';
 import RadioButton from '../../../../components/radioButton';
+import Editor from '@monaco-editor/react';
 
 const schemaTypes = [
     {
@@ -58,8 +59,8 @@ const schemaTypes = [
         disabled: true
     },
     {
-        id: 2,
-        value: 1,
+        id: 3,
+        value: 2,
         label: 'Json',
         description: (
             <span>
@@ -69,18 +70,46 @@ const schemaTypes = [
                 </a>
             </span>
         ),
-        disabled: true
+        disabled: false
     }
 ];
+
+const SchemaEditorExample = {
+    0: {
+        language: 'proto',
+        value: `syntax = "proto3";
+        ​
+        message SchemaMemphis {
+            string field1 = 1;
+            string  field2 = 2;
+            int32  field3 = 3;
+        }`
+    },
+    2: {
+        language: 'json',
+        value: `{
+            "type": "record",
+            "namespace": "com.example",
+            "name": "test-schema",
+            "fields": [
+               { "name": "username", "type": "string", "default": "-2" },
+               { "name": "age", "type": "int", "default": "none" },
+               { "name": "phone", "type": "int", "default": "NONE" },
+               { "name": "country", "type": "string", "default": "NONE" }
+            ]
+        }`
+    }
+};
 
 function CreateSchema({ createNew }) {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: '',
-        type: '',
+        type: 0,
         tags: [],
         schema: ''
     });
+    const [updated, setUpdated] = useState(false);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -110,44 +139,74 @@ function CreateSchema({ createNew }) {
                 </span>
             </div>
             <Form name="form" form={creationForm} autoComplete="off" onFinish={onFinish} className="create-schema-form">
-                <Form.Item
-                    name="name"
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Please input schema name!'
-                        }
-                    ]}
-                >
-                    <div className="schema-field name">
-                        <p>Schema Name</p>
-                        <Input
-                            placeholder="Type schema name"
-                            type="text"
-                            radiusType="semi-round"
-                            colorType="black"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            height="40px"
-                            width="200px"
-                            onBlur={(e) => updateFormState('name', e.target.value)}
-                            onChange={(e) => updateFormState('name', e.target.value)}
-                            value={formFields.name}
-                        />
-                    </div>
-                </Form.Item>
-                <Form.Item name="tags">
-                    <div className="schema-field tags">
-                        <p>Tags</p>
-                        <TagsList addNew={true} />
-                    </div>
-                </Form.Item>
-                <Form.Item name="type">
-                    <div className="schema-field type">
-                        <p>Schema Type</p>
-                        <RadioButton vertical={true} options={schemaTypes} radioValue={formFields.type} onChange={(e) => updateFormState('type', e.target.value)} />
-                    </div>
-                </Form.Item>
+                <div className="left-side">
+                    <Form.Item
+                        name="name"
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Please input schema name!'
+                            }
+                        ]}
+                    >
+                        <div className="schema-field name">
+                            <p className="field-title">Schema Name</p>
+                            <Input
+                                placeholder="Type schema name"
+                                type="text"
+                                radiusType="semi-round"
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                height="40px"
+                                width="200px"
+                                onBlur={(e) => updateFormState('name', e.target.value)}
+                                onChange={(e) => updateFormState('name', e.target.value)}
+                                value={formFields.name}
+                            />
+                        </div>
+                    </Form.Item>
+                    <Form.Item name="tags">
+                        <div className="schema-field tags">
+                            <p className="field-title">Tags</p>
+                            <TagsList addNew={true} />
+                        </div>
+                    </Form.Item>
+                    <Form.Item name="type">
+                        <div className="schema-field type">
+                            <p className="field-title">Schema Type</p>
+                            <RadioButton
+                                vertical={true}
+                                options={schemaTypes}
+                                radioWrapper="schema-type"
+                                radioValue={formFields.type}
+                                onChange={(e) => updateFormState('type', e.target.value)}
+                            />
+                        </div>
+                    </Form.Item>
+                </div>
+                <div className="right-side">
+                    <Form.Item name="schema" style={{ height: '100%' }}>
+                        <div className="schema-field schema">
+                            <p className="field-title">Schema Defination</p>
+                            <div className="editor">
+                                <Editor
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollbar: { verticalScrollbarSize: 0 },
+                                        scrollBeyondLastLine: false,
+                                        roundedSelection: false,
+                                        formatOnPaste: true,
+                                        formatOnType: true
+                                    }}
+                                    language={SchemaEditorExample[formFields?.type]?.language}
+                                    value={SchemaEditorExample[formFields?.type]?.value}
+                                    onChange={() => setUpdated(true)}
+                                />
+                            </div>
+                        </div>
+                    </Form.Item>
+                </div>
             </Form>
         </div>
     );
