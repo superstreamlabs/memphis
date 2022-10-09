@@ -134,7 +134,7 @@ function OverView() {
     }, [state.socket]);
 
     const setBotImage = (botId) => {
-        SetBotUrl(require(`../../assets/images/bots/${botId}.svg`));
+        SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
     const capitalizeFirst = (str) => {
@@ -169,7 +169,7 @@ function OverView() {
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 60 : 40}
                                     height={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    alt="bot"
+                                    alt="avatar"
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
