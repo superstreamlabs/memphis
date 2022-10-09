@@ -77,10 +77,6 @@ function Users() {
                         Cluster configuration
                     </div>
                     <div className="menu-item disabled">
-                        <img src={selectedMenuItem === 'intergrations' ? IntegrationColor : IntegrationGray} />
-                        Intergrations
-                    </div>
-                    <div className="menu-item disabled">
                         <img src={selectedMenuItem === 'notifications' ? NotificationGray : NotificationGray} />
                         Notifications
                     </div>
