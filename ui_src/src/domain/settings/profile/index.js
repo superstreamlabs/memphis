@@ -84,6 +84,7 @@ function Profile() {
             await httpRequest('DELETE', ApiEndpoints.REMOVE_COMPANY_LOGO);
             localStorage.setItem(LOCAL_STORAGE_COMPANY_LOGO, '');
             dispatch({ type: 'SET_COMPANY_LOGO', payload: '' });
+            updateFileList([]);
             onSuccess('ok');
         } catch (err) {
             onError('error');
@@ -204,7 +205,7 @@ function Profile() {
                     <img className="logoimg" src={state?.companyLogo || Logo} alt="companyLogo" />
                     <div className="company-logo-right">
                         <div className="update-remove-logo">
-                            <Upload name="avatar" {...uploadProps} showUploadList={false} onPreview={onPreview} fileList={fileList}>
+                            <Upload name="avatar" {...uploadProps} maxCount={1} showUploadList={false} onPreview={onPreview} fileList={fileList}>
                                 <Button
                                     className="modal-btn"
                                     width="160px"
@@ -232,6 +233,7 @@ function Profile() {
                                 fontWeight="600"
                                 aria-haspopup="true"
                                 onClick={() => deleteLogo(fileList[0])}
+                                disabled={!state?.companyLogo}
                             />
                         </div>
                         <label className="company-logo-description">Logo must be 200x200 pixel and size is less than 5mb</label>
@@ -250,6 +252,7 @@ function Profile() {
                         ]}
                         radioValue={allowAnalytics}
                         onChange={(e) => sendAnalytics(e.target.value)}
+                        onClick={(e) => sendAnalytics(e)}
                         labelType
                     />
                 </div>
@@ -258,8 +261,9 @@ function Profile() {
             <div className="delete-account-section">
                 <p className="title">Delete your account</p>
                 <label className="delete-account-description">
-                    When you delete your account, you lose access to Front account services, and we permanently delete your personal data. You can cancel the deletion for
-                    14 days.
+                    When you delete your account, you lose access to Front account services, and we permanently delete your personal data.
+                    <br />
+                    You can cancel the deletion for 14 days.
                 </label>
                 <div className="delete-account-checkbox">
                     <Checkbox checked={checkboxdeleteAccount} onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)} name="delete-account" />

@@ -29,16 +29,16 @@ import Modal from '../../../components/modal';
 import { parsingDate } from '../../../services/valueConvertor';
 
 function UserItem(props) {
-    const defaultBotId = 1;
-    const [botUrl, SetBotUrl] = useState(1);
+    const defaultAvatarId = 1;
+    const [avatarUrl, setAvatarUrl] = useState(1);
     const [open, modalFlip] = useState(false);
 
     useEffect(() => {
-        setBotImage(props.content?.avatar_id || defaultBotId);
+        setAvatarImage(props.content?.avatar_id || defaultAvatarId);
     }, []);
 
-    const setBotImage = (botId) => {
-        SetBotUrl(require(`../../../assets/images/bots/${botId}.svg`));
+    const setAvatarImage = (avatarId) => {
+        setAvatarUrl(require(`../../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
     const removeUser = async (username) => {
@@ -53,7 +53,7 @@ function UserItem(props) {
         <div className="users-item">
             <div className="user-name">
                 <div className="user-avatar">
-                    <img src={botUrl} width={25} height={25} alt="bot"></img>
+                    <img src={avatarUrl} width={25} height={25} alt="avatar"></img>
                 </div>
                 {props.content?.username}
             </div>

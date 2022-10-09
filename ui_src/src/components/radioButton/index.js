@@ -58,8 +58,10 @@ const RadioButton = (props) => {
                                     : '',
                             padding: props.labelType ? '10px' : '',
                             marginRight: props.labelType ? '10px' : '',
-                            borderRadius: props.labelType ? '8px' : ''
+                            borderRadius: props.labelType ? '8px' : '',
+                            cursor: 'pointer'
                         }}
+                        onClick={() => (props.labelType ? props.onClick(option.value) : '')}
                     >
                         <Radio key={option.id} value={option.value}>
                             <span
