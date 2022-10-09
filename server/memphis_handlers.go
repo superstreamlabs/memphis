@@ -180,10 +180,10 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func IsSchemaExist(schemaName string) (bool, models.SchemaVersion, error) {
+func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
 	filter := bson.M{
 		"name": schemaName}
-	var schema models.SchemaVersion
+	var schema models.Schema
 	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
 	if err == mongo.ErrNoDocuments {
 		return false, schema, nil

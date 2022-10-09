@@ -163,30 +163,10 @@ func updateUserResources(user models.User) error {
 		return err
 	}
 
-	projectSchemaVersionIds := bson.D{{"$project", bson.D{{"_id", 1}}}}
-	cursor, err := schemaVersionCollection.Aggregate(context.TODO(), mongo.Pipeline{projectSchemaVersionIds})
-	if err != nil {
-		return err
-	}
-
-	var schemaVersionIds []bson.M
-	if err = cursor.All(context.TODO(), &schemaVersionIds); err != nil {
-		return err
-	}
-
-	var objSchemaVersionId []primitive.ObjectID
-	for _, id := range schemaVersionIds {
-		for _, schemaVersionId := range id {
-			objSchemaVersionId = append(objSchemaVersionId, schemaVersionId.(primitive.ObjectID))
-		}
-	}
-
-	filter := bson.M{"versions": bson.M{"$in": objSchemaVersionId}}
-	_, err = schemaVersionCollection.DeleteMany(context.TODO(), bson.M{"created_by_user": user.Username})
-	if err != nil {
-		return err
-	}
-	_, err = schemasCollection.DeleteMany(context.TODO(), filter)
+	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "active": false}},
+	)
 	if err != nil {
 		return err
 	}

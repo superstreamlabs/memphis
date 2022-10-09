@@ -61,7 +61,7 @@ type ExtendedSchemaDetails struct {
 	ID         primitive.ObjectID `json:"id"`
 	SchemaName string             `json:"schema_name"`
 	Type       string             `json:"type"`
-	Versions   []SchemaVersion    `json:"schema_version"`
+	Versions   []SchemaVersion    `json:"versions"`
 }
 
 type GetSchemaDetails struct {
