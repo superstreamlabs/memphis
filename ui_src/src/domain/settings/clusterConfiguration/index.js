@@ -73,18 +73,6 @@ function ClusterConfiguration() {
         }
     };
 
-    const editAvatar = async (avatarId) => {
-        console.log(avatarId);
-        // try {
-        //     const data = await httpRequest('PUT', `${ApiEndpoints.EDIT_AVATAR}`, { avatar_id: avatarId });
-        //     setAvatar(data.avatar_id);
-        //     localStorage.setItem(LOCAL_STORAGE_AVATAR_ID, data.avatar_id);
-        //     dispatch({ type: 'SET_AVATAR_ID', payload: data.avatar_id });
-        // } catch (err) {
-        //     return;
-        // }
-    };
-
     return (
         <div className="configuration-container">
             <div className="header">

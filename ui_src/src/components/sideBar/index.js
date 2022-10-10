@@ -83,10 +83,11 @@ function SideBar() {
     useEffect(() => {
         getCompanyLogo().catch(console.error);
         getSystemVersion().catch(console.error);
+        setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
     }, []);
 
     useEffect(() => {
-        setAvatarImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
+        setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
     }, [state]);
 
     const setAvatarImage = (avatarId) => {

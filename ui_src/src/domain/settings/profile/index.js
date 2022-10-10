@@ -40,21 +40,8 @@ function Profile() {
     const [open, modalFlip] = useState(false);
     const [allowAnalytics, setAllowAnalytics] = useState();
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
-
-    function getBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-        });
-    }
-
     const [loading, setLoading] = useState(false);
-    const [previewVisible, setpreviewVisible] = useState(false);
-    const [previewTitle, setpreviewTitle] = useState('');
-    const [previewImage, setpreviewImage] = useState('');
-    const [fileList, updateFileList] = useState(
+    const [fileList, setFileList] = useState(
         localStorage.getItem(LOCAL_STORAGE_COMPANY_LOGO)
             ? [
                   {
@@ -67,6 +54,18 @@ function Profile() {
             : []
     );
 
+    const props = {
+        beforeUpload: (file) => {
+            const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+            if (!isJpgOrPng) {
+                message.error('JPG/PNG format required', 3);
+            }
+            setFileList([file]);
+            return isJpgOrPng;
+        },
+        customRequest: (file) => uploadLogo(file),
+        fileList
+    };
     const uploadLogo = async ({ file, onSuccess, onError }) => {
         let dataImg = new FormData();
         dataImg.append('file', file);
@@ -79,62 +78,19 @@ function Profile() {
             onError('error');
         }
     };
+
     const deleteLogo = async ({ onSuccess, onError }) => {
         try {
-            await httpRequest('DELETE', ApiEndpoints.REMOVE_COMPANY_LOGO);
-            localStorage.setItem(LOCAL_STORAGE_COMPANY_LOGO, '');
-            dispatch({ type: 'SET_COMPANY_LOGO', payload: '' });
-            updateFileList([]);
+            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_COMPANY_LOGO);
+            localStorage.setItem(LOCAL_STORAGE_COMPANY_LOGO, null);
+            dispatch({ type: 'SET_COMPANY_LOGO', payload: null });
+            setFileList([]);
             onSuccess('ok');
         } catch (err) {
             onError('error');
         }
     };
-    const handleCancel = () => {
-        setpreviewVisible(false);
-    };
 
-    const uploadProps = {
-        beforeUpload: (file) => {
-            const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-            if (!isJpgOrPng) {
-                message.error('JPG/PNG format required', 3);
-            }
-            return isJpgOrPng;
-        },
-        customRequest: (file) => uploadLogo(file),
-        onChange(info) {
-            let fileList = info.fileList.filter((file) => !!file.status);
-            fileList = fileList.slice(-1);
-            updateFileList(fileList);
-            handleMessage(info.file);
-        },
-        onRemove: (file) => {
-            deleteLogo(file);
-        }
-    };
-
-    const handleMessage = (file) => {
-        if (file.response === 'ok' && file.status === 'done') {
-            message.success(`Done uploading ${file.name} file`, 3);
-        } else if (file.response === 'error' && file.status === 'done') {
-            message.error(`${file.name} file upload failed`, 3);
-        }
-        if (file.response === 'ok' && file.status === 'removed') {
-            message.success(`Removed uploading ${file.name} file`, 3);
-        } else if (file.response === 'error' && file.status === 'removed') {
-            message.error(`${file.name} file upload failed`, 3);
-        }
-    };
-
-    const onPreview = async (file) => {
-        if (!file.url && !file.preview) {
-            file.preview = await getBase64(file.originFileObj);
-        }
-        setpreviewVisible(true);
-        setpreviewImage(file.url || file.preview);
-        setpreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
-    };
     useEffect(() => {
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
         setAvatar(localStorage.getItem('profile_pic') || state?.userData?.avatar_id || Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID))); // profile_pic is available only in sandbox env
@@ -205,7 +161,7 @@ function Profile() {
                     <img className="logoimg" src={state?.companyLogo || Logo} alt="companyLogo" />
                     <div className="company-logo-right">
                         <div className="update-remove-logo">
-                            <Upload name="avatar" {...uploadProps} maxCount={1} showUploadList={false} onPreview={onPreview} fileList={fileList}>
+                            <Upload {...props} name="company-logo" maxCount={1} showUploadList={false} fileList={fileList}>
                                 <Button
                                     className="modal-btn"
                                     width="160px"
@@ -263,11 +219,18 @@ function Profile() {
                 <label className="delete-account-description">
                     When you delete your account, you lose access to Front account services, and we permanently delete your personal data.
                     <br />
-                    You can cancel the deletion for 14 days.
+                    You can cancel the deletion in 14 days.
                 </label>
                 <div className="delete-account-checkbox">
-                    <Checkbox checked={checkboxdeleteAccount} onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)} name="delete-account" />
-                    <p onClick={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}>Confirm that I want to delete my account.</p>
+                    <Checkbox
+                        checked={checkboxdeleteAccount}
+                        disabled={userName === 'root'}
+                        onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
+                        name="delete-account"
+                    />
+                    <p className={userName === 'root' && 'disabled'} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
+                        Confirm that I want to delete my account.
+                    </p>
                 </div>
                 <Button
                     className="modal-btn"
@@ -282,7 +245,7 @@ function Profile() {
                     fontSize="14px"
                     fontWeight="600"
                     aria-haspopup="true"
-                    disabled={!checkboxdeleteAccount || userName === 'root'}
+                    disabled={!checkboxdeleteAccount}
                     onClick={() => modalFlip(true)}
                 />
             </div>

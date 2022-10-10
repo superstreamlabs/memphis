@@ -110,7 +110,7 @@ function OverView() {
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
         setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
-        setBotImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
+        setBotImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         SetUsername(
             localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))

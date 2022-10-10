@@ -105,6 +105,9 @@
                 padding-left: 15px;
                 cursor: pointer;
             }
+            .disabled {
+                cursor: not-allowed;
+            }
         }
     }
 }
