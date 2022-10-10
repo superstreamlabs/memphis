@@ -1,0 +1,40 @@
+.tags-list-wrapper {
+    display: flex;
+    // display: grid;
+    // grid-auto-columns: minmax();
+    align-items: center;
+    gap: 5px;
+    margin-left: 5px;
+    .add-tags {
+        background-color: #f0f1f2;
+        padding-right: 5px;
+        border-style: solid;
+        border-color: #e3e3e3;
+        border-width: thin;
+        padding-left: 5px;
+        border-radius: 4px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        min-width: 110px;
+        cursor: pointer;
+        svg {
+            width: 18px;
+        }
+        p {
+            font-family: 'InterSemiBold';
+            font-size: 12px;
+            line-height: 12px;
+            margin-top: 50%;
+            margin-bottom: 50%;
+        }
+    }
+    .tag-wrapper {
+        padding-right: 5px;
+        padding-left: 5px;
+        border-radius: 4px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+    }
+}

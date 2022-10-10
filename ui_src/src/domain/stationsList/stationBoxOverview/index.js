@@ -41,6 +41,7 @@ import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
 import { Link } from 'react-router-dom';
 import stationsIcon from '../../../assets/images/stationsIcon.svg';
+import TagsList from '../../../components/tagList';
 
 const StationBoxOverview = (props) => {
     const [modalIsOpen, modalFlip] = useState(false);
@@ -86,6 +87,12 @@ const StationBoxOverview = (props) => {
                         <OverflowTip className="data-info" text={props.station.station.created_by_user} width={'100px'}>
                             {props.station.station.created_by_user}
                         </OverflowTip>
+                    </div>
+                    <div className="station-created">
+                        <label className="data-labels">Tags</label>
+                        <div className="tags-list">
+                            <TagsList tags={props.station.tags} />
+                        </div>
                     </div>
                 </div>
                 <div className="right-section">

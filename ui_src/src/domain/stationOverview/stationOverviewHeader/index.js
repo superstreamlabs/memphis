@@ -36,6 +36,12 @@ import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import SdkExample from '../sdkExsample';
 import Auditing from '../auditing';
+import TagsList from '../../../components/tagList';
+import AddTag from '../../../components/addTag';
+import { useRef } from 'react';
+import { httpRequest } from '../../../services/http';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { createContext } from 'react';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -44,6 +50,10 @@ const StationOverviewHeader = () => {
     const [retentionValue, setRetentionValue] = useState('');
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
+    const [tagModal, setTagModal] = useState(false);
+    const [tags, setTags] = useState(stationState?.stationMetaData?.tags);
+    const [shouldUpdateTags, setShouldUpdateTags] = useState(false);
+    const tagsContext = createContext();
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -65,15 +75,31 @@ const StationOverviewHeader = () => {
         history.push(pathDomains.stations);
     };
 
+    const clickOutSide = async () => {
+        setTagModal(false);
+        if (shouldUpdateTags) {
+            try {
+                const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
+                console.log(data);
+                setTags(data.tags);
+                setShouldUpdateTags(false);
+            } catch (error) {}
+        }
+    };
+
     return (
         <div className="station-overview-header">
             <div className="title-wrapper">
                 <div className="station-details">
-                    <h1 className="station-name">{stationState?.stationMetaData?.name}</h1>
+                    <h1 className="station-name">
+                        {stationState?.stationMetaData?.name}
+                        <TagsList className="tags-list" tags={tags} addNew={true} handleAddNew={() => setTagModal(true)} />
+                    </h1>
                     <span className="created-by">
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
                     </span>
                 </div>
+                <div></div>
                 <div id="e2e-tests-station-close-btn">
                     <Button
                         width="80px"
@@ -190,6 +216,14 @@ const StationOverviewHeader = () => {
                     hr={false}
                 >
                     <Auditing />
+                </Modal>
+                <Modal header="Tag" displayButtons={false} height="50%" width="40%" clickOutside={() => clickOutSide()} open={tagModal} hr={false}>
+                    <AddTag
+                        tagList={tags}
+                        entity_type={'station'}
+                        entity_name={stationState?.stationMetaData?.name}
+                        handleUpdatedTagList={() => setShouldUpdateTags(true)}
+                    />
                 </Modal>
             </div>
         </div>

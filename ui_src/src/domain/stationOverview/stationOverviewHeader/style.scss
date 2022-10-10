@@ -12,6 +12,14 @@
                 font-weight: 600;
                 line-height: 29px;
                 margin-bottom: 0;
+                margin-right: 5px;
+                display: flex;
+                .tags-list {
+                    justify-content: space-between;
+                    margin-bottom: 0px;
+                    margin-left: 10px;
+                    margin-top: 4px;
+                }
             }
             .created-by {
                 color: #979797;

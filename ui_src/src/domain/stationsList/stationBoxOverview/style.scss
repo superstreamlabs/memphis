@@ -10,26 +10,26 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
-    min-width:1000px;
+    min-width: 1000px;
     .data-labels {
         color: #84818a;
         font-size: 12px;
         font-family: 'InterSemiBold';
     }
     .retention {
-        color: #00A5FF;
+        color: #00a5ff;
     }
-    .storage{
-        color: #FFA043;
+    .storage {
+        color: #ffa043;
     }
     .replicas {
         color: var(--purple);
     }
     .total {
-        color: #20C9AC;
+        color: #20c9ac;
     }
     .poison {
-        color: #FF8C82;
+        color: #ff8c82;
     }
     .data-info {
         color: #2e2c34;
@@ -66,6 +66,11 @@
         .station-created {
             margin-right: 15px;
         }
+        .tags-list {
+            margin-bottom: 0px;
+            margin-left: 1px;
+            margin-top: 10px;
+        }
     }
     .right-section {
         width: 50%;
@@ -91,5 +96,3 @@
 .station-box-container:hover {
     opacity: 0.8;
 }
-
-
