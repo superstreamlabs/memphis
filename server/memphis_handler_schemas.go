@@ -150,7 +150,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 	exist, _, err := IsSchemaExist(schemaName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf("CreateNewSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
 		return
 	}
@@ -197,10 +197,10 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	filter := bson.M{"name": newSchema.Name}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"_id":  newSchema.ID,
-			"type": newSchema.Type,
+			"_id":      newSchema.ID,
+			"type":     newSchema.Type,
+			"versions": newSchema.Versions,
 		},
-		"$set": bson.M{"versions": newSchema.Versions},
 	}
 	opts := options.Update().SetUpsert(true)
 	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -212,16 +212,18 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	if updateResults.MatchedCount == 0 {
 		message := "Schema " + schemaName + " has been created"
 		serv.Noticef(message)
+		_, err = schemaVersionCollection.InsertOne(context.TODO(), newSchemaVersion)
+		if err != nil {
+			serv.Errorf("CreateSchema error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	} else {
-		serv.Warnf("Scheam with the same name is already exist")
-	}
-
-	_, err = schemaVersionCollection.InsertOne(context.TODO(), newSchemaVersion)
-	if err != nil {
-		serv.Errorf("CreateSchema error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		serv.Warnf("Schema with that name already exists")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema with that name already exists"})
 		return
 	}
+
 	c.IndentedJSON(200, newSchema)
 }
 
@@ -244,7 +246,7 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	schemaName := strings.ToLower(body.SchemaName)
 	exist, _, err := IsSchemaExist(schemaName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf("GetSchemaDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -273,7 +275,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	schemaName := strings.ToLower(body.SchemaName)
 	exist, _, err := IsSchemaExist(schemaName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Errorf("RemoveSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
