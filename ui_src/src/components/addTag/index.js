@@ -52,12 +52,13 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
     }, [inputValue]);
 
     const handleClose = (removedTag) => {
-        if (originalTags.some((tag) => tag.name === removedTag)) {
-            const newTags = tags.filter((tag) => tag.name !== removedTag);
-            setTags(newTags);
-            setDeletedTags([...deletedTags, removedTag]);
-            setEditedList(true);
-        }
+        debugger;
+        console.log(originalTags);
+        console.log(tags);
+        const newTags = tags.filter((tag) => tag !== removedTag.name);
+        setTags(newTags);
+        setDeletedTags([...deletedTags, removedTag.name]);
+        setEditedList(true);
     };
 
     const showInput = () => {
@@ -69,7 +70,7 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
     };
 
     const handleInputConfirm = () => {
-        if (inputValue && tags.indexOf(inputValue) === -1 && originalTags.some((tag) => tag.name !== inputValue) && tags.some((tag) => tag.name !== inputValue)) {
+        if (inputValue && tags.indexOf(inputValue) === -1 && !originalTags.some((tag) => tag.name === inputValue) && !tags.some((tag) => tag.name === inputValue)) {
             const newTag = {
                 name: inputValue,
                 color_bg: 'blue',
@@ -108,7 +109,7 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
         try {
             if (!(deletedTags.length === 0)) {
                 const reqBody = {
-                    tags: deletedTags,
+                    names: deletedTags,
                     entity_type: entity_type,
                     entity_name: entity_name
                 };
@@ -146,7 +147,6 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
                             />
                         );
                     }
-
                     const isLongTag = tag.name.length > 5;
                     const tagElem = (
                         <Tag className="edit-tag" key={tag.name} color={tag.color_bg} closable={true} onClose={() => handleClose(tag)}>
