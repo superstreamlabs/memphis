@@ -77,8 +77,12 @@ func getSchemasOverviewData(h *server.Handlers) ([]models.ExtendedSchema, error)
 }
 
 func getStationOverviewData(stationName string, h *server.Handlers) (models.StationOverviewData, error) {
-	stationName = strings.ToLower(stationName)
-	exist, station, err := server.IsStationExist(stationName)
+	sn, err := server.StationNameFromStr(stationName)
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
+	exist, station, err := server.IsStationExist(sn)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
@@ -90,7 +94,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(sn, station)
 	if err != nil {
 		return models.StationOverviewData{}, err
 	}
