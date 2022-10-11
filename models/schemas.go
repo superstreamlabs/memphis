@@ -28,17 +28,46 @@ import (
 )
 
 type Schema struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id"`
-	Name      string             `json:"name" bson:"name"`
-	Type      string             `json:"type" bson:"type"`
-	Versions  []SchemaVersion    `json:"versions" bson:"versions"`
-	IsDeleted bool               `json:"is_deleted" bson:"is_deleted"`
+	ID       primitive.ObjectID   `json:"id" bson:"_id"`
+	Name     string               `json:"name" bson:"name"`
+	Type     string               `json:"type" bson:"type"`
+	Versions []primitive.ObjectID `json:"versions" bson:"versions"`
 }
 
 type SchemaVersion struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	VersionNumber string             `json:"version_number" bson:"version_number"`
+	VersionNumber int                `json:"version_number" bson:"version_number"`
 	Active        bool               `json:"active" bson:"active"`
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	SchemaContent string             `json:"schema_content" bson:"schema_content"`
+}
+
+type CreateNewSchema struct {
+	Name          string `json:"name" binding:"required,min=1,max=32"`
+	Type          string `json:"type"`
+	SchemaContent string `json:"schema_content"`
+}
+
+type ExtendedSchema struct {
+	ID            primitive.ObjectID `json:"id" bson:"_id"`
+	Name          string             `json:"name" bson:"name"`
+	Type          string             `json:"type" bson:"type"`
+	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+}
+
+type ExtendedSchemaDetails struct {
+	ID         primitive.ObjectID `json:"id"`
+	SchemaName string             `json:"schema_name"`
+	Type       string             `json:"type"`
+	Versions   []SchemaVersion    `json:"versions"`
+}
+
+type GetSchemaDetails struct {
+	SchemaName string `form:"schema_name" json:"schema_name"`
+}
+
+type RemoveSchema struct {
+	SchemaName string `json:"schema_name"`
 }
