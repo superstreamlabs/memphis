@@ -180,19 +180,6 @@ func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, m
 	return true, producer, nil
 }
 
-func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
-	filter := bson.M{
-		"name": schemaName}
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
-	if err == mongo.ErrNoDocuments {
-		return false, schema, nil
-	} else if err != nil {
-		return false, schema, err
-	}
-	return true, schema, nil
-}
-
 func CreateDefaultStation(s *Server, stationName string, username string) (models.Station, bool, error) {
 	var newStation models.Station
 	newStation = models.Station{
@@ -282,4 +269,17 @@ func validateName(name, objectType string) error {
 		return invalidCharErr
 	}
 	return nil
+}
+
+func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
+	filter := bson.M{
+		"name": schemaName}
+	var schema models.Schema
+	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
+	if err == mongo.ErrNoDocuments {
+		return false, schema, nil
+	} else if err != nil {
+		return false, schema, err
+	}
+	return true, schema, nil
 }
