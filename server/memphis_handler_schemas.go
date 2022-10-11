@@ -210,14 +210,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 	if updateResults.MatchedCount == 0 {
-		message := "Schema " + schemaName + " has been created"
-		serv.Noticef(message)
 		_, err = schemaVersionCollection.InsertOne(context.TODO(), newSchemaVersion)
 		if err != nil {
 			serv.Errorf("CreateSchema error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		message := "Schema " + schemaName + " has been created"
+		serv.Noticef(message)
 	} else {
 		serv.Warnf("Schema with that name already exists")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema with that name already exists"})
