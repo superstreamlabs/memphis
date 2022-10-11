@@ -42,7 +42,9 @@ function Users() {
     const [selectedMenuItem, selectMenuItem] = useState('editProfile');
     const [state, dispatch] = useContext(Context);
 
-    useEffect(() => {}, []);
+    useEffect(() => {
+        dispatch({ type: 'SET_ROUTE', payload: 'settings' });
+    }, []);
 
     const getComponent = () => {
         switch (selectedMenuItem) {
