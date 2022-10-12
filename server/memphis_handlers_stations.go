@@ -111,6 +111,10 @@ func removeStationResources(s *Server, station models.Station) error {
 	if err != nil {
 		return err
 	}
+	err = s.RemoveStream(stationName.Intern())
+	if err != nil {
+		return err
+	}
 
 	DeleteTagsByStation(station.ID)
 
