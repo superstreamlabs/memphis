@@ -55,6 +55,7 @@ type ExtendedSchema struct {
 	Type          string             `json:"type" bson:"type"`
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	VersionNumber int                `json:"version_number" bson:"version_number"`
 }
 
 type ExtendedSchemaDetails struct {
@@ -80,9 +81,4 @@ type CreateNewVersion struct {
 type RollBackVersion struct {
 	SchemaName    string `json:"schema_name"`
 	VersionNumber int    `json:"version_number"`
-}
-
-type ActiveVersions struct {
-	Name          string `json:"name" bson:"name"`
-	VersionNumber int    `json:"version_number" bson:"version_number"`
 }
