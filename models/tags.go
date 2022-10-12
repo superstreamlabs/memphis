@@ -28,17 +28,15 @@ import (
 type Tag struct {
 	ID       primitive.ObjectID   `json:"id" bson:"_id"`
 	Name     string               `json:"name" bson:"name"`
-	ColorBG  string               `json:"color_bg" bson:"color_bg"`
-	ColorTXT string               `json:"color_txt" bson:"color_txt"`
+	Color    string               `json:"color" bson:"color"`
 	Users    []primitive.ObjectID `json:"users" bson:"users"`
 	Stations []primitive.ObjectID `json:"stations" bson:"stations"`
 	Schemas  []primitive.ObjectID `json:"schemas" bson:"schemas"`
 }
 
 type CreateTag struct {
-	Name     string `json:"name" binding:"required,min=1,max=20"`
-	ColorBG  string `json:"color_bg"`
-	ColorTXT string `json:"color_txt"`
+	Name  string `json:"name" binding:"required,min=1,max=20"`
+	Color string `json:"color"`
 }
 
 type CreateTagsSchema struct {
