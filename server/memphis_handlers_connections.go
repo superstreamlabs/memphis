@@ -42,7 +42,7 @@ var consumersHandler ConsumersHandler
 func handleConnectMessage(client *client) error {
 	splittedMemphisInfo := strings.Split(client.opts.Name, "::")
 	if len(splittedMemphisInfo) != 2 {
-		client.Warnf("missing username or connectionId")
+		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
 	objIdString := splittedMemphisInfo[0]

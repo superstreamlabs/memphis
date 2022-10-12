@@ -107,8 +107,7 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequest
 	if err := json.Unmarshal(msg, &ccr); err != nil {
-		s.Errorf("Failed creating consumer: %v", err.Error())
-		s.Errorf(string(msg))
+		s.Errorf("Failed creating consumer: %v\n%v", err.Error(), string(msg))
 		respondWithErr(s, reply, err)
 		return
 	}
