@@ -149,24 +149,6 @@ func IsStationExist(sn StationName) (bool, models.Station, error) {
 	return true, station, nil
 }
 
-// func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
-// 	filter := bson.M{
-// 		"name": schemaName,
-// 		"$or": []interface{}{
-// 			bson.M{"is_deleted": false},
-// 			bson.M{"is_deleted": bson.M{"$exists": false}},
-// 		},
-// 	}
-// 	var schema models.Schema
-// 	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
-// 	if err == mongo.ErrNoDocuments {
-// 		return false, schema, nil
-// 	} else if err != nil {
-// 		return false, schema, err
-// 	}
-// 	return true, schema, nil
-// }
-
 func IsTagExist(tagName string) (bool, models.Tag, error) {
 	filter := bson.M{
 		"name": tagName,
