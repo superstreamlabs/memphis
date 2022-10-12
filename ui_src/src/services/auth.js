@@ -62,7 +62,9 @@ const AuthService = (function () {
     const logout = () => {
         const isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
         localStorage.clear();
-        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+        if (isSkipGetStarted === 'true') {
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+        }
         window.location.assign(pathDomains.login);
     };
 

@@ -22,6 +22,7 @@
 package routes
 
 import (
+	"memphis-broker/conf"
 	"memphis-broker/middlewares"
 	"memphis-broker/models"
 	"memphis-broker/server"
@@ -37,6 +38,7 @@ import (
 )
 
 var socketServer = socketio.NewServer(nil)
+var configuration = conf.GetConfig()
 
 func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	stations, err := h.Stations.GetAllStationsDetails()
@@ -66,6 +68,14 @@ func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetail
 		return stations, err
 	}
 	return stations, nil
+}
+
+func getSchemasOverviewData(h *server.Handlers) ([]models.ExtendedSchema, error) {
+	schemas, err := h.Schemas.GetAllSchemasDetails()
+	if err != nil {
+		return schemas, err
+	}
+	return schemas, nil
 }
 
 func getStationOverviewData(stationName string, h *server.Handlers) (models.StationOverviewData, error) {
@@ -114,6 +124,12 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
+	tags, err := h.Tags.GetTagsByStation(station.ID)
+	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
 	return models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,
@@ -126,6 +142,9 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+		Tags:                  tags,
+		Leader:                leader,
+		Followers:             followers,
 	}, nil
 }
 
@@ -190,6 +209,12 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		return "recv " + msg
 	})
 
+	socketServer.OnEvent("/api", "get_all_schemas_data", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("all_schemas_group")
+		return "recv " + msg
+	})
+
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
 		serv.Warnf("An error occured during a socket connection " + e.Error())
 	})
@@ -213,6 +238,15 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
 				} else {
 					socketServer.BroadcastToRoom("/api", "all_stations_group", "stations_overview_data", data)
+				}
+			}
+
+			if socketServer.RoomLen("/api", "all_schemas_group") > 0 {
+				data, err := getSchemasOverviewData(h)
+				if err != nil {
+					serv.Errorf("Error while trying to get schemas overview data - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "all_schemas_group", "schemas_overview_data", data)
 				}
 			}
 
@@ -246,7 +280,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 						socketServer.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
 					}
 				}
-
 			}
 		}
 	}()

@@ -1,3 +1,4 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the MIT License (the "License");
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,35 +19,38 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+package models
 
-import React, { createContext, useReducer } from 'react';
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
-import Reducer from './reducer';
+type Tag struct {
+	ID       primitive.ObjectID   `json:"id" bson:"_id"`
+	Name     string               `json:"name" bson:"name"`
+	Color    string               `json:"color" bson:"color"`
+	Users    []primitive.ObjectID `json:"users" bson:"users"`
+	Stations []primitive.ObjectID `json:"stations" bson:"stations"`
+	Schemas  []primitive.ObjectID `json:"schemas" bson:"schemas"`
+}
 
-const initialState = {
-    userData: {
-        user_id: '',
-        already_logged_in: false,
-        creation_date: '',
-        user_type: '',
-        avatar_id: 1
-    },
-    companyLogo: '',
-    monitor_data: {},
-    loading: false,
-    error: null,
-    route: '',
-    isAuthentication: false,
-    analytics_modal: true,
-    socket: null,
-    skipSignup: false
-};
+type CreateTag struct {
+	Name  string `json:"name" binding:"required,min=1,max=20"`
+	Color string `json:"color"`
+}
 
-const Store = ({ children }) => {
-    const [state, dispatch] = useReducer(Reducer, initialState);
+type CreateTagsSchema struct {
+	Tags       []CreateTag `json:"tags"`
+	EntityType string      `json:"entity_type"`
+	EntityName string      `json:"entity_name"`
+}
 
-    return <Context.Provider value={[state, dispatch]}>{children}</Context.Provider>;
-};
+type RemoveTagsSchema struct {
+	Names      []string `json:"names"`
+	EntityType string   `json:"entity_type"`
+	EntityName string   `json:"entity_name"`
+}
 
-export const Context = createContext(initialState);
-export default Store;
+type GetTagsSchema struct {
+	EntityType string `json:"entity_type"`
+}

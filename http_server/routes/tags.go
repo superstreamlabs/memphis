@@ -19,26 +19,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-package models
+package routes
 
 import (
-	"time"
+	"memphis-broker/server"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/gin-gonic/gin"
 )
 
-type Schema struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id"`
-	Name      string             `json:"name" bson:"name"`
-	Type      string             `json:"type" bson:"type"`
-	Versions  []SchemaVersion    `json:"versions" bson:"versions"`
-	IsDeleted bool               `json:"is_deleted" bson:"is_deleted"`
-}
-
-type SchemaVersion struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	VersionNumber string             `json:"version_number" bson:"version_number"`
-	Active        bool               `json:"active" bson:"active"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+func InitializeTagsRoutes(router *gin.RouterGroup, h *server.Handlers) {
+	tagsHandler := h.Tags
+	tagsRoutes := router.Group("/tags")
+	tagsRoutes.GET("/getTags", tagsHandler.GetTags)
+	tagsRoutes.DELETE("/removeTags", tagsHandler.RemoveTags)
+	tagsRoutes.POST("/createTags", tagsHandler.CreateTags)
 }

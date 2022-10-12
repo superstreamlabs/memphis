@@ -61,9 +61,11 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             window.location.pathname !== pathDomains.signup &&
             err?.response?.status === AUTHENTICATION_ERROR_STATUS_CODE
         ) {
-            localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
+            isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
             localStorage.clear();
-            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+            if (isSkipGetStarted === 'true') {
+                localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+            }
             window.location.assign('/login');
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
@@ -106,9 +108,11 @@ export async function handleRefreshTokenRequest() {
         }
         return true;
     } catch (err) {
-        localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
+        isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
         localStorage.clear();
-        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+        if (isSkipGetStarted === 'true') {
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+        }
         window.location.assign('/login');
         return false;
     }
