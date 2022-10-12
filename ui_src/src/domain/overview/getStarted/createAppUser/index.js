@@ -128,7 +128,7 @@ const CreateAppUser = (props) => {
             {isCreatedUser === screenEnum['DATA_WAITING'] && (
                 <div className="creating-the-user-container">
                     <Lottie className="lottie" animationData={userCreator} loop={true} />
-                    <p className="create-the-user-header">User is getting created</p>
+                    <p className="create-the-user-header">We are creating the user</p>
                 </div>
             )}
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && (
@@ -139,12 +139,12 @@ const CreateAppUser = (props) => {
                     </div>
                     <div className="container-username-token">
                         <div className="username-container">
-                            <p>Username: {getStartedState?.username}</p>
-                            <Copy data={getStartedState?.username} />
+                            <p>Username: {getStartedState.username}</p>
+                            <Copy data={getStartedState.username} />
                         </div>
                         <div className="token-container">
                             <p>Connection token: {getStartedState?.connectionCreds}</p>
-                            <Copy data={getStartedState?.connectionCreds} />
+                            <Copy data={getStartedState.connectionCreds} />
                         </div>
                     </div>
                 </div>

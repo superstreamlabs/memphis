@@ -28,7 +28,8 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_WELCOME_MESSAGE
+    LOCAL_STORAGE_WELCOME_MESSAGE,
+    LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
 import CreateStationDetails from '../../components/createStationDetails';
 import discordLogo from '../../assets/images/discordLogo.svg';
@@ -60,18 +61,36 @@ const Mobile = ({ children }) => {
     return isMobile ? children : null;
 };
 
+const dataSentences = [
+    `“Data is the new oil” — Clive Humby`,
+    `“With data collection, ‘the sooner the better’ is always the best answer” — Marissa Mayer`,
+    `“Data are just summaries of thousands of stories – tell a few of those stories to help make the data meaningful” — Chip and Dan Heath`,
+    `“Data really powers everything that we do” — Jeff Weiner`,
+    `“Without big data, you are blind and deaf and in the middle of a freeway” — Geoffrey Moore`
+];
+
 function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
     const createStationRef = useRef(null);
     const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
     const [username, SetUsername] = useState('');
-    const [isLoading, setisLoading] = useState(false);
+    const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
 
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [allStations, setAllStations] = useState([]);
     const [showWelcome, setShowWelcome] = useState(false);
+
+    const [dataSentence, setDataSentence] = useState(dataSentences[0]);
+
+    const getRandomInt = (max) => {
+        return Math.floor(Math.random() * max);
+    };
+
+    const generateSentence = () => {
+        setDataSentence(dataSentences[getRandomInt(5)]);
+    };
 
     const getOverviewData = async () => {
         setisLoading(true);
@@ -97,6 +116,7 @@ function OverView() {
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))
                 : capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME))
         );
+        generateSentence();
     }, []);
 
     useEffect(() => {
@@ -104,7 +124,6 @@ function OverView() {
             data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
             dispatch({ type: 'SET_MONITOR_DATA', payload: data });
         });
-
         setTimeout(() => {
             state.socket?.emit('register_main_overview_data');
             setisLoading(false);
@@ -131,7 +150,6 @@ function OverView() {
         }
     };
 
-    const stationsOfUser = allStations.filter((station) => station.created_by_user === localStorage.getItem(LOCAL_STORAGE_USER_NAME));
     return (
         <div className="overview-container">
             {isLoading && (
@@ -139,7 +157,8 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-            {!isLoading && (
+
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -173,23 +192,20 @@ function OverView() {
                         />
                     </div>
                     <div className="overview-components">
-                        {stationsOfUser.length === 0 ? (
-                            <div className="left-side">
-                                <GetStarted />
-                            </div>
-                        ) : (
-                            <div className="left-side">
-                                <GenericDetails />
-                                <FailedStations />
-                                <Throughput />
-                            </div>
-                        )}
+                        <div className="left-side">
+                            <GenericDetails />
+                            <FailedStations />
+                            <Throughput />
+                        </div>
                         <div className="right-side">
                             <Resources />
                             <SysComponents />
                         </div>
                     </div>
                 </div>
+            )}
+            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') && (
+                <GetStarted username={username} dataSentence={dataSentence} />
             )}
             <Modal
                 header="Your station details"

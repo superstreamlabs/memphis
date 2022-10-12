@@ -69,6 +69,11 @@ const Reducer = (state, action) => {
                 ...state,
                 socket: action.payload
             };
+        case 'SKIP_SIGNUP':
+            return {
+                ...state,
+                skipSignup: action.payload
+            };
 
         default:
             return state;

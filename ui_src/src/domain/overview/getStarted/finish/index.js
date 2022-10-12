@@ -21,8 +21,9 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Button from '../../../../components/button';
+import Switcher from '../../../../components/switcher';
 import docsLogo from '../../../../assets/images/docsLogo.svg';
 import GithubLogo from '../../../../assets/images/githubLogo.svg';
 import discordLogo from '../../../../assets/images/discordLogo.svg';
@@ -31,12 +32,12 @@ import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../../const/localStorageConsts';
 
-const Finish = (props) => {
-    const { createStationFormRef } = props;
-
+const Finish = ({ createStationFormRef }) => {
     const history = useHistory();
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
+    const [allowAnalytics, setAllowAnalytics] = useState(false);
 
     useEffect(() => {
         createStationFormRef.current = onNext;
@@ -49,8 +50,10 @@ const Finish = (props) => {
 
     const onFinish = (e) => {
         e.preventDefault();
+        getStartedDispatch({ type: 'INITIAL_STATE', payload: {} });
         doneNextSteps();
         history.push(`${pathDomains.stations}/${getStartedState.stationName}`);
+        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
     };
 
     const doneNextSteps = async () => {
@@ -59,24 +62,42 @@ const Finish = (props) => {
         } catch (error) {}
     };
 
+    const sendAnalytics = async (analyticsFlag) => {
+        try {
+            await httpRequest('PUT', `${ApiEndpoints.EDIT_ANALYTICS}`, { send_analytics: analyticsFlag });
+            setAllowAnalytics(analyticsFlag);
+            localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, analyticsFlag);
+        } catch (err) {
+            return;
+        }
+    };
+
     return (
         <div className="finish-container" id="e2e-getstarted-step5">
+            <div className="btn-container">
+                <div className="allow-analytics">
+                    <Switcher onChange={() => sendAnalytics(!allowAnalytics)} checked={allowAnalytics} checkedChildren="on" unCheckedChildren="off" />
+                    <p>I allow Memphis team to reach out and ask for feedback.</p>
+                </div>
+                <div id="e2e-getstarted-finish-btn">
+                    <Button
+                        width="192px"
+                        height="42px"
+                        placeholder="Go to dashboard"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="16px"
+                        fontWeight="bold"
+                        colorType="white"
+                        borderRadius="31px"
+                        boxShadowStyle="none"
+                        onClick={(e) => {
+                            onFinish(e);
+                        }}
+                    />
+                </div>
+            </div>
             <div className="container-icons-finish">
-                <Button
-                    width="192px"
-                    height="42px"
-                    placeholder="Go to station"
-                    radiusType="circle"
-                    backgroundColorType="white"
-                    fontSize="16px"
-                    fontWeight="bold"
-                    border="1px solid #EEEEEE"
-                    borderRadius="31px"
-                    boxShadowStyle="none"
-                    onClick={(e) => {
-                        onFinish(e);
-                    }}
-                />
                 <p className="link-finish-header">Link to our channels</p>
                 <Link
                     className="icon-image"
