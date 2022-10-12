@@ -148,7 +148,7 @@ const GetStarted = ({ username, dataSentence }) => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
-            indexOfBrokerComponent = indexOfBrokerComponent || 1;
+            indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
             getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
         } catch (error) {}
     };
