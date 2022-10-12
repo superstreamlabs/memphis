@@ -111,6 +111,12 @@ func removeStationResources(s *Server, station models.Station) error {
 	if err != nil {
 		return err
 	}
+	err = s.RemoveStream(stationName.Intern())
+	if err != nil {
+		return err
+	}
+
+	DeleteTagsByStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
@@ -270,8 +276,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	if !ok {
 		return
 	}
+	tagsHandler := TagsHandler{S: sh.S}
 
-	var station models.Station
+	var station models.GetStationResponseSchema
 	err := stationsCollection.FindOne(context.TODO(), bson.M{
 		"name": body.StationName,
 		"$or": []interface{}{
@@ -287,6 +294,13 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	station.Tags = tags
 
 	c.IndentedJSON(200, station)
 }
@@ -314,6 +328,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
+		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
@@ -331,7 +346,11 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 					return []models.ExtendedStationDetails{}, err
 				}
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+			tags, err := tagsHandler.GetTagsByStation(station.ID)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
 		}
 		return exStations, nil
 	}
@@ -359,6 +378,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		return []models.ExtendedStation{}, nil
 	} else {
 		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		tagsHandler := TagsHandler{S: sh.S}
 		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
@@ -377,9 +397,14 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 					return []models.ExtendedStation{}, err
 				}
 			}
+			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
+			if err != nil {
+				return []models.ExtendedStation{}, err
+			}
 
 			stations[i].TotalMessages = totalMessages
 			stations[i].PoisonMessages = poisonMessages
+			stations[i].Tags = tags
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, nil
@@ -527,6 +552,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		serv.Warnf("Station with the same name is already exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
 		return
+	}
+
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	message := "Station " + stationName.Ext() + " has been created"
