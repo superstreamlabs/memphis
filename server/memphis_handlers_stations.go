@@ -103,7 +103,11 @@ func validateReplicas(replicas int) error {
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station) error {
-	err := s.RemoveStream(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return err
+	}
+	err = s.RemoveStream(stationName.Intern())
 	if err != nil {
 		return err
 	}
@@ -324,11 +328,19 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
-				return []models.ExtendedStationDetails{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station.Name)
 			if err != nil {
-				return []models.ExtendedStationDetails{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
 			}
 			tags, err := tagsHandler.GetTagsByStation(station.ID)
 			if err != nil {
@@ -363,14 +375,23 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	} else {
 		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 		tagsHandler := TagsHandler{S: sh.S}
+		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
 			}
 			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
@@ -380,8 +401,9 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			stations[i].TotalMessages = totalMessages
 			stations[i].PoisonMessages = poisonMessages
 			stations[i].Tags = tags
+			extStations = append(extStations, stations[i])
 		}
-		return stations, nil
+		return extStations, nil
 	}
 }
 
@@ -598,7 +620,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(),
+	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
 			"name": stationName,
 			"$or": []interface{}{
@@ -704,6 +726,19 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	}
 
 	return messages, nil
+}
+
+func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+	if sh.S.JetStreamIsClustered() {
+		leader, followers, err := sh.S.GetLeaderAndFollowers(station)
+		if err != nil {
+			return "", []string{}, err
+		}
+
+		return leader, followers, nil
+	} else {
+		return "broker-0", []string{}, nil
+	}
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {

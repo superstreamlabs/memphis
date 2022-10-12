@@ -7,7 +7,7 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
 	github.com/gin-gonic/gin v1.8.1
-	github.com/go-playground/validator/v10 v10.10.0
+	github.com/go-playground/validator/v10 v10.11.1
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/googollee/go-socket.io v1.6.2
 	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
