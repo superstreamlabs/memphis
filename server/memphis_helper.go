@@ -76,19 +76,16 @@ func (s *Server) MemphisInitialized() bool {
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
-		var msgJson []byte
-		if err := json.Unmarshal(msg, &msgJson); err != nil {
-			s.Errorf("Inside the reply handler %v", string(msg))
-		}
-		
-		respCh <- msg
+		go func() {
+			respCh <- msg
+		}()
 	}
 }
 
 func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
 	reply := s.getJsApiReplySubject()
 
-	timeout := time.After(5 * time.Second)
+	timeout := time.After(30 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {

@@ -103,7 +103,11 @@ func validateReplicas(replicas int) error {
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station) error {
-	err := s.RemoveStream(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return err
+	}
+	err = s.RemoveStream(stationName.Intern())
 	if err != nil {
 		return err
 	}
@@ -313,11 +317,19 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
-				return []models.ExtendedStationDetails{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station.Name)
 			if err != nil {
-				return []models.ExtendedStationDetails{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
 			}
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
 		}
@@ -347,20 +359,30 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		return []models.ExtendedStation{}, nil
 	} else {
 		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
 			}
 
 			stations[i].TotalMessages = totalMessages
 			stations[i].PoisonMessages = poisonMessages
+			extStations = append(extStations, stations[i])
 		}
-		return stations, nil
+		return extStations, nil
 	}
 }
 
@@ -568,7 +590,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(),
+	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
 			"name": stationName,
 			"$or": []interface{}{

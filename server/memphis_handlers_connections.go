@@ -42,7 +42,7 @@ var consumersHandler ConsumersHandler
 func handleConnectMessage(client *client) error {
 	splittedMemphisInfo := strings.Split(client.opts.Name, "::")
 	if len(splittedMemphisInfo) != 2 {
-		client.Errorf("handleConnectMessage: missing username or connectionId")
+		client.Warnf("missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
 	objIdString := splittedMemphisInfo[0]
@@ -54,9 +54,11 @@ func handleConnectMessage(client *client) error {
 		return err
 	}
 	if !exist {
+		client.Warnf("handleConnectMessage: User is not exist")
 		return errors.New("User is not exist")
 	}
 	if user.UserType != "root" && user.UserType != "application" {
+		client.Warnf("handleConnectMessage: Please use a user of type Root/Application and not Management")
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}
 
@@ -155,6 +157,10 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 }
 
 func (mci *memphisClientInfo) updateDisconnection() error {
+	if mci.connectionId.IsZero() {
+		return nil
+	}
+
 	ctx := context.TODO()
 	_, err := connectionsCollection.UpdateOne(ctx,
 		bson.M{"_id": mci.connectionId},
