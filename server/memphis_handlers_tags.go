@@ -39,7 +39,7 @@ const (
 	tagObjectName = "Tag"
 )
 
-func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, background_color string, text_color string) error {
+func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, color string) error {
 	name = strings.ToLower(name)
 	exist, _, err := IsTagExist(name)
 	if err != nil {
@@ -63,8 +63,7 @@ func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, ba
 	newTag = models.Tag{
 		ID:       primitive.NewObjectID(),
 		Name:     name,
-		ColorBG:  background_color,
-		ColorTXT: text_color,
+		Color:    color,
 		Stations: stationArr,
 		Schemas:  schemaArr,
 		Users:    userArr,
@@ -73,13 +72,12 @@ func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, ba
 	filter := bson.M{"name": newTag.Name}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"_id":       newTag.ID,
-			"name":      newTag.Name,
-			"color_bg":  newTag.ColorBG,
-			"color_txt": newTag.ColorTXT,
-			"stations":  newTag.Stations,
-			"schemas":   newTag.Schemas,
-			"users":     newTag.Users,
+			"_id":      newTag.ID,
+			"name":     newTag.Name,
+			"color":    newTag.Color,
+			"stations": newTag.Stations,
+			"schemas":  newTag.Schemas,
+			"users":    newTag.Users,
 		},
 	}
 	opts := options.Update().SetUpsert(true)
@@ -103,7 +101,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 				return err
 			}
 			if !exist {
-				err = CreateTag(name, entity_type, entity_id, tag.ColorBG, tag.ColorTXT)
+				err = CreateTag(name, entity_type, entity_id, tag.Color)
 				if err != nil {
 					return err
 				}
@@ -123,7 +121,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 		// 		return err
 		// 	}
 		// 	if !exist {
-		// 		err = CreateTag(name, entity_type, entity_id, tag.ColorBG, tag.ColorTXT)
+		// 		err = CreateTag(name, entity_type, entity_id, tag.Color)
 		// 		if err != nil {
 		// 			return err
 		// 		}
@@ -142,7 +140,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 		// 		return err
 		// 	}
 		// 	if !exist {
-		// 		err = CreateTag(name, entity_type, entity_id, tag.ColorBG, tag.ColorTXT)
+		// 		err = CreateTag(name, entity_type, entity_id, tag.Color)
 		// 		if err != nil {
 		// 			return err
 		// 		}

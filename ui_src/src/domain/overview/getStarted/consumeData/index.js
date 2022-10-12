@@ -20,7 +20,7 @@
 // SOFTWARE.
 
 import React, { useContext, useEffect, useState } from 'react';
-import consWaiting from '../../../../assets/lotties/consWaiting.json';
+import consWaiting from '../../../../assets/images/waitingForConsumer.svg';
 import ProduceConsumeData, { produceConsumeScreenEnum } from '../produceConsumeData';
 import { GetStartedStoreContext } from '..';
 
@@ -48,7 +48,7 @@ const ConsumeData = (props) => {
     }, []);
 
     return (
-        <div id="e2e-getstarted-step4">
+        <div className="produce-consume-data" id="e2e-getstarted-step4">
             <ProduceConsumeData
                 waitingImage={consWaiting}
                 waitingTitle={'Waiting to consume messages from the station'}

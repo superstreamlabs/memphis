@@ -65,10 +65,10 @@ const Login = (props) => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
-            if (data.exist) {
+            if (data.exist && !state.skipSignup) {
                 history.push(pathDomains.signup);
             }
-            setIsSignup(data.exist);
+            setIsSignup();
             setisLoading(false);
         } catch (error) {
             setisLoading(false);

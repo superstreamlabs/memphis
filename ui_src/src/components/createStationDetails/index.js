@@ -22,7 +22,7 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-import { Button, Form, InputNumber } from 'antd';
+import { Form } from 'antd';
 
 import RadioButton from '../radioButton';
 import Input from '../Input';
@@ -33,6 +33,7 @@ import { convertDateToSeconds } from '../../services/valueConvertor';
 import { useHistory } from 'react-router';
 import pathDomains from '../../router';
 import Helper from '../helper';
+import InputNumberComponent from '../InputNumber';
 
 const retanionOptions = [
     {
@@ -91,7 +92,7 @@ const CreateStationDetails = (props) => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
-            indexOfBrokerComponent = indexOfBrokerComponent || 1;
+            indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
             data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(data?.system_components[indexOfBrokerComponent]?.actual_pods);
         } catch (error) {}
     };
@@ -204,28 +205,28 @@ const CreateStationDetails = (props) => {
                     <div className="time-value">
                         <div className="days-section">
                             <Form.Item name="days" initialValue={timeSeparator.days}>
-                                <InputNumber bordered={false} min={0} max={100} keyboard={true} onChange={(e) => handleDaysChange(e)} value={timeSeparator.days} />
+                                <InputNumberComponent min={0} max={100} onChange={(e) => handleDaysChange(e)} value={timeSeparator.days} />
                             </Form.Item>
                             <p>days</p>
                         </div>
                         <p className="separator">:</p>
                         <div className="hours-section">
                             <Form.Item name="hours" initialValue={timeSeparator.hours}>
-                                <InputNumber bordered={false} min={0} max={24} keyboard={true} onChange={(e) => handleHoursChange(e)} value={timeSeparator.hours} />
+                                <InputNumberComponent min={0} max={24} onChange={(e) => handleHoursChange(e)} value={timeSeparator.hours} />
                             </Form.Item>
                             <p>hours</p>
                         </div>
                         <p className="separator">:</p>
                         <div className="minutes-section">
                             <Form.Item name="minutes" initialValue={timeSeparator.minutes}>
-                                <InputNumber bordered={false} min={0} max={60} keyboard={true} onChange={(e) => handleMinutesChange(e)} value={timeSeparator.minutes} />
+                                <InputNumberComponent min={0} max={60} onChange={(e) => handleMinutesChange(e)} value={timeSeparator.minutes} />
                             </Form.Item>
                             <p>minutes</p>
                         </div>
                         <p className="separator">:</p>
                         <div className="seconds-section">
                             <Form.Item name="seconds" initialValue={timeSeparator.seconds}>
-                                <InputNumber bordered={false} min={0} max={60} keyboard={true} onChange={(e) => handleSecondsChange(e)} value={timeSeparator.seconds} />
+                                <InputNumberComponent min={0} max={60} onChange={(e) => handleSecondsChange(e)} value={timeSeparator.seconds} />
                             </Form.Item>
                             <p>seconds</p>
                         </div>
@@ -286,11 +287,9 @@ const CreateStationDetails = (props) => {
                 </p>
                 <div className="replicas-value">
                     <Form.Item name="replicas" initialValue={formFields.replicas}>
-                        <InputNumber
-                            bordered={false}
+                        <InputNumberComponent
                             min={1}
                             max={actualPods && actualPods <= 5 ? actualPods : 5}
-                            keyboard={true}
                             value={formFields.replicas}
                             onChange={(e) => updateFormState('replicas', e.target.value)}
                         />

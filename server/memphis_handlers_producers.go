@@ -99,7 +99,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		respondWithErr(s, reply, errors.New("memphis: connection id is not active"))
+		respondWithErr(s, reply, errors.New("memphis: connection is not active"))
 		return
 	}
 
