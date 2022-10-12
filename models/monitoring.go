@@ -48,6 +48,8 @@ type StationOverviewData struct {
 	AuditLogs             []AuditLog           `json:"audit_logs"`
 	Messages              []MessageDetails     `json:"messages"`
 	PoisonMessages        []LightPoisonMessage `json:"poison_messages"`
+	Leader                string               `json:"leader"`
+	Followers             []string             `json:"followers"`
 }
 
 type GetStationOverviewDataSchema struct {

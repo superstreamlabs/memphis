@@ -260,6 +260,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	response := models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,
@@ -272,6 +279,8 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+		Leader:                leader,
+		Followers:             followers,
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

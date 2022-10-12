@@ -22,6 +22,7 @@
 package routes
 
 import (
+	"memphis-broker/conf"
 	"memphis-broker/middlewares"
 	"memphis-broker/models"
 	"memphis-broker/server"
@@ -37,6 +38,7 @@ import (
 )
 
 var socketServer = socketio.NewServer(nil)
+var configuration = conf.GetConfig()
 
 func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	stations, err := h.Stations.GetAllStationsDetails()
@@ -122,6 +124,11 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
+	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
 	return models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,
@@ -134,6 +141,8 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+		Leader:                leader,
+		Followers:             followers,
 	}, nil
 }
 
