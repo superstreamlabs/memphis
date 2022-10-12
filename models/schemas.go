@@ -50,12 +50,12 @@ type CreateNewSchema struct {
 }
 
 type ExtendedSchema struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	VersionNumber int                `json:"version_number" bson:"version_number"`
+	ID                  primitive.ObjectID `json:"id" bson:"_id"`
+	Name                string             `json:"name" bson:"name"`
+	Type                string             `json:"type" bson:"type"`
+	CreatedByUser       string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
+	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
 }
 
 type ExtendedSchemaDetails struct {

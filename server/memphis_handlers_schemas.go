@@ -67,15 +67,9 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	return nil
 }
 
-func (sh SchemasHandler) updateActiveVersion(schemaName string, versionNumber int) error {
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": schemaName}).Decode(&schema)
-	if err != nil {
-		return err
-	}
-
-	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
-		bson.M{"schema_id": schema.ID},
+func (sh SchemasHandler) updateActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
+	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
+		bson.M{"schema_id": schemaId},
 		bson.M{"$set": bson.M{"active": false}},
 	)
 
@@ -83,27 +77,22 @@ func (sh SchemasHandler) updateActiveVersion(schemaName string, versionNumber in
 		return err
 	}
 
-	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schema.ID, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
+	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (sh SchemasHandler) GetVersionsCount(schemaName string) (models.Schema, int, error) {
-	filter := bson.M{"name": schemaName}
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
-	if err != nil {
-		return models.Schema{}, 0, err
-	}
-	countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schema.ID})
+func (sh SchemasHandler) getVersionsCount(schemaId primitive.ObjectID) (int, error) {
+
+	countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schemaId})
 
 	if err != nil {
-		return schema, 0, err
+		return 0, err
 	}
 
-	return schema, int(countVersions), err
+	return int(countVersions), err
 }
 
 func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models.ExtendedSchemaDetails, error) {
@@ -346,12 +335,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	schemaName := strings.ToLower(body.SchemaName)
-	err := validateSchemaName(schemaName)
-	if err != nil {
-		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
 	exist, schema, err := IsSchemaExist(schemaName)
 	if err != nil {
 		serv.Errorf("CreateNewVersion error: " + err.Error())
@@ -379,7 +362,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
-	schema, countVersions, err := sh.GetVersionsCount(schemaName)
+	countVersions, err := sh.getVersionsCount(schema.ID)
 	if err != nil {
 		serv.Errorf("CreateNewVersion error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -387,11 +370,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	versionNumber := countVersions + 1
-	newSchema := models.Schema{
-		ID:   schema.ID,
-		Name: schema.Name,
-		Type: schema.Type,
-	}
 
 	newSchemaVersion := models.SchemaVersion{
 		ID:            primitive.NewObjectID(),
@@ -400,7 +378,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
 		SchemaContent: schemaContent,
-		SchemaId:      newSchema.ID,
+		SchemaId:      schema.ID,
 	}
 
 	filter := bson.M{"schema_id": schema.ID, "version_number": newSchemaVersion.VersionNumber}
@@ -422,7 +400,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 	if updateResults.MatchedCount == 0 {
-		message := "Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created"
+		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created"
 		serv.Noticef(message)
 	} else {
 		serv.Warnf("Version already exists")
@@ -441,13 +419,8 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 	}
 
 	schemaName := strings.ToLower(body.SchemaName)
-	err := validateSchemaName(schemaName)
-	if err != nil {
-		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-	exist, _, err := IsSchemaExist(schemaName)
+
+	exist, schema, err := IsSchemaExist(schemaName)
 	if err != nil {
 		serv.Errorf("RollBackVersion error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -460,7 +433,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 	}
 
 	schemaVersion := body.VersionNumber
-	exist, _, err = isSchemaVersionExists(schemaVersion, schemaName)
+	exist, _, err = isSchemaVersionExists(schemaVersion, schema.ID)
 
 	if err != nil {
 		serv.Errorf("RollBackVersion error: " + err.Error())
@@ -468,12 +441,12 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Version does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "version does not exist"})
+		serv.Warnf("Schema Version does not exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema version does not exist"})
 		return
 	}
 
-	err = sh.updateActiveVersion(schemaName, body.VersionNumber)
+	err = sh.updateActiveVersion(schema.ID, body.VersionNumber)
 	if err != nil {
 		serv.Errorf("RollBackVersion error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})

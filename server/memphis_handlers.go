@@ -307,15 +307,10 @@ func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
 	return true, schema, nil
 }
 
-func isSchemaVersionExists(version int, schemaName string) (bool, models.SchemaVersion, error) {
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": schemaName}).Decode(&schema)
-	if err != nil {
-		return false, models.SchemaVersion{}, err
-	}
+func isSchemaVersionExists(version int, schemaId primitive.ObjectID) (bool, models.SchemaVersion, error) {
 	var schemaVersion models.SchemaVersion
-	filter := bson.M{"schema_id": schema.ID, "version_number": version}
-	err = schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
+	filter := bson.M{"schema_id": schemaId, "version_number": version}
+	err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
 
 	if err == mongo.ErrNoDocuments {
 		return false, schemaVersion, nil
