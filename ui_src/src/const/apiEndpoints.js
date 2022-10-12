@@ -59,5 +59,13 @@ export const ApiEndpoints = {
     GET_MAIN_OVERVIEW_DATA: '/monitoring/getMainOverviewData',
     GET_STATION_DATA: '/monitoring/getStationOverviewData',
     GET_SYS_LOGS: '/monitoring/getSystemLogs',
-    DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs'
+    DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
+
+    //Schemas
+    GET_ALL_SCHEMAS: '/schemas/getAllSchemas',
+    CREATE_NEW_SCHEMA: '/schemas/createNewSchema',
+    GET_SCHEMA_DETAILS: '/schemas/getSchemaDetails',
+    REMOVE_SCHEMA: '/schemas/removeSchema',
+    CREATE_NEW_VERSION: '/schemas/createNewVersion',
+    ROLL_BACK_VERSION: '/schemas/rollBackVersion'
 };

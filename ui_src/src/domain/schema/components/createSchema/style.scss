@@ -4,6 +4,9 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+    a:hover{
+        opacity: 0.8;
+    }
     .header{
         width: 600px;
         .flex-title{
@@ -15,6 +18,7 @@
                 margin: 0;
             }
             img{
+                cursor: pointer;
                 margin-right: 10px;
             }
         }
@@ -32,11 +36,12 @@
     .create-schema-form{
         margin-top: 20px;
         display: flex;
-        height: calc(100% - 160px);
+        height: calc(100% - 130px);
         position: relative;
         .left-side{
             width: 50%;
             .schema-field{
+                padding-bottom: 42px;
                 .field-title{
                     font-family: 'InterSemiBold';
                     font-size: 16px;  
@@ -68,13 +73,9 @@
             width: 50%;
             height: 100%;
             position: relative;
-            .ant-form-item {
-                position: relative;
-                height: 100%;
-            }
-            .ant-row, .ant-form-item-control-input, .ant-form-item-control-input-content{
-                height: 100%;
-            }
+                display: flex;
+    flex-direction: column;
+    justify-content: space-between;
             .schema-field{
                 position: relative;
                 height: 100%;
@@ -87,9 +88,34 @@
                     border: 1px solid #D8D8D8;
                     border-radius: 4px;
                     width: 100%;
-                    height: calc(100% - 100px);
                     position: relative;
                     padding-top:20px;
+                    padding-bottom:2px;
+                    height: calc(100% - 90px);
+
+                }
+            }
+            .schema-item{
+                height: calc(100%);
+                .ant-form-item {
+                    position: relative;
+                    height: 100%;
+                }
+                .ant-row, .ant-form-item-control-input, .ant-form-item-control-input-content{
+                    height: 100%;
+                }
+               
+            }
+            .button-container{
+                display: flex;
+                place-content: end;
+                margin-bottom: 0;
+                height: 50px;
+                place-items: end;
+                .ant-form-item-control-input-content{
+                    display: flex;
+                    width: 260px;
+                    justify-content: space-between;
                 }
             }
         }

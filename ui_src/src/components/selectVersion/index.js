@@ -45,7 +45,7 @@ const SelectVersion = ({ options, onChange, value }) => {
                 placement="bottomRight"
                 popupClassName="select-version-options"
             >
-                {options.map((option, index) => {
+                {options?.map((option, index) => {
                     return (
                         <Option key={option?.id} value={option?.version_number}>
                             <p className="schema-name">Version {option?.version_number}</p>

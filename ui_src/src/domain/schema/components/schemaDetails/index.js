@@ -31,6 +31,8 @@ import typeIcon from '../../../../assets/images/typeIcon.svg';
 import RadioButton from '../../../../components/radioButton';
 import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
+import { httpRequest } from '../../../../services/http';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
 
 const formatOption = [
     {
@@ -45,25 +47,39 @@ const formatOption = [
     }
 ];
 
-function SchemaDetails({ schema, closeDrawer }) {
+const stations = ['station_1', 'station_2', 'station_3', 'station_4'];
+
+function SchemaDetails({ schemaName, closeDrawer }) {
     const [passwordType, setPasswordType] = useState(0);
     const [versionSelected, setVersionSelected] = useState();
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
+    const [loading, setIsLoading] = useState(false);
+    const [schemaDetails, setSchemaDetails] = useState({
+        schema_name: '',
+        type: '',
+        version: []
+    });
 
-    useEffect(() => {
-        let index = schema?.versions?.findIndex((version) => version?.active === true);
-        setCurrentversion(schema?.versions[index]);
-        setVersionSelected(schema?.versions[index]);
-    }, []);
-
-    const passwordTypeChange = (e) => {
-        setPasswordType(e.target.value);
+    const getScemaDetails = async () => {
+        try {
+            setIsLoading(true);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SCHEMA_DETAILS}?schema_name=${schemaName}`);
+            let index = data.versions?.findIndex((version) => version?.active === true);
+            setCurrentversion(data.versions[index]);
+            setVersionSelected(data.versions[index]);
+            setSchemaDetails(data);
+        } catch (err) {}
+        setIsLoading(false);
     };
 
+    useEffect(() => {
+        getScemaDetails();
+    }, []);
+
     const handleSelectVersion = (e) => {
-        let index = schema.versions?.findIndex((version) => version.id === Number(e));
-        setVersionSelected(schema.versions[index]);
+        let index = schemaDetails?.versions?.findIndex((version) => version.id === Number(e));
+        setVersionSelected(schemaDetails?.versions[index]);
     };
 
     return (
@@ -72,23 +88,23 @@ function SchemaDetails({ schema, closeDrawer }) {
                 <div className="wrapper">
                     <img src={typeIcon} />
                     <p>Type:</p>
-                    <span>{schema.type}</span>
+                    <span>{schemaDetails?.type}</span>
                 </div>
                 <div className="wrapper">
                     <img src={createdByIcon} />
                     <p>Created by:</p>
-                    <span>{schema.created_by}</span>
+                    <span>{currentVersion?.created_by_user}</span>
                 </div>
             </div>
             <div className="tags">
-                <TagsList tags={schema.tags} addNew={true} />
+                <TagsList tags={schemaDetails?.tags} addNew={true} />
             </div>
             <div className="schema-fields">
                 <div className="left">
                     <p>Schema</p>
                     {/* <RadioButton options={formatOption} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} /> */}
                 </div>
-                <SelectVersion value={versionSelected?.version_number} options={schema.versions} onChange={(e) => handleSelectVersion(e)} />
+                <SelectVersion value={versionSelected?.version_number} options={schemaDetails?.versions} onChange={(e) => handleSelectVersion(e)} />
             </div>
             <div className="schema-content">
                 {versionSelected?.active && (
@@ -101,17 +117,17 @@ function SchemaDetails({ schema, closeDrawer }) {
                             formatOnPaste: true,
                             formatOnType: true
                         }}
-                        language="json"
-                        value={versionSelected?.schema}
+                        language="proto"
+                        value={versionSelected?.schema_content}
                         onChange={() => setUpdated(true)}
                     />
                 )}
                 {!versionSelected?.active && (
                     <DiffEditor
                         height="90%"
-                        language="json"
-                        original={currentVersion?.schema}
-                        modified={versionSelected?.schema}
+                        language="proto"
+                        original={currentVersion?.schema_content}
+                        modified={versionSelected?.schema_content}
                         options={{
                             renderSideBySide: false,
                             scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
@@ -124,7 +140,7 @@ function SchemaDetails({ schema, closeDrawer }) {
             <div className="used-stations">
                 <p className="title">Used by stations</p>
                 <div className="stations-list">
-                    {schema.stations?.map((station, index) => {
+                    {stations?.map((station, index) => {
                         return (
                             <div className="station-wrapper" key={index}>
                                 <p>{station}</p>

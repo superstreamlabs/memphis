@@ -34,21 +34,23 @@
             align-items: center;
             height: 100%;
             justify-content: center;
-            color: #A9A9A9;
             width: 100%;
             img {
                 margin-bottom: 30px;
             }
-            p {
-                font-weight: 600;
-                font-size: 18px;
+            .title {
+                color: #1D1D1D ;
+                font-family: 'InterSemiBold';
+                font-size: 24px;
                 line-height: 22px;
             }
             .sub-title {
                 font-weight: 400;
                 font-size: 14px;
                 line-height: 17px;
-                margin-bottom: 60px;
+                margin-bottom: 30px;
+                color: #8F8F8F;
+
             }
         }
     }

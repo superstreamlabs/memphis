@@ -24,7 +24,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 import { SearchOutlined } from '@ant-design/icons';
 
-import emptyList from '../../../../assets/images/emptyList.svg';
+import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
@@ -37,691 +37,27 @@ function SchemaList({ createNew }) {
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
-    const [schemaList, setSchemaList] = useState([
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock1',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                },
-                {
-                    id: 3,
-                    active: false,
-                    version_number: 3,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 4,
-                    active: false,
-                    version_number: 4,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock2',
-            used: true,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1_gfdgfdgfdgfgd', 'station_2_jghghhjhj', 'station_3']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock3',
-            used: true,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: true,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: false,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock1',
-            used: true,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        },
-        {
-            id: 'jhjhjkhkjhkj',
-            name: 'schema_mock',
-            used: true,
-            type: 'avro',
-            created_by: 'avraham',
-            tags: [
-                { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-                { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-                { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-                { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
-            ],
-            creation_date: '2022-09-21T14:28:02.539503+03:00',
-            versions: [
-                {
-                    id: 1,
-                    active: false,
-                    version_number: 1,
-                    name: 'schema_mock2',
-                    created_by_user: 'avraham',
-                    schema: `{
-    "type": "record",
-    "namespace": "com.example",
-    "name": "test-schema",
-    "fields": [
-       { "name": "username", "type": "string", "default": "-2" },
-       { "name": "age", "type": "int", "default": "none" },
-       { "name": "phone", "type": "int", "default": "NONE" },
-       { "name": "country", "type": "string", "default": "NONE" }
-    ]
-}`
-                },
-                {
-                    id: 2,
-                    active: true,
-                    version_number: 2,
-                    name: 'schema_mock1',
-                    created_by_user: 'avraham',
-                    schema: `{
-                                "type": "record",
-                                "namespace": "com.example",
-                                "name": "test-schema",
-                                "fields": [
-                                { "name": "username", "type": "string", "default": "NONE" },
-                                { "name": "age", "type": "int", "default": "-1" },
-                                { "name": "phone", "type": "string", "default": "NONE" },
-                                { "name": "country", "type": "string", "default": "NONE" }
-                                ]
-                            }`
-                }
-            ],
-            stations: ['station_1', 'station_2', 'station_3', 'station_4']
-        }
-    ]);
+    const [schemaList, setSchemaList] = useState([]);
     const [isLoading, setisLoading] = useState(false);
 
-    const getSchemas = async () => {
-        // setisLoading(true);
-        // try {
-        //     debugger;
-        //     const data = await httpRequest('GET', ApiEndpoints.GEL_ALL_FACTORIES);
-        //     setSchemaList(data);
-        //     setisLoading(false);
-        // } catch (error) {
-        //     setisLoading(false);
-        // }
+    const getAllSchemas = async () => {
+        setisLoading(true);
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
+            setSchemaList(data);
+            setisLoading(false);
+        } catch (error) {
+            setisLoading(false);
+        }
     };
 
     useEffect(() => {
-        getSchemas();
+        getAllSchemas();
     }, []);
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(schemaList.map((li) => li.id));
+        setIsCheck(schemaList.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -737,10 +73,44 @@ function SchemaList({ createNew }) {
             setIsCheckAll(false);
         }
     };
+
+    const handleDeleteSelected = () => {
+        setisLoading(true);
+        isCheck.forEach(async (name) => {
+            try {
+                const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA, {
+                    schema_name: name
+                });
+                if (data) {
+                    setSchemaList(schemaList.filter((schema) => schema.name !== name));
+                    setIsCheck(isCheck.filter((item) => item !== name));
+                    setTimeout(() => {
+                        setisLoading(false);
+                    }, 500);
+                }
+            } catch (error) {
+                setisLoading(false);
+            }
+        });
+    };
     return (
         <div className="schema-container">
             <h1 className="main-header-h1">Schema</h1>
             <div className="action-section">
+                {isCheck?.length > 0 && (
+                    <Button
+                        width="131px"
+                        height="34px"
+                        placeholder="Delete Selected"
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={() => handleDeleteSelected()}
+                    />
+                )}
                 <SearchInput
                     placeholder="Search schema"
                     colorType="navy"
@@ -810,26 +180,26 @@ function SchemaList({ createNew }) {
                     </div>
                 )}
                 {schemaList.map((schema, index) => {
-                    return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.id)} handleCheckedClick={handleCheckedClick} />;
+                    return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                 })}
                 {!isLoading && schemaList.length === 0 && (
                     <div className="no-schema-to-display">
-                        <img src={emptyList} width="100" height="100" alt="emptyList" />
-                        <p>There are no schema yet</p>
+                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
+                        <p className="title">No Schema found</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
                             className="modal-btn"
-                            width="240px"
-                            height="50px"
-                            placeholder="Create your first schema"
+                            width="160px"
+                            height="34px"
+                            placeholder="Create from blank"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
                             fontSize="12px"
-                            fontWeight="600"
+                            fontFamily="InterSemiBold"
                             aria-controls="usecse-menu"
                             aria-haspopup="true"
-                            // onClick={() => modalFlip(true)}
+                            onClick={() => createNew()}
                         />
                     </div>
                 )}
