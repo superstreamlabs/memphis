@@ -81,3 +81,8 @@ type RollBackVersion struct {
 	SchemaName    string `json:"schema_name"`
 	VersionNumber int    `json:"version_number"`
 }
+
+type ActiveVersions struct {
+	Name          string `json:"name" bson:"name"`
+	VersionNumber int    `json:"version_number" bson:"version_number"`
+}
