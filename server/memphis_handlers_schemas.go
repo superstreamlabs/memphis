@@ -140,7 +140,10 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "extendedSchema"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$extendedSchema"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$match", bson.D{{"extendedSchema.version_number", 1}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}}}},
+		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "activeVersion"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$activeVersion"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$match", bson.D{{"activeVersion.active", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}, {"version_number", "$activeVersion.version_number"}}}},
 		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 	})
 
@@ -153,31 +156,6 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	}
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
-	} else {
-		return schemas, nil
-	}
-}
-
-func (sh SchemasHandler) GetAllActiveVersions() ([]models.ActiveVersions, error) {
-	var schemas []models.ActiveVersions
-	cursor, err := schemasCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "extendedSchema"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$extendedSchema"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"extendedSchema.active", true}}}},
-		bson.D{{"$project", bson.D{{"name", 1}, {"version_number", "$extendedSchema.version_number"}}}},
-	})
-
-	if err != nil {
-		return []models.ActiveVersions{}, err
-	}
-
-	if err = cursor.All(context.TODO(), &schemas); err != nil {
-		return []models.ActiveVersions{}, err
-	}
-
-	if len(schemas) == 0 {
-		return []models.ActiveVersions{}, nil
-
 	} else {
 		return schemas, nil
 	}
@@ -503,16 +481,4 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
-}
-
-func (sh SchemasHandler) GetActiveVersions(c *gin.Context) {
-
-	schemas, err := sh.GetAllActiveVersions()
-	if err != nil {
-		serv.Errorf("GetActiveVersions error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	c.IndentedJSON(200, schemas)
-
 }
