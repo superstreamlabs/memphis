@@ -28,10 +28,9 @@ import (
 )
 
 type Schema struct {
-	ID       primitive.ObjectID   `json:"id" bson:"_id"`
-	Name     string               `json:"name" bson:"name"`
-	Type     string               `json:"type" bson:"type"`
-	Versions []primitive.ObjectID `json:"versions" bson:"versions"`
+	ID   primitive.ObjectID `json:"id" bson:"_id"`
+	Name string             `json:"name" bson:"name"`
+	Type string             `json:"type" bson:"type"`
 }
 
 type SchemaVersion struct {
@@ -41,6 +40,7 @@ type SchemaVersion struct {
 	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
 	SchemaContent string             `json:"schema_content" bson:"schema_content"`
+	SchemaId      primitive.ObjectID `json:"schema_id" bson:"schema_id"`
 }
 
 type CreateNewSchema struct {
@@ -50,11 +50,12 @@ type CreateNewSchema struct {
 }
 
 type ExtendedSchema struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
+	ID                  primitive.ObjectID `json:"id" bson:"_id"`
+	Name                string             `json:"name" bson:"name"`
+	Type                string             `json:"type" bson:"type"`
+	CreatedByUser       string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
+	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
 }
 
 type ExtendedSchemaDetails struct {
@@ -70,4 +71,14 @@ type GetSchemaDetails struct {
 
 type RemoveSchema struct {
 	SchemaName string `json:"schema_name"`
+}
+
+type CreateNewVersion struct {
+	SchemaName    string `json:"schema_name"`
+	SchemaContent string `json:"schema_content"`
+}
+
+type RollBackVersion struct {
+	SchemaName    string `json:"schema_name"`
+	VersionNumber int    `json:"version_number"`
 }

@@ -13,4 +13,6 @@ func InitializeSchemasRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	schemasRoutes.GET("/getAllSchemas", schemasHandler.GetAllSchemas)
 	schemasRoutes.GET("/getSchemaDetails", schemasHandler.GetSchemaDetails)
 	schemasRoutes.DELETE("/removeSchema", schemasHandler.RemoveSchema)
+	schemasRoutes.POST("/createNewVersion", schemasHandler.CreateNewVersion)
+	schemasRoutes.PUT("/rollBackVersion", schemasHandler.RollBackVersion)
 }
