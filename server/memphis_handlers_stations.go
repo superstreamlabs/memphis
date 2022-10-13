@@ -267,7 +267,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
