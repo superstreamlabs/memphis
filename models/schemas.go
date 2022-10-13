@@ -67,7 +67,7 @@ type ExtendedSchemaDetails struct {
 	Type         string             `json:"type"`
 	Versions     []SchemaVersion    `json:"versions"`
 	UsedStations []string           `json:"used_stations"`
-	Tags                []Tag              `json:"tags"`
+	Tags         []Tag              `json:"tags"`
 }
 
 type GetSchemaDetails struct {

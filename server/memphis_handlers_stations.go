@@ -445,6 +445,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

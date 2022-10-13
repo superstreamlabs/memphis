@@ -147,12 +147,12 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 		return models.ExtendedSchemaDetails{}, err
 	}
 
-	var usedVersions []string
+	var usedStations []string
 	if len(stations) == 0 {
-		usedVersions = []string{}
+		usedStations = []string{}
 	}
 	for _, station := range stations {
-		usedVersions = append(usedVersions, station.Name)
+		usedStations = append(usedStations, station.Name)
 	}
 
 	tagsHandler := TagsHandler{S: sh.S}
@@ -166,7 +166,7 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 		SchemaName:   schema.Name,
 		Type:         schema.Type,
 		Versions:     schemaVersions,
-		UsedStations: usedVersions,
+		UsedStations: usedStations,
 		Tags:         tags,
 	}
 
@@ -194,7 +194,6 @@ func (sh SchemasHandler) getExtedndedSchema(schemas []models.ExtendedSchema) ([]
 		if err != nil {
 			return []models.ExtendedSchema{}, err
 		}
-		schemas[i].Tags = tags
 		schemaUpdated := models.ExtendedSchema{
 			ID:                  schema.ID,
 			Name:                schema.Name,
