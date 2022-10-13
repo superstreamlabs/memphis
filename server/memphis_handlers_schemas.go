@@ -9,9 +9,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io"
+	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tallstoat/pbparser"
+	"github.com/jhump/protoreflect/desc/protoparse"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,8 +27,12 @@ const (
 )
 
 func validateProtobufContent(schemaContent string) error {
-	r := strings.NewReader(schemaContent)
-	_, err := pbparser.Parse(r, nil)
+	parser := protoparse.Parser{
+		Accessor: func(filename string) (io.ReadCloser, error) {
+			return ioutil.NopCloser(strings.NewReader(schemaContent)), nil
+		},
+	}
+	_, err := parser.ParseFiles("")
 	if err != nil {
 		return errors.New("Your Proto file is invalid: " + err.Error())
 	}
@@ -115,11 +121,18 @@ func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models
 		return models.ExtendedSchemaDetails{}, err
 	}
 
+	tagsHandler := TagsHandler{S: sh.S}
+	tags, err := tagsHandler.GetTagsBySchema(schema.ID)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
 	extedndedSchemaDetails := models.ExtendedSchemaDetails{
 		ID:         schema.ID,
 		SchemaName: schema.Name,
 		Type:       schema.Type,
 		Versions:   schemaVersions,
+		Tags:       tags,
 	}
 	return extedndedSchemaDetails, nil
 }
@@ -147,6 +160,14 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
 	} else {
+		tagsHandler := TagsHandler{S: sh.S}
+		for i := 0; i < len(schemas); i++ {
+			tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
+			if err != nil {
+				return []models.ExtendedSchema{}, err
+			}
+			schemas[i].Tags = tags
+		}
 		return schemas, nil
 	}
 }
@@ -256,6 +277,15 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	c.IndentedJSON(200, newSchema)
 }
 
@@ -305,7 +335,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		return
 	}
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, _, err := IsSchemaExist(schemaName)
+	exist, schema, err := IsSchemaExist(schemaName)
 	if err != nil {
 		serv.Errorf("RemoveSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -316,6 +346,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
 		return
 	}
+	DeleteTagsBySchema(schema.ID)
 	err = sh.findAndDeleteSchema(schemaName)
 
 	if err != nil {
