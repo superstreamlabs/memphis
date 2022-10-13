@@ -111,10 +111,6 @@ func removeStationResources(s *Server, station models.Station) error {
 	if err != nil {
 		return err
 	}
-	err = s.RemoveStream(stationName.Intern())
-	if err != nil {
-		return err
-	}
 
 	DeleteTagsByStation(station.ID)
 
@@ -267,7 +263,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {

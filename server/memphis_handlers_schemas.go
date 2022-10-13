@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jhump/protoreflect/desc/protoparse"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,11 +27,17 @@ const (
 )
 
 func validateProtobufContent(schemaContent string) error {
-	if strings.Contains(schemaContent, "syntax") {
-		return nil
-	} else {
-		return errors.New("Your Schema is invalid")
+	parser := protoparse.Parser{
+		Accessor: func(filename string) (io.ReadCloser, error) {
+			return ioutil.NopCloser(strings.NewReader(schemaContent)), nil
+		},
 	}
+	_, err := parser.ParseFiles("")
+	if err != nil {
+		return errors.New("Your Proto file is invalid: " + err.Error())
+	}
+
+	return nil
 }
 
 func validateSchemaName(schemaName string) error {
@@ -51,13 +60,11 @@ func validateSchemaType(schemaType string) error {
 }
 
 func validateSchemaContent(schemaContent, schemaType string) error {
-	invalidSchemaContentErrStr := fmt.Sprintf("Your Schema is invalid")
-	invalidSchemaContentErr := errors.New(invalidSchemaContentErrStr)
 	switch schemaType {
 	case "protobuf":
 		err := validateProtobufContent(schemaContent)
 		if err != nil {
-			return invalidSchemaContentErr
+			return err
 		}
 	case "json":
 		break
@@ -148,12 +155,19 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 		usedVersions = append(usedVersions, station.Name)
 	}
 
+	tagsHandler := TagsHandler{S: sh.S}
+	tags, err := tagsHandler.GetTagsBySchema(schema.ID)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
 	extedndedSchemaDetails = models.ExtendedSchemaDetails{
 		ID:           schema.ID,
 		SchemaName:   schema.Name,
 		Type:         schema.Type,
 		Versions:     schemaVersions,
 		UsedStations: usedVersions,
+		Tags:         tags,
 	}
 
 	return extedndedSchemaDetails, nil
@@ -201,6 +215,7 @@ func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
+
 	return extedndedSchemaDetails, nil
 }
 
@@ -226,6 +241,16 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	}
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
+	} else {
+		tagsHandler := TagsHandler{S: sh.S}
+		for i := 0; i < len(schemas); i++ {
+			tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
+			if err != nil {
+				return []models.ExtendedSchema{}, err
+			}
+			schemas[i].Tags = tags
+		}
+		return schemas, nil
 	}
 	schemas, err = sh.getExtedndedSchema(schemas)
 	if err != nil {
@@ -352,6 +377,15 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	c.IndentedJSON(200, newSchema)
 }
 
@@ -402,7 +436,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	}
 	for _, name := range body.SchemasName {
 		schemaName := strings.ToLower(name)
-		exist, _, err := IsSchemaExist(schemaName)
+		exist, schema, err := IsSchemaExist(schemaName)
 		if err != nil {
 			serv.Errorf("RemoveSchema error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -413,8 +447,9 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
 			return
 		}
-	}
+		DeleteTagsBySchema(schema.ID)
 
+	}
 	err := sh.findAndDeleteSchema(body.SchemasName)
 
 	if err != nil {

@@ -35,10 +35,6 @@ import (
 
 type TagsHandler struct{ S *Server }
 
-const (
-	tagObjectName = "Tag"
-)
-
 func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, color string) error {
 	name = strings.ToLower(name)
 	exist, _, err := IsTagExist(name)
@@ -55,8 +51,8 @@ func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, co
 	switch entity_type {
 	case "station":
 		stationArr = append(stationArr, entity_id)
-		// case "schema":
-		// 	schemaArr = append(schemaArr, entity_id)
+	case "schema":
+		schemaArr = append(schemaArr, entity_id)
 		// case "user":
 		// 	userArr = append(userArr, entity_id)
 	}
@@ -113,25 +109,25 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 			}
 		}
 
-		// case "schema":
-		// for _, tagToCreate := range tags {
-		// 	name := strings.ToLower(tagToCreate.Name)
-		// 	exist, tag, err := IsTagExist(name)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if !exist {
-		// 		err = CreateTag(name, entity_type, entity_id, tag.Color)
-		// 		if err != nil {
-		// 			return err
-		// 		}
-		// 		return nil
-		// 	}
-		// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"schemas": schema.ID}})
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
+	case "schema":
+		for _, tagToCreate := range tags {
+			name := strings.ToLower(tagToCreate.Name)
+			exist, tag, err := IsTagExist(name)
+			if err != nil {
+				return err
+			}
+			if !exist {
+				err = CreateTag(name, entity_type, entity_id, tag.Color)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"schemas": entity_id}})
+			if err != nil {
+				return err
+			}
+		}
 		// case "user":
 		// for _, tagToCreate := range tags {
 		// 	name := strings.ToLower(tagToCreate.Name)
@@ -146,7 +142,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 		// 		}
 		// 		return nil
 		// 	}
-		// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"users": user.ID}})
+		// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"users": entity_id}})
 		// 	if err != nil {
 		// 		return err
 		// 	}
@@ -163,13 +159,13 @@ func DeleteTagsByStation(id primitive.ObjectID) {
 	}
 }
 
-// func DeleteTagsBySchema(id primitive.ObjectID) {
-// 	_, err: = tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"schemas": id}})
-// 	if err != nil {
-// 		serv.Errorf("Failed deleting tags: %v", err.Error())
-// 		return
-// 	}
-// }
+func DeleteTagsBySchema(id primitive.ObjectID) {
+	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"schemas": id}})
+	if err != nil {
+		serv.Errorf("Failed deleting tags: %v", err.Error())
+		return
+	}
+}
 
 func DeleteTagsByUser(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"users": id}})
@@ -270,25 +266,25 @@ func (th TagsHandler) RemoveTags(c *gin.Context) {
 				return
 			}
 
-		// case "schema":
-		// 	exist, schema, err := IsSchemaExist(body.EntityName)
-		// 	if err != nil {
-		// 		serv.Errorf("RemoveTags error: " + err.Error())
-		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 		return
-		// 	}
-		// 	if !exist {
-		// 		serv.Warnf("Schema does not exist")
-		// 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, schema does not exist"})
-		// 		return
-		// 	}
-		// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-		// 		bson.M{"$pull": bson.M{"schemas": schema.ID}})
-		// 	if err != nil {
-		// 		serv.Errorf("RemoveTags error: " + err.Error())
-		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 		return
-		// 	}
+		case "schema":
+			exist, schema, err := IsSchemaExist(body.EntityName)
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			if !exist {
+				serv.Warnf("Schema does not exist")
+				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, schema does not exist"})
+				return
+			}
+			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
+				bson.M{"$pull": bson.M{"schemas": schema.ID}})
+			if err != nil {
+				serv.Errorf("RemoveTags error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 		// case "user":
 		// 	exist, user, err := IsUserExist(body.EntityName)
 		// 	if err != nil {
