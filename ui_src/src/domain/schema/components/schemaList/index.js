@@ -38,13 +38,16 @@ function SchemaList({ createNew }) {
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [schemaList, setSchemaList] = useState([]);
+    const [schemaFilteredList, setSchemaFilteredList] = useState([]);
     const [isLoading, setisLoading] = useState(false);
+    const [searchInput, setSearchInput] = useState('');
 
     const getAllSchemas = async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             setSchemaList(data);
+            setSchemaFilteredList(data);
             setisLoading(false);
         } catch (error) {
             setisLoading(false);
@@ -55,9 +58,14 @@ function SchemaList({ createNew }) {
         getAllSchemas();
     }, []);
 
+    useEffect(() => {
+        if (searchInput.length >= 2) setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
+        else setSchemaFilteredList(schemaList);
+    }, [searchInput]);
+
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(schemaList.map((li) => li.name));
+        setIsCheck(schemaFilteredList.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -82,7 +90,7 @@ function SchemaList({ createNew }) {
                     schema_name: name
                 });
                 if (data) {
-                    setSchemaList(schemaList.filter((schema) => schema.name !== name));
+                    setSchemaList(schemaFilteredList.filter((schema) => schema.name !== name));
                     setIsCheck(isCheck.filter((item) => item !== name));
                     setTimeout(() => {
                         setisLoading(false);
@@ -93,6 +101,11 @@ function SchemaList({ createNew }) {
             }
         });
     };
+
+    const handleSearch = (e) => {
+        setSearchInput(e.target.value);
+    };
+
     return (
         <div className="schema-container">
             <h1 className="main-header-h1">Schema</h1>
@@ -111,6 +124,21 @@ function SchemaList({ createNew }) {
                         onClick={() => handleDeleteSelected()}
                     />
                 )}
+                {schemaFilteredList?.length > 1 && (
+                    <Button
+                        width="131px"
+                        height="34px"
+                        placeholder="Selected All"
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={() => onCheckedAll()}
+                    />
+                )}
+
                 <SearchInput
                     placeholder="Search schema"
                     colorType="navy"
@@ -121,8 +149,8 @@ function SchemaList({ createNew }) {
                     borderColorType="none"
                     boxShadowsType="none"
                     iconComponent={<SearchOutlined />}
-                    // onChange={handleSearch}
-                    // value={searchInput}
+                    onChange={handleSearch}
+                    value={searchInput}
                 />
                 <Button
                     width="111px"
@@ -179,7 +207,7 @@ function SchemaList({ createNew }) {
                         <Loader />
                     </div>
                 )}
-                {schemaList.map((schema, index) => {
+                {schemaFilteredList.map((schema, index) => {
                     return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                 })}
                 {!isLoading && schemaList.length === 0 && (

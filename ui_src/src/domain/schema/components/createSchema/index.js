@@ -209,7 +209,7 @@ function CreateSchema({ goBack }) {
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Please add schema content'
+                                        message: 'Schema content cannot be empty'
                                     }
                                 ]}
                             >

@@ -55,6 +55,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
     const [loading, setIsLoading] = useState(false);
+    const [newVersion, setNewVersion] = useState(false);
     const [schemaDetails, setSchemaDetails] = useState({
         schema_name: '',
         type: '',
@@ -63,14 +64,12 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const getScemaDetails = async () => {
         try {
-            setIsLoading(true);
             const data = await httpRequest('GET', `${ApiEndpoints.GET_SCHEMA_DETAILS}?schema_name=${schemaName}`);
             let index = data.versions?.findIndex((version) => version?.active === true);
             setCurrentversion(data.versions[index]);
             setVersionSelected(data.versions[index]);
             setSchemaDetails(data);
         } catch (err) {}
-        setIsLoading(false);
     };
 
     useEffect(() => {
@@ -80,6 +79,16 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const handleSelectVersion = (e) => {
         let index = schemaDetails?.versions?.findIndex((version) => version.id === Number(e));
         setVersionSelected(schemaDetails?.versions[index]);
+    };
+
+    const createNewVersion = async () => {
+        try {
+            setIsLoading(true);
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_VERSION, { schema_name: schemaName, schema_content: newVersion });
+            if (data) {
+            }
+        } catch (err) {}
+        setIsLoading(false);
     };
 
     return (
@@ -118,8 +127,12 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             formatOnType: true
                         }}
                         language="proto"
-                        value={versionSelected?.schema_content}
-                        onChange={() => setUpdated(true)}
+                        defaultValue={versionSelected?.schema_content}
+                        value={newVersion}
+                        onChange={(value) => {
+                            setUpdated(true);
+                            setNewVersion(value);
+                        }}
                     />
                 )}
                 {!versionSelected?.active && (
@@ -135,6 +148,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             scrollBeyondLastColumn: false
                         }}
                     />
+                )}
+                {updated && newVersion === '' && (
+                    <div>
+                        <p className="warning-message">Schema content cannot be empty</p>
+                    </div>
                 )}
             </div>
             <div className="used-stations">
@@ -192,8 +210,9 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         backgroundColorType="purple"
                         fontSize="12px"
                         fontWeight="600"
-                        disabled={!updated}
-                        // onClick={() => addUserModalFlip(true)}
+                        loading={loading}
+                        disabled={!updated || (updated && newVersion === '')}
+                        onClick={() => createNewVersion()}
                     />
                 </div>
             </div>

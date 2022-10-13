@@ -63,8 +63,12 @@ schema-details {
         border-radius: 4px;
         padding-top: 25px;
         padding-right: 25px;
+        padding-bottom: 2px;
         margin: 14px 28px;
         height: 450px;
+        .warning-message{
+            color: #ff4d4f;
+        }
     }
     .used-stations{
         padding: 16px 30px;

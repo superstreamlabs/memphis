@@ -54,40 +54,42 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     };
     return (
         <>
-            <div key={schema.name} className="schema-box-wrapper">
-                <header is="x3d">
-                    <div className="header-wrapper">
-                        <CheckboxComponent checked={isCheck} id={schema.name} onChange={handleCheckedClick} name={schema.name} />
-                        <div onClick={openSchemaDetails} className="schema-name">
-                            <p>{schema.name}</p>
-                        </div>
-                        <div onClick={openSchemaDetails} className="is-used">
-                            <img src={schema.used ? usedIcond : notUsedIcond} />
-                            {schema.used && <p className="used">Used</p>}
-                            {!schema.used && <p className="not-used"> Not Used</p>}
-                        </div>
-                        {/* <div className="menu">
+            <div>
+                <CheckboxComponent checked={isCheck} id={schema.name} onChange={handleCheckedClick} name={schema.name} />
+                <div key={schema.name} onClick={openSchemaDetails} className="schema-box-wrapper">
+                    <header is="x3d">
+                        <div className="header-wrapper">
+                            <div className="schema-name">
+                                <p>{schema.name}</p>
+                            </div>
+                            <div className="is-used">
+                                <img src={schema.used ? usedIcond : notUsedIcond} />
+                                {schema.used && <p className="used">Used</p>}
+                                {!schema.used && <p className="not-used"> Not Used</p>}
+                            </div>
+                            {/* <div className="menu">
                             <p>***</p>
                         </div> */}
-                    </div>
-                </header>
-                <type onClick={openSchemaDetails} is="x3d">
-                    <div>
-                        <p>Type : </p>
-                        <span>{schema.type}</span>
-                    </div>
-                    <div>
-                        <p>Created by : </p>
-                        <span>{schema.created_by_user}</span>
-                    </div>
-                </type>
-                <tags onClick={openSchemaDetails} is="x3d">
-                    <TagsList tags={tags} />
-                </tags>
-                <date onClick={openSchemaDetails} is="x3d">
-                    <img src={createdDateIcon} />
-                    <p>{parsingDate(schema.creation_date)}</p>
-                </date>
+                        </div>
+                    </header>
+                    <type is="x3d">
+                        <div>
+                            <p>Type : </p>
+                            <span>{schema.type}</span>
+                        </div>
+                        <div>
+                            <p>Created by : </p>
+                            <span>{schema.created_by_user}</span>
+                        </div>
+                    </type>
+                    <tags is="x3d">
+                        <TagsList tags={tags} />
+                    </tags>
+                    <date is="x3d">
+                        <img src={createdDateIcon} />
+                        <p>{parsingDate(schema.creation_date)}</p>
+                    </date>
+                </div>
             </div>
             <Drawer title={schema?.name} placement="right" size={'large'} onClose={closeDrawer} open={open} maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}>
                 <SchemaDetails schemaName={schema?.name} closeDrawer={() => closeDrawer()} />
