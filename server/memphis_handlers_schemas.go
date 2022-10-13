@@ -9,9 +9,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io"
+	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tallstoat/pbparser"
+	"github.com/jhump/protoreflect/desc/protoparse"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,8 +27,12 @@ const (
 )
 
 func validateProtobufContent(schemaContent string) error {
-	r := strings.NewReader(schemaContent)
-	_, err := pbparser.Parse(r, nil)
+	parser := protoparse.Parser{
+		Accessor: func(filename string) (io.ReadCloser, error) {
+			return ioutil.NopCloser(strings.NewReader(schemaContent)), nil
+		},
+	}
+	_, err := parser.ParseFiles("")
 	if err != nil {
 		return errors.New("Your Proto file is invalid: " + err.Error())
 	}
