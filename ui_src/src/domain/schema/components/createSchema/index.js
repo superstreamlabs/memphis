@@ -21,17 +21,17 @@
 
 import './style.scss';
 
+import Editor from '@monaco-editor/react';
 import React, { useState } from 'react';
+import { Form } from 'antd';
 
 import BackIcon from '../../../../assets/images/backIcon.svg';
-import Input from '../../../../components/Input';
-import { Form } from 'antd';
-import TagsList from '../../../../components/tagsList';
-import RadioButton from '../../../../components/radioButton';
-import Editor from '@monaco-editor/react';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import RadioButton from '../../../../components/radioButton';
 import { httpRequest } from '../../../../services/http';
+import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
+import Input from '../../../../components/Input';
 
 const schemaTypes = [
     {
@@ -106,13 +106,13 @@ const SchemaEditorExample = {
 
 function CreateSchema({ goBack }) {
     const [creationForm] = Form.useForm();
+
     const [formFields, setFormFields] = useState({
         name: '',
         type: 'Protobuf',
         // tags: [],
         schema_content: ''
     });
-    const [updated, setUpdated] = useState(false);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
 
     const handleSubmit = async (e) => {

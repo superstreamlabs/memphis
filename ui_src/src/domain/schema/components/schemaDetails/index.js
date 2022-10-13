@@ -25,6 +25,7 @@ import Editor, { DiffEditor } from '@monaco-editor/react';
 import React, { useEffect, useState } from 'react';
 
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
+import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
@@ -33,6 +34,7 @@ import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import Modal from '../../../../components/modal';
 
 const formatOption = [
     {
@@ -50,17 +52,19 @@ const formatOption = [
 const stations = ['station_1', 'station_2', 'station_3', 'station_4'];
 
 function SchemaDetails({ schemaName, closeDrawer }) {
-    const [passwordType, setPasswordType] = useState(0);
     const [versionSelected, setVersionSelected] = useState();
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
     const [loading, setIsLoading] = useState(false);
-    const [newVersion, setNewVersion] = useState(false);
+    const [rollLoading, setIsRollLoading] = useState(false);
+
+    const [newVersion, setNewVersion] = useState({});
     const [schemaDetails, setSchemaDetails] = useState({
         schema_name: '',
         type: '',
         version: []
     });
+    const [rollBackModal, setRollBackModal] = useState(false);
 
     const getScemaDetails = async () => {
         try {
@@ -68,6 +72,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             let index = data.versions?.findIndex((version) => version?.active === true);
             setCurrentversion(data.versions[index]);
             setVersionSelected(data.versions[index]);
+            setNewVersion(data.versions[index].schema_content);
             setSchemaDetails(data);
         } catch (err) {}
     };
@@ -77,7 +82,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     }, []);
 
     const handleSelectVersion = (e) => {
-        let index = schemaDetails?.versions?.findIndex((version) => version.id === Number(e));
+        let index = schemaDetails?.versions?.findIndex((version) => version.version_number === e);
         setVersionSelected(schemaDetails?.versions[index]);
     };
 
@@ -86,6 +91,16 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             setIsLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_VERSION, { schema_name: schemaName, schema_content: newVersion });
             if (data) {
+            }
+        } catch (err) {}
+        setIsLoading(false);
+    };
+    const rollBackVersion = async () => {
+        try {
+            setIsLoading(true);
+            const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, { schema_name: schemaName, version_number: versionSelected?.version_number });
+            if (data) {
+                setRollBackModal(false);
             }
         } catch (err) {}
         setIsLoading(false);
@@ -184,7 +199,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             backgroundColorType="purple"
                             fontSize="12px"
                             fontWeight="600"
-                            // onClick={() => addUserModalFlip(true)}
+                            onClick={() => setRollBackModal(true)}
                         />
                     )}
                 </div>
@@ -216,6 +231,45 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     />
                 </div>
             </div>
+            <Modal
+                header={<img src={rollBackIcon} />}
+                width="400px"
+                height="160px"
+                displayButtons={false}
+                clickOutside={() => setRollBackModal(false)}
+                open={rollBackModal}
+            >
+                <div className="roll-back-modal">
+                    <p className="title">Are you sure you want oto roll back?</p>
+                    <p className="desc">Your current changes will be changed to this version.</p>
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Close"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => setRollBackModal(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Confirm"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            loading={rollLoading}
+                            onClick={() => rollBackVersion()}
+                        />
+                    </div>
+                </div>
+            </Modal>
         </schema-details>
     );
 }

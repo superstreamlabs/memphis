@@ -39,7 +39,6 @@ import Loader from '../../components/loader';
 
 const StationsList = () => {
     const history = useHistory();
-
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [stationsList, setStationList] = useState([]);

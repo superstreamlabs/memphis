@@ -114,3 +114,26 @@ schema-details {
         }
     }
 }
+
+.roll-back-modal{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    p{
+        margin: 0;
+    }
+   .title{
+    font-size: 18px;
+    font-family: "InterSemiBold";
+   } 
+   .desc{
+    font-size: 14px;
+    color: #667085;
+   }
+   .buttons {
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+   }
+}

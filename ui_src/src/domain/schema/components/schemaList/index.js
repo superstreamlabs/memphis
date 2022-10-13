@@ -21,8 +21,9 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, useCallback } from 'react';
 import { SearchOutlined } from '@ant-design/icons';
+import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -31,9 +32,12 @@ import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
 import { Context } from '../../../../hooks/store';
+import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 
 function SchemaList({ createNew }) {
+    const history = useHistory();
+
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
@@ -57,6 +61,34 @@ function SchemaList({ createNew }) {
     useEffect(() => {
         getAllSchemas();
     }, []);
+
+    useEffect(() => {
+        if (searchInput !== '' && searchInput.length >= 2) {
+            setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
+        } else setSchemaFilteredList(schemaList);
+    }, [schemaList]);
+
+    const handleRegisterToSchema = useCallback(() => {
+        state.socket?.emit('get_all_schemas_data');
+    }, [state.socket]);
+
+    useEffect(() => {
+        state.socket?.on(`schemas_overview_data`, (data) => {
+            setSchemaList(data);
+        });
+
+        state.socket?.on('error', (error) => {
+            history.push(pathDomains.overview);
+        });
+
+        setTimeout(() => {
+            handleRegisterToSchema();
+        }, 1000);
+
+        return () => {
+            state.socket?.emit('deregister');
+        };
+    }, [state.socket]);
 
     useEffect(() => {
         if (searchInput.length >= 2) setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
