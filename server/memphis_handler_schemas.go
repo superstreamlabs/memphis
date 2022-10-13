@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tallstoat/pbparser"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,11 +24,13 @@ const (
 )
 
 func validateProtobufContent(schemaContent string) error {
-	if strings.Contains(schemaContent, "syntax") {
-		return nil
-	} else {
-		return errors.New("Your Schema is invalid")
+	r := strings.NewReader(schemaContent)
+	_, err := pbparser.Parse(r, nil)
+	if err != nil {
+		return errors.New("Your Proto file is invalid: " + err.Error())
 	}
+
+	return nil
 }
 
 func validateSchemaName(schemaName string) error {
@@ -50,13 +53,11 @@ func validateSchemaType(schemaType string) error {
 }
 
 func validateSchemaContent(schemaContent, schemaType string) error {
-	invalidSchemaContentErrStr := fmt.Sprintf("Your Schema is invalid")
-	invalidSchemaContentErr := errors.New(invalidSchemaContentErrStr)
 	switch schemaType {
 	case "protobuf":
 		err := validateProtobufContent(schemaContent)
 		if err != nil {
-			return invalidSchemaContentErr
+			return err
 		}
 	case "json":
 		break

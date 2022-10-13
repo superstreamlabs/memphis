@@ -18,6 +18,7 @@ require (
 	github.com/nats-io/nkeys v0.3.0
 	github.com/nats-io/nuid v1.0.1
 	github.com/posthog/posthog-go v0.0.0-20220817142604-0b0bbf0f9c0f
+	github.com/tallstoat/pbparser v0.2.0
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
 	go.mongodb.org/mongo-driver v1.8.3
 	go.uber.org/automaxprocs v1.5.1
