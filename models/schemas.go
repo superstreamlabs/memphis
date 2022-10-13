@@ -58,6 +58,7 @@ type ExtendedSchema struct {
 	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
 	Used                bool               `json:"used"`
+	Tags                []Tag              `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {

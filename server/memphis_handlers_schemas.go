@@ -175,7 +175,7 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 
 func (sh SchemasHandler) getExtedndedSchema(schemas []models.ExtendedSchema) ([]models.ExtendedSchema, error) {
 	var extedndedSchemaDetails []models.ExtendedSchema
-	for _, schema := range schemas {
+	for i, schema := range schemas {
 		stations, err := sh.getUsingStationsByName(schema.Name)
 
 		if err != nil {
@@ -188,6 +188,13 @@ func (sh SchemasHandler) getExtedndedSchema(schemas []models.ExtendedSchema) ([]
 		} else {
 			used = false
 		}
+
+		tagsHandler := TagsHandler{S: sh.S}
+		tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+		schemas[i].Tags = tags
 		schemaUpdated := models.ExtendedSchema{
 			ID:                  schema.ID,
 			Name:                schema.Name,
@@ -196,6 +203,7 @@ func (sh SchemasHandler) getExtedndedSchema(schemas []models.ExtendedSchema) ([]
 			CreationDate:        schema.CreationDate,
 			ActiveVersionNumber: schema.ActiveVersionNumber,
 			Used:                used,
+			Tags:                tags,
 		}
 
 		extedndedSchemaDetails = append(extedndedSchemaDetails, schemaUpdated)
@@ -241,16 +249,6 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	}
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
-	} else {
-		tagsHandler := TagsHandler{S: sh.S}
-		for i := 0; i < len(schemas); i++ {
-			tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
-			if err != nil {
-				return []models.ExtendedSchema{}, err
-			}
-			schemas[i].Tags = tags
-		}
-		return schemas, nil
 	}
 	schemas, err = sh.getExtedndedSchema(schemas)
 	if err != nil {
