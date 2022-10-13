@@ -21,25 +21,13 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React from 'react';
 
 import LogBadge from '../../../../components/logBadge';
-import Button from '../../../../components/button';
-import copy from '../../../../assets/images/copy.svg';
-import Copied from '../../../../assets/images/copied.svg';
 import { capitalizeFirst, cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
+import Copy from '../../../../components/copy';
 
 const LogContent = ({ displayedLog }) => {
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = () => {
-        setCopied(true);
-        navigator.clipboard.writeText(cutInfoLog(displayedLog?.data));
-        setTimeout(() => {
-            setCopied(false);
-        }, 3000);
-    };
-
     return (
         <div className="log-content-wrapper">
             <log-header is="3xd">
@@ -64,8 +52,8 @@ const LogContent = ({ displayedLog }) => {
             </log-payload>
             <log-content is="3xd">
                 <p>{cutInfoLog(displayedLog?.data)}</p>
-                <div className="copy-button" onClick={() => handleCopy()}>
-                    <img src={copied ? Copied : copy} />
+                <div className="copy-button">
+                    <Copy data={cutInfoLog(displayedLog?.data)} />
                 </div>
             </log-content>
         </div>

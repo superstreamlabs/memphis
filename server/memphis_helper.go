@@ -46,6 +46,13 @@ const (
 	descrHdr  = "Description"
 )
 
+const (
+	syslogsStreamName  = "$memphis_syslogs"
+	syslogsInfoSubject = "info"
+	syslogsWarnSubject = "warn"
+	syslogsErrSubject  = "err"
+)
+
 // JetStream API request kinds
 const (
 	kindStreamInfo     = "$memphis_stream_info"
@@ -69,14 +76,16 @@ func (s *Server) MemphisInitialized() bool {
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
-		respCh <- msg
+		go func() {
+			respCh <- msg
+		}()
 	}
 }
 
 func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
 	reply := s.getJsApiReplySubject()
 
-	timeout := time.After(20 * time.Second)
+	timeout := time.After(30 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
@@ -165,13 +174,6 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			Duplicates:   dedupWindow,
 		})
 }
-
-const (
-	syslogsStreamName  = "$memphis_syslogs"
-	syslogsInfoSubject = "info"
-	syslogsWarnSubject = "warn"
-	syslogsErrSubject  = "err"
-)
 
 func (s *Server) memphisClusterReady() {
 	if !s.memphis.mcrReported {
@@ -318,7 +320,7 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 	var resp JSApiConsumerCreateResponse
 	err = json.Unmarshal(rawResp, &resp)
 	if err != nil {
-		s.Errorf("ConsumerCreate json response unmarshal error")
+		s.Errorf("ConsumerCreate json response unmarshal error %v\n%v", err.Error(), string(rawResp))
 		return err
 	}
 
@@ -360,7 +362,7 @@ func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInf
 	var resp JSApiConsumerInfoResponse
 	err = json.Unmarshal(rawResp, &resp)
 	if err != nil {
-		s.Errorf("ConsumerInfo json response unmarshal error")
+		s.Errorf("ConsumerInfo json response unmarshal error %v\n%v", err.Error(), string(rawResp))
 		return nil, err
 	}
 
@@ -429,7 +431,7 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 	var resp JSApiStreamInfoResponse
 	err = json.Unmarshal(rawResp, &resp)
 	if err != nil {
-		s.Errorf("StreamInfo json response unmarshal error")
+		s.Errorf("StreamInfo json response unmarshal error %v\n%v", err.Error(), string(rawResp))
 		return nil, err
 	}
 
@@ -638,6 +640,25 @@ cleanup:
 
 func (s *Server) GetMessage(stationName StationName, msgSeq uint64) (*StoredMsg, error) {
 	return s.memphisGetMessage(stationName.Intern(), msgSeq)
+}
+
+func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+	var followers []string
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return "", followers, err
+	}
+
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
+	if err != nil {
+		return "", followers, err
+	}
+
+	for _, replica := range streamInfo.Cluster.Replicas {
+		followers = append(followers, replica.Name)
+	}
+
+	return streamInfo.Cluster.Leader, followers, nil
 }
 
 func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {

@@ -21,7 +21,7 @@
 
 import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
-import { Form, InputNumber } from 'antd';
+import { Form } from 'antd';
 import TitleComponent from '../../../../components/titleComponent';
 import RadioButton from '../../../../components/radioButton';
 import Input from '../../../../components/Input';
@@ -29,6 +29,7 @@ import { convertDateToSeconds } from '../../../../services/valueConvertor';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import { GetStartedStoreContext } from '..';
+import InputNumberComponent from '../../../../components/InputNumber';
 
 const retanionOptions = [
     {
@@ -61,8 +62,7 @@ const storageOptions = [
     }
 ];
 
-const CreateStationForm = (props) => {
-    const { createStationFormRef } = props;
+const CreateStationForm = ({ createStationFormRef }) => {
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
@@ -128,7 +128,7 @@ const CreateStationForm = (props) => {
 
     return (
         <Form name="form" form={creationForm} autoComplete="off" className="create-station-form-getstarted">
-            <div id="e2e-getstarted-step1">
+            <div id="e2e-getstarted-step1" className="station-name-section">
                 <TitleComponent
                     headerTitle="Enter station name"
                     typeTitle="sub-header"
@@ -144,7 +144,7 @@ const CreateStationForm = (props) => {
                         }
                     ]}
                     style={{ height: '50px' }}
-                    initialValue={getStartedState?.formFieldsCreateStation.name}
+                    initialValue={getStartedState?.formFieldsCreateStation?.name}
                 >
                     <Input
                         placeholder="Type station name"
@@ -157,38 +157,37 @@ const CreateStationForm = (props) => {
                         height="40px"
                         onBlur={(e) => updateFormState('name', e.target.value)}
                         onChange={(e) => updateFormState('name', e.target.value)}
-                        value={getStartedState?.formFieldsCreateStation.name}
+                        value={getStartedState?.formFieldsCreateStation?.name}
                         disabled={!allowEdit}
                     />
                 </Form.Item>
             </div>
-            <div>
+            <div className="retention-type-section">
                 <TitleComponent
                     headerTitle="Retention type"
                     typeTitle="sub-header"
                     headerDescription="By which criteria messages will be expelled from the station"
                 ></TitleComponent>
-                <Form.Item name="retention_type" initialValue={getStartedState?.formFieldsCreateStation.retention_type}>
+                <Form.Item name="retention_type" initialValue={getStartedState?.formFieldsCreateStation?.retention_type}>
                     <RadioButton
                         className="radio-button"
                         options={retanionOptions}
-                        radioValue={getStartedState?.formFieldsCreateStation.retention_type}
+                        radioValue={getStartedState?.formFieldsCreateStation?.retention_type}
                         optionType="button"
+                        fontFamily="InterSemiBold"
                         style={{ marginRight: '20px', content: '' }}
                         onChange={(e) => updateFormState('retention_type', e.target.value)}
                         disabled={!allowEdit}
                     />
                 </Form.Item>
 
-                {getStartedState?.formFieldsCreateStation.retention_type === 'message_age_sec' && (
+                {getStartedState?.formFieldsCreateStation?.retention_type === 'message_age_sec' && (
                     <div className="time-value">
                         <div className="days-section">
                             <Form.Item name="days" initialValue={getStartedState?.formFieldsCreateStation?.days}>
-                                <InputNumber
-                                    bordered={false}
+                                <InputNumberComponent
                                     min={0}
                                     max={100}
-                                    keyboard={true}
                                     onChange={(e) => updateFormState('days', e)}
                                     value={getStartedState?.formFieldsCreateStation?.days}
                                     placeholder={getStartedState?.formFieldsCreateStation?.days || 7}
@@ -200,11 +199,9 @@ const CreateStationForm = (props) => {
                         <p className="separator">:</p>
                         <div className="hours-section">
                             <Form.Item name="hours" initialValue={getStartedState?.formFieldsCreateStation?.hours}>
-                                <InputNumber
-                                    bordered={false}
+                                <InputNumberComponent
                                     min={0}
                                     max={24}
-                                    keyboard={true}
                                     onChange={(e) => updateFormState('hours', e)}
                                     value={getStartedState?.formFieldsCreateStation?.hours}
                                     placeholder={getStartedState?.formFieldsCreateStation?.hours || 0}
@@ -216,11 +213,9 @@ const CreateStationForm = (props) => {
                         <p className="separator">:</p>
                         <div className="minutes-section">
                             <Form.Item name="minutes" initialValue={getStartedState?.formFieldsCreateStation?.minutes}>
-                                <InputNumber
-                                    bordered={false}
+                                <InputNumberComponent
                                     min={0}
                                     max={60}
-                                    keyboard={true}
                                     onChange={(e) => updateFormState('minutes', e)}
                                     value={getStartedState?.formFieldsCreateStation?.minutes}
                                     placeholder={getStartedState?.formFieldsCreateStation?.minutes || 0}
@@ -232,11 +227,9 @@ const CreateStationForm = (props) => {
                         <p className="separator">:</p>
                         <div className="seconds-section">
                             <Form.Item name="seconds" initialValue={getStartedState?.formFieldsCreateStation?.seconds}>
-                                <InputNumber
-                                    bordered={false}
+                                <InputNumberComponent
                                     min={0}
                                     max={60}
-                                    keyboard={true}
                                     onChange={(e) => updateFormState('seconds', e)}
                                     placeholder={getStartedState?.formFieldsCreateStation?.seconds || 0}
                                     value={getStartedState?.formFieldsCreateStation?.seconds}
@@ -247,7 +240,7 @@ const CreateStationForm = (props) => {
                         </div>
                     </div>
                 )}
-                {getStartedState?.formFieldsCreateStation.retention_type === 'bytes' && (
+                {getStartedState?.formFieldsCreateStation?.retention_type === 'bytes' && (
                     <div className="retention-type">
                         <Form.Item name="retentionSizeValue" initialValue={getStartedState?.formFieldsCreateStation?.retentionSizeValue}>
                             <Input
@@ -268,7 +261,7 @@ const CreateStationForm = (props) => {
                         <p>bytes</p>
                     </div>
                 )}
-                {getStartedState?.formFieldsCreateStation.retention_type === 'messages' && (
+                {getStartedState?.formFieldsCreateStation?.retention_type === 'messages' && (
                     <div className="retention-type">
                         <Form.Item name="retentionMessagesValue" initialValue={getStartedState?.formFieldsCreateStation?.retentionMessagesValue}>
                             <Input
@@ -291,7 +284,7 @@ const CreateStationForm = (props) => {
                 )}
             </div>
             <div className="storage-replicas-container">
-                <div>
+                <div className="storage-container">
                     <TitleComponent
                         headerTitle="Storage type"
                         typeTitle="sub-header"
@@ -301,6 +294,7 @@ const CreateStationForm = (props) => {
                     <Form.Item name="storage_type" initialValue={getStartedState?.formFieldsCreateStation?.storage_type}>
                         <RadioButton
                             options={storageOptions}
+                            fontFamily="InterSemiBold"
                             radioValue={getStartedState?.formFieldsCreateStation?.storage_type}
                             optionType="button"
                             onChange={(e) => updateFormState('storage_type', e.target.value)}
@@ -308,7 +302,7 @@ const CreateStationForm = (props) => {
                         />
                     </Form.Item>
                 </div>
-                <div>
+                <div className="replicas-container">
                     <TitleComponent
                         headerTitle="Replicas"
                         typeTitle="sub-header"
@@ -317,11 +311,9 @@ const CreateStationForm = (props) => {
                     ></TitleComponent>
                     <div>
                         <Form.Item name="replicas" initialValue={getStartedState?.formFieldsCreateStation?.replicas}>
-                            <InputNumber
-                                bordered={false}
+                            <InputNumberComponent
                                 min={1}
                                 max={getStartedState?.actualPods && getStartedState?.actualPods <= 5 ? getStartedState?.actualPods : 5}
-                                keyboard={true}
                                 value={getStartedState?.formFieldsCreateStation?.replicas}
                                 onChange={(e) => updateFormState('replicas', e)}
                                 disabled={!allowEdit}

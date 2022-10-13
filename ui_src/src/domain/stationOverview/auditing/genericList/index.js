@@ -59,8 +59,8 @@ const GenericList = (props) => {
                                 <OverflowTip text={row?.message || row?.produced_by} width={'300px'}>
                                     {row?.message || row?.produced_by}
                                 </OverflowTip>
-                                <OverflowTip text={row?.user_type || row?.consumer} width={'200px'}>
-                                    {row?.user_type || row?.consumer}
+                                <OverflowTip text={row?.created_by_user || row?.consumer} width={'200px'}>
+                                    {row?.created_by_user || row?.consumer}
                                 </OverflowTip>
                                 <OverflowTip text={parsingDate(row?.creation_date)} width={'200px'}>
                                     {parsingDate(row?.creation_date)}

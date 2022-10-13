@@ -163,6 +163,14 @@ func updateUserResources(user models.User) error {
 		return err
 	}
 
+	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

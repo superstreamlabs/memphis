@@ -15,9 +15,9 @@ const TitleComponent = (props) => {
                         <img className="header-image" src={img} alt={img} style={style?.image}></img>
                     )}
 
-                    <label className="header-title" style={style?.header}>
+                    <p className="header-title" style={style?.header}>
                         {headerTitle}
-                    </label>
+                    </p>
                 </div>
             )}
             {typeTitle === 'sub-header' && (
