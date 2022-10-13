@@ -26,6 +26,7 @@ import { SearchOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
+import deleteIcon from '../../../../assets/images/deleteIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
@@ -34,6 +35,7 @@ import Button from '../../../../components/button';
 import { Context } from '../../../../hooks/store';
 import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
+import Modal from '../../../../components/modal';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
@@ -44,6 +46,7 @@ function SchemaList({ createNew }) {
     const [schemaList, setSchemaList] = useState([]);
     const [schemaFilteredList, setSchemaFilteredList] = useState([]);
     const [isLoading, setisLoading] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
 
     const getAllSchemas = async () => {
@@ -73,7 +76,7 @@ function SchemaList({ createNew }) {
     }, [state.socket]);
 
     useEffect(() => {
-        state.socket?.on(`schemas_overview_data`, (data) => {
+        state.socket?.on('schemas_overview_data', (data) => {
             setSchemaList(data);
         });
 
@@ -124,9 +127,6 @@ function SchemaList({ createNew }) {
                 if (data) {
                     setSchemaList(schemaFilteredList.filter((schema) => schema.name !== name));
                     setIsCheck(isCheck.filter((item) => item !== name));
-                    setTimeout(() => {
-                        setisLoading(false);
-                    }, 500);
                 }
             } catch (error) {
                 setisLoading(false);
@@ -153,7 +153,7 @@ function SchemaList({ createNew }) {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        onClick={() => handleDeleteSelected()}
+                        onClick={() => setDeleteModal(true)}
                     />
                 )}
                 {schemaFilteredList?.length > 1 && (
@@ -264,6 +264,38 @@ function SchemaList({ createNew }) {
                     </div>
                 )}
             </div>
+            <Modal header={<img src={deleteIcon} />} width="450px" height="180px" displayButtons={false} clickOutside={() => setDeleteModal(false)} open={deleteModal}>
+                <div className="roll-back-modal">
+                    <p className="title">Are you sure you want to delete this schema?</p>
+                    <p className="desc">When you delete this schema, it will be permanently deleted.</p>
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Close"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => setDeleteModal(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Delete"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            loading={isLoading}
+                            onClick={() => handleDeleteSelected()}
+                        />
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

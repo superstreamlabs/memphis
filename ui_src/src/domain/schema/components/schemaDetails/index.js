@@ -240,8 +240,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 open={rollBackModal}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Are you sure you want oto roll back?</p>
-                    <p className="desc">Your current changes will be changed to this version.</p>
+                    <p className="title">Are you sure you want to roll back?</p>
+                    <p className="desc">Your current schema will be changed to this version.</p>
                     <div className="buttons">
                         <Button
                             width="150px"

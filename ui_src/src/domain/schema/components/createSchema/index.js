@@ -81,11 +81,11 @@ const SchemaEditorExample = {
     Protobuf: {
         language: 'proto',
         value: `syntax = "proto3";
-        ​
+
         message Test {
-            string field1;
-            string  field2;
-            int32  field3;
+            string field1 = 1;
+            string  field2 = 2;
+            int32  field3 = 3;
         }`
     },
     avro: {
