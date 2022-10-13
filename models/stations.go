@@ -69,6 +69,7 @@ type Station struct {
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
 	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
+	SchemaName      string             `json:"schema_name" bson:"schema_name"`
 }
 
 type GetStationResponseSchema struct {
@@ -126,6 +127,7 @@ type CreateStationSchema struct {
 	DedupEnabled    bool        `json:"dedup_enabled"`
 	DedupWindowInMs int         `json:"dedup_window_in_ms" binding:"min=0"`
 	Tags            []CreateTag `json:"tags"`
+	SchemaName      string      `json:"schema_name"`
 }
 
 type AckPoisonMessagesSchema struct {
@@ -137,7 +139,7 @@ type ResendPoisonMessagesSchema struct {
 }
 
 type RemoveStationSchema struct {
-	StationName string `json:"station_name" binding:"required"`
+	StationName []string `json:"station_name" binding:"required"`
 }
 
 type GetPoisonMessageJourneySchema struct {
@@ -149,4 +151,9 @@ type GetMessageDetailsSchema struct {
 	MessageId       string `form:"message_id" json:"message_id"`
 	MessageSeq      int    `form:"message_seq" json:"message_seq"`
 	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+type UseSchema struct {
+	StationName string `json:"station_name"`
+	SchemaName  string `json:"schema_name"`
 }
