@@ -193,6 +193,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	consumersHandler := ConsumersHandler{S: mh.S}
 	auditLogsHandler := AuditLogsHandler{}
 	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
+	tagsHandler := TagsHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -260,6 +261,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	tags, err := tagsHandler.GetTagsByStation(station.ID)
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())
@@ -279,6 +281,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+		Tags:                  tags,
 		Leader:                leader,
 		Followers:             followers,
 	}

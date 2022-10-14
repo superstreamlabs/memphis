@@ -124,6 +124,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
+	tags, err := h.Tags.GetTagsByStation(station.ID)
 	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
 	if err != nil {
 		return models.StationOverviewData{}, err
@@ -141,6 +142,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		AuditLogs:             auditLogs,
 		Messages:              messages,
 		PoisonMessages:        poisonMessages,
+		Tags:                  tags,
 		Leader:                leader,
 		Followers:             followers,
 	}, nil
