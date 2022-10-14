@@ -44,9 +44,10 @@ type SchemaVersion struct {
 }
 
 type CreateNewSchema struct {
-	Name          string `json:"name" binding:"required,min=1,max=32"`
-	Type          string `json:"type"`
-	SchemaContent string `json:"schema_content"`
+	Name          string      `json:"name" binding:"required,min=1,max=32"`
+	Type          string      `json:"type"`
+	SchemaContent string      `json:"schema_content"`
+	Tags          []CreateTag `json:"tags"`
 }
 
 type ExtendedSchema struct {
@@ -56,6 +57,7 @@ type ExtendedSchema struct {
 	CreatedByUser       string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
+	Tags                []Tag              `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {
@@ -63,6 +65,7 @@ type ExtendedSchemaDetails struct {
 	SchemaName string             `json:"schema_name"`
 	Type       string             `json:"type"`
 	Versions   []SchemaVersion    `json:"versions"`
+	Tags       []Tag              `json:"tags"`
 }
 
 type GetSchemaDetails struct {
