@@ -140,19 +140,7 @@ const App = withRouter(() => {
                                 ></AppWrapper>
                             }
                         />
-                        <PrivateRoute
-                            exact
-                            path={pathDomains.settings}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <Settings />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
+                        <PrivateRoute exact path={pathDomains.settings} component={<AppWrapper content={<Settings />}></AppWrapper>} />
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}

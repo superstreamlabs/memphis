@@ -100,7 +100,7 @@ const Button = (props) => {
 
     return (
         <div className="button-container" style={styleButtonContainer}>
-            <ButtonDesign {...fieldProps} type="primary" htmlType="submit">
+            <ButtonDesign {...fieldProps} type="primary" htmlType="submit" className={disabled && 'noHover'}>
                 <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
             </ButtonDesign>
         </div>

@@ -46,9 +46,19 @@ const RadioButton = (props) => {
                 defaultValue={radioValue || options[0]?.value}
             >
                 {options.map((option) => (
-                    <Radio key={option.id} value={option.value}>
-                        <span style={{ fontFamily: fontFamily }}>{option.label}</span>
-                    </Radio>
+                    <div
+                        className={props.labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : ''}
+                        onClick={() => (props.labelType ? props.onClick(option.value) : '')}
+                    >
+                        <Radio key={option.id} value={option.value}>
+                            <span
+                                className={props.labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : ''}
+                                style={{ fontFamily: fontFamily }}
+                            >
+                                {option.label}
+                            </span>
+                        </Radio>
+                    </div>
                 ))}
             </Radio.Group>
         </div>

@@ -22,33 +22,28 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME } from '../../../const/localStorageConsts';
-import { LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
-import Warning from '../../../assets/images/warning.svg';
-import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
-import Input from '../../../components/Input';
-import ImgLoader from './imgLoader';
-import Bot1 from '../../../assets/images/bots/1.svg';
-import Bot2 from '../../../assets/images/bots/2.svg';
-import Bot3 from '../../../assets/images/bots/3.svg';
 import pathDomains from '../../../router';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
+import { Checkbox, Divider, Upload, message } from 'antd';
+import RadioButton from '../../../components/radioButton';
+import Button from '../../../components/button';
 import Modal from '../../../components/modal';
-import Switcher from '../../../components/switcher';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from '../../../services/http';
+import ImgUploader from './imgUploader';
 
 function Profile() {
     const [userName, setUserName] = useState('');
     const [state, dispatch] = useContext(Context);
-    const [avatar, setAvatar] = useState('1');
+    const [avatar, setAvatar] = useState(1);
     const [open, modalFlip] = useState(false);
-    const [allowAnalytics, setAllowAnalytics] = useState(false);
+    const [allowAnalytics, setAllowAnalytics] = useState();
+    const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
 
     useEffect(() => {
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
-        setAvatar(localStorage.getItem('profile_pic') || state?.userData?.avatar_id || Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID))); // profile_pic is available only in sandbox env
+        setAvatar(localStorage.getItem('profile_pic') || Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id); // profile_pic is available only in sandbox env
         setAllowAnalytics(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) === 'false' ? false : true);
     }, []);
 
@@ -58,6 +53,16 @@ function Profile() {
             modalFlip(false);
             localStorage.clear();
             window.location.assign(pathDomains.login);
+        } catch (err) {
+            return;
+        }
+    };
+
+    const sendAnalytics = async (analyticsFlag) => {
+        try {
+            await httpRequest('PUT', `${ApiEndpoints.EDIT_ANALYTICS}`, { send_analytics: analyticsFlag });
+            setAllowAnalytics(analyticsFlag);
+            localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, analyticsFlag);
         } catch (err) {
             return;
         }
@@ -74,20 +79,92 @@ function Profile() {
         }
     };
 
-    const sendAnalytics = async (analyticsFlag) => {
-        try {
-            await httpRequest('PUT', `${ApiEndpoints.EDIT_ANALYTICS}`, { send_analytics: analyticsFlag });
-            setAllowAnalytics(analyticsFlag);
-            localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, analyticsFlag);
-        } catch (err) {
-            return;
-        }
-    };
-
     return (
         <div className="profile-container">
+            <div className="header">
+                <p className="main-header">Profile</p>
+                <p className="sub-header">Modify your profile information and preferences</p>
+            </div>
+            <div className="avatar-section">
+                <p className="title">Avatar</p>
+                <div className="avatar-images">
+                    {Array.from(Array(9).keys()).map((item) => {
+                        return (
+                            <div
+                                className={process.env.REACT_APP_SANDBOX_ENV ? 'sub-icon-wrapper-sandbox' : avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'}
+                                onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
+                            >
+                                <img
+                                    src={localStorage.getItem('profile_pic') || require(`../../../assets/images/bots/avatar${item + 1}.svg`)} // profile_pic is available only in sandbox env
+                                    width={localStorage.getItem('profile_pic') ? 35 : ''}
+                                    height={localStorage.getItem('profile_pic') ? 35 : ''}
+                                    alt="avater"
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            <ImgUploader />
+            <Divider />
+            <div className="analytics-section">
+                <p className="title">Analytics</p>
+                <label className="analytics-description">
+                    Memphis only collects bugs, events, and anonymous metadata to become better and more stable for you.
+                    <br />
+                    No sensitive or personal data gets collected.
+                </label>
+                <div className="radioButton-section">
+                    <RadioButton
+                        options={[
+                            { id: 0, value: true, label: 'Allow Analytics' },
+                            { id: 1, value: false, label: 'Don’t allow any analytics' }
+                        ]}
+                        radioValue={allowAnalytics}
+                        onChange={(e) => sendAnalytics(e.target.value)}
+                        onClick={(e) => sendAnalytics(e)}
+                        labelType
+                    />
+                </div>
+            </div>
+            <Divider />
+            <div className="delete-account-section">
+                <p className="title">Delete your account</p>
+                <label className="delete-account-description">
+                    When you delete your account, you will lose access to Memphis,
+                    <br />
+                    and your profile will be permanently deleted. You can cancel the deletion for 14 days.
+                </label>
+                <div className="delete-account-checkbox">
+                    <Checkbox
+                        checked={checkboxdeleteAccount}
+                        disabled={userName === 'root'}
+                        onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
+                        name="delete-account"
+                    />
+                    <p className={userName === 'root' && 'disabled'} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
+                        Confirm that I want to delete my account.
+                    </p>
+                </div>
+                <Button
+                    className="modal-btn"
+                    width="200px"
+                    height="36px"
+                    placeholder="Delete Account"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="red"
+                    border="red"
+                    boxShadowsType="red"
+                    fontSize="14px"
+                    fontWeight="600"
+                    aria-haspopup="true"
+                    disabled={!checkboxdeleteAccount}
+                    onClick={() => modalFlip(true)}
+                />
+            </div>
             <Modal
-                header="Remove user"
+                header="Remove accont"
                 height="120px"
                 rBtnText="Cancel"
                 lBtnText="Remove"
@@ -98,105 +175,10 @@ function Profile() {
                 rBtnClick={() => modalFlip(false)}
                 open={open}
             >
-                <label>Are you sure you want to remove user?</label>
+                <label>Are you sure you want to remove user account?</label>
                 <br />
                 <label>Please note that this action is irreversible.</label>
             </Modal>
-            <div className="profile-sections company-logo">
-                <p>Company logo</p>
-                <ImgLoader />
-            </div>
-            <div className="profile-sections">
-                <p>Select your avatar</p>
-                <div className="avatar-section">
-                    <div
-                        className={
-                            process.env.REACT_APP_SANDBOX_ENV
-                                ? 'sub-icon-wrapper-sandbox'
-                                : avatar === 1
-                                ? 'sub-icon-wrapper sub-icon-wrapper-border'
-                                : 'sub-icon-wrapper'
-                        }
-                        onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(1)}
-                    >
-                        <img
-                            className="sandboxUserImg"
-                            src={localStorage.getItem('profile_pic') || Bot1} // profile_pic is available only in sandbox env
-                            width={localStorage.getItem('profile_pic') ? 35 : 25}
-                            height={localStorage.getItem('profile_pic') ? 35 : 25}
-                            border-raduis={'50%'}
-                            alt="bot1"
-                        ></img>
-                    </div>
-                    <div
-                        className={
-                            process.env.REACT_APP_SANDBOX_ENV
-                                ? 'sub-icon-wrapper-sandbox'
-                                : avatar === 2
-                                ? 'sub-icon-wrapper sub-icon-wrapper-border'
-                                : 'sub-icon-wrapper'
-                        }
-                        onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(2)}
-                    >
-                        <img src={Bot2} width={25} height={25} alt="bot2"></img>
-                    </div>
-                    <div
-                        className={
-                            process.env.REACT_APP_SANDBOX_ENV
-                                ? 'sub-icon-wrapper-sandbox'
-                                : avatar === 3
-                                ? 'sub-icon-wrapper sub-icon-wrapper-border'
-                                : 'sub-icon-wrapper'
-                        }
-                        onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(3)}
-                    >
-                        <img src={Bot3} width={25} height={25} alt="bot3"></img>
-                    </div>
-                </div>
-            </div>
-            <div className="profile-sections">
-                <p>Username</p>
-                <Input
-                    disabled={true}
-                    value={userName}
-                    placeholder="usernmane"
-                    type="text"
-                    radiusType="semi-round"
-                    borderColorType="none"
-                    boxShadowsType="gray"
-                    colorType="black"
-                    backgroundColorType="white"
-                    width="350px"
-                    height="40px"
-                    onChange={() => {}}
-                />
-            </div>
-            <div className="profile-sections analytics">
-                <p>Allow Analytics</p>
-                <Switcher onChange={() => sendAnalytics(!allowAnalytics)} checked={allowAnalytics} checkedChildren="on" unCheckedChildren="off" />
-            </div>
-            {userName !== 'root' && (
-                <div className="profile-sections">
-                    <p>Remove user</p>
-                    <div className="warning">
-                        <img src={Warning} width={16} height={16} alt="warning"></img>
-                        <p>Please note that this action is irreversible</p>
-                    </div>
-                    <Button
-                        className="modal-btn"
-                        width="160px"
-                        height="36px"
-                        placeholder="Remove user"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="14px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        onClick={() => modalFlip(true)}
-                    />
-                </div>
-            )}
         </div>
     );
 }
