@@ -210,9 +210,15 @@ function OverView() {
                 (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') &&
                 allStations.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
-                header="Create new station"
-                headerImage={stationImg}
-                subTitle="A station is a distributed unit that stores the produced data."
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={stationImg} />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
                 height="460px"
                 width="540px"
                 rBtnText="Add"

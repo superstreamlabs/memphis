@@ -77,11 +77,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         getOverviewData();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
         if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
-    }, []);
-
-    useEffect(() => {
         createStationFormRef.current = onFinish;
-    }, [createStationFormRef, getStartedStateRef]);
+    }, []);
 
     const getRetentionValue = (formFields) => {
         switch (formFields.retention_type) {

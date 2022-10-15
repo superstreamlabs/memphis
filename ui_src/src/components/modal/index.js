@@ -37,17 +37,7 @@ const TransitionsModal = (props) => {
     return (
         <Modal
             wrapClassName={'modal-wrapper'}
-            title={
-                <div className="header">
-                    {headerImage && (
-                        <div className="header-img-container">
-                            <img className="headerImage" src={headerImage} />
-                        </div>
-                    )}
-                    <p>{header}</p>
-                    {subTitle && <label>{subTitle}</label>}
-                </div>
-            }
+            title={header}
             open={open}
             width={width}
             onCancel={() => props.clickOutside()}

@@ -190,9 +190,15 @@ const StationsList = () => {
             {!isLoading && <div className="stations-content">{renderStationsOverview()}</div>}
             <div id="e2e-createstation-modal">
                 <Modal
-                    header="Create new station"
-                    headerImage={stationImg}
-                    subTitle="A station is a distributed unit that stores the produced data."
+                    header={
+                        <div className="modal-header">
+                            <div className="header-img-container">
+                                <img className="headerImage" src={stationImg} />
+                            </div>
+                            <p>Create new station</p>
+                            <label>A station is a distributed unit that stores the produced data.</label>
+                        </div>
+                    }
                     height="460px"
                     width="540px"
                     rBtnText="Add"
