@@ -23,12 +23,13 @@ import './style.scss';
 
 import React, { createContext, useEffect, useReducer, useRef } from 'react';
 
-import CreateStationForm from './createStationForm';
 import SideStep from './sideStep';
 import CreateAppUser from './createAppUser';
 import ConsumeData from './consumeData';
 import Reducer from './hooks/reducer';
 import ProduceData from './produceData';
+import CreateStation from './createStation';
+
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
@@ -42,6 +43,7 @@ import Button from '../../../components/button';
 import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
 import pathDomains from '../../../router';
 import { useHistory } from 'react-router-dom';
+import CreateStationForm from '../../../components/createStationForm';
 
 const steps = [{ stepName: 'Create Station' }, { stepName: 'Create App user' }, { stepName: 'Produce data' }, { stepName: 'Consume data' }, { stepName: 'Finish' }];
 
@@ -206,7 +208,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             onNext={onNext}
                             onBack={onBack}
                         >
-                            <CreateStationForm createStationFormRef={createStationFormRef} />
+                            <CreateStation createStationFormRef={createStationFormRef} />
                         </GetStartedItem>
                     )}
                     {getStartedState?.currentStep === 2 && (

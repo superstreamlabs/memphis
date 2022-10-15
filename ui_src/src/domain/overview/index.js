@@ -31,9 +31,11 @@ import {
     LOCAL_STORAGE_WELCOME_MESSAGE,
     LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
-import CreateStationDetails from '../../components/createStationDetails';
+import CreateStationForm from '../../components/createStationForm';
+
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
@@ -158,7 +160,7 @@ function OverView() {
                 </div>
             )}
 
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
+            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || allStations.length > 0) && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -204,12 +206,21 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') && (
-                <GetStarted username={username} dataSentence={dataSentence} />
-            )}
+            {!isLoading &&
+                (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') &&
+                allStations.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
-                header="Your station details"
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={stationImg} />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
                 height="460px"
+                width="540px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {
@@ -222,7 +233,7 @@ function OverView() {
                 open={open}
                 isLoading={creatingProsessd}
             >
-                <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
             </Modal>
             <Modal
                 header={''}
