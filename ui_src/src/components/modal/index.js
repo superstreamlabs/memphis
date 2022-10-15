@@ -27,7 +27,7 @@ import { Modal } from 'antd';
 import Button from '../button';
 
 const TransitionsModal = (props) => {
-    const { height, width, rBtnText, lBtnText, rBtnDisabled, lBtnDisabled, header, isLoading, open = false, displayButtons = true } = props;
+    const { height, width, rBtnText, lBtnText, rBtnDisabled, lBtnDisabled, header, isLoading, headerImage, subTitle, open = false, displayButtons = true } = props;
 
     const contentStyle = {
         height: height,
@@ -37,7 +37,17 @@ const TransitionsModal = (props) => {
     return (
         <Modal
             wrapClassName={'modal-wrapper'}
-            title={header}
+            title={
+                <div className="header">
+                    {headerImage && (
+                        <div className="header-img-container">
+                            <img className="headerImage" src={headerImage} />
+                        </div>
+                    )}
+                    <p>{header}</p>
+                    {subTitle && <label>{subTitle}</label>}
+                </div>
+            }
             open={open}
             width={width}
             onCancel={() => props.clickOutside()}

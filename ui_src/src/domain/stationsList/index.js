@@ -32,9 +32,13 @@ import SearchInput from '../../components/searchInput';
 import pathDomains from '../../router';
 import stationsIcon from '../../assets/images/stationIcon.svg';
 import searchIcon from '../../assets/images/searchIcon.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
+
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
-import CreateStationDetails from '../../components/createStationDetails';
+// import CreateStationDetails from '../../components/createStationDetails';
+import CreateStationForm from '../../components/createStationForm';
+
 import Loader from '../../components/loader';
 
 const StationsList = () => {
@@ -186,8 +190,11 @@ const StationsList = () => {
             {!isLoading && <div className="stations-content">{renderStationsOverview()}</div>}
             <div id="e2e-createstation-modal">
                 <Modal
-                    header="Your station details"
+                    header="Create new station"
+                    headerImage={stationImg}
+                    subTitle="Lorem Ipsum is simply dummy text of the printing and typesetting industry."
                     height="460px"
+                    width="540px"
                     rBtnText="Add"
                     lBtnText="Cancel"
                     lBtnClick={() => {
@@ -200,7 +207,7 @@ const StationsList = () => {
                     open={modalIsOpen}
                     isLoading={creatingProsessd}
                 >
-                    <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                    <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
                 </Modal>
             </div>
         </div>
