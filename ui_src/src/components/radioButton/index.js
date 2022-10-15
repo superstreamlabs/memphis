@@ -47,29 +47,13 @@ const RadioButton = (props) => {
             >
                 {options.map((option) => (
                     <div
-                        style={{
-                            background: props.labelType && radioValue === option.value ? 'rgba(101, 87, 255, 0.1)' : '',
-                            width: props.labelType ? '300px' : '',
-                            border:
-                                props.labelType && radioValue === option.value
-                                    ? '1px solid #6557FF'
-                                    : props.labelType && radioValue !== option.value
-                                    ? '1px solid #EAECF0'
-                                    : '',
-                            padding: props.labelType ? '10px' : '',
-                            marginRight: props.labelType ? '10px' : '',
-                            borderRadius: props.labelType ? '8px' : '',
-                            cursor: 'pointer'
-                        }}
+                        className={props.labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : ''}
                         onClick={() => (props.labelType ? props.onClick(option.value) : '')}
                     >
                         <Radio key={option.id} value={option.value}>
                             <span
-                                style={{
-                                    fontFamily: fontFamily,
-                                    color: props.labelType && radioValue === option.value ? '#6557FF' : '',
-                                    fontSize: props.labelType ? '14px' : ''
-                                }}
+                                className={props.labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : ''}
+                                style={{ fontFamily: fontFamily }}
                             >
                                 {option.label}
                             </span>
