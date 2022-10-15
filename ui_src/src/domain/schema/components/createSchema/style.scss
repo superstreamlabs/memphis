@@ -40,8 +40,10 @@
         position: relative;
         .left-side{
             width: 50%;
+            .ant-row{
+                padding-bottom: 30px;
+            }
             .schema-field{
-                padding-bottom: 42px;
                 .field-title{
                     font-family: 'InterSemiBold';
                     font-size: 16px;  

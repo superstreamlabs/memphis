@@ -132,6 +132,8 @@ function SchemaList({ createNew }) {
                 setisLoading(false);
             }
         });
+        setisLoading(false);
+        setDeleteModal(false);
     };
 
     const handleSearch = (e) => {

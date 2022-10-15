@@ -81,7 +81,6 @@ const SchemaEditorExample = {
     Protobuf: {
         language: 'proto',
         value: `syntax = "proto3";
-
         message Test {
             string field1 = 1;
             string  field2 = 2;
@@ -168,9 +167,10 @@ function CreateSchema({ goBack }) {
                                 placeholder="Type schema name"
                                 type="text"
                                 radiusType="semi-round"
-                                colorType="black"
-                                backgroundColorType="none"
+                                colorType="gray"
+                                backgroundColorType="white"
                                 borderColorType="gray"
+                                fontSize="12px"
                                 height="40px"
                                 width="200px"
                                 onBlur={(e) => updateFormState('name', e.target.value)}

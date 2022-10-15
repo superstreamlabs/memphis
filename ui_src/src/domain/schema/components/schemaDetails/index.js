@@ -57,8 +57,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [updated, setUpdated] = useState(false);
     const [loading, setIsLoading] = useState(false);
     const [rollLoading, setIsRollLoading] = useState(false);
-
-    const [newVersion, setNewVersion] = useState({});
+    const [newVersion, setNewVersion] = useState('');
     const [schemaDetails, setSchemaDetails] = useState({
         schema_name: '',
         type: '',
