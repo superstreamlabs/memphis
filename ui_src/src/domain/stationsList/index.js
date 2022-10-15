@@ -192,7 +192,7 @@ const StationsList = () => {
                 <Modal
                     header="Create new station"
                     headerImage={stationImg}
-                    subTitle="Lorem Ipsum is simply dummy text of the printing and typesetting industry."
+                    subTitle="A station is a distributed unit that stores the produced data."
                     height="460px"
                     width="540px"
                     rBtnText="Add"
