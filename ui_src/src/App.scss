@@ -52,6 +52,12 @@
     top: 30px;
 }
 
+.header-wraper{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
 .main-header-h1 {
     font-weight: 600;
     font-size: 24px;
@@ -59,6 +65,11 @@
     position: relative;
     margin-bottom: 0;
     line-height: 30px;
+    .length-list {
+        color: #b4b4b4;
+        font-weight: 400;
+    }
+      
 }
 
 ::-webkit-scrollbar {

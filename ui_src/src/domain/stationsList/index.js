@@ -41,11 +41,14 @@ const StationsList = () => {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
+    const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const [stationsList, setStationList] = useState([]);
     const [filteredList, setFilteredList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [isCheck, setIsCheck] = useState([]);
+    const [isCheckAll, setIsCheckAll] = useState(false);
 
     const createStationRef = useRef(null);
 
@@ -125,57 +128,134 @@ const StationsList = () => {
                 return (
                     <div>
                         {filteredList?.map((station) => (
-                            <StationBoxOverview key={station.station.id} station={station} removeStation={() => removeStation(station.station.name)} />
+                            <StationBoxOverview
+                                key={station.station.id}
+                                isCheck={isCheck.includes(station.station.name)}
+                                handleCheckedClick={handleCheckedClick}
+                                station={station}
+                                removeStation={() => removeStation(station.station.name)}
+                            />
                         ))}
                         <StationsInstructions header="Add more stations" button="Add Station" newStation={() => modalFlip(true)} />
                     </div>
                 );
             }
             return filteredList?.map((station) => (
-                <StationBoxOverview key={station.station.id} station={station} removeStation={() => removeStation(station.station.name)} />
+                <StationBoxOverview
+                    key={station.station.id}
+                    isCheck={isCheck.includes(station.station.name)}
+                    handleCheckedClick={handleCheckedClick}
+                    station={station}
+                    removeStation={() => removeStation(station.station.name)}
+                />
             ));
         }
         return <StationsInstructions header="You don’t have any station yet?" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
     };
 
+    const onCheckedAll = (e) => {
+        setIsCheckAll(!isCheckAll);
+        setIsCheck(filteredList.map((li) => li.station.name));
+        if (isCheckAll) {
+            setIsCheck([]);
+        }
+    };
+
+    const handleCheckedClick = (e) => {
+        const { id, checked } = e.target;
+        setIsCheck([...isCheck, id]);
+        if (!checked) {
+            setIsCheck(isCheck.filter((item) => item !== id));
+        }
+        if (isCheck.length === 1 && !checked) {
+            setIsCheckAll(false);
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        isCheck.forEach(async (name) => {
+            try {
+                const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
+                    station_name: name
+                });
+                if (data) {
+                    setStationList(stationsList.filter((station) => station.station.name !== name));
+                    setIsCheck(isCheck.filter((item) => item !== name));
+                }
+            } catch (error) {
+                setisLoading(false);
+            }
+        });
+        modalDeleteFlip(false);
+    };
+
     return (
         <div className="stations-details-container">
             <div className="stations-details-header">
-                <div className="left-side">
+                <div className="header-wraper">
                     <label className="main-header-h1">
-                        Stations <label className="num-stations">{stationsList?.length > 0 && `(${stationsList?.length})`}</label>
+                        Stations <label className="length-list">{stationsList?.length > 0 && `(${stationsList?.length})`}</label>
                     </label>
+                    {stationsList?.length > 0 && (
+                        <div className="right-side">
+                            {isCheck?.length > 0 && (
+                                <Button
+                                    width="131px"
+                                    height="34px"
+                                    placeholder={`Delete Selected (${isCheck?.length})`}
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    aria-haspopup="true"
+                                    onClick={() => modalDeleteFlip(true)}
+                                />
+                            )}
+                            {filteredList?.length > 1 && (
+                                <Button
+                                    width="131px"
+                                    height="34px"
+                                    placeholder="Selected All"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    aria-haspopup="true"
+                                    onClick={() => onCheckedAll()}
+                                />
+                            )}
+                            <SearchInput
+                                placeholder="Search Stations"
+                                colorType="navy"
+                                backgroundColorType="gray-dark"
+                                width="288px"
+                                height="34px"
+                                borderColorType="none"
+                                boxShadowsType="none"
+                                borderRadiusType="circle"
+                                iconComponent={<img src={searchIcon} />}
+                                onChange={handleSearch}
+                                value={searchInput}
+                            />
+                            <Button
+                                className="modal-btn"
+                                width="180px"
+                                height="37px"
+                                placeholder="Create New Station"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="14px"
+                                fontWeight="bold"
+                                aria-controls="usecse-menu"
+                                aria-haspopup="true"
+                                onClick={() => modalFlip(true)}
+                            />
+                        </div>
+                    )}
                 </div>
-                {stationsList?.length > 0 ? (
-                    <div className="right-side">
-                        <SearchInput
-                            placeholder="Search Stations"
-                            placeholderColor="red"
-                            width="280px"
-                            height="37px"
-                            borderRadiusType="circle"
-                            backgroundColorType="gray-dark"
-                            iconComponent={<img src={searchIcon} />}
-                            onChange={handleSearch}
-                            value={searchInput}
-                        />
-                        <Button
-                            className="modal-btn"
-                            width="180px"
-                            height="37px"
-                            placeholder="Create New Station"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            marginLeft="15px"
-                            aria-controls="usecse-menu"
-                            aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
-                        />
-                    </div>
-                ) : null}
             </div>
             {isLoading && (
                 <div className="loader-uploading">
@@ -202,6 +282,24 @@ const StationsList = () => {
                     <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
                 </Modal>
             </div>
+            <Modal
+                header="Remove stations"
+                height="100px"
+                minWidth="460px"
+                rBtnText="Cancel"
+                lBtnText="Remove"
+                lBtnClick={() => {
+                    handleDeleteSelected();
+                    modalDeleteFlip(false);
+                }}
+                closeAction={() => modalDeleteFlip(false)}
+                clickOutside={() => modalDeleteFlip(false)}
+                rBtnClick={() => modalDeleteFlip(false)}
+                open={modalDeleteIsOpen}
+            >
+                <label>Are you sure you want to delete all the selected station?</label>
+                <br />
+            </Modal>
         </div>
     );
 };

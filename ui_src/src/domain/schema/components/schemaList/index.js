@@ -26,16 +26,17 @@ import { SearchOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
-import deleteIcon from '../../../../assets/images/deleteIcon.svg';
+import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
+import searchIcon from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
 import { Context } from '../../../../hooks/store';
+import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
-import Modal from '../../../../components/modal';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
@@ -142,98 +143,101 @@ function SchemaList({ createNew }) {
 
     return (
         <div className="schema-container">
-            <h1 className="main-header-h1">Schema</h1>
-            <div className="action-section">
-                {isCheck?.length > 0 && (
-                    <Button
-                        width="131px"
+            <div className="header-wraper">
+                <label className="main-header-h1">
+                    Schema <label className="length-list">{schemaList?.length > 0 && `(${schemaList?.length})`}</label>
+                </label>
+                <div className="action-section">
+                    {isCheck?.length > 0 && (
+                        <Button
+                            width="131px"
+                            height="34px"
+                            placeholder={`Delete Selected (${isCheck?.length})`}
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => setDeleteModal(true)}
+                        />
+                    )}
+                    {schemaFilteredList?.length > 1 && (
+                        <Button
+                            width="131px"
+                            height="34px"
+                            placeholder="Selected All"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => onCheckedAll()}
+                        />
+                    )}
+                    <SearchInput
+                        placeholder="Search schema"
+                        colorType="navy"
+                        backgroundColorType="gray-dark"
+                        width="288px"
                         height="34px"
-                        placeholder="Delete Selected"
+                        borderRadiusType="circle"
+                        borderColorType="none"
+                        boxShadowsType="none"
+                        iconComponent={<img src={searchIcon} />}
+                        onChange={handleSearch}
+                        value={searchInput}
+                    />
+                    <Button
+                        width="111px"
+                        height="34px"
+                        placeholder={'Filters'}
                         colorType="black"
                         radiusType="circle"
                         backgroundColorType="white"
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        onClick={() => setDeleteModal(true)}
+                        // onClick={() => addUserModalFlip(true)}
                     />
-                )}
-                {schemaFilteredList?.length > 1 && (
-                    <Button
-                        width="131px"
+                    {/* <Button
+                        width="81px"
                         height="34px"
-                        placeholder="Selected All"
+                        placeholder={'Sort'}
                         colorType="black"
                         radiusType="circle"
                         backgroundColorType="white"
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        onClick={() => onCheckedAll()}
+                        // onClick={() => addUserModalFlip(true)}
+                    /> */}
+                    <Button
+                        width="160px"
+                        height="34px"
+                        placeholder={'Create from blank'}
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={() => createNew()}
                     />
-                )}
-
-                <SearchInput
-                    placeholder="Search schema"
-                    colorType="navy"
-                    backgroundColorType="gray-dark"
-                    width="288px"
-                    height="34px"
-                    borderRadiusType="circle"
-                    borderColorType="none"
-                    boxShadowsType="none"
-                    iconComponent={<SearchOutlined />}
-                    onChange={handleSearch}
-                    value={searchInput}
-                />
-                <Button
-                    width="111px"
-                    height="34px"
-                    placeholder={'Filters'}
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType="white"
-                    fontSize="12px"
-                    fontWeight="600"
-                    aria-haspopup="true"
-                    // onClick={() => addUserModalFlip(true)}
-                />
-                {/* <Button
-                    width="81px"
-                    height="34px"
-                    placeholder={'Sort'}
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType="white"
-                    fontSize="12px"
-                    fontWeight="600"
-                    aria-haspopup="true"
-                    // onClick={() => addUserModalFlip(true)}
-                /> */}
-                <Button
-                    width="160px"
-                    height="34px"
-                    placeholder={'Create from blank'}
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="purple"
-                    fontSize="12px"
-                    fontWeight="600"
-                    aria-haspopup="true"
-                    onClick={() => createNew()}
-                />
-                {/* <Button
-                    width="145px"
-                    height="34px"
-                    placeholder={'Import schema'}
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="purple"
-                    fontSize="12px"
-                    fontWeight="600"
-                    aria-haspopup="true"
-                    // onClick={() => createNew()}
-                /> */}
+                    {/* <Button
+                        width="145px"
+                        height="34px"
+                        placeholder={'Import schema'}
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        // onClick={() => createNew()}
+                    /> */}
+                </div>
             </div>
             <div className="schema-list">
                 {isLoading && (
@@ -266,7 +270,14 @@ function SchemaList({ createNew }) {
                     </div>
                 )}
             </div>
-            <Modal header={<img src={deleteIcon} />} width="450px" height="180px" displayButtons={false} clickOutside={() => setDeleteModal(false)} open={deleteModal}>
+            <Modal
+                header={<img src={deleteWrapperIcon} />}
+                width="450px"
+                height="180px"
+                displayButtons={false}
+                clickOutside={() => setDeleteModal(false)}
+                open={deleteModal}
+            >
                 <div className="roll-back-modal">
                     <p className="title">Are you sure you want to delete this schema?</p>
                     <p className="desc">When you delete this schema, it will be permanently deleted.</p>
