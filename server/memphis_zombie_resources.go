@@ -25,6 +25,7 @@ import (
 	"context"
 	"memphis-broker/models"
 	"strings"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -82,29 +83,32 @@ func removeOldPoisonMsgs() error {
 	return nil
 }
 
-func (srv *Server) removeRedundantStations() error {
+func (srv *Server) removeRedundantStations() {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(nil, bson.M{"is_deleted": false})
 	if err != nil {
-		return err
+		srv.Errorf("removeRedundantStations error: " + err.Error())
 	}
 
 	if err = cursor.All(nil, &stations); err != nil {
-		return err
+		srv.Errorf("removeRedundantStations error: " + err.Error())
 	}
 
-	redundant := make([]string, 0, len(stations))
 	for _, s := range stations {
-		_, err = srv.memphisStreamInfo(s.Name)
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			redundant = append(redundant, s.Name)
-		}
+		go func(srv *Server, s models.Station) {
+			stationName, _ := StationNameFromStr(s.Name)
+			_, err = srv.memphisStreamInfo(stationName.Intern())
+			if IsNatsErr(err, JSStreamNotFoundErr) {
+				srv.Warnf("Found zombie station to delete: " + s.Name)
+				_, err := stationsCollection.UpdateMany(nil,
+					bson.M{"name": s.Name, "is_deleted": false},
+					bson.M{"$set": bson.M{"is_deleted": true}})
+				if err != nil {
+					srv.Errorf("removeRedundantStations error: " + err.Error())
+				}
+			}
+		}(srv, s)
 	}
-
-	_, err = stationsCollection.UpdateMany(nil,
-		bson.M{"name": bson.M{"$in": redundant}},
-		bson.M{"$set": bson.M{"is_deleted": true}})
-	return err
 }
 
 func getActiveConnections() ([]models.Connection, error) {
@@ -123,11 +127,11 @@ func getActiveConnections() ([]models.Connection, error) {
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func() {
+			message := strings.TrimSuffix(string(msg), "\r\n")
 			connInfo := &ConnzOptions{}
 			conns, _ := s.Connz(connInfo)
 			for _, conn := range conns.Conns {
 				connId := strings.Split(conn.Name, "::")[0]
-				message := strings.TrimSuffix(string(msg), "\r\n")
 				if connId == message {
 					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("connExists"), true)
 					return
@@ -141,66 +145,81 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 	return nil
 }
 
-func (s *Server) KillZombieResources() {
-	respCh := make(chan []byte)
+func killFunc(s *Server) {
+	connections, err := getActiveConnections()
+	if err != nil {
+		serv.Errorf("killFunc error: " + err.Error())
+		return
+	}
 
-	for range time.Tick(time.Second * 30) {
-		s.Debugf("Killing Zombie resources iteration")
-		var zombieConnections []primitive.ObjectID
-		connections, err := getActiveConnections()
-		if err != nil {
-			serv.Errorf("KillZombieResources error: " + err.Error())
-			continue
-		}
-
-		for _, conn := range connections {
+	var zombieConnections []primitive.ObjectID
+	var lock sync.Mutex
+	wg := sync.WaitGroup{}
+	wg.Add(len(connections))
+	for _, conn := range connections {
+		go func(s *Server, conn models.Connection,  wg *sync.WaitGroup, lock *sync.Mutex) {
+			respCh := make(chan []byte)
 			msg := (conn.ID).Hex()
 			reply := CONN_STATUS_SUBJ + "_reply" + s.memphis.nuid.Next()
-
+	
 			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func() { respCh <- msg }()
 			})
 			if err != nil {
-				serv.Errorf("KillZombieResources error: " + err.Error())
-				continue
+				s.Errorf("killFunc error: " + err.Error())
+				wg.Done()
+				return
 			}
-
+	
 			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, reply, nil, msg, true)
-			timeout := time.After(10 * time.Second)
+			timeout := time.After(30 * time.Second)
 			select {
 			case <-respCh:
-				continue
+				wg.Done()
+				return
 			case <-timeout:
+				lock.Lock()
 				zombieConnections = append(zombieConnections, conn.ID)
+				lock.Unlock()
 			}
 			sub.close()
-		}
-
-		if len(zombieConnections) > 0 {
-			serv.Warnf("Zombie connection found, killing")
-			err := killRelevantConnections(zombieConnections)
+			wg.Done()
+		}(s, conn, &wg, &lock)
+	}
+	wg.Wait()
+	
+	if len(zombieConnections) > 0 {
+		serv.Warnf("Zombie connections found, killing")
+		err := killRelevantConnections(zombieConnections)
+		if err != nil {
+			serv.Errorf("killFunc error: " + err.Error())
+		} else {
+			err = killProducersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("KillZombieResources error: " + err.Error())
-			} else {
-				err = killProducersByConnections(zombieConnections)
-				if err != nil {
-					serv.Errorf("KillZombieResources error: " + err.Error())
-				}
+				serv.Errorf("killFunc error: " + err.Error())
+			}
 
-				err = killConsumersByConnections(zombieConnections)
-				if err != nil {
-					serv.Errorf("KillZombieResources error: " + err.Error())
-				}
+			err = killConsumersByConnections(zombieConnections)
+			if err != nil {
+				serv.Errorf("killFunc error: " + err.Error())
 			}
 		}
+	}
 
-		err = removeOldPoisonMsgs()
-		if err != nil {
-			serv.Errorf("KillZombieResources error: " + err.Error())
-		}
+	err = removeOldPoisonMsgs()
+	if err != nil {
+		serv.Errorf("killFunc error: " + err.Error())
+	}
 
-		if err = s.removeRedundantStations(); err != nil {
-			serv.Errorf("KillZombieResources error: " + err.Error())
-		}
+	s.removeRedundantStations()
+}
+
+func (s *Server) KillZombieResources() {
+	s.Debugf("Killing Zombie resources iteration")
+	killFunc(s)
+
+	for range time.Tick(time.Second * 30) {
+		s.Debugf("Killing Zombie resources iteration")
+		killFunc(s)
 	}
 }

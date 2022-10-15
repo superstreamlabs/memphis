@@ -44,8 +44,37 @@ const (
 	stationObjectName = "Station"
 )
 
-func validateStationName(stationName string) error {
-	return validateName(stationName, stationObjectName)
+type StationName struct {
+	internal string
+	external string
+}
+
+func (sn StationName) Ext() string {
+	return sn.external
+}
+
+func (sn StationName) Intern() string {
+	return sn.internal
+}
+
+func StationNameFromStr(name string) (StationName, error) {
+	extern := strings.ToLower(name)
+
+	err := validateName(extern, stationObjectName)
+	if err != nil {
+		return StationName{}, err
+	}
+
+	intern := replaceDelimiters(name)
+
+	return StationName{internal: intern, external: extern}, nil
+}
+
+func StationNameFromStreamName(streamName string) StationName {
+	intern := streamName
+	extern := revertDelimiters(intern)
+
+	return StationName{internal: intern, external: extern}
 }
 
 func validateRetentionType(retentionType string) error {
@@ -74,10 +103,16 @@ func validateReplicas(replicas int) error {
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station) error {
-	err := s.RemoveStream(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
+	err = s.RemoveStream(stationName.Intern())
+	if err != nil {
+		return err
+	}
+
+	DeleteTagsByStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
@@ -115,8 +150,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(csr.StationName)
-	err := validateStationName(stationName)
+	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf(err.Error())
 		respondWithErr(s, reply, err)
@@ -178,7 +212,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
-		Name:            stationName,
+		Name:            stationName.Ext(),
 		CreatedByUser:   c.memphisInfo.username,
 		CreationDate:    time.Now(),
 		IsDeleted:       false,
@@ -192,7 +226,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		Functions:       []models.Function{},
 	}
 
-	err = s.CreateStream(newStation)
+	err = s.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
 		respondWithErr(s, reply, err)
@@ -205,13 +239,13 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName + " has been created"
+	message := "Station " + stationName.Ext() + " has been created"
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
@@ -229,7 +263,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
@@ -238,8 +271,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	if !ok {
 		return
 	}
+	tagsHandler := TagsHandler{S: sh.S}
 
-	var station models.Station
+	var station models.GetStationResponseSchema
 	err := stationsCollection.FindOne(context.TODO(), bson.M{
 		"name": body.StationName,
 		"$or": []interface{}{
@@ -255,6 +289,13 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	station.Tags = tags
 
 	c.IndentedJSON(200, station)
 }
@@ -282,16 +323,29 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
+		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
-				return []models.ExtendedStationDetails{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station.Name)
 			if err != nil {
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
+			}
+			tags, err := tagsHandler.GetTagsByStation(station.ID)
+			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
 		}
 		return exStations, nil
 	}
@@ -319,20 +373,36 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		return []models.ExtendedStation{}, nil
 	} else {
 		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		tagsHandler := TagsHandler{S: sh.S}
+		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(stations[i].Name)
+			if err != nil {
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
+			}
+			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
 				return []models.ExtendedStation{}, err
 			}
 
 			stations[i].TotalMessages = totalMessages
 			stations[i].PoisonMessages = poisonMessages
+			stations[i].Tags = tags
+			extStations = append(extStations, stations[i])
 		}
-		return stations, nil
+		return extStations, nil
 	}
 }
 
@@ -366,8 +436,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	stationName := strings.ToLower(body.Name)
-	err := validateStationName(stationName)
+	stationName, err := StationNameFromStr(body.Name)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -430,7 +499,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	newStation := models.Station{
 		ID:              primitive.NewObjectID(),
-		Name:            stationName,
+		Name:            stationName.Ext(),
 		RetentionType:   retentionType,
 		RetentionValue:  body.RetentionValue,
 		StorageType:     body.StorageType,
@@ -444,7 +513,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		IsDeleted:       false,
 	}
 
-	err = sh.S.CreateStream(newStation)
+	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -480,12 +549,21 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	message := "Station " + stationName + " has been created"
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	message := "Station " + stationName.Ext() + " has been created"
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: user.Username,
 		CreationDate:  time.Now(),
@@ -515,7 +593,13 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	stationName := strings.ToLower(body.StationName)
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
@@ -535,9 +619,9 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(),
+	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
-			"name": stationName,
+			"name": stationName.Ext(),
 			"$or": []interface{}{
 				bson.M{"is_deleted": false},
 				bson.M{"is_deleted": bson.M{"$exists": false}},
@@ -557,7 +641,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
-	serv.Noticef("Station " + stationName + " has been deleted")
+	serv.Noticef("Station " + stationName.Ext() + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -568,7 +652,13 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(dsr.StationName)
+	stationName, err := StationNameFromStr(dsr.StationName)
+	if err != nil {
+		serv.Errorf("RemoveStation error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: " + err.Error())
@@ -590,7 +680,7 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 
 	_, err = stationsCollection.UpdateOne(context.TODO(),
 		bson.M{
-			"name": stationName,
+			"name": stationName.Ext(),
 			"$or": []interface{}{
 				bson.M{"is_deleted": false},
 				bson.M{"is_deleted": bson.M{"$exists": false}},
@@ -604,12 +694,16 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 		return
 	}
 
-	serv.Noticef("Station " + stationName + " has been deleted")
+	serv.Noticef("Station " + stationName.Ext() + " has been deleted")
 	respondWithErr(s, reply, nil)
 	return
 }
 
-func (sh StationsHandler) GetTotalMessages(stationName string) (int, error) {
+func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
+	stationName, err := StationNameFromStr(stationNameExt)
+	if err != nil {
+		return 0, err
+	}
 	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
 	return totalMessages, err
 }
@@ -631,6 +725,19 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	}
 
 	return messages, nil
+}
+
+func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+	if sh.S.JetStreamIsClustered() {
+		leader, followers, err := sh.S.GetLeaderAndFollowers(station)
+		if err != nil {
+			return "", []string{}, err
+		}
+
+		return leader, followers, nil
+	} else {
+		return "broker-0", []string{}, nil
+	}
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
@@ -659,7 +766,11 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		return poisonMessage, err
 	}
 
-	exist, station, err := IsStationExist(poisonMessage.StationName)
+	stationName, err := StationNameFromStr(poisonMessage.StationName)
+	if err != nil {
+		return poisonMessage, err
+	}
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		return poisonMessage, err
 	}
@@ -688,7 +799,11 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 
 		isActive, isDeleted := getCgStatus(cgMembers)
 
-		cgInfo, err := sh.S.GetCgInfo(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
+		stationName, err := StationNameFromStr(poisonMessage.StationName)
+		if err != nil {
+			return poisonMessage, err
+		}
+		cgInfo, err := sh.S.GetCgInfo(stationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
 			return poisonMessage, err
 		}
@@ -783,8 +898,10 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	for _, msg := range msgs {
+		stationName := replaceDelimiters(msg.StationName)
 		for _, cg := range msg.PoisonedCgs {
-			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+msg.StationName+"_"+cg.CgName, []byte(msg.Message.Data))
+			cgName := replaceDelimiters(cg.CgName)
+			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data))
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -831,7 +948,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		c.IndentedJSON(200, poisonMessage)
 		return
 	}
-	stationName := strings.ToLower(body.StationName)
+
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Errorf("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	exist, station, err := IsStationExist(stationName)
 	if !exist {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
@@ -868,7 +992,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-	poisonedCgs, err := GetPoisonedCgsByMessage(stationName, models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
+	poisonedCgs, err := GetPoisonedCgsByMessage(stationName.Ext(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -883,7 +1007,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName, cg.CgName)
+		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
 		if err != nil {
 			serv.Errorf("GetMessageDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

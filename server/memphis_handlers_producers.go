@@ -99,11 +99,16 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		respondWithErr(s, reply, errors.New("memphis: connection id is not active"))
+		respondWithErr(s, reply, errors.New("memphis: connection is not active"))
 		return
 	}
 
-	stationName := strings.ToLower(cpr.StationName)
+	stationName, err := StationNameFromStr(cpr.StationName)
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
@@ -120,12 +125,12 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		}
 
 		if created {
-			message := "Station " + stationName + " has been created"
+			message := "Station " + stationName.Ext() + " has been created"
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				ID:            primitive.NewObjectID(),
-				StationName:   stationName,
+				StationName:   stationName.Ext(),
 				Message:       message,
 				CreatedByUser: c.memphisInfo.username,
 				CreationDate:  time.Now(),
@@ -186,13 +191,13 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if updateResults.MatchedCount > 0 {
+	if updateResults.MatchedCount == 0 {
 		message := "Producer " + name + " has been created"
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
+			StationName:   stationName.Ext(),
 			Message:       message,
 			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
@@ -318,7 +323,8 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 
-	exist, station, err := IsStationExist(body.StationName)
+	stationName, err := StationNameFromStr(body.StationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -366,7 +372,14 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(dpr.StationName)
+
+	stationName, err := StationNameFromStr(dpr.StationName)
+	if err != nil {
+		serv.Errorf("DestroyProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
@@ -397,7 +410,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),

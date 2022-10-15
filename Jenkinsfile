@@ -75,7 +75,6 @@ node {
 
     stage('Open port forwarding to memphis service') {
       sh(script: """until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
-      // sh "nohup kubectl port-forward service/memphis-ui 9000:80 --namespace memphis-$unique_id &"
       sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis-$unique_id &"
     }
 
@@ -90,11 +89,6 @@ node {
       sh(script: """/usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
     }
 
-    if (env.BRANCH_NAME ==~ /(master)/) {
-      stage('Tests - Remove used directories') {
-      	sh "rm -rf memphis-e2e-tests"
-    	}
-    }
 
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
@@ -120,9 +114,27 @@ node {
     	stage('Push to staging'){
 	  sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
           sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
-          sh 'helm upgrade --atomic --install my-memphis memphis-k8s/memphis --set analytics="false" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
+          sh 'helm upgrade --atomic --install my-memphis memphis-k8s/memphis --set analytics="false",cluster.enabled="true" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
           sh "rm -rf memphis-k8s"
 	}
+	      
+	stage('Open port forwarding to memphis service') {
+          sh(script: """until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
+     	  sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis &"
+   	}
+
+   	stage('Tests - Run e2e tests over memphis cluster') {
+          sh "npm install --prefix ./memphis-e2e-tests"
+          sh "node ./memphis-e2e-tests/index.js kubernetes memphis"
+        }
+
+    	stage('Tests - remove port-forwarding') {
+          sh(script: """/usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
+        }
+
+        stage('Tests - Remove used directories') {
+       	  sh "rm -rf memphis-e2e-tests"
+    	}
       }
 
     //////////////////////////////////////////////////////////

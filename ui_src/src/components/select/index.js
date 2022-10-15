@@ -25,7 +25,7 @@ import { Select } from 'antd';
 import React from 'react';
 
 import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
-import Arrow from '../../assets/images/arrow.svg';
+import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
 
 const { Option } = Select;
 
@@ -80,7 +80,7 @@ const SelectComponent = (props) => {
                 size={size}
                 dropdownClassName={dropdownClassName}
                 value={value}
-                suffixIcon={<img src={Arrow} alt="select-arrow" />}
+                suffixIcon={<ArrowDropDownRounded />}
                 dropdownStyle={dropdownStyle}
             >
                 {customOptions && options}
