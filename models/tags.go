@@ -19,29 +19,38 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-package http_server
+package models
 
 import (
-	"memphis-broker/conf"
-	"memphis-broker/http_server/routes"
-	"memphis-broker/server"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func InitializeHttpServer(s *server.Server) {
-	configuration := conf.GetConfig()
+type Tag struct {
+	ID       primitive.ObjectID   `json:"id" bson:"_id"`
+	Name     string               `json:"name" bson:"name"`
+	Color    string               `json:"color" bson:"color"`
+	Users    []primitive.ObjectID `json:"users" bson:"users"`
+	Stations []primitive.ObjectID `json:"stations" bson:"stations"`
+	Schemas  []primitive.ObjectID `json:"schemas" bson:"schemas"`
+}
 
-	handlers := server.Handlers{
-		Producers:  server.ProducersHandler{S: s},
-		Consumers:  server.ConsumersHandler{S: s},
-		AuditLogs:  server.AuditLogsHandler{},
-		Stations:   server.StationsHandler{S: s},
-		Monitoring: server.MonitoringHandler{S: s},
-		PoisonMsgs: server.PoisonMessagesHandler{S: s},
-		Schemas:    server.SchemasHandler{S: s},
-	}
+type CreateTag struct {
+	Name  string `json:"name" binding:"required,min=1,max=20"`
+	Color string `json:"color"`
+}
 
-	httpServer, socketioServer := routes.InitializeHttpRoutes(&handlers)
+type CreateTagsSchema struct {
+	Tags       []CreateTag `json:"tags"`
+	EntityType string      `json:"entity_type"`
+	EntityName string      `json:"entity_name"`
+}
 
-	defer socketioServer.Close()
-	httpServer.Run("0.0.0.0:" + configuration.HTTP_PORT)
+type RemoveTagsSchema struct {
+	Names      []string `json:"names"`
+	EntityType string   `json:"entity_type"`
+	EntityName string   `json:"entity_name"`
+}
+
+type GetTagsSchema struct {
+	EntityType string `json:"entity_type"`
 }

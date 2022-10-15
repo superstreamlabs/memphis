@@ -56,6 +56,8 @@ func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Ser
 	InitializeProducersRoutes(mainRouter, handlers)
 	InitializeConsumersRoutes(mainRouter, handlers)
 	InitializeMonitoringRoutes(mainRouter, handlers)
+	InitializeTagsRoutes(mainRouter, handlers)
+	InitializeSchemasRoutes(mainRouter, handlers)
 	InitializeSandboxRoutes(mainRouter)
 	socketioServer := InitializeSocketio(router, handlers)
 	ui.InitializeUIRoutes(router)

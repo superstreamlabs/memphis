@@ -103,10 +103,16 @@ func validateReplicas(replicas int) error {
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station) error {
-	err := s.RemoveStream(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
+	err = s.RemoveStream(stationName.Intern())
+	if err != nil {
+		return err
+	}
+
+	DeleteTagsByStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
@@ -257,7 +263,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
@@ -266,8 +271,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	if !ok {
 		return
 	}
+	tagsHandler := TagsHandler{S: sh.S}
 
-	var station models.Station
+	var station models.GetStationResponseSchema
 	err := stationsCollection.FindOne(context.TODO(), bson.M{
 		"name": body.StationName,
 		"$or": []interface{}{
@@ -283,6 +289,13 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	station.Tags = tags
 
 	c.IndentedJSON(200, station)
 }
@@ -310,16 +323,29 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
+		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
 			if err != nil {
-				return []models.ExtendedStationDetails{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(station.Name)
 			if err != nil {
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStationDetails{}, err
+				}
+			}
+			tags, err := tagsHandler.GetTagsByStation(station.ID)
+			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages})
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
 		}
 		return exStations, nil
 	}
@@ -347,20 +373,36 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		return []models.ExtendedStation{}, nil
 	} else {
 		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+		tagsHandler := TagsHandler{S: sh.S}
+		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
 			}
 			poisonMessages, err := poisonMsgsHandler.GetTotalPoisonMsgsByStation(stations[i].Name)
+			if err != nil {
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					continue
+				} else {
+					return []models.ExtendedStation{}, err
+				}
+			}
+			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
 				return []models.ExtendedStation{}, err
 			}
 
 			stations[i].TotalMessages = totalMessages
 			stations[i].PoisonMessages = poisonMessages
+			stations[i].Tags = tags
+			extStations = append(extStations, stations[i])
 		}
-		return stations, nil
+		return extStations, nil
 	}
 }
 
@@ -507,6 +549,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+		if err != nil {
+			serv.Errorf("Failed creating tag: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	message := "Station " + stationName.Ext() + " has been created"
 	serv.Noticef(message)
 	var auditLogs []interface{}
@@ -568,9 +619,9 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(),
+	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
-			"name": stationName,
+			"name": stationName.Ext(),
 			"$or": []interface{}{
 				bson.M{"is_deleted": false},
 				bson.M{"is_deleted": bson.M{"$exists": false}},
@@ -674,6 +725,19 @@ func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch in
 	}
 
 	return messages, nil
+}
+
+func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+	if sh.S.JetStreamIsClustered() {
+		leader, followers, err := sh.S.GetLeaderAndFollowers(station)
+		if err != nil {
+			return "", []string{}, err
+		}
+
+		return leader, followers, nil
+	} else {
+		return "broker-0", []string{}, nil
+	}
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
