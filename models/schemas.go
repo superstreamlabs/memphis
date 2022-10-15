@@ -66,7 +66,7 @@ type ExtendedSchemaDetails struct {
 	SchemaName   string             `json:"schema_name"`
 	Type         string             `json:"type"`
 	Versions     []SchemaVersion    `json:"versions"`
-	UsedStations []string           `json:"used_stations"`
+	UsedStations []StationNames     `json:"used_stations"`
 	Tags         []Tag              `json:"tags"`
 }
 
@@ -75,7 +75,7 @@ type GetSchemaDetails struct {
 }
 
 type RemoveSchema struct {
-	SchemasName []string `json:"schema_name"`
+	SchemaNames []string `json:"schema_names" binding:"required"`
 }
 
 type CreateNewVersion struct {
@@ -86,4 +86,8 @@ type CreateNewVersion struct {
 type RollBackVersion struct {
 	SchemaName    string `json:"schema_name"`
 	VersionNumber int    `json:"version_number"`
+}
+
+type StationNames struct {
+	StationNames string `json:"station_name" bson:"name"`
 }

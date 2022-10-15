@@ -464,12 +464,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	schemaName := body.SchemaName
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
-		err = validateSchemaName(schemaName)
-		if err != nil {
-			serv.Warnf(err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
 		exist, _, err = IsSchemaExist(schemaName)
 		if err != nil {
 			serv.Errorf("CreateStation error: " + err.Error())
@@ -618,13 +612,16 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		return
 	}
 
-	for _, stationName := range body.StationName {
+	var stationNames []string
+	for _, stationName := range body.StationNames {
 		stationName, err := StationNameFromStr(stationName)
 		if err != nil {
 			serv.Warnf(err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
+
+		stationNames = append(stationNames, stationName.Ext())
 
 		exist, station, err := IsStationExist(stationName)
 		if err != nil {
@@ -648,7 +645,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 	_, err := stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
-			"name": bson.M{"$in": body.StationName},
+			"name": bson.M{"$in": stationNames},
 			"$or": []interface{}{
 				bson.M{"is_deleted": false},
 				bson.M{"is_deleted": bson.M{"$exists": false}},
@@ -668,7 +665,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
-	for _, name := range body.StationName {
+	for _, name := range stationNames {
 		serv.Noticef("Station " + name + " has been deleted")
 	}
 	c.IndentedJSON(200, gin.H{})
@@ -683,7 +680,7 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 	}
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
-		serv.Errorf("RemoveStation error: " + err.Error())
+		serv.Warnf("RemoveStation error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -980,8 +977,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Errorf("GetMessageDetails error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		serv.Warnf("GetMessageDetails error: " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -1137,7 +1134,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationNameStr}, bson.M{"$set": bson.M{"schema_name": schemaName}})
+	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext()}, bson.M{"$set": bson.M{"schema_name": schemaName}})
 
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())

@@ -139,7 +139,7 @@ type ResendPoisonMessagesSchema struct {
 }
 
 type RemoveStationSchema struct {
-	StationName []string `json:"station_name" binding:"required"`
+	StationNames []string `json:"station_names" binding:"required"`
 }
 
 type GetPoisonMessageJourneySchema struct {
@@ -154,6 +154,6 @@ type GetMessageDetailsSchema struct {
 }
 
 type UseSchema struct {
-	StationName string `json:"station_name"`
-	SchemaName  string `json:"schema_name"`
+	StationName string `json:"station_name" binding:"required"`
+	SchemaName  string `json:"schema_name" binding:"required"`
 }
