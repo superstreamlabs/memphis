@@ -27,7 +27,7 @@ import { Modal } from 'antd';
 import Button from '../button';
 
 const TransitionsModal = (props) => {
-    const { height, width, rBtnText, lBtnText, rBtnDisabled, lBtnDisabled, header, isLoading, headerImage, subTitle, open = false, displayButtons = true } = props;
+    const { height, width, rBtnText, lBtnText, rBtnDisabled, lBtnDisabled, header, isLoading, open = false, displayButtons = true } = props;
 
     const contentStyle = {
         height: height,
