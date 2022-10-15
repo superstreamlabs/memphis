@@ -22,14 +22,15 @@
 import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import { Form } from 'antd';
-import TitleComponent from '../../../../components/titleComponent';
-import RadioButton from '../../../../components/radioButton';
-import Input from '../../../../components/Input';
-import { convertDateToSeconds } from '../../../../services/valueConvertor';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import { GetStartedStoreContext } from '..';
-import InputNumberComponent from '../../../../components/InputNumber';
+import TitleComponent from '../titleComponent';
+import RadioButton from '../radioButton';
+import Input from '../Input';
+import { convertDateToSeconds } from '../../services/valueConvertor';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import { httpRequest } from '../../services/http';
+import { GetStartedStoreContext } from '../../domain/overview/getStarted';
+import InputNumberComponent from '../InputNumber';
+import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../const/localStorageConsts';
 
 const retanionOptions = [
     {
@@ -68,67 +69,71 @@ const CreateStationForm = ({ createStationFormRef }) => {
     const [allowEdit, setAllowEdit] = useState(true);
 
     useEffect(() => {
-        checkState();
-        createStationFormRef.current = onFinish;
+        console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED));
+        console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true');
+
+        // checkState();
+        // createStationFormRef.current = onFinish;
     }, []);
 
-    const checkState = () => {
-        if (getStartedState?.formFieldsCreateStation?.name) {
-            setAllowEdit(false);
-            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
-        } else {
-            setAllowEdit(true);
-        }
-    };
+    // const checkState = () => {
+    //     if (getStartedState?.formFieldsCreateStation?.name) {
+    //         setAllowEdit(false);
+    //         getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+    //     } else {
+    //         setAllowEdit(true);
+    //     }
+    // };
 
-    const onFinish = async () => {
-        if (getStartedState?.completedSteps > 0) {
-            getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-        } else {
-            let retentionValue = 0;
-            try {
-                const values = await creationForm.validateFields();
-                getStartedDispatch({ type: 'IS_LOADING', payload: true });
-                if (values.retention_type === 'message_age_sec') {
-                    retentionValue = convertDateToSeconds(values.days, values.hours, values.minutes, values.seconds);
-                } else if (values.retention_type === 'bytes') {
-                    retentionValue = Number(values.retentionSizeValue);
-                } else {
-                    retentionValue = Number(values.retentionMessagesValue);
-                }
-                updateFormState('retention_value', retentionValue);
-                const bodyRequest = {
-                    name: values.name,
-                    retention_type: values.retention_type,
-                    retention_value: retentionValue,
-                    storage_type: values.storage_type,
-                    replicas: values.replicas
-                };
-                createStation(bodyRequest);
-            } catch (error) {}
-        }
-    };
-    const createStation = async (bodyRequest) => {
-        try {
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
-            if (data) {
-                getStartedDispatch({ type: 'SET_STATION', payload: data.name });
-                getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
-                getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-            }
-        } catch (error) {
-        } finally {
-            getStartedDispatch({ type: 'IS_LOADING', payload: false });
-        }
-    };
+    // const onFinish = async () => {
+    //     if (getStartedState?.completedSteps > 0) {
+    //         getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+    //     } else {
+    //         let retentionValue = 0;
+    //         try {
+    //             const values = await creationForm.validateFields();
+    //             getStartedDispatch({ type: 'IS_LOADING', payload: true });
+    //             if (values.retention_type === 'message_age_sec') {
+    //                 retentionValue = convertDateToSeconds(values.days, values.hours, values.minutes, values.seconds);
+    //             } else if (values.retention_type === 'bytes') {
+    //                 retentionValue = Number(values.retentionSizeValue);
+    //             } else {
+    //                 retentionValue = Number(values.retentionMessagesValue);
+    //             }
+    //             updateFormState('retention_value', retentionValue);
+    //             const bodyRequest = {
+    //                 name: values.name,
+    //                 retention_type: values.retention_type,
+    //                 retention_value: retentionValue,
+    //                 storage_type: values.storage_type,
+    //                 replicas: values.replicas
+    //             };
+    //             createStation(bodyRequest);
+    //         } catch (error) {}
+    //     }
+    // };
+    // const createStation = async (bodyRequest) => {
+    //     try {
+    //         const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
+    //         if (data) {
+    //             getStartedDispatch({ type: 'SET_STATION', payload: data.name });
+    //             getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
+    //             getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+    //         }
+    //     } catch (error) {
+    //     } finally {
+    //         getStartedDispatch({ type: 'IS_LOADING', payload: false });
+    //     }
+    // };
 
-    const updateFormState = (field, value) => {
-        getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });
-    };
+    // const updateFormState = (field, value) => {
+    //     getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });
+    // };
 
     return (
         <Form name="form" form={creationForm} autoComplete="off" className="create-station-form-getstarted">
-            <div id="e2e-getstarted-step1" className="station-name-section">
+            Hio
+            {/* <div id="e2e-getstarted-step1" className="station-name-section">
                 <TitleComponent
                     headerTitle="Enter station name"
                     typeTitle="sub-header"
@@ -321,7 +326,7 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         </Form.Item>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </Form>
     );
 };

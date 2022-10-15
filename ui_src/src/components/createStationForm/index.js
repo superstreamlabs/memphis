@@ -20,7 +20,10 @@
 // SOFTWARE.
 
 import './style.scss';
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../router';
+
 import { Form } from 'antd';
 import TitleComponent from '../titleComponent';
 import RadioButton from '../radioButton';
@@ -28,9 +31,8 @@ import Input from '../Input';
 import { convertDateToSeconds } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
-import { GetStartedStoreContext } from '../../domain/overview/getStarted';
+
 import InputNumberComponent from '../InputNumber';
-import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../const/localStorageConsts';
 
 const retanionOptions = [
     {
@@ -63,77 +65,74 @@ const storageOptions = [
     }
 ];
 
-const CreateStationForm = ({ createStationFormRef }) => {
-    const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
+const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
+    const history = useHistory();
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
+    const [actualPods, setActualPods] = useState(null);
+    const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
+    const [storageType, setStorageType] = useState(storageOptions[0].value);
 
     useEffect(() => {
-        console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED));
-        console.log(localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true');
-
-        // checkState();
-        // createStationFormRef.current = onFinish;
+        getOverviewData();
+        if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
+        if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
+        createStationFormRef.current = onFinish;
     }, []);
 
-    // const checkState = () => {
-    //     if (getStartedState?.formFieldsCreateStation?.name) {
-    //         setAllowEdit(false);
-    //         getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
-    //     } else {
-    //         setAllowEdit(true);
-    //     }
-    // };
+    const getRetentionValue = (formFields) => {
+        switch (formFields.retention_type) {
+            case 'message_age_sec':
+                return convertDateToSeconds(formFields.days, formFields.hours, formFields.minutes, formFields.seconds);
+            case 'messages':
+                return Number(formFields.retentionMessagesValue);
+            case 'bytes':
+                return Number(formFields.retentionValue);
+        }
+    };
 
-    // const onFinish = async () => {
-    //     if (getStartedState?.completedSteps > 0) {
-    //         getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-    //     } else {
-    //         let retentionValue = 0;
-    //         try {
-    //             const values = await creationForm.validateFields();
-    //             getStartedDispatch({ type: 'IS_LOADING', payload: true });
-    //             if (values.retention_type === 'message_age_sec') {
-    //                 retentionValue = convertDateToSeconds(values.days, values.hours, values.minutes, values.seconds);
-    //             } else if (values.retention_type === 'bytes') {
-    //                 retentionValue = Number(values.retentionSizeValue);
-    //             } else {
-    //                 retentionValue = Number(values.retentionMessagesValue);
-    //             }
-    //             updateFormState('retention_value', retentionValue);
-    //             const bodyRequest = {
-    //                 name: values.name,
-    //                 retention_type: values.retention_type,
-    //                 retention_value: retentionValue,
-    //                 storage_type: values.storage_type,
-    //                 replicas: values.replicas
-    //             };
-    //             createStation(bodyRequest);
-    //         } catch (error) {}
-    //     }
-    // };
-    // const createStation = async (bodyRequest) => {
-    //     try {
-    //         const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
-    //         if (data) {
-    //             getStartedDispatch({ type: 'SET_STATION', payload: data.name });
-    //             getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
-    //             getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-    //         }
-    //     } catch (error) {
-    //     } finally {
-    //         getStartedDispatch({ type: 'IS_LOADING', payload: false });
-    //     }
-    // };
+    const onFinish = async () => {
+        const formFields = await creationForm.validateFields();
+        const retentionValue = getRetentionValue(formFields);
+        const bodyRequest = {
+            name: formFields.name,
+            retention_type: formFields.retention_type,
+            retention_value: retentionValue,
+            storage_type: formFields.storage_type,
+            replicas: formFields.replicas
+        };
+        createStation(bodyRequest);
+    };
 
-    // const updateFormState = (field, value) => {
-    //     getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });
-    // };
+    const getOverviewData = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
+            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
+            indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
+            data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(data?.system_components[indexOfBrokerComponent]?.actual_pods);
+        } catch (error) {}
+    };
+
+    const createStation = async (bodyRequest) => {
+        try {
+            getStarted && setLoading(true);
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
+            if (data) {
+                if (!getStartedStateRef) history.push(`${pathDomains.stations}/${data.name}`);
+                else {
+                    finishUpdate(data);
+                }
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            getStarted && setLoading(false);
+        }
+    };
 
     return (
         <Form name="form" form={creationForm} autoComplete="off" className="create-station-form-getstarted">
-            Hio
-            {/* <div id="e2e-getstarted-step1" className="station-name-section">
+            <div id="e2e-getstarted-step1" className="station-name-section">
                 <TitleComponent
                     headerTitle="Enter station name"
                     typeTitle="sub-header"
@@ -149,7 +148,7 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         }
                     ]}
                     style={{ height: '50px' }}
-                    initialValue={getStartedState?.formFieldsCreateStation?.name}
+                    initialValue={getStartedStateRef?.formFieldsCreateStation?.name}
                 >
                     <Input
                         placeholder="Type station name"
@@ -160,9 +159,9 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         borderColorType="gray"
                         width="450px"
                         height="40px"
-                        onBlur={(e) => updateFormState('name', e.target.value)}
-                        onChange={(e) => updateFormState('name', e.target.value)}
-                        value={getStartedState?.formFieldsCreateStation?.name}
+                        onBlur={(e) => getStarted && updateFormState('name', e.target.value)}
+                        onChange={(e) => getStarted && updateFormState('name', e.target.value)}
+                        value={getStartedStateRef?.formFieldsCreateStation?.name}
                         disabled={!allowEdit}
                     />
                 </Form.Item>
@@ -173,29 +172,31 @@ const CreateStationForm = ({ createStationFormRef }) => {
                     typeTitle="sub-header"
                     headerDescription="By which criteria messages will be expelled from the station"
                 ></TitleComponent>
-                <Form.Item name="retention_type" initialValue={getStartedState?.formFieldsCreateStation?.retention_type}>
+                <Form.Item name="retention_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : 'message_age_sec'}>
                     <RadioButton
                         className="radio-button"
                         options={retanionOptions}
-                        radioValue={getStartedState?.formFieldsCreateStation?.retention_type}
+                        radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}
                         optionType="button"
                         fontFamily="InterSemiBold"
                         style={{ marginRight: '20px', content: '' }}
-                        onChange={(e) => updateFormState('retention_type', e.target.value)}
+                        onChange={(e) => {
+                            setRetentionType(e.target.value);
+                            if (getStarted) updateFormState('retention_type', e.target.value);
+                        }}
                         disabled={!allowEdit}
                     />
                 </Form.Item>
-
-                {getStartedState?.formFieldsCreateStation?.retention_type === 'message_age_sec' && (
+                {retentionType === 'message_age_sec' && (
                     <div className="time-value">
                         <div className="days-section">
-                            <Form.Item name="days" initialValue={getStartedState?.formFieldsCreateStation?.days}>
+                            <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                 <InputNumberComponent
                                     min={0}
                                     max={100}
-                                    onChange={(e) => updateFormState('days', e)}
-                                    value={getStartedState?.formFieldsCreateStation?.days}
-                                    placeholder={getStartedState?.formFieldsCreateStation?.days || 7}
+                                    onChange={(e) => getStarted && updateFormState('days', e)}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.days}
+                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
@@ -203,13 +204,13 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         </div>
                         <p className="separator">:</p>
                         <div className="hours-section">
-                            <Form.Item name="hours" initialValue={getStartedState?.formFieldsCreateStation?.hours}>
+                            <Form.Item name="hours" initialValue={getStartedStateRef?.formFieldsCreateStation?.hours || 0}>
                                 <InputNumberComponent
                                     min={0}
                                     max={24}
-                                    onChange={(e) => updateFormState('hours', e)}
-                                    value={getStartedState?.formFieldsCreateStation?.hours}
-                                    placeholder={getStartedState?.formFieldsCreateStation?.hours || 0}
+                                    onChange={(e) => getStarted && updateFormState('hours', e)}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.hours}
+                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.hours || 0}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
@@ -217,13 +218,13 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         </div>
                         <p className="separator">:</p>
                         <div className="minutes-section">
-                            <Form.Item name="minutes" initialValue={getStartedState?.formFieldsCreateStation?.minutes}>
+                            <Form.Item name="minutes" initialValue={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}>
                                 <InputNumberComponent
                                     min={0}
                                     max={60}
-                                    onChange={(e) => updateFormState('minutes', e)}
-                                    value={getStartedState?.formFieldsCreateStation?.minutes}
-                                    placeholder={getStartedState?.formFieldsCreateStation?.minutes || 0}
+                                    onChange={(e) => getStarted && updateFormState('minutes', e)}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.minutes}
+                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
@@ -231,13 +232,13 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         </div>
                         <p className="separator">:</p>
                         <div className="seconds-section">
-                            <Form.Item name="seconds" initialValue={getStartedState?.formFieldsCreateStation?.seconds}>
+                            <Form.Item name="seconds" initialValue={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}>
                                 <InputNumberComponent
                                     min={0}
                                     max={60}
-                                    onChange={(e) => updateFormState('seconds', e)}
-                                    placeholder={getStartedState?.formFieldsCreateStation?.seconds || 0}
-                                    value={getStartedState?.formFieldsCreateStation?.seconds}
+                                    onChange={(e) => getStarted && updateFormState('seconds', e)}
+                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.seconds}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
@@ -245,9 +246,9 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         </div>
                     </div>
                 )}
-                {getStartedState?.formFieldsCreateStation?.retention_type === 'bytes' && (
+                {retentionType === 'bytes' && (
                     <div className="retention-type">
-                        <Form.Item name="retentionSizeValue" initialValue={getStartedState?.formFieldsCreateStation?.retentionSizeValue}>
+                        <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
                             <Input
                                 placeholder="Type"
                                 type="number"
@@ -257,18 +258,18 @@ const CreateStationForm = ({ createStationFormRef }) => {
                                 borderColorType="gray"
                                 width="90px"
                                 height="38px"
-                                onBlur={(e) => updateFormState('retentionSizeValue', e.target.value)}
-                                onChange={(e) => updateFormState('retentionSizeValue', e.target.value)}
-                                value={getStartedState?.formFieldsCreateStation?.retentionSizeValue}
+                                onBlur={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
+                                onChange={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
+                                value={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue}
                                 disabled={!allowEdit}
                             />
                         </Form.Item>
                         <p>bytes</p>
                     </div>
                 )}
-                {getStartedState?.formFieldsCreateStation?.retention_type === 'messages' && (
+                {retentionType === 'messages' && (
                     <div className="retention-type">
-                        <Form.Item name="retentionMessagesValue" initialValue={getStartedState?.formFieldsCreateStation?.retentionMessagesValue}>
+                        <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
                             <Input
                                 placeholder="Type"
                                 type="number"
@@ -278,9 +279,9 @@ const CreateStationForm = ({ createStationFormRef }) => {
                                 borderColorType="gray"
                                 width="90px"
                                 height="38px"
-                                onBlur={(e) => updateFormState('retentionMessagesValue', e)}
-                                onChange={(e) => updateFormState('retentionMessagesValue', e)}
-                                value={getStartedState?.formFieldsCreateStation?.retentionMessagesValue}
+                                onBlur={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
+                                onChange={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
+                                value={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue}
                                 disabled={!allowEdit}
                             />
                         </Form.Item>
@@ -296,13 +297,16 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         headerDescription="Type of message persistence"
                         style={{ description: { width: '18vw' } }}
                     ></TitleComponent>
-                    <Form.Item name="storage_type" initialValue={getStartedState?.formFieldsCreateStation?.storage_type}>
+                    <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
                         <RadioButton
                             options={storageOptions}
                             fontFamily="InterSemiBold"
-                            radioValue={getStartedState?.formFieldsCreateStation?.storage_type}
+                            radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : storageType}
                             optionType="button"
-                            onChange={(e) => updateFormState('storage_type', e.target.value)}
+                            onChange={(e) => {
+                                setStorageType(e.target.value);
+                                getStarted && updateFormState('storage_type', e.target.value);
+                            }}
                             disabled={!allowEdit}
                         />
                     </Form.Item>
@@ -315,18 +319,18 @@ const CreateStationForm = ({ createStationFormRef }) => {
                         style={{ description: { width: '16vw' } }}
                     ></TitleComponent>
                     <div>
-                        <Form.Item name="replicas" initialValue={getStartedState?.formFieldsCreateStation?.replicas}>
+                        <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}>
                             <InputNumberComponent
                                 min={1}
-                                max={getStartedState?.actualPods && getStartedState?.actualPods <= 5 ? getStartedState?.actualPods : 5}
-                                value={getStartedState?.formFieldsCreateStation?.replicas}
-                                onChange={(e) => updateFormState('replicas', e)}
+                                max={actualPods && actualPods <= 5 ? actualPods : 5}
+                                value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}
+                                onChange={(e) => getStarted && updateFormState('replicas', e)}
                                 disabled={!allowEdit}
                             />
                         </Form.Item>
                     </div>
                 </div>
-            </div> */}
+            </div>
         </Form>
     );
 };
