@@ -32,9 +32,13 @@ import SearchInput from '../../components/searchInput';
 import pathDomains from '../../router';
 import stationsIcon from '../../assets/images/stationIcon.svg';
 import searchIcon from '../../assets/images/searchIcon.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
+
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
-import CreateStationDetails from '../../components/createStationDetails';
+// import CreateStationDetails from '../../components/createStationDetails';
+import CreateStationForm from '../../components/createStationForm';
+
 import Loader from '../../components/loader';
 
 const StationsList = () => {
@@ -265,8 +269,17 @@ const StationsList = () => {
             {!isLoading && <div className="stations-content">{renderStationsOverview()}</div>}
             <div id="e2e-createstation-modal">
                 <Modal
-                    header="Your station details"
+                    header={
+                        <div className="modal-header">
+                            <div className="header-img-container">
+                                <img className="headerImage" src={stationImg} />
+                            </div>
+                            <p>Create new station</p>
+                            <label>A station is a distributed unit that stores the produced data.</label>
+                        </div>
+                    }
                     height="460px"
+                    width="540px"
                     rBtnText="Add"
                     lBtnText="Cancel"
                     lBtnClick={() => {
@@ -279,7 +292,7 @@ const StationsList = () => {
                     open={modalIsOpen}
                     isLoading={creatingProsessd}
                 >
-                    <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                    <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
                 </Modal>
             </div>
             <Modal

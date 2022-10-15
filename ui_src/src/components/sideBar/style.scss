@@ -69,19 +69,19 @@
                 place-content: center;
             }
         }
-        version{
-                background: rgba(132, 129, 138, 0.1);
-                border-radius: 4px;
-                width: 80%;
-                height: 24px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                p {
+        version {
+            background: rgba(132, 129, 138, 0.1);
+            border-radius: 4px;
+            width: 80%;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            p {
                 margin: 0;
                 font-size: 12px;
                 font-family: 'InterSemiBold';
-                }
+            }
         }
     }
 }
@@ -124,11 +124,10 @@
 .item-wrapp .item-title:hover {
     opacity: 0.8;
 }
-.ant-menu-item a:hover{
-    p{
+.ant-menu-item a:hover {
+    p {
         opacity: 0.8;
     }
-
 }
 
 .ant-menu-submenu > .ant-menu {
@@ -155,7 +154,7 @@
     padding-top: 10px !important;
 }
 
-.installation-icon-wrapper{
+.installation-icon-wrapper {
     width: 40px;
     height: 40px;
     background: rgba(101, 87, 255, 0.1);

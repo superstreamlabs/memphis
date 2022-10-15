@@ -1,4 +1,5 @@
 .radio-group {
+    display: flex;
     .ant-radio-wrapper {
         margin-right: 21px;
         color: #777777;
@@ -17,6 +18,25 @@
     }
     .ant-radio:hover .ant-radio-inner {
         border-color: var(--purple);
+    }
+    .label-type {
+        width: 300px;
+        border: 1px solid #eaecf0;
+        padding: 10px;
+        margin-right: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        .radio-style {
+            font-size: 14px;
+        }
+        .radio-selected {
+            color: #6557ff;
+        }
+    }
+    .radio-value {
+        background: rgba(101, 87, 255, 0.1);
+        border: 1px solid #6557ff;
+        color: #6557ff;
     }
 }
 .gr-vertical{
