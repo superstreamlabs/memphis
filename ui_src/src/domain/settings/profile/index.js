@@ -83,7 +83,7 @@ function Profile() {
         <div className="profile-container">
             <div className="header">
                 <p className="main-header">Profile</p>
-                <p className="sub-header">Select your avater for showing in this system</p>
+                <p className="sub-header">Modify your profile information and preferences</p>
             </div>
             <div className="avatar-section">
                 <p className="title">Avatar</p>
@@ -109,7 +109,11 @@ function Profile() {
             <Divider />
             <div className="analytics-section">
                 <p className="title">Analytics</p>
-                <label className="analytics-description">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</label>
+                <label className="analytics-description">
+                    Memphis only collects bugs, events, and anonymous metadata to become better and more stable for you.
+                    <br />
+                    No sensitive or personal data gets collected.
+                </label>
                 <div className="radioButton-section">
                     <RadioButton
                         options={[
@@ -127,9 +131,9 @@ function Profile() {
             <div className="delete-account-section">
                 <p className="title">Delete your account</p>
                 <label className="delete-account-description">
-                    When you delete your account, you lose access to Front account services, and we permanently delete your personal data.
+                    When you delete your account, you will lose access to Memphis,
                     <br />
-                    You can cancel the deletion in 14 days.
+                    and your profile will be permanently deleted. You can cancel the deletion for 14 days.
                 </label>
                 <div className="delete-account-checkbox">
                     <Checkbox
