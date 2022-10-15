@@ -75,7 +75,7 @@ function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
     const createStationRef = useRef(null);
-    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
+    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
@@ -112,7 +112,7 @@ function OverView() {
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
         setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
-        setBotImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
+        setBotImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         SetUsername(
             localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))
@@ -136,7 +136,7 @@ function OverView() {
     }, [state.socket]);
 
     const setBotImage = (botId) => {
-        SetBotUrl(require(`../../assets/images/bots/${botId}.svg`));
+        SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
     const capitalizeFirst = (str) => {
@@ -171,7 +171,7 @@ function OverView() {
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 60 : 40}
                                     height={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    alt="bot"
+                                    alt="avatar"
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
