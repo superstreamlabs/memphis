@@ -118,28 +118,33 @@ func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID
 	return schemaVersions, nil
 }
 
-func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]models.StationNames, error) {
-	var stationNames []models.StationNames
+func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]string, error) {
+	var stations []models.Station
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"schema_name", schemaName}, {"is_deleted", false}}}},
 		bson.D{{"$project", bson.D{{"name", 1}}}},
 	})
 
 	if err != nil {
-		return []models.StationNames{}, err
+		return []string{}, err
 	}
 
-	if err = cursor.All(context.TODO(), &stationNames); err != nil {
-		return []models.StationNames{}, err
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return []string{}, err
 	}
-	if len(stationNames) == 0 {
-		return []models.StationNames{}, nil
+	if len(stations) == 0 {
+		return []string{}, nil
+	}
+
+	var stationNames []string
+	for _, station := range stations {
+		stationNames = append(stationNames, station.Name)
 	}
 
 	return stationNames, nil
 }
 
-func (sh SchemasHandler) getSchemasCount(schemaName string) (int, error) {
+func (sh SchemasHandler) getStationsBySchemaCount(schemaName string) (int, error) {
 	filter := bson.M{"schema_name": schemaName, "is_deleted": false}
 	countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
 
@@ -186,7 +191,7 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 func (sh SchemasHandler) getExtedndedSchemas(schemas []models.ExtendedSchema) ([]models.ExtendedSchema, error) {
 	var extedndedSchemasDetails []models.ExtendedSchema
 	for i, schema := range schemas {
-		stations, err := sh.getSchemasCount(schema.Name)
+		stations, err := sh.getStationsBySchemaCount(schema.Name)
 
 		if err != nil {
 			return []models.ExtendedSchema{}, err
@@ -266,27 +271,15 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	return schemas, nil
 }
 
-func (sh SchemasHandler) findAndDeleteSchema(schemaNames []string) error {
-	var schemas []models.Schema
-
-	cursor, err := schemasCollection.Find(context.TODO(), bson.M{"name": bson.M{"$in": schemaNames}})
-	if err = cursor.All(context.TODO(), &schemas); err != nil {
-		return err
-	}
-
-	var schemaIds []primitive.ObjectID
-	for _, schema := range schemas {
-		schemaIds = append(schemaIds, schema.ID)
-	}
-
+func (sh SchemasHandler) findAndDeleteSchema(schemaIds []primitive.ObjectID) error {
 	filter := bson.M{"schema_id": bson.M{"$in": schemaIds}}
-	_, err = schemaVersionCollection.DeleteMany(context.TODO(), filter)
+	_, err := schemaVersionCollection.DeleteMany(context.TODO(), filter)
 
 	if err != nil {
 		return err
 	}
 
-	filter = bson.M{"name": bson.M{"$in": schemaNames}}
+	filter = bson.M{"_id": bson.M{"$in": schemaIds}}
 	_, err = schemasCollection.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		return err
@@ -451,19 +444,17 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		}
 		if exist {
 			DeleteTagsBySchema(schema.ID)
+			var schemaIds []primitive.ObjectID
+			schemaIds = append(schemaIds, schema.ID)
 
+			err := sh.findAndDeleteSchema(schemaIds)
+			if err != nil {
+				serv.Errorf("RemoveSchema error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			serv.Noticef("Schema " + name + " has been deleted")
 		}
-	}
-	err := sh.findAndDeleteSchema(body.SchemaNames)
-
-	if err != nil {
-		serv.Errorf("RemoveSchema error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-
-	}
-	for _, name := range body.SchemaNames {
-		serv.Noticef("Schema " + name + " has been deleted")
 	}
 
 	c.IndentedJSON(200, gin.H{})
