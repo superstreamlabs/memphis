@@ -407,6 +407,7 @@ func DenyForSandboxEnv(c *gin.Context) error {
 	if err != nil {
 		serv.Errorf("Sandbox error: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return err
 	}
 
 	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {

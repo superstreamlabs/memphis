@@ -57,15 +57,17 @@ type ExtendedSchema struct {
 	CreatedByUser       string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
+	Used                bool               `json:"used"`
 	Tags                []Tag              `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {
-	ID         primitive.ObjectID `json:"id"`
-	SchemaName string             `json:"schema_name"`
-	Type       string             `json:"type"`
-	Versions   []SchemaVersion    `json:"versions"`
-	Tags       []Tag              `json:"tags"`
+	ID           primitive.ObjectID `json:"id"`
+	SchemaName   string             `json:"schema_name"`
+	Type         string             `json:"type"`
+	Versions     []SchemaVersion    `json:"versions"`
+	UsedStations []string           `json:"used_stations"`
+	Tags         []Tag              `json:"tags"`
 }
 
 type GetSchemaDetails struct {
@@ -73,7 +75,7 @@ type GetSchemaDetails struct {
 }
 
 type RemoveSchema struct {
-	SchemaName string `json:"schema_name"`
+	SchemaNames []string `json:"schema_names" binding:"required"`
 }
 
 type CreateNewVersion struct {
