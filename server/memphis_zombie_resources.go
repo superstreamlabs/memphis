@@ -157,20 +157,20 @@ func killFunc(s *Server) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(connections))
 	for _, conn := range connections {
-		go func(s *Server, conn models.Connection,  wg *sync.WaitGroup, lock *sync.Mutex) {
+		go func(s *Server, conn models.Connection, wg *sync.WaitGroup, lock *sync.Mutex) {
 			respCh := make(chan []byte)
 			msg := (conn.ID).Hex()
 			reply := CONN_STATUS_SUBJ + "_reply" + s.memphis.nuid.Next()
-	
+
 			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-				go func() { respCh <- msg }()
+				go func(msg []byte) { respCh <- msg }(copyBytes(msg))
 			})
 			if err != nil {
 				s.Errorf("killFunc error: " + err.Error())
 				wg.Done()
 				return
 			}
-	
+
 			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, reply, nil, msg, true)
 			timeout := time.After(30 * time.Second)
 			select {
@@ -187,7 +187,7 @@ func killFunc(s *Server) {
 		}(s, conn, &wg, &lock)
 	}
 	wg.Wait()
-	
+
 	if len(zombieConnections) > 0 {
 		serv.Warnf("Zombie connections found, killing")
 		err := killRelevantConnections(zombieConnections)
