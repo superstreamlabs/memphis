@@ -27,89 +27,11 @@ import { Divider } from 'antd';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import Button from '../button';
-
-// const CustomCollapse = (props) => {
-//     const [activeKey, setActiveKey] = useState(props.defaultOpen ? ['1'] : []);
-//     const onChange = (key) => {
-//         setActiveKey(key);
-//     };
-
-//     return (
-//         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="filter-collapse">
-//             <p className="filter-header">Filter</p>
-//             {props.data.map((filterGroup, filterGroupIndex = 0) => {
-//                 return (
-//                     <Panel
-//                         showArrow={false}
-//                         header={
-//                             <div className="collapse-header">
-//                                 <p className="title">{filterGroup.value}</p>
-//                                 <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
-//                             </div>
-//                         }
-//                         key={filterGroup.name}
-//                     >
-//                         <div className="collapse-body">
-//                             {filterGroup.type === 'label' &&
-//                                 filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
-//                                     return (
-//                                         <div className="label" key={filterField.name}>
-//                                             <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
-
-//                                             <label style={{ color: filterField.color, backgroundColor: filterField.background }}>{filterField.name}</label>
-//                                         </div>
-//                                     );
-//                                 })}
-//                             {filterGroup.type === 'circle' &&
-//                                 filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
-//                                     return (
-//                                         <div className="circle" key={filterField.name}>
-//                                             <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
-//                                             <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
-//                                                 {filterField.name[0]}
-//                                             </p>
-//                                             <label>{filterField.name}</label>
-//                                         </div>
-//                                     );
-//                                 })}
-//                         </div>
-//                     </Panel>
-//                 );
-//             })}
-//             <div className="collapse-footer">
-//                 <Button
-//                     width={'100px'}
-//                     height="26px"
-//                     placeholder={'Cancle'}
-//                     colorType="black"
-//                     radiusType="circle"
-//                     backgroundColorType={'white'}
-//                     border={'gray'}
-//                     fontSize="12px"
-//                     fontWeight="bold"
-//                     htmlType="submit"
-//                     onClick={() => props.cancel()}
-//                 />
-//                 <Button
-//                     width={'100px'}
-//                     height="26px"
-//                     placeholder={'Confirm'}
-//                     colorType="white"
-//                     radiusType="circle"
-//                     backgroundColorType={'purple'}
-//                     fontSize="12px"
-//                     fontWeight="bold"
-//                     htmlType="submit"
-//                     onClick={() => props.confirm()}
-//                 />
-//             </div>
-//         </Collapse>
-//     );
-// };
+import RadioButton from '../radioButton';
 
 const { Panel } = Collapse;
 
-const CustomCollapse = (props) => {
+const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
     const [activeKey, setActiveKey] = useState(['0']);
     const onChange = (key) => {
         setActiveKey(key);
@@ -118,7 +40,7 @@ const CustomCollapse = (props) => {
     return (
         <Collapse ghost defaultActiveKey={['0']} onChange={onChange} className="custom-collapse-filter">
             <div className="collapse-header">Filter</div>
-            {props.data.map((filterGroup, filterGroupIndex = 0) => (
+            {data.map((filterGroup, filterGroupIndex = 0) => (
                 <Panel
                     header={
                         <div className="filter-header">
@@ -133,11 +55,11 @@ const CustomCollapse = (props) => {
                     key={`${filterGroupIndex}`}
                     showArrow={false}
                 >
-                    {filterGroup.type === 'label' &&
+                    {filterGroup.labelType === 'label' &&
                         filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                             return (
                                 <div className="label-container" key={filterField.name}>
-                                    <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
+                                    <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
 
                                     <label className="label" style={{ color: filterField.color, backgroundColor: filterField.background }}>
                                         {filterField.name}
@@ -145,11 +67,11 @@ const CustomCollapse = (props) => {
                                 </div>
                             );
                         })}
-                    {filterGroup.type === 'circle' &&
+                    {filterGroup.labelType === 'circle' &&
                         filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                             return (
                                 <div className="circle-container" key={filterField.name}>
-                                    <Checkbox checked={filterField.checked} onChange={() => props.onCheck(filterGroupIndex, filterFieldIndex)} name="checkedG" />
+                                    <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
                                     <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
                                         {filterField.name[0].toUpperCase()}
                                     </p>
@@ -157,7 +79,17 @@ const CustomCollapse = (props) => {
                                 </div>
                             );
                         })}
-                    {filterGroupIndex + 1 < props?.data?.length && <Divider />}
+                    {!filterGroup.labelType && (
+                        <RadioButton
+                            fontFamily="InterSemiBold"
+                            options={filterGroup.fields.map((item, id) => {
+                                return { id: id, value: id, label: item.name };
+                            })}
+                            radioValue={filterGroup.fields[0].label}
+                            onChange={(e) => onCheck(filterGroupIndex, e.target.value)}
+                        />
+                    )}
+                    {filterGroupIndex + 1 < data?.length && <Divider />}
                 </Panel>
             ))}
             <div className="collapse-footer">
@@ -172,7 +104,7 @@ const CustomCollapse = (props) => {
                     fontSize="12px"
                     fontWeight="bold"
                     htmlType="submit"
-                    onClick={() => props.cancel()}
+                    onClick={cancel}
                 />
                 <Button
                     width={'100px'}
@@ -184,7 +116,7 @@ const CustomCollapse = (props) => {
                     fontSize="12px"
                     fontWeight="bold"
                     htmlType="submit"
-                    onClick={() => props.confirm()}
+                    onClick={confirm}
                 />
             </div>
         </Collapse>

@@ -37,6 +37,7 @@ import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
 import CreateStationDetails from '../../components/createStationDetails';
 import Loader from '../../components/loader';
+import { filterType, labelType } from '../../const/filterConsts';
 
 const StationsList = () => {
     const history = useHistory();
@@ -49,12 +50,101 @@ const StationsList = () => {
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [filterTerms, setFilterTerms] = useState([]);
-
+    const [filterFields, setFilterFields] = useState([
+        {
+            name: 'tags',
+            value: 'Tags',
+            labelType: labelType.BADGE,
+            filterType: filterType.CHECKBOX,
+            fields: [
+                {
+                    name: 'Github',
+                    color: '#00A5FF',
+                    background: 'rgba(0, 165, 255, 0.1)',
+                    checked: false
+                },
+                {
+                    name: 'Mixpod',
+                    color: '#FFA043',
+                    background: 'rgba(255, 160, 67, 0.1)',
+                    checked: false
+                },
+                {
+                    name: '2022',
+                    color: '#5542F6',
+                    background: 'rgba(85, 66, 246, 0.1)',
+                    checked: false
+                },
+                {
+                    name: 'Success',
+                    color: '#20C9AC',
+                    background: 'rgba(32, 201, 172, 0.1)',
+                    checked: false
+                }
+            ]
+        },
+        {
+            name: 'created',
+            value: 'Created By',
+            labelType: labelType.CIRCLEDLETTER,
+            filterType: filterType.CHECKBOX,
+            fields: [
+                {
+                    name: 'sveta@memphis.dev',
+                    color: '#FFC633',
+                    checked: false
+                },
+                {
+                    name: 'root',
+                    color: 'yellowGreen',
+                    checked: false
+                }
+            ]
+        },
+        {
+            name: 'type',
+            value: 'Type',
+            filterType: filterType.RADIOBUTTON,
+            fields: [
+                {
+                    name: 'Protobuff',
+                    checked: true
+                },
+                {
+                    name: 'Avro',
+                    checked: false
+                },
+                {
+                    name: 'Json',
+                    color: 'Avro',
+                    checked: false
+                }
+            ]
+        },
+        {
+            name: 'dateAndTime',
+            value: 'Date & Time',
+            filterType: filterType.DATE,
+            fields: [
+                {
+                    name: 'from',
+                    label: 'Selet Start Date',
+                    value: ''
+                },
+                {
+                    name: 'to',
+                    label: 'Selet End Date',
+                    value: ''
+                }
+            ]
+        }
+    ]);
     const createStationRef = useRef(null);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getAllStations();
+        // getTags();
     }, []);
 
     useEffect(() => {
@@ -72,6 +162,15 @@ const StationsList = () => {
         } else setFilteredList(stationsList);
         handleFilter();
     }, [stationsList]);
+
+    // const getTags = async () => {
+    //     try {
+    //         const data = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}?from=users/stations`);
+    //         console.log(data);
+    //     } catch (err) {
+    //         console.log(err);
+    //     }
+    // };
 
     const getAllStations = async () => {
         setisLoading(true);
@@ -175,7 +274,7 @@ const StationsList = () => {
                             onChange={handleSearch}
                             value={searchInput}
                         />
-                        <Filter filtersUpdated={(e) => setFilterTerms(e)} />
+                        <Filter filterFields={filterFields} filtersUpdated={(e) => setFilterTerms(e)} />
                         <Button
                             className="modal-btn"
                             width="180px"

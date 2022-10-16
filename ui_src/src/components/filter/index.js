@@ -31,33 +31,15 @@ import CustomCollapse from './customCollapse';
 import { Dropdown, Menu, Space } from 'antd';
 // import { getBorderRadius, getFontColor, getBackgroundColor, getBorderColor, getBoxShadows } from '../../utils/styleTemplates';
 
-const Filter = (props) => {
-    // const {
-    //     placeholder,
-    //     type,
-    //     height,
-    //     width,
-    //     radiusType,
-    //     colorType,
-    //     backgroundColorType,
-    //     onBlur,
-    //     onChange,
-    //     iconComponent,
-    //     borderColorType,
-    //     boxShadowsType,
-    //     disabled,
-    //     numberOfRows,
-    //     value,
-    //     opacity,
-    //     id,
-    //     minWidth,
-    //     fontSize
-    // } = props;
-
-    // const handleChange = (e) => (onChange ? onChange(e) : '');
+const Filter = ({ filterFields, filtersUpdated }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [filtersConter, setFilterCounter] = useState(0);
+    const [filter, setFilterFields] = useState(null);
     const open = Boolean(anchorEl);
+
+    useEffect(() => {
+        setFilterFields(filterFields);
+    }, []);
 
     const handleClickMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -67,77 +49,26 @@ const Filter = (props) => {
         setAnchorEl(null);
     };
 
-    const [filterFields, setFilterFields] = useState([
-        {
-            name: 'tags',
-            value: 'Tags',
-            type: 'label',
-            fields: [
-                {
-                    name: 'Github',
-                    color: '#00A5FF',
-                    background: 'rgba(0, 165, 255, 0.1)',
-                    checked: false
-                },
-                {
-                    name: 'Mixpod',
-                    color: '#FFA043',
-                    background: 'rgba(255, 160, 67, 0.1)',
-                    checked: false
-                },
-                {
-                    name: '2022',
-                    color: '#5542F6',
-                    background: 'rgba(85, 66, 246, 0.1)',
-                    checked: false
-                },
-                {
-                    name: 'Success',
-                    color: '#20C9AC',
-                    background: 'rgba(32, 201, 172, 0.1)',
-                    checked: false
-                }
-            ]
-        },
-        {
-            name: 'created',
-            value: 'Created By',
-            type: 'circle',
-            fields: [
-                {
-                    name: 'sveta@memphis.dev',
-                    color: '#FFC633',
-                    checked: false
-                },
-                {
-                    name: 'root',
-                    color: 'yellowGreen',
-                    checked: false
-                }
-            ]
-        }
-    ]);
-
     const handleCheck = (filterGroup, filterField) => {
-        let data = filterFields;
+        let data = filter;
         data[filterGroup].fields[filterField].checked = !data[filterGroup].fields[filterField].checked;
         setFilterFields(data);
     };
 
     const handleConfirm = () => {
         let counter = 0;
-        filterFields.forEach((element) => {
+        filter.forEach((element) => {
             element.fields.forEach((field) => {
                 if (field.checked) counter++;
             });
         });
         setFilterCounter(counter);
-        props.filtersUpdated(filterFields);
+        filtersUpdated(filter);
         handleCloseMenu();
     };
 
     const handleCancel = () => {
-        let data = filterFields;
+        let data = filter;
         data.forEach((element) => {
             element.fields.forEach((field) => {
                 field.checked = false;
@@ -163,7 +94,7 @@ const Filter = (props) => {
             <Popover id="long-menu" classes={{ paper: 'Menu c' }} anchorEl={anchorEl} onClose={handleCloseMenu} open={open}>
                 <CustomCollapse
                     header="Details"
-                    data={filterFields}
+                    data={filter}
                     onCheck={(filterGroup, filterField) => handleCheck(filterGroup, filterField)}
                     cancel={handleCancel}
                     confirm={handleConfirm}
