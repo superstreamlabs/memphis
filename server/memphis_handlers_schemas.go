@@ -188,44 +188,6 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 	return extedndedSchemaDetails, nil
 }
 
-func (sh SchemasHandler) getExtedndedSchemas(schemas []models.ExtendedSchema) ([]models.ExtendedSchema, error) {
-	var extedndedSchemasDetails []models.ExtendedSchema
-	for i, schema := range schemas {
-		stations, err := sh.getStationsBySchemaCount(schema.Name)
-
-		if err != nil {
-			return []models.ExtendedSchema{}, err
-		}
-
-		var used bool
-		if stations > 0 {
-			used = true
-		} else {
-			used = false
-		}
-
-		tagsHandler := TagsHandler{S: sh.S}
-		tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
-		if err != nil {
-			return []models.ExtendedSchema{}, err
-		}
-		schemaUpdated := models.ExtendedSchema{
-			ID:                  schema.ID,
-			Name:                schema.Name,
-			Type:                schema.Type,
-			CreatedByUser:       schema.CreatedByUser,
-			CreationDate:        schema.CreationDate,
-			ActiveVersionNumber: schema.ActiveVersionNumber,
-			Used:                used,
-			Tags:                tags,
-		}
-
-		extedndedSchemasDetails = append(extedndedSchemasDetails, schemaUpdated)
-	}
-
-	return extedndedSchemasDetails, nil
-}
-
 func (sh SchemasHandler) getSchemaDetailsBySchemaName(schemaName string) (models.ExtendedSchemaDetails, error) {
 	var schema models.Schema
 	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": schemaName}).Decode(&schema)
@@ -264,11 +226,44 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
 	}
-	schemas, err = sh.getExtedndedSchemas(schemas)
+
+	var extedndedSchemasDetails []models.ExtendedSchema
+	for i, schema := range schemas {
+		stations, err := sh.getStationsBySchemaCount(schema.Name)
+
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+
+		var used bool
+		if stations > 0 {
+			used = true
+		} else {
+			used = false
+		}
+
+		tagsHandler := TagsHandler{S: sh.S}
+		tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+		schemaUpdated := models.ExtendedSchema{
+			ID:                  schema.ID,
+			Name:                schema.Name,
+			Type:                schema.Type,
+			CreatedByUser:       schema.CreatedByUser,
+			CreationDate:        schema.CreationDate,
+			ActiveVersionNumber: schema.ActiveVersionNumber,
+			Used:                used,
+			Tags:                tags,
+		}
+
+		extedndedSchemasDetails = append(extedndedSchemasDetails, schemaUpdated)
+	}
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-	return schemas, nil
+	return extedndedSchemasDetails, nil
 }
 
 func (sh SchemasHandler) findAndDeleteSchema(schemaIds []primitive.ObjectID) error {
