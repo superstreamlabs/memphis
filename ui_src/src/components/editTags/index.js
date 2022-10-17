@@ -26,12 +26,13 @@ import { PlusOutlined } from '@ant-design/icons';
 import { Button, Input, Tag, Tooltip } from 'antd';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
+import TagsList from '../tagList';
+import TagsPicker from '../tagsPicker';
 
-const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => {
+const EditTags = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => {
     const [tags, setTags] = useState(tagList);
     const [originalTags] = useState(tagList);
     const [allTags, setAllTags] = useState([]);
-    const [allTagsToDisplay, setAllTagsToDisplay] = useState([]);
     const [newTags, setNewTags] = useState([]);
     const [deletedTags, setDeletedTags] = useState([]);
     const [inputVisible, setInputVisible] = useState(false);
@@ -51,10 +52,16 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
         editInputRef.current?.focus();
     }, [inputValue]);
 
+    useEffect(() => {
+        const getAllTags = async () => {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}`);
+            // let allTagsRes = res.filter((allTag) => !tags.some((tag) => allTag.id === tag.id));
+            setAllTags(res);
+        };
+        getAllTags();
+    }, []);
+
     const handleClose = (removedTag) => {
-        debugger;
-        console.log(originalTags);
-        console.log(tags);
         const newTags = tags.filter((tag) => tag !== removedTag.name);
         setTags(newTags);
         setDeletedTags([...deletedTags, removedTag.name]);
@@ -73,8 +80,7 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
         if (inputValue && tags.indexOf(inputValue) === -1 && !originalTags.some((tag) => tag.name === inputValue) && !tags.some((tag) => tag.name === inputValue)) {
             const newTag = {
                 name: inputValue,
-                color_bg: 'blue',
-                color_txt: 'white'
+                color: 'blue'
             };
             setTags([...tags, newTag]);
             setNewTags([...newTags, newTag]);
@@ -94,8 +100,7 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
             const newTags = [...tags];
             const newTag = {
                 name: editInputValue,
-                color_bg: 'blue',
-                color_txt: 'white'
+                color: 'blue'
             };
             newTags[editInputIndex] = newTag;
             setTags(newTags);
@@ -103,6 +108,11 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
         }
         setEditInputIndex(-1);
         setInputValue('');
+    };
+
+    const handleTagClick = (tag) => {
+        setTags(...tags, tag);
+        let allTagsEdit = allTags;
     };
 
     const handleSaveChanges = async () => {
@@ -131,7 +141,7 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
     };
     return (
         <div className="add-tag-container">
-            <div className="existing-tags">
+            {/* <div className="existing-tags">
                 {tags.map((tag, index) => {
                     if (editInputIndex === index) {
                         return (
@@ -149,18 +159,8 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
                     }
                     const isLongTag = tag.name.length > 5;
                     const tagElem = (
-                        <Tag className="edit-tag" key={tag.name} color={tag.color_bg} closable={true} onClose={() => handleClose(tag)}>
-                            <span
-                            // onDoubleClick={(e) => {
-                            //     if (index !== 0) {
-                            //         setEditInputIndex(index);
-                            //         setEditInputValue(tag.name);
-                            //         e.preventDefault();
-                            //     }
-                            // }}
-                            >
-                                {isLongTag ? `${tag.name.slice(0, 5)}...` : tag.name}
-                            </span>
+                        <Tag className="edit-tag" key={tag.name} color={tag.color} closable={true} onClose={() => handleClose(tag)}>
+                            <span>{isLongTag ? `${tag.name.slice(0, 5)}...` : tag.name}</span>
                         </Tag>
                     );
                     return isLongTag ? (
@@ -194,7 +194,7 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
                     {allTagsToDisplay.map((tag, index) => {
                         const isLongTag = tag.name.length > 5;
                         const tagElem = (
-                            <Tag className="edit-tag" key={tag.name} color={tag.color_bg} closable={false} onClick={() => handleClose(tag)}>
+                            <Tag className="edit-tag" key={tag.name} color={tag.color} closable={false} onClick={() => handleClose(tag)}>
                                 <span>{isLongTag ? `${tag.name.slice(0, 5)}...` : tag.name}</span>
                             </Tag>
                         );
@@ -207,10 +207,24 @@ const AddTag = ({ tagList, entity_type, entity_name, handleUpdatedTagList }) => 
                         );
                     })}
                 </div>
+            } */}
+            {
+                <div className="tags-list">
+                    <TagsPicker tags={tags} />
+                </div>
             }
-            {editedList && <Button onClick={handleSaveChanges}>Save Changes</Button>}
+            {editedList && (
+                <div>
+                    <div>
+                        <Button onClick={handleSaveChanges}>Save Changes123</Button>
+                    </div>
+                    <div>
+                        <Button>Cancel</Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-export default AddTag;
+export default EditTags;

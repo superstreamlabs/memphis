@@ -97,11 +97,10 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 				return err
 			}
 			if !exist {
-				err = CreateTag(name, entity_type, entity_id, tag.Color)
+				err = CreateTag(name, entity_type, entity_id, tagToCreate.Color)
 				if err != nil {
 					return err
 				}
-				return nil
 			}
 			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"stations": entity_id}})
 			if err != nil {

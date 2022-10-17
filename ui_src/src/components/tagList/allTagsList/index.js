@@ -20,15 +20,24 @@
 // SOFTWARE.
 
 import './style.scss';
+import React, { useEffect, useState } from 'react';
+import { Tag } from 'antd';
 
-import React from 'react';
 
-const Tag = ({ tag, onClick }) => {
-    return (
-        <div className="tag-wrapper" style={{ background: tag.color ? tag.color : 'purple' }} onClick={onClick}>
-            <p style={{ color: 'white' }}>{tag.name}</p>
-        </div>
-    );
+const AllTagsList = ({ tags, handleClose, closable }) => {
+    const tagsToList = () => {
+        const tagsToMakeList = tags;
+        const listItems = tagsToMakeList.map((tag) => {
+            const isLongTag = tag.length > 20;
+            <li>
+                <Tag className="tag-wrapper" key={tag.name} color={tag.color} closable={closable ? closable : false} onClose={() => handleClose(tag.name)}>
+                    {isLongTag ? `${tag.name.slice(0, 20)}...` : tag.name}
+                </Tag>
+            </li>;
+        });
+        return <ul>{listItems}</ul>;
+    };
+    return <>{tagsToList}</>;
 };
 
-export default Tag;
+export default AllTagsList;

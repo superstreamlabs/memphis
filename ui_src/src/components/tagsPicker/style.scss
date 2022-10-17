@@ -1,0 +1,42 @@
+.tags-picker-wrapper {
+    width: 100%;
+    align-items: center;
+    align-content: center;
+    .divider {
+        width: 200px;
+        margin: 0 !important;
+    }
+    .hr {
+        border-top: 3px solid #bbb;
+    }
+    .search-input {
+        margin-left: 25px;
+    }
+    .no-new {
+        margin-left: 33px;
+    }
+    .color-circle {
+        margin-left: 2px;
+        display: inline-block;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+    }
+    .tag-name {
+        font-size: 14px;
+        font-family: InterSemiBold;
+        padding: 1px;
+        margin: 2px;
+        display: inline-block;
+    }
+    .save-cancel-buttons {
+        display: flex;
+        margin-top: 10px;
+    }
+    .tags-list {
+        margin-top: 10px;
+    }
+    .create-new-tag {
+        align-items: center;
+    }
+}

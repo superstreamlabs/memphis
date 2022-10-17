@@ -37,11 +37,10 @@ import { StationStoreContext } from '..';
 import SdkExample from '../sdkExsample';
 import Auditing from '../auditing';
 import TagsList from '../../../components/tagList';
-import AddTag from '../../../components/addTag';
-import { useRef } from 'react';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { createContext } from 'react';
+import TagsPicker from '../../../components/tagsPicker';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -75,16 +74,21 @@ const StationOverviewHeader = () => {
         history.push(pathDomains.stations);
     };
 
-    const clickOutSide = async () => {
-        setTagModal(false);
+    useEffect(async () => {
         if (shouldUpdateTags) {
             try {
                 const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
-                console.log(data);
                 setTags(data.tags);
                 setShouldUpdateTags(false);
             } catch (error) {}
         }
+    }, [shouldUpdateTags]);
+
+    const removeTag = async (tag) => {
+        try {
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAGS}`, { names: [tag], entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
+            setShouldUpdateTags(true);
+        } catch (error) {}
     };
 
     return (
@@ -93,7 +97,14 @@ const StationOverviewHeader = () => {
                 <div className="station-details">
                     <h1 className="station-name">
                         {stationState?.stationMetaData?.name}
-                        <TagsList className="tags-list" tags={tags} addNew={true} handleAddNew={() => setTagModal(true)} />
+                        <TagsList
+                            className="tags-list"
+                            tags={tags}
+                            addNew={true}
+                            closable={true}
+                            handleEdit={() => setTagModal(true)}
+                            handleClose={(tag) => removeTag(tag)}
+                        />
                     </h1>
                     <span className="created-by">
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
@@ -217,12 +228,19 @@ const StationOverviewHeader = () => {
                 >
                     <Auditing />
                 </Modal>
-                <Modal header="Tag" displayButtons={false} height="50%" width="40%" clickOutside={() => clickOutSide()} open={tagModal} hr={false}>
-                    <AddTag
-                        tagList={tags}
+                <Modal header="Tags" displayButtons={false} height="50%" width="300px" clickOutside={() => setTagModal(false)} open={tagModal} hr={false}>
+                    <TagsPicker
+                        tags={tags}
                         entity_type={'station'}
                         entity_name={stationState?.stationMetaData?.name}
-                        handleUpdatedTagList={() => setShouldUpdateTags(true)}
+                        handleUpdatedTagList={() => {
+                            setShouldUpdateTags(true);
+                            setTagModal(false);
+                        }}
+                        handleCloseWithNoChanges={() => {
+                            setShouldUpdateTags(false);
+                            setTagModal(false);
+                        }}
                     />
                 </Modal>
             </div>

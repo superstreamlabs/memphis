@@ -1,7 +1,5 @@
 .tags-list-wrapper {
     display: flex;
-    // display: grid;
-    // grid-auto-columns: minmax();
     align-items: center;
     gap: 5px;
     margin-left: 5px;
@@ -16,7 +14,6 @@
         height: 24px;
         display: flex;
         align-items: center;
-        min-width: 110px;
         cursor: pointer;
         svg {
             width: 18px;
