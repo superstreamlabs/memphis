@@ -23,7 +23,7 @@ object-assign
 */
 
 /*!
- * ApexCharts v3.36.0
+ * ApexCharts v3.35.5
  * (c) 2018-2022 ApexCharts
  * Released under the MIT License.
  */
