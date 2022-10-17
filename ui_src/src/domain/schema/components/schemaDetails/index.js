@@ -107,78 +107,80 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     return (
         <schema-details is="3xd">
-            <div className="type-created">
-                <div className="wrapper">
-                    <img src={typeIcon} />
-                    <p>Type:</p>
-                    <span>{schemaDetails?.type}</span>
-                </div>
-                <div className="wrapper">
-                    <img src={createdByIcon} />
-                    <p>Created by:</p>
-                    <span>{currentVersion?.created_by_user}</span>
-                </div>
-            </div>
-            <div className="tags">
-                <TagsList tags={schemaDetails?.tags} addNew={true} />
-            </div>
-            <div className="schema-fields">
-                <div className="left">
-                    <p>Schema</p>
-                    {/* <RadioButton options={formatOption} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} /> */}
-                </div>
-                <SelectVersion value={versionSelected?.version_number} options={schemaDetails?.versions} onChange={(e) => handleSelectVersion(e)} />
-            </div>
-            <div className="schema-content">
-                {versionSelected?.active && (
-                    <Editor
-                        options={{
-                            minimap: { enabled: false },
-                            scrollbar: { verticalScrollbarSize: 0 },
-                            scrollBeyondLastLine: false,
-                            roundedSelection: false,
-                            formatOnPaste: true,
-                            formatOnType: true
-                        }}
-                        language="proto"
-                        defaultValue={versionSelected?.schema_content}
-                        value={newVersion}
-                        onChange={(value) => {
-                            setUpdated(true);
-                            setNewVersion(value);
-                        }}
-                    />
-                )}
-                {!versionSelected?.active && (
-                    <DiffEditor
-                        height="90%"
-                        language="proto"
-                        original={currentVersion?.schema_content}
-                        modified={versionSelected?.schema_content}
-                        options={{
-                            renderSideBySide: false,
-                            scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                            scrollBeyondLastLine: false,
-                            scrollBeyondLastColumn: false
-                        }}
-                    />
-                )}
-                {updated && newVersion === '' && (
-                    <div>
-                        <p className="warning-message">Schema content cannot be empty</p>
+            <div className="scrollable-wrapper">
+                <div className="type-created">
+                    <div className="wrapper">
+                        <img src={typeIcon} />
+                        <p>Type:</p>
+                        <span>{schemaDetails?.type}</span>
                     </div>
-                )}
-            </div>
-            <div className="used-stations">
-                <p className="title">Used by stations</p>
-                <div className="stations-list">
-                    {stations?.map((station, index) => {
-                        return (
-                            <div className="station-wrapper" key={index}>
-                                <p>{station}</p>
-                            </div>
-                        );
-                    })}
+                    <div className="wrapper">
+                        <img src={createdByIcon} />
+                        <p>Created by:</p>
+                        <span>{currentVersion?.created_by_user}</span>
+                    </div>
+                </div>
+                <div className="tags">
+                    <TagsList tags={schemaDetails?.tags} addNew={true} />
+                </div>
+                <div className="schema-fields">
+                    <div className="left">
+                        <p>Schema</p>
+                        {/* <RadioButton options={formatOption} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} /> */}
+                    </div>
+                    <SelectVersion value={versionSelected?.version_number} options={schemaDetails?.versions} onChange={(e) => handleSelectVersion(e)} />
+                </div>
+                <div className="schema-content">
+                    {versionSelected?.active && (
+                        <Editor
+                            options={{
+                                minimap: { enabled: false },
+                                scrollbar: { verticalScrollbarSize: 0 },
+                                scrollBeyondLastLine: false,
+                                roundedSelection: false,
+                                formatOnPaste: true,
+                                formatOnType: true
+                            }}
+                            language="proto"
+                            defaultValue={versionSelected?.schema_content}
+                            value={newVersion}
+                            onChange={(value) => {
+                                setUpdated(true);
+                                setNewVersion(value);
+                            }}
+                        />
+                    )}
+                    {!versionSelected?.active && (
+                        <DiffEditor
+                            height="90%"
+                            language="proto"
+                            original={currentVersion?.schema_content}
+                            modified={versionSelected?.schema_content}
+                            options={{
+                                renderSideBySide: false,
+                                scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                scrollBeyondLastLine: false,
+                                scrollBeyondLastColumn: false
+                            }}
+                        />
+                    )}
+                    {updated && newVersion === '' && (
+                        <div>
+                            <p className="warning-message">Schema content cannot be empty</p>
+                        </div>
+                    )}
+                </div>
+                <div className="used-stations">
+                    <p className="title">Used by stations</p>
+                    <div className="stations-list">
+                        {stations?.map((station, index) => {
+                            return (
+                                <div className="station-wrapper" key={index}>
+                                    <p>{station}</p>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
             <div className="footer">

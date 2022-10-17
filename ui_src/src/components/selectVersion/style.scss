@@ -22,6 +22,29 @@
         color: #8F8F8F;
         display: flex;
         align-items:center;
+        .current{
+            background: rgba(32, 201, 172, 0.2);
+            border-radius: 25px;
+            width: 60px;
+            margin-right: 10px;
+            text-align:center;
+            p{
+                color: rgb(32, 201, 172);
+                margin-right: 0px;
+
+            }  
+        }
+        .latest{
+            background: rgba(0, 165, 255, 0.2);
+            border-radius: 25px;
+            width: 50px;
+            text-align:center;
+            p{
+                color: rgb(0, 165, 255);
+                margin-right: 0px;
+
+            }
+        }
         p{
             margin: 0;
             margin-right: 8px;

@@ -40,10 +40,8 @@ const schemaTypes = [
         label: 'Protobuf',
         description: (
             <span>
-                Contrary to popular belief, Lorem Ipsum is not simply random text. Latin literature from 45 BC{' '}
-                <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                    Learn More
-                </a>
+                The modern. Protocol buffers are Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but
+                smaller, faster, and simpler.
             </span>
         )
     },
@@ -53,10 +51,8 @@ const schemaTypes = [
         label: 'Avro',
         description: (
             <span>
-                Contrary to popular belief, Lorem Ipsum is not simply random text. Latin literature from 45 BC{' '}
-                <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                    Learn More
-                </a>
+                The popular. Apache Avro™ is the leading serialization format for record data, and first choice for streaming data pipelines. It offers excellent schema
+                evolution.
             </span>
         ),
         disabled: true
@@ -65,14 +61,7 @@ const schemaTypes = [
         id: 3,
         value: 'json',
         label: 'Json',
-        description: (
-            <span>
-                Contrary to popular belief, Lorem Ipsum is not simply random text. Latin literature from 45 BC{' '}
-                <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                    Learn More
-                </a>
-            </span>
-        ),
+        description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>,
         disabled: true
     }
 ];
@@ -144,7 +133,7 @@ function CreateSchema({ goBack }) {
                     <p>Create Schema</p>
                 </div>
                 <span>
-                    Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature
+                    Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
                     <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
                         Learn More
                     </a>
@@ -200,7 +189,7 @@ function CreateSchema({ goBack }) {
                 </div>
                 <div className="right-side">
                     <div className="schema-field schema">
-                        <p className="field-title">Schema Defination</p>
+                        <p className="field-title">Structure Defination</p>
                         <div className="editor">
                             <Form.Item
                                 name="schema_content"
