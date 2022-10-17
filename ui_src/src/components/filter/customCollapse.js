@@ -27,7 +27,9 @@ import { Divider } from 'antd';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import Button from '../button';
+import DatePicker from '../datePicker';
 import RadioButton from '../radioButton';
+import { filterType, labelType } from '../../const/filterConsts';
 
 const { Panel } = Collapse;
 
@@ -35,6 +37,72 @@ const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
     const [activeKey, setActiveKey] = useState(['0']);
     const onChange = (key) => {
         setActiveKey(key);
+    };
+
+    const drawComponent = (filterGroup, filterGroupIndex) => {
+        switch (filterGroup.filterType) {
+            case filterType.CHECKBOX:
+                return drawCheckBox(filterGroup, filterGroupIndex);
+            case filterType.DATE:
+                return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                    return (
+                        <div className="" key={filterField.name}>
+                            <label>{filterField.label}</label>
+                            <DatePicker
+                                placeholder="Type your name"
+                                type="text"
+                                radiusType="semi-round"
+                                colorType="gray"
+                                backgroundColorType="none"
+                                borderColorType="red"
+                                width="200px"
+                                minWidth="200px"
+                                onChange={(e) => console.log(e)}
+                            />
+                        </div>
+                    );
+                });
+            case filterType.RADIOBUTTON:
+                return (
+                    <RadioButton
+                        fontFamily="InterSemiBold"
+                        options={filterGroup.fields.map((item, id) => {
+                            return { id: id, value: id, label: item.name };
+                        })}
+                        radioValue={filterGroup.fields[0].label}
+                        onChange={(e) => onCheck(filterGroupIndex, e.target.value)}
+                    />
+                );
+        }
+    };
+
+    const drawCheckBox = (filterGroup, filterGroupIndex) => {
+        switch (filterGroup.labelType) {
+            case labelType.BADGE:
+                return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                    return (
+                        <div className="label-container" key={filterField.name}>
+                            <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
+
+                            <label className="label" style={{ color: filterField.color, backgroundColor: filterField.background }}>
+                                {filterField.name}
+                            </label>
+                        </div>
+                    );
+                });
+            case labelType.CIRCLEDLETTER:
+                return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                    return (
+                        <div className="circle-container" key={filterField.name}>
+                            <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
+                            <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
+                                {filterField.name[0].toUpperCase()}
+                            </p>
+                            <label>{filterField.name}</label>
+                        </div>
+                    );
+                });
+        }
     };
 
     return (
@@ -55,40 +123,7 @@ const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
                     key={`${filterGroupIndex}`}
                     showArrow={false}
                 >
-                    {filterGroup.labelType === 'label' &&
-                        filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
-                            return (
-                                <div className="label-container" key={filterField.name}>
-                                    <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
-
-                                    <label className="label" style={{ color: filterField.color, backgroundColor: filterField.background }}>
-                                        {filterField.name}
-                                    </label>
-                                </div>
-                            );
-                        })}
-                    {filterGroup.labelType === 'circle' &&
-                        filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
-                            return (
-                                <div className="circle-container" key={filterField.name}>
-                                    <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
-                                    <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
-                                        {filterField.name[0].toUpperCase()}
-                                    </p>
-                                    <label>{filterField.name}</label>
-                                </div>
-                            );
-                        })}
-                    {!filterGroup.labelType && (
-                        <RadioButton
-                            fontFamily="InterSemiBold"
-                            options={filterGroup.fields.map((item, id) => {
-                                return { id: id, value: id, label: item.name };
-                            })}
-                            radioValue={filterGroup.fields[0].label}
-                            onChange={(e) => onCheck(filterGroupIndex, e.target.value)}
-                        />
-                    )}
+                    {drawComponent(filterGroup, filterGroupIndex)}
                     {filterGroupIndex + 1 < data?.length && <Divider />}
                 </Panel>
             ))}

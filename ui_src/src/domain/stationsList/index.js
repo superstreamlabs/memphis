@@ -38,6 +38,7 @@ import Modal from '../../components/modal';
 import CreateStationDetails from '../../components/createStationDetails';
 import Loader from '../../components/loader';
 import { filterType, labelType } from '../../const/filterConsts';
+import DatePicker from '../../components/datePicker';
 
 const StationsList = () => {
     const history = useHistory();
@@ -273,6 +274,17 @@ const StationsList = () => {
                             iconComponent={<img src={searchIcon} />}
                             onChange={handleSearch}
                             value={searchInput}
+                        />
+                        <DatePicker
+                            placeholder="Type your name"
+                            type="text"
+                            radiusType="semi-round"
+                            colorType="gray"
+                            backgroundColorType="none"
+                            borderColorType="red"
+                            width="200px"
+                            minWidth="200px"
+                            onChange={(e) => console.log(e)}
                         />
                         <Filter filterFields={filterFields} filtersUpdated={(e) => setFilterTerms(e)} />
                         <Button
