@@ -69,7 +69,7 @@ type Station struct {
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
 	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
-	SchemaName      string             `json:"schema_name" bson:"schema_name"`
+	Schema          SchemaDetails      `json:"schema" bson:"schema"`
 }
 
 type GetStationResponseSchema struct {
@@ -156,4 +156,23 @@ type GetMessageDetailsSchema struct {
 type UseSchema struct {
 	StationName string `json:"station_name" binding:"required"`
 	SchemaName  string `json:"schema_name" binding:"required"`
+}
+
+type RemoveSchemaFromStation struct {
+	StationName string `json:"station_name" binding:"required"`
+}
+
+type SchemaStation struct {
+	SchemaName    string `json:"name" bson:"name"`
+	VersionNumber int    `json:"version_number" bson:"version_number"`
+}
+
+type SchemaDetails struct {
+	SchemaName            string `json:"name" bson:"name"`
+	UsingVersionNumber    int    `json:"using_version_number" bson:"version_number"`
+	IsActiveVersionNumber bool   `json:"is_active_version"`
+}
+
+type GetUpdatesForSchema struct {
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
