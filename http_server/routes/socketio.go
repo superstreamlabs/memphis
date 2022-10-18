@@ -130,6 +130,15 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
+	schema, err := h.Schemas.GetSchema(station.Schema.SchemaName)
+
+	if err != nil {
+		return models.StationOverviewData{}, err
+	}
+
+	schemaVersion, err := h.Schemas.GetUsedSchemaVersion(station.Schema.UsingVersionNumber, schema)
+	schemaDetails := models.SchemaDetails{SchemaName: schema.Name, UsingVersionNumber: station.Schema.UsingVersionNumber, IsActiveVersionNumber: schemaVersion.Active}
+
 	return models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,
@@ -145,6 +154,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		Tags:                  tags,
 		Leader:                leader,
 		Followers:             followers,
+		Schema:                schemaDetails,
 	}, nil
 }
 

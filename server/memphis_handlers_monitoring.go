@@ -279,7 +279,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	schemaVersion, err := schemasHandler.getUsedSchemaVersion(station.Schema.UsingVersionNumber, schema)
+	schemaVersion, err := schemasHandler.GetUsedSchemaVersion(station.Schema.UsingVersionNumber, schema)
 	schemaDetails := models.SchemaDetails{SchemaName: schema.Name, UsingVersionNumber: station.Schema.UsingVersionNumber, IsActiveVersionNumber: schemaVersion.Active}
 
 	response := models.StationOverviewData{
