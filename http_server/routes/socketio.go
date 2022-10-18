@@ -130,7 +130,7 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
-	schema, err := h.Schemas.GetSchema(station.Schema.SchemaName)
+	schema, err := h.Schemas.GetSchemaByStationName(station.Schema.SchemaName)
 
 	if err != nil {
 		return models.StationOverviewData{}, err

@@ -83,7 +83,7 @@ func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID)
 	return schemaVersion, nil
 }
 
-func (sh SchemasHandler) GetSchema(stationName string) (models.Schema, error) {
+func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
 	var schema models.Schema
 	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
 	if err != nil {
@@ -194,12 +194,17 @@ func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(stationVersion 
 		return models.ExtendedSchemaDetails{}, err
 	}
 
-	activeSchemaVersion, err := sh.getActiveVersionBySchemaId(schema.ID)
+	if !usedSchemaVersion.Active {
+		activeSchemaVersion, err := sh.getActiveVersionBySchemaId(schema.ID)
 
-	if err != nil {
-		return models.ExtendedSchemaDetails{}, err
+		if err != nil {
+			return models.ExtendedSchemaDetails{}, err
+		}
+		schemaVersions = append(schemaVersions, usedSchemaVersion, activeSchemaVersion)
+
+	} else {
+		schemaVersions = append(schemaVersions, usedSchemaVersion)
 	}
-	schemaVersions = append(schemaVersions, usedSchemaVersion, activeSchemaVersion)
 
 	var extedndedSchemaDetails models.ExtendedSchemaDetails
 	stations, err := sh.getUsingStationsByName(schema.Name)
