@@ -284,6 +284,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		Tags:                  tags,
 		Leader:                leader,
 		Followers:             followers,
+		SchemaName:            station.SchemaName,
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

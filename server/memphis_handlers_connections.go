@@ -157,7 +157,6 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 }
 
 func (mci *memphisClientInfo) updateDisconnection() error {
-	serv.Noticef("Client has been disconnected from Memphis")
 	if mci.connectionId.IsZero() {
 		return nil
 	}
@@ -182,5 +181,6 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 
+	serv.Noticef("Client has been disconnected from Memphis")
 	return err
 }

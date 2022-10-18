@@ -216,7 +216,7 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 	})
 
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
-		serv.Warnf("An error occured during a socket connection " + e.Error())
+		serv.Warnf("An error occurred during a socket connection " + e.Error())
 	})
 
 	go socketServer.Serve()

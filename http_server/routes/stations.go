@@ -39,4 +39,5 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.POST("/resendPoisonMessages", stationsHandler.ResendPoisonMessages)
 	stationsRoutes.POST("/ackPoisonMessages", stationsHandler.AckPoisonMessages)
 	stationsRoutes.DELETE("/removeStation", stationsHandler.RemoveStation)
+	stationsRoutes.POST("/useSchema", stationsHandler.UseSchema)
 }

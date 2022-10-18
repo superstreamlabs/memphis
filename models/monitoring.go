@@ -51,6 +51,7 @@ type StationOverviewData struct {
 	Tags                  []Tag                `json:"tags"`
 	Leader                string               `json:"leader"`
 	Followers             []string             `json:"followers"`
+	SchemaName            string               `json:"schema_name"`
 }
 
 type GetStationOverviewDataSchema struct {
