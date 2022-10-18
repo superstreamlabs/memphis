@@ -131,3 +131,17 @@ export const capitalizeFirst = (str) => {
 export const cutInfoLog = (str) => {
     return str?.split('] ')[2];
 };
+
+export const filterArray = (arr1, arr2) => {
+    const filtered = arr1.filter((el) => {
+        return arr2.indexOf(el) === -1;
+    });
+    return filtered;
+};
+
+export const stationFilterArray = (arr1, arr2) => {
+    const filtered = arr1.filter((station) => {
+        return arr2.indexOf(station.station.name) === -1;
+    });
+    return filtered;
+};

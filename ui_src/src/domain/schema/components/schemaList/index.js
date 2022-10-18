@@ -37,6 +37,7 @@ import { Context } from '../../../../hooks/store';
 import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
+import { filterArray } from '../../../../services/valueConvertor';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
@@ -118,22 +119,20 @@ function SchemaList({ createNew }) {
         }
     };
 
-    const handleDeleteSelected = () => {
+    const handleDeleteSelected = async () => {
         setisLoading(true);
-        isCheck.forEach(async (name) => {
-            try {
-                const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA, {
-                    schema_name: name
-                });
-                if (data) {
-                    setSchemaList(schemaFilteredList.filter((schema) => schema.name !== name));
-                    setIsCheck(isCheck.filter((item) => item !== name));
-                }
-            } catch (error) {
+        try {
+            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA, {
+                schema_names: isCheck
+            });
+            if (data) {
+                setSchemaList(filterArray(schemaFilteredList, isCheck));
+                setIsCheck([]);
                 setisLoading(false);
             }
-        });
-        setisLoading(false);
+        } catch (error) {
+            setisLoading(false);
+        }
         setDeleteModal(false);
     };
 

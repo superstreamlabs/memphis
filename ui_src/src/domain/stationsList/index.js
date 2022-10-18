@@ -31,6 +31,7 @@ import { Context } from '../../hooks/store';
 import SearchInput from '../../components/searchInput';
 import pathDomains from '../../router';
 import stationsIcon from '../../assets/images/stationIcon.svg';
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
 import searchIcon from '../../assets/images/searchIcon.svg';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 
@@ -40,6 +41,7 @@ import Modal from '../../components/modal';
 import CreateStationForm from '../../components/createStationForm';
 
 import Loader from '../../components/loader';
+import { stationFilterArray } from '../../services/valueConvertor';
 
 const StationsList = () => {
     const history = useHistory();
@@ -176,20 +178,20 @@ const StationsList = () => {
         }
     };
 
-    const handleDeleteSelected = () => {
-        isCheck.forEach(async (name) => {
-            try {
-                const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
-                    station_name: name
-                });
-                if (data) {
-                    setStationList(stationsList.filter((station) => station.station.name !== name));
-                    setIsCheck(isCheck.filter((item) => item !== name));
-                }
-            } catch (error) {
+    const handleDeleteSelected = async () => {
+        setisLoading(true);
+        try {
+            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
+                station_names: isCheck
+            });
+            if (data) {
+                setStationList(stationFilterArray(stationsList, isCheck));
+                setIsCheck([]);
                 setisLoading(false);
             }
-        });
+        } catch (error) {
+            setisLoading(false);
+        }
         modalDeleteFlip(false);
     };
 
@@ -296,22 +298,43 @@ const StationsList = () => {
                 </Modal>
             </div>
             <Modal
-                header="Remove stations"
-                height="100px"
-                minWidth="460px"
-                rBtnText="Cancel"
-                lBtnText="Remove"
-                lBtnClick={() => {
-                    handleDeleteSelected();
-                    modalDeleteFlip(false);
-                }}
-                closeAction={() => modalDeleteFlip(false)}
+                header={<img src={deleteWrapperIcon} />}
+                width="520px"
+                height="210px"
+                displayButtons={false}
                 clickOutside={() => modalDeleteFlip(false)}
-                rBtnClick={() => modalDeleteFlip(false)}
                 open={modalDeleteIsOpen}
             >
-                <label>Are you sure you want to delete all the selected station?</label>
-                <br />
+                <div className="roll-back-modal">
+                    <p className="title">Are you sure you want to delete the selected station?</p>
+                    <p className="desc">When you delete this stations, it will be permanently deleted.</p>
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Close"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => modalDeleteFlip(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Delete"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            loading={isLoading}
+                            onClick={() => handleDeleteSelected()}
+                        />
+                    </div>
+                </div>
             </Modal>
         </div>
     );

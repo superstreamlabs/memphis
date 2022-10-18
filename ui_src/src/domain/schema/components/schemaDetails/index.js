@@ -35,6 +35,7 @@ import Button from '../../../../components/button';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Modal from '../../../../components/modal';
+import { message } from 'antd';
 
 const formatOption = [
     {
@@ -48,8 +49,6 @@ const formatOption = [
         label: 'Table'
     }
 ];
-
-const stations = ['station_1', 'station_2', 'station_3', 'station_4'];
 
 function SchemaDetails({ schemaName, closeDrawer }) {
     const [versionSelected, setVersionSelected] = useState();
@@ -65,14 +64,18 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     });
     const [rollBackModal, setRollBackModal] = useState(false);
 
+    const arrangeData = (schema) => {
+        let index = schema.versions?.findIndex((version) => version?.active === true);
+        setCurrentversion(schema.versions[index]);
+        setVersionSelected(schema.versions[index]);
+        setNewVersion(schema.versions[index].schema_content);
+        setSchemaDetails(schema);
+    };
+
     const getScemaDetails = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_SCHEMA_DETAILS}?schema_name=${schemaName}`);
-            let index = data.versions?.findIndex((version) => version?.active === true);
-            setCurrentversion(data.versions[index]);
-            setVersionSelected(data.versions[index]);
-            setNewVersion(data.versions[index].schema_content);
-            setSchemaDetails(data);
+            arrangeData(data);
         } catch (err) {}
     };
 
@@ -90,6 +93,15 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             setIsLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_VERSION, { schema_name: schemaName, schema_content: newVersion });
             if (data) {
+                arrangeData(data);
+                message.success({
+                    key: 'memphisSuccessMessage',
+                    content: 'New version was created successfully',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisSuccessMessage')
+                });
+                setIsLoading(false);
             }
         } catch (err) {}
         setIsLoading(false);
@@ -99,6 +111,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             setIsLoading(true);
             const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, { schema_name: schemaName, version_number: versionSelected?.version_number });
             if (data) {
+                arrangeData(data);
                 setRollBackModal(false);
             }
         } catch (err) {}
@@ -171,16 +184,22 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     )}
                 </div>
                 <div className="used-stations">
-                    <p className="title">Used by stations</p>
-                    <div className="stations-list">
-                        {stations?.map((station, index) => {
-                            return (
-                                <div className="station-wrapper" key={index}>
-                                    <p>{station}</p>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    {schemaDetails?.used_stations?.length > 0 ? (
+                        <>
+                            <p className="title">Used by stations</p>
+                            <div className="stations-list">
+                                {schemaDetails.used_stations?.map((station, index) => {
+                                    return (
+                                        <div className="station-wrapper" key={index}>
+                                            <p>{station}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    ) : (
+                        <p className="title">Not Used yet</p>
+                    )}
                 </div>
             </div>
             <div className="footer">

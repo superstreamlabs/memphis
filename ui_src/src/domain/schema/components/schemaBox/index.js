@@ -42,21 +42,16 @@ const tags = [
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     const [open, setOpen] = useState(false);
-    const [size, setSize] = useState();
 
-    const openSchemaDetails = () => {
-        setSize('large');
-        setOpen(true);
+    const handleDrawer = (flag) => {
+        setOpen(flag);
     };
 
-    const closeDrawer = () => {
-        setOpen(false);
-    };
     return (
         <>
             <div>
                 <CheckboxComponent checked={isCheck} id={schema.name} onChange={handleCheckedClick} name={schema.name} />
-                <div key={schema.name} onClick={openSchemaDetails} className="schema-box-wrapper">
+                <div key={schema.name} onClick={() => handleDrawer(true)} className="schema-box-wrapper">
                     <header is="x3d">
                         <div className="header-wrapper">
                             <div className="schema-name">
@@ -91,8 +86,15 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     </date>
                 </div>
             </div>
-            <Drawer title={schema?.name} placement="right" size={'large'} onClose={closeDrawer} open={open} maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}>
-                <SchemaDetails schemaName={schema?.name} closeDrawer={() => closeDrawer()} />
+            <Drawer
+                title={schema?.name}
+                placement="right"
+                size={'large'}
+                onClose={() => handleDrawer(false)}
+                open={open}
+                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+            >
+                <SchemaDetails schemaName={schema?.name} closeDrawer={() => handleDrawer(false)} />
             </Drawer>
         </>
     );
