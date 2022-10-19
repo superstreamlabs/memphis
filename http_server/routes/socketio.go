@@ -136,8 +136,8 @@ func getStationOverviewData(stationName string, h *server.Handlers) (models.Stat
 		return models.StationOverviewData{}, err
 	}
 
-	schemaVersion, err := h.Schemas.GetUsedSchemaVersion(station.Schema.UsingVersionNumber, schema)
-	schemaDetails := models.SchemaDetails{SchemaName: schema.Name, UsingVersionNumber: station.Schema.UsingVersionNumber, IsActiveVersionNumber: schemaVersion.Active}
+	schemaVersion, err := h.Schemas.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+	schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: schemaVersion.Active}
 
 	return models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,

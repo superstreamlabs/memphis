@@ -463,7 +463,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	schemaName := body.SchemaName
 	var schemaDetails models.SchemaDetails
-	var schemaStation models.SchemaStation
+	var stationOverviewData models.StationOverviewSchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
 		exist, schema, err := IsSchemaExist(schemaName)
@@ -486,8 +486,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		schemaDetails = models.SchemaDetails{SchemaName: schemaName, UsingVersionNumber: schemaVersion.VersionNumber, IsActiveVersionNumber: true}
-		schemaStation = models.SchemaStation{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+		stationOverviewData = models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: true}
+		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 	}
 
 	var retentionType string
@@ -541,7 +541,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		LastUpdate:      time.Now(),
 		Functions:       []models.Function{},
 		IsDeleted:       false,
-		Schema:          schemaDetails,
+		Schema:          stationOverviewData,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -565,7 +565,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"creation_date":      newStation.CreationDate,
 			"last_update":        newStation.LastUpdate,
 			"functions":          newStation.Functions,
-			"schema":             schemaStation,
+			"schema":             schemaDetails,
 		},
 	}
 	opts := options.Update().SetUpsert(true)
@@ -1155,17 +1155,17 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
-	schemaDetails := models.SchemaDetails{SchemaName: schemaName, UsingVersionNumber: schemaVersion.VersionNumber, IsActiveVersionNumber: true}
-	schemaStation := models.SchemaStation{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+	stationOverviewData := models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: true}
+	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext()}, bson.M{"$set": bson.M{"schema": schemaStation}})
+	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext()}, bson.M{"$set": bson.M{"schema": schemaDetails}})
 
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
-	c.IndentedJSON(200, schemaDetails)
+	c.IndentedJSON(200, stationOverviewData)
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
@@ -1195,7 +1195,6 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
-	schema := models.SchemaStation{}
 	_, err = stationsCollection.UpdateOne(context.TODO(),
 		bson.M{
 			"name": stationName.Ext(),
@@ -1204,7 +1203,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 				bson.M{"is_deleted": bson.M{"$exists": false}},
 			},
 		},
-		bson.M{"$set": bson.M{"schema": schema}},
+		bson.M{"$set": bson.M{"schema.name": ""}, "$unset": bson.M{"schema.version_number": models.SchemaDetails{}}},
 	)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
@@ -1250,7 +1249,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	}
 
 	schemasHandler := SchemasHandler{S: sh.S}
-	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.Schema.UsingVersionNumber, schema)
+	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.Schema.VersionNumber, schema)
 
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation error: " + err.Error())

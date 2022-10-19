@@ -56,20 +56,20 @@ type MessageDetails struct {
 }
 
 type Station struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Name            string             `json:"name" bson:"name"`
-	RetentionType   string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
-	StorageType     string             `json:"storage_type" bson:"storage_type"`
-	Replicas        int                `json:"replicas" bson:"replicas"`
-	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-	DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
-	Functions       []Function         `json:"functions" bson:"functions"`
-	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
-	Schema          SchemaDetails      `json:"schema" bson:"schema"`
+	ID              primitive.ObjectID           `json:"id" bson:"_id"`
+	Name            string                       `json:"name" bson:"name"`
+	RetentionType   string                       `json:"retention_type" bson:"retention_type"`
+	RetentionValue  int                          `json:"retention_value" bson:"retention_value"`
+	StorageType     string                       `json:"storage_type" bson:"storage_type"`
+	Replicas        int                          `json:"replicas" bson:"replicas"`
+	DedupEnabled    bool                         `json:"dedup_enabled" bson:"dedup_enabled"`
+	DedupWindowInMs int                          `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
+	CreatedByUser   string                       `json:"created_by_user" bson:"created_by_user"`
+	CreationDate    time.Time                    `json:"creation_date" bson:"creation_date"`
+	LastUpdate      time.Time                    `json:"last_update" bson:"last_update"`
+	Functions       []Function                   `json:"functions" bson:"functions"`
+	IsDeleted       bool                         `json:"is_deleted" bson:"is_deleted"`
+	Schema          StationOverviewSchemaDetails `json:"schema" bson:"schema"`
 }
 
 type GetStationResponseSchema struct {
@@ -162,15 +162,15 @@ type RemoveSchemaFromStation struct {
 	StationName string `json:"station_name" binding:"required"`
 }
 
-type SchemaStation struct {
+type SchemaDetails struct {
 	SchemaName    string `json:"name" bson:"name"`
 	VersionNumber int    `json:"version_number" bson:"version_number"`
 }
 
-type SchemaDetails struct {
-	SchemaName            string `json:"name" bson:"name"`
-	UsingVersionNumber    int    `json:"using_version_number" bson:"version_number"`
-	IsActiveVersionNumber bool   `json:"is_active_version"`
+type StationOverviewSchemaDetails struct {
+	SchemaName       string `json:"name" bson:"name"`
+	VersionNumber    int    `json:"version_number" bson:"version_number"`
+	UpdatesAvailable bool   `json:"updates_available"`
 }
 
 type GetUpdatesForSchema struct {
