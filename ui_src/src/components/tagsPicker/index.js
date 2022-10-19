@@ -20,11 +20,10 @@
 // SOFTWARE.
 
 import './style.scss';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '../../components/button';
 import { Divider } from 'antd';
 import SearchInput from '../searchInput';
-import { InfoOutlined } from '@material-ui/icons';
 import searchIcon from '../../assets/images/searchIcon.svg';
 import Modal from '../../components/modal';
 import { httpRequest } from '../../services/http';
@@ -32,13 +31,11 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
 import CheckboxComponent from '../checkBox';
 
-const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdatedTagList, handleCloseWithNoChanges }) => {
+const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges, entityName }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [checkedList, setCheckedList] = useState(tags);
-    const [tagsToRemove, setTagsToRemove] = useState([]);
-    const [tagsToAdd, setTagsToAdd] = useState([]);
     const [editedList, setEditedList] = useState(false);
     const [newTagModal, setNewTagModal] = useState(false);
 
@@ -54,14 +51,6 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
         setCheckedList(updatedList);
         setEditedList(true);
     };
-
-    useEffect(() => {
-        if (tagsToAdd.length > 0 || tagsToRemove.length > 0) {
-            setEditedList(true);
-        } else {
-            setEditedList(false);
-        }
-    }, [tagsToAdd, tagsToRemove]);
 
     useEffect(() => {
         const getAllTags = async () => {
@@ -93,33 +82,26 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
             if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
             return true;
         });
-
+        var tagsToRemoveNames;
         const tagsToAdd = checkedList.filter((checkedTag) => {
             if (tags.some((tag) => tag.name === checkedTag.name)) return false;
             return true;
         });
         try {
             if (!(tagsToRemove.length === 0)) {
-                var tagsToRemoveNames = tagsToRemove.map((tag) => {
+                tagsToRemoveNames = tagsToRemove.map((tag) => {
                     return tag.name;
                 });
-                const reqBody = {
-                    names: tagsToRemoveNames,
-                    entity_type: entity_type,
-                    entity_name: entity_name
-                };
-                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAGS}`, reqBody);
             }
-            if (!(tagsToAdd.length === 0)) {
-                const reqBody = {
-                    tags: tagsToAdd,
-                    entity_type: entity_type,
-                    entity_name: entity_name
-                };
-                await httpRequest('POST', `${ApiEndpoints.CREATE_TAGS}`, reqBody);
-            }
+            const reqBody = {
+                tags_to_Add: tagsToAdd,
+                tags_to_Remove: tagsToRemoveNames,
+                entity_type: entity_type,
+                entity_id: entity_id
+            };
+            const updatedTags = await httpRequest('POST', `${ApiEndpoints.EDIT_TAGS}`, reqBody);
             setEditedList(false);
-            handleUpdatedTagList();
+            handleUpdatedTagList(updatedTags);
         } catch (error) {}
     };
 
@@ -153,7 +135,7 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
                 {tagsToDisplay && tagsToDisplay.length > 0 ? (
                     tagsToDisplay.map((tag) => (
                         <li key={tag.name} className="tag">
-                            <input value={tag.name} type="checkbox" defaultChecked={checkedList.some((item) => tag.name === item.name)} onChange={handleCheck} />
+                            <input value={tag.name} type="checkbox" defaultChecked={checkedList?.some((item) => tag.name === item.name)} onChange={handleCheck} />
                             {/* <CheckboxComponent checkName={tag.name} id={tag.name} checked={checkedList.some((item) => tag.name === item.name)} onChange={handleCheck} /> */}
                             <div className="color-circle" style={{ backgroundColor: tag.color }}></div>
                             <span className="tag-name">{tag.name}</span>
@@ -180,8 +162,6 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
                     onClick={() => setNewTagModal(true)}
                 />
             </div>
-            {/* <Button onClick={() => setAuditModal(true)}>Create New Tag {searchInput.length > 0 && tagsToDisplay.length === 0 ? searchInput : ''}</Button> */}
-            {/* {editedList && ( */}
             <div className="save-cancel-buttons">
                 <Button
                     width={'120px'}

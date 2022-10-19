@@ -47,7 +47,14 @@ const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
             {tagsToDisplay?.map((tag, index) => {
                 const isLongTag = tag.name.length > 7;
                 return (
-                    <Tag className="tag-wrapper" key={tag.name} color={tag.color} closable={closable ? closable : false} onClose={() => handleClose(tag.name)}>
+                    <Tag
+                        className="tag-wrapper"
+                        key={tag.name}
+                        color={tag.color}
+                        style={{ borderColor: 'transparent', padding: '0px' }}
+                        closable={closable ? closable : false}
+                        onClose={() => handleClose(tag.name)}
+                    >
                         {isLongTag ? `${tag.name.slice(0, 7)}...` : tag.name}
                     </Tag>
                 );
@@ -57,11 +64,9 @@ const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
                     overlay={<AllTagsList tags={remainingTags} handleClose={handleClose} closable={closable}></AllTagsList>}
                     trigger={closable ? ['click'] : ['hover']}
                 >
-                    <Space>
-                        <div className="plus-tag-wrapper">
-                            <Tag className="tag-wrapper" key={'+'} closable={false} color={'purple'}>
-                                +{tags.length - 3}
-                            </Tag>
+                    <Space className="space">
+                        <div className="edit-tags">
+                            <p>+{tags.length - 3}</p>
                         </div>
                     </Space>
                 </Dropdown>

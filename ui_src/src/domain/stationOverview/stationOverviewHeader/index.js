@@ -49,7 +49,7 @@ const StationOverviewHeader = () => {
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
     const [tagModal, setTagModal] = useState(false);
-    const [tags, setTags] = useState(stationState?.stationMetaData?.tags);
+    // const [tags, setTags] = useState(stationState?.stationMetaData?.tags);
     // const [shouldUpdateTags, setShouldUpdateTags] = useState(false);
 
     useEffect(() => {
@@ -82,17 +82,16 @@ const StationOverviewHeader = () => {
     //     }
     // }, [shouldUpdateTags]);
 
-    const updateTags = async () => {
-        try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
-            setTags(data.tags);
-        } catch (error) {}
+    const updateTags = (tags) => {
+        stationDispatch({ type: 'SET_TAGS', payload: tags });
     };
 
-    const removeTag = async (tag) => {
+    const removeTag = async (tagName) => {
         try {
-            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAGS}`, { names: [tag], entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
-            await updateTags();
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAGS}`, { names: [tagName], entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
+            let tags = stationState?.stationMetaData?.tags;
+            let updatedTags = tags.filter((tag) => tag.name !== tagName);
+            stationDispatch({ type: 'SET_TAGS', payload: updatedTags });
         } catch (error) {}
     };
 
@@ -104,7 +103,7 @@ const StationOverviewHeader = () => {
                         {stationState?.stationMetaData?.name}
                         <TagsList
                             className="tags-list"
-                            tags={tags}
+                            tags={stationState?.stationMetaData?.tags}
                             addNew={true}
                             closable={true}
                             handleEdit={() => setTagModal(true)}
@@ -235,16 +234,17 @@ const StationOverviewHeader = () => {
                 </Modal>
                 <Modal header="Tags" displayButtons={false} height="500px" width="300px" clickOutside={() => setTagModal(false)} open={tagModal} hr={false}>
                     <TagsPicker
-                        tags={tags}
+                        tags={stationState?.stationMetaData?.tags}
+                        entity_id={stationState?.stationMetaData?.id}
                         entity_type={'station'}
-                        entity_name={stationState?.stationMetaData?.name}
-                        handleUpdatedTagList={() => {
-                            updateTags();
+                        handleUpdatedTagList={(tags) => {
+                            updateTags(tags);
                             setTagModal(false);
                         }}
                         handleCloseWithNoChanges={() => {
                             setTagModal(false);
                         }}
+                        entityName={stationState?.stationMetaData?.name}
                     />
                 </Modal>
             </div>
