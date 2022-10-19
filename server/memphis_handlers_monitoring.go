@@ -515,11 +515,11 @@ cleanup:
 
 	if getAll {
 		sort.Slice(resMsgs, func(i, j int) bool {
-			return resMsgs[i].TimeSent.Before(resMsgs[j].TimeSent)
+			return resMsgs[i].MessageSeq < resMsgs[j].MessageSeq
 		})
 	} else {
 		sort.Slice(resMsgs, func(i, j int) bool {
-			return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
+			return resMsgs[i].MessageSeq > resMsgs[j].MessageSeq
 		})
 	}
 
