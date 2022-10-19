@@ -22,22 +22,21 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-import { Tag } from 'antd';
+import { Tag, Dropdown, Space } from 'antd';
 import { Add } from '@material-ui/icons';
 import Modal from '../modal';
 import AllTagsList from './allTagsList';
 
 const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
-    const [listTags, setListTags] = useState([]);
+    const [remainingTags, setRemainingTags] = useState([]);
     const [listTagModal, setListTagModal] = useState(false);
     useEffect(() => {
-        console.log(tags);
         if (tags?.length > 3) {
             const tagsShow = tags.slice(0, 3);
             setTagsToDisplay(tagsShow);
-            const remainingTags = tags.slice(3, tags?.length);
-            setListTags(remainingTags);
+            const remainingTagsList = tags.slice(3, tags?.length);
+            setRemainingTags(remainingTagsList);
         } else {
             setTagsToDisplay(tags);
         }
@@ -46,34 +45,36 @@ const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
     return (
         <div className="tags-list-wrapper">
             {tagsToDisplay?.map((tag, index) => {
-                const isLongTag = tag.length > 20;
+                const isLongTag = tag.name.length > 7;
                 return (
                     <Tag className="tag-wrapper" key={tag.name} color={tag.color} closable={closable ? closable : false} onClose={() => handleClose(tag.name)}>
-                        {isLongTag ? `${tag.name.slice(0, 20)}...` : tag.name}
+                        {isLongTag ? `${tag.name.slice(0, 7)}...` : tag.name}
                     </Tag>
                 );
             })}
-            <div
-                className="tag-wrapper"
-                onClick={() => {
-                    setListTagModal(true);
-                }}
-            >
-                {tags?.length > 3 ? (
-                    <Tag className="tag-wrapper" key={'+'} closable={false} color={'purple'}>
-                        +{tags.length - 3}
-                    </Tag>
-                ) : (
-                    <></>
-                )}
-            </div>
+            {tags?.length > 3 ? (
+                <Dropdown
+                    overlay={<AllTagsList tags={remainingTags} handleClose={handleClose} closable={closable}></AllTagsList>}
+                    trigger={closable ? ['click'] : ['hover']}
+                >
+                    <Space>
+                        <div className="plus-tag-wrapper">
+                            <Tag className="tag-wrapper" key={'+'} closable={false} color={'purple'}>
+                                +{tags.length - 3}
+                            </Tag>
+                        </div>
+                    </Space>
+                </Dropdown>
+            ) : (
+                <></>
+            )}
             {addNew && (
-                <div className="add-tags" onClick={() => handleEdit()}>
+                <div className="edit-tags" onClick={() => handleEdit()}>
                     <Add />
                     <p>Edit Tags</p>
                 </div>
             )}
-            {
+            {/* {
                 <Modal
                     header={
                         <div className="audit-header">
@@ -81,15 +82,15 @@ const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
                         </div>
                     }
                     displayButtons={false}
-                    height="300px"
-                    width="300px"
+                    height="250px"
+                    width="140px"
                     clickOutside={() => setListTagModal(false)}
                     open={listTagModal}
                     hr={false}
                 >
                     <AllTagsList tags={tags} handleClose={handleClose} closable={closable}></AllTagsList>
                 </Modal>
-            }
+            } */}
         </div>
     );
 };

@@ -50,7 +50,6 @@ const StationBoxOverview = (props) => {
     const [retentionValue, setRetentionValue] = useState('');
 
     useEffect(() => {
-        console.log(props.station.tags);
         switch (props.station.station.retention_type) {
             case 'message_age_sec':
                 convertSecondsToDate(props.station.station.retention_value);

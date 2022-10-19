@@ -1,0 +1,15 @@
+.all-tags-list-wrapper {
+    display: grid;
+    align-items: center;
+    gap: 5px;
+    margin-left: 5px;
+    .tag-wrapper {
+        padding-right: 5px;
+        padding-left: 5px;
+        border-radius: 4px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        width: 70px;
+    }
+}

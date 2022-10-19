@@ -64,5 +64,6 @@ export const ApiEndpoints = {
     //Tags
     REMOVE_TAGS: '/tags/removeTags',
     CREATE_TAGS: '/tags/createTags',
+    CREATE_NEW_TAG: '/tags/createNewTag',
     GET_TAGS: '/tags/getTags'
 };

@@ -13,7 +13,7 @@
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO e SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
@@ -22,7 +22,7 @@
 import './style.scss';
 import React, { useEffect, useRef, useState } from 'react';
 import Button from '../../components/button';
-import { Badge, Divider, Space } from 'antd';
+import { Divider } from 'antd';
 import SearchInput from '../searchInput';
 import { InfoOutlined } from '@material-ui/icons';
 import searchIcon from '../../assets/images/searchIcon.svg';
@@ -30,43 +30,29 @@ import Modal from '../../components/modal';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
+import CheckboxComponent from '../checkBox';
 
 const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdatedTagList, handleCloseWithNoChanges }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
-    const [selectedTags, setSelectedTags] = useState(tags);
     const [searchInput, setSearchInput] = useState('');
-    const [checked, setChecked] = useState(tags);
+    const [checkedList, setCheckedList] = useState(tags);
     const [tagsToRemove, setTagsToRemove] = useState([]);
     const [tagsToAdd, setTagsToAdd] = useState([]);
-    const [newTags, setNewTags] = useState([]);
     const [editedList, setEditedList] = useState(false);
     const [newTagModal, setNewTagModal] = useState(false);
 
-    const handleCheck = (event) => {
-        var updatedList = [...checked];
-        var updatedTagsToRemove = [...tagsToRemove];
-        if (event.target.checked) {
-            updatedList = [...checked, event.target.value];
-            if (selectedTags.some((tag) => event.target.value === tag.name)) {
-                updatedTagsToRemove.splice(tagsToRemove.indexOf(event.target.value), 1);
-                setTagsToRemove(updatedTagsToRemove);
-            } else {
-                let tagToAdd = allTags.find((tag) => {
-                    return tag.name === event.target.value;
-                });
-                if (tagToAdd) {
-                    setTagsToAdd([...tagsToAdd, tagToAdd]);
-                }
-            }
+    const handleCheck = (e) => {
+        const { value, checked } = e.target;
+        var updatedList = [...checkedList];
+        var tagChecked = allTags.find((tag) => tag.name === value);
+        if (checked) {
+            updatedList = [...checkedList, tagChecked];
         } else {
-            updatedList.splice(checked.indexOf(event.target.value), 1);
-            if (selectedTags.some((item) => event.target.value === item.name)) {
-                updatedTagsToRemove = [...tagsToRemove, event.target.value];
-                setTagsToRemove(updatedTagsToRemove);
-            }
+            updatedList.splice(checkedList.indexOf(tagChecked), 1);
         }
-        setChecked(updatedList);
+        setCheckedList(updatedList);
+        setEditedList(true);
     };
 
     useEffect(() => {
@@ -80,7 +66,6 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
     useEffect(() => {
         const getAllTags = async () => {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}`);
-            // let allTagsRes = res.filter((allTag) => !tags.some((tag) => allTag.id === tag.id));
             setTagsToDisplay(res);
             setAllTags(res);
         };
@@ -99,20 +84,27 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
         }
     }, [searchInput]);
 
-    // useEffect(() => {
-    //     // setTagsToDisplay([...allTags, newTags]);
-    //     setChecked([...checked, newTags]);
-    // }, [newTags]);
-
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
     };
 
     const handleSaveChanges = async () => {
+        const tagsToRemove = tags.filter((tag) => {
+            if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
+            return true;
+        });
+
+        const tagsToAdd = checkedList.filter((checkedTag) => {
+            if (tags.some((tag) => tag.name === checkedTag.name)) return false;
+            return true;
+        });
         try {
             if (!(tagsToRemove.length === 0)) {
+                var tagsToRemoveNames = tagsToRemove.map((tag) => {
+                    return tag.name;
+                });
                 const reqBody = {
-                    names: tagsToRemove,
+                    names: tagsToRemoveNames,
                     entity_type: entity_type,
                     entity_name: entity_name
                 };
@@ -126,21 +118,18 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
                 };
                 await httpRequest('POST', `${ApiEndpoints.CREATE_TAGS}`, reqBody);
             }
-            setTagsToRemove([]);
-            setTagsToAdd([]);
-            setNewTags([]);
             setEditedList(false);
             handleUpdatedTagList();
         } catch (error) {}
     };
 
     const handleNewTag = (tag) => {
-        setChecked([...checked, newTags]);
-        setNewTagModal(false);
+        setCheckedList([...checkedList, tag]);
+        setAllTags([...allTags, tag]);
+        setTagsToDisplay([...tagsToDisplay, tag]);
+        setEditedList(true);
         setSearchInput('');
-        setTagsToAdd([...tagsToAdd, tag]);
-        setNewTags([...newTags, tag]);
-        setTagsToDisplay([...allTags, tag]);
+        setNewTagModal(false);
     };
 
     return (
@@ -163,11 +152,12 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
             <div className="tags-list">
                 {tagsToDisplay && tagsToDisplay.length > 0 ? (
                     tagsToDisplay.map((tag) => (
-                        <li key={tag.id} className="tag">
-                            <input value={tag.name} type="checkbox" defaultChecked={checked.some((item) => tag.name === item.name)} onChange={handleCheck} />
+                        <li key={tag.name} className="tag">
+                            <input value={tag.name} type="checkbox" defaultChecked={checkedList.some((item) => tag.name === item.name)} onChange={handleCheck} />
+                            {/* <CheckboxComponent checkName={tag.name} id={tag.name} checked={checkedList.some((item) => tag.name === item.name)} onChange={handleCheck} /> */}
                             <div className="color-circle" style={{ backgroundColor: tag.color }}></div>
                             <span className="tag-name">{tag.name}</span>
-                            <hr></hr>
+                            <Divider className="divider" />
                         </li>
                     ))
                 ) : (
@@ -191,39 +181,40 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
                 />
             </div>
             {/* <Button onClick={() => setAuditModal(true)}>Create New Tag {searchInput.length > 0 && tagsToDisplay.length === 0 ? searchInput : ''}</Button> */}
-            {editedList && (
-                <div className="save-cancel-buttons">
-                    <Button
-                        width={'120px'}
-                        height="30px"
-                        placeholder={`Cancel`}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType={'white'}
-                        border="gray-light"
-                        fontSize="14px"
-                        fontWeight="bold"
-                        htmlType="submit"
-                        marginRight="5px"
-                        onClick={handleCloseWithNoChanges}
-                    />
-                    <Button
-                        width={'120px'}
-                        height="30px"
-                        placeholder={`Save`}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType={'purple'}
-                        fontSize="14px"
-                        fontWeight="bold"
-                        htmlType="submit"
-                        onClick={handleSaveChanges}
-                    />
+            {/* {editedList && ( */}
+            <div className="save-cancel-buttons">
+                <Button
+                    width={'120px'}
+                    height="30px"
+                    placeholder={`Cancel`}
+                    colorType="black"
+                    radiusType="circle"
+                    backgroundColorType={'white'}
+                    border="gray-light"
+                    fontSize="14px"
+                    fontWeight="bold"
+                    htmlType="submit"
+                    marginRight="5px"
+                    onClick={handleCloseWithNoChanges}
+                />
+                <Button
+                    width={'120px'}
+                    height="30px"
+                    placeholder={`Save`}
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType={'purple'}
+                    fontSize="14px"
+                    fontWeight="bold"
+                    htmlType="submit"
+                    onClick={handleSaveChanges}
+                    disabled={!editedList}
+                />
 
-                    {/* <Button onClick={handleSaveChanges}>Save Changes</Button> */}
-                    {/* <Button onClick={handleCloseWithNoChanges}>Cancel</Button> */}
-                </div>
-            )}
+                {/* <Button onClick={handleSaveChanges}>Save Changes</Button> */}
+                {/* <Button onClick={handleCloseWithNoChanges}>Cancel</Button> */}
+            </div>
+            {/* )} */}
             {
                 <Modal
                     header={
@@ -232,8 +223,8 @@ const TagsPicker = ({ tags, handleClick, entity_type, entity_name, handleUpdated
                         </div>
                     }
                     displayButtons={false}
-                    height="300px"
-                    width="300px"
+                    height="250px"
+                    width="320px"
                     clickOutside={() => setNewTagModal(false)}
                     open={newTagModal}
                     hr={false}

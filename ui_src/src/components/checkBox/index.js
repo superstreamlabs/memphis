@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the MIT License (the "License");
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,19 +18,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-package routes
 
-import (
-	"memphis-broker/server"
+import './style.scss';
 
-	"github.com/gin-gonic/gin"
-)
+import { Checkbox } from 'antd';
+import React from 'react';
 
-func InitializeTagsRoutes(router *gin.RouterGroup, h *server.Handlers) {
-	tagsHandler := h.Tags
-	tagsRoutes := router.Group("/tags")
-	tagsRoutes.GET("/getTags", tagsHandler.GetTags)
-	tagsRoutes.DELETE("/removeTags", tagsHandler.RemoveTags)
-	tagsRoutes.POST("/createTags", tagsHandler.CreateTags)
-	tagsRoutes.POST("/createNewTag", tagsHandler.CreateNewTag)
-}
+const CheckboxComponent = ({ checkName, id, checked, onChange }) => {
+    return <Checkbox checked={checked} id={id} onChange={onChange} name={checkName} />;
+};
+
+export default CheckboxComponent;

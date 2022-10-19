@@ -3,7 +3,7 @@
     align-items: center;
     gap: 5px;
     margin-left: 5px;
-    .add-tags {
+    .edit-tags {
         background-color: #f0f1f2;
         padding-right: 5px;
         border-style: solid;
@@ -11,7 +11,7 @@
         border-width: thin;
         padding-left: 5px;
         border-radius: 4px;
-        height: 24px;
+        height: 20px;
         display: flex;
         align-items: center;
         cursor: pointer;
@@ -30,8 +30,17 @@
         padding-right: 5px;
         padding-left: 5px;
         border-radius: 4px;
-        height: 24px;
+        height: 20px;
         display: flex;
         align-items: center;
+    }
+    .plus-tag-wrapper {
+        padding-right: 5px;
+        padding-left: 5px;
+        border-radius: 4px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
     }
 }

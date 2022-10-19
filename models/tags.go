@@ -45,6 +45,13 @@ type CreateTagsSchema struct {
 	EntityName string      `json:"entity_name"`
 }
 
+type CreateNewTagSchema struct {
+	Name       string `json:"name" binding:"required,min=1,max=20"`
+	Color      string `json:"color"`
+	EntityType string `json:"entity_type"`
+	EntityName string `json:"entity_name"`
+}
+
 type RemoveTagsSchema struct {
 	Names      []string `json:"names"`
 	EntityType string   `json:"entity_type"`

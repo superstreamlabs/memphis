@@ -12,6 +12,13 @@
         width: 15px;
         height: 15px;
     }
+    .color-picker {
+        margin-left: 5px;
+        display: inline-block;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+    }
     .field-title {
         font-weight: 400;
         font-size: 12px;
@@ -97,5 +104,9 @@
             margin-left: 5px;
             margin-bottom: 10px;
         }
+    }
+    .divider {
+        margin: 0;
+        margin-top: 10px;
     }
 }

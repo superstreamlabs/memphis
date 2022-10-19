@@ -21,10 +21,12 @@
 
 import './style.scss';
 import React, { useEffect, useState } from 'react';
-import { Form } from 'antd';
+import { Form, message, Divider } from 'antd';
 import Button from '../../button';
 import Input from '../../Input';
-import { CirclePicker } from 'react-color';
+import { httpRequest } from '../../../services/http';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import ColorPicker from '../../colorPicker';
 
 const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
     const [saveVisible, setSaveVisible] = useState(false);
@@ -32,27 +34,8 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
     const [formFields, setFormFields] = useState({
         name: ''
     });
-    const [tagColor, setTagColor] = useState('#00A5FF');
-    const colors = [
-        '#00A5FF',
-        '#e91e63',
-        '#9c27b0',
-        '#673ab7',
-        '#3f51b5',
-        '#2196f3',
-        '#03a9f4',
-        '#00bcd4',
-        '#009688',
-        '#4caf50',
-        '#8bc34a',
-        '#cddc39',
-        '#ffeb3b',
-        '#ffc107',
-        '#ff9800',
-        '#ff5722',
-        '#795548',
-        '#607d8b'
-    ];
+    const [tagColor, setTagColor] = useState('purple');
+    const colors = ['purple', 'magenta', 'red', 'orange', 'gold', 'lime', 'green', 'cyan', 'blue'];
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
         updatedValue[field] = value;
@@ -69,35 +52,35 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
         const values = await creationForm.validateFields();
         if (values?.errorFields) {
             return;
-        } else if (!saveVisible) {
-            return;
         } else {
-            handleFinish({
-                name: values.name,
-                color: tagColor
-            });
+            if (allTags.some((tag) => formFields.name === tag.name)) {
+                message.warning({
+                    key: 'memphisWarningMessage',
+                    content: 'Tag with this name already exists',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisWarningMessage')
+                });
+            } else {
+                try {
+                    let data = {
+                        name: values.name,
+                        color: tagColor
+                    };
+                    const res = await httpRequest('POST', ApiEndpoints.CREATE_NEW_TAG, data);
+                    handleFinish(res);
+                } catch (error) {}
+            }
         }
     };
 
-    useEffect(() => {
-        if (formFields.name !== '') {
-            if (allTags.some((tag) => formFields.name === tag.name)) {
-                setSaveVisible(false);
-            } else {
-                setSaveVisible(true);
-            }
-        } else {
-            setSaveVisible(false);
-        }
-    }, [formFields.name]);
-
     const handleColorChange = (color) => {
-        setTagColor(color.hex);
+        setTagColor(color);
     };
 
     return (
         <div className="new-tag-generator-wrapper">
-            <Form name="form" form={creationForm} autoComplete="on" onFinish={onFinish} className="create-tag-form">
+            <Form name="form" form={creationForm} autoComplete="on" className="create-tag-form">
                 <Form.Item
                     className="form-input"
                     name="name"
@@ -129,25 +112,30 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
                     </div>
                 </Form.Item>
                 <div className="color-pick">
-                    <CirclePicker colors={colors} onChange={handleColorChange} />
+                    {/* <CirclePicker colors={colors} onChange={handleColorChange} /> */}
+                    <ColorPicker colors={colors} onChange={handleColorChange} />
+                    <Divider className="divider" />
+                    {/* {colors.map((color) => (
+                        <li key={color} className="color-picker">
+                            <div className="color-picker" style={{ backgroundColor: color }}></div>
+                        </li>
+                    ))} */}
                 </div>
-                {saveVisible && (
-                    <Button
-                        width={'200px'}
-                        height="30px"
-                        placeholder={`Create Tag`}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType={'purple'}
-                        fontSize="14px"
-                        fontWeight="bold"
-                        htmlType="submit"
-                        marginTop="10px"
-                        marginLeft="20px"
-                        marginBottom="5px"
-                        onClick={onFinish}
-                    />
-                )}
+                <Button
+                    width={'200px'}
+                    height="30px"
+                    placeholder={`Create Tag`}
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType={'purple'}
+                    fontSize="14px"
+                    fontWeight="bold"
+                    htmlType="submit"
+                    marginTop="20px"
+                    marginLeft="30px"
+                    marginBottom="5px"
+                    onClick={onFinish}
+                />
             </Form>
         </div>
     );

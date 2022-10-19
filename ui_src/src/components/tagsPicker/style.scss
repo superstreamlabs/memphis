@@ -35,6 +35,11 @@
     }
     .tags-list {
         margin-top: 10px;
+        height: 350px;
+        overflow-y: scroll;
+    }
+    .divider {
+        margin: 0;
     }
     .create-new-tag {
         align-items: center;

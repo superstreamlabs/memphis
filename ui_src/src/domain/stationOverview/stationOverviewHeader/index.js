@@ -39,7 +39,6 @@ import Auditing from '../auditing';
 import TagsList from '../../../components/tagList';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { createContext } from 'react';
 import TagsPicker from '../../../components/tagsPicker';
 
 const StationOverviewHeader = () => {
@@ -51,8 +50,7 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [tagModal, setTagModal] = useState(false);
     const [tags, setTags] = useState(stationState?.stationMetaData?.tags);
-    const [shouldUpdateTags, setShouldUpdateTags] = useState(false);
-    const tagsContext = createContext();
+    // const [shouldUpdateTags, setShouldUpdateTags] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -74,20 +72,27 @@ const StationOverviewHeader = () => {
         history.push(pathDomains.stations);
     };
 
-    useEffect(async () => {
-        if (shouldUpdateTags) {
-            try {
-                const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
-                setTags(data.tags);
-                setShouldUpdateTags(false);
-            } catch (error) {}
-        }
-    }, [shouldUpdateTags]);
+    // useEffect(async () => {
+    //     if (shouldUpdateTags) {
+    //         try {
+    //             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
+    //             setTags(data.tags);
+    //             setShouldUpdateTags(false);
+    //         } catch (error) {}
+    //     }
+    // }, [shouldUpdateTags]);
+
+    const updateTags = async () => {
+        try {
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
+            setTags(data.tags);
+        } catch (error) {}
+    };
 
     const removeTag = async (tag) => {
         try {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAGS}`, { names: [tag], entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
-            setShouldUpdateTags(true);
+            await updateTags();
         } catch (error) {}
     };
 
@@ -228,17 +233,16 @@ const StationOverviewHeader = () => {
                 >
                     <Auditing />
                 </Modal>
-                <Modal header="Tags" displayButtons={false} height="50%" width="300px" clickOutside={() => setTagModal(false)} open={tagModal} hr={false}>
+                <Modal header="Tags" displayButtons={false} height="500px" width="300px" clickOutside={() => setTagModal(false)} open={tagModal} hr={false}>
                     <TagsPicker
                         tags={tags}
                         entity_type={'station'}
                         entity_name={stationState?.stationMetaData?.name}
                         handleUpdatedTagList={() => {
-                            setShouldUpdateTags(true);
+                            updateTags();
                             setTagModal(false);
                         }}
                         handleCloseWithNoChanges={() => {
-                            setShouldUpdateTags(false);
                             setTagModal(false);
                         }}
                     />
