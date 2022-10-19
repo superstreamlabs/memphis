@@ -462,9 +462,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	schemaName := body.SchemaName
+	var schemaDetails models.SchemaDetails
+	var schemaDetailsResponse models.StationOverviewSchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
-		exist, _, err = IsSchemaExist(schemaName)
+		exist, schema, err := IsSchemaExist(schemaName)
 		if err != nil {
 			serv.Errorf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -475,6 +477,17 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
 			return
 		}
+		schemasHandler := SchemasHandler{S: sh.S}
+		schemaVersion, err := schemasHandler.getActiveVersionBySchemaId(schema.ID)
+
+		if err != nil {
+			serv.Errorf("CreateStation error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			return
+		}
+
+		schemaDetailsResponse = models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: true}
+		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 	}
 
 	var retentionType string
@@ -528,7 +541,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		LastUpdate:      time.Now(),
 		Functions:       []models.Function{},
 		IsDeleted:       false,
-		SchemaName:      schemaName,
+		Schema:          schemaDetails,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -538,22 +551,43 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	var emptySchemaDetailsResponse struct{}
+	var update bson.M
 	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                newStation.ID,
-			"retention_type":     newStation.RetentionType,
-			"retention_value":    newStation.RetentionValue,
-			"storage_type":       newStation.StorageType,
-			"replicas":           newStation.Replicas,
-			"dedup_enabled":      newStation.DedupEnabled,
-			"dedup_window_in_ms": newStation.DedupWindowInMs,
-			"created_by_user":    newStation.CreatedByUser,
-			"creation_date":      newStation.CreationDate,
-			"last_update":        newStation.LastUpdate,
-			"functions":          newStation.Functions,
-			"schema_name":        newStation.SchemaName,
-		},
+	if schemaName != "" {
+		update = bson.M{
+			"$setOnInsert": bson.M{
+				"_id":                newStation.ID,
+				"retention_type":     newStation.RetentionType,
+				"retention_value":    newStation.RetentionValue,
+				"storage_type":       newStation.StorageType,
+				"replicas":           newStation.Replicas,
+				"dedup_enabled":      newStation.DedupEnabled,
+				"dedup_window_in_ms": newStation.DedupWindowInMs,
+				"created_by_user":    newStation.CreatedByUser,
+				"creation_date":      newStation.CreationDate,
+				"last_update":        newStation.LastUpdate,
+				"functions":          newStation.Functions,
+				"schema":             newStation.Schema,
+			},
+		}
+	} else {
+		update = bson.M{
+			"$setOnInsert": bson.M{
+				"_id":                newStation.ID,
+				"retention_type":     newStation.RetentionType,
+				"retention_value":    newStation.RetentionValue,
+				"storage_type":       newStation.StorageType,
+				"replicas":           newStation.Replicas,
+				"dedup_enabled":      newStation.DedupEnabled,
+				"dedup_window_in_ms": newStation.DedupWindowInMs,
+				"created_by_user":    newStation.CreatedByUser,
+				"creation_date":      newStation.CreationDate,
+				"last_update":        newStation.LastUpdate,
+				"functions":          newStation.Functions,
+				"schema":             emptySchemaDetailsResponse,
+			},
+		}
 	}
 	opts := options.Update().SetUpsert(true)
 	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -599,7 +633,41 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-create-station")
 	}
 
-	c.IndentedJSON(200, newStation)
+	if schemaName != "" {
+		c.IndentedJSON(200, gin.H{
+			"id":                 primitive.NewObjectID(),
+			"name":               stationName.Ext(),
+			"retention_type":     retentionType,
+			"retention_value":    body.RetentionValue,
+			"storage_type":       body.StorageType,
+			"replicas":           body.Replicas,
+			"dedup_enabled":      body.DedupEnabled,
+			"dedup_window_in_ms": body.DedupWindowInMs,
+			"created_by_user":    user.Username,
+			"creation_date":      time.Now(),
+			"last_update":        time.Now(),
+			"functions":          []models.Function{},
+			"is_deleted":         false,
+			"schema":             schemaDetailsResponse,
+		})
+	} else {
+		c.IndentedJSON(200, gin.H{
+			"id":                 primitive.NewObjectID(),
+			"name":               stationName.Ext(),
+			"retention_type":     retentionType,
+			"retention_value":    body.RetentionValue,
+			"storage_type":       body.StorageType,
+			"replicas":           body.Replicas,
+			"dedup_enabled":      body.DedupEnabled,
+			"dedup_window_in_ms": body.DedupWindowInMs,
+			"created_by_user":    user.Username,
+			"creation_date":      time.Now(),
+			"last_update":        time.Now(),
+			"functions":          []models.Function{},
+			"is_deleted":         false,
+			"schema":             emptySchemaDetailsResponse,
+		})
+	}
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
@@ -1122,7 +1190,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	}
 
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, _, err = IsSchemaExist(schemaName)
+	exist, schema, err := IsSchemaExist(schemaName)
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -1134,12 +1202,115 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext()}, bson.M{"$set": bson.M{"schema_name": schemaName}})
+	schemasHandler := SchemasHandler{S: sh.S}
+	schemaVersion, err := schemasHandler.getActiveVersionBySchemaId(schema.ID)
 
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
+	schemaDetailsResponse := models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: true}
+	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+
+	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext()}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+
+	if err != nil {
+		serv.Errorf("UseSchema error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+	c.IndentedJSON(200, schemaDetailsResponse)
+}
+
+func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
+	var body models.RemoveSchemaFromStation
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationNameStr := strings.ToLower(body.StationName)
+	stationName, err := StationNameFromStr(stationNameStr)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	exist, _, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		return
+	}
+
+	_, err = stationsCollection.UpdateOne(context.TODO(),
+		bson.M{
+			"name": stationName.Ext(),
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			},
+		},
+		bson.M{"$set": bson.M{"schema": bson.M{}}},
+	)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
+	var body models.GetUpdatesForSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationNameStr := strings.ToLower(body.StationName)
+	stationName, err := StationNameFromStr(stationNameStr)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("GetUpdatesForSchemaByStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		return
+	}
+
+	var schema models.Schema
+	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+	if err != nil {
+		serv.Errorf("GetUpdatesForSchemaByStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	schemasHandler := SchemasHandler{S: sh.S}
+	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.Schema.VersionNumber, schema)
+
+	if err != nil {
+		serv.Errorf("GetUpdatesForSchemaByStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.IndentedJSON(200, extedndedSchemaDetails)
 }

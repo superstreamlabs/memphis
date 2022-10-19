@@ -37,6 +37,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -194,6 +195,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	auditLogsHandler := AuditLogsHandler{}
 	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
 	tagsHandler := TagsHandler{S: mh.S}
+	schemasHandler := SchemasHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -269,6 +271,23 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	var schema models.Schema
+	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+	var updatesAvailable bool
+	if schemaVersion.Active {
+		updatesAvailable = false
+	} else {
+		updatesAvailable = true
+	}
+	schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+
 	response := models.StationOverviewData{
 		ConnectedProducers:    connectedProducers,
 		DisconnectedProducers: disconnectedProducers,
@@ -284,7 +303,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		Tags:                  tags,
 		Leader:                leader,
 		Followers:             followers,
-		SchemaName:            station.SchemaName,
+		Schema:                schemaDetails,
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

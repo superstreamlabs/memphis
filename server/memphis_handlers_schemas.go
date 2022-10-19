@@ -74,6 +74,35 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	return nil
 }
 
+func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID) (models.SchemaVersion, error) {
+	var schemaVersion models.SchemaVersion
+	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": schemaId, "active": true}).Decode(&schemaVersion)
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+	return schemaVersion, nil
+}
+
+func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
+	var schema models.Schema
+	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
+	if err != nil {
+		return models.Schema{}, err
+	}
+
+	return schema, nil
+}
+
+func (sh SchemasHandler) GetSchemaVersion(stationVersion int, schemaId primitive.ObjectID) (models.SchemaVersion, error) {
+	var schemaVersion models.SchemaVersion
+	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": stationVersion}).Decode(&schemaVersion)
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+
+	return schemaVersion, nil
+}
+
 func (sh SchemasHandler) updateActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
 	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
 		bson.M{"schema_id": schemaId},
@@ -121,7 +150,8 @@ func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID
 func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]string, error) {
 	var stations []models.Station
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"schema_name", schemaName}, {"is_deleted", false}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$schema"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$match", bson.D{{"schema.name", schemaName}, {"is_deleted", false}}}},
 		bson.D{{"$project", bson.D{{"name", 1}}}},
 	})
 
@@ -145,7 +175,7 @@ func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]string, er
 }
 
 func (sh SchemasHandler) getStationsBySchemaCount(schemaName string) (int, error) {
-	filter := bson.M{"schema_name": schemaName, "is_deleted": false}
+	filter := bson.M{"schema.name": schemaName, "is_deleted": false}
 	countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
 
 	if err != nil {
@@ -154,6 +184,51 @@ func (sh SchemasHandler) getStationsBySchemaCount(schemaName string) (int, error
 
 	return int(countStations), nil
 
+}
+
+func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion int, schema models.Schema) (models.ExtendedSchemaDetails, error) {
+	var schemaVersions []models.SchemaVersion
+	usedSchemaVersion, err := sh.GetSchemaVersion(schemaVersion, schema.ID)
+
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	if !usedSchemaVersion.Active {
+		activeSchemaVersion, err := sh.getActiveVersionBySchemaId(schema.ID)
+
+		if err != nil {
+			return models.ExtendedSchemaDetails{}, err
+		}
+		schemaVersions = append(schemaVersions, usedSchemaVersion, activeSchemaVersion)
+
+	} else {
+		schemaVersions = append(schemaVersions, usedSchemaVersion)
+	}
+
+	var extedndedSchemaDetails models.ExtendedSchemaDetails
+	stations, err := sh.getUsingStationsByName(schema.Name)
+
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	tagsHandler := TagsHandler{S: sh.S}
+	tags, err := tagsHandler.GetTagsBySchema(schema.ID)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	extedndedSchemaDetails = models.ExtendedSchemaDetails{
+		ID:           schema.ID,
+		SchemaName:   schema.Name,
+		Type:         schema.Type,
+		Versions:     schemaVersions,
+		UsedStations: stations,
+		Tags:         tags,
+	}
+
+	return extedndedSchemaDetails, nil
 }
 
 func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.ExtendedSchemaDetails, error) {
