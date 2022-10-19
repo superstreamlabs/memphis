@@ -77,7 +77,7 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 
 func validateMessageStructName(messageStructName string) error {
 	if messageStructName == "" {
-		return errors.New("message_struct_name attribute is required when type is protobuf")
+		return errors.New("Message struct name is required when schema type is Protobuf")
 	}
 	return nil
 }
@@ -723,8 +723,6 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 		return
 	}
 
-	isValid := false
-	var response gin.H
 	schemaType := strings.ToLower(body.SchemaType)
 	err := validateSchemaType(schemaType)
 
@@ -739,12 +737,7 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 
 	if err != nil {
 		serv.Warnf(err.Error())
-		response = gin.H{
-			"is_valid": isValid,
-			"error":    err.Error(),
-		}
-
-		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, response)
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 

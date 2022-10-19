@@ -271,9 +271,11 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	var schemaObj models.SchemaDetails
+	var emptySchemaDetailsObj models.SchemaDetails
 	var response gin.H
-	if station.Schema != schemaObj {
+
+	//Check when the schema object in station is not empty
+	if station.Schema != emptySchemaDetailsObj {
 		var schema models.Schema
 		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
 		if err != nil {
@@ -288,12 +290,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		var updatesAvailable bool
-		if schemaVersion.Active {
-			updatesAvailable = false
-		} else {
-			updatesAvailable = true
-		}
+		updatesAvailable := !schemaVersion.Active
 		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
 
 		response = gin.H{
