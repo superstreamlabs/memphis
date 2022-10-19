@@ -23,7 +23,8 @@ import (
 type SchemasHandler struct{ S *Server }
 
 const (
-	schemaObjectName = "Schema"
+	schemaObjectName                    = "Schema"
+	SCHEMA_VALIDATION_ERROR_STATUS_CODE = 555
 )
 
 func validateProtobufContent(schemaContent string) error {
@@ -70,6 +71,13 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 		break
 	case "avro":
 		break
+	}
+	return nil
+}
+
+func validateMessageStructName(messageStructName string) error {
+	if messageStructName == "" {
+		return errors.New("message_struct_name attribute is required when type is protobuf")
 	}
 	return nil
 }
@@ -395,11 +403,21 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
+	messageStructName := body.MessageStructName
+	if schemaType == "protobuf" {
+		err := validateMessageStructName(messageStructName)
+		if err != nil {
+			serv.Warnf(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
+
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schemaType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 	newSchema := models.Schema{
@@ -417,13 +435,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	newSchemaVersion := models.SchemaVersion{
-		ID:            primitive.NewObjectID(),
-		VersionNumber: 1,
-		Active:        true,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		SchemaContent: schemaContent,
-		SchemaId:      newSchema.ID,
+		ID:                primitive.NewObjectID(),
+		VersionNumber:     1,
+		Active:            true,
+		CreatedByUser:     user.Username,
+		CreationDate:      time.Now(),
+		SchemaContent:     schemaContent,
+		SchemaId:          newSchema.ID,
+		MessageStructName: messageStructName,
 	}
 	opts := options.Update().SetUpsert(true)
 	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -562,11 +581,20 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
+	messageStructName := body.MessageStructName
+	if schema.Type == "protobuf" {
+		err := validateMessageStructName(messageStructName)
+		if err != nil {
+			serv.Warnf(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schema.Type)
 	if err != nil {
 		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -580,23 +608,25 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	versionNumber := countVersions + 1
 
 	newSchemaVersion := models.SchemaVersion{
-		ID:            primitive.NewObjectID(),
-		VersionNumber: versionNumber,
-		Active:        false,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		SchemaContent: schemaContent,
-		SchemaId:      schema.ID,
+		ID:                primitive.NewObjectID(),
+		VersionNumber:     versionNumber,
+		Active:            false,
+		CreatedByUser:     user.Username,
+		CreationDate:      time.Now(),
+		SchemaContent:     schemaContent,
+		SchemaId:          schema.ID,
+		MessageStructName: messageStructName,
 	}
 
 	filter := bson.M{"schema_id": schema.ID, "version_number": newSchemaVersion.VersionNumber}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"_id":             newSchemaVersion.ID,
-			"active":          newSchemaVersion.Active,
-			"created_by_user": newSchemaVersion.CreatedByUser,
-			"creation_date":   newSchemaVersion.CreationDate,
-			"schema_content":  newSchemaVersion.SchemaContent,
+			"_id":                 newSchemaVersion.ID,
+			"active":              newSchemaVersion.Active,
+			"created_by_user":     newSchemaVersion.CreatedByUser,
+			"creation_date":       newSchemaVersion.CreationDate,
+			"schema_content":      newSchemaVersion.SchemaContent,
+			"message_struct_name": newSchemaVersion.MessageStructName,
 		},
 	}
 
@@ -684,4 +714,41 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 	}
 	c.IndentedJSON(200, extedndedSchemaDetails)
 
+}
+
+func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
+	var body models.ValidateSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	isValid := false
+	var response gin.H
+	schemaType := strings.ToLower(body.SchemaType)
+	err := validateSchemaType(schemaType)
+
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	schemaContent := body.SchemaContent
+	err = validateSchemaContent(schemaContent, schemaType)
+
+	if err != nil {
+		serv.Warnf(err.Error())
+		response = gin.H{
+			"is_valid": isValid,
+			"error":    err.Error(),
+		}
+
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, response)
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{
+		"is_valid": true,
+	})
 }
