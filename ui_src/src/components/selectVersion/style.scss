@@ -3,6 +3,16 @@
         .ant-select-selector .scheme-details {
             display: none;
         }
+        .ant-select-selector .schema-name{
+            margin-right: 10px;
+            font-family: 'InterMedium';
+            font-size: 14px !important;
+            color: #2E2C34;
+        }
+        .drop-sown-icon{
+            color: rgba(143,146,161,0.4);
+            margin-left: 10px;
+        }
     }
 }
 .select-version-options{
@@ -11,10 +21,16 @@
     box-shadow: 0px 10px 10px rgba(16, 10, 85, 0.1);
     border-radius: 8px;
     width: 300px !important;
+    padding: 10px 0;
     .schema-name{
-        font-weight: 600;
+        font-family: 'InterMedium';
         font-size: 16px;
         margin: 0;
+    }
+    .created-by{
+        font-family: 'InterMedium';
+        font-size: 12px;
+
     }
     .scheme-details{
         font-size: 12px;
@@ -25,23 +41,29 @@
         .current{
             background: rgba(32, 201, 172, 0.2);
             border-radius: 25px;
-            width: 60px;
+            width: 67px;
+            height: 22px;
             margin-right: 10px;
             text-align:center;
             p{
                 color: rgb(32, 201, 172);
                 margin-right: 0px;
+                font-family: 'InterMedium';
+                font-size: 12px;
 
             }  
         }
         .latest{
             background: rgba(0, 165, 255, 0.2);
             border-radius: 25px;
-            width: 50px;
+            width: 59px;
+            height: 22px;
             text-align:center;
             p{
                 color: rgb(0, 165, 255);
                 margin-right: 0px;
+                font-family: 'InterMedium';
+                font-size: 12px;
 
             }
         }
@@ -55,16 +77,19 @@
         }
     }
     .ant-select-item-option{
-        margin: 8px;
+        margin: 3px 8px;
         border-radius: 8px;
     }
     .ant-select-item-option-selected:not(.ant-select-item-option-disabled){
         background: rgba(101, 87, 255, 0.1);
         border-radius: 8px;
-        margin: 8px;
+        margin: 3px 8px;
+        font-weight: unset !important;
     }
     .ant-select-item-option-content{
         display: flex;
         flex-direction: column;
+        height: 50px;
+        justify-content: center;
     }
 }

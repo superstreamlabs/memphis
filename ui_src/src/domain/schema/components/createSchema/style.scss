@@ -76,15 +76,22 @@
             width: 50%;
             height: 100%;
             position: relative;
-                display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             .schema-field{
                 position: relative;
                 height: 100%;
-                .field-title{
-                    font-family: 'InterSemiBold';
-                    font-size: 24px;  
+                .title-wrapper{
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                    align-items: center;
+                    .field-title{
+                        font-family: 'InterSemiBold';
+                        font-size: 24px;
+                        margin: 0;
+                    }
                 }
                 .editor{
                     background: #FFFFFF;
@@ -113,11 +120,10 @@
                 display: flex;
                 place-content: end;
                 margin-bottom: 0;
-                height: 50px;
                 place-items: end;
                 .ant-form-item-control-input-content{
                     display: flex;
-                    width: 260px;
+                    width: 250px;
                     justify-content: space-between;
                 }
             }

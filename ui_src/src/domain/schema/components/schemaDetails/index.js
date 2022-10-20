@@ -36,6 +36,7 @@ import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Modal from '../../../../components/modal';
 import { message } from 'antd';
+import { isThereDiff } from '../../../../services/valueConvertor';
 
 const formatOption = [
     {
@@ -106,6 +107,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         } catch (err) {}
         setIsLoading(false);
     };
+
     const rollBackVersion = async () => {
         try {
             setIsLoading(true);
@@ -116,6 +118,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             }
         } catch (err) {}
         setIsLoading(false);
+    };
+
+    const handleEditVersion = (value) => {
+        setNewVersion(value);
+        setUpdated(isThereDiff(versionSelected?.schema_content, value));
     };
 
     return (
@@ -158,8 +165,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
                             onChange={(value) => {
-                                setUpdated(true);
-                                setNewVersion(value);
+                                handleEditVersion(value);
                             }}
                         />
                     )}
@@ -171,9 +177,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             modified={versionSelected?.schema_content}
                             options={{
                                 renderSideBySide: false,
+                                readOnly: true,
                                 scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                                scrollBeyondLastLine: false,
-                                scrollBeyondLastColumn: false
+                                // scrollBeyondLastLine: false,
+                                renderOverviewRuler: false,
+                                colorDecorators: true
                             }}
                         />
                     )}
@@ -203,10 +211,22 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
             </div>
             <div className="footer">
-                <div>
-                    {!versionSelected?.active && (
+                <div className="left-side">
+                    <Button
+                        width="105px"
+                        height="34px"
+                        placeholder={'close'}
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        border="gray-light"
+                        fontSize="12px"
+                        fontWeight="600"
+                        onClick={() => closeDrawer()}
+                    />
+                    {!versionSelected?.active ? (
                         <Button
-                            width="111px"
+                            width="115px"
                             height="34px"
                             placeholder={
                                 <div className="placeholder-button">
@@ -221,34 +241,21 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             fontWeight="600"
                             onClick={() => setRollBackModal(true)}
                         />
+                    ) : (
+                        <Button
+                            width="115px"
+                            height="34px"
+                            placeholder={'Create version'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            loading={loading}
+                            disabled={!updated || (updated && newVersion === '')}
+                            onClick={() => createNewVersion()}
+                        />
                     )}
-                </div>
-                <div className="left-side">
-                    <Button
-                        width="111px"
-                        height="34px"
-                        placeholder={'close'}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType="white"
-                        border="gray-light"
-                        fontSize="12px"
-                        fontWeight="600"
-                        onClick={() => closeDrawer()}
-                    />
-                    <Button
-                        width="111px"
-                        height="34px"
-                        placeholder={'Update'}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="12px"
-                        fontWeight="600"
-                        loading={loading}
-                        disabled={!updated || (updated && newVersion === '')}
-                        onClick={() => createNewVersion()}
-                    />
                 </div>
             </div>
             <Modal

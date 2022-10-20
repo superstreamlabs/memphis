@@ -19,7 +19,7 @@ schema-details {
                 }
                 p{
                     color: #84818A;
-                    font-family: 'InterSemiBold';
+                    font-family: 'InterMedium';
                     font-size: 12px;
                     line-height: 12px;
                     margin-right: 5px;
@@ -27,7 +27,7 @@ schema-details {
                 span {
                     font-size: 14px;
                     line-height: 14px;
-                    font-family: 'InterSemiBold';
+                    font-family: 'InterMedium';
                     text-transform:capitalize;
                 }
             }
@@ -104,7 +104,7 @@ schema-details {
     .footer{
         padding: 16px 30px;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         .placeholder-button{
             display: flex;
             width: 72px;

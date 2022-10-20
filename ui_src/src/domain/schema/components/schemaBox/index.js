@@ -32,6 +32,7 @@ import usedIcond from '../../../../assets/images/usedIcon.svg';
 import TagsList from '../../../../components/tagsList';
 import Tag from '../../../../components/tag';
 import SchemaDetails from '../schemaDetails';
+import { CloseRounded } from '@material-ui/icons';
 
 const tags = [
     { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
@@ -93,6 +94,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                 onClose={() => handleDrawer(false)}
                 open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+                closeIcon={<CloseRounded style={{ color: '#D1D1D1' }} />}
             >
                 <SchemaDetails schemaName={schema?.name} closeDrawer={() => handleDrawer(false)} />
             </Drawer>

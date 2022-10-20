@@ -24,8 +24,7 @@ import './style.scss';
 import { Select } from 'antd';
 import React from 'react';
 
-import Arrow from '../../assets/images/arrow.svg';
-import { FiberManualRecord } from '@material-ui/icons';
+import { ArrowDropDownRounded, FiberManualRecord } from '@material-ui/icons';
 
 const { Option } = Select;
 
@@ -40,7 +39,7 @@ const SelectVersion = ({ options, onChange, value }) => {
                 className="select"
                 value={value}
                 bordered={false}
-                suffixIcon={<img src={Arrow} alt="select-arrow" />}
+                suffixIcon={<ArrowDropDownRounded className="drop-sown-icon" />}
                 onChange={handleChange}
                 placement="bottomRight"
                 popupClassName="select-version-options"
@@ -50,7 +49,7 @@ const SelectVersion = ({ options, onChange, value }) => {
                         <Option key={option?.id} value={option?.version_number}>
                             <p className="schema-name">Version {option?.version_number}</p>
                             <div className="scheme-details">
-                                <p>Created by {option?.created_by_user}</p>
+                                <p className="created-by">Created by {option?.created_by_user}</p>
                                 {(option.active || index === 0) && <FiberManualRecord />}
                                 {option.active && (
                                     <div className="current">

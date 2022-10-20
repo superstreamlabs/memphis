@@ -67,5 +67,6 @@ export const ApiEndpoints = {
     GET_SCHEMA_DETAILS: '/schemas/getSchemaDetails',
     REMOVE_SCHEMA: '/schemas/removeSchema',
     CREATE_NEW_VERSION: '/schemas/createNewVersion',
-    ROLL_BACK_VERSION: '/schemas/rollBackVersion'
+    ROLL_BACK_VERSION: '/schemas/rollBackVersion',
+    VALIDATE_SCHEMA: '/schemas/validateSchema'
 };

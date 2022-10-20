@@ -80,7 +80,9 @@ export const convertSecondsToDate = (seconds) => {
     } else if (seconds > 0) {
         result = seconds === 1 ? 'one second' : `${seconds} seconds`;
     }
+
     const spliter = result.split(',');
+
     for (let i = 0; i < spliter.length; i++) {
         if (i === 0) {
             result = spliter[0];
@@ -144,4 +146,11 @@ export const stationFilterArray = (arr1, arr2) => {
         return arr2.indexOf(station.station.name) === -1;
     });
     return filtered;
+};
+
+export const isThereDiff = (s1, s2) => {
+    if (s1 === s2) {
+        return false;
+    }
+    return true;
 };

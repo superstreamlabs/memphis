@@ -125,17 +125,21 @@ function CreateSchema({ goBack }) {
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
+    // const handleValidateSchema = () => {
+
+    // }
+
     return (
         <div className="create-schema-wrapper">
             <div className="header">
                 <div className="flex-title">
                     <img src={BackIcon} onClick={() => goBack()} />
-                    <p>Create Schema</p>
+                    <p>Create schema</p>
                 </div>
                 <span>
                     Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
                     <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                        Learn More
+                        Learn more
                     </a>
                 </span>
             </div>
@@ -151,7 +155,7 @@ function CreateSchema({ goBack }) {
                         ]}
                     >
                         <div className="schema-field name">
-                            <p className="field-title">Schema Name</p>
+                            <p className="field-title">Schema name</p>
                             <Input
                                 placeholder="Type schema name"
                                 type="text"
@@ -176,7 +180,7 @@ function CreateSchema({ goBack }) {
                     </Form.Item> */}
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
-                            <p className="field-title">Schema Type</p>
+                            <p className="field-title">Schema type</p>
                             <RadioButton
                                 vertical={true}
                                 options={schemaTypes}
@@ -189,7 +193,21 @@ function CreateSchema({ goBack }) {
                 </div>
                 <div className="right-side">
                     <div className="schema-field schema">
-                        <p className="field-title">Structure Defination</p>
+                        <div className="title-wrapper">
+                            <p className="field-title">Structure definition</p>
+                            {/* <Button
+                                width="115px"
+                                height="34px"
+                                placeholder="Validate"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                // isLoading={loadingSubmit}
+                                onClick={handleValidateSchema}
+                            /> */}
+                        </div>
                         <div className="editor">
                             <Form.Item
                                 name="schema_content"
@@ -221,19 +239,7 @@ function CreateSchema({ goBack }) {
                     </div>
                     <Form.Item className="button-container">
                         <Button
-                            width="147px"
-                            height="34px"
-                            placeholder="Create Schema"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            isLoading={loadingSubmit}
-                            onClick={handleSubmit}
-                        />
-                        <Button
-                            width="106px"
+                            width="105px"
                             height="34px"
                             placeholder="Close"
                             colorType="black"
@@ -243,6 +249,18 @@ function CreateSchema({ goBack }) {
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             onClick={() => goBack()}
+                        />
+                        <Button
+                            width="125px"
+                            height="34px"
+                            placeholder="Create Schema"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            isLoading={loadingSubmit}
+                            onClick={handleSubmit}
                         />
                     </Form.Item>
                 </div>
