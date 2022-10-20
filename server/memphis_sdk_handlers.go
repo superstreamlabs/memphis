@@ -92,37 +92,37 @@ func (s *Server) initializeSDKHandlers() {
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createStationDirect(c, reply, msg)
+		go s.createStationDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func destroyStationHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, subject, reply string, msg []byte) {
-		go s.removeStationDirect(reply, msg)
+		go s.removeStationDirect(reply, copyBytes(msg))
 	}
 }
 
 func createProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createProducerDirect(c, reply, msg)
+		go s.createProducerDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func destroyProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.destroyProducerDirect(c, reply, msg)
+		go s.destroyProducerDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func createConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createConsumerDirect(c, reply, msg)
+		go s.createConsumerDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.destroyConsumerDirect(c, reply, msg)
+		go s.destroyConsumerDirect(c, reply, copyBytes(msg))
 	}
 }
 

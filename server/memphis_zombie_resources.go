@@ -126,7 +126,7 @@ func getActiveConnections() ([]models.Connection, error) {
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func() {
+		go func(msg []byte) {
 			message := strings.TrimSuffix(string(msg), "\r\n")
 			connInfo := &ConnzOptions{}
 			conns, _ := s.Connz(connInfo)
@@ -137,7 +137,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 					return
 				}
 			}
-		}()
+		}(copyBytes(msg))
 	})
 	if err != nil {
 		return err

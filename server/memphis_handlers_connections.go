@@ -130,19 +130,6 @@ func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, co
 	return nil
 }
 
-func (ch ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) error {
-	_, err := connectionsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		serv.Errorf("KillConnection error: " + err.Error())
-		return err
-	}
-
-	return nil
-}
-
 func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
