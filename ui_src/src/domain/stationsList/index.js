@@ -38,7 +38,7 @@ import Modal from '../../components/modal';
 import CreateStationDetails from '../../components/createStationDetails';
 import Loader from '../../components/loader';
 import { filterType, labelType } from '../../const/filterConsts';
-import DatePicker from '../../components/datePicker';
+import { CircleLetterColor } from '../../const/circleLetterColor';
 
 const StationsList = () => {
     const history = useHistory();
@@ -51,95 +51,65 @@ const StationsList = () => {
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [filterTerms, setFilterTerms] = useState([]);
-    const [filterFields, setFilterFields] = useState([
+    const [tagList, setTagList] = useState([
         {
-            name: 'tags',
-            value: 'Tags',
-            labelType: labelType.BADGE,
-            filterType: filterType.CHECKBOX,
-            fields: [
-                {
-                    name: 'Github',
-                    color: '#00A5FF',
-                    background: 'rgba(0, 165, 255, 0.1)',
-                    checked: false
-                },
-                {
-                    name: 'Mixpod',
-                    color: '#FFA043',
-                    background: 'rgba(255, 160, 67, 0.1)',
-                    checked: false
-                },
-                {
-                    name: '2022',
-                    color: '#5542F6',
-                    background: 'rgba(85, 66, 246, 0.1)',
-                    checked: false
-                },
-                {
-                    name: 'Success',
-                    color: '#20C9AC',
-                    background: 'rgba(32, 201, 172, 0.1)',
-                    checked: false
-                }
-            ]
+            id: '63511f8b209adb84d07f1ae9',
+            name: 'a',
+            color: '101, 87, 255',
+            users: [],
+            stations: ['634ffbfa7ca3717d64f58cea'],
+            schemas: []
         },
         {
-            name: 'created',
-            value: 'Created By',
-            labelType: labelType.CIRCLEDLETTER,
-            filterType: filterType.CHECKBOX,
-            fields: [
-                {
-                    name: 'sveta@memphis.dev',
-                    color: '#FFC633',
-                    checked: false
-                },
-                {
-                    name: 'root',
-                    color: 'yellowGreen',
-                    checked: false
-                }
-            ]
+            id: '63512013209adb84d07f1aed',
+            name: '111',
+            color: '101, 87, 255',
+            users: [],
+            stations: [],
+            schemas: []
         },
         {
-            name: 'type',
-            value: 'Type',
-            filterType: filterType.RADIOBUTTON,
-            fields: [
-                {
-                    name: 'Protobuff',
-                    checked: true
-                },
-                {
-                    name: 'Avro',
-                    checked: false
-                },
-                {
-                    name: 'Json',
-                    color: 'Avro',
-                    checked: false
-                }
-            ]
+            id: '6351205d209adb84d07f1aee',
+            name: 'shay',
+            color: '252, 52, 0',
+            users: [],
+            stations: ['634ffbfa7ca3717d64f58cea'],
+            schemas: []
         },
         {
-            name: 'dateAndTime',
-            value: 'Date & Time',
-            filterType: filterType.DATE,
-            fields: [
-                {
-                    name: 'from',
-                    label: 'Selet Start Date',
-                    value: ''
-                },
-                {
-                    name: 'to',
-                    label: 'Selet End Date',
-                    value: ''
-                }
-            ]
+            id: '635120c5209adb84d07f1aef',
+            name: '1',
+            color: '253, 236, 194',
+            users: [],
+            stations: [],
+            schemas: []
+        },
+        {
+            id: '635128c9209adb84d07f1af0',
+            name: 'asdadasdasdasd',
+            color: '101, 87, 255',
+            users: [],
+            stations: [],
+            schemas: []
+        },
+        {
+            id: '63512a7a209adb84d07f1af1',
+            name: '123334r',
+            color: '77, 34, 178',
+            users: [],
+            stations: ['634ffbfa7ca3717d64f58cea'],
+            schemas: []
+        },
+        {
+            id: '63512a85209adb84d07f1af2',
+            name: 'zxvzxvzxvzxv',
+            color: '101, 87, 255',
+            users: [],
+            stations: ['634ffbfa7ca3717d64f58cea'],
+            schemas: []
         }
     ]);
+    const [filterFields, setFilterFields] = useState([]);
     const createStationRef = useRef(null);
 
     useEffect(() => {
@@ -154,15 +124,78 @@ const StationsList = () => {
     }, [searchInput]);
 
     useEffect(() => {
-        handleFilter();
+        filterTerms.length > 0 && handleFilter();
     }, [filterTerms]);
 
     useEffect(() => {
         if (searchInput !== '' && searchInput.length >= 2) {
             setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
         } else setFilteredList(stationsList);
-        handleFilter();
+        filterTerms.length > 0 && handleFilter();
     }, [stationsList]);
+
+    const getTagsFilter = (tags) => {
+        const fields = tagList.map((tag) => {
+            return {
+                name: tag.name,
+                color: `rgba(${tag.color})`,
+                checked: false
+            };
+        });
+        const tagFilter = {
+            name: 'tags',
+            value: 'Tags',
+            labelType: labelType.BADGE,
+            filterType: filterType.CHECKBOX,
+            fields: fields
+        };
+        let filteredFields = filterFields;
+        filteredFields.push(tagFilter);
+        setFilterFields(filteredFields);
+    };
+
+    const getCreatedByFilter = (stations) => {
+        let createdBy = [];
+        stations.forEach((item) => {
+            createdBy.push(item.station.created_by_user);
+        });
+        const created = [...new Set(createdBy)].map((user) => {
+            return {
+                name: user,
+                color: CircleLetterColor[user[0].toUpperCase()],
+                checked: false
+            };
+        });
+        const cratedFilter = {
+            name: 'created',
+            value: 'Created By',
+            labelType: labelType.CIRCLEDLETTER,
+            filterType: filterType.CHECKBOX,
+            fields: created
+        };
+        let filteredFields = filterFields;
+        filteredFields.push(cratedFilter);
+        setFilterFields(filteredFields);
+    };
+
+    const getStorageTypeFilter = () => {
+        const storageTypeFilter = {
+            name: 'storage',
+            value: 'Storage Type',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: [{ name: 'Memory' }, { name: 'File' }]
+        };
+        let filteredFields = filterFields;
+        filteredFields.push(storageTypeFilter);
+        setFilterFields(filteredFields);
+    };
+
+    const getFilterData = (stations) => {
+        getTagsFilter(tagList);
+        getCreatedByFilter(stations);
+        getStorageTypeFilter();
+    };
 
     // const getTags = async () => {
     //     try {
@@ -177,6 +210,7 @@ const StationsList = () => {
         setisLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
+            getFilterData(res.stations);
             res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
             setStationList(res.stations);
             setFilteredList(res.stations);
@@ -194,11 +228,18 @@ const StationsList = () => {
     };
 
     const handleFilter = () => {
-        const createdBy = [];
-        filterTerms[1]?.fields.forEach((item) => {
-            if (item.checked === true) createdBy.push(item.name);
-        });
-        setFilteredList(stationsList.filter((station) => station.station.created_by_user.includes(createdBy)));
+        let objCreated = [];
+        let objStorage = [];
+        try {
+            objCreated = filterTerms.find((o) => o.name === 'created').fields.map((element) => element.toLowerCase());
+        } catch {}
+        try {
+            objStorage = filterTerms.find((o) => o.name === 'storage').fields.map((element) => element.toLowerCase());
+        } catch {}
+        const data = stationsList
+            .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.created_by_user) : !objCreated.includes(item.station.created_by_user)))
+            .filter((item) => (objStorage.length > 0 ? objStorage.includes(item.station.storage_type) : !objStorage.includes(item.station.storage_type)));
+        setFilteredList(data);
     };
 
     const handleRegisterToStation = useCallback(() => {
@@ -275,17 +316,6 @@ const StationsList = () => {
                             onChange={handleSearch}
                             value={searchInput}
                         />
-                        <DatePicker
-                            placeholder="Type your name"
-                            type="text"
-                            radiusType="semi-round"
-                            colorType="gray"
-                            backgroundColorType="none"
-                            borderColorType="red"
-                            width="200px"
-                            minWidth="200px"
-                            onChange={(e) => console.log(e)}
-                        />
                         <Filter filterFields={filterFields} filtersUpdated={(e) => setFilterTerms(e)} />
                         <Button
                             className="modal-btn"
@@ -297,7 +327,6 @@ const StationsList = () => {
                             backgroundColorType="purple"
                             fontSize="14px"
                             fontWeight="bold"
-                            marginLeft="15px"
                             aria-controls="usecse-menu"
                             aria-haspopup="true"
                             onClick={() => modalFlip(true)}

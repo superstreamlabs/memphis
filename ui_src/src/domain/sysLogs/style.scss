@@ -11,5 +11,11 @@
         margin-bottom: 25px;
         display: flex;
         justify-content: space-between;
+        .filter-btn-container {
+            display: flex;
+            .sep {
+                width: 10px;
+            }
+        }
     }
 }

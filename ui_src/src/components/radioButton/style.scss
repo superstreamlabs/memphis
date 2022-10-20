@@ -23,6 +23,7 @@
         color: #777777;
         font-size: 12px;
     }
+
     .ant-radio-checked {
         .ant-radio-inner {
             border-color: var(--purple);
@@ -37,4 +38,12 @@
     .ant-radio:hover .ant-radio-inner {
         border-color: var(--purple);
     }
+    .filter-radio {
+        color: #1d1d1d;
+        margin-bottom: 5px;
+    }
+}
+
+.radio-filter {
+    margin-bottom: 6px;
 }

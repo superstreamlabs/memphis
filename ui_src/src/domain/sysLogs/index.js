@@ -21,13 +21,16 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import LogsWrapper from './components/logsWrapper';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import { filterType, labelType } from '../../const/filterConsts';
+
+import Filter from '../../components/filter';
 
 const SysLogs = () => {
     const [state, dispatch] = useContext(Context);
@@ -52,19 +55,22 @@ const SysLogs = () => {
         <div className="logs-container">
             <header is="3xd">
                 <h1 className="main-header-h1">System Logs </h1>
-                <Button
-                    className="modal-btn"
-                    width="160px"
-                    height="36px"
-                    placeholder="Download Logs"
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="purple"
-                    fontSize="14px"
-                    fontWeight="600"
-                    aria-haspopup="true"
-                    onClick={downloadLogs}
-                />
+                <div className="filter-btn-container">
+                    <div className="sep"></div>
+                    <Button
+                        className="modal-btn"
+                        width="160px"
+                        height="36px"
+                        placeholder="Download Logs"
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="14px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={downloadLogs}
+                    />
+                </div>
             </header>
 
             <LogsWrapper />

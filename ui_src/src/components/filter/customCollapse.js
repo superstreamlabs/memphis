@@ -20,8 +20,8 @@
 // SOFTWARE.
 import './style.scss';
 
-import React, { useState, useEffect } from 'react';
-import { Collapse } from 'antd';
+import React, { useState } from 'react';
+import { Collapse, Tag } from 'antd';
 import { Checkbox } from 'antd';
 import { Divider } from 'antd';
 
@@ -33,31 +33,30 @@ import { filterType, labelType } from '../../const/filterConsts';
 
 const { Panel } = Collapse;
 
-const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
+const CustomCollapse = ({ data, filterCount, onCheck, cancel, apply, clear }) => {
     const [activeKey, setActiveKey] = useState(['0']);
     const onChange = (key) => {
         setActiveKey(key);
     };
 
-    const drawComponent = (filterGroup, filterGroupIndex) => {
+    function drawComponent(filterGroup, filterGroupIndex) {
         switch (filterGroup.filterType) {
             case filterType.CHECKBOX:
                 return drawCheckBox(filterGroup, filterGroupIndex);
             case filterType.DATE:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="" key={filterField.name}>
+                        <div className="date-container" key={filterField.name}>
                             <label>{filterField.label}</label>
                             <DatePicker
-                                placeholder="Type your name"
                                 type="text"
                                 radiusType="semi-round"
                                 colorType="gray"
                                 backgroundColorType="none"
                                 borderColorType="red"
-                                width="200px"
+                                width="240px"
                                 minWidth="200px"
-                                onChange={(e) => console.log(e)}
+                                onChange={(e) => onCheck(filterGroupIndex, filterFieldIndex, e)}
                             />
                         </div>
                     );
@@ -65,30 +64,30 @@ const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
             case filterType.RADIOBUTTON:
                 return (
                     <RadioButton
+                        filter
                         fontFamily="InterSemiBold"
                         options={filterGroup.fields.map((item, id) => {
                             return { id: id, value: id, label: item.name };
                         })}
-                        radioValue={filterGroup.fields[0].label}
+                        radioValue={filterGroup.radioValue}
                         onChange={(e) => onCheck(filterGroupIndex, e.target.value)}
                     />
                 );
         }
-    };
+    }
 
     const drawCheckBox = (filterGroup, filterGroupIndex) => {
         switch (filterGroup.labelType) {
             case labelType.BADGE:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                    // if (filterFieldIndex < 4)
                     return (
                         <div className="label-container" key={filterField.name}>
                             <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
-
-                            <label className="label" style={{ color: filterField.color, backgroundColor: filterField.background }}>
-                                {filterField.name}
-                            </label>
+                            <Tag color={filterField.color}>{filterField.name}</Tag>
                         </div>
                     );
+                    // else if (filterFieldIndex === 4) return <p className="show-more">Show All...</p>;
                 });
             case labelType.CIRCLEDLETTER:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
@@ -102,12 +101,29 @@ const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
                         </div>
                     );
                 });
+            default:
+                return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
+                    return (
+                        <div className="default-checkbox" key={filterField.name}>
+                            <Checkbox checked={filterField.checked} onChange={() => onCheck(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
+                            <label>{filterField.name}</label>
+                        </div>
+                    );
+                });
         }
     };
 
     return (
         <Collapse ghost defaultActiveKey={['0']} onChange={onChange} className="custom-collapse-filter">
-            <div className="collapse-header">Filter</div>
+            <div className="collapse-header">
+                <div className="header-name-counter">
+                    <label>Filter</label>
+                    {filterCount > 0 && <div className="filter-counter">{filterCount}</div>}
+                </div>
+                <label className="clear" onClick={clear}>
+                    Clear All
+                </label>
+            </div>
             {data.map((filterGroup, filterGroupIndex = 0) => (
                 <Panel
                     header={
@@ -129,29 +145,27 @@ const CustomCollapse = ({ data, onCheck, cancel, confirm }) => {
             ))}
             <div className="collapse-footer">
                 <Button
-                    width={'100px'}
+                    width="110px"
                     height="26px"
-                    placeholder={'Cancle'}
+                    placeholder="Cancel"
                     colorType="black"
                     radiusType="circle"
                     backgroundColorType={'white'}
                     border={'gray'}
                     fontSize="12px"
                     fontWeight="bold"
-                    htmlType="submit"
                     onClick={cancel}
                 />
                 <Button
-                    width={'100px'}
+                    width="110px"
                     height="26px"
-                    placeholder={'Confirm'}
+                    placeholder="Apply"
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType={'purple'}
                     fontSize="12px"
                     fontWeight="bold"
-                    htmlType="submit"
-                    onClick={confirm}
+                    onClick={apply}
                 />
             </div>
         </Collapse>

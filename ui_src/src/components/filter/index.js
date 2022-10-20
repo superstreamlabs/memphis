@@ -22,86 +22,108 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-import MenuItem from '@material-ui/core/MenuItem';
-import Popover from '@material-ui/core/Popover';
 import filterImg from '../../assets/images/filter.svg';
-import { MailOutlined, AppstoreOutlined, SettingOutlined } from '@ant-design/icons';
-import { DownOutlined } from '@ant-design/icons';
 import CustomCollapse from './customCollapse';
-import { Dropdown, Menu, Space } from 'antd';
-// import { getBorderRadius, getFontColor, getBackgroundColor, getBorderColor, getBoxShadows } from '../../utils/styleTemplates';
+import { Popover } from 'antd';
+import { filterType, labelType } from '../../const/filterConsts';
 
-const Filter = ({ filterFields, filtersUpdated }) => {
-    const [anchorEl, setAnchorEl] = useState(null);
+const Filter = ({ filterFields, filtersUpdated, height }) => {
+    const [open, setIsOpen] = useState(false);
     const [filtersConter, setFilterCounter] = useState(0);
     const [filter, setFilterFields] = useState(null);
-    const open = Boolean(anchorEl);
+    const [counter, setCounter] = useState(0);
 
     useEffect(() => {
         setFilterFields(filterFields);
     }, []);
 
-    const handleClickMenu = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-        setAnchorEl(null);
-    };
-
-    const handleCheck = (filterGroup, filterField) => {
+    const handleCheck = (filterGroup, filterField, value) => {
+        let updatedCounter = counter;
         let data = filter;
-        data[filterGroup].fields[filterField].checked = !data[filterGroup].fields[filterField].checked;
+        if (filterFields[filterGroup].filterType === filterType.RADIOBUTTON) {
+            if (data[filterGroup].radioValue === 0) updatedCounter++;
+            data[filterGroup].radioValue = filterField;
+        } else if (filterFields[filterGroup].filterType === filterType.DATE) {
+            if (data[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
+            else if (data[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
+            data[filterGroup].fields[filterField].value = value;
+        } else {
+            if (data[filterGroup].fields[filterField].checked) updatedCounter--;
+            else updatedCounter++;
+            data[filterGroup].fields[filterField].checked = !data[filterGroup].fields[filterField].checked;
+        }
+        setCounter(updatedCounter);
         setFilterFields(data);
     };
 
-    const handleConfirm = () => {
-        let counter = 0;
+    const handleApply = () => {
+        let filterTerms = [];
         filter.forEach((element) => {
-            element.fields.forEach((field) => {
-                if (field.checked) counter++;
-            });
+            let term = {
+                name: element.name,
+                fields: []
+            };
+            if (element.filterType === filterType.CHECKBOX) {
+                element.fields.forEach((field) => {
+                    if (field.checked) {
+                        let t = term.fields;
+                        t.push(field.name);
+                        term.fields = t;
+                    }
+                });
+            } else if (element.filterType === filterType.RADIOBUTTON && element.radioValue !== -1) {
+                let t = [];
+                t.push(element.fields[element.radioValue].name);
+                term.fields = t;
+            } else {
+                element.fields.forEach((field) => {
+                    if (field.value !== '') {
+                        let t = term.fields;
+                        let d = {};
+                        d[field.name] = field.value;
+                        t.push(d);
+                        term.fields = t;
+                    }
+                });
+            }
+            if (term.fields.length > 0) filterTerms.push(term);
         });
         setFilterCounter(counter);
-        filtersUpdated(filter);
-        handleCloseMenu();
+        filtersUpdated(filterTerms);
+        setIsOpen(false);
     };
 
     const handleCancel = () => {
-        let data = filter;
-        data.forEach((element) => {
-            element.fields.forEach((field) => {
-                field.checked = false;
-            });
-        });
-        setFilterFields(data);
-        handleCloseMenu();
+        setIsOpen(false);
     };
+
+    const handleClear = () => {
+        setFilterFields(filterFields);
+        setCounter(0);
+        setFilterCounter(0);
+    };
+
+    const content = (
+        <CustomCollapse
+            header="Details"
+            data={filter}
+            filterCount={counter}
+            onCheck={(filterGroup, filterField, value) => handleCheck(filterGroup, filterField, value)}
+            cancel={handleCancel}
+            apply={handleApply}
+            clear={handleClear}
+            defaultOpen={true}
+        />
+    );
+
     return (
-        <div className="filter-container">
-            <img
-                src={filterImg}
-                width="25"
-                height="25"
-                alt="filter"
-                onClick={(e) => {
-                    e.preventDefault();
-                    handleClickMenu(e);
-                }}
-            />
-            Filters
-            {filtersConter > 0 && <div className="filter-counter">{filtersConter}</div>}
-            <Popover id="long-menu" classes={{ paper: 'Menu c' }} anchorEl={anchorEl} onClose={handleCloseMenu} open={open}>
-                <CustomCollapse
-                    header="Details"
-                    data={filter}
-                    onCheck={(filterGroup, filterField) => handleCheck(filterGroup, filterField)}
-                    cancel={handleCancel}
-                    confirm={handleConfirm}
-                    defaultOpen={true}
-                />
-            </Popover>
-        </div>
+        <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => setIsOpen(!open)} open={open}>
+            <div className="filter-container" style={{ height: height }}>
+                <img src={filterImg} width="25" height="25" alt="filter" />
+                Filters
+                {filtersConter > 0 && <div className="filter-counter">{filtersConter}</div>}
+            </div>
+        </Popover>
     );
 };
 

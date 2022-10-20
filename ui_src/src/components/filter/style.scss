@@ -1,8 +1,23 @@
-.Menu.MuiPopover-paper {
-    width: 250px !important;
-    padding: 15px;
+.ant-popover {
+    padding-top: 0;
 }
 
+.ant-popover-inner {
+    width: 280px !important;
+    border-radius: 8px;
+}
+.filter-counter {
+    background: #6557ff;
+    color: white;
+    height: 16px;
+    width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+    font-size: 10px;
+    border-radius: 50%;
+}
 .filter-container {
     height: 40px;
     width: 115px;
@@ -33,26 +48,44 @@
 
 .custom-collapse-filter {
     .ant-divider-horizontal {
-        margin-top: 20px;
+        margin-top: 10px;
         margin-bottom: 0;
     }
     .collapse-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         font-size: 16px;
         font-weight: 600;
+        .header-name-counter {
+            display: flex;
+            align-items: center;
+        }
+        .clear {
+            color: #6557ff;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .clear:hover {
+            text-decoration: underline;
+        }
     }
     .ant-collapse-header {
         padding: 0 !important;
     }
+    .ant-collapse-content-box {
+        max-height: 130px;
+        overflow-y: scroll;
+    }
     .filter-header {
-        margin-bottom: 10px;
-        margin-top: 10px;
+        margin-bottom: 5px;
+        margin-top: 5px;
         .title {
-            font-weight: 500;
+            font-family: 'InterSemiBold';
             font-size: 14px;
             color: #2e2c34;
             margin-bottom: 0;
             margin-right: 10px;
-            padding-left: 5px;
         }
         .collapse-arrow {
             transition: transform 0.4s;
@@ -63,22 +96,32 @@
     }
     .ant-collapse-content-box {
         padding: 0 !important;
-        padding-top: 10px !important;
+        padding-top: 5px !important;
     }
     .label-container {
         margin-bottom: 10px;
-        .label {
-            padding: 3px 6px 3px 6px;
+        .ant-tag {
+            padding: 0px 6px 0px 6px;
             margin-left: 8px;
+            font-family: 'InterSemiBold';
             border-radius: 4px;
+        }
+    }
+    .date-container {
+        margin-bottom: 5px;
+        label {
+            font-size: 11px;
         }
     }
     .circle-container {
         margin-bottom: 10px;
         display: flex;
+        align-items: center;
+        font-size: 13px;
+
         .circle-letter {
-            // font-weight: 600;
-            // font-family: 'InterSemiBold';
+            font-family: 'InterSemiBold';
+            font-size: 13px;
             border-radius: 50%;
             width: 22px;
             align-items: center;
@@ -88,79 +131,21 @@
             margin-left: 8px;
         }
     }
+    .default-checkbox {
+        margin-bottom: 8px;
+        label {
+            margin-left: 8px;
+        }
+    }
     .collapse-footer {
         display: flex;
         justify-content: space-evenly;
         margin-top: 20px;
     }
+    .show-more {
+        color: #6557ff;
+        font-size: 12px;
+        font-family: 'InterSemiBold';
+        cursor: pointer;
+    }
 }
-
-// .filter-collapse {
-//     position: relative;
-//     .filter-header {
-//         margin-bottom: 0;
-//         font-weight: 600;
-//         font-size: 16px;
-//     }
-//     .collapse-header {
-//         display: flex;
-//         align-items: center;
-//         .title {
-//             font-weight: 500;
-//             font-size: 14px;
-//             color: #2e2c34;
-//             margin-bottom: 0;
-//             margin-right: 10px;
-//         }
-//     }
-//     .collapse-body {
-//         .label {
-//             margin-bottom: 5px;
-
-//             label {
-//                 padding: 3px 6px 3px 6px;
-//                 border-radius: 4px;
-//             }
-//         }
-//         .circle {
-//             display: flex;
-//             align-items: center;
-//             margin-bottom: 5px;
-//             .circle-letter {
-//                 font-weight: 600;
-//                 border-radius: 50%;
-//                 width: 22px;
-//                 align-items: center;
-//                 margin-bottom: 0;
-//                 text-align: center;
-//                 margin-right: 5px;
-//                 margin-left: 5px;
-//             }
-//             label {
-//                 font-weight: 400;
-//             }
-//         }
-//     }
-//     .collapse-footer {
-//         display: flex;
-//         justify-content: space-evenly;
-//         margin-bottom: 10px;
-//     }
-
-//     status {
-//         display: flex;
-//     }
-
-//     .message {
-//         font-size: 11px;
-//         color: #84818a;
-//         font-weight: 400;
-//         img {
-//             cursor: pointer;
-//             width: 16px !important;
-//             position: absolute;
-//             top: 15px;
-//             right: 40px;
-//         }
-//     }
-// }s

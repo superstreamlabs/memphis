@@ -34,9 +34,12 @@
 
 .ant-picker-panel-container {
     border-radius: 8px !important;
-    z-index: 100;
 }
 
 .ant-picker-focused {
     box-shadow: none !important;
+}
+
+.date-picker-popup {
+    z-index: 9999;
 }
