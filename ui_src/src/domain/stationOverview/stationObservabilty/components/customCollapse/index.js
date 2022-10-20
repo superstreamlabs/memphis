@@ -35,6 +35,15 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
         setActiveKey(key);
     };
 
+    const isJsonString = (str) => {
+        try {
+            JSON.parse(str);
+        } catch (e) {
+            return false;
+        }
+        return true;
+    };
+
     return (
         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse">
             <Panel
@@ -53,7 +62,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                 {message ? (
                     <div className="message">
                         {message && activeKey.length > 0 && <Copy data={data} />}
-                        <p>{data}</p>
+                        {isJsonString(data) ? <pre>{JSON.stringify(JSON.parse(data), null, 2)}</pre> : <p>{data}</p>}
                     </div>
                 ) : (
                     <>
