@@ -75,12 +75,16 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		serv.Errorf(err.Error())
 		return
 	}
-	connectionIdHeader := hdr["connectionId"]
-	producedByHeader := hdr["producedBy"]
+	connectionIdHeader := hdr["$memphisconnectionId"]
+	producedByHeader := hdr["$memphisproducedBy"]
 
 	if connectionIdHeader == "" || producedByHeader == "" {
-		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-		return
+		connectionIdHeader = hdr["connectionId"]
+		producedByHeader = hdr["producedBy"]
+		if connectionIdHeader == "" || producedByHeader == "" {
+			serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			return
+		}
 	}
 
 	if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent

@@ -485,11 +485,23 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		if len(data) > 100 { // get the first chars for preview needs
 			data = data[0:100]
 		}
+
+		connectionIdHeader := hdr["$memphisconnectionId"]
+		producedByHeader := strings.ToLower(hdr["$memphisproducedBy"])
+
+		if connectionIdHeader == "" || producedByHeader == "" {
+			connectionIdHeader = hdr["connectionId"]
+			producedByHeader = strings.ToLower(hdr["producedBy"])
+			if connectionIdHeader == "" || producedByHeader == "" {
+				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			}
+		}
+
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(msg.Sequence),
 			Data:         data,
-			ProducedBy:   hdr["producedBy"],
-			ConnectionId: hdr["connectionId"],
+			ProducedBy:   producedByHeader,
+			ConnectionId: connectionIdHeader,
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		})
