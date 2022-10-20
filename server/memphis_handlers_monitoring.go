@@ -271,39 +271,65 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	var schema models.Schema
-	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
-	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+	var emptySchemaDetailsObj models.SchemaDetails
+	var response gin.H
 
-	schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
-	var updatesAvailable bool
-	if schemaVersion.Active {
-		updatesAvailable = false
+	//Check when the schema object in station is not empty
+	if station.Schema != emptySchemaDetailsObj {
+		var schema models.Schema
+		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		updatesAvailable := !schemaVersion.Active
+		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+
+		response = gin.H{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 schemaDetails,
+		}
+
 	} else {
-		updatesAvailable = true
-	}
-	schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
-
-	response := models.StationOverviewData{
-		ConnectedProducers:    connectedProducers,
-		DisconnectedProducers: disconnectedProducers,
-		DeletedProducers:      deletedProducers,
-		ConnectedCgs:          connectedCgs,
-		DisconnectedCgs:       disconnectedCgs,
-		DeletedCgs:            deletedCgs,
-		TotalMessages:         totalMessages,
-		AvgMsgSize:            avgMsgSize,
-		AuditLogs:             auditLogs,
-		Messages:              messages,
-		PoisonMessages:        poisonMessages,
-		Tags:                  tags,
-		Leader:                leader,
-		Followers:             followers,
-		Schema:                schemaDetails,
+		var emptyResponse struct{}
+		response = gin.H{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 emptyResponse,
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
