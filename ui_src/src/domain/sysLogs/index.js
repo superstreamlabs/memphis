@@ -50,7 +50,7 @@ const SysLogs = () => {
 
     return (
         <div className="logs-container">
-            <header is="3xd">
+            <div className="header-wraper">
                 <h1 className="main-header-h1">System Logs </h1>
                 <Button
                     className="modal-btn"
@@ -65,7 +65,7 @@ const SysLogs = () => {
                     aria-haspopup="true"
                     onClick={downloadLogs}
                 />
-            </header>
+            </div>
 
             <LogsWrapper />
         </div>

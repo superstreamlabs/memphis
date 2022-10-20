@@ -96,34 +96,36 @@ function Users() {
 
     return (
         <div className="users-container">
-            <h1 className="main-header-h1">Users</h1>
-            <div className="add-search-user">
-                <SearchInput
-                    placeholder="Search here"
-                    colorType="navy"
-                    backgroundColorType="none"
-                    width="10vw"
-                    height="27px"
-                    borderRadiusType="circle"
-                    borderColorType="gray"
-                    boxShadowsType="gray"
-                    iconComponent={<img src={searchIcon} />}
-                    onChange={handleSearch}
-                    value={searchInput}
-                />
-                <Button
-                    className="modal-btn"
-                    width="160px"
-                    height="36px"
-                    placeholder={'Add a new user'}
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="purple"
-                    fontSize="14px"
-                    fontWeight="600"
-                    aria-haspopup="true"
-                    onClick={() => addUserModalFlip(true)}
-                />
+            <div className="header-wraper">
+                <label className="main-header-h1">Users</label>
+                <div className="add-search-user">
+                    <SearchInput
+                        placeholder="Search here"
+                        colorType="navy"
+                        backgroundColorType="none"
+                        width="10vw"
+                        height="27px"
+                        borderRadiusType="circle"
+                        borderColorType="gray"
+                        boxShadowsType="gray"
+                        iconComponent={<img src={searchIcon} />}
+                        onChange={handleSearch}
+                        value={searchInput}
+                    />
+                    <Button
+                        className="modal-btn"
+                        width="160px"
+                        height="36px"
+                        placeholder={'Add a new user'}
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="14px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={() => addUserModalFlip(true)}
+                    />
+                </div>
             </div>
             <div className="users-list-container">
                 <div className="users-list-header">

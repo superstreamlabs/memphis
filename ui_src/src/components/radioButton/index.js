@@ -21,11 +21,11 @@
 
 import './style.scss';
 
-import { Radio } from 'antd';
+import { Radio, Space } from 'antd';
 import React from 'react';
 
 const RadioButton = (props) => {
-    const { options = [], radioValue, onChange, optionType, disabled, fontFamily } = props;
+    const { options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper } = props;
 
     const handleChange = (e) => {
         onChange(e);
@@ -40,25 +40,26 @@ const RadioButton = (props) => {
         <div className="radio-button">
             <Radio.Group
                 {...fieldProps}
-                className="radio-group"
+                className={vertical ? 'radio-group gr-vertical' : 'radio-group'}
                 optionType={optionType ? optionType : null}
                 disabled={disabled}
                 defaultValue={radioValue || options[0]?.value}
             >
                 {options.map((option) => (
-                    <div
-                        className={props.labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : ''}
-                        onClick={() => (props.labelType ? props.onClick(option.value) : '')}
-                    >
-                        <Radio key={option.id} value={option.value}>
+                    <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
+                        <div
+                            className={props.labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
+                            onClick={() => (props.labelType ? props.onClick(option.value) : '')}
+                        >
                             <span
-                                className={props.labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : ''}
+                                className={props.labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : 'label'}
                                 style={{ fontFamily: fontFamily }}
                             >
                                 {option.label}
                             </span>
-                        </Radio>
-                    </div>
+                            {option.description && <span className="des">{option.description}</span>}
+                        </div>
+                    </Radio>
                 ))}
             </Radio.Group>
         </div>

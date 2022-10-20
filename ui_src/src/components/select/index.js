@@ -38,7 +38,7 @@ const SelectComponent = (props) => {
         value,
         backgroundColorType,
         borderColorType,
-        dropdownClassName,
+        popupClassName,
         boxShadowsType,
         radiusType,
         size,
@@ -78,7 +78,7 @@ const SelectComponent = (props) => {
                 {...fieldProps}
                 className="select"
                 size={size}
-                dropdownClassName={dropdownClassName}
+                popupClassName={popupClassName}
                 value={value}
                 suffixIcon={<ArrowDropDownRounded />}
                 dropdownStyle={dropdownStyle}
