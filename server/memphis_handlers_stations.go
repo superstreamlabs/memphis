@@ -1146,12 +1146,20 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	headersJson, err := getMessageHeaders(hdr)
+
+	if err != nil {
+		serv.Errorf("HandleNewMessage" + err.Error())
+		return
+	}
+
 	msg := models.Message{
 		MessageSeq: body.MessageSeq,
 		Message: models.MessagePayload{
 			TimeSent: sm.Time,
 			Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
 			Data:     string(sm.Data),
+			Headers:  headersJson,
 		},
 		Producer: models.ProducerDetails{
 			Name:          producedByHeader,

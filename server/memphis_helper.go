@@ -36,6 +36,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nuid"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -80,6 +81,23 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 			respCh <- msg
 		}(copyBytes(msg))
 	}
+}
+
+func getMessageHeaders(hdr map[string]string) (string, error) {
+	headers := map[string]string{}
+	for i, header := range hdr {
+		if !strings.HasPrefix(i, "$memphis") {
+			keyValue := map[string]string{i: header}
+			maps.Copy(headers, keyValue)
+		}
+	}
+	headersJson, err := json.Marshal(headers)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(headersJson), nil
 }
 
 func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {
@@ -497,6 +515,10 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			}
 		}
 
+		headersJson, err := getMessageHeaders(hdr)
+		if err != nil {
+			return []models.MessageDetails{}, err
+		}
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(msg.Sequence),
 			Data:         data,
@@ -504,6 +526,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			ConnectionId: connectionIdHeader,
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
+			Headers:      headersJson,
 		})
 	}
 
