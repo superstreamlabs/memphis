@@ -21,7 +21,24 @@
 
 import './style.scss';
 import React, { useState } from 'react';
-const ColorPicker = ({ colors, onChange }) => {
+const ColorPicker = ({ onChange }) => {
+    const colors = [
+        '101, 87, 255',
+        '77, 34, 178',
+        '177, 140, 254',
+        '216, 201, 254',
+        '0, 165, 255',
+        '238, 113, 158',
+        '255, 140, 130',
+        '252, 52, 0',
+        '97, 223, 155',
+        '32, 201, 172',
+        '97, 223, 215',
+        '255, 160, 67',
+        '253, 236, 194',
+        '182, 180, 186',
+        '100, 100, 103'
+    ];
     const [chosenColor, setChosenColor] = useState(colors[0]);
 
     const handleColorPick = (color) => {
@@ -30,11 +47,13 @@ const ColorPicker = ({ colors, onChange }) => {
     };
 
     return colors?.map((color) => (
-        <li key={color} className="color-picker" onClick={() => handleColorPick(color)}>
-            <div className="color-circle" key={color} style={{ backgroundColor: color }}>
-                {color === chosenColor ? <div className="checkmark"></div> : <></>}
-            </div>
-        </li>
+        <div className="color-picker">
+            <li key={color} onClick={() => handleColorPick(color)}>
+                <div className="color-circle" key={color} style={{ backgroundColor: `rgb(${color})` }}>
+                    {color === chosenColor ? <div className="inner-circle"></div> : <></>}
+                </div>
+            </li>
+        </div>
     ));
 };
 

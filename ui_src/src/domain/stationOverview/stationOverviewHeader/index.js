@@ -22,8 +22,10 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { InfoOutlined } from '@material-ui/icons';
+import { InfoOutlined, Add } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+
+import { Space, Popover } from 'antd';
 
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
@@ -49,8 +51,6 @@ const StationOverviewHeader = () => {
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
     const [tagModal, setTagModal] = useState(false);
-    // const [tags, setTags] = useState(stationState?.stationMetaData?.tags);
-    // const [shouldUpdateTags, setShouldUpdateTags] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -72,16 +72,6 @@ const StationOverviewHeader = () => {
         history.push(pathDomains.stations);
     };
 
-    // useEffect(async () => {
-    //     if (shouldUpdateTags) {
-    //         try {
-    //             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationState?.stationMetaData?.name}`);
-    //             setTags(data.tags);
-    //             setShouldUpdateTags(false);
-    //         } catch (error) {}
-    //     }
-    // }, [shouldUpdateTags]);
-
     const updateTags = (tags) => {
         stationDispatch({ type: 'SET_TAGS', payload: tags });
     };
@@ -101,14 +91,35 @@ const StationOverviewHeader = () => {
                 <div className="station-details">
                     <h1 className="station-name">
                         {stationState?.stationMetaData?.name}
-                        <TagsList
-                            className="tags-list"
-                            tags={stationState?.stationMetaData?.tags}
-                            addNew={true}
-                            closable={true}
-                            handleEdit={() => setTagModal(true)}
-                            handleClose={(tag) => removeTag(tag)}
-                        />
+                        <TagsList className="tags-list" tags={stationState?.stationMetaData?.tags} addNew={true} closable={true} handleClose={(tag) => removeTag(tag)} />
+                        <Popover
+                            onClick={() => setTagModal(!tagModal)}
+                            onCancel={() => setTagModal(false)}
+                            placement="bottomLeft"
+                            visible={tagModal}
+                            content={
+                                <TagsPicker
+                                    tags={stationState?.stationMetaData?.tags}
+                                    entity_id={stationState?.stationMetaData?.id}
+                                    entity_type={'station'}
+                                    handleUpdatedTagList={(tags) => {
+                                        updateTags(tags);
+                                        setTagModal(false);
+                                    }}
+                                    handleCloseWithNoChanges={() => {
+                                        setTagModal(false);
+                                    }}
+                                    entityName={stationState?.stationMetaData?.name}
+                                />
+                            }
+                        >
+                            <Space className="space">
+                                <div className="edit-tags">
+                                    <Add className="add" />
+                                    <div className="edit-content">Edit Tags</div>
+                                </div>
+                            </Space>
+                        </Popover>
                     </h1>
                     <span className="created-by">
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
@@ -231,21 +242,6 @@ const StationOverviewHeader = () => {
                     hr={false}
                 >
                     <Auditing />
-                </Modal>
-                <Modal header="Tags" displayButtons={false} height="500px" width="300px" clickOutside={() => setTagModal(false)} open={tagModal} hr={false}>
-                    <TagsPicker
-                        tags={stationState?.stationMetaData?.tags}
-                        entity_id={stationState?.stationMetaData?.id}
-                        entity_type={'station'}
-                        handleUpdatedTagList={(tags) => {
-                            updateTags(tags);
-                            setTagModal(false);
-                        }}
-                        handleCloseWithNoChanges={() => {
-                            setTagModal(false);
-                        }}
-                        entityName={stationState?.stationMetaData?.name}
-                    />
                 </Modal>
             </div>
         </div>

@@ -1,23 +1,24 @@
 .color-picker {
-    display: grid;
-    justify-content: space-between;
     .color-circle {
         margin-left: 0;
         display: inline-block;
         border-radius: 50%;
-        width: 25px;
-        height: 25px;
+        width: 30px;
+        height: 30px;
         position: relative;
         cursor: pointer;
     }
-    .checkmark {
+    .inner-circle {
+        margin-left: 0;
         position: absolute;
-        transform: rotate(45deg) translate(-50%, -50%);
-        left: 28%;
-        top: 46%;
-        height: 12px;
-        width: 7px;
-        border-bottom: 3px solid white;
-        border-right: 3px solid white;
+        background-color: transparent;
+        border: 2px solid white;
+        border-radius: 50%;
+        left: 11%;
+        top: 11%;
+        height: 24px;
+        width: 24px;
+        position: relative;
+        cursor: pointer;
     }
 }

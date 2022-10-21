@@ -9,24 +9,26 @@
         margin-left: 5px;
         display: inline-block;
         border-radius: 50%;
-        width: 15px;
-        height: 15px;
     }
     .color-picker {
-        margin-left: 5px;
+        margin-left: 8px;
+        margin-right: 8px;
+        margin-top: 10px;
         display: inline-block;
         border-radius: 50%;
-        width: 25px;
-        height: 25px;
+        width: 30px;
+        height: 30px;
     }
     .field-title {
         font-weight: 400;
         font-size: 12px;
         margin: 0;
+        margin-bottom: 10px;
         display: flex;
     }
     .color-pick {
         margin-top: 15px;
+        justify-content: space-between;
     }
     .tag-name {
         font-size: 17px;
@@ -56,6 +58,10 @@
             line-height: 23px;
             color: var(--gray);
         }
+    }
+    .save-cancel-buttons {
+        display: flex;
+        margin-top: 10px;
     }
     .size-value,
     .messages-value,

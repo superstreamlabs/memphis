@@ -28,14 +28,13 @@ import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import ColorPicker from '../../colorPicker';
 
-const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
-    const [saveVisible, setSaveVisible] = useState(false);
+const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: ''
     });
-    const [tagColor, setTagColor] = useState('purple');
-    const colors = ['purple', 'magenta', 'red', 'orange', 'gold', 'lime', 'green', 'cyan', 'blue'];
+    const [tagColor, setTagColor] = useState('101, 87, 255');
+
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
         updatedValue[field] = value;
@@ -94,9 +93,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
                     style={{ height: '70px' }}
                 >
                     <div className="tag-name">
-                        <p className="field-title">
-                            <span className="required-field-mark">* </span>Tag name <div className="color-circle" style={{ backgroundColor: tagColor }}></div>
-                        </p>
+                        <p className="field-title">Tag name</p>
                         <Input
                             placeholder={searchVal ? searchVal : 'Type tag name'}
                             type="text"
@@ -112,30 +109,39 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish }) => {
                     </div>
                 </Form.Item>
                 <div className="color-pick">
-                    {/* <CirclePicker colors={colors} onChange={handleColorChange} /> */}
-                    <ColorPicker colors={colors} onChange={handleColorChange} />
+                    <ColorPicker onChange={handleColorChange} />
                     <Divider className="divider" />
-                    {/* {colors.map((color) => (
-                        <li key={color} className="color-picker">
-                            <div className="color-picker" style={{ backgroundColor: color }}></div>
-                        </li>
-                    ))} */}
                 </div>
-                <Button
-                    width={'200px'}
-                    height="30px"
-                    placeholder={`Create Tag`}
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType={'purple'}
-                    fontSize="14px"
-                    fontWeight="bold"
-                    htmlType="submit"
-                    marginTop="20px"
-                    marginLeft="30px"
-                    marginBottom="5px"
-                    onClick={onFinish}
-                />
+                <div className="save-cancel-buttons">
+                    <Button
+                        width={'80px'}
+                        height="36px"
+                        placeholder={`Cancel`}
+                        colorType="black"
+                        radiusType="semi-round"
+                        backgroundColorType={'white'}
+                        border="gray-light"
+                        fontSize="14px"
+                        fontWeight="bold"
+                        marginBottom="5px"
+                        htmlType="submit"
+                        onClick={handleCancel}
+                    />
+                    <Button
+                        width={'60px'}
+                        height="36px"
+                        placeholder={`Add`}
+                        colorType="white"
+                        radiusType="semi-round"
+                        backgroundColorType={'purple'}
+                        fontSize="14px"
+                        fontWeight="bold"
+                        htmlType="submit"
+                        marginLeft="100px"
+                        marginBottom="5px"
+                        onClick={onFinish}
+                    />
+                </div>
             </Form>
         </div>
     );

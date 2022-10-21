@@ -22,15 +22,14 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-import { Tag, Dropdown, Space } from 'antd';
+import { Space, Popover } from 'antd';
+import Tag from '../tag';
 import { Add } from '@material-ui/icons';
-import Modal from '../modal';
 import AllTagsList from './allTagsList';
 
-const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
+const TagsList = ({ tags, closable, handleClose }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [remainingTags, setRemainingTags] = useState([]);
-    const [listTagModal, setListTagModal] = useState(false);
     useEffect(() => {
         if (tags?.length > 3) {
             const tagsShow = tags.slice(0, 3);
@@ -40,62 +39,25 @@ const TagsList = ({ tags, addNew, handleEdit, closable, handleClose }) => {
         } else {
             setTagsToDisplay(tags);
         }
-    }, []);
+    }, [tags]);
 
     return (
         <div className="tags-list-wrapper">
             {tagsToDisplay?.map((tag, index) => {
-                const isLongTag = tag.name.length > 7;
-                return (
-                    <Tag
-                        className="tag-wrapper"
-                        key={tag.name}
-                        color={tag.color}
-                        style={{ borderColor: 'transparent', padding: '0px' }}
-                        closable={closable ? closable : false}
-                        onClose={() => handleClose(tag.name)}
-                    >
-                        {isLongTag ? `${tag.name.slice(0, 7)}...` : tag.name}
-                    </Tag>
-                );
+                return <Tag key={tag.name} tag={tag} closable={closable ? closable : false} onClose={() => handleClose(tag.name)} />;
             })}
             {tags?.length > 3 ? (
-                <Dropdown
-                    overlay={<AllTagsList tags={remainingTags} handleClose={handleClose} closable={closable}></AllTagsList>}
-                    trigger={closable ? ['click'] : ['hover']}
-                >
+                <Popover placement="bottomLeft" content={<AllTagsList tags={remainingTags} handleClose={handleClose} closable={closable}></AllTagsList>}>
                     <Space className="space">
-                        <div className="edit-tags">
-                            <p>+{tags.length - 3}</p>
+                        <div className="plus-tags">
+                            <Add className="add" />
+                            <p>{tags.length - 3}</p>
                         </div>
                     </Space>
-                </Dropdown>
+                </Popover>
             ) : (
                 <></>
             )}
-            {addNew && (
-                <div className="edit-tags" onClick={() => handleEdit()}>
-                    <Add />
-                    <p>Edit Tags</p>
-                </div>
-            )}
-            {/* {
-                <Modal
-                    header={
-                        <div className="audit-header">
-                            <p className="title">Tags</p>
-                        </div>
-                    }
-                    displayButtons={false}
-                    height="250px"
-                    width="140px"
-                    clickOutside={() => setListTagModal(false)}
-                    open={listTagModal}
-                    hr={false}
-                >
-                    <AllTagsList tags={tags} handleClose={handleClose} closable={closable}></AllTagsList>
-                </Modal>
-            } */}
         </div>
     );
 };

@@ -2,14 +2,24 @@
     padding-right: 5px;
     padding-left: 5px;
     border-radius: 4px;
-    height: 24px;
+    height: 30px;
     display: flex;
     align-items: center;
-    p {
+    max-width: 80px;
+    margin-right: 2px;
+    .tag-content {
         font-family: 'InterSemiBold';
         font-size: 12px;
         line-height: 12px;
-        margin-top: 50%;
-        margin-bottom: 50%;
+        height: 12px;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .close {
+        height: 10px;
+        width: 10px;
+        float: right;
+        cursor: pointer;
     }
 }

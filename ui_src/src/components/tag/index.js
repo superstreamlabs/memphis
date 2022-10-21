@@ -20,13 +20,17 @@
 // SOFTWARE.
 
 import './style.scss';
+import { Close } from '@material-ui/icons';
 
 import React from 'react';
 
-const Tag = ({ tag, onClick }) => {
+const Tag = ({ tag, onClose, closable }) => {
     return (
-        <div className="tag-wrapper" style={{ background: tag.color ? tag.color : 'purple' }} onClick={onClick}>
-            <p style={{ color: 'white' }}>{tag.name}</p>
+        <div className="tag-wrapper" style={{ background: `rgba(${tag.color},0.2)` }}>
+            <div className="tag-content" style={{ color: `rgb(${tag.color})` }}>
+                {tag.name}
+            </div>
+            {closable ? <Close className="close" style={{ color: `rgb(${tag.color})` }} onClick={onClose} /> : <></>}
         </div>
     );
 };

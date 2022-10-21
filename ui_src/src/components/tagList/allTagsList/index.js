@@ -20,18 +20,13 @@
 // SOFTWARE.
 
 import './style.scss';
-import { Tag } from 'antd';
+import Tag from '../../tag';
 
 const AllTagsList = ({ tags, handleClose, closable }) => {
     return (
         <div className="all-tags-list-wrapper">
             {tags?.map((tag, index) => {
-                const isLongTag = tag.name.length > 7;
-                return (
-                    <Tag className="tag-wrapper" key={tag.name} color={tag.color} closable={closable ? closable : false} onClose={() => handleClose(tag.name)}>
-                        {isLongTag ? `${tag.name.slice(0, 7)}...` : tag.name}
-                    </Tag>
-                );
+                return <Tag key={tag.name} tag={tag} closable={closable ? closable : false} onClose={() => handleClose(tag.name)} />;
             })}
         </div>
     );

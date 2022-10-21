@@ -2,8 +2,8 @@
     display: flex;
     align-items: center;
     margin-left: 5px;
-    .edit-tags {
-        // background-color: #f0f1f2;
+
+    .plus-tags {
         background-color: rgba(132, 129, 138, 0.1);
         padding-right: 5px;
         border-style: solid;
@@ -15,22 +15,32 @@
         display: flex;
         align-items: center;
         cursor: pointer;
-        svg {
-            width: 18px;
-        }
         p {
             font-family: 'InterSemiBold';
             font-size: 12px;
             line-height: 12px;
+            color: #2e2c34;
             margin-top: 50%;
             margin-bottom: 50%;
+        }
+        .add {
+            height: 13px;
+            width: 13px;
+            cursor: pointer;
         }
     }
     .tag-wrapper {
         border-radius: 4px;
+        font-family: 'Manrope';
+        font-style: normal;
+        font-weight: 600;
+        font-size: 14px;
         height: 20px;
         display: flex;
         align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
     .plus-tag-wrapper {
         padding-right: 5px;
@@ -41,7 +51,27 @@
         align-items: center;
         cursor: pointer;
     }
+
     .space {
         padding-right: 2px;
     }
+}
+.ant-popover-inner {
+    width: 90px !important;
+    justify-content: center !important;
+    .ant-popover-inner-content {
+        padding: 10px 5px;
+        box-sizing: border-box;
+        position: absolute;
+        background: #ffffff;
+        border: 1px solid #f0f0f0;
+        box-shadow: 0px 10px 10px rgba(16, 10, 85, 0.1);
+        border-radius: 8px !important;
+    }
+}
+.ant-popover-arrow {
+    visibility: hidden;
+}
+.ant-popover-placement-bottomLeft {
+    top: 35px !important;
 }

@@ -22,16 +22,15 @@
 import './style.scss';
 import React, { useEffect, useState } from 'react';
 import Button from '../../components/button';
-import { Divider } from 'antd';
 import SearchInput from '../searchInput';
 import searchIcon from '../../assets/images/searchIcon.svg';
 import Modal from '../../components/modal';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
-import CheckboxComponent from '../checkBox';
+import { Add } from '@material-ui/icons';
 
-const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges, entityName }) => {
+const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -39,16 +38,13 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
     const [editedList, setEditedList] = useState(false);
     const [newTagModal, setNewTagModal] = useState(false);
 
-    const handleCheck = (e) => {
-        const { value, checked } = e.target;
-        var updatedList = [...checkedList];
-        var tagChecked = allTags.find((tag) => tag.name === value);
+    const handleCheck = (tagToHandle) => {
+        const checked = checkedList?.some((item) => tagToHandle.name === item.name);
         if (checked) {
-            updatedList = [...checkedList, tagChecked];
+            setCheckedList(checkedList.filter((item) => item.name !== tagToHandle.name));
         } else {
-            updatedList.splice(checkedList.indexOf(tagChecked), 1);
+            setCheckedList([...checkedList, tagToHandle]);
         }
-        setCheckedList(updatedList);
         setEditedList(true);
     };
 
@@ -62,7 +58,6 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
     }, []);
 
     useEffect(() => {
-        //let allTagsRes = res.filter((allTag) => !tags.some((tag) => allTag.id === tag.id));
         if (searchInput.length > 0) {
             const results = allTags.filter((tag) => {
                 return tag.name.toLowerCase().startsWith(searchInput.toLowerCase());
@@ -116,51 +111,39 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
 
     return (
         <div className="tags-picker-wrapper">
+            <div className="tags-picker-title">Apply tags to this {entity_type}</div>
             <div className="search-input">
                 <SearchInput
                     placeholder="Tag Name"
                     colorType="navy"
                     backgroundColorType="none"
-                    width="10vw"
+                    width="11.5vw"
                     height="27px"
                     borderRadiusType="circle"
                     borderColorType="search-input"
-                    boxShadowsType="search-input"
+                    boxShadowsType="none"
                     iconComponent={<img alt="search tag" src={searchIcon} />}
                     onChange={handleSearch}
                     value={searchInput}
+                    style={{ boxShadow: 'none' }}
                 />
             </div>
             <div className="tags-list">
                 {tagsToDisplay && tagsToDisplay.length > 0 ? (
                     tagsToDisplay.map((tag) => (
-                        <li key={tag.name} className="tag">
-                            <input value={tag.name} type="checkbox" defaultChecked={checkedList?.some((item) => tag.name === item.name)} onChange={handleCheck} />
-                            {/* <CheckboxComponent checkName={tag.name} id={tag.name} checked={checkedList.some((item) => tag.name === item.name)} onChange={handleCheck} /> */}
-                            <div className="color-circle" style={{ backgroundColor: tag.color }}></div>
+                        <li key={tag.name} className="tag" onClick={() => handleCheck(tag)}>
+                            {checkedList?.some((item) => tag.name === item.name) ? <div className="checkmark"></div> : <div className="no-checkmark"></div>}
+                            <div className="color-circle" style={{ backgroundColor: `rgb(${tag.color})` }}></div>
                             <span className="tag-name">{tag.name}</span>
-                            <Divider className="divider" />
                         </li>
                     ))
                 ) : (
                     <span className="no-new">No Tags With That Name</span>
                 )}
             </div>
-            <div className="create-new-tag">
-                <Button
-                    width={'200px'}
-                    height="30px"
-                    placeholder={`Create New Tag ${searchInput.length > 0 && tagsToDisplay.length === 0 ? searchInput : ''}`}
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType={'none'}
-                    fontSize="14px"
-                    fontWeight="bold"
-                    htmlType="submit"
-                    marginLeft="20px"
-                    marginBottom="5px"
-                    onClick={() => setNewTagModal(true)}
-                />
+            <div className="create-new-tag" onClick={() => setNewTagModal(true)}>
+                <Add style={{ height: '20px' }} />
+                <div className="new-button">{`Create New Tag ${searchInput.length > 0 && tagsToDisplay.length === 0 ? `"${searchInput}"` : ''}`}</div>
             </div>
             <div className="save-cancel-buttons">
                 <Button
@@ -190,11 +173,7 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                     onClick={handleSaveChanges}
                     disabled={!editedList}
                 />
-
-                {/* <Button onClick={handleSaveChanges}>Save Changes</Button> */}
-                {/* <Button onClick={handleCloseWithNoChanges}>Cancel</Button> */}
             </div>
-            {/* )} */}
             {
                 <Modal
                     header={
@@ -203,13 +182,13 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                         </div>
                     }
                     displayButtons={false}
-                    height="250px"
-                    width="320px"
+                    height="334px"
+                    width="290px"
                     clickOutside={() => setNewTagModal(false)}
                     open={newTagModal}
                     hr={false}
                 >
-                    <NewTagGenerator searchVal={searchInput} allTags={allTags} handleFinish={(tag) => handleNewTag(tag)} />
+                    <NewTagGenerator searchVal={searchInput} allTags={allTags} handleFinish={(tag) => handleNewTag(tag)} handleCancel={() => setNewTagModal(false)} />
                 </Modal>
             }
         </div>
