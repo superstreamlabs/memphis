@@ -36,4 +36,5 @@ func InitializeTagsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	tagsRoutes.POST("/createTags", tagsHandler.CreateTags)
 	tagsRoutes.POST("/createNewTag", tagsHandler.CreateNewTag)
 	tagsRoutes.POST("/editTags", tagsHandler.EditTags)
+	tagsRoutes.GET("/getActiveTags", tagsHandler.GetActiveTags)
 }

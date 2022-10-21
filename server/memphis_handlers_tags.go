@@ -793,3 +793,22 @@ func (th TagsHandler) GetTagsByEntityName(c *gin.Context) {
 
 	c.IndentedJSON(200, tags)
 }
+
+func (th TagsHandler) GetActiveTags(c *gin.Context) {
+	var tags []models.Tag
+	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
+	cursor, err := tagsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		serv.Errorf("GetTags error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if err = cursor.All(context.TODO(), &tags); err != nil {
+		serv.Errorf("GetTags error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, tags)
+}
