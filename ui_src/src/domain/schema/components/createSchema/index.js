@@ -102,6 +102,9 @@ function CreateSchema({ goBack }) {
         schema_content: ''
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [validateLoading, setValidateLoading] = useState(false);
+    const [validateError, setValidateError] = useState('');
+    const [validateSuccess, setValidateSuccess] = useState(false);
 
     const handleSubmit = async (e) => {
         const values = await creationForm.validateFields();
@@ -125,9 +128,26 @@ function CreateSchema({ goBack }) {
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
-    // const handleValidateSchema = () => {
-
-    // }
+    const handleValidateSchema = async () => {
+        setValidateLoading(true);
+        try {
+            const data = await httpRequest('POST', ApiEndpoints.VALIDATE_SCHEMA, {
+                schema_type: formFields?.type,
+                schema_content: formFields.schema_content || SchemaEditorExample[formFields?.type]?.value
+            });
+            if (data.is_valid) {
+                setTimeout(() => {
+                    setValidateSuccess(true);
+                }, 1000);
+                setValidateLoading(false);
+            }
+        } catch (error) {
+            if (error.status === 555) {
+                setValidateError(error.data.message);
+            }
+            setValidateLoading(false);
+        }
+    };
 
     return (
         <div className="create-schema-wrapper">
@@ -172,12 +192,12 @@ function CreateSchema({ goBack }) {
                             />
                         </div>
                     </Form.Item>
-                    {/* <Form.Item name="tags">
+                    <Form.Item name="tags">
                         <div className="schema-field tags">
                             <p className="field-title">Tags</p>
                             <TagsList addNew={true} />
                         </div>
-                    </Form.Item> */}
+                    </Form.Item>
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
                             <p className="field-title">Schema type</p>
@@ -195,7 +215,7 @@ function CreateSchema({ goBack }) {
                     <div className="schema-field schema">
                         <div className="title-wrapper">
                             <p className="field-title">Structure definition</p>
-                            {/* <Button
+                            <Button
                                 width="115px"
                                 height="34px"
                                 placeholder="Validate"
@@ -204,9 +224,9 @@ function CreateSchema({ goBack }) {
                                 backgroundColorType="purple"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                // isLoading={loadingSubmit}
-                                onClick={handleValidateSchema}
-                            /> */}
+                                isLoading={validateLoading}
+                                onClick={() => handleValidateSchema()}
+                            />
                         </div>
                         <div className="editor">
                             <Form.Item
@@ -234,6 +254,9 @@ function CreateSchema({ goBack }) {
                                     value={formFields.schema_content}
                                     onChange={(value) => updateFormState('schema_content', value)}
                                 />
+                                {/* <div className="validate-note">
+                                    <p>hvhvjhbk</p>
+                                </div> */}
                             </Form.Item>
                         </div>
                     </div>
