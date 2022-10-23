@@ -310,6 +310,7 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
@@ -355,6 +356,7 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
