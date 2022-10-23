@@ -52,13 +52,13 @@ type CreateNewTagSchema struct {
 	EntityName string `json:"entity_name"`
 }
 
-type RemoveTagsSchema struct {
-	Names      []string `json:"names"`
-	EntityType string   `json:"entity_type"`
-	EntityName string   `json:"entity_name"`
+type RemoveTagSchema struct {
+	Name       string `json:"name"`
+	EntityType string `json:"entity_type"`
+	EntityName string `json:"entity_name"`
 }
 
-type EditTagsSchema struct {
+type EditTagsListSchema struct {
 	TagsToAdd    []Tag              `json:"tags_to_add"`
 	TagsToRemove []string           `json:"tags_to_remove"`
 	EntityType   string             `json:"entity_type"`
