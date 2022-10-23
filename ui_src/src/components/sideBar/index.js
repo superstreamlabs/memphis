@@ -22,38 +22,34 @@
 import './style.scss';
 
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { useMediaQuery } from 'react-responsive';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Menu } from 'antd';
 
+import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
+import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
-import logsIcon from '../../assets/images/logsIcon.svg';
-import logsActive from '../../assets/images/logsActive.svg';
 import supportIcon from '../../assets/images/supportIcon.svg';
 import accountIcon from '../../assets/images/accountIcon.svg';
 import logoutIcon from '../../assets/images/logoutIcon.svg';
+import logsActive from '../../assets/images/logsActive.svg';
+import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
-import Logo from '../../assets/images/logo.svg';
 import betaLogo from '../../assets/images/betaLogo.svg';
+import logsIcon from '../../assets/images/logsIcon.svg';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import { httpRequest } from '../../services/http';
+import Logo from '../../assets/images/logo.svg';
+import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import AuthService from '../../services/auth';
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
-import { httpRequest } from '../../services/http';
-import { ApiEndpoints } from '../../const/apiEndpoints';
 import { DOC_URL } from '../../config';
 
 const { SubMenu } = Menu;
-
-const Desktop = ({ children }) => {
-    const isDesktop = useMediaQuery({ minWidth: 850 });
-    return isDesktop ? children : null;
-};
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
@@ -99,8 +95,6 @@ function SideBar() {
             case '1':
                 history.push(pathDomains.settings);
                 break;
-            case '2':
-                break;
             case '3':
                 await AuthService.logout();
                 break;
@@ -118,13 +112,11 @@ function SideBar() {
                 <div className="item-wrapper">
                     <Link to={pathDomains.overview}>
                         <div className="icon">
-                            <div className={state.route === 'overview' ? 'circle-nav-item checked' : 'circle-nav-item'}>
-                                {state.route === 'overview' ? (
-                                    <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
-                                ) : (
-                                    <img src={overviewIcon} alt="overviewIcon" width="20" height="20"></img>
-                                )}
-                            </div>
+                            {state.route === 'overview' ? (
+                                <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
+                            ) : (
+                                <img src={overviewIcon} alt="overviewIcon" width="20" height="20"></img>
+                            )}
                         </div>
                         <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
                     </Link>
@@ -133,13 +125,11 @@ function SideBar() {
                     <div id="e2e-tests-station-sidebar">
                         <Link to={pathDomains.stations}>
                             <div className="icon">
-                                <div className={state.route === 'stations' ? 'circle-nav-item checked' : 'circle-nav-item'}>
-                                    {state.route === 'stations' ? (
-                                        <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
-                                    ) : (
-                                        <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
-                                    )}
-                                </div>
+                                {state.route === 'stations' ? (
+                                    <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
+                                ) : (
+                                    <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
+                                )}
                             </div>
                             <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                         </Link>
@@ -149,13 +139,11 @@ function SideBar() {
                     <div id="e2e-tests-users-sidebar">
                         <Link to={pathDomains.users}>
                             <div className="icon">
-                                <div className={state.route === 'users' ? 'circle-nav-item checked' : 'circle-nav-item'}>
-                                    {state.route === 'users' ? (
-                                        <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
-                                    ) : (
-                                        <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
-                                    )}
-                                </div>
+                                {state.route === 'users' ? (
+                                    <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
+                                ) : (
+                                    <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
+                                )}
                             </div>
                             <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                         </Link>
@@ -163,15 +151,27 @@ function SideBar() {
                 </div>
                 <div className="item-wrapper">
                     <div id="e2e-tests-users-sidebar">
+                        <Link to={pathDomains.schemas}>
+                            <div className="icon">
+                                {state.route === 'schemas' ? (
+                                    <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
+                                ) : (
+                                    <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
+                                )}
+                            </div>
+                            <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemas</p>
+                        </Link>
+                    </div>
+                </div>
+                <div className="item-wrapper">
+                    <div id="e2e-tests-users-sidebar">
                         <Link to={pathDomains.sysLogs}>
                             <div className="icon">
-                                <div className={state.route === 'logs' ? 'circle-nav-item checked' : 'circle-nav-item'}>
-                                    {state.route === 'logs' ? (
-                                        <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
-                                    ) : (
-                                        <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
-                                    )}
-                                </div>
+                                {state.route === 'logs' ? (
+                                    <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                                ) : (
+                                    <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
+                                )}
                             </div>
                             <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                         </Link>

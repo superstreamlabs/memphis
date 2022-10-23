@@ -60,27 +60,36 @@
                     font-family: 'InterSemiBold';
                     font-size: 14px;
                 }
+                .centered{
+                    width: 120px;
+                    text-align: center;
+                }
                 .station-creation{
                     font-weight: 400;
                     font-size: 12px;
                     color: rgba(74, 73, 92, 0.8);
                 }
-                .staion-link {
-                    font-family: 'InterSemiBold';
-                    font-size: 14px;
-                    cursor: pointer;
+                .link-wrapper{
                     width: 120px;
-                    border: 1px solid #F3F3F3;
-                    border-radius: 4px;
-                    height: 23px;
-                    display: flex;
-                    justify-content: center;
-                    span{
-                        font-family: 'InterSemiBold';
-                        font-size: 14px;
-                    }
-                    img {
-                        width: 16px;
+                    .staion-link {
+                        cursor: pointer;
+                        width: 120px;
+                        background: #F1F0FF;
+                        border: 0.8px solid #E2DFFF;
+                        border-radius: 32px;
+                        height: 23px;
+                        justify-content: center;
+                        display: none;
+                        align-items:center;
+                        span{
+                            font-family: 'InterSemiBold';
+                            font-size: 12px;
+                            color: var(--purple);
+                        }
+                        svg{
+                            color: var(--purple);
+                            width: 12px;
+                        }
                     }
                 }
                 .staion-link:hover {
@@ -102,6 +111,9 @@
                 a {
                     width: 100px;
                 }
+            }
+            .stations-row:hover .staion-link{
+                display: flex !important;
             }
             .stations-row:nth-child(even) {
                 background-color: #f8f8f8;
