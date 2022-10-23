@@ -53,7 +53,7 @@ type MessageDetails struct {
 	TimeSent     time.Time `json:"creation_date" bson:"creation_date"`
 	ConnectionId string    `json:"connection_id" bson:"connection_id"`
 	Size         int       `json:"size" bson:"size"`
-	Headers      string    `json:"headers"`
+	Headers      string    `json:"headers" bson:"headers"`
 }
 
 type Station struct {

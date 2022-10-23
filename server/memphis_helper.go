@@ -36,7 +36,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nuid"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -87,8 +86,7 @@ func getMessageHeaders(hdr map[string]string) (string, error) {
 	headers := map[string]string{}
 	for i, header := range hdr {
 		if !strings.HasPrefix(i, "$memphis") {
-			keyValue := map[string]string{i: header}
-			maps.Copy(headers, keyValue)
+			headers[i] = header
 		}
 	}
 	headersJson, err := json.Marshal(headers)
@@ -96,7 +94,6 @@ func getMessageHeaders(hdr map[string]string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return string(headersJson), nil
 }
 
@@ -495,24 +492,25 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		if err != nil {
 			return nil, err
 		}
-		if hdr["producedBy"] == "$memphis_dlq" { // skip poison messages which have been resent
-			continue
-		}
 
-		data := (string(msg.Data))
-		if len(data) > 100 { // get the first chars for preview needs
-			data = data[0:100]
-		}
+		connectionIdHeader := hdr["$memphis_connectionId"]
+		producedByHeader := strings.ToLower(hdr["$memphis_producedBy"])
 
-		connectionIdHeader := hdr["$memphisconnectionId"]
-		producedByHeader := strings.ToLower(hdr["$memphisproducedBy"])
-
+		//This check for backward compatability
 		if connectionIdHeader == "" || producedByHeader == "" {
 			connectionIdHeader = hdr["connectionId"]
 			producedByHeader = strings.ToLower(hdr["producedBy"])
 			if connectionIdHeader == "" || producedByHeader == "" {
 				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			}
+		}
+		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
+			continue
+		}
+
+		data := (string(msg.Data))
+		if len(data) > 100 { // get the first chars for preview needs
+			data = data[0:100]
 		}
 
 		headersJson, err := getMessageHeaders(hdr)
@@ -714,8 +712,20 @@ func (s *Server) Respond(reply string, msg []byte) {
 	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
-func (s *Server) ResendPoisonMessage(subject string, data []byte) error {
-	hdr := map[string]string{"producedBy": "$memphis_dlq"}
+func (s *Server) ResendPoisonMessage(subject string, data []byte, header map[string]string) error {
+	producedByHeader := header["$memphis_producedBy"]
+	producedBy := "$memphis_producedBy"
+	//This check for backward compatability
+	if producedByHeader == "" {
+		producedByHeader = header["producedBy"]
+		producedBy = "producedBy"
+		if producedByHeader == "" {
+			serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			return errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+		}
+	}
+
+	hdr := map[string]string{producedBy: "$memphis_dlq"}
 	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdr, data)
 	return nil
 }

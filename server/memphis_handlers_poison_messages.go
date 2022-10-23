@@ -75,9 +75,10 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		serv.Errorf(err.Error())
 		return
 	}
-	connectionIdHeader := hdr["$memphisconnectionId"]
-	producedByHeader := hdr["$memphisproducedBy"]
+	connectionIdHeader := hdr["$memphis_connectionId"]
+	producedByHeader := hdr["$memphis_producedBy"]
 
+	//This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
 		connectionIdHeader = hdr["connectionId"]
 		producedByHeader = hdr["producedBy"]
@@ -104,10 +105,17 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		ConnectionId:  connId,
 	}
 
+	headersJson, err := getMessageHeaders(hdr)
+	if err != nil {
+		serv.Errorf("HandleNewMessage" + err.Error())
+		return
+	}
+
 	messagePayload := models.MessagePayload{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
+		Headers:  headersJson,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
