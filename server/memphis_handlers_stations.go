@@ -995,7 +995,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		stationName := replaceDelimiters(msg.StationName)
 		for _, cg := range msg.PoisonedCgs {
 			cgName := replaceDelimiters(cg.CgName)
-			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data))
+			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data), []byte(msg.Message.Headers))
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
