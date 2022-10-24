@@ -40,6 +40,7 @@ type MessagePayload struct {
 	TimeSent time.Time `json:"time_sent" bson:"time_sent"`
 	Size     int       `json:"size" bson:"size"`
 	Data     string    `json:"data" bson:"data"`
+	Headers  string    `json:"headers" bson:"headers"`
 }
 
 type PoisonedCg struct {
