@@ -306,8 +306,8 @@ const StationsList = () => {
                 open={modalDeleteIsOpen}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Are you sure you want to delete the selected station?</p>
-                    <p className="desc">When you delete this stations, it will be permanently deleted.</p>
+                    <p className="title">Are you sure you want to delete the selected stations?</p>
+                    <p className="desc">Deleting these stations means they will be permanently deleted.</p>
                     <div className="buttons">
                         <Button
                             width="150px"
