@@ -25,38 +25,77 @@ import React, { useState, useEffect } from 'react';
 import { Space, Popover } from 'antd';
 import Tag from '../tag';
 import { Add } from '@material-ui/icons';
-import AllTagsList from './allTagsList';
+import RemainingTagsList from './remainingTagsList';
+import TagsPicker from '../tagsPicker';
 
-const TagsList = ({ tags, closable, handleClose }) => {
+const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entityID, handleTagsUpdate }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [remainingTags, setRemainingTags] = useState([]);
+    const [tagsPop, setTagsPop] = useState(false);
+
     useEffect(() => {
-        if (tags?.length > 3) {
-            const tagsShow = tags.slice(0, 3);
+        if (tags?.length > tagsToShow) {
+            const tagsShow = tags.slice(0, tagsToShow);
             setTagsToDisplay(tagsShow);
-            const remainingTagsList = tags.slice(3, tags?.length);
+            const remainingTagsList = tags.slice(tagsToShow);
             setRemainingTags(remainingTagsList);
         } else {
             setTagsToDisplay(tags);
+            setRemainingTags([]);
         }
-    }, [tags]);
+    }, [tags, tagsToShow]);
 
     return (
         <div className="tags-list-wrapper">
             {tagsToDisplay?.map((tag, index) => {
-                return <Tag key={tag.name} tag={tag} closable={closable ? closable : false} onClose={() => handleClose(tag.name)} />;
+                return <Tag key={tag.name} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
             })}
-            {tags?.length > 3 ? (
-                <Popover placement="bottomLeft" content={<AllTagsList tags={remainingTags} handleClose={handleClose} closable={closable}></AllTagsList>}>
+            {remainingTags?.length > 0 && (
+                <Popover
+                    overlayInnerStyle={{ maxWidth: '155px', padding: '10px', paddingBottom: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' }}
+                    placement="bottomLeft"
+                    content={<RemainingTagsList tags={remainingTags} handleDelete={(tag) => handleDelete(tag)} deletable={deletable}></RemainingTagsList>}
+                >
                     <Space className="space">
                         <div className="plus-tags">
                             <Add className="add" />
-                            <p>{tags.length - 3}</p>
+                            <p>{remainingTags.length}</p>
                         </div>
                     </Space>
                 </Popover>
-            ) : (
-                <></>
+            )}
+            {deletable && (
+                <Popover
+                    overlayInnerStyle={{ width: '300px', height: '440px', borderRadius: '12px', border: '1px solid #f0f0f0', padding: '0px 0px', overflow: 'hidden' }}
+                    zIndex={2}
+                    destroyTooltipOnHide={true}
+                    onClick={() => setTagsPop(!tagsPop)}
+                    onCancel={() => setTagsPop(false)}
+                    placement="bottomLeft"
+                    visible={tagsPop}
+                    content={
+                        <TagsPicker
+                            tags={tags}
+                            entity_id={entityID}
+                            entity_type={'station'}
+                            handleUpdatedTagList={(tags) => {
+                                handleTagsUpdate(tags);
+                                setTagsPop(false);
+                            }}
+                            handleCloseWithNoChanges={() => {
+                                setTagsPop(false);
+                            }}
+                            entityName={entityName}
+                        />
+                    }
+                >
+                    <Space className="space">
+                        <div className="edit-tags">
+                            <Add className="add" />
+                            <div className="edit-content">{tags?.length > 0 ? 'Edit Tags' : 'Add Tags'}</div>
+                        </div>
+                    </Space>
+                </Popover>
             )}
         </div>
     );

@@ -31,9 +31,9 @@ import ColorPicker from '../../colorPicker';
 const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
-        name: ''
+        name: '',
+        color: '101, 87, 255' //default memphis-purple
     });
-    const [tagColor, setTagColor] = useState('101, 87, 255');
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -64,7 +64,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                 try {
                     let data = {
                         name: values.name,
-                        color: tagColor
+                        color: values.color
                     };
                     const res = await httpRequest('POST', ApiEndpoints.CREATE_NEW_TAG, data);
                     handleFinish(res);
@@ -73,17 +73,13 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
         }
     };
 
-    const handleColorChange = (color) => {
-        setTagColor(color);
-    };
-
     return (
         <div className="new-tag-generator-wrapper">
             <Form name="form" form={creationForm} autoComplete="on" className="create-tag-form">
                 <Form.Item
                     className="form-input"
                     name="name"
-                    initialValue={searchVal ? searchVal : ''}
+                    initialValue={searchVal || ''}
                     rules={[
                         {
                             required: true,
@@ -93,9 +89,9 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                     style={{ height: '70px' }}
                 >
                     <div className="tag-name">
-                        <p className="field-title">Tag name</p>
+                        <p className="field-title">Tag</p>
                         <Input
-                            placeholder={searchVal ? searchVal : 'Type tag name'}
+                            placeholder={searchVal || 'Enter tag here'}
                             type="text"
                             radiusType="semi-round"
                             colorType="black"
@@ -109,9 +105,11 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                     </div>
                 </Form.Item>
                 <div className="color-pick">
-                    <ColorPicker onChange={handleColorChange} />
-                    <Divider className="divider" />
+                    <Form.Item className="form-input" name="color">
+                        <ColorPicker onChange={(value) => updateFormState('color', value)} value={formFields.color} />
+                    </Form.Item>
                 </div>
+                <Divider className="divider" />
                 <div className="save-cancel-buttons">
                     <Button
                         width={'80px'}
@@ -124,7 +122,6 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         fontSize="14px"
                         fontWeight="bold"
                         marginBottom="5px"
-                        htmlType="submit"
                         onClick={handleCancel}
                     />
                     <Button
@@ -136,7 +133,6 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         backgroundColorType={'purple'}
                         fontSize="14px"
                         fontWeight="bold"
-                        htmlType="submit"
                         marginLeft="100px"
                         marginBottom="5px"
                         onClick={onFinish}

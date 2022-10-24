@@ -91,7 +91,7 @@ const StationBoxOverview = (props) => {
                     <div className="station-created">
                         <label className="data-labels">Tags</label>
                         <div className="tags-list">
-                            <TagsList tags={props.station.tags} />
+                            <TagsList tagsToShow={5} tags={props.station.tags} />
                         </div>
                     </div>
                 </div>

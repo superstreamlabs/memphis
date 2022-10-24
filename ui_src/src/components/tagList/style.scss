@@ -1,45 +1,64 @@
 .tags-list-wrapper {
     display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 5px;
     margin-left: 5px;
-
     .plus-tags {
         background-color: rgba(132, 129, 138, 0.1);
-        padding-right: 5px;
-        border-style: solid;
-        border-color: transparent;
-        border-width: thin;
+        padding-right: 7px;
         padding-left: 5px;
         border-radius: 4px;
         height: 20px;
         display: flex;
-        align-items: center;
         cursor: pointer;
         p {
             font-family: 'InterSemiBold';
             font-size: 12px;
             line-height: 12px;
             color: #2e2c34;
-            margin-top: 50%;
-            margin-bottom: 50%;
+            margin-top: 4px;
+            margin-left: -3px;
         }
         .add {
+            margin-top: 3px;
             height: 13px;
             width: 13px;
             cursor: pointer;
         }
     }
+    .edit-tags {
+        background-color: rgba(132, 129, 138, 0.1);
+        border: 1px solid #e3e3e3;
+        border-radius: 4px;
+        height: 20px;
+        display: flex;
+        cursor: pointer;
+        svg {
+            width: 18px;
+        }
+        .edit-content {
+            font-family: 'InterSemiBold';
+            font-size: 12px;
+            line-height: 12px;
+            color: #2e2c34;
+        }
+        .add {
+            height: 13px;
+            width: 13px;
+        }
+    }
     .tag-wrapper {
         border-radius: 4px;
-        font-family: 'Manrope';
+        font-family: 'InterSemiBold';
         font-style: normal;
-        font-weight: 600;
         font-size: 14px;
         height: 20px;
         display: flex;
         align-items: center;
         overflow: hidden;
         white-space: nowrap;
+        max-width: 135px;
         text-overflow: ellipsis;
     }
     .plus-tag-wrapper {
@@ -56,22 +75,7 @@
         padding-right: 2px;
     }
 }
-.ant-popover-inner {
-    width: 90px !important;
-    justify-content: center !important;
-    .ant-popover-inner-content {
-        padding: 10px 5px;
-        box-sizing: border-box;
-        position: absolute;
-        background: #ffffff;
-        border: 1px solid #f0f0f0;
-        box-shadow: 0px 10px 10px rgba(16, 10, 85, 0.1);
-        border-radius: 8px !important;
-    }
-}
-.ant-popover-arrow {
-    visibility: hidden;
-}
-.ant-popover-placement-bottomLeft {
-    top: 35px !important;
+
+.ant-popover-inner-content {
+    padding: 0;
 }

@@ -22,11 +22,8 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { InfoOutlined, Add } from '@material-ui/icons';
+import { InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-
-import { Space, Popover } from 'antd';
-
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
@@ -41,7 +38,6 @@ import Auditing from '../auditing';
 import TagsList from '../../../components/tagList';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import TagsPicker from '../../../components/tagsPicker';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -50,7 +46,6 @@ const StationOverviewHeader = () => {
     const [retentionValue, setRetentionValue] = useState('');
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
-    const [tagModal, setTagModal] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -78,7 +73,7 @@ const StationOverviewHeader = () => {
 
     const removeTag = async (tagName) => {
         try {
-            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAGS}`, { names: [tagName], entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
             let tags = stationState?.stationMetaData?.tags;
             let updatedTags = tags.filter((tag) => tag.name !== tagName);
             stationDispatch({ type: 'SET_TAGS', payload: updatedTags });
@@ -91,41 +86,24 @@ const StationOverviewHeader = () => {
                 <div className="station-details">
                     <h1 className="station-name">
                         {stationState?.stationMetaData?.name}
-                        <TagsList className="tags-list" tags={stationState?.stationMetaData?.tags} addNew={true} closable={true} handleClose={(tag) => removeTag(tag)} />
-                        <Popover
-                            onClick={() => setTagModal(!tagModal)}
-                            onCancel={() => setTagModal(false)}
-                            placement="bottomLeft"
-                            visible={tagModal}
-                            content={
-                                <TagsPicker
-                                    tags={stationState?.stationMetaData?.tags}
-                                    entity_id={stationState?.stationMetaData?.id}
-                                    entity_type={'station'}
-                                    handleUpdatedTagList={(tags) => {
-                                        updateTags(tags);
-                                        setTagModal(false);
-                                    }}
-                                    handleCloseWithNoChanges={() => {
-                                        setTagModal(false);
-                                    }}
-                                    entityName={stationState?.stationMetaData?.name}
-                                />
-                            }
-                        >
-                            <Space className="space">
-                                <div className="edit-tags">
-                                    <Add className="add" />
-                                    <div className="edit-content">Edit Tags</div>
-                                </div>
-                            </Space>
-                        </Popover>
+                        <TagsList
+                            tagsToShow={3}
+                            className="tags-list"
+                            tags={stationState?.stationMetaData?.tags}
+                            addNew={true}
+                            deletable={true}
+                            handleDelete={(tag) => removeTag(tag)}
+                            entityID={stationState?.stationMetaData?.id}
+                            entityName={stationState?.stationMetaData?.name}
+                            handleTagsUpdate={(tags) => {
+                                updateTags(tags);
+                            }}
+                        />
                     </h1>
                     <span className="created-by">
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
                     </span>
                 </div>
-                <div></div>
                 <div id="e2e-tests-station-close-btn">
                     <Button
                         width="80px"

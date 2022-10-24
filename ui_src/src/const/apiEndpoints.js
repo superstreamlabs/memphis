@@ -62,9 +62,8 @@ export const ApiEndpoints = {
     DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
 
     //Tags
-    REMOVE_TAGS: '/tags/removeTags',
+    REMOVE_TAG: '/tags/removeTag',
     CREATE_NEW_TAG: '/tags/createNewTag',
     GET_TAGS: '/tags/getTags',
-    GET_TAGS_BY_ENTITY_NAME: '/tags/getTagsByEntityName',
-    EDIT_TAGS: '/tags/editTagsList'
+    UPDATE_TAGS_FOR_ENTITY: '/tags/updateTagsForEntity'
 };

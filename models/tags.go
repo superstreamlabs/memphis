@@ -39,26 +39,13 @@ type CreateTag struct {
 	Color string `json:"color"`
 }
 
-type CreateTagsSchema struct {
-	Tags       []CreateTag `json:"tags"`
-	EntityType string      `json:"entity_type"`
-	EntityName string      `json:"entity_name"`
-}
-
-type CreateNewTagSchema struct {
-	Name       string `json:"name" binding:"required,min=1,max=20"`
-	Color      string `json:"color"`
-	EntityType string `json:"entity_type"`
-	EntityName string `json:"entity_name"`
-}
-
 type RemoveTagSchema struct {
 	Name       string `json:"name"`
 	EntityType string `json:"entity_type"`
 	EntityName string `json:"entity_name"`
 }
 
-type EditTagsListSchema struct {
+type UpdateTagsForEntitySchema struct {
 	TagsToAdd    []Tag              `json:"tags_to_add"`
 	TagsToRemove []string           `json:"tags_to_remove"`
 	EntityType   string             `json:"entity_type"`
@@ -67,9 +54,4 @@ type EditTagsListSchema struct {
 
 type GetTagsSchema struct {
 	EntityType string `json:"entity_type"`
-}
-
-type GetTagsByEntityNameSchema struct {
-	EntityType string `json:"entity_type"`
-	EntityName string `json:"entity_name"`
 }

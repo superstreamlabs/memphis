@@ -28,7 +28,9 @@ import Modal from '../../components/modal';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
-import { Add } from '@material-ui/icons';
+import { Add, Check } from '@material-ui/icons';
+import { Divider } from 'antd';
+import emptyTags from '../../assets/images/emptyTags.svg';
 
 const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
@@ -94,7 +96,7 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                 entity_type: entity_type,
                 entity_id: entity_id
             };
-            const updatedTags = await httpRequest('POST', `${ApiEndpoints.EDIT_TAGS}`, reqBody);
+            const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
             setEditedList(false);
             handleUpdatedTagList(updatedTags);
         } catch (error) {}
@@ -112,77 +114,95 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
     return (
         <div className="tags-picker-wrapper">
             <div className="tags-picker-title">Apply tags to this {entity_type}</div>
-            <div className="search-input">
-                <SearchInput
-                    placeholder="Tag Name"
-                    colorType="navy"
-                    backgroundColorType="none"
-                    width="11.5vw"
-                    height="27px"
-                    borderRadiusType="circle"
-                    borderColorType="search-input"
-                    boxShadowsType="none"
-                    iconComponent={<img alt="search tag" src={searchIcon} />}
-                    onChange={handleSearch}
-                    value={searchInput}
-                    style={{ boxShadow: 'none' }}
-                />
-            </div>
-            <div className="tags-list">
-                {tagsToDisplay && tagsToDisplay.length > 0 ? (
-                    tagsToDisplay.map((tag) => (
-                        <li key={tag.name} className="tag" onClick={() => handleCheck(tag)}>
-                            {checkedList?.some((item) => tag.name === item.name) ? <div className="checkmark"></div> : <div className="no-checkmark"></div>}
-                            <div className="color-circle" style={{ backgroundColor: `rgb(${tag.color})` }}></div>
-                            <span className="tag-name">{tag.name}</span>
-                        </li>
-                    ))
-                ) : (
-                    <span className="no-new">No Tags With That Name</span>
-                )}
-            </div>
-            <div className="create-new-tag" onClick={() => setNewTagModal(true)}>
-                <Add style={{ height: '20px' }} />
-                <div className="new-button">{`Create New Tag ${searchInput.length > 0 && tagsToDisplay.length === 0 ? `"${searchInput}"` : ''}`}</div>
-            </div>
-            <div className="save-cancel-buttons">
-                <Button
-                    width={'120px'}
-                    height="30px"
-                    placeholder={`Cancel`}
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType={'white'}
-                    border="gray-light"
-                    fontSize="14px"
-                    fontWeight="bold"
-                    htmlType="submit"
-                    marginRight="5px"
-                    onClick={handleCloseWithNoChanges}
-                />
-                <Button
-                    width={'120px'}
-                    height="30px"
-                    placeholder={`Save`}
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType={'purple'}
-                    fontSize="14px"
-                    fontWeight="bold"
-                    htmlType="submit"
-                    onClick={handleSaveChanges}
-                    disabled={!editedList}
-                />
-            </div>
+            {allTags?.length > 0 && (
+                <>
+                    <div className="search-input">
+                        <SearchInput
+                            placeholder="Tag Name"
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderRadiusType="circle"
+                            borderColorType="search-input"
+                            iconComponent={<img alt="search tag" src={searchIcon} />}
+                            onChange={handleSearch}
+                            value={searchInput}
+                        />
+                    </div>
+                    <div className="tags-list">
+                        {tagsToDisplay?.length > 0 ? (
+                            tagsToDisplay.map((tag) => (
+                                <>
+                                    <li key={tag.name} className="tag" onClick={() => handleCheck(tag)}>
+                                        {checkedList?.some((item) => tag.name === item.name) ? <Check className="checkmark" /> : <div className="no-checkmark"></div>}
+                                        <div className="color-circle" style={{ backgroundColor: `rgb(${tag.color})` }}></div>
+                                        <div className="tag-name">{tag.name}</div>
+                                    </li>
+                                    <Divider className="divider" />
+                                </>
+                            ))
+                        ) : (
+                            <div className="no-tags">
+                                <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
+                                <span className="no-tags-message">No Tags Found</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="create-new-tag" onClick={() => setNewTagModal(true)}>
+                        <Add className="add" />
+                        <div className="new-button">
+                            {`Create New Tag `}
+                            {searchInput.length > 0 && `"${searchInput}"`}
+                        </div>
+                    </div>
+                    <Divider className="divider" />
+                    <div className="save-cancel-buttons">
+                        <Button
+                            width={'120px'}
+                            height="30px"
+                            placeholder={`Cancel`}
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType={'white'}
+                            border="gray-light"
+                            fontSize="14px"
+                            fontWeight="bold"
+                            marginRight="5px"
+                            onClick={() => {
+                                handleCloseWithNoChanges();
+                                setSearchInput('');
+                            }}
+                        />
+                        <Button
+                            width={'120px'}
+                            height="30px"
+                            placeholder={`Save`}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType={'purple'}
+                            fontSize="14px"
+                            fontWeight="bold"
+                            onClick={handleSaveChanges}
+                            disabled={!editedList}
+                        />
+                    </div>
+                </>
+            )}
+            {allTags?.length === 0 && (
+                <div className="no-tags">
+                    <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
+                    <span className="no-tags-message">No Tags Exist</span>
+                    <span className="tags-info-message">Tags will help you organize, search and filter your data</span>
+                    <div className="create-new-tag-empty" onClick={() => setNewTagModal(true)}>
+                        <Add className="add" />
+                        <div className="new-button">{`Create New Tag ${searchInput.length > 0 && tagsToDisplay.length === 0 ? `"${searchInput}"` : ''}`}</div>
+                    </div>
+                </div>
+            )}
             {
                 <Modal
-                    header={
-                        <div className="audit-header">
-                            <p className="title">New Tag</p>
-                        </div>
-                    }
+                    className="generator-modal"
                     displayButtons={false}
-                    height="334px"
+                    height="415px"
                     width="290px"
                     clickOutside={() => setNewTagModal(false)}
                     open={newTagModal}

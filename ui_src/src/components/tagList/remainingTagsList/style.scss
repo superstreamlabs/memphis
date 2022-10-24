@@ -1,0 +1,19 @@
+.remaining-tags-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    .tag-wrapper {
+        border-radius: 4px;
+        font-family: 'InterSemiBold';
+        font-style: normal;
+        font-size: 14px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+        max-width: 135px;
+        text-overflow: ellipsis;
+    }
+}

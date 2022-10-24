@@ -20,12 +20,16 @@
 // SOFTWARE.
 
 import './style.scss';
+import Tag from '../../tag';
 
-import { Checkbox } from 'antd';
-import React from 'react';
-
-const CheckboxComponent = ({ checkName, id, checked, onChange }) => {
-    return <Checkbox checked={checked} id={id} onChange={onChange} name={checkName} />;
+const RemainingTagsList = ({ tags, handleDelete, deletable }) => {
+    return (
+        <div className="remaining-tags-list-wrapper">
+            {tags?.map((tag, index) => {
+                return <Tag key={tag.name} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
+            })}
+        </div>
+    );
 };
 
-export default CheckboxComponent;
+export default RemainingTagsList;

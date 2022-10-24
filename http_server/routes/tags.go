@@ -31,9 +31,8 @@ func InitializeTagsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	tagsHandler := h.Tags
 	tagsRoutes := router.Group("/tags")
 	tagsRoutes.GET("/getTags", tagsHandler.GetTags)
-	tagsRoutes.GET("/getTagsByEntityName", tagsHandler.GetTagsByEntityName)
-	tagsRoutes.DELETE("/removeTags", tagsHandler.RemoveTags)
+	tagsRoutes.DELETE("/removeTag", tagsHandler.RemoveTag)
 	tagsRoutes.POST("/createNewTag", tagsHandler.CreateNewTag)
-	tagsRoutes.POST("/editTagsList", tagsHandler.EditTagsList)
-	tagsRoutes.GET("/getActiveTags", tagsHandler.GetActiveTags)
+	tagsRoutes.PUT("/updateTagsForEntity", tagsHandler.UpdateTagsForEntity)
+	tagsRoutes.GET("/getUsedTags", tagsHandler.GetUsedTags)
 }

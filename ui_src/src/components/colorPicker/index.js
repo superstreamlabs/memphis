@@ -20,37 +20,17 @@
 // SOFTWARE.
 
 import './style.scss';
-import React, { useState } from 'react';
-const ColorPicker = ({ onChange }) => {
-    const colors = [
-        '101, 87, 255',
-        '77, 34, 178',
-        '177, 140, 254',
-        '216, 201, 254',
-        '0, 165, 255',
-        '238, 113, 158',
-        '255, 140, 130',
-        '252, 52, 0',
-        '97, 223, 155',
-        '32, 201, 172',
-        '97, 223, 215',
-        '255, 160, 67',
-        '253, 236, 194',
-        '182, 180, 186',
-        '100, 100, 103'
-    ];
-    const [chosenColor, setChosenColor] = useState(colors[0]);
+import React from 'react';
+import { ColorPalette } from '../../const/colorPalette';
 
-    const handleColorPick = (color) => {
-        setChosenColor(color);
-        onChange(color);
-    };
+const ColorPicker = ({ onChange, value}) => {
+   
 
-    return colors?.map((color) => (
+    return ColorPalette?.map((color) => (
         <div className="color-picker">
-            <li key={color} onClick={() => handleColorPick(color)}>
+            <li key={color} onClick={() => onChange(color)}>
                 <div className="color-circle" key={color} style={{ backgroundColor: `rgb(${color})` }}>
-                    {color === chosenColor ? <div className="inner-circle"></div> : <></>}
+                    {color === value && <div className="inner-circle"></div>}
                 </div>
             </li>
         </div>
