@@ -714,19 +714,13 @@ func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error
 		return err
 	}
 
-	producedByHeader := hdrs["$memphis_producedBy"]
-	var producedBy = "$memphis_producedBy"
-	if producedByHeader == "" {
-		producedByHeader := hdrs["producedBy"]
-		producedBy = "producedBy"
-		if producedByHeader == "" {
-			serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			return errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-		}
+	hdrs["$memphis_producedBy"] = "$memphis_dlq"
+
+	if hdrs["producedBy"] != "" {
+		delete(hdrs, "producedBy")
 	}
 
-	hdr := map[string]string{producedBy: "$memphis_dlq"}
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdr, data)
+	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdrs, data)
 	return nil
 }
 
