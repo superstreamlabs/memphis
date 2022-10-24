@@ -171,7 +171,6 @@ func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string)
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
 		"station_name": stationName,
 	})
-
 	if err != nil {
 		return int(count), err
 	}

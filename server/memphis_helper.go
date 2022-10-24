@@ -84,7 +84,6 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 
 func getMessageHeaders(hdr map[string]string) (string, error) {
 	headersJson, err := json.Marshal(hdr)
-
 	if err != nil {
 		return "", err
 	}
@@ -231,7 +230,6 @@ func (s *Server) CreateSystemLogsStream() {
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
-
 	if err != nil {
 		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
 	}
@@ -316,7 +314,6 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 
 	request := CreateConsumerRequest{Stream: streamName, Config: *cc}
 	rawRequest, err := json.Marshal(request)
-
 	if err != nil {
 		return err
 	}
@@ -709,7 +706,6 @@ func (s *Server) Respond(reply string, msg []byte) {
 func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error {
 	hdrs := make(map[string]string)
 	err := json.Unmarshal(headers, &hdrs)
-
 	if err != nil {
 		return err
 	}

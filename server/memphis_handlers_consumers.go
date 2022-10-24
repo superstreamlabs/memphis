@@ -81,7 +81,6 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		return consumers, err
 	}
@@ -320,7 +319,6 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 	})
-
 	if err != nil {
 		serv.Errorf("GetAllConsumers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -352,7 +350,6 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"connection", 0}}}},
 	})
-
 	if err != nil {
 		return cgs, cgs, cgs, err
 	}
@@ -493,7 +490,6 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		serv.Errorf("GetAllConsumersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

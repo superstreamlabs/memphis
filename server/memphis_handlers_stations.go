@@ -311,7 +311,6 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
 	})
-
 	if err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
@@ -360,7 +359,6 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		}}}}},
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
-
 	if err != nil {
 		return stations, err
 	}
@@ -479,7 +477,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		schemasHandler := SchemasHandler{S: sh.S}
 		schemaVersion, err := schemasHandler.getActiveVersionBySchemaId(schema.ID)
-
 		if err != nil {
 			serv.Errorf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -1004,12 +1001,6 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		}
 	}
 
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
@@ -1062,7 +1053,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
-
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
