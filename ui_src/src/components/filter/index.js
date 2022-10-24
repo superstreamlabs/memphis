@@ -21,44 +21,39 @@
 
 import './style.scss';
 
-import React, { useState, useEffect } from 'react';
+import React, { createContext, useEffect, useReducer } from 'react';
+
+import Reducer from './hooks/reducer';
+
+import './style.scss';
+
 import filterImg from '../../assets/images/filter.svg';
 import CustomCollapse from './customCollapse';
 import { Popover } from 'antd';
-import { filterType, labelType } from '../../const/filterConsts';
+import { filterType } from '../../const/filterConsts';
+const initialState = {
+    isOpen: false,
+    counter: 0,
+    filterFields: [],
+    applied: false
+};
 
 const Filter = ({ filterFields, filtersUpdated, height }) => {
-    const [open, setIsOpen] = useState(false);
-    const [filtersConter, setFilterCounter] = useState(0);
-    const [filter, setFilterFields] = useState(null);
-    const [counter, setCounter] = useState(0);
+    const [filterState, filterDispatch] = useReducer(Reducer, initialState);
 
     useEffect(() => {
-        setFilterFields(filterFields);
+        const filter = filterFields;
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
     }, []);
 
-    const handleCheck = (filterGroup, filterField, value) => {
-        let updatedCounter = counter;
-        let data = filter;
-        if (filterFields[filterGroup].filterType === filterType.RADIOBUTTON) {
-            if (data[filterGroup].radioValue === 0) updatedCounter++;
-            data[filterGroup].radioValue = filterField;
-        } else if (filterFields[filterGroup].filterType === filterType.DATE) {
-            if (data[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
-            else if (data[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
-            data[filterGroup].fields[filterField].value = value;
-        } else {
-            if (data[filterGroup].fields[filterField].checked) updatedCounter--;
-            else updatedCounter++;
-            data[filterGroup].fields[filterField].checked = !data[filterGroup].fields[filterField].checked;
-        }
-        setCounter(updatedCounter);
-        setFilterFields(data);
+    const flipOpen = () => {
+        filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
     };
 
     const handleApply = () => {
+        filterDispatch({ type: 'SET_APPLY', payload: true });
         let filterTerms = [];
-        filter.forEach((element) => {
+        filterState?.filterFields.forEach((element) => {
             let term = {
                 name: element.name,
                 fields: []
@@ -88,43 +83,45 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
             }
             if (term.fields.length > 0) filterTerms.push(term);
         });
-        setFilterCounter(counter);
         filtersUpdated(filterTerms);
-        setIsOpen(false);
-    };
-
-    const handleCancel = () => {
-        setIsOpen(false);
+        flipOpen();
     };
 
     const handleClear = () => {
-        setFilterFields(filterFields);
-        setCounter(0);
-        setFilterCounter(0);
+        let filter = filterFields;
+        filter.map((filterGroup) => {
+            switch (filterGroup.filterType) {
+                case filterType.CHECKBOX:
+                    filterGroup.fields.map((field) => (field.checked = false));
+                case filterType.DATE:
+                    filterGroup.fields.map((field) => (field.value = ''));
+                case filterType.RADIOBUTTON:
+                    filterGroup.radioValue = -1;
+            }
+        });
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        filterDispatch({ type: 'SET_COUNTER', payload: 0 });
     };
 
-    const content = (
-        <CustomCollapse
-            header="Details"
-            data={filter}
-            filterCount={counter}
-            onCheck={(filterGroup, filterField, value) => handleCheck(filterGroup, filterField, value)}
-            cancel={handleCancel}
-            apply={handleApply}
-            clear={handleClear}
-            defaultOpen={true}
-        />
-    );
+    const handleCancel = () => {
+        handleClear();
+        filtersUpdated([]);
+        filterDispatch({ type: 'SET_IS_OPEN', payload: false });
+    };
+
+    const content = <CustomCollapse header="Details" data={filterState?.filterFields} cancel={handleCancel} apply={handleApply} clear={handleClear} />;
 
     return (
-        <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => setIsOpen(!open)} open={open}>
-            <div className="filter-container" style={{ height: height }}>
-                <img src={filterImg} width="25" height="25" alt="filter" />
-                Filters
-                {filtersConter > 0 && <div className="filter-counter">{filtersConter}</div>}
-            </div>
-        </Popover>
+        <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
+            <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
+                <div className="filter-container" style={{ height: height }}>
+                    <img src={filterImg} width="25" height="25" alt="filter" />
+                    Filters
+                    {filterState?.apply && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
+                </div>
+            </Popover>
+        </FilterStoreContext.Provider>
     );
 };
-
+export const FilterStoreContext = createContext({});
 export default Filter;

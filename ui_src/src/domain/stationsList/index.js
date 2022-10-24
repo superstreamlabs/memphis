@@ -51,72 +51,19 @@ const StationsList = () => {
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [filterTerms, setFilterTerms] = useState([]);
-    const [tagList, setTagList] = useState([
-        {
-            id: '63511f8b209adb84d07f1ae9',
-            name: 'a',
-            color: '101, 87, 255',
-            users: [],
-            stations: ['634ffbfa7ca3717d64f58cea'],
-            schemas: []
-        },
-        {
-            id: '63512013209adb84d07f1aed',
-            name: '111',
-            color: '101, 87, 255',
-            users: [],
-            stations: [],
-            schemas: []
-        },
-        {
-            id: '6351205d209adb84d07f1aee',
-            name: 'shay',
-            color: '252, 52, 0',
-            users: [],
-            stations: ['634ffbfa7ca3717d64f58cea'],
-            schemas: []
-        },
-        {
-            id: '635120c5209adb84d07f1aef',
-            name: '1',
-            color: '253, 236, 194',
-            users: [],
-            stations: [],
-            schemas: []
-        },
-        {
-            id: '635128c9209adb84d07f1af0',
-            name: 'asdadasdasdasd',
-            color: '101, 87, 255',
-            users: [],
-            stations: [],
-            schemas: []
-        },
-        {
-            id: '63512a7a209adb84d07f1af1',
-            name: '123334r',
-            color: '77, 34, 178',
-            users: [],
-            stations: ['634ffbfa7ca3717d64f58cea'],
-            schemas: []
-        },
-        {
-            id: '63512a85209adb84d07f1af2',
-            name: 'zxvzxvzxvzxv',
-            color: '101, 87, 255',
-            users: [],
-            stations: ['634ffbfa7ca3717d64f58cea'],
-            schemas: []
-        }
-    ]);
+    const [tagList, setTagList] = useState([]);
     const [filterFields, setFilterFields] = useState([]);
     const createStationRef = useRef(null);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
+        getTags();
         getAllStations();
-        // getTags();
     }, []);
+
+    useEffect(() => {
+        tagList.length > 0 && filterFields.findIndex((x) => x.name === 'tags') === -1 && getTagsFilter(tagList);
+    }, [tagList]);
 
     useEffect(() => {
         if (searchInput.length >= 2) setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
@@ -192,19 +139,18 @@ const StationsList = () => {
     };
 
     const getFilterData = (stations) => {
-        getTagsFilter(tagList);
-        getCreatedByFilter(stations);
-        getStorageTypeFilter();
+        filterFields.findIndex((x) => x.name === 'created') === -1 && getCreatedByFilter(stations);
+        filterFields.findIndex((x) => x.name === 'storage') === -1 && getStorageTypeFilter();
     };
 
-    // const getTags = async () => {
-    //     try {
-    //         const data = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}?from=users/stations`);
-    //         console.log(data);
-    //     } catch (err) {
-    //         console.log(err);
-    //     }
-    // };
+    const getTags = async () => {
+        try {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_ACTIVE_TAGS}`);
+            setTagList(res);
+        } catch (err) {
+            return;
+        }
+    };
 
     const getAllStations = async () => {
         setisLoading(true);
@@ -231,12 +177,16 @@ const StationsList = () => {
         let objCreated = [];
         let objStorage = [];
         try {
+            objCreated = filterTerms.find((o) => o.name === 'tags').fields.map((element) => element.toLowerCase());
+        } catch {}
+        try {
             objCreated = filterTerms.find((o) => o.name === 'created').fields.map((element) => element.toLowerCase());
         } catch {}
         try {
             objStorage = filterTerms.find((o) => o.name === 'storage').fields.map((element) => element.toLowerCase());
         } catch {}
         const data = stationsList
+            // .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.tags) : !objCreated.includes(item.station.tags)))
             .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.created_by_user) : !objCreated.includes(item.station.created_by_user)))
             .filter((item) => (objStorage.length > 0 ? objStorage.includes(item.station.storage_type) : !objStorage.includes(item.station.storage_type)));
         setFilteredList(data);

@@ -62,5 +62,6 @@ export const ApiEndpoints = {
     DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
 
     //Tags
-    GET_TAGS: '/tags/getTags'
+    GET_TAGS: '/tags/getTags',
+    GET_ACTIVE_TAGS: '/tags/getActiveTags'
 };
