@@ -35,7 +35,7 @@ import { filterType, labelType } from '../../const/filterConsts';
 
 const { Panel } = Collapse;
 
-const CustomCollapse = ({ data, filterCount, cancel, apply, clear }) => {
+const CustomCollapse = ({ cancel, apply, clear }) => {
     const [filterState, filterDispatch] = useContext(FilterStoreContext);
     const [activeKey, setActiveKey] = useState(['0']);
     const onChange = (key) => {
