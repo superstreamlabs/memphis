@@ -83,13 +83,7 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 }
 
 func getMessageHeaders(hdr map[string]string) (string, error) {
-	headers := map[string]string{}
-	for i, header := range hdr {
-		if !strings.HasPrefix(i, "$memphis") {
-			headers[i] = header
-		}
-	}
-	headersJson, err := json.Marshal(headers)
+	headersJson, err := json.Marshal(hdr)
 
 	if err != nil {
 		return "", err
@@ -712,20 +706,8 @@ func (s *Server) Respond(reply string, msg []byte) {
 	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
-func (s *Server) ResendPoisonMessage(subject string, data []byte, header map[string]string) error {
-	producedByHeader := header["$memphis_producedBy"]
-	producedBy := "$memphis_producedBy"
-	//This check for backward compatability
-	if producedByHeader == "" {
-		producedByHeader = header["producedBy"]
-		producedBy = "producedBy"
-		if producedByHeader == "" {
-			serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			return errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-		}
-	}
-
-	hdr := map[string]string{producedBy: "$memphis_dlq"}
+func (s *Server) ResendPoisonMessage(subject string, data []byte) error {
+	hdr := map[string]string{"$memphis_producedBy": "$memphis_dlq"}
 	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdr, data)
 	return nil
 }

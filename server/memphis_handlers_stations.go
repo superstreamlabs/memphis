@@ -992,29 +992,10 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	for _, msg := range msgs {
-		stationNameFromStr, err := StationNameFromStr(msg.StationName)
-		if err != nil {
-			serv.Warnf("ResendPoisonMessages error: " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-		sm, err := sh.S.GetMessage(stationNameFromStr, uint64(msg.MessageSeq))
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		hdr, err := DecodeHeader(sm.Header)
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages error: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
 		stationName := replaceDelimiters(msg.StationName)
 		for _, cg := range msg.PoisonedCgs {
 			cgName := replaceDelimiters(cg.CgName)
-			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data+msg.Message.Headers), hdr)
+			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data))
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
