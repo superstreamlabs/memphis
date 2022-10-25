@@ -47,7 +47,7 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
     }, [tags, tagsToShow]);
 
     const handleOpenChange = (newOpen) => {
-        if (!newOpen) saveChangesRef?.current();
+        if (!newOpen) saveChangesRef?.current.handleSaveChanges();
         setTagsPop(newOpen);
     };
 
@@ -89,19 +89,15 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
                     }}
                     zIndex={2}
                     destroyTooltipOnHide={true}
-                    // onClick={() => setTagsPop(!tagsPop)}
-                    // onCancel={() => setTagsPop(false)}
                     trigger="click"
                     placement="bottomLeft"
                     open={tagsPop}
                     onOpenChange={(open) => {
                         handleOpenChange(open);
-                        // saveChangesRef?.current();
-                        // setTagsPop(false);
                     }}
                     content={
                         <TagsPicker
-                            saveChangesRef={saveChangesRef}
+                            ref={saveChangesRef}
                             tags={tags}
                             entity_id={entityID}
                             entity_type={'station'}
@@ -109,7 +105,6 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
                                 handleTagsUpdate(tags);
                                 setTagsPop(false);
                             }}
-                            // handleCloseWithNoChanges={hide}
                             entityName={entityName}
                         />
                     }

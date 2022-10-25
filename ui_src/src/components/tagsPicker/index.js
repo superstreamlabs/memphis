@@ -20,7 +20,7 @@
 // SOFTWARE.
 
 import './style.scss';
-import React, { useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import Button from '../../components/button';
 import SearchInput from '../searchInput';
 import searchIcon from '../../assets/images/searchIcon.svg';
@@ -32,7 +32,7 @@ import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
 import emptyTags from '../../assets/images/emptyTags.svg';
 
-const TagsPicker = ({ saveChangesRef, tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges, closeTrigger }) => {
+const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges, closeTrigger }, ref) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -51,7 +51,6 @@ const TagsPicker = ({ saveChangesRef, tags, entity_id, entity_type, handleUpdate
     };
 
     useEffect(() => {
-        saveChangesRef.current = handleSaveChanges;
         const getAllTags = async () => {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}`);
             setTagsToDisplay(res);
@@ -75,36 +74,38 @@ const TagsPicker = ({ saveChangesRef, tags, entity_id, entity_type, handleUpdate
         setSearchInput(e.target.value);
     };
 
-    const handleSaveChanges = async () => {
-        if (editedList) {
-            const tagsToRemove = tags.filter((tag) => {
-                if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
-                return true;
-            });
-            var tagsToRemoveNames;
-            const tagsToAdd = checkedList.filter((checkedTag) => {
-                if (tags.some((tag) => tag.name === checkedTag.name)) return false;
-                return true;
-            });
-            try {
-                if (!(tagsToRemove.length === 0)) {
-                    tagsToRemoveNames = tagsToRemove.map((tag) => {
-                        return tag.name;
-                    });
-                }
-                const reqBody = {
-                    tags_to_Add: tagsToAdd,
-                    tags_to_Remove: tagsToRemoveNames,
-                    entity_type: entity_type,
-                    entity_id: entity_id
-                };
-                const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
-                setEditedList(false);
-                setSearchInput('');
-                handleUpdatedTagList(updatedTags);
-            } catch (error) {}
+    useImperativeHandle(ref, () => ({
+        async handleSaveChanges() {
+            if (editedList) {
+                const tagsToRemove = tags.filter((tag) => {
+                    if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
+                    return true;
+                });
+                var tagsToRemoveNames;
+                const tagsToAdd = checkedList.filter((checkedTag) => {
+                    if (tags.some((tag) => tag.name === checkedTag.name)) return false;
+                    return true;
+                });
+                try {
+                    if (!(tagsToRemove.length === 0)) {
+                        tagsToRemoveNames = tagsToRemove.map((tag) => {
+                            return tag.name;
+                        });
+                    }
+                    const reqBody = {
+                        tags_to_Add: tagsToAdd,
+                        tags_to_Remove: tagsToRemoveNames,
+                        entity_type: entity_type,
+                        entity_id: entity_id
+                    };
+                    const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
+                    setEditedList(false);
+                    setSearchInput('');
+                    handleUpdatedTagList(updatedTags);
+                } catch (error) {}
+            }
         }
-    };
+    }));
 
     const handleNewTag = (tag) => {
         setCheckedList([...checkedList, tag]);
@@ -160,37 +161,6 @@ const TagsPicker = ({ saveChangesRef, tags, entity_id, entity_type, handleUpdate
                             {searchInput.length > 0 && `"`}
                         </p>
                     </div>
-                    <Divider className="divider" />
-                    <div className="save-cancel-buttons">
-                        <Button
-                            width={'100px'}
-                            height="30px"
-                            placeholder={`Cancel`}
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType={'white'}
-                            border="gray-light"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            marginRight="5px"
-                            onClick={() => {
-                                handleCloseWithNoChanges();
-                                setSearchInput('');
-                            }}
-                        />
-                        <Button
-                            width={'100px'}
-                            height="30px"
-                            placeholder={`Save`}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType={'purple'}
-                            fontSize="14px"
-                            fontWeight="bold"
-                            onClick={handleSaveChanges}
-                            disabled={!editedList}
-                        />
-                    </div>
                 </>
             )}
             {allTags?.length === 0 && (
@@ -211,6 +181,6 @@ const TagsPicker = ({ saveChangesRef, tags, entity_id, entity_type, handleUpdate
             }
         </div>
     );
-};
+});
 
 export default TagsPicker;

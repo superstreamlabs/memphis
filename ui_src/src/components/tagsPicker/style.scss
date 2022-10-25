@@ -105,24 +105,22 @@
         padding: 0;
     }
     .create-new-tag {
-        justify-content: center;
         height: 36px;
-        font-family: 'InterSemiBold';
-        font-size: 14px;
-        line-height: 18px;
         color: #4a495c;
         align-items: center;
         display: flex;
         max-width: 300px;
         cursor: pointer;
+        margin-left: 32px;
         .new-button {
             display: flex;
             margin: 0;
-            margin-top: 3px;
+            line-height: 14px;
             max-width: 300px;
-            height: 20px;
+            line-height: 20px;
             text-overflow: ellipsis;
             overflow: hidden;
+            margin-left: 7px;
         }
     }
     .create-new-search {
