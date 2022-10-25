@@ -75,12 +75,17 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		serv.Errorf(err.Error())
 		return
 	}
-	connectionIdHeader := hdr["connectionId"]
-	producedByHeader := hdr["producedBy"]
+	connectionIdHeader := hdr["$memphis_connectionId"]
+	producedByHeader := hdr["$memphis_producedBy"]
 
+	//This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
-		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-		return
+		connectionIdHeader = hdr["connectionId"]
+		producedByHeader = hdr["producedBy"]
+		if connectionIdHeader == "" || producedByHeader == "" {
+			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			return
+		}
 	}
 
 	if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
@@ -100,10 +105,17 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		ConnectionId:  connId,
 	}
 
+	headersJson, err := getMessageHeaders(hdr)
+	if err != nil {
+		serv.Errorf("HandleNewMessage" + err.Error())
+		return
+	}
+
 	messagePayload := models.MessagePayload{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
+		Headers:  headersJson,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
@@ -159,7 +171,6 @@ func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string)
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
 		"station_name": stationName,
 	})
-
 	if err != nil {
 		return int(count), err
 	}
