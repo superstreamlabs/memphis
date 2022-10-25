@@ -376,7 +376,6 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				return
 			}
 			if exist {
-
 				_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
 					bson.M{"$pull": bson.M{entityDBList: body.EntityID}})
 				if err != nil {
@@ -401,19 +400,15 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 func (th TagsHandler) GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
 	var tags []models.Tag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": station_id})
-
 	if err != nil {
 		return tags, err
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		return tags, err
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
-
 	return tags, nil
 }
 
@@ -423,11 +418,9 @@ func (th TagsHandler) GetTagsBySchema(schema_id primitive.ObjectID) ([]models.Ta
 	if err != nil {
 		return tags, err
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		return tags, err
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
@@ -441,11 +434,9 @@ func (th TagsHandler) GetTagsByUser(user_id primitive.ObjectID) ([]models.Tag, e
 	if err != nil {
 		return tags, err
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		return tags, err
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
@@ -515,7 +506,6 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 			return
 		}
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
@@ -532,7 +522,6 @@ func (th TagsHandler) GetUsedTags(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		serv.Errorf("GetUsedTags error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
