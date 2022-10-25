@@ -91,7 +91,8 @@ const Button = ({
             minWidth: minWidth || '60px',
             boxShadow,
             padding,
-            zIndex: zIndex
+            zIndex: zIndex,
+            lineHeight: fontSize
         },
         loading: isLoading
     };

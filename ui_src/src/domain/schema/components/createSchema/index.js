@@ -22,16 +22,20 @@
 import './style.scss';
 
 import Editor from '@monaco-editor/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form } from 'antd';
 
 import BackIcon from '../../../../assets/images/backIcon.svg';
+import tagsIcon from '../../../../assets/images/tagsIcon.svg';
+import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
+
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
+import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 
 const schemaTypes = [
     {
@@ -99,12 +103,27 @@ function CreateSchema({ goBack }) {
         name: '',
         type: 'Protobuf',
         // tags: [],
-        schema_content: ''
+        schema_content: '',
+        message_struct_name: 'test'
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [validateLoading, setValidateLoading] = useState(false);
     const [validateError, setValidateError] = useState('');
     const [validateSuccess, setValidateSuccess] = useState(false);
+
+    const updateFormState = (field, value) => {
+        let updatedValue = { ...formFields };
+        updatedValue[field] = value;
+        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+        if (field === 'schema_content') {
+            setValidateSuccess('');
+            setValidateError('');
+        }
+    };
+
+    useEffect(() => {
+        updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
+    }, []);
 
     const handleSubmit = async (e) => {
         const values = await creationForm.validateFields();
@@ -117,15 +136,14 @@ function CreateSchema({ goBack }) {
                 if (data) {
                     goBack();
                 }
-            } catch (err) {}
+            } catch (err) {
+                if (err.status === 555) {
+                    setValidateSuccess('');
+                    setValidateError(err.data.message);
+                }
+            }
             setLoadingSubmit(false);
         }
-    };
-
-    const updateFormState = (field, value) => {
-        let updatedValue = { ...formFields };
-        updatedValue[field] = value;
-        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
     const handleValidateSchema = async () => {
@@ -133,38 +151,50 @@ function CreateSchema({ goBack }) {
         try {
             const data = await httpRequest('POST', ApiEndpoints.VALIDATE_SCHEMA, {
                 schema_type: formFields?.type,
-                schema_content: formFields.schema_content || SchemaEditorExample[formFields?.type]?.value
+                schema_content: formFields.schema_content
             });
             if (data.is_valid) {
+                setValidateError('');
                 setTimeout(() => {
-                    setValidateSuccess(true);
+                    setValidateSuccess('Schema is valid');
+                    setValidateLoading(false);
                 }, 1000);
-                setValidateLoading(false);
             }
         } catch (error) {
             if (error.status === 555) {
+                setValidateSuccess('');
                 setValidateError(error.data.message);
             }
             setValidateLoading(false);
         }
     };
 
+    const checkContent = (_, value) => {
+        if (value.length > 0) {
+            return Promise.resolve();
+        } else {
+            setValidateSuccess('');
+            setValidateError('Schema content cannot be empty');
+            return Promise.reject(new Error());
+        }
+    };
+
     return (
         <div className="create-schema-wrapper">
-            <div className="header">
-                <div className="flex-title">
-                    <img src={BackIcon} onClick={() => goBack()} />
-                    <p>Create schema</p>
-                </div>
-                <span>
-                    Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
-                    <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                        Learn more
-                    </a>
-                </span>
-            </div>
             <Form name="form" form={creationForm} autoComplete="off" className="create-schema-form">
                 <div className="left-side">
+                    <div className="header">
+                        <div className="flex-title">
+                            <img src={BackIcon} onClick={() => goBack()} />
+                            <p>Create schema</p>
+                        </div>
+                        <span>
+                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
+                            <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
+                                Learn more
+                            </a>
+                        </span>
+                    </div>
                     <Form.Item
                         name="name"
                         rules={[
@@ -194,13 +224,25 @@ function CreateSchema({ goBack }) {
                     </Form.Item>
                     <Form.Item name="tags">
                         <div className="schema-field tags">
-                            <p className="field-title">Tags</p>
+                            <div className="title-icon-img">
+                                <img className="icon" src={tagsIcon} />
+                                <div className="title-desc">
+                                    <p className="field-title">Tags</p>
+                                    <p className="desc">Tags will help you organize, search and filter your data</p>
+                                </div>
+                            </div>
                             <TagsList addNew={true} />
                         </div>
                     </Form.Item>
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
-                            <p className="field-title">Schema type</p>
+                            <div className="title-icon-img">
+                                <img className="icon" src={schemaTypeIcon} />
+                                <div className="title-desc">
+                                    <p className="field-title">Schema type</p>
+                                    <p className="desc">Tags will help you organize, search and filter your data</p>
+                                </div>
+                            </div>
                             <RadioButton
                                 vertical={true}
                                 options={schemaTypes}
@@ -225,6 +267,7 @@ function CreateSchema({ goBack }) {
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 isLoading={validateLoading}
+                                disabled={formFields?.schema_content === ''}
                                 onClick={() => handleValidateSchema()}
                             />
                         </div>
@@ -235,8 +278,7 @@ function CreateSchema({ goBack }) {
                                 initialValue={SchemaEditorExample[formFields?.type]?.value}
                                 rules={[
                                     {
-                                        required: true,
-                                        message: 'Schema content cannot be empty'
+                                        validator: checkContent
                                     }
                                 ]}
                             >
@@ -247,17 +289,23 @@ function CreateSchema({ goBack }) {
                                         scrollBeyondLastLine: false,
                                         roundedSelection: false,
                                         formatOnPaste: true,
-                                        formatOnType: true
+                                        formatOnType: true,
+                                        fontSize: '14px'
                                     }}
+                                    height="calc(100% - 80px)"
                                     language={SchemaEditorExample[formFields?.type]?.language}
                                     defaultValue={SchemaEditorExample[formFields?.type]?.value}
                                     value={formFields.schema_content}
                                     onChange={(value) => updateFormState('schema_content', value)}
                                 />
-                                {/* <div className="validate-note">
-                                    <p>hvhvjhbk</p>
-                                </div> */}
                             </Form.Item>
+                            {(validateError || validateSuccess) && (
+                                <div className={validateSuccess ? 'validate-note success' : 'validate-note error'}>
+                                    {validateError && <ErrorOutlineRounded />}
+                                    {validateSuccess && <CheckCircleOutlineRounded />}
+                                    <p>{validateError || validateSuccess}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <Form.Item className="button-container">

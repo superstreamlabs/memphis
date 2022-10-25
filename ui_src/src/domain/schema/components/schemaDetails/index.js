@@ -24,9 +24,10 @@ import './style.scss';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import React, { useEffect, useState } from 'react';
 
-import createdByIcon from '../../../../assets/images/createdByIcon.svg';
-import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
+import createdByIcon from '../../../../assets/images/createdByIcon.svg';
+import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
+import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
 import RadioButton from '../../../../components/radioButton';
@@ -37,6 +38,9 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Modal from '../../../../components/modal';
 import { message } from 'antd';
 import { isThereDiff } from '../../../../services/valueConvertor';
+import SelectComponent from '../../../../components/select';
+import Copy from '../../../../components/copy';
+import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 
 const formatOption = [
     {
@@ -64,6 +68,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         version: []
     });
     const [rollBackModal, setRollBackModal] = useState(false);
+    const [isDiff, setIsDiff] = useState(true);
+    const [validateLoading, setValidateLoading] = useState(false);
+    const [validateError, setValidateError] = useState('');
+    const [validateSuccess, setValidateSuccess] = useState(false);
 
     const arrangeData = (schema) => {
         let index = schema.versions?.findIndex((version) => version?.active === true);
@@ -87,6 +95,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const handleSelectVersion = (e) => {
         let index = schemaDetails?.versions?.findIndex((version) => version.version_number === e);
         setVersionSelected(schemaDetails?.versions[index]);
+        setNewVersion('');
     };
 
     const createNewVersion = async () => {
@@ -121,8 +130,37 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     };
 
     const handleEditVersion = (value) => {
+        setValidateSuccess('');
         setNewVersion(value);
         setUpdated(isThereDiff(versionSelected?.schema_content, value));
+        if (value === '') {
+            setValidateError('Schema content cannot be empty');
+        } else {
+            setValidateError('');
+        }
+    };
+
+    const handleValidateSchema = async () => {
+        setValidateLoading(true);
+        try {
+            const data = await httpRequest('POST', ApiEndpoints.VALIDATE_SCHEMA, {
+                schema_type: schemaDetails?.type,
+                schema_content: newVersion || versionSelected?.schema_content
+            });
+            if (data.is_valid) {
+                setValidateError('');
+                setTimeout(() => {
+                    setValidateSuccess('Schema is valid');
+                    setValidateLoading(false);
+                }, 1000);
+            }
+        } catch (error) {
+            if (error.status === 555) {
+                setValidateSuccess('');
+                setValidateError(error.data.message);
+            }
+            setValidateLoading(false);
+        }
     };
 
     return (
@@ -145,12 +183,67 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
                 <div className="schema-fields">
                     <div className="left">
-                        <p>Schema</p>
+                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema structure</p>
+                        {!versionSelected?.active && (
+                            <>
+                                <span>Diff : </span>
+                                <div className="switcher">
+                                    <div className={isDiff ? 'yes-no-wrapper yes' : 'yes-no-wrapper border'} onClick={() => setIsDiff(true)}>
+                                        <p>Yes</p>
+                                    </div>
+                                    <div className={isDiff ? 'yes-no-wrapper' : 'yes-no-wrapper no'} onClick={() => setIsDiff(false)}>
+                                        <p>No</p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                         {/* <RadioButton options={formatOption} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} /> */}
                     </div>
                     <SelectVersion value={versionSelected?.version_number} options={schemaDetails?.versions} onChange={(e) => handleSelectVersion(e)} />
                 </div>
                 <div className="schema-content">
+                    <div className="header">
+                        <div className="structure-message">
+                            <p className="field-name">Master message :</p>
+                            <SelectComponent
+                                // value={handelChangeFieldToAnalyze.outputField}
+                                colorType="black"
+                                backgroundColorType="white"
+                                borderColorType="gray-light"
+                                radiusType="semi-round"
+                                minWidth="12vw"
+                                width="250px"
+                                height="30px"
+                                options={['op1', 'op2']}
+                                iconColor="gray"
+                                popupClassName="message-option"
+                                // onChange={(e) => handelChangeOutputField(e)}
+                            />
+                        </div>
+                        <div className="validation">
+                            <Button
+                                width="90px"
+                                height="28px"
+                                placeholder={
+                                    <div className="validate-placeholder">
+                                        <img src={verifiedIcon} />
+                                        <p>Validate</p>
+                                    </div>
+                                }
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontFamily="InterMedium"
+                                disabled={updated && newVersion === ''}
+                                isLoading={validateLoading}
+                                onClick={() => handleValidateSchema()}
+                            />
+                        </div>
+                        <div className="copy-icon">
+                            <Copy data={newVersion || versionSelected?.schema_content} />
+                        </div>
+                    </div>
                     {versionSelected?.active && (
                         <Editor
                             options={{
@@ -159,9 +252,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 scrollBeyondLastLine: false,
                                 roundedSelection: false,
                                 formatOnPaste: true,
-                                formatOnType: true
+                                formatOnType: true,
+                                fontSize: '14px'
                             }}
                             language="proto"
+                            height="calc(100% - 120px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
                             onChange={(value) => {
@@ -170,24 +265,47 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         />
                     )}
                     {!versionSelected?.active && (
-                        <DiffEditor
-                            height="90%"
-                            language="proto"
-                            original={currentVersion?.schema_content}
-                            modified={versionSelected?.schema_content}
-                            options={{
-                                renderSideBySide: false,
-                                readOnly: true,
-                                scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                                // scrollBeyondLastLine: false,
-                                renderOverviewRuler: false,
-                                colorDecorators: true
-                            }}
-                        />
+                        <>
+                            {!isDiff && (
+                                <Editor
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollbar: { verticalScrollbarSize: 0 },
+                                        scrollBeyondLastLine: false,
+                                        roundedSelection: false,
+                                        formatOnPaste: true,
+                                        formatOnType: true,
+                                        readOnly: true,
+                                        fontSize: '14px'
+                                    }}
+                                    language="proto"
+                                    height="calc(100% - 120px)"
+                                    value={versionSelected?.schema_content}
+                                />
+                            )}
+                            {isDiff && (
+                                <DiffEditor
+                                    height="calc(100% - 120px)"
+                                    language="proto"
+                                    original={currentVersion?.schema_content}
+                                    modified={versionSelected?.schema_content}
+                                    options={{
+                                        renderSideBySide: false,
+                                        readOnly: true,
+                                        scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                        renderOverviewRuler: false,
+                                        colorDecorators: true,
+                                        fontSize: '14px'
+                                    }}
+                                />
+                            )}
+                        </>
                     )}
-                    {updated && newVersion === '' && (
-                        <div>
-                            <p className="warning-message">Schema content cannot be empty</p>
+                    {(validateError || validateSuccess) && (
+                        <div className={validateSuccess ? 'validate-note success' : 'validate-note error'}>
+                            {validateError && <ErrorOutlineRounded />}
+                            {validateSuccess && <CheckCircleOutlineRounded />}
+                            <p>{validateError || validateSuccess}</p>
                         </div>
                     )}
                 </div>
