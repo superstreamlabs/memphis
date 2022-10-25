@@ -387,7 +387,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			}
 		}
 	}
-	tags, err := GetTagsByStation(body.EntityID)
+	tags, err := th.GetTagsByStation(body.EntityID)
 	if err != nil {
 		serv.Errorf("UpdateTagsForEntity error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -399,10 +399,6 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 }
 
 func (th TagsHandler) GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
-	return GetTagsByStation(station_id)
-}
-
-func GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
 	var tags []models.Tag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": station_id})
 
@@ -422,9 +418,6 @@ func GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
 }
 
 func (th TagsHandler) GetTagsBySchema(schema_id primitive.ObjectID) ([]models.Tag, error) {
-	return GetTagsBySchema(schema_id)
-}
-func GetTagsBySchema(schema_id primitive.ObjectID) ([]models.Tag, error) {
 	var tags []models.Tag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": schema_id})
 	if err != nil {
