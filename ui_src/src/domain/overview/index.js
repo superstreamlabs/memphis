@@ -220,7 +220,7 @@ function OverView() {
                     </div>
                 }
                 height="540px"
-                width="550px"
+                width="560px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {
