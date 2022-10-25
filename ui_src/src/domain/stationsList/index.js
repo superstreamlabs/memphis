@@ -37,7 +37,6 @@ import stationImg from '../../assets/images/stationsIconActive.svg';
 
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
-// import CreateStationDetails from '../../components/createStationDetails';
 import CreateStationForm from '../../components/createStationForm';
 
 import Loader from '../../components/loader';
@@ -280,8 +279,8 @@ const StationsList = () => {
                             <label>A station is a distributed unit that stores the produced data.</label>
                         </div>
                     }
-                    height="460px"
-                    width="540px"
+                    height="540px"
+                    width="550px"
                     rBtnText="Add"
                     lBtnText="Cancel"
                     lBtnClick={() => {
