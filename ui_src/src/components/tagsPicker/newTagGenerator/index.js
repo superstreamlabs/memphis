@@ -27,12 +27,13 @@ import Input from '../../Input';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import ColorPicker from '../../colorPicker';
+import { ColorPalette } from '../../../const/colorPalette';
 
 const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: '',
-        color: '101, 87, 255' //default memphis-purple
+        color: ColorPalette[0] //default memphis-purple
     });
 
     const updateFormState = (field, value) => {
@@ -44,6 +45,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
     useEffect(() => {
         if (searchVal.length > 0) {
             updateFormState('name', searchVal);
+            updateFormState('color', ColorPalette[0]);
         }
     }, []);
 
@@ -104,11 +106,11 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         />
                     </div>
                 </Form.Item>
-                <div className="color-pick">
-                    <Form.Item className="form-input" name="color">
-                        <ColorPicker onChange={(value) => updateFormState('color', value)} value={formFields.color} />
-                    </Form.Item>
-                </div>
+                {/* <div className="color-pick"> */}
+                <Form.Item className="form-input" name="color">
+                    <ColorPicker onChange={(value) => updateFormState('color', value)} value={formFields.color} />
+                </Form.Item>
+                {/* </div> */}
                 <Divider className="divider" />
                 <div className="save-cancel-buttons">
                     <Button
@@ -133,7 +135,6 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         backgroundColorType={'purple'}
                         fontSize="14px"
                         fontWeight="bold"
-                        marginLeft="100px"
                         marginBottom="5px"
                         onClick={onFinish}
                     />

@@ -1,13 +1,13 @@
 .tags-picker-wrapper {
-    width: 300px;
-    height: 440px;
-    align-items: center;
-    align-content: center;
+    width: 250px;
+    max-height: 440px;
     overflow-x: hidden;
     overflow: hidden;
+    min-height: 300px;
     .tags-picker-title {
+        display: flex;
         margin-top: 15px;
-        margin-left: 55px;
+        margin-left: 30px;
         font-weight: 600;
         font-size: 16px;
         line-height: 20px;
@@ -60,9 +60,9 @@
     .search-input {
         display: flex;
         margin-top: 10px;
-        width: 200px;
+        width: 230px;
         height: 32px;
-        margin-left: 49px;
+        margin-left: 9px;
         border: 1px solid rgb(90, 79, 229);
         border-radius: 15px;
     }
@@ -72,7 +72,7 @@
         justify-content: space-between;
         margin: 10px;
     }
-    .save-add-buttons {
+    .cancel-add-buttons {
         display: inline-flex;
         flex-direction: row;
         justify-content: flex-start;
@@ -83,7 +83,8 @@
     }
     .tags-list {
         margin-top: 10px;
-        height: 260px;
+        min-height: 130px;
+        max-height: 260px;
         overflow-y: scroll;
         overflow-x: hidden;
         width: 100%;
@@ -104,10 +105,9 @@
         padding: 0;
     }
     .create-new-tag {
-        margin-left: 32px;
+        justify-content: center;
         height: 36px;
         font-family: 'InterSemiBold';
-        font-weight: 600;
         font-size: 14px;
         line-height: 18px;
         color: #4a495c;
@@ -115,24 +115,33 @@
         display: flex;
         max-width: 300px;
         cursor: pointer;
-        overflow: hidden;
-        text-overflow: ellipsis;
         .new-button {
-            margin-top: 4px;
-            max-width: 200px;
+            display: flex;
+            margin: 0;
+            margin-top: 3px;
+            max-width: 300px;
             height: 20px;
+            text-overflow: ellipsis;
             overflow: hidden;
         }
+    }
+    .create-new-search {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
     }
     .no-tags {
         display: flex;
         justify-content: center;
         flex-direction: column;
         align-items: center;
+        max-height: 250px;
+        min-height: 130px;
         .no-tags-image {
             justify-content: flex-start;
             display: flex;
-            margin-top: 60px;
             width: 200px;
             flex-direction: column;
         }
@@ -141,14 +150,13 @@
             font-size: 16px;
             font-weight: 600;
             line-height: 20px;
-            margin-top: 10px;
             color: #2e2c34;
         }
         .tags-info-message {
             display: flex;
             text-align: center;
             padding: 0 20px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 400;
             line-height: 15px;
             margin-top: 10px;

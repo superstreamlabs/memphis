@@ -10,21 +10,10 @@
         display: inline-block;
         border-radius: 50%;
     }
-    .color-picker {
-        margin-left: 8px;
-        margin-right: 8px;
-        margin-top: 30px;
-        display: inline-block;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-    }
     .field-title {
         margin-top: 10px;
         font-weight: 400;
         font-size: 12px;
-        // margin: 0;
-        margin-bottom: 10px;
         display: flex;
     }
     .color-pick {
@@ -34,20 +23,20 @@
     .tag-name {
         font-size: 17px;
         font-weight: 600;
-        margin-bottom: 10px;
         color: #2e2c34;
     }
     .save-cancel-buttons {
         display: flex;
         margin-top: 20px;
+        justify-content: space-between;
     }
     .ant-form-item {
         margin-bottom: 10px;
     }
     .divider {
         margin: 0;
-        margin-top: 20px;
-        margin-left: -27px;
-        width: 293px;
+        margin-top: 3px;
+        margin-left: -24px;
+        width: 250px;
     }
 }

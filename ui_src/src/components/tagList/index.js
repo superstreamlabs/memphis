@@ -21,16 +21,17 @@
 
 import './style.scss';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Space, Popover } from 'antd';
 import Tag from '../tag';
-import { Add } from '@material-ui/icons';
+import { Add, AddRounded } from '@material-ui/icons';
 import RemainingTagsList from './remainingTagsList';
 import TagsPicker from '../tagsPicker';
 
 const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entityID, handleTagsUpdate }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [remainingTags, setRemainingTags] = useState([]);
+    const saveChangesRef = useRef(null);
     const [tagsPop, setTagsPop] = useState(false);
 
     useEffect(() => {
@@ -45,10 +46,21 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
         }
     }, [tags, tagsToShow]);
 
+    const handleOpenChange = (newOpen) => {
+        if (!newOpen) saveChangesRef?.current();
+        setTagsPop(newOpen);
+    };
+
+    const hide = () => {
+        setTagsPop(false);
+    };
+
+    useEffect(() => {}, [tagsPop]);
+
     return (
         <div className="tags-list-wrapper">
             {tagsToDisplay?.map((tag, index) => {
-                return <Tag key={tag.name} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
+                return <Tag key={index} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
             })}
             {remainingTags?.length > 0 && (
                 <Popover
@@ -66,15 +78,30 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
             )}
             {deletable && (
                 <Popover
-                    overlayInnerStyle={{ width: '300px', height: '440px', borderRadius: '12px', border: '1px solid #f0f0f0', padding: '0px 0px', overflow: 'hidden' }}
+                    overlayInnerStyle={{
+                        width: '250px',
+                        maxHeight: '440px',
+                        minHeight: '300px',
+                        borderRadius: '12px',
+                        border: '1px solid #f0f0f0',
+                        padding: '0px 0px',
+                        overflow: 'hidden'
+                    }}
                     zIndex={2}
                     destroyTooltipOnHide={true}
-                    onClick={() => setTagsPop(!tagsPop)}
-                    onCancel={() => setTagsPop(false)}
+                    // onClick={() => setTagsPop(!tagsPop)}
+                    // onCancel={() => setTagsPop(false)}
+                    trigger="click"
                     placement="bottomLeft"
-                    visible={tagsPop}
+                    open={tagsPop}
+                    onOpenChange={(open) => {
+                        handleOpenChange(open);
+                        // saveChangesRef?.current();
+                        // setTagsPop(false);
+                    }}
                     content={
                         <TagsPicker
+                            saveChangesRef={saveChangesRef}
                             tags={tags}
                             entity_id={entityID}
                             entity_type={'station'}
@@ -82,17 +109,15 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
                                 handleTagsUpdate(tags);
                                 setTagsPop(false);
                             }}
-                            handleCloseWithNoChanges={() => {
-                                setTagsPop(false);
-                            }}
+                            // handleCloseWithNoChanges={hide}
                             entityName={entityName}
                         />
                     }
                 >
                     <Space className="space">
                         <div className="edit-tags">
-                            <Add className="add" />
-                            <div className="edit-content">{tags?.length > 0 ? 'Edit Tags' : 'Add Tags'}</div>
+                            <AddRounded className="add" />
+                            <div className="edit-content">{tags?.length > 0 ? 'Edit Tags' : 'Add new tag'}</div>
                         </div>
                     </Space>
                 </Popover>

@@ -20,21 +20,28 @@
 // SOFTWARE.
 
 import './style.scss';
-import React from 'react';
+import React, { useState } from 'react';
 import { ColorPalette } from '../../const/colorPalette';
 
-const ColorPicker = ({ onChange, value}) => {
-   
-
-    return ColorPalette?.map((color) => (
+const ColorPicker = ({ onChange, value }) => {
+    const [changed, setChanged] = useState(false);
+    return (
         <div className="color-picker">
-            <li key={color} onClick={() => onChange(color)}>
-                <div className="color-circle" key={color} style={{ backgroundColor: `rgb(${color})` }}>
-                    {color === value && <div className="inner-circle"></div>}
-                </div>
-            </li>
+            {ColorPalette?.map((color) => (
+                <li
+                    key={color}
+                    onClick={() => {
+                        setChanged(true);
+                        onChange(color);
+                    }}
+                >
+                    <div className="color-circle" key={color} style={{ backgroundColor: `rgb(${color})` }}>
+                        {(changed ? color === value : color === ColorPalette[0]) && <div className="inner-circle"></div>}
+                    </div>
+                </li>
+            ))}
         </div>
-    ));
+    );
 };
 
 export default ColorPicker;

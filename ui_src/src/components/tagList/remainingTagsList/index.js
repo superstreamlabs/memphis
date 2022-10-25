@@ -26,7 +26,7 @@ const RemainingTagsList = ({ tags, handleDelete, deletable }) => {
     return (
         <div className="remaining-tags-list-wrapper">
             {tags?.map((tag, index) => {
-                return <Tag key={tag.name} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
+                return <Tag key={index} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
             })}
         </div>
     );

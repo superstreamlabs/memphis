@@ -28,11 +28,11 @@ import Modal from '../../components/modal';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
-import { Add, Check } from '@material-ui/icons';
+import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
 import emptyTags from '../../assets/images/emptyTags.svg';
 
-const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges }) => {
+const TagsPicker = ({ saveChangesRef, tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges, closeTrigger }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -51,6 +51,7 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
     };
 
     useEffect(() => {
+        saveChangesRef.current = handleSaveChanges;
         const getAllTags = async () => {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}`);
             setTagsToDisplay(res);
@@ -75,31 +76,34 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
     };
 
     const handleSaveChanges = async () => {
-        const tagsToRemove = tags.filter((tag) => {
-            if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
-            return true;
-        });
-        var tagsToRemoveNames;
-        const tagsToAdd = checkedList.filter((checkedTag) => {
-            if (tags.some((tag) => tag.name === checkedTag.name)) return false;
-            return true;
-        });
-        try {
-            if (!(tagsToRemove.length === 0)) {
-                tagsToRemoveNames = tagsToRemove.map((tag) => {
-                    return tag.name;
-                });
-            }
-            const reqBody = {
-                tags_to_Add: tagsToAdd,
-                tags_to_Remove: tagsToRemoveNames,
-                entity_type: entity_type,
-                entity_id: entity_id
-            };
-            const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
-            setEditedList(false);
-            handleUpdatedTagList(updatedTags);
-        } catch (error) {}
+        if (editedList) {
+            const tagsToRemove = tags.filter((tag) => {
+                if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
+                return true;
+            });
+            var tagsToRemoveNames;
+            const tagsToAdd = checkedList.filter((checkedTag) => {
+                if (tags.some((tag) => tag.name === checkedTag.name)) return false;
+                return true;
+            });
+            try {
+                if (!(tagsToRemove.length === 0)) {
+                    tagsToRemoveNames = tagsToRemove.map((tag) => {
+                        return tag.name;
+                    });
+                }
+                const reqBody = {
+                    tags_to_Add: tagsToAdd,
+                    tags_to_Remove: tagsToRemoveNames,
+                    entity_type: entity_type,
+                    entity_id: entity_id
+                };
+                const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
+                setEditedList(false);
+                setSearchInput('');
+                handleUpdatedTagList(updatedTags);
+            } catch (error) {}
+        }
     };
 
     const handleNewTag = (tag) => {
@@ -130,9 +134,9 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                     </div>
                     <div className="tags-list">
                         {tagsToDisplay?.length > 0 ? (
-                            tagsToDisplay.map((tag) => (
+                            tagsToDisplay.map((tag, index) => (
                                 <>
-                                    <li key={tag.name} className="tag" onClick={() => handleCheck(tag)}>
+                                    <li key={index} className="tag" onClick={() => handleCheck(tag)}>
                                         {checkedList?.some((item) => tag.name === item.name) ? <Check className="checkmark" /> : <div className="no-checkmark"></div>}
                                         <div className="color-circle" style={{ backgroundColor: `rgb(${tag.color})` }}></div>
                                         <div className="tag-name">{tag.name}</div>
@@ -148,16 +152,18 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                         )}
                     </div>
                     <div className="create-new-tag" onClick={() => setNewTagModal(true)}>
-                        <Add className="add" />
-                        <div className="new-button">
-                            {`Create New Tag `}
-                            {searchInput.length > 0 && `"${searchInput}"`}
-                        </div>
+                        <AddRounded className="add" />
+                        <p className="new-button">
+                            Create New Tag {` `}
+                            {searchInput.length > 0 && `"`}
+                            <span className="create-new-search">{searchInput.length > 0 && `${searchInput}`}</span>
+                            {searchInput.length > 0 && `"`}
+                        </p>
                     </div>
                     <Divider className="divider" />
                     <div className="save-cancel-buttons">
                         <Button
-                            width={'120px'}
+                            width={'100px'}
                             height="30px"
                             placeholder={`Cancel`}
                             colorType="black"
@@ -173,7 +179,7 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                             }}
                         />
                         <Button
-                            width={'120px'}
+                            width={'100px'}
                             height="30px"
                             placeholder={`Save`}
                             colorType="white"
@@ -193,21 +199,13 @@ const TagsPicker = ({ tags, entity_id, entity_type, handleUpdatedTagList, handle
                     <span className="no-tags-message">No Tags Exist</span>
                     <span className="tags-info-message">Tags will help you organize, search and filter your data</span>
                     <div className="create-new-tag-empty" onClick={() => setNewTagModal(true)}>
-                        <Add className="add" />
-                        <div className="new-button">{`Create New Tag ${searchInput.length > 0 && tagsToDisplay.length === 0 ? `"${searchInput}"` : ''}`}</div>
+                        <AddRounded className="add" />
+                        <div className="new-button">{`Create New Tag`}</div>
                     </div>
                 </div>
             )}
             {
-                <Modal
-                    className="generator-modal"
-                    displayButtons={false}
-                    height="415px"
-                    width="290px"
-                    clickOutside={() => setNewTagModal(false)}
-                    open={newTagModal}
-                    hr={false}
-                >
+                <Modal className="generator-modal" displayButtons={false} width="250px" clickOutside={() => setNewTagModal(false)} open={newTagModal} hr={false}>
                     <NewTagGenerator searchVal={searchInput} allTags={allTags} handleFinish={(tag) => handleNewTag(tag)} handleCancel={() => setNewTagModal(false)} />
                 </Modal>
             }

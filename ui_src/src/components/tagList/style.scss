@@ -28,10 +28,11 @@
         }
     }
     .edit-tags {
-        background-color: rgba(132, 129, 138, 0.1);
+        background-color: #f0f1f2;
         border: 1px solid #e3e3e3;
         border-radius: 4px;
-        height: 20px;
+        height: 24px;
+        padding: 10px;
         display: flex;
         cursor: pointer;
         svg {
@@ -44,16 +45,16 @@
             color: #2e2c34;
         }
         .add {
-            height: 13px;
-            width: 13px;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
         }
     }
     .tag-wrapper {
         border-radius: 4px;
         font-family: 'InterSemiBold';
-        font-style: normal;
         font-size: 14px;
-        height: 20px;
+        height: 24px;
         display: flex;
         align-items: center;
         overflow: hidden;

@@ -1,7 +1,13 @@
 .color-picker {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    // gap: 7px;
     .color-circle {
-        margin-left: 0;
-        display: inline-block;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
         border-radius: 50%;
         width: 30px;
         height: 30px;
