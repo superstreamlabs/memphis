@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"memphis-broker/models"
 	"memphis-broker/utils"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +43,37 @@ func validateProtobufContent(schemaContent string) error {
 	return nil
 }
 
+func generateProtobufDescriptor(schema string) ([]byte, error) {
+	filename := "tmp_proto"
+	descFilename := "tmp_proto_desc"
+	err := os.WriteFile(filename, []byte(schema), 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	protoCmd := "protoc"
+	args := []string{"--descriptor_set_out=" + descFilename, filename}
+	cmd := exec.Command(protoCmd, args...)
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	descContent, err := ioutil.ReadFile(descFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tmpFile := range []string{filename, descFilename} {
+		err = os.Remove(tmpFile)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return descContent, nil
+}
+
 func validateSchemaName(schemaName string) error {
 	return validateName(schemaName, schemaObjectName)
 }
@@ -64,7 +97,7 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	if len(schemaContent) == 0 {
 		return errors.New("Your schema content is invalid")
 	}
-	
+
 	switch schemaType {
 	case "protobuf":
 		err := validateProtobufContent(schemaContent)
@@ -77,6 +110,24 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 		break
 	}
 	return nil
+}
+
+func generateSchemaDescriptor(schemaContent, schemaType string) (string, error) {
+	if len(schemaContent) == 0 {
+		panic("attempt to generate schema descriptor with empty schema")
+	}
+
+	switch schemaType {
+	case "protobuf":
+		descriptor, err := generateProtobufDescriptor(schemaContent)
+		if err != nil {
+			return "", err
+		}
+		return string(descriptor), nil
+	default:
+		return "", nil
+	}
+
 }
 
 func validateMessageStructName(messageStructName string) error {
@@ -411,6 +462,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
+
+	descriptor, err := generateSchemaDescriptor(schemaContent, schemaType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
 	newSchema := models.Schema{
 		ID:   primitive.NewObjectID(),
 		Name: schemaName,
@@ -434,7 +493,9 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		SchemaContent:     schemaContent,
 		SchemaId:          newSchema.ID,
 		MessageStructName: messageStructName,
+		Descriptor:        descriptor,
 	}
+
 	opts := options.Update().SetUpsert(true)
 	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
@@ -588,6 +649,13 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
+	descriptor, err := generateSchemaDescriptor(schemaContent, schema.Type)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
 	countVersions, err := sh.getVersionsCount(schema.ID)
 	if err != nil {
 		serv.Errorf("CreateNewVersion error: " + err.Error())
@@ -606,6 +674,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		SchemaContent:     schemaContent,
 		SchemaId:          schema.ID,
 		MessageStructName: messageStructName,
+		Descriptor:        descriptor,
 	}
 
 	filter := bson.M{"schema_id": schema.ID, "version_number": newSchemaVersion.VersionNumber}

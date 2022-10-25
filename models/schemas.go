@@ -42,6 +42,7 @@ type SchemaVersion struct {
 	SchemaContent     string             `json:"schema_content" bson:"schema_content"`
 	SchemaId          primitive.ObjectID `json:"schema_id" bson:"schema_id"`
 	MessageStructName string             `json:"message_struct_name" bson:"message_struct_name"`
+	Descriptor        string             `json:"-" bson:"descriptor"`
 }
 
 type CreateNewSchema struct {
