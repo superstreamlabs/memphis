@@ -1,17 +1,18 @@
 .tags-picker-wrapper {
     width: 250px;
-    max-height: 440px;
-    overflow-x: hidden;
+    height: 310px;
     overflow: hidden;
-    min-height: 300px;
+    display: grid;
+    justify-content: center;
+    align-items: center;
     .tags-picker-title {
         display: flex;
-        margin-top: 15px;
-        margin-left: 30px;
         font-weight: 600;
         font-size: 16px;
-        line-height: 20px;
+        line-height: 40px;
         color: #2e2c34;
+        align-self: center;
+        justify-self: center;
     }
     .tag {
         padding-top: 8px;
@@ -62,9 +63,9 @@
         margin-top: 10px;
         width: 230px;
         height: 32px;
-        margin-left: 9px;
         border: 1px solid rgb(90, 79, 229);
         border-radius: 15px;
+        justify-self: center;
     }
 
     .save-cancel-buttons {
@@ -83,8 +84,7 @@
     }
     .tags-list {
         margin-top: 10px;
-        min-height: 130px;
-        max-height: 260px;
+        height: 185px;
         overflow-y: scroll;
         overflow-x: hidden;
         width: 100%;
@@ -108,10 +108,10 @@
         height: 36px;
         color: #4a495c;
         align-items: center;
+        justify-content: center;
         display: flex;
         max-width: 300px;
         cursor: pointer;
-        margin-left: 32px;
         .new-button {
             display: flex;
             margin: 0;
@@ -135,8 +135,7 @@
         justify-content: center;
         flex-direction: column;
         align-items: center;
-        max-height: 250px;
-        min-height: 130px;
+        height: 180px;
         .no-tags-image {
             justify-content: flex-start;
             display: flex;
@@ -165,7 +164,6 @@
             display: flex;
             height: 18px;
             font-family: 'InterSemiBold';
-            font-weight: 600;
             font-size: 14px;
             line-height: 18px;
             color: #6557ff;

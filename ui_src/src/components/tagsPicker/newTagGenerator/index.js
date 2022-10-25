@@ -32,7 +32,7 @@ import { ColorPalette } from '../../../const/colorPalette';
 const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
-        name: '',
+        name: searchVal,
         color: ColorPalette[0] //default memphis-purple
     });
 
@@ -41,13 +41,6 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
         updatedValue[field] = value;
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
-
-    useEffect(() => {
-        if (searchVal.length > 0) {
-            updateFormState('name', searchVal);
-            updateFormState('color', ColorPalette[0]);
-        }
-    }, []);
 
     const onFinish = async () => {
         const values = await creationForm.validateFields();
@@ -93,7 +86,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                     <div className="tag-name">
                         <p className="field-title">Tag</p>
                         <Input
-                            placeholder={searchVal || 'Enter tag here'}
+                            placeholder={'Enter tag here'}
                             type="text"
                             radiusType="semi-round"
                             colorType="black"
@@ -106,11 +99,9 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         />
                     </div>
                 </Form.Item>
-                {/* <div className="color-pick"> */}
                 <Form.Item className="form-input" name="color">
                     <ColorPicker onChange={(value) => updateFormState('color', value)} value={formFields.color} />
                 </Form.Item>
-                {/* </div> */}
                 <Divider className="divider" />
                 <div className="save-cancel-buttons">
                     <Button

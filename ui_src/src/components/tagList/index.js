@@ -80,8 +80,7 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
                 <Popover
                     overlayInnerStyle={{
                         width: '250px',
-                        maxHeight: '440px',
-                        minHeight: '300px',
+                        height: '330px',
                         borderRadius: '12px',
                         border: '1px solid #f0f0f0',
                         padding: '0px 0px',
