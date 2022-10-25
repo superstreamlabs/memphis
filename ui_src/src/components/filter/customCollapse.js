@@ -41,48 +41,45 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
     const onChange = (key) => {
         setActiveKey(key);
     };
-    useEffect(() => {
-        console.log(filterState);
-    }, [filterState]);
 
-    const updateDateChoice = (filterGroup, filterField, value) => {
-        let updatedCounter = filterState.counter;
-        let filter = filterState.filterFields;
-        if (filter[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
-        else if (filter[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
-        filter[filterGroup].fields[filterField].value = value;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-        filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
+    const updateChoice = (filterGroup, filterField, value) => {
+        let updatedCounter;
+        let filter;
+        switch (filterState.filterFields[filterGroup].filterType) {
+            case filterType.CHECKBOX:
+                updatedCounter = filterState.counter;
+                filter = filterState.filterFields;
+                if (filter[filterGroup].fields[filterField].checked) updatedCounter--;
+                else updatedCounter++;
+                filter[filterGroup].fields[filterField].checked = !filter[filterGroup].fields[filterField].checked;
+                filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+                filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
+                return;
+            case filterType.RADIOBUTTON:
+                updatedCounter = filterState.counter;
+                filter = filterState.filterFields;
+                if (filter[filterGroup].radioValue === -1) updatedCounter++;
+                filter[filterGroup].radioValue = filterField;
+                filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+                filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
+                return;
+            case filterType.DATE:
+                updatedCounter = filterState.counter;
+                filter = filterState.filterFields;
+                if (filter[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
+                else if (filter[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
+                filter[filterGroup].fields[filterField].value = value;
+                filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+                filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
+                return;
+            default:
+                return;
+        }
     };
 
-    const updateRadioChoice = (filterGroupIndex, e) => {
-        let updatedCounter = filterState.counter;
+    const showMoreLess = (index, showMore) => {
         let filter = filterState.filterFields;
-        if (filter[filterGroupIndex].radioValue === -1) updatedCounter++;
-        filter[filterGroupIndex].radioValue = e;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-        filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
-    };
-
-    const updateCheckBoxChoice = (filterGroupIndex, filterField) => {
-        let updatedCounter = filterState.counter;
-        let filter = filterState.filterFields;
-        if (filter[filterGroupIndex].fields[filterField].checked) updatedCounter--;
-        else updatedCounter++;
-        filter[filterGroupIndex].fields[filterField].checked = !filter[filterGroupIndex].fields[filterField].checked;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-        filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
-    };
-
-    const showMore = (index) => {
-        let filter = filterState.filterFields;
-        filter[index].showMore = true;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-    };
-
-    const showLess = (index) => {
-        let filter = filterState.filterFields;
-        filter[index].showMore = false;
+        filter[index].showMore = showMore;
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
     };
 
@@ -103,7 +100,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                                 borderColorType="red"
                                 width="240px"
                                 minWidth="200px"
-                                onChange={(e) => updateDateChoice(filterGroupIndex, filterFieldIndex, e)}
+                                onChange={(e) => updateChoice(filterGroupIndex, filterFieldIndex, e)}
                             />
                         </div>
                     );
@@ -117,7 +114,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                             return { id: id, value: id, label: item.name };
                         })}
                         radioValue={filterGroup.radioValue}
-                        onChange={(e) => updateRadioChoice(filterGroupIndex, e.target.value)}
+                        onChange={(e) => updateChoice(filterGroupIndex, e.target.value)}
                     />
                 );
         }
@@ -130,11 +127,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                     if (filterFieldIndex < 3)
                         return (
                             <div className="label-container" key={filterField.name}>
-                                <Checkbox
-                                    checked={filterField.checked}
-                                    onChange={() => updateCheckBoxChoice(filterGroupIndex, filterFieldIndex)}
-                                    name={filterGroup.name}
-                                />
+                                <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
                                 <Tag color={filterField.color}>{filterField.name}</Tag>
                             </div>
                         );
@@ -142,22 +135,18 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         return filterGroup.showMore ? (
                             <div>
                                 <div className="label-container" key={filterField.name}>
-                                    <Checkbox
-                                        checked={filterField.checked}
-                                        onChange={() => updateCheckBoxChoice(filterGroupIndex, filterFieldIndex)}
-                                        name={filterGroup.name}
-                                    />
+                                    <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
                                     <Tag color={filterField.color}>{filterField.name}</Tag>
                                 </div>
                                 {filterFieldIndex === filterGroup.fields.length - 1 && (
-                                    <p className="show-more" onClick={() => showLess(filterGroupIndex)}>
+                                    <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, true)}>
                                         Show Less...
                                     </p>
                                 )}
                             </div>
                         ) : (
                             filterFieldIndex === 3 && (
-                                <p className="show-more" onClick={() => showMore(filterGroupIndex)}>
+                                <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, false)}>
                                     Show All...
                                 </p>
                             )
@@ -168,7 +157,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
                         <div className="circle-container" key={filterField.name}>
-                            <Checkbox checked={filterField.checked} onChange={() => updateCheckBoxChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
+                            <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
                             <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
                                 {filterField.name[0].toUpperCase()}
                             </p>
@@ -180,7 +169,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
                         <div className="default-checkbox" key={filterField.name}>
-                            <Checkbox checked={filterField.checked} onChange={() => updateCheckBoxChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
+                            <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
                             <label>{filterField.name}</label>
                         </div>
                     );

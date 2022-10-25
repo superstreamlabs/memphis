@@ -62,8 +62,8 @@ const StationsList = () => {
     }, []);
 
     useEffect(() => {
-        tagList.length > 0 && filterFields.findIndex((x) => x.name === 'tags') === -1 && getTagsFilter(tagList);
-    }, [tagList]);
+        filterFields.findIndex((x) => x.name === 'tags') === -1 && getTagsFilter();
+    }, [tagList.length > 0]);
 
     useEffect(() => {
         if (searchInput.length >= 2) setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
@@ -71,8 +71,8 @@ const StationsList = () => {
     }, [searchInput]);
 
     useEffect(() => {
-        filterTerms.length > 0 && handleFilter();
-    }, [filterTerms]);
+        handleFilter();
+    }, [filterTerms.length > 0]);
 
     useEffect(() => {
         if (searchInput !== '' && searchInput.length >= 2) {
@@ -81,7 +81,7 @@ const StationsList = () => {
         filterTerms.length > 0 && handleFilter();
     }, [stationsList]);
 
-    const getTagsFilter = (tags) => {
+    const getTagsFilter = () => {
         const fields = tagList.map((tag) => {
             return {
                 name: tag.name,
@@ -145,8 +145,8 @@ const StationsList = () => {
 
     const getTags = async () => {
         try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_ACTIVE_TAGS}`);
-            setTagList(res);
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_USED_TAGS}`);
+            if (res) setTagList(res);
         } catch (err) {
             return;
         }

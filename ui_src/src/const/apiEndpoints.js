@@ -63,5 +63,5 @@ export const ApiEndpoints = {
 
     //Tags
     GET_TAGS: '/tags/getTags',
-    GET_ACTIVE_TAGS: '/tags/getActiveTags'
+    GET_USED_TAGS: '/tags/getUsedTags'
 };

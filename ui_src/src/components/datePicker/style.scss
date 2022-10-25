@@ -1,6 +1,4 @@
-// .date-picker-container {
 .ant-picker-cell-selected {
-    // background: greenyellow !important;
     .ant-picker-cell-inner {
         background: #6557ff !important;
         border-radius: 4px !important;
@@ -11,14 +9,10 @@
         border: 1px solid #6557ff !important;
         border-radius: 4px !important;
     }
-    // .ant-picker-cell-inner {
-    //     border: 1px solid greenyellow !important;
-    // }
 }
 
 .ant-picker-header {
-    // display: none;
-    .ant-picker-header-view {
+    date-picker-container .ant-picker-header-view {
         font-weight: 600;
     }
     .ant-picker-header-view:hover {
