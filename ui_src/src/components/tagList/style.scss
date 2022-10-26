@@ -3,7 +3,6 @@
     align-items: center;
     justify-content: center;
     gap: 5px;
-    margin-left: 5px;
     .plus-tags {
         background-color: rgba(132, 129, 138, 0.1);
         padding-right: 7px;
@@ -60,7 +59,7 @@
         align-items: center;
         overflow: hidden;
         white-space: nowrap;
-        max-width: 135px;
+        max-width: 100px;
         text-overflow: ellipsis;
     }
     .plus-tag-wrapper {

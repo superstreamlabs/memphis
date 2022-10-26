@@ -107,6 +107,7 @@
         justify-self: center;
         display: flex;
         width: 230px;
+        padding-left: 22px;
         cursor: pointer;
         .new-button {
             display: flex;
@@ -120,7 +121,7 @@
         }
     }
     .create-new-search {
-        max-width: 80px;
+        max-width: 58px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

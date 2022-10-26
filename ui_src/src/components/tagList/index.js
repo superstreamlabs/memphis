@@ -29,7 +29,7 @@ import RemainingTagsList from './remainingTagsList';
 import TagsPicker from '../tagsPicker';
 
 const remainingTagsPopInnerStyle = { maxWidth: '155px', padding: '10px', paddingBottom: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
-const tagsPickerPopInnerStyle = { width: '250px', height: '316px', borderRadius: '12px', border: '1px solid #f0f0f0', padding: '0px 0px', overflow: 'hidden' };
+const tagsPickerPopInnerStyle = { width: '250px', height: '313px', borderRadius: '12px', border: '1px solid #f0f0f0', padding: '0px 0px', overflow: 'hidden' };
 
 const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entityID, handleTagsUpdate }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
