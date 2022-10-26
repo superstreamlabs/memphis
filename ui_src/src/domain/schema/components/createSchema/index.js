@@ -36,6 +36,7 @@ import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
+import Schema from 'protocol-buffers-schema';
 
 const schemaTypes = [
     {
@@ -110,6 +111,7 @@ function CreateSchema({ goBack }) {
     const [validateLoading, setValidateLoading] = useState(false);
     const [validateError, setValidateError] = useState('');
     const [validateSuccess, setValidateSuccess] = useState(false);
+    const [messageStructName, setMessageStructName] = useState('Test');
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -132,7 +134,7 @@ function CreateSchema({ goBack }) {
         } else {
             try {
                 setLoadingSubmit(true);
-                const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, values);
+                const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageStructName });
                 if (data) {
                     goBack();
                 }
@@ -170,6 +172,8 @@ function CreateSchema({ goBack }) {
     };
 
     const checkContent = (_, value) => {
+        // let t = Schema.parse(value);
+        // console.log(t);
         if (value.length > 0) {
             return Promise.resolve();
         } else {
@@ -203,6 +207,7 @@ function CreateSchema({ goBack }) {
                                 message: 'Please input schema name!'
                             }
                         ]}
+                        style={{ height: '114px' }}
                     >
                         <div className="schema-field name">
                             <p className="field-title">Schema name</p>
@@ -292,20 +297,18 @@ function CreateSchema({ goBack }) {
                                         formatOnType: true,
                                         fontSize: '14px'
                                     }}
-                                    height="calc(100% - 80px)"
+                                    height="calc(100% - 5px)"
                                     language={SchemaEditorExample[formFields?.type]?.language}
                                     defaultValue={SchemaEditorExample[formFields?.type]?.value}
                                     value={formFields.schema_content}
                                     onChange={(value) => updateFormState('schema_content', value)}
                                 />
                             </Form.Item>
-                            {(validateError || validateSuccess) && (
-                                <div className={validateSuccess ? 'validate-note success' : 'validate-note error'}>
-                                    {validateError && <ErrorOutlineRounded />}
-                                    {validateSuccess && <CheckCircleOutlineRounded />}
-                                    <p>{validateError || validateSuccess}</p>
-                                </div>
-                            )}
+                            <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
+                                {validateError && <ErrorOutlineRounded />}
+                                {validateSuccess && <CheckCircleOutlineRounded />}
+                                <p>{validateError || validateSuccess}</p>
+                            </div>
                         </div>
                     </div>
                     <Form.Item className="button-container">
