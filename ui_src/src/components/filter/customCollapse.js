@@ -191,14 +191,16 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             {filterState?.filterFields.map((filterGroup, filterGroupIndex = 0) => (
                 <Panel
                     header={
-                        <div className="filter-header">
-                            <label className="title">{filterGroup.value}</label>
-                            <img
-                                className={activeKey?.includes(filterGroupIndex.toString()) ? 'collapse-arrow open' : 'collapse-arrow'}
-                                src={CollapseArrow}
-                                alt="collapse-arrow"
-                            />
-                        </div>
+                        filterGroup?.fields?.length > 0 && (
+                            <div className="filter-header">
+                                <label className="title">{filterGroup.value}</label>
+                                <img
+                                    className={activeKey?.includes(filterGroupIndex.toString()) ? 'collapse-arrow open' : 'collapse-arrow'}
+                                    src={CollapseArrow}
+                                    alt="collapse-arrow"
+                                />
+                            </div>
+                        )
                     }
                     key={`${filterGroupIndex}`}
                     showArrow={false}
