@@ -230,7 +230,6 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		serv.Errorf("GetAllProducers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -263,7 +262,6 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		return producers, producers, producers, err
 	}
@@ -345,7 +343,6 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		serv.Errorf("GetAllProducersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

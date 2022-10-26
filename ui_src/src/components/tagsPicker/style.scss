@@ -1,0 +1,177 @@
+.tags-picker-wrapper {
+    width: 250px;
+    height: 310px;
+    overflow: hidden;
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    .tags-picker-title {
+        display: flex;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 40px;
+        color: #2e2c34;
+        align-self: center;
+        justify-self: center;
+    }
+    .tag {
+        padding-top: 8px;
+        height: 36px;
+        width: 270px;
+        background: white;
+        justify-content: space-between;
+        cursor: pointer;
+        &:hover {
+            background: #f6f5ff;
+            width: 100%;
+        }
+    }
+    .add {
+        width: 20px;
+    }
+    .no-new {
+        margin-left: 33px;
+        width: 119px;
+        height: 18px;
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 18px;
+        color: #4a495c;
+        flex: none;
+        order: 1;
+    }
+    .color-circle {
+        margin-right: 10px;
+        display: inline-block;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+    }
+    .checkmark {
+        display: inline-block;
+        height: 14px;
+        width: 35px;
+        color: rgba(74, 73, 92, 0.8);
+    }
+    .search-input {
+        display: flex;
+        margin-top: 10px;
+        width: 230px;
+        height: 32px;
+        border: 1.5px solid rgb(90, 79, 229);
+        border-radius: 15px;
+        justify-self: center;
+    }
+
+    .save-cancel-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin: 10px;
+    }
+    .cancel-add-buttons {
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        margin: 10px;
+        .add-button {
+            width: 80px !important;
+        }
+    }
+    .tags-list {
+        margin-top: 10px;
+        min-height: 180px;
+        max-height: 185px;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    .tag-name {
+        display: inline-block;
+        font-family: 'InterSemiBold';
+        font-size: 14px;
+        color: #4a495c;
+        margin-bottom: 6px;
+    }
+    .divider {
+        margin: 0;
+        width: 250px;
+    }
+    .generator-modal {
+        padding: 0;
+    }
+    .create-new-tag {
+        height: 36px;
+        color: #4a495c;
+        align-items: center;
+        justify-self: center;
+        display: flex;
+        width: 230px;
+        padding-left: 22px;
+        cursor: pointer;
+        .new-button {
+            display: flex;
+            margin: 0;
+            line-height: 14px;
+            max-width: 300px;
+            line-height: 20px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            margin-left: 7px;
+        }
+    }
+    .create-new-search {
+        max-width: 58px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
+    .no-tags {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        height: 180px;
+        .no-tags-image {
+            justify-content: flex-start;
+            display: flex;
+            width: 200px;
+            flex-direction: column;
+        }
+        .no-tags-message {
+            display: flex;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 20px;
+            color: #2e2c34;
+        }
+        .tags-info-message {
+            display: flex;
+            text-align: center;
+            padding: 0 20px;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 15px;
+            margin-top: 10px;
+            color: #a7a7a7;
+        }
+        .create-new-tag-empty {
+            margin-top: 20px;
+            display: flex;
+            height: 18px;
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+            line-height: 18px;
+            color: #6557ff;
+            align-items: center;
+            cursor: pointer;
+            .new-button {
+                margin-top: 4px;
+                max-width: 200px;
+                height: 20px;
+                overflow: hidden;
+            }
+        }
+    }
+}

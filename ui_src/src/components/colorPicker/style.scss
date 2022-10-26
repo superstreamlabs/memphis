@@ -1,0 +1,28 @@
+.color-picker {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    .color-circle {
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        position: relative;
+        cursor: pointer;
+    }
+    .inner-circle {
+        margin-left: 0;
+        background-color: transparent;
+        border: 2px solid white;
+        border-radius: 50%;
+        left: 3px;
+        top: 3px;
+        height: 24px;
+        width: 24px;
+        position: relative;
+        cursor: pointer;
+    }
+}

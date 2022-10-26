@@ -3,8 +3,9 @@
     height: 100vh;
     position: relative;
     text-align: center;
-    background: white;
-    min-height: 350px;
+    background: #FCFCFC;
+    min-height: 370px;
+    border-right: 1px solid #F4F4F4;
     .upper-icons {
         .logoimg {
             margin-top: 1vh;
@@ -14,7 +15,7 @@
             p {
                 font-size: 80%;
                 color: var(--gray);
-                font-weight: 600;
+                font-family: 'InterSemiBold';
             }
             .checked {
                 color: var(--purple);
@@ -69,41 +70,23 @@
                 place-content: center;
             }
         }
-        version{
-                background: rgba(132, 129, 138, 0.1);
-                border-radius: 4px;
-                width: 80%;
-                height: 24px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                p {
+        version {
+            background: rgba(132, 129, 138, 0.1);
+            border-radius: 4px;
+            width: 80%;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            p {
                 margin: 0;
                 font-size: 12px;
                 font-family: 'InterSemiBold';
-                }
+            }
         }
-    }
-
-    .circle-nav-item {
-        img {
-            width: 20px;
-        }
-        svg {
-            width: 20px;
-            height: 20px;
-        }
-    }
-
-    .checked {
-        color: var(--white);
-    }
-
-    .support {
-        background: var(--purple);
-        color: var(--white);
     }
 }
+
 .header-menu {
     border-bottom: 0.5px solid #e9e9e9;
     display: flex;
@@ -142,11 +125,10 @@
 .item-wrapp .item-title:hover {
     opacity: 0.8;
 }
-.ant-menu-item a:hover{
-    p{
+.ant-menu-item a:hover {
+    p {
         opacity: 0.8;
     }
-
 }
 
 .ant-menu-submenu > .ant-menu {
@@ -173,7 +155,7 @@
     padding-top: 10px !important;
 }
 
-.installation-icon-wrapper{
+.installation-icon-wrapper {
     width: 40px;
     height: 40px;
     background: rgba(101, 87, 255, 0.1);

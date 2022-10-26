@@ -21,12 +21,10 @@
 
 import './style.scss';
 
-import { Radio } from 'antd';
+import { Radio, Space } from 'antd';
 import React from 'react';
 
-const RadioButton = (props) => {
-    const { options = [], radioValue, onChange, optionType, disabled, fontFamily, filter } = props;
-
+const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, disabled, vertical, fontFamily, radioWrapper, labelType }) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -40,20 +38,26 @@ const RadioButton = (props) => {
         <div className="radio-button">
             <Radio.Group
                 {...fieldProps}
-                className="radio-group"
+                className={vertical ? 'radio-group gr-vertical' : 'radio-group'}
                 optionType={optionType ? optionType : null}
                 disabled={disabled}
                 defaultValue={radioValue || options[0]?.value}
             >
                 {options.map((option) => (
-                    <>
-                        <Radio key={option.id} value={option.value} className={filter && 'radio-filter'}>
-                            <span className={filter && 'filter-radio'} style={{ fontFamily: fontFamily }}>
+                    <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
+                        <div
+                            className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
+                            onClick={() => (labelType ? onClick(option.value) : '')}
+                        >
+                            <span
+                                className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : 'label'}
+                                style={{ fontFamily: fontFamily }}
+                            >
                                 {option.label}
                             </span>
-                        </Radio>
-                        {filter && <br />}
-                    </>
+                            {option.description && <span className="des">{option.description}</span>}
+                        </div>
+                    </Radio>
                 ))}
             </Radio.Group>
         </div>

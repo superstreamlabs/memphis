@@ -54,17 +54,19 @@ const LogsWrapper = () => {
     const getLogs = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=all&start_index=${stateRef.current[0]}`);
-            if (stateRef.current[0] === -1) {
-                setLastMgsSeq(data.logs[0].message_seq);
-                setDisplayedLog(data.logs[0]);
-                setSelectedRow(data.logs[0].message_seq);
-            }
-            let message_seq = data.logs[data.logs.length - 1].message_seq;
-            if (message_seq === stateRef.current[0]) {
-                setStopLoad(true);
-            } else {
-                setSeqNum(message_seq);
-                setLogs((users) => [...users, ...data.logs]);
+            if (data.logs) {
+                if (stateRef.current[0] === -1) {
+                    setLastMgsSeq(data.logs[0].message_seq);
+                    setDisplayedLog(data.logs[0]);
+                    setSelectedRow(data.logs[0].message_seq);
+                }
+                let message_seq = data.logs[data.logs.length - 1].message_seq;
+                if (message_seq === stateRef.current[0]) {
+                    setStopLoad(true);
+                } else {
+                    setSeqNum(message_seq);
+                    setLogs((users) => [...users, ...data.logs]);
+                }
             }
         } catch (error) {
             console.log(error);
@@ -106,10 +108,10 @@ const LogsWrapper = () => {
     useEffect(() => {
         state.socket?.on('syslogs_data', (data) => {
             setSocketOn(true);
-            if (data) {
-                let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
-                const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-                setLastMgsSeq(data.logs[0].message_seq);
+            if (data.logs) {
+                let lastMgsSeqIndex = data?.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
+                const uniqueItems = data?.logs?.slice(0, lastMgsSeqIndex);
+                setLastMgsSeq(data?.logs[0]?.message_seq);
                 setLogs((users) => [...uniqueItems, ...users]);
             }
         });

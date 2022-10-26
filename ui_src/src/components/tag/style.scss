@@ -1,0 +1,27 @@
+.tag-wrapper {
+    padding-right: 5px;
+    padding-left: 5px;
+    border-radius: 4px;
+    height: 30px;
+    display: flex;
+    max-width: 100px;
+    align-items: center;
+    margin-right: 2px;
+    padding: 2px, 8px, 4px, 8px;
+    justify-content: space-between;
+    .tag-content {
+        font-family: 'InterSemiBold';
+        font-size: 12px;
+        line-height: 24px;
+        height: 24px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 5px;
+    }
+    .close {
+        display: flex;
+        height: 10px;
+        width: 10px;
+        cursor: pointer;
+    }
+}

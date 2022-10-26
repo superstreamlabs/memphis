@@ -53,8 +53,9 @@ const SysLogs = () => {
 
     return (
         <div className="logs-container">
-            <header is="3xd">
+            <div className="header-wraper">
                 <h1 className="main-header-h1">System Logs </h1>
+<<<<<<< HEAD
                 <div className="filter-btn-container">
                     <div className="sep"></div>
                     <Button
@@ -72,6 +73,22 @@ const SysLogs = () => {
                     />
                 </div>
             </header>
+=======
+                <Button
+                    className="modal-btn"
+                    width="160px"
+                    height="36px"
+                    placeholder="Download Logs"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="purple"
+                    fontSize="14px"
+                    fontWeight="600"
+                    aria-haspopup="true"
+                    onClick={downloadLogs}
+                />
+            </div>
+>>>>>>> e06aca59fcb29e3955bf655331bab005d941f9ab
 
             <LogsWrapper />
         </div>

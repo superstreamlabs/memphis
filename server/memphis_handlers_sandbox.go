@@ -28,10 +28,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"memphis-broker/analytics"
 	"memphis-broker/db"
 	"memphis-broker/models"
 	"memphis-broker/utils"
-	"memphis-broker/analytics"
 	"net/http"
 	"net/url"
 	"strings"
@@ -207,12 +207,12 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	domain := ""
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-	
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analytics.SendEvent(user.Username, "user-sandbox-login")
 	}
-	
+
 	c.IndentedJSON(200, gin.H{
 		"jwt":               token,
 		"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
@@ -403,10 +403,10 @@ func getGithubData(accessToken string) (map[string]any, error) {
 
 func DenyForSandboxEnv(c *gin.Context) error {
 	user, err := getUserDetailsFromMiddleware(c)
-
 	if err != nil {
 		serv.Errorf("Sandbox error: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return err
 	}
 
 	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {

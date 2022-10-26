@@ -34,20 +34,22 @@ type Schema struct {
 }
 
 type SchemaVersion struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	VersionNumber int                `json:"version_number" bson:"version_number"`
-	Active        bool               `json:"active" bson:"active"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	SchemaContent string             `json:"schema_content" bson:"schema_content"`
-	SchemaId      primitive.ObjectID `json:"schema_id" bson:"schema_id"`
+	ID                primitive.ObjectID `json:"id" bson:"_id"`
+	VersionNumber     int                `json:"version_number" bson:"version_number"`
+	Active            bool               `json:"active" bson:"active"`
+	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
+	SchemaContent     string             `json:"schema_content" bson:"schema_content"`
+	SchemaId          primitive.ObjectID `json:"schema_id" bson:"schema_id"`
+	MessageStructName string             `json:"message_struct_name" bson:"message_struct_name"`
 }
 
 type CreateNewSchema struct {
-	Name          string      `json:"name" binding:"required,min=1,max=32"`
-	Type          string      `json:"type"`
-	SchemaContent string      `json:"schema_content"`
-	Tags          []CreateTag `json:"tags"`
+	Name              string      `json:"name" binding:"required,min=1,max=32"`
+	Type              string      `json:"type"`
+	SchemaContent     string      `json:"schema_content"`
+	Tags              []CreateTag `json:"tags"`
+	MessageStructName string      `json:"message_struct_name"`
 }
 
 type ExtendedSchema struct {
@@ -57,15 +59,17 @@ type ExtendedSchema struct {
 	CreatedByUser       string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
+	Used                bool               `json:"used"`
 	Tags                []Tag              `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {
-	ID         primitive.ObjectID `json:"id"`
-	SchemaName string             `json:"schema_name"`
-	Type       string             `json:"type"`
-	Versions   []SchemaVersion    `json:"versions"`
-	Tags       []Tag              `json:"tags"`
+	ID           primitive.ObjectID `json:"id"`
+	SchemaName   string             `json:"schema_name"`
+	Type         string             `json:"type"`
+	Versions     []SchemaVersion    `json:"versions"`
+	UsedStations []string           `json:"used_stations"`
+	Tags         []Tag              `json:"tags"`
 }
 
 type GetSchemaDetails struct {
@@ -73,15 +77,21 @@ type GetSchemaDetails struct {
 }
 
 type RemoveSchema struct {
-	SchemaName string `json:"schema_name"`
+	SchemaNames []string `json:"schema_names" binding:"required"`
 }
 
 type CreateNewVersion struct {
-	SchemaName    string `json:"schema_name"`
-	SchemaContent string `json:"schema_content"`
+	SchemaName        string `json:"schema_name"`
+	SchemaContent     string `json:"schema_content"`
+	MessageStructName string `json:"message_struct_name"`
 }
 
 type RollBackVersion struct {
 	SchemaName    string `json:"schema_name"`
 	VersionNumber int    `json:"version_number"`
+}
+
+type ValidateSchema struct {
+	SchemaType    string `json:"schema_type"`
+	SchemaContent string `json:"schema_content"`
 }

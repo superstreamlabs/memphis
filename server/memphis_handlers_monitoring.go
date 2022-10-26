@@ -37,6 +37,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -194,6 +195,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	auditLogsHandler := AuditLogsHandler{}
 	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
 	tagsHandler := TagsHandler{S: mh.S}
+	schemasHandler := SchemasHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -262,6 +264,11 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())
@@ -269,21 +276,65 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	response := models.StationOverviewData{
-		ConnectedProducers:    connectedProducers,
-		DisconnectedProducers: disconnectedProducers,
-		DeletedProducers:      deletedProducers,
-		ConnectedCgs:          connectedCgs,
-		DisconnectedCgs:       disconnectedCgs,
-		DeletedCgs:            deletedCgs,
-		TotalMessages:         totalMessages,
-		AvgMsgSize:            avgMsgSize,
-		AuditLogs:             auditLogs,
-		Messages:              messages,
-		PoisonMessages:        poisonMessages,
-		Tags:                  tags,
-		Leader:                leader,
-		Followers:             followers,
+	var emptySchemaDetailsObj models.SchemaDetails
+	var response gin.H
+
+	//Check when the schema object in station is not empty
+	if station.Schema != emptySchemaDetailsObj {
+		var schema models.Schema
+		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		updatesAvailable := !schemaVersion.Active
+		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+
+		response = gin.H{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 schemaDetails,
+		}
+
+	} else {
+		var emptyResponse struct{}
+		response = gin.H{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 emptyResponse,
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -495,11 +546,11 @@ cleanup:
 
 	if getAll {
 		sort.Slice(resMsgs, func(i, j int) bool {
-			return resMsgs[i].TimeSent.Before(resMsgs[j].TimeSent)
+			return resMsgs[i].MessageSeq < resMsgs[j].MessageSeq
 		})
 	} else {
 		sort.Slice(resMsgs, func(i, j int) bool {
-			return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
+			return resMsgs[i].MessageSeq > resMsgs[j].MessageSeq
 		})
 	}
 
