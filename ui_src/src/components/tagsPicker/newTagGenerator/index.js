@@ -33,7 +33,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: searchVal,
-        color: ColorPalette[0] //default memphis-purple
+        color: ColorPalette[0]
     });
 
     const updateFormState = (field, value) => {

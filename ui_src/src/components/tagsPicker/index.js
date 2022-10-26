@@ -138,7 +138,7 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                             tagsToDisplay.map((tag, index) => (
                                 <>
                                     <li key={index} className="tag" onClick={() => handleCheck(tag)}>
-                                        {checkedList?.some((item) => tag.name === item.name) ? <Check className="checkmark" /> : <div className="no-checkmark"></div>}
+                                        {<Check className="checkmark" style={!checkedList?.some((item) => tag.name === item.name) ? { color: 'transparent' } : {}} />}
                                         <div className="color-circle" style={{ backgroundColor: `rgb(${tag.color})` }}></div>
                                         <div className="tag-name">{tag.name}</div>
                                     </li>
@@ -152,6 +152,7 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                             </div>
                         )}
                     </div>
+                    {tagsToDisplay?.length < 5 && <Divider className="divider" />}
                     <div className="create-new-tag" onClick={() => setNewTagModal(true)}>
                         <AddRounded className="add" />
                         <p className="new-button">

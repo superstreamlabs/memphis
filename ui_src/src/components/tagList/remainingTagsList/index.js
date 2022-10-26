@@ -22,11 +22,11 @@
 import './style.scss';
 import Tag from '../../tag';
 
-const RemainingTagsList = ({ tags, handleDelete, deletable }) => {
+const RemainingTagsList = ({ tags, handleDelete, editable }) => {
     return (
         <div className="remaining-tags-list-wrapper">
             {tags?.map((tag, index) => {
-                return <Tag key={index} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
+                return <Tag key={index} tag={tag} editable={editable || false} onDelete={() => handleDelete(tag.name)} />;
             })}
         </div>
     );

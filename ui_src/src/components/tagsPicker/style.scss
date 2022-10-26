@@ -53,17 +53,12 @@
         width: 35px;
         color: rgba(74, 73, 92, 0.8);
     }
-    .no-checkmark {
-        display: inline-block;
-        height: 14px;
-        width: 35px;
-    }
     .search-input {
         display: flex;
         margin-top: 10px;
         width: 230px;
         height: 32px;
-        border: 1px solid rgb(90, 79, 229);
+        border: 1.5px solid rgb(90, 79, 229);
         border-radius: 15px;
         justify-self: center;
     }
@@ -84,7 +79,8 @@
     }
     .tags-list {
         margin-top: 10px;
-        height: 185px;
+        min-height: 180px;
+        max-height: 185px;
         overflow-y: scroll;
         overflow-x: hidden;
         width: 100%;
@@ -99,7 +95,7 @@
     }
     .divider {
         margin: 0;
-        width: 300px;
+        width: 250px;
     }
     .generator-modal {
         padding: 0;
@@ -108,9 +104,9 @@
         height: 36px;
         color: #4a495c;
         align-items: center;
-        justify-content: center;
+        justify-self: center;
         display: flex;
-        max-width: 300px;
+        width: 230px;
         cursor: pointer;
         .new-button {
             display: flex;

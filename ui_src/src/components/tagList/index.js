@@ -28,7 +28,10 @@ import { Add, AddRounded } from '@material-ui/icons';
 import RemainingTagsList from './remainingTagsList';
 import TagsPicker from '../tagsPicker';
 
-const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entityID, handleTagsUpdate }) => {
+const remainingTagsPopInnerStyle = { maxWidth: '155px', padding: '10px', paddingBottom: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
+const tagsPickerPopInnerStyle = { width: '250px', height: '316px', borderRadius: '12px', border: '1px solid #f0f0f0', padding: '0px 0px', overflow: 'hidden' };
+
+const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entityID, handleTagsUpdate }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [remainingTags, setRemainingTags] = useState([]);
     const saveChangesRef = useRef(null);
@@ -51,22 +54,16 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
         setTagsPop(newOpen);
     };
 
-    const hide = () => {
-        setTagsPop(false);
-    };
-
-    useEffect(() => {}, [tagsPop]);
-
     return (
         <div className="tags-list-wrapper">
             {tagsToDisplay?.map((tag, index) => {
-                return <Tag key={index} tag={tag} deletable={deletable || false} onDelete={() => handleDelete(tag.name)} />;
+                return <Tag key={index} tag={tag} editable={editable || false} onDelete={() => handleDelete(tag.name)} />;
             })}
             {remainingTags?.length > 0 && (
                 <Popover
-                    overlayInnerStyle={{ maxWidth: '155px', padding: '10px', paddingBottom: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' }}
+                    overlayInnerStyle={remainingTagsPopInnerStyle}
                     placement="bottomLeft"
-                    content={<RemainingTagsList tags={remainingTags} handleDelete={(tag) => handleDelete(tag)} deletable={deletable}></RemainingTagsList>}
+                    content={<RemainingTagsList tags={remainingTags} handleDelete={(tag) => handleDelete(tag)} editable={editable}></RemainingTagsList>}
                 >
                     <Space className="space">
                         <div className="plus-tags">
@@ -76,16 +73,9 @@ const TagsList = ({ tagsToShow, tags, deletable, handleDelete, entityName, entit
                     </Space>
                 </Popover>
             )}
-            {deletable && (
+            {editable && (
                 <Popover
-                    overlayInnerStyle={{
-                        width: '250px',
-                        height: '330px',
-                        borderRadius: '12px',
-                        border: '1px solid #f0f0f0',
-                        padding: '0px 0px',
-                        overflow: 'hidden'
-                    }}
+                    overlayInnerStyle={tagsPickerPopInnerStyle}
                     zIndex={2}
                     destroyTooltipOnHide={true}
                     trigger="click"

@@ -24,13 +24,13 @@ import { Close } from '@material-ui/icons';
 
 import React from 'react';
 
-const Tag = ({ tag, onDelete, deletable }) => {
+const Tag = ({ tag, onDelete, editable }) => {
     return (
         <div className="tag-wrapper" style={{ background: `rgba(${tag.color},0.2)` }}>
             <div className="tag-content" style={{ color: `rgb(${tag.color})` }}>
                 {tag.name}
             </div>
-            {deletable && <Close className="close" style={{ color: `rgb(${tag.color})` }} onClick={onDelete} />}
+            {editable && <Close className="close" style={{ color: `rgb(${tag.color})` }} onClick={onDelete} />}
         </div>
     );
 };

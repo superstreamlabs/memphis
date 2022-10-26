@@ -235,7 +235,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	entity := strings.ToLower(body.EntityType)
 	err := validateEntityType(entity)
 	if err != nil {
-		serv.Errorf("RemoveTag error: " + err.Error())
+		serv.Warnf("RemoveTag error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -246,7 +246,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
 			serv.Warnf("RemoveTag error: " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Server error"})
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 		exist, station, err := IsStationExist(station_name)
@@ -324,7 +324,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	entity := strings.ToLower(body.EntityType)
 	err := validateEntityType(entity)
 	if err != nil {
-		serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+		serv.Warnf("UpdateTagsForEntity error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -451,7 +451,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	if entity != "" {
 		err := validateEntityType(entity)
 		if err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Warnf("GetTags error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
