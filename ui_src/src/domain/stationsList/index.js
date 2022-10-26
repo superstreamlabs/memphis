@@ -204,20 +204,20 @@ const StationsList = () => {
                     </label>
                     {stationsList?.length > 0 && (
                         <div className="right-side">
-                            {isCheck?.length > 0 && (
-                                <Button
-                                    width="131px"
-                                    height="34px"
-                                    placeholder={`Delete Selected (${isCheck?.length})`}
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    aria-haspopup="true"
-                                    onClick={() => modalDeleteFlip(true)}
-                                />
-                            )}
+                            <Button
+                                width="131px"
+                                height="34px"
+                                placeholder={`Delete Selected (${isCheck?.length})`}
+                                colorType="black"
+                                radiusType="circle"
+                                backgroundColorType="white"
+                                fontSize="12px"
+                                fontWeight="600"
+                                aria-haspopup="true"
+                                disabled={isCheck?.length === 0}
+                                onClick={() => modalDeleteFlip(true)}
+                            />
+
                             {filteredList?.length > 1 && (
                                 <Button
                                     width="131px"

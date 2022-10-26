@@ -21,17 +21,24 @@
 
 import './style.scss';
 
+import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
+import React, { useEffect, useState } from 'react';
+import Schema from 'protocol-buffers-schema';
 import Editor from '@monaco-editor/react';
-import React, { useState } from 'react';
 import { Form } from 'antd';
 
+import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
+import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
+import tagsIcon from '../../../../assets/images/tagsIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
+import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
+import Modal from '../../../../components/modal';
 
 const schemaTypes = [
     {
@@ -99,52 +106,127 @@ function CreateSchema({ goBack }) {
         name: '',
         type: 'Protobuf',
         // tags: [],
-        schema_content: ''
+        schema_content: '',
+        message_struct_name: 'test'
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [validateLoading, setValidateLoading] = useState(false);
+    const [validateError, setValidateError] = useState('');
+    const [validateSuccess, setValidateSuccess] = useState(false);
+    const [messageStructName, setMessageStructName] = useState('Test');
+    const [messagesStructNameList, setMessagesStructNameList] = useState([]);
 
-    const handleSubmit = async (e) => {
-        const values = await creationForm.validateFields();
-        if (values?.errorFields) {
-            return;
-        } else {
-            try {
-                setLoadingSubmit(true);
-                const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, values);
-                if (data) {
-                    goBack();
-                }
-            } catch (err) {}
-            setLoadingSubmit(false);
-        }
-    };
+    const [modalOpen, setModalOpen] = useState(false);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
         updatedValue[field] = value;
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+        if (field === 'schema_content') {
+            setValidateSuccess('');
+            setValidateError('');
+        }
     };
 
-    // const handleValidateSchema = () => {
+    useEffect(() => {
+        updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
+    }, []);
 
-    // }
+    const handleSubmit = async () => {
+        const values = await creationForm.validateFields();
+        if (values?.errorFields) {
+            return;
+        } else {
+            if (values.type === 'Protobuf') {
+                let parser = Schema.parse(values.schema_content).messages;
+                if (parser.length === 1) {
+                    setMessageStructName(parser[0].name);
+                    handleCreateNewSchema();
+                } else {
+                    setMessageStructName(parser[0].name);
+                    setMessagesStructNameList(parser);
+                    setModalOpen(true);
+                }
+            } else {
+                handleCreateNewSchema();
+            }
+        }
+    };
+
+    const handleCreateNewSchema = async () => {
+        try {
+            const values = await creationForm.validateFields();
+            setLoadingSubmit(true);
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageStructName });
+            if (data) {
+                goBack();
+            }
+        } catch (err) {
+            if (err.status === 555) {
+                setValidateSuccess('');
+                setValidateError(err.data.message);
+            }
+        }
+        setLoadingSubmit(false);
+    };
+
+    const handleValidateSchema = async () => {
+        setValidateLoading(true);
+        try {
+            const data = await httpRequest('POST', ApiEndpoints.VALIDATE_SCHEMA, {
+                schema_type: formFields?.type,
+                schema_content: formFields.schema_content
+            });
+            if (data.is_valid) {
+                setValidateError('');
+                setTimeout(() => {
+                    setValidateSuccess('Schema is valid');
+                    setValidateLoading(false);
+                }, 1000);
+            }
+        } catch (error) {
+            if (error.status === 555) {
+                setValidateSuccess('');
+                setValidateError(error.data.message);
+            }
+            setValidateLoading(false);
+        }
+    };
+
+    const checkContent = (_, value) => {
+        if (value.length > 0) {
+            try {
+                Schema.parse(value);
+                setValidateSuccess('');
+                setValidateError('');
+            } catch (error) {
+                setValidateSuccess('');
+                setValidateError(error.message);
+            }
+            return Promise.resolve();
+        } else {
+            setValidateSuccess('');
+            setValidateError('Schema content cannot be empty');
+            return Promise.reject(new Error());
+        }
+    };
 
     return (
         <div className="create-schema-wrapper">
-            <div className="header">
-                <div className="flex-title">
-                    <img src={BackIcon} onClick={() => goBack()} />
-                    <p>Create schema</p>
-                </div>
-                <span>
-                    Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
-                    <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                        Learn more
-                    </a>
-                </span>
-            </div>
             <Form name="form" form={creationForm} autoComplete="off" className="create-schema-form">
                 <div className="left-side">
+                    <div className="header">
+                        <div className="flex-title">
+                            <img src={BackIcon} onClick={() => goBack()} />
+                            <p>Create schema</p>
+                        </div>
+                        <span>
+                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
+                            <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
+                                Learn more
+                            </a>
+                        </span>
+                    </div>
                     <Form.Item
                         name="name"
                         rules={[
@@ -153,6 +235,7 @@ function CreateSchema({ goBack }) {
                                 message: 'Please input schema name!'
                             }
                         ]}
+                        style={{ height: '114px' }}
                     >
                         <div className="schema-field name">
                             <p className="field-title">Schema name</p>
@@ -172,15 +255,27 @@ function CreateSchema({ goBack }) {
                             />
                         </div>
                     </Form.Item>
-                    {/* <Form.Item name="tags">
+                    <Form.Item name="tags">
                         <div className="schema-field tags">
-                            <p className="field-title">Tags</p>
+                            <div className="title-icon-img">
+                                <img className="icon" src={tagsIcon} />
+                                <div className="title-desc">
+                                    <p className="field-title">Tags</p>
+                                    <p className="desc">Tags will help you organize, search and filter your data</p>
+                                </div>
+                            </div>
                             <TagsList addNew={true} />
                         </div>
-                    </Form.Item> */}
+                    </Form.Item>
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
-                            <p className="field-title">Schema type</p>
+                            <div className="title-icon-img">
+                                <img className="icon" src={schemaTypeIcon} />
+                                <div className="title-desc">
+                                    <p className="field-title">Schema type</p>
+                                    <p className="desc">Tags will help you organize, search and filter your data</p>
+                                </div>
+                            </div>
                             <RadioButton
                                 vertical={true}
                                 options={schemaTypes}
@@ -195,7 +290,7 @@ function CreateSchema({ goBack }) {
                     <div className="schema-field schema">
                         <div className="title-wrapper">
                             <p className="field-title">Structure definition</p>
-                            {/* <Button
+                            <Button
                                 width="115px"
                                 height="34px"
                                 placeholder="Validate"
@@ -204,9 +299,10 @@ function CreateSchema({ goBack }) {
                                 backgroundColorType="purple"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                // isLoading={loadingSubmit}
-                                onClick={handleValidateSchema}
-                            /> */}
+                                isLoading={validateLoading}
+                                disabled={formFields?.schema_content === ''}
+                                onClick={() => handleValidateSchema()}
+                            />
                         </div>
                         <div className="editor">
                             <Form.Item
@@ -215,8 +311,7 @@ function CreateSchema({ goBack }) {
                                 initialValue={SchemaEditorExample[formFields?.type]?.value}
                                 rules={[
                                     {
-                                        required: true,
-                                        message: 'Schema content cannot be empty'
+                                        validator: checkContent
                                     }
                                 ]}
                             >
@@ -227,14 +322,21 @@ function CreateSchema({ goBack }) {
                                         scrollBeyondLastLine: false,
                                         roundedSelection: false,
                                         formatOnPaste: true,
-                                        formatOnType: true
+                                        formatOnType: true,
+                                        fontSize: '14px'
                                     }}
+                                    height="calc(100% - 5px)"
                                     language={SchemaEditorExample[formFields?.type]?.language}
                                     defaultValue={SchemaEditorExample[formFields?.type]?.value}
                                     value={formFields.schema_content}
                                     onChange={(value) => updateFormState('schema_content', value)}
                                 />
                             </Form.Item>
+                            <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
+                                {validateError && <ErrorOutlineRounded />}
+                                {validateSuccess && <CheckCircleOutlineRounded />}
+                                <p>{validateError || validateSuccess}</p>
+                            </div>
                         </div>
                     </div>
                     <Form.Item className="button-container">
@@ -260,11 +362,57 @@ function CreateSchema({ goBack }) {
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             isLoading={loadingSubmit}
+                            disabled={validateError}
                             onClick={handleSubmit}
                         />
                     </Form.Item>
                 </div>
             </Form>
+            <Modal header={<img src={errorModal} />} width="400px" height="300px" displayButtons={false} clickOutside={() => setModalOpen(false)} open={modalOpen}>
+                <div className="roll-back-modal">
+                    <p className="title">Too many message types specified in schema definition</p>
+                    <p className="desc">Please choose your master message as a schema definition</p>
+                    <SelectComponent
+                        value={messageStructName}
+                        colorType="black"
+                        backgroundColorType="white"
+                        borderColorType="gray-light"
+                        radiusType="semi-round"
+                        minWidth="12vw"
+                        width="100%"
+                        height="45px"
+                        options={messagesStructNameList}
+                        iconColor="gray"
+                        popupClassName="message-option"
+                        onChange={(e) => setMessageStructName(e)}
+                    />
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Close"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => setModalOpen(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Confirm"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => handleCreateNewSchema()}
+                        />
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

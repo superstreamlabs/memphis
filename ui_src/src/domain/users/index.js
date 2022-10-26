@@ -35,7 +35,7 @@ import Modal from '../../components/modal';
 import UserItem from './userItem';
 
 function Users() {
-    const [state, dispatch] = useContext(Context);
+    const [dispatch] = useContext(Context);
     const [userList, setUsersList] = useState([]);
     const [copyOfUserList, setCopyOfUserList] = useState([]);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
@@ -47,7 +47,7 @@ function Users() {
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
         getAllUsers();
-    }, []);
+    }, [dispatch]);
 
     const getAllUsers = async () => {
         try {
@@ -141,7 +141,7 @@ function Users() {
                     )}
                     {!isLoading &&
                         userList.map((user) => {
-                            return <UserItem key={user.id} content={user} removeUser={() => removeUser(user.username)} />;
+                            return <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />;
                         })}
                 </div>
             </div>

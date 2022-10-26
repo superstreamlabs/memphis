@@ -21,12 +21,13 @@
 
 import React, { useEffect, useState } from 'react';
 
-function UserType(props) {
+function UserType({ userType }) {
     const [fontColor, setFontColor] = useState('#FD79A8');
     const [backgroundColor, setBackgroundColor] = useState('rgba(253, 121, 168, 0.2)');
+
     useEffect(() => {
-        createTypeWrapperStyle(props.userType);
-    }, []);
+        createTypeWrapperStyle(userType);
+    }, [userType]);
 
     const createTypeWrapperStyle = (userType) => {
         switch (userType) {
@@ -47,7 +48,7 @@ function UserType(props) {
 
     return (
         <div className="user-typep-wrapper" style={{ background: backgroundColor, color: fontColor }}>
-            {props.userType}
+            {userType}
         </div>
     );
 }

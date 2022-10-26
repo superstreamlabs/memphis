@@ -20,7 +20,7 @@ import './style.scss';
 
 import { BrowserRouter } from 'react-router-dom';
 import ReactDOM from 'react-dom';
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import reportWebVitals from './reportWebVitals';
 import Store from './hooks/store';

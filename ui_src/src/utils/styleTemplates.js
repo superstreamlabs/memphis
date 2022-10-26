@@ -107,5 +107,7 @@ export function getBoxShadows(boxShadowsType) {
             return '0px 1px 2px 0px rgba(0,0,0,0.5)';
         case 'login-input':
             return '0px 1px 2px 0px rgba(0,0,0,0.21)';
+        default:
+            return 'none';
     }
 }
