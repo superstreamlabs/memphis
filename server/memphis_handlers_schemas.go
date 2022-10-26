@@ -23,7 +23,8 @@ import (
 type SchemasHandler struct{ S *Server }
 
 const (
-	schemaObjectName = "Schema"
+	schemaObjectName                    = "Schema"
+	SCHEMA_VALIDATION_ERROR_STATUS_CODE = 555
 )
 
 func validateProtobufContent(schemaContent string) error {
@@ -60,6 +61,10 @@ func validateSchemaType(schemaType string) error {
 }
 
 func validateSchemaContent(schemaContent, schemaType string) error {
+	if len(schemaContent) == 0 {
+		return errors.New("Your schema content is invalid")
+	}
+
 	switch schemaType {
 	case "protobuf":
 		err := validateProtobufContent(schemaContent)
@@ -74,12 +79,47 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	return nil
 }
 
+func validateMessageStructName(messageStructName string) error {
+	if messageStructName == "" {
+		return errors.New("Message struct name is required when schema type is Protobuf")
+	}
+	return nil
+}
+
+func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID) (models.SchemaVersion, error) {
+	var schemaVersion models.SchemaVersion
+	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": schemaId, "active": true}).Decode(&schemaVersion)
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+	return schemaVersion, nil
+}
+
+func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
+	var schema models.Schema
+	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
+	if err != nil {
+		return models.Schema{}, err
+	}
+
+	return schema, nil
+}
+
+func (sh SchemasHandler) GetSchemaVersion(stationVersion int, schemaId primitive.ObjectID) (models.SchemaVersion, error) {
+	var schemaVersion models.SchemaVersion
+	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": stationVersion}).Decode(&schemaVersion)
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+
+	return schemaVersion, nil
+}
+
 func (sh SchemasHandler) updateActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
 	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
 		bson.M{"schema_id": schemaId},
 		bson.M{"$set": bson.M{"active": false}},
 	)
-
 	if err != nil {
 		return err
 	}
@@ -92,9 +132,7 @@ func (sh SchemasHandler) updateActiveVersion(schemaId primitive.ObjectID, versio
 }
 
 func (sh SchemasHandler) getVersionsCount(schemaId primitive.ObjectID) (int, error) {
-
 	countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schemaId})
-
 	if err != nil {
 		return 0, err
 	}
@@ -102,22 +140,81 @@ func (sh SchemasHandler) getVersionsCount(schemaId primitive.ObjectID) (int, err
 	return int(countVersions), err
 }
 
-func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models.ExtendedSchemaDetails, error) {
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": schemaName}).Decode(&schema)
-	if err != nil {
-		return models.ExtendedSchemaDetails{}, err
-	}
+func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID) ([]models.SchemaVersion, error) {
 	var schemaVersions []models.SchemaVersion
-	filter := bson.M{"schema_id": schema.ID}
+	filter := bson.M{"schema_id": schemaId}
 	findOptions := options.Find()
 	findOptions.SetSort(bson.M{"creation_date": -1})
 
 	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
 	if err != nil {
-		return models.ExtendedSchemaDetails{}, err
+		return []models.SchemaVersion{}, err
 	}
 	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
+		return []models.SchemaVersion{}, err
+	}
+
+	return schemaVersions, nil
+}
+
+func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]string, error) {
+	var stations []models.Station
+	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$unwind", bson.D{{"path", "$schema"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$match", bson.D{{"schema.name", schemaName}, {"is_deleted", false}}}},
+		bson.D{{"$project", bson.D{{"name", 1}}}},
+	})
+	if err != nil {
+		return []string{}, err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return []string{}, err
+	}
+	if len(stations) == 0 {
+		return []string{}, nil
+	}
+
+	var stationNames []string
+	for _, station := range stations {
+		stationNames = append(stationNames, station.Name)
+	}
+
+	return stationNames, nil
+}
+
+func (sh SchemasHandler) getStationsBySchemaCount(schemaName string) (int, error) {
+	filter := bson.M{"schema.name": schemaName, "is_deleted": false}
+	countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(countStations), nil
+
+}
+
+func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion int, schema models.Schema) (models.ExtendedSchemaDetails, error) {
+	var schemaVersions []models.SchemaVersion
+	usedSchemaVersion, err := sh.GetSchemaVersion(schemaVersion, schema.ID)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	if !usedSchemaVersion.Active {
+		activeSchemaVersion, err := sh.getActiveVersionBySchemaId(schema.ID)
+		if err != nil {
+			return models.ExtendedSchemaDetails{}, err
+		}
+		schemaVersions = append(schemaVersions, usedSchemaVersion, activeSchemaVersion)
+
+	} else {
+		schemaVersions = append(schemaVersions, usedSchemaVersion)
+	}
+
+	var extedndedSchemaDetails models.ExtendedSchemaDetails
+	stations, err := sh.getUsingStationsByName(schema.Name)
+	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
 
@@ -127,13 +224,60 @@ func (sh SchemasHandler) GetSchemaDetailsBySchemaName(schemaName string) (models
 		return models.ExtendedSchemaDetails{}, err
 	}
 
-	extedndedSchemaDetails := models.ExtendedSchemaDetails{
-		ID:         schema.ID,
-		SchemaName: schema.Name,
-		Type:       schema.Type,
-		Versions:   schemaVersions,
-		Tags:       tags,
+	extedndedSchemaDetails = models.ExtendedSchemaDetails{
+		ID:           schema.ID,
+		SchemaName:   schema.Name,
+		Type:         schema.Type,
+		Versions:     schemaVersions,
+		UsedStations: stations,
+		Tags:         tags,
 	}
+
+	return extedndedSchemaDetails, nil
+}
+
+func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.ExtendedSchemaDetails, error) {
+	schemaVersions, err := sh.getSchemaVersionsBySchemaId(schema.ID)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	var extedndedSchemaDetails models.ExtendedSchemaDetails
+	stations, err := sh.getUsingStationsByName(schema.Name)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	tagsHandler := TagsHandler{S: sh.S}
+	tags, err := tagsHandler.GetTagsBySchema(schema.ID)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	extedndedSchemaDetails = models.ExtendedSchemaDetails{
+		ID:           schema.ID,
+		SchemaName:   schema.Name,
+		Type:         schema.Type,
+		Versions:     schemaVersions,
+		UsedStations: stations,
+		Tags:         tags,
+	}
+
+	return extedndedSchemaDetails, nil
+}
+
+func (sh SchemasHandler) getSchemaDetailsBySchemaName(schemaName string) (models.ExtendedSchemaDetails, error) {
+	var schema models.Schema
+	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": schemaName}).Decode(&schema)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
+	extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema)
+	if err != nil {
+		return models.ExtendedSchemaDetails{}, err
+	}
+
 	return extedndedSchemaDetails, nil
 }
 
@@ -149,7 +293,6 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}, {"version_number", "$activeVersion.version_number"}}}},
 		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
 	})
-
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -159,29 +302,55 @@ func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error)
 	}
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
-	} else {
-		tagsHandler := TagsHandler{S: sh.S}
-		for i := 0; i < len(schemas); i++ {
-			tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
-			if err != nil {
-				return []models.ExtendedSchema{}, err
-			}
-			schemas[i].Tags = tags
-		}
-		return schemas, nil
 	}
+
+	var extedndedSchemasDetails []models.ExtendedSchema
+	for i, schema := range schemas {
+		stations, err := sh.getStationsBySchemaCount(schema.Name)
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+
+		var used bool
+		if stations > 0 {
+			used = true
+		} else {
+			used = false
+		}
+
+		tagsHandler := TagsHandler{S: sh.S}
+		tags, err := tagsHandler.GetTagsBySchema(schemas[i].ID)
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+		schemaUpdated := models.ExtendedSchema{
+			ID:                  schema.ID,
+			Name:                schema.Name,
+			Type:                schema.Type,
+			CreatedByUser:       schema.CreatedByUser,
+			CreationDate:        schema.CreationDate,
+			ActiveVersionNumber: schema.ActiveVersionNumber,
+			Used:                used,
+			Tags:                tags,
+		}
+
+		extedndedSchemasDetails = append(extedndedSchemasDetails, schemaUpdated)
+	}
+	if err != nil {
+		return []models.ExtendedSchema{}, err
+	}
+	return extedndedSchemasDetails, nil
 }
 
-func (sh SchemasHandler) findAndDeleteSchema(schemaName string) error {
-	var schema models.Schema
-	filter := bson.M{"name": schemaName}
-	err := schemasCollection.FindOneAndDelete(context.TODO(), filter).Decode(&schema)
+func (sh SchemasHandler) findAndDeleteSchema(schemaIds []primitive.ObjectID) error {
+	filter := bson.M{"schema_id": bson.M{"$in": schemaIds}}
+	_, err := schemaVersionCollection.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
-	filter = bson.M{"schema_id": schema.ID}
-	_, err = schemaVersionCollection.DeleteMany(context.TODO(), filter)
 
+	filter = bson.M{"_id": bson.M{"$in": schemaIds}}
+	_, err = schemasCollection.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
@@ -216,20 +385,30 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("CreateNewSchema error: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	schemaType := strings.ToLower(body.Type)
 	err = validateSchemaType(schemaType)
-
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
+	messageStructName := body.MessageStructName
+	if schemaType == "protobuf" {
+		err := validateMessageStructName(messageStructName)
+		if err != nil {
+			serv.Warnf(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
+
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schemaType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 	newSchema := models.Schema{
@@ -247,13 +426,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	newSchemaVersion := models.SchemaVersion{
-		ID:            primitive.NewObjectID(),
-		VersionNumber: 1,
-		Active:        true,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		SchemaContent: schemaContent,
-		SchemaId:      newSchema.ID,
+		ID:                primitive.NewObjectID(),
+		VersionNumber:     1,
+		Active:            true,
+		CreatedByUser:     user.Username,
+		CreationDate:      time.Now(),
+		SchemaContent:     schemaContent,
+		SchemaId:          newSchema.ID,
+		MessageStructName: messageStructName,
 	}
 	opts := options.Update().SetUpsert(true)
 	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -318,8 +498,7 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 		return
 	}
 
-	schemaDetails, err := sh.GetSchemaDetailsBySchemaName(schemaName)
-
+	schemaDetails, err := sh.getSchemaDetailsBySchemaName(schemaName)
 	if err != nil {
 		serv.Errorf("GetSchemaDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -348,14 +527,34 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	}
 	DeleteTagsFromSchema(schema.ID)
 	err = sh.findAndDeleteSchema(schemaName)
+	var schemaIds []primitive.ObjectID
 
-	if err != nil {
-		serv.Errorf("RemoveSchema error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-
+	for _, name := range body.SchemaNames {
+		schemaName := strings.ToLower(name)
+		exist, schema, err := IsSchemaExist(schemaName)
+		if err != nil {
+			serv.Errorf("RemoveSchema error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if exist {
+			DeleteTagsBySchema(schema.ID)
+			schemaIds = append(schemaIds, schema.ID)
+		}
 	}
-	serv.Noticef("Schema " + schemaName + " has been deleted")
+
+	if len(schemaIds) > 0 {
+		err := sh.findAndDeleteSchema(schemaIds)
+		if err != nil {
+			serv.Errorf("RemoveSchema error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		for _, name := range body.SchemaNames {
+			serv.Noticef("Schema " + name + " has been deleted")
+		}
+	}
+
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -386,11 +585,20 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
+	messageStructName := body.MessageStructName
+	if schema.Type == "protobuf" {
+		err := validateMessageStructName(messageStructName)
+		if err != nil {
+			serv.Warnf(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schema.Type)
 	if err != nil {
 		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -404,23 +612,25 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	versionNumber := countVersions + 1
 
 	newSchemaVersion := models.SchemaVersion{
-		ID:            primitive.NewObjectID(),
-		VersionNumber: versionNumber,
-		Active:        false,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		SchemaContent: schemaContent,
-		SchemaId:      schema.ID,
+		ID:                primitive.NewObjectID(),
+		VersionNumber:     versionNumber,
+		Active:            false,
+		CreatedByUser:     user.Username,
+		CreationDate:      time.Now(),
+		SchemaContent:     schemaContent,
+		SchemaId:          schema.ID,
+		MessageStructName: messageStructName,
 	}
 
 	filter := bson.M{"schema_id": schema.ID, "version_number": newSchemaVersion.VersionNumber}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"_id":             newSchemaVersion.ID,
-			"active":          newSchemaVersion.Active,
-			"created_by_user": newSchemaVersion.CreatedByUser,
-			"creation_date":   newSchemaVersion.CreationDate,
-			"schema_content":  newSchemaVersion.SchemaContent,
+			"_id":                 newSchemaVersion.ID,
+			"active":              newSchemaVersion.Active,
+			"created_by_user":     newSchemaVersion.CreatedByUser,
+			"creation_date":       newSchemaVersion.CreationDate,
+			"schema_content":      newSchemaVersion.SchemaContent,
+			"message_struct_name": newSchemaVersion.MessageStructName,
 		},
 	}
 
@@ -439,7 +649,13 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Version already exists"})
 		return
 	}
-	c.IndentedJSON(200, newSchemaVersion)
+	extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema)
+	if err != nil {
+		serv.Errorf("CreateNewVersion error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, extedndedSchemaDetails)
 
 }
 
@@ -449,6 +665,8 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 	if !ok {
 		return
 	}
+
+	var extedndedSchemaDetails models.ExtendedSchemaDetails
 
 	schemaName := strings.ToLower(body.SchemaName)
 
@@ -478,12 +696,54 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 
-	err = sh.updateActiveVersion(schema.ID, body.VersionNumber)
+	countVersions, err := sh.getVersionsCount(schema.ID)
 	if err != nil {
 		serv.Errorf("RollBackVersion error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if countVersions > 1 {
+		err = sh.updateActiveVersion(schema.ID, body.VersionNumber)
+		if err != nil {
+			serv.Errorf("RollBackVersion error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			return
+		}
+	}
+	extedndedSchemaDetails, err = sh.getExtendedSchemaDetails(schema)
+	if err != nil {
+		serv.Errorf("RollBackVersion error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, extedndedSchemaDetails)
+
+}
+
+func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
+	var body models.ValidateSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
 		return
 	}
 
-	c.IndentedJSON(200, gin.H{})
+	schemaType := strings.ToLower(body.SchemaType)
+	err := validateSchemaType(schemaType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	schemaContent := body.SchemaContent
+	err = validateSchemaContent(schemaContent, schemaType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{
+		"is_valid": true,
+	})
 }

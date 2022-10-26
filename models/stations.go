@@ -46,13 +46,21 @@ type Message struct {
 	Message     MessagePayload  `json:"message" bson:"message"`
 }
 
+type MessageResponse struct {
+	MessageSeq  int             `json:"message_seq" bson:"message_seq"`
+	Producer    ProducerDetails `json:"producer" bson:"producer"`
+	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs" bson:"poisoned_cgs"`
+	Message     MessagePayload  `json:"message" bson:"message"`
+}
+
 type MessageDetails struct {
-	MessageSeq   int       `json:"message_seq" bson:"message_seq"`
-	ProducedBy   string    `json:"produced_by" bson:"produced_by"`
-	Data         string    `json:"data" bson:"data"`
-	TimeSent     time.Time `json:"creation_date" bson:"creation_date"`
-	ConnectionId string    `json:"connection_id" bson:"connection_id"`
-	Size         int       `json:"size" bson:"size"`
+	MessageSeq   int               `json:"message_seq" bson:"message_seq"`
+	ProducedBy   string            `json:"produced_by" bson:"produced_by"`
+	Data         string            `json:"data" bson:"data"`
+	TimeSent     time.Time         `json:"creation_date" bson:"creation_date"`
+	ConnectionId string            `json:"connection_id" bson:"connection_id"`
+	Size         int               `json:"size" bson:"size"`
+	Headers      map[string]string `json:"headers" bson:"headers"`
 }
 
 type Station struct {
@@ -69,6 +77,7 @@ type Station struct {
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
 	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
+	Schema          SchemaDetails      `json:"schema" bson:"schema"`
 }
 
 type GetStationResponseSchema struct {
@@ -126,6 +135,7 @@ type CreateStationSchema struct {
 	DedupEnabled    bool        `json:"dedup_enabled"`
 	DedupWindowInMs int         `json:"dedup_window_in_ms" binding:"min=0"`
 	Tags            []CreateTag `json:"tags"`
+	SchemaName      string      `json:"schema_name"`
 }
 
 type AckPoisonMessagesSchema struct {
@@ -137,7 +147,7 @@ type ResendPoisonMessagesSchema struct {
 }
 
 type RemoveStationSchema struct {
-	StationName string `json:"station_name" binding:"required"`
+	StationNames []string `json:"station_names" binding:"required"`
 }
 
 type GetPoisonMessageJourneySchema struct {
@@ -149,4 +159,28 @@ type GetMessageDetailsSchema struct {
 	MessageId       string `form:"message_id" json:"message_id"`
 	MessageSeq      int    `form:"message_seq" json:"message_seq"`
 	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+type UseSchema struct {
+	StationName string `json:"station_name" binding:"required"`
+	SchemaName  string `json:"schema_name" binding:"required"`
+}
+
+type RemoveSchemaFromStation struct {
+	StationName string `json:"station_name" binding:"required"`
+}
+
+type SchemaDetails struct {
+	SchemaName    string `json:"name" bson:"name"`
+	VersionNumber int    `json:"version_number" bson:"version_number"`
+}
+
+type StationOverviewSchemaDetails struct {
+	SchemaName       string `json:"name" bson:"name"`
+	VersionNumber    int    `json:"version_number" bson:"version_number"`
+	UpdatesAvailable bool   `json:"updates_available"`
+}
+
+type GetUpdatesForSchema struct {
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }

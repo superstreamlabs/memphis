@@ -63,6 +63,8 @@ export function getFontColor(colorType) {
             return '#A9A9A9';
         case 'white':
             return '#f7f7f7';
+        case 'red':
+            return '#FF4838';
         default:
             return '#6557FF';
     }
@@ -77,7 +79,7 @@ export function getBackgroundColor(backgroundColor) {
         case 'orange':
             return '#FFC633';
         case 'red':
-            return '#CD5C5C';
+            return '#FC3400';
         case 'navy':
             return '#1D1D1D';
         case 'turquoise':
@@ -109,5 +111,7 @@ export function getBoxShadows(boxShadowsType) {
             return '0px 1px 2px 0px rgba(0,0,0,0.21)';
         case 'search-input':
             return '0px 1px 2px 0px rgba(90, 79, 229, 1)';
+        default:
+            return 'none';
     }
 }

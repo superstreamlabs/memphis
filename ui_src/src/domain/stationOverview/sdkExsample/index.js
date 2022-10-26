@@ -83,7 +83,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                     height="50px"
                     options={selectLngOption}
                     onChange={(e) => handleSelectLang(e)}
-                    dropdownClassName="select-options"
+                    popupClassName="select-options"
                 />
             </div>
             <div className="installation">

@@ -31,9 +31,11 @@ import {
     LOCAL_STORAGE_WELCOME_MESSAGE,
     LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
-import CreateStationDetails from '../../components/createStationDetails';
+import CreateStationForm from '../../components/createStationForm';
+
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
@@ -73,7 +75,7 @@ function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
     const createStationRef = useRef(null);
-    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
+    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
@@ -110,7 +112,7 @@ function OverView() {
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
         setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
-        setBotImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
+        setBotImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         SetUsername(
             localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))
@@ -134,7 +136,7 @@ function OverView() {
     }, [state.socket]);
 
     const setBotImage = (botId) => {
-        SetBotUrl(require(`../../assets/images/bots/${botId}.svg`));
+        SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
     const capitalizeFirst = (str) => {
@@ -158,7 +160,7 @@ function OverView() {
                 </div>
             )}
 
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
+            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || allStations.length > 0) && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -169,7 +171,7 @@ function OverView() {
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 60 : 40}
                                     height={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    alt="bot"
+                                    alt="avatar"
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
@@ -204,12 +206,21 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') && (
-                <GetStarted username={username} dataSentence={dataSentence} />
-            )}
+            {!isLoading &&
+                (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') &&
+                allStations.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
-                header="Your station details"
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={stationImg} />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
                 height="460px"
+                width="540px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {
@@ -222,7 +233,7 @@ function OverView() {
                 open={open}
                 isLoading={creatingProsessd}
             >
-                <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
             </Modal>
             <Modal
                 header={''}

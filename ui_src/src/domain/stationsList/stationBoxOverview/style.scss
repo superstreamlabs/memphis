@@ -16,21 +16,6 @@
         font-size: 12px;
         font-family: 'InterSemiBold';
     }
-    .retention {
-        color: #00a5ff;
-    }
-    .storage {
-        color: #ffa043;
-    }
-    .replicas {
-        color: var(--purple);
-    }
-    .total {
-        color: #20c9ac;
-    }
-    .poison {
-        color: #ff8c82;
-    }
     .data-info {
         color: #2e2c34;
         font-size: 14px;
@@ -51,11 +36,17 @@
         }
     }
     .left-section {
-        .station-name {
-            font-size: 17px;
-            font-weight: 600;
+        .check-box{
+            display: flex;
+            align-items: center;
             margin-bottom: 10px;
-            color: #2e2c34;
+            .station-name {
+                font-size: 17px;
+                font-weight: 600;
+                margin: 0;
+                margin-left: 10px;
+                color: #2e2c34;
+            }
         }
     }
     .middle-section {
@@ -83,16 +74,33 @@
                 margin-right: 3px;
             }
         }
+        .station-actions{
+            display: flex;
+            width: 35px;
+            height: 100%;
+            align-items: center;
+            .action{
+                border: 1px solid #ECECEC;
+                border-radius: 8px;
+                width: 30px;
+                height: 30px;
+                justify-content:center;
+                cursor: pointer;
+                img{
+                    width: 15px;
+                }
+                display: none;
+            }
+            .action:hover{
+                opacity: 0.8;
+            }
+        }
     }
 
-    .threedots-menu {
-        margin-left: 30px;
-    }
-    .MuiSvgIcon-root {
-        color: #84818a;
-    }
+}
+.station-box-container:hover{
+   a{
+       display: flex !important;
+   } 
 }
 
-.station-box-container:hover {
-    opacity: 0.8;
-}

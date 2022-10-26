@@ -130,7 +130,7 @@ function FunctionForm(props) {
                                     options={['op1', 'op2']}
                                     boxShadowsType="gray"
                                     onChange={(e) => handelChangeOutputField(e)}
-                                    dropdownClassName="select-options"
+                                    popupClassName="select-options"
                                 />
                             </div>
                         </div>

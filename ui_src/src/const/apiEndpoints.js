@@ -65,5 +65,14 @@ export const ApiEndpoints = {
     REMOVE_TAG: '/tags/removeTag',
     CREATE_NEW_TAG: '/tags/createNewTag',
     GET_TAGS: '/tags/getTags',
-    UPDATE_TAGS_FOR_ENTITY: '/tags/updateTagsForEntity'
+    UPDATE_TAGS_FOR_ENTITY: '/tags/updateTagsForEntity',
+
+    //Schemas
+    GET_ALL_SCHEMAS: '/schemas/getAllSchemas',
+    CREATE_NEW_SCHEMA: '/schemas/createNewSchema',
+    GET_SCHEMA_DETAILS: '/schemas/getSchemaDetails',
+    REMOVE_SCHEMA: '/schemas/removeSchema',
+    CREATE_NEW_VERSION: '/schemas/createNewVersion',
+    ROLL_BACK_VERSION: '/schemas/rollBackVersion',
+    VALIDATE_SCHEMA: '/schemas/validateSchema'
 };

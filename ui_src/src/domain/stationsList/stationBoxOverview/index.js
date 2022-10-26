@@ -24,9 +24,6 @@ import './style.scss';
 import React, { useState, useEffect } from 'react';
 
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import MenuItem from '@material-ui/core/MenuItem';
-import Popover from '@material-ui/core/Popover';
 import { MinusOutlined } from '@ant-design/icons';
 import pathDomains from '../../../router';
 
@@ -35,57 +32,51 @@ import Modal from '../../../components/modal';
 import { parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import retentionIcon from '../../../assets/images/retentionIcon.svg';
+import deleteIcon from '../../../assets/images/deleteIcon.svg';
+import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
 import { Link } from 'react-router-dom';
-import stationsIcon from '../../../assets/images/stationsIcon.svg';
 import TagsList from '../../../components/tagList';
+import CheckboxComponent from '../../../components/checkBox';
 
-const StationBoxOverview = (props) => {
-    const [modalIsOpen, modalFlip] = useState(false);
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
+const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
 
     useEffect(() => {
-        switch (props.station.station.retention_type) {
+        switch (station.station.retention_type) {
             case 'message_age_sec':
-                convertSecondsToDate(props.station.station.retention_value);
-                setRetentionValue(convertSecondsToDate(props.station.station.retention_value));
+                convertSecondsToDate(station.station.retention_value);
+                setRetentionValue(convertSecondsToDate(station.station.retention_value));
                 break;
             case 'bytes':
-                setRetentionValue(`${props.station.station.retention_value} bytes`);
+                setRetentionValue(`${station.station.retention_value} bytes`);
                 break;
             case 'messages':
-                setRetentionValue(`${props.station.station.retention_value} messages`);
+                setRetentionValue(`${station.station.retention_value} messages`);
                 break;
             default:
                 break;
         }
     }, []);
 
-    const handleClickMenu = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-        setAnchorEl(null);
-    };
-
     return (
         <div>
-            <Link className="station-box-container" to={`${pathDomains.stations}/${props.station.station.name}`}>
+            <div className="station-box-container">
                 <div className="left-section">
-                    <p className="station-name">{props.station?.station?.name}</p>
-                    <label className="data-labels">Created at {parsingDate(props.station.station.creation_date)}</label>
+                    <div className="check-box">
+                        <CheckboxComponent checked={isCheck} id={station?.station?.name} onChange={handleCheckedClick} name={station?.station?.name} />
+                        <p className="station-name">{station?.station?.name}</p>
+                    </div>
+                    <label className="data-labels">Created at {parsingDate(station.station.creation_date)}</label>
                 </div>
                 <div className="middle-section">
                     <div className="station-created">
                         <label className="data-labels">Created by</label>
-                        <OverflowTip className="data-info" text={props.station.station.created_by_user} width={'100px'}>
-                            {props.station.station.created_by_user}
+                        <OverflowTip className="data-info" text={station.station.created_by_user} width={'100px'}>
+                            {station.station.created_by_user}
                         </OverflowTip>
                     </div>
                     <div className="station-created">
@@ -106,83 +97,35 @@ const StationBoxOverview = (props) => {
                     <div className="station-meta">
                         <img src={storageIcon} alt="storage" />
                         <label className="data-labels storage">Storage Type</label>
-                        <p className="data-info">{props.station.station.storage_type}</p>
+                        <p className="data-info">{station.station.storage_type}</p>
                     </div>
                     <div className="station-meta">
                         <img src={replicasIcon} alt="replicas" />
                         <label className="data-labels replicas">Replicas</label>
-                        <p className="data-info">{props.station.station.replicas}</p>
+                        <p className="data-info">{station.station.replicas}</p>
                     </div>
                     <div className="station-meta">
                         <img src={totalMsgIcon} alt="total messages" />
                         <label className="data-labels total">Total messages</label>
                         <p className="data-info">
-                            {props.station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : numberWithCommas(props?.station?.total_messages)}
+                            {station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : numberWithCommas(station?.total_messages)}
                         </p>
                     </div>
                     <div className="station-meta">
                         <img src={poisonMsgIcon} alt="poison messages" />
                         <label className="data-labels poison">Poison messages</label>
-                        <p className="data-info">{props?.station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(props?.station?.posion_messages)}</p>
+                        <p className="data-info">{station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(station?.posion_messages)}</p>
                     </div>
-                    <div id="e2e-tests-station-menu">
-                        <MoreVertIcon
-                            aria-controls="long-button"
-                            aria-haspopup="true"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                handleClickMenu(e);
-                            }}
-                            className="threedots-menu"
-                        />
+                    <div className="station-actions">
+                        {/* <div className="action" onClick={() => modalFlip(true)}>
+                                <img src={deleteIcon} />
+                            </div> */}
+                        <Link to={`${pathDomains.stations}/${station.station.name}`} className="action">
+                            <img src={redirectIcon} />
+                        </Link>
                     </div>
                 </div>
-            </Link>
-
-            <Popover id="long-menu" classes={{ paper: 'Menu c' }} anchorEl={anchorEl} onClose={handleCloseMenu} open={open}>
-                <MenuItem
-                    onClick={() => {
-                        modalFlip(true);
-                        handleCloseMenu();
-                    }}
-                >
-                    <DeleteOutline className="menu-item-icon" />
-                    <label id="e2e-tests-remove-stations" className="menu-item-label">
-                        Remove
-                    </label>
-                </MenuItem>
-                <MenuItem>
-                    <img src={stationsIcon} alt="stationsIcon" style={{ height: '15px', width: '15px' }} />
-                    <Link
-                        id="e2e-tests-remove-stations"
-                        className="menu-item-label"
-                        style={{ color: 'black' }}
-                        to={`${pathDomains.stations}/${props.station.station.name}`}
-                    >
-                        Overview
-                    </Link>
-                </MenuItem>
-            </Popover>
-            <Modal
-                header="Remove station"
-                height="100px"
-                minWidth="460px"
-                rBtnText="Cancel"
-                lBtnText="Remove"
-                lBtnClick={() => {
-                    props.removeStation();
-                    modalFlip(false);
-                }}
-                closeAction={() => modalFlip(false)}
-                clickOutside={() => modalFlip(false)}
-                rBtnClick={() => modalFlip(false)}
-                open={modalIsOpen}
-            >
-                <label>
-                    Are you sure you want to delete "<b>{props.station.station.name}</b>" station?
-                </label>
-                <br />
-            </Modal>
+            </div>
         </div>
     );
 };
