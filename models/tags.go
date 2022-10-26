@@ -39,16 +39,17 @@ type CreateTag struct {
 	Color string `json:"color"`
 }
 
-type CreateTagsSchema struct {
-	Tags       []CreateTag `json:"tags"`
-	EntityType string      `json:"entity_type"`
-	EntityName string      `json:"entity_name"`
+type RemoveTagSchema struct {
+	Name       string `json:"name"`
+	EntityType string `json:"entity_type"`
+	EntityName string `json:"entity_name"`
 }
 
-type RemoveTagsSchema struct {
-	Names      []string `json:"names"`
-	EntityType string   `json:"entity_type"`
-	EntityName string   `json:"entity_name"`
+type UpdateTagsForEntitySchema struct {
+	TagsToAdd    []Tag              `json:"tags_to_add"`
+	TagsToRemove []string           `json:"tags_to_remove"`
+	EntityType   string             `json:"entity_type"`
+	EntityID     primitive.ObjectID `json:"entity_id"`
 }
 
 type GetTagsSchema struct {

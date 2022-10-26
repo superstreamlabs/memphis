@@ -42,8 +42,10 @@ export function getBorderColor(borderColorType) {
             return '#E9E9E9';
         case 'navy':
             return '#1D1D1D';
+        case 'search-input':
+            return '#5A4FE5';
         default:
-            return 'transparent';
+            return borderColorType;
     }
 }
 
@@ -107,6 +109,8 @@ export function getBoxShadows(boxShadowsType) {
             return '0px 1px 2px 0px rgba(0,0,0,0.5)';
         case 'login-input':
             return '0px 1px 2px 0px rgba(0,0,0,0.21)';
+        case 'search-input':
+            return '0px 1px 2px 0px rgba(90, 79, 229, 1)';
         default:
             return 'none';
     }

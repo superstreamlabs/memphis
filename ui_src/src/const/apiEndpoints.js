@@ -61,6 +61,12 @@ export const ApiEndpoints = {
     GET_SYS_LOGS: '/monitoring/getSystemLogs',
     DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
 
+    //Tags
+    REMOVE_TAG: '/tags/removeTag',
+    CREATE_NEW_TAG: '/tags/createNewTag',
+    GET_TAGS: '/tags/getTags',
+    UPDATE_TAGS_FOR_ENTITY: '/tags/updateTagsForEntity',
+
     //Schemas
     GET_ALL_SCHEMAS: '/schemas/getAllSchemas',
     CREATE_NEW_SCHEMA: '/schemas/createNewSchema',

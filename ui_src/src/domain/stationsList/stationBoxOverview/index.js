@@ -39,10 +39,10 @@ import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
 import { Link } from 'react-router-dom';
+import TagsList from '../../../components/tagList';
 import CheckboxComponent from '../../../components/checkBox';
 
 const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isCheck }) => {
-    const [modalIsOpen, modalFlip] = useState(false);
     const [retentionValue, setRetentionValue] = useState('');
 
     useEffect(() => {
@@ -75,9 +75,22 @@ const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isChec
                 <div className="middle-section">
                     <div className="station-created">
                         <label className="data-labels">Created by</label>
-                        <OverflowTip className="data-info" text={station.station.created_by_user} width={'100px'}>
+                        <OverflowTip className="data-info" text={station.station.created_by_user} width={'90px'}>
                             {station.station.created_by_user}
                         </OverflowTip>
+                    </div>
+                    <div className="station-created">
+                        <label className="data-labels">Tags</label>
+
+                        <div className="tags-list">
+                            {station.tags.length === 0 ? (
+                                <p className="data-info">
+                                    <MinusOutlined />
+                                </p>
+                            ) : (
+                                <TagsList tagsToShow={3} tags={station.tags} />
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="right-section">

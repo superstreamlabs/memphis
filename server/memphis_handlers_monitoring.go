@@ -264,6 +264,11 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())

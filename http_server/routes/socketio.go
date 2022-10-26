@@ -125,6 +125,9 @@ func getStationOverviewData(stationName string, h *server.Handlers) (map[string]
 	}
 
 	tags, err := h.Tags.GetTagsByStation(station.ID)
+	if err != nil {
+		return map[string]any{}, err
+	}
 	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
 	if err != nil {
 		return map[string]any{}, err
