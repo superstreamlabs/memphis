@@ -458,7 +458,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	}
 	var tags []models.Tag
 	switch entity {
-	case "stations":
+	case "station":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
 			serv.Errorf("GetTags error: " + err.Error())
@@ -471,7 +471,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-	case "users":
+	case "user":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"users": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
 			serv.Errorf("GetTags error: " + err.Error())
@@ -484,7 +484,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-	case "schemas":
+	case "schema":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
 			serv.Errorf("GetTags error: " + err.Error())
