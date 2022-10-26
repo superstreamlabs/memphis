@@ -38,10 +38,10 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
-import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import Copy from '../../../../components/copy';
+import TagsList from '../../../../components/tagList';
 
 const formatOption = [
     {
@@ -205,9 +205,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <span>{currentVersion?.created_by_user}</span>
                     </div>
                 </div>
-                <div className="tags">
-                    <TagsList tags={schemaDetails?.tags} addNew={true} />
-                </div>
+                <div className="tags">{/* <TagsList tagsToShow={4} tags={schemaDetails?.tags} editable={true} /> */}</div>
                 <div className="schema-fields">
                     <div className="left">
                         <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema structure</p>

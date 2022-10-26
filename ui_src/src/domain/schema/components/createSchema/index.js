@@ -35,10 +35,10 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
-import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
+import TagsList from '../../../../components/tagList';
 
 const schemaTypes = [
     {
@@ -264,7 +264,7 @@ function CreateSchema({ goBack }) {
                                     <p className="desc">Tags will help you organize, search and filter your data</p>
                                 </div>
                             </div>
-                            <TagsList addNew={true} />
+                            {/* <TagsList editable={true} /> */}
                         </div>
                     </Form.Item>
                     <Form.Item name="type" initialValue={formFields.type}>
