@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
 	"strings"
 	"time"
-	"io"
-	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jhump/protoreflect/desc/protoparse"
@@ -346,7 +346,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
 		return
 	}
-	DeleteTagsBySchema(schema.ID)
+	DeleteTagsFromSchema(schema.ID)
 	err = sh.findAndDeleteSchema(schemaName)
 
 	if err != nil {

@@ -112,7 +112,7 @@ func removeStationResources(s *Server, station models.Station) error {
 		return err
 	}
 
-	DeleteTagsByStation(station.ID)
+	DeleteTagsFromStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
