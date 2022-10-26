@@ -93,7 +93,9 @@ const StationBoxOverview = (props) => {
 
                         <div className="tags-list">
                             {props.station.tags.length === 0 ? (
-                                <MinusOutlined style={{ color: '#2E2C34', width: '7px', height: '20px' }} />
+                                <p className="data-info">
+                                    <MinusOutlined />
+                                </p>
                             ) : (
                                 <TagsList tagsToShow={4} tags={props.station.tags} />
                             )}
