@@ -108,9 +108,9 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
     }));
 
     const handleNewTag = (tag) => {
-        setCheckedList([...checkedList, tag]);
-        setAllTags([...allTags, tag]);
-        setTagsToDisplay([...tagsToDisplay, tag]);
+        setCheckedList([tag, ...checkedList]);
+        setAllTags([tag, ...allTags]);
+        setTagsToDisplay([tag, ...tagsToDisplay]);
         setEditedList(true);
         setSearchInput('');
         setNewTagModal(false);

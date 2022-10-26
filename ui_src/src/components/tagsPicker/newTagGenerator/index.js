@@ -79,6 +79,10 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         {
                             required: true,
                             message: 'Please input tag name!'
+                        },
+                        {
+                            max: 20,
+                            message: `Can't be longer than 20!`
                         }
                     ]}
                     style={{ height: '70px' }}
