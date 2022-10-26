@@ -82,6 +82,14 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	}
 }
 
+func getMessageHeaders(hdr map[string]string) (map[string]string, error) {
+	jsonMsgHeaders := map[string]string{}
+	for key, value := range hdr {
+		jsonMsgHeaders[key] = value
+	}
+	return jsonMsgHeaders, nil
+}
+
 func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {
 	reply := s.getJsApiReplySubject()
 
@@ -222,7 +230,6 @@ func (s *Server) CreateSystemLogsStream() {
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
-
 	if err != nil {
 		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
 	}
@@ -307,7 +314,6 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 
 	request := CreateConsumerRequest{Stream: streamName, Config: *cc}
 	rawRequest, err := json.Marshal(request)
-
 	if err != nil {
 		return err
 	}
@@ -477,7 +483,19 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		if err != nil {
 			return nil, err
 		}
-		if hdr["producedBy"] == "$memphis_dlq" { // skip poison messages which have been resent
+
+		connectionIdHeader := hdr["$memphis_connectionId"]
+		producedByHeader := strings.ToLower(hdr["$memphis_producedBy"])
+
+		//This check for backward compatability
+		if connectionIdHeader == "" || producedByHeader == "" {
+			connectionIdHeader = hdr["connectionId"]
+			producedByHeader = strings.ToLower(hdr["producedBy"])
+			if connectionIdHeader == "" || producedByHeader == "" {
+				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			}
+		}
+		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
 			continue
 		}
 
@@ -485,13 +503,19 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		if len(data) > 100 { // get the first chars for preview needs
 			data = data[0:100]
 		}
+
+		headersJson, err := getMessageHeaders(hdr)
+		if err != nil {
+			return []models.MessageDetails{}, err
+		}
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(msg.Sequence),
 			Data:         data,
-			ProducedBy:   hdr["producedBy"],
-			ConnectionId: hdr["connectionId"],
+			ProducedBy:   producedByHeader,
+			ConnectionId: connectionIdHeader,
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
+			Headers:      headersJson,
 		})
 	}
 
@@ -679,9 +703,20 @@ func (s *Server) Respond(reply string, msg []byte) {
 	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
-func (s *Server) ResendPoisonMessage(subject string, data []byte) error {
-	hdr := map[string]string{"producedBy": "$memphis_dlq"}
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdr, data)
+func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error {
+	hdrs := make(map[string]string)
+	err := json.Unmarshal(headers, &hdrs)
+	if err != nil {
+		return err
+	}
+
+	hdrs["$memphis_producedBy"] = "$memphis_dlq"
+
+	if hdrs["producedBy"] != "" {
+		delete(hdrs, "producedBy")
+	}
+
+	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdrs, data)
 	return nil
 }
 

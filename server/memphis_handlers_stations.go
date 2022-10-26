@@ -311,7 +311,6 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
 	})
-
 	if err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
@@ -360,7 +359,6 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		}}}}},
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
-
 	if err != nil {
 		return stations, err
 	}
@@ -479,7 +477,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 		schemasHandler := SchemasHandler{S: sh.S}
 		schemaVersion, err := schemasHandler.getActiveVersionBySchemaId(schema.ID)
-
 		if err != nil {
 			serv.Errorf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -995,19 +992,23 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		stationName := replaceDelimiters(msg.StationName)
 		for _, cg := range msg.PoisonedCgs {
 			cgName := replaceDelimiters(cg.CgName)
-			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data))
+			headersJson := map[string]string{}
+			for _, value := range msg.Message.Headers {
+				headersJson[value.HeaderKey] = value.HeaderValue
+			}
+			headers, err := json.Marshal(headersJson)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			err = sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data), headers)
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 		}
-	}
-
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1062,7 +1063,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
-
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1076,13 +1076,18 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	connectionIdHeader := hdr["connectionId"]
-	producedByHeader := strings.ToLower(hdr["producedBy"])
+	connectionIdHeader := hdr["$memphis_connectionId"]
+	producedByHeader := strings.ToLower(hdr["$memphis_producedBy"])
 
+	//This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
-		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
-		return
+		connectionIdHeader = hdr["connectionId"]
+		producedByHeader = strings.ToLower(hdr["producedBy"])
+		if connectionIdHeader == "" || producedByHeader == "" {
+			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
+			return
+		}
 	}
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
@@ -1142,12 +1147,19 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	msg := models.Message{
+	headersJson, err := getMessageHeaders(hdr)
+	if err != nil {
+		serv.Errorf("GetMessageDetails" + err.Error())
+		return
+	}
+
+	msg := models.MessageResponse{
 		MessageSeq: body.MessageSeq,
 		Message: models.MessagePayload{
 			TimeSent: sm.Time,
 			Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
 			Data:     string(sm.Data),
+			Headers:  headersJson,
 		},
 		Producer: models.ProducerDetails{
 			Name:          producedByHeader,

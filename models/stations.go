@@ -46,13 +46,21 @@ type Message struct {
 	Message     MessagePayload  `json:"message" bson:"message"`
 }
 
+type MessageResponse struct {
+	MessageSeq  int             `json:"message_seq" bson:"message_seq"`
+	Producer    ProducerDetails `json:"producer" bson:"producer"`
+	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs" bson:"poisoned_cgs"`
+	Message     MessagePayload  `json:"message" bson:"message"`
+}
+
 type MessageDetails struct {
-	MessageSeq   int       `json:"message_seq" bson:"message_seq"`
-	ProducedBy   string    `json:"produced_by" bson:"produced_by"`
-	Data         string    `json:"data" bson:"data"`
-	TimeSent     time.Time `json:"creation_date" bson:"creation_date"`
-	ConnectionId string    `json:"connection_id" bson:"connection_id"`
-	Size         int       `json:"size" bson:"size"`
+	MessageSeq   int               `json:"message_seq" bson:"message_seq"`
+	ProducedBy   string            `json:"produced_by" bson:"produced_by"`
+	Data         string            `json:"data" bson:"data"`
+	TimeSent     time.Time         `json:"creation_date" bson:"creation_date"`
+	ConnectionId string            `json:"connection_id" bson:"connection_id"`
+	Size         int               `json:"size" bson:"size"`
+	Headers      map[string]string `json:"headers" bson:"headers"`
 }
 
 type Station struct {
