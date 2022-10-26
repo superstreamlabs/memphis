@@ -75,7 +75,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isChec
                 <div className="middle-section">
                     <div className="station-created">
                         <label className="data-labels">Created by</label>
-                        <OverflowTip className="data-info" text={station.station.created_by_user} width={'100px'}>
+                        <OverflowTip className="data-info" text={station.station.created_by_user} width={'90px'}>
                             {station.station.created_by_user}
                         </OverflowTip>
                     </div>
@@ -88,7 +88,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isChec
                                     <MinusOutlined />
                                 </p>
                             ) : (
-                                <TagsList tagsToShow={4} tags={station.tags} />
+                                <TagsList tagsToShow={3} tags={station.tags} />
                             )}
                         </div>
                     </div>
