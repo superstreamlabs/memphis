@@ -21,26 +21,27 @@
 
 import './style.scss';
 
+import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import React, { useEffect, useState } from 'react';
+import Schema from 'protocol-buffers-schema';
+import { message } from 'antd';
 
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
 import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
 import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
+import { isThereDiff } from '../../../../services/valueConvertor';
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
+import SelectComponent from '../../../../components/select';
+import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
-import { httpRequest } from '../../../../services/http';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Modal from '../../../../components/modal';
-import { message } from 'antd';
-import { isThereDiff } from '../../../../services/valueConvertor';
-import SelectComponent from '../../../../components/select';
 import Copy from '../../../../components/copy';
-import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 
 const formatOption = [
     {
@@ -72,6 +73,9 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [validateLoading, setValidateLoading] = useState(false);
     const [validateError, setValidateError] = useState('');
     const [validateSuccess, setValidateSuccess] = useState(false);
+    const [messageStructName, setMessageStructName] = useState('');
+    const [messagesStructNameList, setMessagesStructNameList] = useState([]);
+    const [editable, setEditable] = useState(false);
 
     const arrangeData = (schema) => {
         let index = schema.versions?.findIndex((version) => version?.active === true);
@@ -79,6 +83,17 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         setVersionSelected(schema.versions[index]);
         setNewVersion(schema.versions[index].schema_content);
         setSchemaDetails(schema);
+        if (schema.type === 'protobuf') {
+            let parser = Schema.parse(schema.versions[index].schema_content).messages;
+            setMessageStructName(schema.versions[index].message_struct_name);
+            if (parser.length === 1) {
+                setEditable(false);
+            } else {
+                setEditable(true);
+                setMessageStructName(schema.versions[index].message_struct_name);
+                setMessagesStructNameList(parser);
+            }
+        }
     };
 
     const getScemaDetails = async () => {
@@ -101,7 +116,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const createNewVersion = async () => {
         try {
             setIsLoading(true);
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_VERSION, { schema_name: schemaName, schema_content: newVersion });
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_VERSION, {
+                schema_name: schemaName,
+                schema_content: newVersion,
+                message_struct_name: messageStructName
+            });
             if (data) {
                 arrangeData(data);
                 message.success({
@@ -133,10 +152,18 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         setValidateSuccess('');
         setNewVersion(value);
         setUpdated(isThereDiff(versionSelected?.schema_content, value));
-        if (value === '') {
-            setValidateError('Schema content cannot be empty');
+        if (value.length > 0) {
+            try {
+                Schema.parse(value);
+                setValidateSuccess('');
+                setValidateError('');
+            } catch (error) {
+                setValidateSuccess('');
+                setValidateError(error.message);
+            }
         } else {
-            setValidateError('');
+            setValidateSuccess('');
+            setValidateError('Schema content cannot be empty');
         }
     };
 
@@ -206,7 +233,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <div className="structure-message">
                             <p className="field-name">Master message :</p>
                             <SelectComponent
-                                // value={handelChangeFieldToAnalyze.outputField}
+                                value={messageStructName}
                                 colorType="black"
                                 backgroundColorType="white"
                                 borderColorType="gray-light"
@@ -214,10 +241,14 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 minWidth="12vw"
                                 width="250px"
                                 height="30px"
-                                options={['op1', 'op2']}
+                                options={messagesStructNameList}
                                 iconColor="gray"
                                 popupClassName="message-option"
-                                // onChange={(e) => handelChangeOutputField(e)}
+                                onChange={(e) => {
+                                    setMessageStructName(e);
+                                    setUpdated(true);
+                                }}
+                                disabled={!editable}
                             />
                         </div>
                         <div className="validation">
@@ -248,7 +279,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <Editor
                             options={{
                                 minimap: { enabled: false },
-                                scrollbar: { verticalScrollbarSize: 0 },
+                                scrollbar: { verticalScrollbarSize: 5 },
                                 scrollBeyondLastLine: false,
                                 roundedSelection: false,
                                 formatOnPaste: true,
@@ -256,7 +287,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 fontSize: '14px'
                             }}
                             language="proto"
-                            height="calc(100% - 120px)"
+                            height="calc(100% - 104px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
                             onChange={(value) => {
@@ -279,13 +310,13 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         fontSize: '14px'
                                     }}
                                     language="proto"
-                                    height="calc(100% - 120px)"
+                                    height="calc(100% - 100px)"
                                     value={versionSelected?.schema_content}
                                 />
                             )}
                             {isDiff && (
                                 <DiffEditor
-                                    height="calc(100% - 120px)"
+                                    height="calc(100% - 100px)"
                                     language="proto"
                                     original={currentVersion?.schema_content}
                                     modified={versionSelected?.schema_content}

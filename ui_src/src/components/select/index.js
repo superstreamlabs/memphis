@@ -84,13 +84,13 @@ const SelectComponent = ({
                 size={size}
                 popupClassName={popupClassName}
                 value={value}
-                suffixIcon={<ArrowDropDownRounded color={dropIconColor} />}
+                suffixIcon={<ArrowDropDownRounded style={{ color: dropIconColor }} />}
                 dropdownStyle={dropdownStyle}
             >
                 {customOptions && options}
                 {!customOptions &&
                     options.map((option) => (
-                        <Option key={option?.id || option} disabled={option?.disabled || false}>
+                        <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
                             {option?.name || option}
                         </Option>
                     ))}

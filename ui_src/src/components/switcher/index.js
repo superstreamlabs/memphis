@@ -20,7 +20,6 @@
 // SOFTWARE.
 import './style.scss';
 
-import { styled } from '@material-ui/core';
 import { Switch } from 'antd';
 import React from 'react';
 

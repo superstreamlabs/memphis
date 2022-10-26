@@ -21,22 +21,24 @@
 
 import './style.scss';
 
-import Editor from '@monaco-editor/react';
+import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import React, { useEffect, useState } from 'react';
+import Schema from 'protocol-buffers-schema';
+import Editor from '@monaco-editor/react';
 import { Form } from 'antd';
 
+import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
+import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
 import tagsIcon from '../../../../assets/images/tagsIcon.svg';
-import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
-
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
+import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagsList';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
-import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
-import Schema from 'protocol-buffers-schema';
+import Modal from '../../../../components/modal';
 
 const schemaTypes = [
     {
@@ -112,6 +114,9 @@ function CreateSchema({ goBack }) {
     const [validateError, setValidateError] = useState('');
     const [validateSuccess, setValidateSuccess] = useState(false);
     const [messageStructName, setMessageStructName] = useState('Test');
+    const [messagesStructNameList, setMessagesStructNameList] = useState([]);
+
+    const [modalOpen, setModalOpen] = useState(false);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -127,25 +132,42 @@ function CreateSchema({ goBack }) {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
     }, []);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async () => {
         const values = await creationForm.validateFields();
         if (values?.errorFields) {
             return;
         } else {
-            try {
-                setLoadingSubmit(true);
-                const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageStructName });
-                if (data) {
-                    goBack();
+            if (values.type === 'Protobuf') {
+                let parser = Schema.parse(values.schema_content).messages;
+                if (parser.length === 1) {
+                    setMessageStructName(parser[0].name);
+                    handleCreateNewSchema();
+                } else {
+                    setMessageStructName(parser[0].name);
+                    setMessagesStructNameList(parser);
+                    setModalOpen(true);
                 }
-            } catch (err) {
-                if (err.status === 555) {
-                    setValidateSuccess('');
-                    setValidateError(err.data.message);
-                }
+            } else {
+                handleCreateNewSchema();
             }
-            setLoadingSubmit(false);
         }
+    };
+
+    const handleCreateNewSchema = async () => {
+        try {
+            const values = await creationForm.validateFields();
+            setLoadingSubmit(true);
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageStructName });
+            if (data) {
+                goBack();
+            }
+        } catch (err) {
+            if (err.status === 555) {
+                setValidateSuccess('');
+                setValidateError(err.data.message);
+            }
+        }
+        setLoadingSubmit(false);
     };
 
     const handleValidateSchema = async () => {
@@ -172,9 +194,15 @@ function CreateSchema({ goBack }) {
     };
 
     const checkContent = (_, value) => {
-        // let t = Schema.parse(value);
-        // console.log(t);
         if (value.length > 0) {
+            try {
+                Schema.parse(value);
+                setValidateSuccess('');
+                setValidateError('');
+            } catch (error) {
+                setValidateSuccess('');
+                setValidateError(error.message);
+            }
             return Promise.resolve();
         } else {
             setValidateSuccess('');
@@ -334,11 +362,57 @@ function CreateSchema({ goBack }) {
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             isLoading={loadingSubmit}
+                            disabled={validateError}
                             onClick={handleSubmit}
                         />
                     </Form.Item>
                 </div>
             </Form>
+            <Modal header={<img src={errorModal} />} width="400px" height="300px" displayButtons={false} clickOutside={() => setModalOpen(false)} open={modalOpen}>
+                <div className="roll-back-modal">
+                    <p className="title">Too many message types specified in schema definition</p>
+                    <p className="desc">Please choose your master message as a schema definition</p>
+                    <SelectComponent
+                        value={messageStructName}
+                        colorType="black"
+                        backgroundColorType="white"
+                        borderColorType="gray-light"
+                        radiusType="semi-round"
+                        minWidth="12vw"
+                        width="100%"
+                        height="45px"
+                        options={messagesStructNameList}
+                        iconColor="gray"
+                        popupClassName="message-option"
+                        onChange={(e) => setMessageStructName(e)}
+                    />
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Close"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => setModalOpen(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Confirm"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => handleCreateNewSchema()}
+                        />
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
