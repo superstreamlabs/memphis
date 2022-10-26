@@ -83,12 +83,12 @@ const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isChec
                         <label className="data-labels">Tags</label>
 
                         <div className="tags-list">
-                            {props.station.tags.length === 0 ? (
+                            {station.tags.length === 0 ? (
                                 <p className="data-info">
                                     <MinusOutlined />
                                 </p>
                             ) : (
-                                <TagsList tagsToShow={4} tags={props.station.tags} />
+                                <TagsList tagsToShow={4} tags={station.tags} />
                             )}
                         </div>
                     </div>

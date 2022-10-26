@@ -513,20 +513,6 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	if !ok {
 		return
 	}
-	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := IsSchemaExist(schemaName)
-	if err != nil {
-		serv.Errorf("RemoveSchema error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("Schema does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
-		return
-	}
-	DeleteTagsFromSchema(schema.ID)
-	err = sh.findAndDeleteSchema(schemaName)
 	var schemaIds []primitive.ObjectID
 
 	for _, name := range body.SchemaNames {
@@ -538,7 +524,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 			return
 		}
 		if exist {
-			DeleteTagsBySchema(schema.ID)
+			DeleteTagsFromSchema(schema.ID)
 			schemaIds = append(schemaIds, schema.ID)
 		}
 	}
