@@ -29,6 +29,10 @@ const (
 	SCHEMA_VALIDATION_ERROR_STATUS_CODE = 555
 )
 
+var (
+	ErrNoSchema = errors.New("No schemas found")
+)
+
 func validateProtobufContent(schemaContent string) error {
 	parser := protoparse.Parser{
 		Accessor: func(filename string) (io.ReadCloser, error) {
@@ -127,7 +131,6 @@ func generateSchemaDescriptor(schemaContent, schemaType string) (string, error) 
 	default:
 		return "", nil
 	}
-
 }
 
 func validateMessageStructName(messageStructName string) error {
@@ -135,6 +138,54 @@ func validateMessageStructName(messageStructName string) error {
 		return errors.New("Message struct name is required when schema type is Protobuf")
 	}
 	return nil
+}
+
+func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerInitSchemaUpdate, error) {
+	schema, err := getSchemaByStationName(sn.Ext())
+	if err != nil {
+		return nil, err
+	}
+
+	versions, err := getSchemaVersionsBySchemaId(schema.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	updateVersions := make([]models.ProducerInitSchemaVersion, len(versions))
+
+	var activeIdx int
+	for i, version := range versions {
+		updateVersions[i] = models.ProducerInitSchemaVersion{
+			VersionNumber: version.VersionNumber,
+			Descriptor:    version.Descriptor,
+		}
+		if version.Active {
+			activeIdx = i
+		}
+	}
+
+	return &models.ProducerInitSchemaUpdate{
+		SchemaName: schema.Name,
+		Versions:   updateVersions,
+		ActiveIdx:  activeIdx,
+	}, nil
+}
+
+func getSchemaVersionsBySchemaId(id primitive.ObjectID) ([]models.SchemaVersion, error) {
+	var schemaVersions []models.SchemaVersion
+	filter := bson.M{"schema_id": id}
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"creation_date": -1})
+
+	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return []models.SchemaVersion{}, err
+	}
+	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
+		return []models.SchemaVersion{}, err
+	}
+
+	return schemaVersions, nil
 }
 
 func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID) (models.SchemaVersion, error) {
@@ -146,14 +197,21 @@ func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID)
 	return schemaVersion, nil
 }
 
-func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
+func getSchemaByStationName(stationName string) (models.Schema, error) {
 	var schema models.Schema
 	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return models.Schema{}, ErrNoSchema
+		}
 		return models.Schema{}, err
 	}
 
 	return schema, nil
+}
+
+func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
+	return getSchemaByStationName(stationName)
 }
 
 func (sh SchemasHandler) GetSchemaVersion(stationVersion int, schemaId primitive.ObjectID) (models.SchemaVersion, error) {
@@ -192,20 +250,7 @@ func (sh SchemasHandler) getVersionsCount(schemaId primitive.ObjectID) (int, err
 }
 
 func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID) ([]models.SchemaVersion, error) {
-	var schemaVersions []models.SchemaVersion
-	filter := bson.M{"schema_id": schemaId}
-	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"creation_date": -1})
-
-	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		return []models.SchemaVersion{}, err
-	}
-	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
-		return []models.SchemaVersion{}, err
-	}
-
-	return schemaVersions, nil
+	return getSchemaVersionsBySchemaId(schemaId)
 }
 
 func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]string, error) {

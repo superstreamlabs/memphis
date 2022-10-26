@@ -698,7 +698,7 @@ func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler)
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
-func (s *Server) Respond(reply string, msg []byte) {
+func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {
 	acc := s.GlobalAccount()
 	s.sendInternalAccountMsg(acc, reply, msg)
 }

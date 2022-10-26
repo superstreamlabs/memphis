@@ -73,6 +73,18 @@ type ExtendedSchemaDetails struct {
 	Tags         []Tag              `json:"tags"`
 }
 
+type ProducerInitSchemaUpdate struct {
+	SchemaName string                      `json:"schema_name"`
+	Versions   []ProducerInitSchemaVersion `json:"versions"`
+	ActiveIdx  int                         `json:"active_index"`
+	SchemaType string                      `json:"type"`
+}
+
+type ProducerInitSchemaVersion struct {
+	VersionNumber int    `json:"version_number"`
+	Descriptor    string `json:"descriptor"`
+}
+
 type GetSchemaDetails struct {
 	SchemaName string `form:"schema_name" json:"schema_name"`
 }
