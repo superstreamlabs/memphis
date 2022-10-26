@@ -35,7 +35,7 @@ import Modal from '../../components/modal';
 import UserItem from './userItem';
 
 function Users() {
-    const [dispatch] = useContext(Context);
+    const [state, dispatch] = useContext(Context);
     const [userList, setUsersList] = useState([]);
     const [copyOfUserList, setCopyOfUserList] = useState([]);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
