@@ -100,6 +100,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                             onBlur={(e) => updateFormState('name', e.target.value)}
                             onChange={(e) => updateFormState('name', e.target.value)}
                             value={formFields.name}
+                            onPressEnter={onFinish}
                         />
                     </div>
                 </Form.Item>
