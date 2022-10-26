@@ -49,10 +49,10 @@ type MsgHeader struct {
 }
 
 type MessagePayload struct {
-	TimeSent time.Time         `json:"time_sent" bson:"time_sent"`
-	Size     int               `json:"size" bson:"size"`
-	Data     string            `json:"data" bson:"data"`
-	Headers  map[string]string `json:"headers" bson:"headers"`
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
 }
 
 type PoisonedCg struct {
@@ -85,8 +85,8 @@ type LightPoisonMessage struct {
 }
 
 type LightPoisonMessageResponse struct {
-	ID      primitive.ObjectID `json:"_id" bson:"_id"`
-	Message MessagePayload     `json:"message" bson:"message"`
+	ID      primitive.ObjectID `json:"_id"`
+	Message MessagePayload     `json:"message"`
 }
 
 type LightweightPoisonMessage struct {
