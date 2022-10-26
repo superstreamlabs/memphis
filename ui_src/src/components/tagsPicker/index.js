@@ -136,14 +136,14 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                     <div className="tags-list">
                         {tagsToDisplay?.length > 0 ? (
                             tagsToDisplay.map((tag, index) => (
-                                <>
+                                <div key={index}>
                                     <li key={index} className="tag" onClick={() => handleCheck(tag)}>
                                         {<Check className="checkmark" style={!checkedList?.some((item) => tag.name === item.name) ? { color: 'transparent' } : {}} />}
                                         <div className="color-circle" style={{ backgroundColor: `rgb(${tag.color})` }}></div>
                                         <div className="tag-name">{tag.name}</div>
                                     </li>
                                     <Divider className="divider" />
-                                </>
+                                </div>
                             ))
                         ) : (
                             <div className="no-tags">

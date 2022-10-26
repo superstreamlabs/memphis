@@ -24,19 +24,17 @@ import React, { useState } from 'react';
 import { ColorPalette } from '../../const/colorPalette';
 
 const ColorPicker = ({ onChange, value }) => {
-    const [changed, setChanged] = useState(false);
     return (
         <div className="color-picker">
             {ColorPalette?.map((color) => (
                 <li
                     key={color}
                     onClick={() => {
-                        setChanged(true);
                         onChange(color);
                     }}
                 >
                     <div className="color-circle" key={color} style={{ backgroundColor: `rgb(${color})` }}>
-                        {(changed ? color === value : color === ColorPalette[0]) && <div className="inner-circle"></div>}
+                        {color === value && <div className="inner-circle"></div>}
                     </div>
                 </li>
             ))}

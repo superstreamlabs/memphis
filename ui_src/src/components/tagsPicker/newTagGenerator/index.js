@@ -104,7 +104,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                         />
                     </div>
                 </Form.Item>
-                <Form.Item className="form-input" name="color">
+                <Form.Item className="form-input" name="color" initialValue={ColorPalette[0]}>
                     <ColorPicker onChange={(value) => updateFormState('color', value)} value={formFields.color} />
                 </Form.Item>
                 <Divider className="divider" />
