@@ -62,7 +62,7 @@ const FloatingButton = () => {
             <Modal
                 header={
                     <label className="installation-icon-wrapper">
-                        <img src={installationIcon} />
+                        <img src={installationIcon} alt="installationIcon" />
                     </label>
                 }
                 height="700px"

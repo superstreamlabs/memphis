@@ -47,6 +47,8 @@ export const ApiEndpoints = {
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
     ACK_POISION_MESSAGE: '/stations/ackPoisonMessages',
     RESEND_POISION_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
+    USE_SCHEMA: '/stations/useSchema',
+    GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',

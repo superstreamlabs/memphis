@@ -257,7 +257,7 @@ const MessageJourney = () => {
             {!isLoading && (
                 <div className="message-journey-container">
                     <div className="bread-crumbs">
-                        <img src={BackIcon} onClick={() => returnBack()} />
+                        <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
                             {stationName} / Poision message #{messageId.substring(0, 5)}
                         </p>

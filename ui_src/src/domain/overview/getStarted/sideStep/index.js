@@ -54,26 +54,26 @@ const SideStep = (props) => {
     const getIcon = () => {
         switch (stepNumber) {
             case 1:
-                return <img className="sidebar-image" src={GetStartedIcon} alt={GetStartedIcon}></img>;
+                return <img className="sidebar-image" src={GetStartedIcon} alt="getStartedIcon" />;
             case 2:
                 return completedSteps + 1 >= stepNumber ? (
-                    <img className="sidebar-image" src={AppUserIcon} alt={GetStartedIcon}></img>
+                    <img className="sidebar-image" src={AppUserIcon} alt="getStartedIcon" />
                 ) : (
-                    <img className="sidebar-image" src={GrayAppUserIcon} alt={GetStartedIcon}></img>
+                    <img className="sidebar-image" src={GrayAppUserIcon} alt="getStartedIcon" />
                 );
             case 3:
-                if (completedSteps + 1 > stepNumber) return <img className="sidebar-image" src={DataProduced} alt={GetStartedIcon}></img>;
-                else if (completedSteps + 1 === stepNumber) return <img className="sidebar-image" src={EmptyStation} alt={GetStartedIcon}></img>;
-                else return <img className="sidebar-image" src={GrayProduceDataImg} alt={GetStartedIcon}></img>;
+                if (completedSteps + 1 > stepNumber) return <img className="sidebar-image" src={DataProduced} alt="getStartedIcon" />;
+                else if (completedSteps + 1 === stepNumber) return <img className="sidebar-image" src={EmptyStation} alt="getStartedIcon" />;
+                else return <img className="sidebar-image" src={GrayProduceDataImg} alt="getStartedIcon" />;
             case 4:
-                if (completedSteps + 1 > stepNumber) return <img className="sidebar-image" src={ConsumeDataImg} alt={GetStartedIcon}></img>;
-                else if (completedSteps + 1 === stepNumber) return <img className="sidebar-image" src={FullStation} alt={GetStartedIcon}></img>;
-                else return <img className="sidebar-image" src={GrayConsumeDataImg} alt={GetStartedIcon}></img>;
+                if (completedSteps + 1 > stepNumber) return <img className="sidebar-image" src={ConsumeDataImg} alt="getStartedIcon" />;
+                else if (completedSteps + 1 === stepNumber) return <img className="sidebar-image" src={FullStation} alt="getStartedIcon" />;
+                else return <img className="sidebar-image" src={GrayConsumeDataImg} alt="getStartedIcon" />;
             case 5:
                 return completedSteps + 1 >= stepNumber ? (
-                    <img className="sidebar-image" src={FinishFlag} alt={GetStartedIcon}></img>
+                    <img className="sidebar-image" src={FinishFlag} alt="getStartedIcon" />
                 ) : (
-                    <img className="sidebar-image" src={GrayfinishStep} alt={GetStartedIcon}></img>
+                    <img className="sidebar-image" src={GrayfinishStep} alt="getStartedIcon" />
                 );
             default:
                 return;
@@ -88,7 +88,7 @@ const SideStep = (props) => {
                 {getIcon()}
                 <div className="step-name-completed">
                     <p className={currentStep === stepNumber ? 'step-name curr-step-name' : 'step-name'}>{stepName}</p>
-                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt="completed"></img>}
+                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt="completed" />}
                 </div>
             </div>
             <div className={completedSteps >= stepNumber ? 'side-step-body border-completed' : stepNumber !== 5 ? 'side-step-body border' : 'side-step-body'}>

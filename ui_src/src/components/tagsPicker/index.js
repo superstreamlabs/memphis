@@ -156,7 +156,7 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                     <div className="create-new-tag" onClick={() => setNewTagModal(true)}>
                         <AddRounded className="add" />
                         <p className="new-button">
-                            Create New Tag {` `}
+                            Create new tag {` `}
                             {searchInput.length > 0 && `"`}
                             <span className="create-new-search">{searchInput.length > 0 && `${searchInput}`}</span>
                             {searchInput.length > 0 && `"`}
@@ -171,12 +171,12 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                     <span className="tags-info-message">Tags will help you organize, search and filter your data</span>
                     <div className="create-new-tag-empty" onClick={() => setNewTagModal(true)}>
                         <AddRounded className="add" />
-                        <div className="new-button">{`Create New Tag`}</div>
+                        <div className="new-button">{`Create new tag`}</div>
                     </div>
                 </div>
             )}
             {
-                <Modal className="generator-modal" displayButtons={false} width="250px" clickOutside={() => setNewTagModal(false)} open={newTagModal} hr={false}>
+                <Modal className="generator-modal" displayButtons={false} width="252px" clickOutside={() => setNewTagModal(false)} open={newTagModal} hr={false}>
                     <NewTagGenerator searchVal={searchInput} allTags={allTags} handleFinish={(tag) => handleNewTag(tag)} handleCancel={() => setNewTagModal(false)} />
                 </Modal>
             }

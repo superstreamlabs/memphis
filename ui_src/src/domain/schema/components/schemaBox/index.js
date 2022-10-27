@@ -58,13 +58,10 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                                 <p>{schema.name}</p>
                             </div>
                             <div className="is-used">
-                                <img src={schema.used ? usedIcond : notUsedIcond} />
+                                <img src={schema.used ? usedIcond : notUsedIcond} alt="usedIcond" />
                                 {schema.used && <p className="used">Used</p>}
-                                {!schema.used && <p className="not-used"> Not Used</p>}
+                                {!schema.used && <p className="not-used"> Not used</p>}
                             </div>
-                            {/* <div className="menu">
-                            <p>***</p>
-                        </div> */}
                         </div>
                     </header>
                     <type is="x3d">
@@ -81,7 +78,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                         <TagsList tagsToShow={3} tags={tags} />
                     </tags>
                     <date is="x3d">
-                        <img src={createdDateIcon} />
+                        <img src={createdDateIcon} alt="createdDateIcon" />
                         <p>{parsingDate(schema.creation_date)}</p>
                     </date>
                 </div>

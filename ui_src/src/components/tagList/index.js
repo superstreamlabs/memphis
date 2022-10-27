@@ -109,7 +109,7 @@ const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entity
                     <Space className="space">
                         <div className="edit-tags">
                             <AddRounded className="add" />
-                            <div className="edit-content">{tags?.length > 0 ? 'Edit Tags' : 'Add new tag'}</div>
+                            <div className="edit-content">{tags?.length > 0 ? 'Edit tags' : 'Add new tag'}</div>
                         </div>
                     </Space>
                 </Popover>

@@ -217,7 +217,7 @@ function CreateSchema({ goBack }) {
                 <div className="left-side">
                     <div className="header">
                         <div className="flex-title">
-                            <img src={BackIcon} onClick={() => goBack()} />
+                            <img src={BackIcon} onClick={() => goBack()} alt="backIcon" />
                             <p>Create schema</p>
                         </div>
                         <span>
@@ -258,7 +258,7 @@ function CreateSchema({ goBack }) {
                     <Form.Item name="tags">
                         <div className="schema-field tags">
                             <div className="title-icon-img">
-                                <img className="icon" src={tagsIcon} />
+                                <img className="icon" src={tagsIcon} alt="tagsIcon" />
                                 <div className="title-desc">
                                     <p className="field-title">Tags</p>
                                     <p className="desc">Tags will help you organize, search and filter your data</p>
@@ -270,7 +270,7 @@ function CreateSchema({ goBack }) {
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
                             <div className="title-icon-img">
-                                <img className="icon" src={schemaTypeIcon} />
+                                <img className="icon" src={schemaTypeIcon} alt="schemaTypeIcon" />
                                 <div className="title-desc">
                                     <p className="field-title">Schema type</p>
                                     <p className="desc">Tags will help you organize, search and filter your data</p>
@@ -289,7 +289,7 @@ function CreateSchema({ goBack }) {
                 <div className="right-side">
                     <div className="schema-field schema">
                         <div className="title-wrapper">
-                            <p className="field-title">Structure definition</p>
+                            <p className="field-title">Schema definition</p>
                             <Button
                                 width="115px"
                                 height="34px"
@@ -355,7 +355,7 @@ function CreateSchema({ goBack }) {
                         <Button
                             width="125px"
                             height="34px"
-                            placeholder="Create Schema"
+                            placeholder="Create schema"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -368,7 +368,14 @@ function CreateSchema({ goBack }) {
                     </Form.Item>
                 </div>
             </Form>
-            <Modal header={<img src={errorModal} />} width="400px" height="300px" displayButtons={false} clickOutside={() => setModalOpen(false)} open={modalOpen}>
+            <Modal
+                header={<img src={errorModal} alt="errorModal" />}
+                width="400px"
+                height="300px"
+                displayButtons={false}
+                clickOutside={() => setModalOpen(false)}
+                open={modalOpen}
+            >
                 <div className="roll-back-modal">
                     <p className="title">Too many message types specified in schema definition</p>
                     <p className="desc">Please choose your master message as a schema definition</p>

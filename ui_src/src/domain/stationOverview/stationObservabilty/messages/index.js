@@ -384,7 +384,7 @@ const Messages = () => {
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder">
-                    <img width={100} src={waitingMessages} />
+                    <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
                     <span className="des">Create your 1st producer and start producing data.</span>
                     {process.env.REACT_APP_SANDBOX_ENV && stationName !== 'demo-app' && (

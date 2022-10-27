@@ -26,21 +26,37 @@ import { Modal } from 'antd';
 
 import Button from '../button';
 
-const TransitionsModal = (props) => {
-    const { height, width, rBtnText, lBtnText, rBtnDisabled, lBtnDisabled, header, isLoading, open = false, displayButtons = true } = props;
-
+const TransitionsModal = ({
+    height,
+    width,
+    rBtnText,
+    lBtnText,
+    rBtnDisabled,
+    lBtnDisabled,
+    header,
+    isLoading,
+    open = false,
+    displayButtons = true,
+    lBtnClick,
+    clickOutside,
+    rBtnClick,
+    children,
+    hr = false,
+    className
+}) => {
     const contentStyle = {
         height: height,
-        overflowY: 'auto'
+        overflowY: 'auto',
+        borderTop: hr ? '1px solid #EAEAEA' : null
     };
 
     return (
         <Modal
-            wrapClassName={'modal-wrapper'}
+            wrapClassName={className || 'modal-wrapper'}
             title={header}
             open={open}
             width={width}
-            onCancel={() => props.clickOutside()}
+            onCancel={() => clickOutside()}
             bodyStyle={contentStyle}
             centered
             destroyOnClose={true}
@@ -48,7 +64,7 @@ const TransitionsModal = (props) => {
                 displayButtons
                     ? [
                           <div key="left" className="btnContainer">
-                              <button className="cancel-button" disabled={lBtnDisabled} onClick={() => props.lBtnClick()}>
+                              <button className="cancel-button" disabled={lBtnDisabled} onClick={() => lBtnClick()}>
                                   {lBtnText}
                               </button>
                               <Button
@@ -64,7 +80,7 @@ const TransitionsModal = (props) => {
                                   fontWeight="600"
                                   isLoading={isLoading}
                                   onClick={() => {
-                                      props.rBtnClick();
+                                      rBtnClick();
                                   }}
                               />
                           </div>
@@ -72,7 +88,7 @@ const TransitionsModal = (props) => {
                     : null
             }
         >
-            {props.children}
+            {children}
         </Modal>
     );
 };

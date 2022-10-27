@@ -314,7 +314,7 @@ const StationsList = () => {
                             <Button
                                 width="131px"
                                 height="34px"
-                                placeholder={`Delete Selected (${isCheck?.length})`}
+                                placeholder={`Delete selected (${isCheck?.length})`}
                                 colorType="black"
                                 radiusType="circle"
                                 backgroundColorType="white"
@@ -329,7 +329,7 @@ const StationsList = () => {
                                 <Button
                                     width="131px"
                                     height="34px"
-                                    placeholder="Select All"
+                                    placeholder="Select all"
                                     colorType="black"
                                     radiusType="circle"
                                     backgroundColorType="white"
@@ -348,7 +348,7 @@ const StationsList = () => {
                                 borderColorType="none"
                                 boxShadowsType="none"
                                 borderRadiusType="circle"
-                                iconComponent={<img src={searchIcon} />}
+                                iconComponent={<img src={searchIcon} alt="searchIcon" />}
                                 onChange={handleSearch}
                                 value={searchInput}
                             />
@@ -382,7 +382,7 @@ const StationsList = () => {
                     header={
                         <div className="modal-header">
                             <div className="header-img-container">
-                                <img className="headerImage" src={stationImg} />
+                                <img className="headerImage" src={stationImg} alt="stationImg" />
                             </div>
                             <p>Create new station</p>
                             <label>A station is a distributed unit that stores the produced data.</label>
@@ -406,7 +406,7 @@ const StationsList = () => {
                 </Modal>
             </div>
             <Modal
-                header={<img src={deleteWrapperIcon} />}
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
                 width="520px"
                 height="210px"
                 displayButtons={false}

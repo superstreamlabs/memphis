@@ -195,12 +195,12 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             <div className="scrollable-wrapper">
                 <div className="type-created">
                     <div className="wrapper">
-                        <img src={typeIcon} />
+                        <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
                         <span>{schemaDetails?.type}</span>
                     </div>
                     <div className="wrapper">
-                        <img src={createdByIcon} />
+                        <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
                         <span>{currentVersion?.created_by_user}</span>
                     </div>
@@ -208,7 +208,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="tags">{/* <TagsList tagsToShow={4} tags={schemaDetails?.tags} editable={true} /> */}</div>
                 <div className="schema-fields">
                     <div className="left">
-                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema structure</p>
+                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema definition</p>
                         {!versionSelected?.active && (
                             <>
                                 <span>Diff : </span>
@@ -255,7 +255,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 height="28px"
                                 placeholder={
                                     <div className="validate-placeholder">
-                                        <img src={verifiedIcon} />
+                                        <img src={verifiedIcon} alt="verifiedIcon" />
                                         <p>Validate</p>
                                     </div>
                                 }
@@ -277,7 +277,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <Editor
                             options={{
                                 minimap: { enabled: false },
-                                scrollbar: { verticalScrollbarSize: 5 },
+                                scrollbar: { verticalScrollbarSize: 3 },
                                 scrollBeyondLastLine: false,
                                 roundedSelection: false,
                                 formatOnPaste: true,
@@ -299,7 +299,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 <Editor
                                     options={{
                                         minimap: { enabled: false },
-                                        scrollbar: { verticalScrollbarSize: 0 },
+                                        scrollbar: { verticalScrollbarSize: 3 },
                                         scrollBeyondLastLine: false,
                                         roundedSelection: false,
                                         formatOnPaste: true,
@@ -321,7 +321,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                     options={{
                                         renderSideBySide: false,
                                         readOnly: true,
-                                        scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                        scrollbar: { verticalScrollbarSize: 3, horizontalScrollbarSize: 0 },
                                         renderOverviewRuler: false,
                                         colorDecorators: true,
                                         fontSize: '14px'
@@ -353,7 +353,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             </div>
                         </>
                     ) : (
-                        <p className="title">Not Used yet</p>
+                        <p className="title">Not in use</p>
                     )}
                 </div>
             </div>
@@ -377,7 +377,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             height="34px"
                             placeholder={
                                 <div className="placeholder-button">
-                                    <img src={scrollBackIcon} />
+                                    <img src={scrollBackIcon} alt="scrollBackIcon" />
                                     <p>Roll back</p>
                                 </div>
                             }
@@ -406,7 +406,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
             </div>
             <Modal
-                header={<img src={rollBackIcon} />}
+                header={<img src={rollBackIcon} alt="rollBackIcon" />}
                 width="400px"
                 height="160px"
                 displayButtons={false}

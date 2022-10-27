@@ -275,7 +275,7 @@ const CreateStationDetails = (props) => {
             </div>
             <div className="storage">
                 <p className="field-title">
-                    Storage Type <Helper text="Type of message persistence" />
+                    Storage type <Helper text="Type of message persistence" />
                 </p>
                 <Form.Item name="storage_type" initialValue={formFields.storage_type}>
                     <RadioButton options={storageOptions} radioValue={formFields.storage_type} onChange={(e) => updateFormState('storage_type', e.target.value)} />

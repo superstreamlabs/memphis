@@ -97,9 +97,6 @@
         margin: 0;
         width: 250px;
     }
-    .generator-modal {
-        padding: 0;
-    }
     .create-new-tag {
         height: 36px;
         color: #4a495c;
@@ -173,5 +170,16 @@
                 overflow: hidden;
             }
         }
+    }
+}
+.generator-modal {
+    padding: 0;
+    .ant-modal-body {
+        padding:10px 24px;
+    }
+    .ant-modal-content{
+        border-radius: 8px;
+        border: 1px solid #F0F0F0;
+        box-shadow: 0px 10px 10px rgba(16, 10, 85, 0.1);
     }
 }

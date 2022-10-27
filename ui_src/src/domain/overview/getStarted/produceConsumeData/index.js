@@ -214,7 +214,7 @@ const ProduceConsumeData = (props) => {
                         </div>
                     </div>
                     <div className="data-waiting-container">
-                        <img className="image-waiting-successful" src={waitingImage} alt={true} />
+                        <img className="image-waiting-successful" src={waitingImage} alt={'waitingImage'} />
                         <TitleComponent headerTitle={waitingTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
                         <div className="waiting-for-data-btn">
                             <Button
@@ -284,9 +284,9 @@ const ProduceConsumeData = (props) => {
                     </div>
                     <div className="successfully-container">
                         {props.produce ? (
-                            <img className="image-waiting-successful" src={successProd} alt={''} />
+                            <img className="image-waiting-successful" src={successProd} alt="successProd" />
                         ) : (
-                            <img className="image-waiting-successful" src={successCons} alt={''} />
+                            <img className="image-waiting-successful" src={successCons} alt="successCons" />
                         )}
 
                         <TitleComponent headerTitle={successfullTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
