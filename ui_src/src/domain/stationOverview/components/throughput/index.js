@@ -30,7 +30,7 @@ const Throughput = () => {
     return (
         <div className="throughput-container">
             <div className="coming-soon-wrapper">
-                <img src={comingSoonBox} width={40} height={70} />
+                <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
                 <p>Coming soon</p>
             </div>
             <p className="title">Throughput</p>

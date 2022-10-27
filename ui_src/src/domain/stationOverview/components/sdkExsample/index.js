@@ -24,10 +24,10 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { CopyBlock, atomOneLight } from 'react-code-blocks';
 
-import SelectComponent from '../../../components/select';
-import { CODE_EXAMPLE } from '../../../const/SDKExample';
-import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../const/localStorageConsts';
-import CustomTabs from '../../../components/Tabs';
+import SelectComponent from '../../../../components/select';
+import { CODE_EXAMPLE } from '../../../../const/SDKExample';
+import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
+import CustomTabs from '../../../../components/Tabs';
 
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');

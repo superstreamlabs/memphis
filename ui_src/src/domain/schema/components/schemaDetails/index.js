@@ -195,12 +195,12 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             <div className="scrollable-wrapper">
                 <div className="type-created">
                     <div className="wrapper">
-                        <img src={typeIcon} />
+                        <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
                         <span>{schemaDetails?.type}</span>
                     </div>
                     <div className="wrapper">
-                        <img src={createdByIcon} />
+                        <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
                         <span>{currentVersion?.created_by_user}</span>
                     </div>
@@ -255,7 +255,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 height="28px"
                                 placeholder={
                                     <div className="validate-placeholder">
-                                        <img src={verifiedIcon} />
+                                        <img src={verifiedIcon} alt="verifiedIcon" />
                                         <p>Validate</p>
                                     </div>
                                 }
@@ -377,7 +377,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             height="34px"
                             placeholder={
                                 <div className="placeholder-button">
-                                    <img src={scrollBackIcon} />
+                                    <img src={scrollBackIcon} alt="scrollBackIcon" />
                                     <p>Roll back</p>
                                 </div>
                             }
@@ -406,7 +406,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
             </div>
             <Modal
-                header={<img src={rollBackIcon} />}
+                header={<img src={rollBackIcon} alt="rollBackIcon" />}
                 width="400px"
                 height="160px"
                 displayButtons={false}

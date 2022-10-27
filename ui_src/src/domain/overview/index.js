@@ -213,7 +213,7 @@ function OverView() {
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={stationImg} />
+                            <img className="headerImage" src={stationImg} alt="stationImg" />
                         </div>
                         <p>Create new station</p>
                         <label>A station is a distributed unit that stores the produced data.</label>

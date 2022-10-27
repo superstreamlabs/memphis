@@ -21,48 +21,14 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import React from 'react';
 
-import CustomTabs from '../../../components/Tabs';
-import GenericList from './genericList';
-import { Divider } from 'antd';
-import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
-
-const auditColumns = [
-    {
-        key: '1',
-        title: 'Message',
-        width: '300px'
-    },
-    {
-        key: '2',
-        title: 'User',
-        width: '200px'
-    },
-    {
-        key: '3',
-        title: 'Date',
-        width: '200px'
-    }
-];
-
-const Auditing = () => {
-    const [tabValue, setTabValue] = useState(0);
-    const tabs = ['Audit'];
-
-    const handleChangeMenuItem = (_, newValue) => {
-        setTabValue(newValue);
-    };
-
+const VersionBadge = ({ active, content }) => {
     return (
-        // <div className="auditing-container">
-        //     {tabValue === 0 && <p className="audit-hint">*last 30 days</p>}
-        //     <CustomTabs value={tabValue} onChange={handleChangeMenuItem} tabs={tabs}></CustomTabs>
-        //     <Divider />
-        //     <div className="auditing-body">{tabValue === 0 && <GenericList tab={tabValue} columns={auditColumns} />}</div>
-        // </div>
-        <GenericList tab={tabValue} columns={auditColumns} />
+        <div className={active ? 'version-badge badgeGreen' : 'version-badge badgeOrange'}>
+            <p>{content}</p>
+        </div>
     );
 };
 
-export default Auditing;
+export default VersionBadge;

@@ -50,27 +50,6 @@
             margin-right: 5px;
         }
     }
-    .tag-wrapper {
-        border-radius: 4px;
-        font-family: 'InterSemiBold';
-        font-size: 14px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        white-space: nowrap;
-        max-width: 100px;
-        text-overflow: ellipsis;
-    }
-    .plus-tag-wrapper {
-        padding-right: 5px;
-        padding-left: 5px;
-        border-radius: 4px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-    }
 
     .space {
         padding-right: 2px;

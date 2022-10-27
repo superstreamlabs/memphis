@@ -19,20 +19,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-export const ColorPalette = [
-    '101, 87, 255', // memphis-purple
-    '77, 34, 178', // deep-purple
-    '177, 140, 254', // lilac-purple
-    '29, 4, 93', // baby-purple
-    '0, 165, 255', // light-blue
-    '238, 113, 158', // pink
-    '255, 140, 130', // peach
-    '252, 52, 0', // red
-    '97, 223, 155', // green
-    '32, 201, 172', // mint-green
-    '97, 223, 215', // aquamarin-green
-    '255, 160, 67', // orange
-    '177, 134, 27', // mustard
-    '182, 180, 186', // grey
-    '100, 100, 103' // dark-grey
+import './style.scss';
+
+import React, { useState } from 'react';
+
+import GenericList from './genericList';
+
+const auditColumns = [
+    {
+        key: '1',
+        title: 'Message',
+        width: '300px'
+    },
+    {
+        key: '2',
+        title: 'User',
+        width: '200px'
+    },
+    {
+        key: '3',
+        title: 'Date',
+        width: '200px'
+    }
 ];
+
+const Auditing = () => {
+    const [tabValue, setTabValue] = useState(0);
+    const tabs = ['Audit'];
+
+    const handleChangeMenuItem = (_, newValue) => {
+        setTabValue(newValue);
+    };
+
+    return <GenericList tab={tabValue} columns={auditColumns} />;
+};
+
+export default Auditing;

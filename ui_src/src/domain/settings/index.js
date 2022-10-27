@@ -67,7 +67,7 @@ function Users() {
                 <p className="sub-header">Update and manage your account</p>
                 <div className="side-menu">
                     <div className={selectedMenuItem === 'editProfile' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('editProfile')}>
-                        <img src={selectedMenuItem === 'editProfile' ? EditProfileColor : EditProfileGray} />
+                        <img src={selectedMenuItem === 'editProfile' ? EditProfileColor : EditProfileGray} alt="editProfile" />
                         Edit Profile
                     </div>
                     <div
@@ -75,11 +75,11 @@ function Users() {
                         //  className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
                         //  onClick={() => selectMenuItem('clusterConfiguration')}
                     >
-                        <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} />
+                        <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                         Cluster configuration
                     </div>
                     <div className="menu-item disabled">
-                        <img src={selectedMenuItem === 'notifications' ? NotificationGray : NotificationGray} />
+                        <img src={selectedMenuItem === 'notifications' ? NotificationGray : NotificationGray} alt="notifications" />
                         Notifications
                     </div>
                 </div>

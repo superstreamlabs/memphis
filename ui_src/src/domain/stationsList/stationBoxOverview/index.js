@@ -22,25 +22,21 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
-
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { MinusOutlined } from '@ant-design/icons';
-import pathDomains from '../../../router';
+import { Link } from 'react-router-dom';
 
 import { convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
-import Modal from '../../../components/modal';
 import { parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import retentionIcon from '../../../assets/images/retentionIcon.svg';
-import deleteIcon from '../../../assets/images/deleteIcon.svg';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
-import storageIcon from '../../../assets/images/strIcon.svg';
 import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
-import { Link } from 'react-router-dom';
-import TagsList from '../../../components/tagList';
 import CheckboxComponent from '../../../components/checkBox';
+import storageIcon from '../../../assets/images/strIcon.svg';
+import TagsList from '../../../components/tagList';
+import pathDomains from '../../../router';
 
 const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
@@ -124,11 +120,8 @@ const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isChec
                         <p className="data-info">{station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(station?.posion_messages)}</p>
                     </div>
                     <div className="station-actions">
-                        {/* <div className="action" onClick={() => modalFlip(true)}>
-                                <img src={deleteIcon} />
-                            </div> */}
                         <Link to={`${pathDomains.stations}/${station.station.name}`} className="action">
-                            <img src={redirectIcon} />
+                            <img src={redirectIcon} alt="redirectIcon" />
                         </Link>
                     </div>
                 </div>

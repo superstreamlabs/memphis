@@ -280,13 +280,13 @@ const Signup = (props) => {
                         >
                             <label>Sign in with root</label>
                             <Tooltip text="Sign in with Memphis root user" arrow>
-                                <img src={signupInfo} />
+                                <img src={signupInfo} alt="signupInfo" />
                             </Tooltip>
                         </div>
 
                         <div className="version">
                             <p>v{systemVersion}</p>
-                            <img src={betaBadge} />
+                            <img src={betaBadge} alt="betaBadge" />
                         </div>
                     </div>
                 </section>
