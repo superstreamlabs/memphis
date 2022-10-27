@@ -176,7 +176,7 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                 </div>
             )}
             {
-                <Modal className="generator-modal" displayButtons={false} width="250px" clickOutside={() => setNewTagModal(false)} open={newTagModal} hr={false}>
+                <Modal className="generator-modal" displayButtons={false} width="252px" clickOutside={() => setNewTagModal(false)} open={newTagModal} hr={false}>
                     <NewTagGenerator searchVal={searchInput} allTags={allTags} handleFinish={(tag) => handleNewTag(tag)} handleCancel={() => setNewTagModal(false)} />
                 </Modal>
             }
