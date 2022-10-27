@@ -115,7 +115,7 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
             <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
                 <div className="filter-container" style={{ height: height }}>
-                    <img src={filterImg} width="25" height="25" alt="filter" />
+                    <img src={filterImg} width="25" alt="filter" />
                     Filters
                     {filterState?.apply && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
                 </div>

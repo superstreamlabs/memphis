@@ -23,9 +23,10 @@ import './style.scss';
 import React, { useState, useContext, useEffect } from 'react';
 import { FilterStoreContext } from './';
 
-import { Collapse, Tag } from 'antd';
+import { Collapse } from 'antd';
 import { Checkbox } from 'antd';
 import { Divider } from 'antd';
+import Tag from '../../components/tag';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import Button from '../button';
@@ -77,9 +78,9 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
         }
     };
 
-    const showMoreLess = (index, showMore) => {
+    const showMoreLess = (index, showMoreFalg) => {
         let filter = filterState.filterFields;
-        filter[index].showMore = showMore;
+        filter[index].showMore = showMoreFalg;
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
     };
 
@@ -108,7 +109,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             case filterType.RADIOBUTTON:
                 return (
                     <RadioButton
-                        filter
+                        vertical={true}
                         fontFamily="InterSemiBold"
                         options={filterGroup.fields.map((item, id) => {
                             return { id: id, value: id, label: item.name };
@@ -128,7 +129,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         return (
                             <div className="label-container" key={filterField.name}>
                                 <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
-                                <Tag color={filterField.color}>{filterField.name}</Tag>
+                                <Tag tag={{ color: filterField.color, name: filterField.name }}></Tag>
                             </div>
                         );
                     else {
@@ -136,17 +137,17 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                             <div>
                                 <div className="label-container" key={filterField.name}>
                                     <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
-                                    <Tag color={filterField.color}>{filterField.name}</Tag>
+                                    <Tag tag={{ color: filterField.color, name: filterField.name }}></Tag>
                                 </div>
                                 {filterFieldIndex === filterGroup.fields.length - 1 && (
-                                    <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, true)}>
+                                    <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, false)}>
                                         Show Less...
                                     </p>
                                 )}
                             </div>
                         ) : (
                             filterFieldIndex === 3 && (
-                                <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, false)}>
+                                <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, true)}>
                                     Show All...
                                 </p>
                             )
@@ -206,6 +207,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                     showArrow={false}
                 >
                     {drawComponent(filterGroup, filterGroupIndex)}
+                    {filterGroupIndex !== 0 && filterGroupIndex + 1 < filterState?.filterFields.length && <Divider />}
                 </Panel>
             ))}
 

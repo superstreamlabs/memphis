@@ -1,21 +1,21 @@
 .custom-collapse {
     position: relative;
-    .collapse-arrow{
-        transition: transform .4s;
+    .collapse-arrow {
+        transition: transform 0.4s;
     }
-    .open{
+    .open {
         transform: rotate(180deg);
     }
-    status{
+    status {
         display: flex;
     }
     content {
         display: flex;
         justify-content: space-between;
-        p{
+        p {
             font-weight: 400;
             font-size: 12px;
-            color: #84818A;
+            color: #84818a;
         }
         span {
             font-size: 12px;
@@ -23,18 +23,39 @@
             font-family: 'InterSemiBold';
         }
     }
-    
-    .message{
+
+    .message {
         font-size: 11px;
-        color: #84818A;
+        color: #84818a;
         font-weight: 400;
-        img{
+        img {
             cursor: pointer;
             width: 16px !important;
             position: absolute;
             top: 15px;
             right: 40px;
         }
-        
+    }
+    .headers-container {
+        position: relative;
+        p {
+            margin-bottom: 5px;
+        }
+        .copy-section {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            p {
+                font-family: 'InterSemiBold';
+                color: #1d1d1d;
+                font-size: 13px;
+            }
+
+            img {
+                top: 0;
+                right: 0;
+            }
+        }
     }
 }

@@ -44,6 +44,21 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
         return true;
     };
 
+    const drawHeaders = (headers) => {
+        let obj = [];
+        for (const property in headers) {
+            obj.push(
+                <div className="headers-container">
+                    <p>{property}</p>
+                    <div className="copy-section">
+                        <Copy data={headers[property]}></Copy>
+                        <p>{headers[property]}</p>
+                    </div>
+                </div>
+            );
+        }
+        return obj;
+    };
     return (
         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse">
             <Panel
@@ -61,8 +76,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
             >
                 {message ? (
                     <div className="message">
-                        {message && activeKey.length > 0 && <Copy data={data} />}
-                        {isJsonString(data) ? <pre>{JSON.stringify(JSON.parse(data), null, 2)}</pre> : <p>{data}</p>}
+                        {header === 'Payload' && isJsonString(data) && <pre>{JSON.stringify(JSON.parse(data), null, 2)}</pre>}
+                        {header === 'Payload' && !isJsonString(data) && <p>{data}</p>}
+                        {header === 'Headers' && drawHeaders(data)}
                     </div>
                 ) : (
                     <>

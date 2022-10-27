@@ -64,12 +64,12 @@ const StationsList = () => {
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
-        getTags();
         getAllStations();
+        getTags();
     }, []);
 
     useEffect(() => {
-        filterFields.findIndex((x) => x.name === 'tags') === -1 && getTagsFilter();
+        getTagsFilter();
     }, [tagList.length > 0]);
 
     useEffect(() => {
@@ -92,7 +92,7 @@ const StationsList = () => {
         const fields = tagList.map((tag) => {
             return {
                 name: tag.name,
-                color: `rgba(${tag.color})`,
+                color: tag.color,
                 checked: false
             };
         });
@@ -104,7 +104,8 @@ const StationsList = () => {
             fields: fields
         };
         let filteredFields = filterFields;
-        filteredFields.push(tagFilter);
+        const tagLocation = filterFields.findIndex((x) => x.name === 'tags');
+        tagLocation === -1 ? filteredFields.splice(0, 0, tagFilter) : filteredFields.splice(tagLocation, 1, tagFilter);
         setFilterFields(filteredFields);
     };
 
@@ -181,10 +182,11 @@ const StationsList = () => {
     };
 
     const handleFilter = () => {
+        let objTags = [];
         let objCreated = [];
         let objStorage = [];
         try {
-            objCreated = filterTerms.find((o) => o.name === 'tags').fields.map((element) => element.toLowerCase());
+            objTags = filterTerms.find((o) => o.name === 'tags').fields.map((element) => element.toLowerCase());
         } catch {}
         try {
             objCreated = filterTerms.find((o) => o.name === 'created').fields.map((element) => element.toLowerCase());
@@ -193,7 +195,7 @@ const StationsList = () => {
             objStorage = filterTerms.find((o) => o.name === 'storage').fields.map((element) => element.toLowerCase());
         } catch {}
         const data = stationsList
-            // .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.tags) : !objCreated.includes(item.station.tags)))
+            .filter((item) => (objTags.length > 0 ? item.tags.some((tag) => objTags.includes(tag.name)) : !item.tags.some((tag) => objTags.includes(tag.name))))
             .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.created_by_user) : !objCreated.includes(item.station.created_by_user)))
             .filter((item) => (objStorage.length > 0 ? objStorage.includes(item.station.storage_type) : !objStorage.includes(item.station.storage_type)));
         setFilteredList(data);
@@ -327,7 +329,7 @@ const StationsList = () => {
                                 <Button
                                     width="131px"
                                     height="34px"
-                                    placeholder="Selected All"
+                                    placeholder="Select All"
                                     colorType="black"
                                     radiusType="circle"
                                     backgroundColorType="white"
@@ -350,10 +352,11 @@ const StationsList = () => {
                                 onChange={handleSearch}
                                 value={searchInput}
                             />
+                            <Filter filterFields={filterFields} filtersUpdated={(e) => setFilterTerms(e)} height="34px" />
                             <Button
                                 className="modal-btn"
                                 width="180px"
-                                height="37px"
+                                height="34px"
                                 placeholder="Create New Station"
                                 colorType="white"
                                 radiusType="circle"
@@ -367,36 +370,6 @@ const StationsList = () => {
                         </div>
                     )}
                 </div>
-                {stationsList?.length > 0 ? (
-                    <div className="right-side">
-                        <SearchInput
-                            placeholder="Search Stations"
-                            placeholderColor="red"
-                            width="280px"
-                            height="37px"
-                            borderRadiusType="circle"
-                            backgroundColorType="gray-dark"
-                            iconComponent={<img src={searchIcon} />}
-                            onChange={handleSearch}
-                            value={searchInput}
-                        />
-                        <Filter filterFields={filterFields} filtersUpdated={(e) => setFilterTerms(e)} />
-                        <Button
-                            className="modal-btn"
-                            width="180px"
-                            height="37px"
-                            placeholder="Create New Station"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            aria-controls="usecse-menu"
-                            aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
-                        />
-                    </div>
-                ) : null}
             </div>
             {isLoading && (
                 <div className="loader-uploading">
