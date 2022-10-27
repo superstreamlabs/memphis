@@ -33,6 +33,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type EventParam struct {
+	Name  string `json:"name"`
+	Value string `json:"value" binding:"required"`
+}
+
 var configuration = conf.GetConfig()
 var systemKeysCollection *mongo.Collection
 var deploymentId string
@@ -130,7 +135,7 @@ func SendEvent(userId, eventName string) {
 	})
 }
 
-func SendEventWithParams(userId string, params []models.EventParam, eventName string) {
+func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"

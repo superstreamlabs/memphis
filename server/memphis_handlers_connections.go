@@ -102,11 +102,11 @@ func handleConnectMessage(client *client) error {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		sdkName := strings.Split(client.opts.Lang, ".")[1]
-		param := models.EventParam{
+		param := analytics.EventParam{
 			Name:  "sdk",
 			Value: sdkName,
 		}
-		analyticsParams := []models.EventParam{param}
+		analyticsParams := []analytics.EventParam{param}
 		analytics.SendEventWithParams(user.Username, analyticsParams, "user-connect-sdk")
 	}
 

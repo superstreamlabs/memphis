@@ -521,7 +521,7 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("", "user-opened-ui")
+		analytics.SendEvent("", "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"exist": exist})
 }
