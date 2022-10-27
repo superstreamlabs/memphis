@@ -73,16 +73,40 @@ type ExtendedSchemaDetails struct {
 	Tags         []Tag              `json:"tags"`
 }
 
-type ProducerInitSchemaUpdate struct {
-	SchemaName string                      `json:"schema_name"`
-	Versions   []ProducerInitSchemaVersion `json:"versions"`
-	ActiveIdx  int                         `json:"active_index"`
-	SchemaType string                      `json:"type"`
+type ProducerSchemaUpdateType int
+
+const (
+	SchemaUpdateTypeInit ProducerSchemaUpdateType = iota + 1
+	SchemaUpdateTypeNewVersion
+	SchemaUpdateTypeChangeVersion
+	SchemaUpdateTypeDrop
+)
+
+type ProducerSchemaUpdate struct {
+	UpdateType    ProducerSchemaUpdateType
+	Init          ProducerSchemaUpdateInit          `json:"init,omitempty"`
+	NewVersion    ProducerSchemaUpdateNewVersion    `json:"new_version,omitempty"`
+	ChangeVersion ProducerSchemaUpdateChangeVersion `json:"change_version,omitempty"`
 }
 
-type ProducerInitSchemaVersion struct {
+type ProducerSchemaUpdateInit struct {
+	SchemaName string                        `json:"schema_name"`
+	Versions   []ProducerSchemaUpdateVersion `json:"versions"`
+	ActiveIdx  int                           `json:"active_index"`
+	SchemaType string                        `json:"type"`
+}
+
+type ProducerSchemaUpdateVersion struct {
 	VersionNumber int    `json:"version_number"`
 	Descriptor    string `json:"descriptor"`
+}
+
+type ProducerSchemaUpdateNewVersion struct {
+	Version ProducerSchemaUpdateVersion `json:"version_details"`
+}
+
+type ProducerSchemaUpdateChangeVersion struct {
+	VersionNumber int `json:"version_number"`
 }
 
 type GetSchemaDetails struct {

@@ -1181,8 +1181,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
-	stationNameStr := strings.ToLower(body.StationName)
-	stationName, err := StationNameFromStr(stationNameStr)
+	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -1233,6 +1232,48 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, schemaDetailsResponse)
+
+	updateContent, err := getProducerInitSchemaUpdate(stationName)
+	update := models.ProducerSchemaUpdate{
+		UpdateType: models.SchemaUpdateTypeInit,
+		Init:       *updateContent,
+	}
+
+	sh.S.updateStationProducersOfSchemaChange(stationName, update)
+}
+
+func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
+	exist, _, err := IsStationExist(sn)
+	if err != nil {
+		return err
+	}
+	if !exist {
+
+		return errors.New("Station does not exit")
+	}
+
+	if updateDB {
+		_, err = stationsCollection.UpdateOne(context.TODO(),
+			bson.M{
+				"name": sn.Ext(),
+				"$or": []interface{}{
+					bson.M{"is_deleted": false},
+					bson.M{"is_deleted": bson.M{"$exists": false}},
+				},
+			},
+			bson.M{"$set": bson.M{"schema": bson.M{}}},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	update := models.ProducerSchemaUpdate{
+		UpdateType: models.SchemaUpdateTypeDrop,
+	}
+
+	s.updateStationProducersOfSchemaChange(sn, update)
+	return nil
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
@@ -1248,7 +1289,6 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
@@ -1258,6 +1298,13 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	if !exist {
 		serv.Warnf("Station does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		return
+	}
+
+	err = removeSchemaFromStation(sh.S, stationName, true)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1277,6 +1324,12 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, gin.H{})
+
+	update := models.ProducerSchemaUpdate{
+		UpdateType: models.SchemaUpdateTypeDrop,
+	}
+
+	sh.S.updateStationProducersOfSchemaChange(stationName, update)
 }
 
 func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {

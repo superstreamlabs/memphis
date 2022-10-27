@@ -54,7 +54,7 @@ type createProducerRequest struct {
 }
 
 type createProducerResponse struct {
-	SchemaUpdate models.ProducerInitSchemaUpdate `json:"schema_update"`
+	SchemaUpdate models.ProducerSchemaUpdateInit `json:"schema_update"`
 	Err          string                          `json:"error"`
 }
 

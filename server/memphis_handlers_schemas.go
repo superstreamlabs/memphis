@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,6 +28,7 @@ type SchemasHandler struct{ S *Server }
 const (
 	schemaObjectName                    = "Schema"
 	SCHEMA_VALIDATION_ERROR_STATUS_CODE = 555
+	schemaUpdatesSubjectTemplate        = "$memphis_schema_updates_%s"
 )
 
 var (
@@ -140,7 +142,7 @@ func validateMessageStructName(messageStructName string) error {
 	return nil
 }
 
-func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerInitSchemaUpdate, error) {
+func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerSchemaUpdateInit, error) {
 	schema, err := getSchemaByStationName(sn.Ext())
 	if err != nil {
 		return nil, err
@@ -151,11 +153,11 @@ func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerInitSchemaUpda
 		return nil, err
 	}
 
-	updateVersions := make([]models.ProducerInitSchemaVersion, len(versions))
+	updateVersions := make([]models.ProducerSchemaUpdateVersion, len(versions))
 
 	var activeIdx int
 	for i, version := range versions {
-		updateVersions[i] = models.ProducerInitSchemaVersion{
+		updateVersions[i] = models.ProducerSchemaUpdateVersion{
 			VersionNumber: version.VersionNumber,
 			Descriptor:    version.Descriptor,
 		}
@@ -164,12 +166,22 @@ func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerInitSchemaUpda
 		}
 	}
 
-	return &models.ProducerInitSchemaUpdate{
+	return &models.ProducerSchemaUpdateInit{
 		SchemaName: schema.Name,
 		Versions:   updateVersions,
 		ActiveIdx:  activeIdx,
 		SchemaType: schema.Type,
 	}, nil
+}
+
+func (s *Server) updateStationProducersOfSchemaChange(sn StationName,
+	schemaUpdate models.ProducerSchemaUpdate) {
+	subject := fmt.Sprintf(schemaUpdatesSubjectTemplate, sn.Intern())
+	msg, err := json.Marshal(schemaUpdate)
+	if err != nil {
+		s.Errorf("schema change update: marshal failed")
+	}
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }
 
 func getSchemaVersionsBySchemaId(id primitive.ObjectID) ([]models.SchemaVersion, error) {
@@ -239,16 +251,50 @@ func (sh SchemasHandler) GetSchemaVersion(stationVersion int, schemaId primitive
 	return schemaVersion, nil
 }
 
-func (sh SchemasHandler) updateActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
-	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
-		bson.M{"schema_id": schemaId},
+func (sh SchemasHandler) updateActiveVersion(s *Server, schema models.Schema, versionNumber int) error {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(nil, bson.M{"schema.name": schema.Name})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(nil, &stations); err != nil {
+		return err
+	}
+
+	for _, station := range stations {
+		sn, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		exist, _, err := IsStationExist(sn)
+		if err != nil {
+			return err
+		}
+		if !exist {
+			serv.Warnf("Station does not exist")
+			continue
+		}
+
+		updateContent := models.ProducerSchemaUpdateChangeVersion{
+			VersionNumber: versionNumber,
+		}
+		update := models.ProducerSchemaUpdate{
+			UpdateType:    models.SchemaUpdateTypeChangeVersion,
+			ChangeVersion: updateContent,
+		}
+
+		s.updateStationProducersOfSchemaChange(sn, update)
+	}
+	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
+		bson.M{"schema_id": schema.ID},
 		bson.M{"$set": bson.M{"active": false}},
 	)
 	if err != nil {
 		return err
 	}
 
-	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
+	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schema.ID, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
 	if err != nil {
 		return err
 	}
@@ -628,8 +674,36 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	c.IndentedJSON(200, schemaDetails)
 }
 
-func deleteSchemaFromStation(schemaName string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
+func deleteSchemaFromStation(s *Server, schemaName string) error {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(nil, bson.M{"schema.name": schemaName})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(nil, &stations); err != nil {
+		return err
+	}
+
+	for _, station := range stations {
+		sn, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		exist, _, err := IsStationExist(sn)
+		if err != nil {
+			s.Errorf("deleteSchemaFromStation error: " + err.Error())
+			return err
+		}
+		if !exist {
+			serv.Warnf("Station does not exist")
+			continue
+		}
+
+		removeSchemaFromStation(s, sn, false)
+	}
+
+	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
 			"schema.name": schemaName,
 		},
@@ -660,7 +734,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		}
 		if exist {
 			DeleteTagsFromSchema(schema.ID)
-			err := deleteSchemaFromStation(schema.Name)
+			err := deleteSchemaFromStation(sh.S, schema.Name)
 			if err != nil {
 				serv.Errorf("RemoveSchema error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -792,7 +866,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, extedndedSchemaDetails)
-
+	//TODO update producers
 }
 
 func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
@@ -839,7 +913,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 	if countVersions > 1 {
-		err = sh.updateActiveVersion(schema.ID, body.VersionNumber)
+		err = sh.updateActiveVersion(sh.S, schema, body.VersionNumber)
 		if err != nil {
 			serv.Errorf("RollBackVersion error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -853,7 +927,6 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, extedndedSchemaDetails)
-
 }
 
 func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
