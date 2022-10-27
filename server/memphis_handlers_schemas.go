@@ -628,6 +628,20 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	c.IndentedJSON(200, schemaDetails)
 }
 
+func deleteSchemaFromStation(schemaName string) error {
+	_, err := stationsCollection.UpdateMany(context.TODO(),
+		bson.M{
+			"schema.name": schemaName,
+		},
+		bson.M{"$set": bson.M{"schema": bson.M{}}},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	var body models.RemoveSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -646,6 +660,13 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		}
 		if exist {
 			DeleteTagsFromSchema(schema.ID)
+			err := deleteSchemaFromStation(schema.Name)
+			if err != nil {
+				serv.Errorf("RemoveSchema error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
 			schemaIds = append(schemaIds, schema.ID)
 		}
 	}
