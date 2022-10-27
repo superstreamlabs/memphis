@@ -64,7 +64,8 @@
         .clear {
             color: #6557ff;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
+            font-family: 'InterMedium';
         }
         .clear:hover {
             text-decoration: underline;
@@ -81,7 +82,7 @@
         margin-bottom: 5px;
         margin-top: 5px;
         .title {
-            font-family: 'InterSemiBold';
+            font-family:'InterMedium';
             font-size: 14px;
             color: #2e2c34;
             margin-bottom: 0;
