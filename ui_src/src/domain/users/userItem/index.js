@@ -28,14 +28,14 @@ import { ApiEndpoints } from '../../../const/apiEndpoints';
 import Modal from '../../../components/modal';
 import { parsingDate } from '../../../services/valueConvertor';
 
-function UserItem(props) {
+function UserItem({ content, handleRemoveUser }) {
     const defaultAvatarId = 1;
     const [avatarUrl, setAvatarUrl] = useState(1);
     const [open, modalFlip] = useState(false);
 
     useEffect(() => {
-        setAvatarImage(props.content?.avatar_id || defaultAvatarId);
-    }, []);
+        setAvatarImage(content?.avatar_id || defaultAvatarId);
+    }, [content]);
 
     const setAvatarImage = (avatarId) => {
         setAvatarUrl(require(`../../../assets/images/bots/avatar${avatarId}.svg`));
@@ -46,24 +46,24 @@ function UserItem(props) {
             await httpRequest('DELETE', ApiEndpoints.REMOVE_USER, {
                 username: username
             });
-            props.removeUser();
+            handleRemoveUser();
         } catch (error) {}
     };
     return (
         <div className="users-item">
             <div className="user-name">
                 <div className="user-avatar">
-                    <img src={avatarUrl} width={25} height={25} alt="avatar"></img>
+                    <img src={avatarUrl} width={25} height={25} alt="avatar" />
                 </div>
-                {props.content?.username}
+                {content?.username}
             </div>
             <div className="user-type">
-                <UserType userType={props.content?.user_type} />
+                <UserType userType={content?.user_type} />
             </div>
             <div className="user-creation-date">
-                <p>{parsingDate(props.content?.creation_date)} </p>
+                <p>{parsingDate(content?.creation_date)} </p>
             </div>
-            {props.content?.user_type !== 'root' && (
+            {content?.user_type !== 'root' && (
                 <div className="user-actions">
                     {/* <p>Generate password</p> */}
                     <p onClick={() => modalFlip(true)}>Delete user</p>
@@ -75,14 +75,14 @@ function UserItem(props) {
                 rBtnText="Cancel"
                 lBtnText="Remove"
                 lBtnClick={() => {
-                    removeUser(props.content?.username);
+                    removeUser(content?.username);
                 }}
                 clickOutside={() => modalFlip(false)}
                 rBtnClick={() => modalFlip(false)}
                 open={open}
             >
                 <label>
-                    Are you sure you want to delete "<b>{props.content?.username}</b>"?
+                    Are you sure you want to delete "<b>{content?.username}</b>"?
                 </label>
                 <br />
             </Modal>

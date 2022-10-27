@@ -151,7 +151,7 @@ function SchemaList({ createNew }) {
                         <Button
                             width="131px"
                             height="34px"
-                            placeholder={`Delete Selected (${isCheck?.length})`}
+                            placeholder={`Delete selected (${isCheck?.length})`}
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"
@@ -165,7 +165,7 @@ function SchemaList({ createNew }) {
                         <Button
                             width="131px"
                             height="34px"
-                            placeholder="Selected All"
+                            placeholder="Select all"
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"
@@ -184,7 +184,7 @@ function SchemaList({ createNew }) {
                         borderRadiusType="circle"
                         borderColorType="none"
                         boxShadowsType="none"
-                        iconComponent={<img src={searchIcon} />}
+                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
                         onChange={handleSearch}
                         value={searchInput}
                     />
@@ -249,7 +249,7 @@ function SchemaList({ createNew }) {
                 })}
                 {!isLoading && schemaList.length === 0 && (
                     <div className="no-schema-to-display">
-                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
+                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" alt="placeholderSchema" />
                         <p className="title">No Schema found</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
@@ -270,7 +270,7 @@ function SchemaList({ createNew }) {
                 )}
             </div>
             <Modal
-                header={<img src={deleteWrapperIcon} />}
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
                 width="450px"
                 height="180px"
                 displayButtons={false}

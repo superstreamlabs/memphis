@@ -204,25 +204,25 @@ const StationsList = () => {
                     </label>
                     {stationsList?.length > 0 && (
                         <div className="right-side">
-                            {isCheck?.length > 0 && (
-                                <Button
-                                    width="131px"
-                                    height="34px"
-                                    placeholder={`Delete Selected (${isCheck?.length})`}
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    aria-haspopup="true"
-                                    onClick={() => modalDeleteFlip(true)}
-                                />
-                            )}
+                            <Button
+                                width="131px"
+                                height="34px"
+                                placeholder={`Delete selected (${isCheck?.length})`}
+                                colorType="black"
+                                radiusType="circle"
+                                backgroundColorType="white"
+                                fontSize="12px"
+                                fontWeight="600"
+                                aria-haspopup="true"
+                                disabled={isCheck?.length === 0}
+                                onClick={() => modalDeleteFlip(true)}
+                            />
+
                             {filteredList?.length > 1 && (
                                 <Button
                                     width="131px"
                                     height="34px"
-                                    placeholder="Selected All"
+                                    placeholder="Select all"
                                     colorType="black"
                                     radiusType="circle"
                                     backgroundColorType="white"
@@ -241,7 +241,7 @@ const StationsList = () => {
                                 borderColorType="none"
                                 boxShadowsType="none"
                                 borderRadiusType="circle"
-                                iconComponent={<img src={searchIcon} />}
+                                iconComponent={<img src={searchIcon} alt="searchIcon" />}
                                 onChange={handleSearch}
                                 value={searchInput}
                             />
@@ -274,7 +274,7 @@ const StationsList = () => {
                     header={
                         <div className="modal-header">
                             <div className="header-img-container">
-                                <img className="headerImage" src={stationImg} />
+                                <img className="headerImage" src={stationImg} alt="stationImg" />
                             </div>
                             <p>Create new station</p>
                             <label>A station is a distributed unit that stores the produced data.</label>
@@ -298,7 +298,7 @@ const StationsList = () => {
                 </Modal>
             </div>
             <Modal
-                header={<img src={deleteWrapperIcon} />}
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
                 width="520px"
                 height="210px"
                 displayButtons={false}

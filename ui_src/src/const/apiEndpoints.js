@@ -47,6 +47,8 @@ export const ApiEndpoints = {
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
     ACK_POISION_MESSAGE: '/stations/ackPoisonMessages',
     RESEND_POISION_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
+    USE_SCHEMA: '/stations/useSchema',
+    GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
@@ -60,6 +62,12 @@ export const ApiEndpoints = {
     GET_STATION_DATA: '/monitoring/getStationOverviewData',
     GET_SYS_LOGS: '/monitoring/getSystemLogs',
     DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
+
+    //Tags
+    REMOVE_TAG: '/tags/removeTag',
+    CREATE_NEW_TAG: '/tags/createNewTag',
+    GET_TAGS: '/tags/getTags',
+    UPDATE_TAGS_FOR_ENTITY: '/tags/updateTagsForEntity',
 
     //Schemas
     GET_ALL_SCHEMAS: '/schemas/getAllSchemas',

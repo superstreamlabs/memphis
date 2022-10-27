@@ -9,7 +9,8 @@
     padding: 20px;
     display: flex;
     justify-content: space-between;
-    min-width:1000px;
+    cursor: pointer;
+    min-width: 1370px;
     .data-labels {
         color: #84818a;
         font-size: 12px;
@@ -35,6 +36,7 @@
         }
     }
     .left-section {
+        width: 237px;
         .check-box{
             display: flex;
             align-items: center;
@@ -43,18 +45,24 @@
                 font-size: 17px;
                 font-weight: 600;
                 margin: 0;
-                margin-left: 10px;
+                margin-left: 25px;
                 color: #2e2c34;
             }
         }
     }
     .middle-section {
         border-left: 1px solid #e9e9e9;
-        justify-content: space-between;
         padding-left: 20px;
         display: flex;
+        width: 310px;
         .station-created {
             margin-right: 15px;
+        }
+        .tags-list {
+            margin-bottom: 0px;
+            margin-left: 1px;
+            margin-top: 10px;
+            max-width: 230px;
         }
     }
     .right-section {
@@ -93,11 +101,11 @@
 
 }
 .station-box-container:hover{
-   a{
+   .action{
        display: flex !important;
    } 
-
 }
-
-
-
+.check-box-station{
+    position: absolute;
+    padding: 22px;
+}

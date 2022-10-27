@@ -1,0 +1,42 @@
+.new-tag-generator-wrapper {
+    .create-tag-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+    }
+    .color-circle {
+        margin-left: 5px;
+        display: inline-block;
+        border-radius: 50%;
+    }
+    .field-title {
+        margin-top: 10px;
+        font-weight: 400;
+        font-size: 12px;
+        display: flex;
+    }
+    .color-pick {
+        margin-top: 10px;
+        justify-content: space-between;
+    }
+    .tag-name {
+        font-size: 17px;
+        font-weight: 600;
+        color: #2e2c34;
+    }
+    .save-cancel-buttons {
+        display: flex;
+        margin-top: 15px;
+        justify-content: space-between;
+    }
+    .ant-form-item {
+        margin-bottom: 10px;
+    }
+    .divider {
+        margin: 0;
+        margin-top: 3px;
+        margin-left: -24px;
+        width: 250px;
+    }
+}

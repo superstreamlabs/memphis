@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.1675f8f9.css",
-    "main.js": "/static/js/main.f9b74674.js",
+    "main.css": "/static/css/main.af5d71a6.css",
+    "main.js": "/static/js/main.85d467ef.js",
     "react-syntax-highlighter/refractor-core-import.js": "/static/js/react-syntax-highlighter/refractor-core-import.ab66c43a.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/static/js/react-syntax-highlighter_languages_refractor_abap.20a78891.chunk.js",
     "react-syntax-highlighter_languages_refractor_actionscript.js": "/static/js/react-syntax-highlighter_languages_refractor_actionscript.21ece32e.chunk.js",
@@ -160,7 +160,7 @@
     "static/media/Inter-Medium.ttf": "/static/media/Inter-Medium.e7231ba33760832432b8.ttf",
     "static/media/Inter-Regular.ttf": "/static/media/Inter-Regular.2391725004ae05a27e8e.ttf",
     "static/media/avatar8.svg": "/static/media/avatar8.d92b08274080e4344acf.svg",
-    "static/media/avatar9.svg": "/static/media/avatar9.eb536756efe5829f2ade.svg",
+    "static/media/avatar1.svg": "/static/media/avatar1.eb536756efe5829f2adecb07a6af1840.svg",
     "static/media/avatar4.svg": "/static/media/avatar4.5c001efb1cef44f249c9.svg",
     "static/media/avatar7.svg": "/static/media/avatar7.74ad285f40c41b292e0a.svg",
     "static/media/avatar2.svg": "/static/media/avatar2.3888ed3399490ce77911.svg",
@@ -172,15 +172,14 @@
     "static/media/betaFullLogo.svg": "/static/media/betaFullLogo.f67d5db5c3e88414474faa9d9aabd69b.svg",
     "static/media/comingSoonBox.svg": "/static/media/comingSoonBox.81b20f9fe215e66de300b271d24bdcc0.svg",
     "static/media/readyToRoll.svg": "/static/media/readyToRoll.9f39c1ec2593dd774eb30b5a3e3d7439.svg",
+    "static/media/emptyTags.svg": "/static/media/emptyTags.cc3c010bc99b5579619b02885f447c9a.svg",
     "static/media/betaLogo.svg": "/static/media/betaLogo.1df8b56be93949d230ccd81a13124a5a.svg",
     "static/media/copied.svg": "/static/media/copied.2d42830115d797a53e3c1f57564efe40.svg",
     "static/media/copy.svg": "/static/media/copy.a9ed41b24d45186c2d1d87ab8e8b1712.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
     "static/media/confImg1.svg": "/static/media/confImg1.cf98f3c124b944df126f52a16d6acb5e.svg",
     "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
-    "static/media/stationIdleIcon.svg": "/static/media/stationIdleIcon.3dcfb76c9b8935281e95567ccbc4b5e4.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.7f5a396e567159f39688bad38b16f9c4.svg",
-    "static/media/deleteIcon.svg": "/static/media/deleteIcon.e76f839b4ec7f8256d25129ff77aa40b.svg",
     "static/media/placeholderSchema.svg": "/static/media/placeholderSchema.cde9d3484259f8c40b67644cd987432c.svg",
     "static/media/welcome.svg": "/static/media/welcome.61578d1269fb9f6d07c1f449ed40be03.svg",
     "static/media/schemaIcon.svg": "/static/media/schemaIcon.45d3d3862c089d88388d019d03cfd302.svg",
@@ -189,11 +188,12 @@
     "static/media/usersIcon.svg": "/static/media/usersIcon.1baef6daf37cdcbab538da49077dc1bb.svg",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
-    "static/media/avatar1.svg": "/static/media/avatar1.3507d3010b952b2b8c440237aa639508.svg",
     "static/media/waitingMessages.svg": "/static/media/waitingMessages.b6dc0edb44eea832a6bc4e9f8357b215.svg",
+    "static/media/schemaTypeIcon.svg": "/static/media/schemaTypeIcon.44504b36261f9061119e649aaa92109a.svg",
     "static/media/waitingProducer.svg": "/static/media/waitingProducer.881595ab6b49ba3bbcd2b16b78e399dd.svg",
     "static/media/waitingConsumer.svg": "/static/media/waitingConsumer.9c8fe46e57642589a37ea1e507345af8.svg",
     "static/media/bgGetStarted.svg": "/static/media/bgGetStarted.1db75bcd048189e22af661908cfdd4e0.svg",
+    "static/media/verifiedIcon.svg": "/static/media/verifiedIcon.0d8d050883148eadba2c89769a9a3d46.svg",
     "static/media/supportIcon.svg": "/static/media/supportIcon.c75670ecf7e65f3cbec1080ebd2b868b.svg",
     "static/media/signupInfo.svg": "/static/media/signupInfo.b9c2b723742579de9fa69a8f6beb6614.svg",
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
@@ -209,6 +209,7 @@
     "static/media/liveMessagesIcon.svg": "/static/media/liveMessagesIcon.1cd78da2c8cc3e6b46c49f5a53ecf5a9.svg",
     "static/media/logsIcon.svg": "/static/media/logsIcon.bb54b7c67fdffffb0f8759b862733302.svg",
     "static/media/rollBackIcon.svg": "/static/media/rollBackIcon.d27a828890f2a4e685738694d53dbfb5.svg",
+    "static/media/errorModal.svg": "/static/media/errorModal.56ec5d38d44a26bcd6582fe4a2df085f.svg",
     "static/media/typeIcon.svg": "/static/media/typeIcon.e663a2d8562816001bdd4feae921295d.svg",
     "static/media/logoutIcon.svg": "/static/media/logoutIcon.8bef4832301d06661184dd79286c1913.svg",
     "static/media/backIcon.svg": "/static/media/backIcon.be12eb6ec289ed5a4dc8d64dd8adec0f.svg",
@@ -223,6 +224,7 @@
     "static/media/clusterConfColor.svg": "/static/media/clusterConfColor.a76b9a325a5af536e03d7b1e458a2565.svg",
     "static/media/createdByIcon.svg": "/static/media/createdByIcon.fed5e9f39160ffeb36aa209e79e20933.svg",
     "static/media/stationActionIcon.svg": "/static/media/stationActionIcon.0ae19394481f1ea637743ca3c9d1f832.svg",
+    "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/userCheck.svg": "/static/media/userCheck.877e388ce6d0f982a147a6bf3b4335b0.svg",
     "static/media/notUsedIcon.svg": "/static/media/notUsedIcon.d34b2a8e7cd5f8c760477123f305b2ab.svg",
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
@@ -237,6 +239,7 @@
     "static/media/docsPurple.svg": "/static/media/docsPurple.1a4b8c526e404f0a0e47cc137aa46d79.svg",
     "static/media/staionLink.svg": "/static/media/staionLink.ae96d46470645bedb82748d847dabdad.svg",
     "static/media/docsLogo.svg": "/static/media/docsLogo.47318fe8ea2ef1cfe195bd21d8a3b4f5.svg",
+    "static/media/schemaItemIcon.svg": "/static/media/schemaItemIcon.c6af0b5dadd1a92922cfec49255241fa.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.2d046e47b29166b55662a6b110c616bb.svg",
     "static/media/editProfileGray.svg": "/static/media/editProfileGray.dd89a2b2e268c88d2a166ad70637539a.svg",
     "static/media/editProfileColor.svg": "/static/media/editProfileColor.75c0501ad7b5e0d90b670e0576bc9d42.svg",
@@ -260,7 +263,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.1675f8f9.css",
-    "static/js/main.f9b74674.js"
+    "static/css/main.af5d71a6.css",
+    "static/js/main.85d467ef.js"
   ]
 }

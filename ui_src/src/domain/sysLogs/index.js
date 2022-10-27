@@ -56,7 +56,7 @@ const SysLogs = () => {
                     className="modal-btn"
                     width="160px"
                     height="36px"
-                    placeholder="Download Logs"
+                    placeholder="Download logs"
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType="purple"

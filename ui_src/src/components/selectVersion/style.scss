@@ -38,41 +38,11 @@
         color: #8F8F8F;
         display: flex;
         align-items:center;
-        .current{
-            background: rgba(32, 201, 172, 0.2);
-            border-radius: 25px;
-            width: 67px;
-            height: 22px;
-            margin-right: 10px;
-            text-align:center;
-            p{
-                color: rgb(32, 201, 172);
-                margin-right: 0px;
-                font-family: 'InterMedium';
-                font-size: 12px;
-
-            }  
-        }
-        .latest{
-            background: rgba(0, 165, 255, 0.2);
-            border-radius: 25px;
-            width: 59px;
-            height: 22px;
-            text-align:center;
-            p{
-                color: rgb(0, 165, 255);
-                margin-right: 0px;
-                font-family: 'InterMedium';
-                font-size: 12px;
-
-            }
-        }
         p{
             margin: 0;
-            margin-right: 8px;
         }
         svg {
-            margin-right: 8px;
+            margin: 0px 8px;
             font-size: 8px;
         }
     }

@@ -35,7 +35,7 @@ const LogPayload = ({ value, onSelected, selectedRow }) => {
             <p className="created-date">{parsingDate(value?.creation_date)}</p>
             <div className="log-info">
                 <div className="source">
-                    <img src={sourceIcon} />
+                    <img src={sourceIcon} alt="sourceIcon" />
                     <p>{capitalizeFirst(value?.source)}</p>
                 </div>
                 <LogBadge type={value?.type} />

@@ -47,7 +47,7 @@ function Users() {
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
         getAllUsers();
-    }, []);
+    }, [dispatch]);
 
     const getAllUsers = async () => {
         try {
@@ -71,7 +71,7 @@ function Users() {
         } else {
             setUsersList(copyOfUserList);
         }
-    }, [searchInput.length > 1]);
+    }, [searchInput]);
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
@@ -102,13 +102,13 @@ function Users() {
                     <SearchInput
                         placeholder="Search here"
                         colorType="navy"
-                        backgroundColorType="none"
-                        width="10vw"
-                        height="27px"
+                        backgroundColorType="gray-dark"
+                        width="288px"
+                        height="34px"
                         borderRadiusType="circle"
-                        borderColorType="gray"
-                        boxShadowsType="gray"
-                        iconComponent={<img src={searchIcon} />}
+                        borderColorType="none"
+                        boxShadowsType="none"
+                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
                         onChange={handleSearch}
                         value={searchInput}
                     />
@@ -141,7 +141,7 @@ function Users() {
                     )}
                     {!isLoading &&
                         userList.map((user) => {
-                            return <UserItem key={user.id} content={user} removeUser={() => removeUser(user.username)} />;
+                            return <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />;
                         })}
                 </div>
             </div>

@@ -137,20 +137,6 @@ function SideBar() {
                 </div>
                 <div className="item-wrapper">
                     <div id="e2e-tests-users-sidebar">
-                        <Link to={pathDomains.users}>
-                            <div className="icon">
-                                {state.route === 'users' ? (
-                                    <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
-                                ) : (
-                                    <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
-                                )}
-                            </div>
-                            <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
-                        </Link>
-                    </div>
-                </div>
-                <div className="item-wrapper">
-                    <div id="e2e-tests-users-sidebar">
                         <Link to={pathDomains.schemas}>
                             <div className="icon">
                                 {state.route === 'schemas' ? (
@@ -160,6 +146,20 @@ function SideBar() {
                                 )}
                             </div>
                             <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemas</p>
+                        </Link>
+                    </div>
+                </div>
+                <div className="item-wrapper">
+                    <div id="e2e-tests-users-sidebar">
+                        <Link to={pathDomains.users}>
+                            <div className="icon">
+                                {state.route === 'users' ? (
+                                    <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
+                                ) : (
+                                    <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
+                                )}
+                            </div>
+                            <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                         </Link>
                     </div>
                 </div>

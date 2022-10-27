@@ -29,16 +29,15 @@ import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
 import { parsingDate } from '../../../../services/valueConvertor';
 import CheckboxComponent from '../../../../components/checkBox';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
-import TagsList from '../../../../components/tagsList';
-import Tag from '../../../../components/tag';
 import SchemaDetails from '../schemaDetails';
 import { CloseRounded } from '@material-ui/icons';
+import TagsList from '../../../../components/tagList';
 
 const tags = [
-    { name: 'Github', background: 'rgba(0, 165, 255,0.1)', color: 'rgb(0, 165, 255)' },
-    { name: 'R&D', background: 'rgba(32, 201, 172,0.1)', color: '#20C9AC' },
-    { name: 'Avi_team', background: 'rgba(85, 66, 246, 0.1)', color: 'rgba(85, 66, 246, 1)' },
-    { name: 'Logs', background: 'rgba(252, 52, 0, 0.1)', color: 'rgba(252, 52, 0, 1)' }
+    { name: 'Github', color: '0, 165, 255' },
+    { name: 'R&D', color: '177, 134, 27' },
+    { name: 'Avi_team', color: '85, 66, 246' },
+    { name: 'Logs', color: '252, 52, 0' }
 ];
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
@@ -59,13 +58,10 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                                 <p>{schema.name}</p>
                             </div>
                             <div className="is-used">
-                                <img src={schema.used ? usedIcond : notUsedIcond} />
+                                <img src={schema.used ? usedIcond : notUsedIcond} alt="usedIcond" />
                                 {schema.used && <p className="used">Used</p>}
-                                {!schema.used && <p className="not-used"> Not Used</p>}
+                                {!schema.used && <p className="not-used"> Not used</p>}
                             </div>
-                            {/* <div className="menu">
-                            <p>***</p>
-                        </div> */}
                         </div>
                     </header>
                     <type is="x3d">
@@ -79,10 +75,10 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                         </div>
                     </type>
                     <tags is="x3d">
-                        <TagsList tags={tags} />
+                        <TagsList tagsToShow={3} tags={tags} />
                     </tags>
                     <date is="x3d">
-                        <img src={createdDateIcon} />
+                        <img src={createdDateIcon} alt="createdDateIcon" />
                         <p>{parsingDate(schema.creation_date)}</p>
                     </date>
                 </div>
