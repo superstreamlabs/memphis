@@ -1242,8 +1242,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
-	stationNameStr := strings.ToLower(body.StationName)
-	stationName, err := StationNameFromStr(stationNameStr)
+	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -1287,8 +1286,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	stationNameStr := strings.ToLower(body.StationName)
-	stationName, err := StationNameFromStr(stationNameStr)
+	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})

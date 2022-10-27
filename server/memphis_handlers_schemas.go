@@ -168,6 +168,7 @@ func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerInitSchemaUpda
 		SchemaName: schema.Name,
 		Versions:   updateVersions,
 		ActiveIdx:  activeIdx,
+		SchemaType: schema.Type,
 	}, nil
 }
 
@@ -199,12 +200,26 @@ func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID)
 
 func getSchemaByStationName(stationName string) (models.Schema, error) {
 	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
+	sn, err := StationNameFromStr(stationName)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return models.Schema{}, ErrNoSchema
-		}
-		return models.Schema{}, err
+		serv.Warnf(err.Error())
+		return schema, err
+	}
+
+	exist, station, err := IsStationExist(sn)
+	if err != nil {
+		serv.Errorf("getSchemaByStation error: " + err.Error())
+		return schema, err
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		return schema, err
+	}
+
+	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+	if err != nil {
+		serv.Errorf("getSchemaByStation error: " + err.Error())
+		return schema, err
 	}
 
 	return schema, nil
