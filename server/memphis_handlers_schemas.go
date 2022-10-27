@@ -630,7 +630,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 			return
 		}
 		if exist {
-			DeleteTagsBySchema(schema.ID)
+			DeleteTagsFromSchema(schema.ID)
 			schemaIds = append(schemaIds, schema.ID)
 		}
 	}

@@ -31,7 +31,7 @@ const LogContent = ({ displayedLog }) => {
     return (
         <div className="log-content-wrapper">
             <log-header is="3xd">
-                <p>Log Details</p>
+                <p>Log details</p>
             </log-header>
             <log-payload is="3xd">
                 <div className="log-details">

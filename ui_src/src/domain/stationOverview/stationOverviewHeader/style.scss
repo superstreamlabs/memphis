@@ -2,6 +2,28 @@
     width: calc(100);
     align-items: center;
     justify-content: space-between;
+    .edit-tags {
+        background-color: rgba(132, 129, 138, 0.1);
+        border-radius: 4px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        align-self: center;
+        cursor: pointer;
+        svg {
+            width: 18px;
+        }
+        .edit-content {
+            font-family: 'InterSemiBold';
+            font-size: 12px;
+            line-height: 12px;
+            color: #2e2c34;
+        }
+        .add {
+            height: 13px;
+            width: 13px;
+        }
+    }
     .title-wrapper {
         display: flex;
         justify-content: space-between;
@@ -12,6 +34,15 @@
                 font-weight: 600;
                 line-height: 29px;
                 margin-bottom: 0;
+                margin-right: 5px;
+                display: flex;
+                gap: 5px;
+                .tags-list {
+                    justify-content: space-between;
+                    margin-bottom: 0px;
+                    margin-left: 10px;
+                    margin-top: 4px;
+                }
             }
             .created-by {
                 color: #979797;
@@ -44,9 +75,6 @@
         }
         .icons-wrapper {
             display: flex;
-            // width: 85%;
-            // width: 90%;
-            // justify-content: space-around;
             height: 100%;
             position: relative;
             background: #ffffff;

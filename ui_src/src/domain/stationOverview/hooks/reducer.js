@@ -38,6 +38,13 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationSocketData: newState
             };
+        case 'SET_TAGS':
+            let updatedState = stationState.stationMetaData;
+            updatedState.tags = action.payload;
+            return {
+                ...stationState,
+                stationMetaData: updatedState
+            };
         default:
             return stationState;
     }

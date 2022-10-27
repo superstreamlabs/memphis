@@ -26,35 +26,33 @@ import React from 'react';
 
 import { getBorderRadius, getFontColor, getBackgroundColor, getBoxShadows, getBorderColor } from '../../utils/styleTemplates';
 
-const Button = (props) => {
-    const {
-        width,
-        height,
-        placeholder,
-        radiusType,
-        colorType,
-        onClick,
-        backgroundColorType,
-        fontSize,
-        fontWeight,
-        disabled,
-        margin,
-        isLoading,
-        padding,
-        textAlign,
-        minWidth,
-        marginBottom,
-        marginTop,
-        marginRight,
-        marginLeft,
-        boxShadowStyle,
-        minHeight,
-        zIndex,
-        border,
-        alignSelf,
-        fontFamily = 'Inter'
-    } = props;
-
+const Button = ({
+    width,
+    height,
+    placeholder,
+    radiusType,
+    colorType,
+    onClick,
+    backgroundColorType,
+    fontSize,
+    fontWeight,
+    disabled,
+    margin,
+    isLoading,
+    padding,
+    textAlign,
+    minWidth,
+    marginBottom,
+    marginTop,
+    marginRight,
+    marginLeft,
+    boxShadowStyle,
+    minHeight,
+    zIndex,
+    border,
+    alignSelf,
+    fontFamily = 'Inter'
+}) => {
     const handleClick = (e) => {
         onClick(e);
     };
@@ -93,7 +91,8 @@ const Button = (props) => {
             minWidth: minWidth || '60px',
             boxShadow,
             padding,
-            zIndex: zIndex
+            zIndex: zIndex,
+            lineHeight: fontSize
         },
         loading: isLoading
     };

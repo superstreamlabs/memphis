@@ -82,12 +82,12 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	}
 }
 
-func getMessageHeaders(hdr map[string]string) (string, error) {
-	headersJson, err := json.Marshal(hdr)
-	if err != nil {
-		return "", err
+func getMessageHeaders(hdr map[string]string) (map[string]string, error) {
+	jsonMsgHeaders := map[string]string{}
+	for key, value := range hdr {
+		jsonMsgHeaders[key] = value
 	}
-	return string(headersJson), nil
+	return jsonMsgHeaders, nil
 }
 
 func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {

@@ -23,6 +23,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strings"
@@ -35,20 +36,23 @@ import (
 
 type TagsHandler struct{ S *Server }
 
+func validateEntityType(entity string) error {
+	switch entity {
+	case "station", "schema", "user":
+		return nil
+	default:
+		return errors.New("Entity type is not valid")
+	}
+}
+
 func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, color string) error {
 	name = strings.ToLower(name)
-	exist, _, err := IsTagExist(name)
-	if err != nil {
-		return err
-	}
-	if exist {
-		return nil
-	}
+	entity := strings.ToLower(entity_type)
 	var newTag models.Tag
 	stationArr := []primitive.ObjectID{}
 	schemaArr := []primitive.ObjectID{}
 	userArr := []primitive.ObjectID{}
-	switch entity_type {
+	switch entity {
 	case "station":
 		stationArr = append(stationArr, entity_id)
 	case "schema":
@@ -77,7 +81,7 @@ func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, co
 		},
 	}
 	opts := options.Update().SetUpsert(true)
-	_, err = tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		return err
 	}
@@ -88,150 +92,166 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 	if len(tags) == 0 {
 		return nil
 	}
-	switch entity_type {
-	case "station":
-		for _, tagToCreate := range tags {
-			name := strings.ToLower(tagToCreate.Name)
-			exist, tag, err := IsTagExist(name)
-			if err != nil {
-				return err
-			}
-			if !exist {
-				err = CreateTag(name, entity_type, entity_id, tag.Color)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"stations": entity_id}})
-			if err != nil {
-				return err
-			}
-		}
-
-	case "schema":
-		for _, tagToCreate := range tags {
-			name := strings.ToLower(tagToCreate.Name)
-			exist, tag, err := IsTagExist(name)
-			if err != nil {
-				return err
-			}
-			if !exist {
-				err = CreateTag(name, entity_type, entity_id, tag.Color)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"schemas": entity_id}})
-			if err != nil {
-				return err
-			}
-		}
-		// case "user":
-		// for _, tagToCreate := range tags {
-		// 	name := strings.ToLower(tagToCreate.Name)
-		// 	exist, tag, err := IsTagExist(name)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	if !exist {
-		// 		err = CreateTag(name, entity_type, entity_id, tag.Color)
-		// 		if err != nil {
-		// 			return err
-		// 		}
-		// 		return nil
-		// 	}
-		// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{"users": entity_id}})
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
+	entity := strings.ToLower(entity_type)
+	err := validateEntityType(entity)
+	if err != nil {
+		return err
 	}
+	stationArr := []primitive.ObjectID{}
+	schemaArr := []primitive.ObjectID{}
+	userArr := []primitive.ObjectID{}
+	var entityDBList string
+	for _, tagToCreate := range tags {
+		switch entity {
+		case "station":
+			stationArr = append(stationArr, entity_id)
+			entityDBList = "stations"
+		case "schema":
+			schemaArr = append(stationArr, entity_id)
+			entityDBList = "schemas"
+		case "user":
+			userArr = append(stationArr, entity_id)
+			entityDBList = "users"
+		}
+		newTag := models.Tag{
+			ID:       primitive.NewObjectID(),
+			Name:     strings.ToLower(tagToCreate.Name),
+			Color:    tagToCreate.Color,
+			Stations: stationArr,
+			Schemas:  schemaArr,
+			Users:    userArr,
+		}
+		filter := bson.M{"name": newTag.Name}
+		update := bson.M{
+			"$setOnInsert": bson.M{
+				"_id":      newTag.ID,
+				"name":     newTag.Name,
+				"color":    newTag.Color,
+				"stations": newTag.Stations,
+				"schemas":  newTag.Schemas,
+				"users":    newTag.Users,
+			}, "$addToSet": bson.M{entityDBList: entity_id},
+		}
+		opts := options.Update().SetUpsert(true)
+		_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func DeleteTagsByStation(id primitive.ObjectID) {
+func DeleteTagsFromStation(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"stations": id}})
 	if err != nil {
-		serv.Errorf("Failed deleting tags: %v", err.Error())
+		serv.Errorf("DeleteTagsFromStation error: " + err.Error())
 		return
 	}
 }
 
-func DeleteTagsBySchema(id primitive.ObjectID) {
+func DeleteTagsFromSchema(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"schemas": id}})
 	if err != nil {
-		serv.Errorf("Failed deleting tags: %v", err.Error())
+		serv.Errorf("DeleteTagsFromSchema error: " + err.Error())
 		return
 	}
 }
 
-func DeleteTagsByUser(id primitive.ObjectID) {
+func DeleteTagsFromUser(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"users": id}})
 	if err != nil {
-		serv.Errorf("Failed deleting tags: %v", err.Error())
+		serv.Errorf("DeleteTagsFromUser error: " + err.Error())
 		return
 	}
 }
 
-func checkIfEmptyAndDelete(name string) {
-	exist, tag, _ := IsTagExist(name)
+func (th TagsHandler) CreateNewTag(c *gin.Context) {
+	var body models.CreateTag
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	name := strings.ToLower(body.Name)
+	exist, _, err := IsTagExist(name)
+	if err != nil {
+		serv.Errorf("CreateNewTag error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	if exist {
-
-		if len(tag.Schemas) == 0 && len(tag.Stations) == 0 && len(tag.Users) == 0 {
-			_, err := tagsCollection.DeleteOne(context.TODO(), bson.M{"_id": tag.ID})
-			if err != nil {
-				serv.Errorf("Delete tag error:" + err.Error())
-			}
-		}
+		serv.Warnf("CreateNewTag error: Tag with the same name already exists")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tag with the same name already exists"})
+		return
 	}
+	var color string
+	if len(body.Color) > 0 {
+		color = body.Color
+	} else {
+		color = "101, 87, 255" // default memphis-purple color
+	}
+	var newTag models.Tag
+	stationArr := []primitive.ObjectID{}
+	schemaArr := []primitive.ObjectID{}
+	userArr := []primitive.ObjectID{}
+	newTag = models.Tag{
+		ID:       primitive.NewObjectID(),
+		Name:     name,
+		Color:    color,
+		Stations: stationArr,
+		Schemas:  schemaArr,
+		Users:    userArr,
+	}
+
+	filter := bson.M{"name": newTag.Name}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":      newTag.ID,
+			"name":     newTag.Name,
+			"color":    newTag.Color,
+			"stations": newTag.Stations,
+			"schemas":  newTag.Schemas,
+			"users":    newTag.Users,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err = tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		serv.Errorf("CreateNewTag error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, newTag)
 }
 
-func (th TagsHandler) CreateTags(c *gin.Context) {
-	var body models.CreateTagsSchema
+func (th TagsHandler) RemoveTag(c *gin.Context) {
+	var body models.RemoveTagSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	station_name, err := StationNameFromStr(body.EntityName)
+	name := strings.ToLower(body.Name)
+	entity := strings.ToLower(body.EntityType)
+	err := validateEntityType(entity)
 	if err != nil {
-		serv.Errorf("CreateTags error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		serv.Warnf("RemoveTag error: " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	exist, station, err := IsStationExist(station_name)
-	if err != nil {
-		serv.Errorf("CreateTags error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("Station does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not create tags, station does not exist"})
-		return
-	}
-	err = AddTagsToEntity(body.Tags, body.EntityType, station.ID)
-	if err != nil {
-		serv.Errorf("Failed creating tag: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	c.IndentedJSON(200, []string{})
-}
-
-func (th TagsHandler) RemoveTags(c *gin.Context) {
-	var body models.RemoveTagsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	for _, tagName := range body.Names {
-		name := strings.ToLower(tagName)
-		exist, tag, err := IsTagExist(name)
-
+	var entity_id primitive.ObjectID
+	var entityDBList string
+	switch entity {
+	case "station":
+		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
-			serv.Errorf("RemoveTags error: " + err.Error())
+			serv.Warnf("RemoveTag error: " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+		exist, station, err := IsStationExist(station_name)
+		if err != nil {
+			serv.Errorf("RemoveTag error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -239,98 +259,153 @@ func (th TagsHandler) RemoveTags(c *gin.Context) {
 			c.IndentedJSON(200, []string{})
 			return
 		}
-		switch body.EntityType {
-		case "station":
-			station_name, err := StationNameFromStr(body.EntityName)
-			if err != nil {
-				serv.Errorf("RemoveTags error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			exist, station, err := IsStationExist(station_name)
-			if err != nil {
-				serv.Errorf("RemoveTags error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			if !exist {
-				serv.Warnf("Station does not exist")
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, station does not exist"})
-				return
-			}
-			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-				bson.M{"$pull": bson.M{"stations": station.ID}})
-			if err != nil {
-				serv.Errorf("RemoveTags error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+		entity_id = station.ID
+		entityDBList = "stations"
 
-		case "schema":
-			exist, schema, err := IsSchemaExist(body.EntityName)
-			if err != nil {
-				serv.Errorf("RemoveTags error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			if !exist {
-				serv.Warnf("Schema does not exist")
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, schema does not exist"})
-				return
-			}
-			_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-				bson.M{"$pull": bson.M{"schemas": schema.ID}})
-			if err != nil {
-				serv.Errorf("RemoveTags error: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-		// case "user":
-		// 	exist, user, err := IsUserExist(body.EntityName)
-		// 	if err != nil {
-		// 		serv.Errorf("RemoveTags error: " + err.Error())
-		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 		return
-		// 	}
-		// 	if !exist {
-		// 		serv.Warnf("User with does not exist")
-		// 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, user does not exist"})
-		//
-		// 		return
-		// 	}
-		// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
-		// 		bson.M{"$pull": bson.M{"users": user.ID}})
-		// 	if err != nil {
-		// 		serv.Errorf("RemoveTags error: " + err.Error())
-		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 		return
-		// 	}
-		default:
-			serv.Warnf("RemoveTags wrong input")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, wrong input"})
+	case "schema":
+		exist, schema, err := IsSchemaExist(body.EntityName)
+		if err != nil {
+			serv.Errorf("RemoveTag error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		checkIfEmptyAndDelete(name)
+		if !exist {
+			c.IndentedJSON(200, []string{})
+			return
+		}
+		_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"name": name},
+			bson.M{"$pull": bson.M{"schemas": schema.ID}})
+		if err != nil {
+			serv.Errorf("RemoveTag error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	// case "user":
+	// 	exist, user, err := IsUserExist(body.EntityName)
+	// 	if err != nil {
+	// 		serv.Errorf("RemoveTag error: " + err.Error())
+	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	// 		return
+	// 	}
+	// 	if !exist {
+	// 		c.IndentedJSON(200, []string{})
+	// 		return
+	// 	}
+	// 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
+	// 		bson.M{"$pull": bson.M{"users": user.ID}})
+	// 	if err != nil {
+	// 		serv.Errorf("RemoveTag error: " + err.Error())
+	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	// 		return
+	// 	}
+	default:
+		serv.Warnf("RemoveTag error: unsupported entity type")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
+		return
+	}
+	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"name": name},
+		bson.M{"$pull": bson.M{entityDBList: entity_id}})
+	if err != nil {
+		serv.Errorf("RemoveTag error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 	c.IndentedJSON(200, []string{})
+}
+
+func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
+	var body models.UpdateTagsForEntitySchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	var tagsRes []models.Tag
+	var entityDBList string
+	entity := strings.ToLower(body.EntityType)
+	err := validateEntityType(entity)
+	if err != nil {
+		serv.Warnf("UpdateTagsForEntity error: " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+	switch entity {
+	case "station":
+		entityDBList = "stations"
+	case "schema":
+		entityDBList = "schemas"
+	case "user":
+		entityDBList = "users"
+	}
+	if len(body.TagsToAdd) > 0 {
+		for _, tagToAdd := range body.TagsToAdd {
+			name := strings.ToLower(tagToAdd.Name)
+			exist, _, err := IsTagExist(name)
+			if err != nil {
+				serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			if !exist {
+				err = CreateTag(name, body.EntityType, body.EntityID, tagToAdd.Color)
+				if err != nil {
+					serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+			} else {
+				_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tagToAdd.ID}, bson.M{"$addToSet": bson.M{entityDBList: body.EntityID}})
+				if err != nil {
+					serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+			}
+
+		}
+	}
+	if len(body.TagsToRemove) > 0 {
+		for _, tagToRemove := range body.TagsToRemove {
+			name := strings.ToLower(tagToRemove)
+			exist, tag, err := IsTagExist(name)
+			if err != nil {
+				serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			if exist {
+				_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
+					bson.M{"$pull": bson.M{entityDBList: body.EntityID}})
+				if err != nil {
+					serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+			}
+		}
+	}
+	tags, err := th.GetTagsByStation(body.EntityID)
+	if err != nil {
+		serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	tagsRes = tags
+
+	c.IndentedJSON(200, tagsRes)
 }
 
 func (th TagsHandler) GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
 	var tags []models.Tag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": station_id})
-
 	if err != nil {
 		return tags, err
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		return tags, err
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
-
 	return tags, nil
 }
 
@@ -340,11 +415,9 @@ func (th TagsHandler) GetTagsBySchema(schema_id primitive.ObjectID) ([]models.Ta
 	if err != nil {
 		return tags, err
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		return tags, err
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
@@ -358,11 +431,9 @@ func (th TagsHandler) GetTagsByUser(user_id primitive.ObjectID) ([]models.Tag, e
 	if err != nil {
 		return tags, err
 	}
-
 	if err = cursor.All(context.TODO(), &tags); err != nil {
 		return tags, err
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
 	}
@@ -376,10 +447,18 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	if !ok {
 		return
 	}
-	from := strings.ToLower(body.EntityType)
+	entity := strings.ToLower(body.EntityType)
+	if entity != "" {
+		err := validateEntityType(entity)
+		if err != nil {
+			serv.Warnf("GetTags error: " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
 	var tags []models.Tag
-	switch from {
-	case "stations":
+	switch entity {
+	case "station":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
 			serv.Errorf("GetTags error: " + err.Error())
@@ -392,7 +471,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-	case "users":
+	case "user":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"users": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
 			serv.Errorf("GetTags error: " + err.Error())
@@ -405,7 +484,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-	case "schemas":
+	case "schema":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
 			serv.Errorf("GetTags error: " + err.Error())
@@ -432,9 +511,26 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 			return
 		}
 	}
-
 	if len(tags) == 0 {
 		tags = []models.Tag{}
+	}
+
+	c.IndentedJSON(200, tags)
+}
+
+func (th TagsHandler) GetUsedTags(c *gin.Context) {
+	var tags []models.Tag
+	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
+	cursor, err := tagsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		serv.Errorf("GetUsedTags error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if err = cursor.All(context.TODO(), &tags); err != nil {
+		serv.Errorf("GetUsedTags error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	c.IndentedJSON(200, tags)

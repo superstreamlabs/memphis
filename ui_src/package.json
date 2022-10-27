@@ -18,6 +18,7 @@
     "lottie-react": "^2.3.1",
     "monaco-editor": "^0.34.0",
     "prettier": "^2.5.1",
+    "protocol-buffers-schema": "^3.6.0",
     "react": "^17.0.2",
     "react-apexcharts": "^1.3.9",
     "react-code-blocks": "0.0.9-0",
