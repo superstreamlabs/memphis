@@ -46,36 +46,23 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
     const updateChoice = (filterGroup, filterField, value) => {
         let updatedCounter;
         let filter;
+        updatedCounter = filterState.counter;
+        filter = filterState.filterFields;
         switch (filterState.filterFields[filterGroup].filterType) {
             case filterType.CHECKBOX:
-                updatedCounter = filterState.counter;
-                filter = filterState.filterFields;
                 if (filter[filterGroup].fields[filterField].checked) updatedCounter--;
                 else updatedCounter++;
                 filter[filterGroup].fields[filterField].checked = !filter[filterGroup].fields[filterField].checked;
-                filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-                filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
-                return;
             case filterType.RADIOBUTTON:
-                updatedCounter = filterState.counter;
-                filter = filterState.filterFields;
                 if (filter[filterGroup].radioValue === -1) updatedCounter++;
                 filter[filterGroup].radioValue = filterField;
-                filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-                filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
-                return;
             case filterType.DATE:
-                updatedCounter = filterState.counter;
-                filter = filterState.filterFields;
                 if (filter[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
                 else if (filter[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
                 filter[filterGroup].fields[filterField].value = value;
-                filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-                filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
-                return;
-            default:
-                return;
         }
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
     };
 
     const showMoreLess = (index, showMoreFalg) => {
@@ -214,7 +201,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             <div className="collapse-footer">
                 <Button
                     width="110px"
-                    height="26px"
+                    height="30px"
                     placeholder="Cancel"
                     colorType="black"
                     radiusType="circle"
@@ -226,7 +213,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 />
                 <Button
                     width="110px"
-                    height="26px"
+                    height="30px"
                     placeholder="Apply"
                     colorType="white"
                     radiusType="circle"
