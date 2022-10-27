@@ -130,6 +130,28 @@ func SendEvent(userId, eventName string) {
 	})
 }
 
+func SendEventWithParams(userId string, params []models.EventParam, eventName string) {
+	var distinctId string
+	if configuration.DEV_ENV != "" {
+		distinctId = "dev"
+	} else if configuration.SANDBOX_ENV == "true" {
+		distinctId = "sandbox" + "-" + userId
+	} else {
+		distinctId = deploymentId + "-" + userId
+	}
+
+	p := posthog.NewProperties()
+	for _, param := range params {
+		p.Set(param.Name, param.Value)
+	}
+
+	go AnalyticsClient.Enqueue(posthog.Capture{
+		DistinctId: distinctId,
+		Event:      eventName,
+		Properties: p,
+	})
+}
+
 func SendErrEvent(origin, errMsg string) {
 	distinctId := deploymentId
 	if configuration.DEV_ENV != "" {

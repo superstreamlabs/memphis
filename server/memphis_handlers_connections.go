@@ -22,6 +22,7 @@
 package server
 
 import (
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 
 	"context"
@@ -97,6 +98,16 @@ func handleConnectMessage(client *client) error {
 			client.Errorf("handleConnectMessage: " + err.Error())
 			return err
 		}
+	}
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		sdkName := strings.Split(client.opts.Lang, ".")[1]
+		param := models.EventParam{
+			Name:  "sdk",
+			Value: sdkName,
+		}
+		analyticsParams := []models.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-connect-sdk")
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID}
