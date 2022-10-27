@@ -1,6 +1,7 @@
 .schema-item-container{
     padding: 15px;
     border-bottom: 1px solid #EFEFEF;
+    cursor: pointer;
     p{
         margin: 0;
     }
@@ -29,4 +30,7 @@
             color: rgba(74,73,92,0.8);
         }
     }
+}
+.sch-item-selected{
+    background: rgba(101, 87, 255, 0.1);
 }

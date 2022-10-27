@@ -277,7 +277,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <Editor
                             options={{
                                 minimap: { enabled: false },
-                                scrollbar: { verticalScrollbarSize: 5 },
+                                scrollbar: { verticalScrollbarSize: 3 },
                                 scrollBeyondLastLine: false,
                                 roundedSelection: false,
                                 formatOnPaste: true,
@@ -299,7 +299,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 <Editor
                                     options={{
                                         minimap: { enabled: false },
-                                        scrollbar: { verticalScrollbarSize: 0 },
+                                        scrollbar: { verticalScrollbarSize: 3 },
                                         scrollBeyondLastLine: false,
                                         roundedSelection: false,
                                         formatOnPaste: true,
@@ -321,7 +321,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                     options={{
                                         renderSideBySide: false,
                                         readOnly: true,
-                                        scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                        scrollbar: { verticalScrollbarSize: 3, horizontalScrollbarSize: 0 },
                                         renderOverviewRuler: false,
                                         colorDecorators: true,
                                         fontSize: '14px'

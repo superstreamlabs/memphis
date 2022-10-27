@@ -27,9 +27,13 @@ import React from 'react';
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
 import { parsingDate } from '../../../../../services/valueConvertor';
 
-const SchemaItem = ({ schema }) => {
+const SchemaItem = ({ schema, handleSelectedItem, selected }) => {
     return (
-        <div key={schema?.id} className="schema-item-container">
+        <div
+            key={schema?.id}
+            className={selected === schema?.name ? 'schema-item-container sch-item-selected' : 'schema-item-container'}
+            onClick={() => handleSelectedItem(schema?.name)}
+        >
             <div className="name-wrapper">
                 <img src={schemaItemIcon} />
                 <p className="name">{schema?.name}</p>

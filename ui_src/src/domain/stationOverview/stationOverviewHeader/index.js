@@ -40,6 +40,7 @@ import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import VersionBadge from '../../../components/versionBadge';
 import UseSchemaModal from '../components/useSchemaModal';
+import UpdateSchemaModal from '../components/updateSchemaModal';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -49,6 +50,7 @@ const StationOverviewHeader = () => {
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
+    const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -77,12 +79,15 @@ const StationOverviewHeader = () => {
     const removeTag = async (tagName) => {
         try {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
-            let tags = stationState?.stationMetaData?.tags;
+            let tags = stationState?.stationSocketData?.tags;
             let updatedTags = tags.filter((tag) => tag.name !== tagName);
             stationDispatch({ type: 'SET_TAGS', payload: updatedTags });
         } catch (error) {}
     };
 
+    const setSchema = (schema) => {
+        stationDispatch({ type: 'SET_SCHEMA', payload: schema });
+    };
     return (
         <div className="station-overview-header">
             <div className="title-wrapper">
@@ -92,7 +97,7 @@ const StationOverviewHeader = () => {
                         <TagsList
                             tagsToShow={3}
                             className="tags-list"
-                            tags={stationState?.stationMetaData?.tags}
+                            tags={stationState?.stationSocketData?.tags}
                             addNew={true}
                             editable={true}
                             handleDelete={(tag) => removeTag(tag)}
@@ -135,62 +140,68 @@ const StationOverviewHeader = () => {
                             <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
                         </p>
                     </div>
-                    {/* <div className="schema-details sd-center">
-                        <div className="add-new">
-                            <Button
-                                width="120px"
-                                height="25px"
-                                placeholder={
-                                    <div className="use-schema-button">
-                                        <Add />
-                                        <p>Use schema</p>
-                                    </div>
-                                }
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontFamily="InterMedium"
-                                // onClick={() => returnToStaionsList()}
-                            />
+                    {stationState?.stationSocketData?.schema === undefined || Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
+                        <div className="schema-details sd-center">
+                            <div className="add-new">
+                                <Button
+                                    width="120px"
+                                    height="25px"
+                                    placeholder={
+                                        <div className="use-schema-button">
+                                            <Add />
+                                            <p>Use schema</p>
+                                        </div>
+                                    }
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => setUseSchemaModal(true)}
+                                />
+                            </div>
                         </div>
-                    </div> */}
-                    <div className="schema-details sd-flex">
-                        <div className="title-and-badge">
-                            <p className="title">Schema</p>
-                            <VersionBadge content="Update available" active={false} />
+                    ) : (
+                        <div className="schema-details sd-flex">
+                            <div className="title-and-badge">
+                                <p className="title">Schema</p>
+                                {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Update available" active={false} />}
+                                {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates" active={true} />}
+                            </div>
+                            <div className="name-and-version">
+                                <p>{stationState?.stationSocketData?.schema?.name}</p>
+                                <FiberManualRecord />
+                                <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
+                            </div>
+                            <div className="buttons">
+                                <Button
+                                    width="40px"
+                                    minWidth="35px"
+                                    height="16px"
+                                    placeholder="Edit"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="10px"
+                                    fontFamily="InterMedium"
+                                    onClick={() => setUseSchemaModal(true)}
+                                />
+                                {stationState?.stationSocketData?.schema?.updates_available && (
+                                    <Button
+                                        width="80px"
+                                        height="16px"
+                                        placeholder="Update now"
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="10px"
+                                        fontFamily="InterMedium"
+                                        onClick={() => setUpdateSchemaModal(true)}
+                                    />
+                                )}
+                            </div>
                         </div>
-                        <div className="name-and-version">
-                            <p>Test</p>
-                            <FiberManualRecord />
-                            <p>v2</p>
-                        </div>
-                        <div className="buttons">
-                            <Button
-                                width="40px"
-                                minWidth="35px"
-                                height="20px"
-                                placeholder="Edit"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="11px"
-                                fontFamily="InterMedium"
-                                onClick={() => setUseSchemaModal(true)}
-                            />
-                            <Button
-                                width="80px"
-                                height="20px"
-                                placeholder="Update now"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="11px"
-                                fontFamily="InterMedium"
-                                // onClick={() => returnToStaionsList()}
-                            />
-                        </div>
-                    </div>
+                    )}
                 </div>
                 <div className="icons-wrapper">
                     <div className="details-wrapper">
@@ -292,7 +303,34 @@ const StationOverviewHeader = () => {
                     hr={true}
                     className="use-schema-modal"
                 >
-                    <UseSchemaModal />
+                    <UseSchemaModal
+                        schemaSelected={stationState?.stationSocketData?.schema?.name || ''}
+                        stationName={stationState?.stationMetaData?.name}
+                        dispatch={(schema) => {
+                            setSchema(schema);
+                            setUseSchemaModal(false);
+                        }}
+                        close={() => setUseSchemaModal(false)}
+                    />
+                </Modal>
+                <Modal
+                    header="Update schema"
+                    displayButtons={false}
+                    height="550px"
+                    width="450px"
+                    clickOutside={() => setUpdateSchemaModal(false)}
+                    open={updateSchemaModal}
+                    className="update-schema-modal"
+                >
+                    <UpdateSchemaModal
+                        schemaSelected={stationState?.stationSocketData?.schema?.name}
+                        stationName={stationState?.stationMetaData?.name}
+                        dispatch={(schema) => {
+                            setSchema(schema);
+                            setUpdateSchemaModal(false);
+                        }}
+                        close={() => setUpdateSchemaModal(false)}
+                    />
                 </Modal>
             </div>
         </div>

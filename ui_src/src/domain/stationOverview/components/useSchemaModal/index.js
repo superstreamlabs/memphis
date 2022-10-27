@@ -30,11 +30,13 @@ import { httpRequest } from '../../../../services/http';
 import SchemaItem from './schemaItem';
 import Button from '../../../../components/button';
 
-const UseSchemaModal = () => {
+const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [selected, setSelected] = useState(schemaSelected);
+    const [useschemaLoading, setUseschemaLoading] = useState(false);
 
     const getAllSchema = async () => {
         try {
@@ -61,6 +63,18 @@ const UseSchemaModal = () => {
         }
     }, [searchInput]);
 
+    const useSchema = async () => {
+        try {
+            setUseschemaLoading(true);
+            const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_name: stationName, schema_name: selected });
+            if (data) {
+                dispatch(data);
+                setUseschemaLoading(false);
+            }
+        } catch (error) {}
+        setUseschemaLoading(false);
+    };
+
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
     };
@@ -81,7 +95,7 @@ const UseSchemaModal = () => {
             />
             <div className="schemas-list">
                 {schemaList?.map((schema) => {
-                    return <SchemaItem schema={schema} />;
+                    return <SchemaItem schema={schema} selected={selected} handleSelectedItem={(id) => setSelected(id)} />;
                 })}
             </div>
             <div className="buttons">
@@ -95,7 +109,7 @@ const UseSchemaModal = () => {
                     border="gray-light"
                     fontSize="13px"
                     fontFamily="InterSemiBold"
-                    // onClick={() => returnToStaionsList()}
+                    onClick={() => close()}
                 />
                 <Button
                     width="150px"
@@ -106,7 +120,9 @@ const UseSchemaModal = () => {
                     backgroundColorType="purple"
                     fontSize="13px"
                     fontFamily="InterSemiBold"
-                    // onClick={() => setUseSchemaModal(true)}
+                    disabled={selected === schemaSelected || selected === ''}
+                    isLoading={useschemaLoading}
+                    onClick={useSchema}
                 />
             </div>
         </div>

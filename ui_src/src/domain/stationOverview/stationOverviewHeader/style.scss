@@ -86,12 +86,13 @@
                 border-radius: 5px;
                 width: 60%;
                 margin: 5px;
-                padding:5px;
+                padding:10px;
                 min-width: 180px;
                 max-width: 200px;
                  .add-new {
                     .use-schema-button{
                         display: flex;
+                        align-items: center;
                         svg{
                             width: 12px;
                         }
@@ -100,30 +101,31 @@
                  .title-and-badge{
                     display: flex;
                     align-items:center;
-                    justify-content:space-between;
                     .title{
                         font-size: 12px;
+                        line-height:12px;
                         font-family: 'InterSemiBold';
+                        margin-right: 10px;
+                    }
+                    .version-badge p{
+                        font-size: 10px;
                     }
                  }
                  .name-and-version{
                     font-size: 12px;
                     display: flex;
                     align-items: center;
-                    height: 22px;
                     svg{
-                        width: 8px;
+                        width: 6px;
                         margin: 0px 5px;
                     }
                  }
                  .buttons{
                     display: flex;
                     justify-content:space-between;
-                    height: 22px;
                  }
             }
             .sd-flex{
-                padding: 5px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
