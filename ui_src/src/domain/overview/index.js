@@ -175,7 +175,7 @@ function OverView() {
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
-                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome Back, {username}</h1> : <h1>Welcome, {username}</h1>}
+                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome back, {username}</h1> : <h1>Welcome, {username}</h1>}
                                 {/* <p className="ok-status">You’re a memphis superhero! All looks good!</p> */}
                             </div>
                         </div>

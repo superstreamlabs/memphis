@@ -289,7 +289,7 @@ function CreateSchema({ goBack }) {
                 <div className="right-side">
                     <div className="schema-field schema">
                         <div className="title-wrapper">
-                            <p className="field-title">Structure definition</p>
+                            <p className="field-title">Schema definition</p>
                             <Button
                                 width="115px"
                                 height="34px"
@@ -355,7 +355,7 @@ function CreateSchema({ goBack }) {
                         <Button
                             width="125px"
                             height="34px"
-                            placeholder="Create Schema"
+                            placeholder="Create schema"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

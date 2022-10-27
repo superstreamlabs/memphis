@@ -128,7 +128,7 @@ const StationOverviewHeader = () => {
                         <b>Replicas:</b> {stationState?.stationMetaData?.replicas}
                     </p>
                     <p>
-                        <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
+                        <b>Storage type:</b> {stationState?.stationMetaData?.storage_type}
                     </p>
                 </div>
                 <div className="icons-wrapper">
@@ -191,12 +191,12 @@ const StationOverviewHeader = () => {
                                 setSdkModal(true);
                             }}
                         >
-                            View Details {'>'}
+                            View details {'>'}
                         </span>
                     </div>
                     <div className="audit">
                         <p>Audit</p>
-                        <span onClick={() => setAuditModal(true)}>View Details {'>'}</span>
+                        <span onClick={() => setAuditModal(true)}>View details {'>'}</span>
                     </div>
                 </div>
                 <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>

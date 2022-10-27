@@ -60,7 +60,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                             <div className="is-used">
                                 <img src={schema.used ? usedIcond : notUsedIcond} />
                                 {schema.used && <p className="used">Used</p>}
-                                {!schema.used && <p className="not-used"> Not Used</p>}
+                                {!schema.used && <p className="not-used"> Not used</p>}
                             </div>
                             {/* <div className="menu">
                             <p>***</p>

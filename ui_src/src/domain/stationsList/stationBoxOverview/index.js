@@ -103,7 +103,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isChec
                     </div>
                     <div className="station-meta">
                         <img src={storageIcon} alt="storage" />
-                        <label className="data-labels storage">Storage Type</label>
+                        <label className="data-labels storage">Storage type</label>
                         <p className="data-info">{station.station.storage_type}</p>
                     </div>
                     <div className="station-meta">
