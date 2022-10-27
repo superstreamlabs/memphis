@@ -263,12 +263,12 @@ const StationOverviewHeader = () => {
                                 setSdkModal(true);
                             }}
                         >
-                            View Details {'>'}
+                            View details {'>'}
                         </span>
                     </div>
                     <div className="audit">
                         <p>Audit</p>
-                        <span onClick={() => setAuditModal(true)}>View Details {'>'}</span>
+                        <span onClick={() => setAuditModal(true)}>View details {'>'}</span>
                     </div>
                 </div>
                 <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>

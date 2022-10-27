@@ -208,7 +208,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="tags">{/* <TagsList tagsToShow={4} tags={schemaDetails?.tags} editable={true} /> */}</div>
                 <div className="schema-fields">
                     <div className="left">
-                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema structure</p>
+                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema definition</p>
                         {!versionSelected?.active && (
                             <>
                                 <span>Diff : </span>
@@ -353,7 +353,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             </div>
                         </>
                     ) : (
-                        <p className="title">Not Used yet</p>
+                        <p className="title">Not in use</p>
                     )}
                 </div>
             </div>

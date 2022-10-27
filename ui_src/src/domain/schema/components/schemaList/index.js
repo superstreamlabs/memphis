@@ -151,7 +151,7 @@ function SchemaList({ createNew }) {
                         <Button
                             width="131px"
                             height="34px"
-                            placeholder={`Delete Selected (${isCheck?.length})`}
+                            placeholder={`Delete selected (${isCheck?.length})`}
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"
@@ -165,7 +165,7 @@ function SchemaList({ createNew }) {
                         <Button
                             width="131px"
                             height="34px"
-                            placeholder="Selected All"
+                            placeholder="Select all"
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"
