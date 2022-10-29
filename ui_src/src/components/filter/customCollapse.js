@@ -97,6 +97,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 return (
                     <RadioButton
                         vertical={true}
+                        height="25px"
                         fontFamily="InterSemiBold"
                         options={filterGroup.fields.map((item, id) => {
                             return { id: id, value: id, label: item.name };
@@ -180,21 +181,25 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 <Panel
                     header={
                         filterGroup?.fields?.length > 0 && (
-                            <div className="filter-header">
-                                <label className="title">{filterGroup.value}</label>
-                                <img
-                                    className={activeKey?.includes(filterGroupIndex.toString()) ? 'collapse-arrow open' : 'collapse-arrow'}
-                                    src={CollapseArrow}
-                                    alt="collapse-arrow"
-                                />
+                            <div>
+                                {filterGroupIndex !== 0 && <Divider />}
+                                <div className="filter-header">
+                                    <label className="title">{filterGroup.value}</label>
+                                    <img
+                                        className={activeKey?.includes(filterGroupIndex.toString()) ? 'collapse-arrow open' : 'collapse-arrow'}
+                                        src={CollapseArrow}
+                                        alt="collapse-arrow"
+                                    />
+                                </div>
                             </div>
                         )
                     }
                     key={`${filterGroupIndex}`}
                     showArrow={false}
                 >
-                    {drawComponent(filterGroup, filterGroupIndex)}
-                    {filterGroupIndex !== 0 && filterGroupIndex + 1 < filterState?.filterFields.length && <Divider />}
+                    <div className={filterGroup.labelType === labelType.BADGE ? 'tag-container tag-container-gray' : 'tag-container'}>
+                        {drawComponent(filterGroup, filterGroupIndex)}
+                    </div>
                 </Panel>
             ))}
 
