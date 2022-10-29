@@ -182,7 +182,11 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                     header={
                         filterGroup?.fields?.length > 0 && (
                             <div>
-                                {filterGroupIndex !== 0 && <Divider />}
+                                {filterGroupIndex !== 0 && (
+                                    <div className="divider-container">
+                                        <Divider />
+                                    </div>
+                                )}
                                 <div className="filter-header">
                                     <label className="title">{filterGroup.value}</label>
                                     <img

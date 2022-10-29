@@ -47,10 +47,15 @@
 .custom-collapse-filter {
     width: 280px !important;
     padding: 20px 0px 20px 0px;
-    .ant-divider-horizontal {
-        margin-top: 0;
-        margin-bottom: 0;
+    .divider-container {
+        margin-left: 20px;
+        margin-right: 20px;
+        .ant-divider-horizontal {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
     }
+
     .collapse-header {
         display: flex;
         align-items: center;
