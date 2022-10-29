@@ -1233,7 +1233,12 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	}
 	c.IndentedJSON(200, schemaDetailsResponse)
 
-	updateContent, err := getProducerInitSchemaUpdate(stationName)
+	updateContent, err := generateSchemaUpdateInit(schema)
+	if err != nil {
+		serv.Errorf("UseSchema error: %v", err)
+		return
+	}
+
 	update := models.ProducerSchemaUpdate{
 		UpdateType: models.SchemaUpdateTypeInit,
 		Init:       *updateContent,

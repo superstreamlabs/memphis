@@ -142,12 +142,7 @@ func validateMessageStructName(messageStructName string) error {
 	return nil
 }
 
-func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerSchemaUpdateInit, error) {
-	schema, err := getSchemaByStationName(sn.Ext())
-	if err != nil {
-		return nil, err
-	}
-
+func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdateInit, error) {
 	versions, err := getSchemaVersionsBySchemaId(schema.ID)
 	if err != nil {
 		return nil, err
@@ -172,6 +167,15 @@ func getProducerInitSchemaUpdate(sn StationName) (*models.ProducerSchemaUpdateIn
 		ActiveIdx:  activeIdx,
 		SchemaType: schema.Type,
 	}, nil
+}
+
+func getSchemaUpdateInitFromStation(sn StationName) (*models.ProducerSchemaUpdateInit, error) {
+	schema, err := getSchemaByStationName(sn)
+	if err != nil {
+		return nil, err
+	}
+
+	return generateSchemaUpdateInit(schema)
 }
 
 func (s *Server) updateStationProducersOfSchemaChange(sn StationName,
@@ -210,13 +214,8 @@ func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID)
 	return schemaVersion, nil
 }
 
-func getSchemaByStationName(stationName string) (models.Schema, error) {
+func getSchemaByStationName(sn StationName) (models.Schema, error) {
 	var schema models.Schema
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		serv.Warnf(err.Error())
-		return schema, err
-	}
 
 	exist, station, err := IsStationExist(sn)
 	if err != nil {
@@ -226,6 +225,9 @@ func getSchemaByStationName(stationName string) (models.Schema, error) {
 	if !exist {
 		serv.Warnf("Station does not exist")
 		return schema, err
+	}
+	if station.Schema.SchemaName == "" {
+		return schema, ErrNoSchema
 	}
 
 	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
@@ -237,7 +239,7 @@ func getSchemaByStationName(stationName string) (models.Schema, error) {
 	return schema, nil
 }
 
-func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
+func (sh SchemasHandler) GetSchemaByStationName(stationName StationName) (models.Schema, error) {
 	return getSchemaByStationName(stationName)
 }
 

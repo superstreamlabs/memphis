@@ -216,7 +216,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	schemaUpdate, err := getProducerInitSchemaUpdate(stationName)
+	schemaUpdate, err := getSchemaUpdateInitFromStation(stationName)
 	if err == ErrNoSchema {
 		respondWithResp(s, reply, &resp)
 		return
