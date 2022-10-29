@@ -27,6 +27,7 @@ import pathDomains from '../../router';
 import { Form } from 'antd';
 import TitleComponent from '../titleComponent';
 import RadioButton from '../radioButton';
+import Switcher from '../switcher';
 import Input from '../Input';
 import { convertDateToSeconds } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -34,6 +35,7 @@ import { httpRequest } from '../../services/http';
 
 import InputNumberComponent from '../InputNumber';
 import SelectComponent from '../select';
+import SelectSchema from '../selectSchema';
 
 const retanionOptions = [
     {
@@ -74,6 +76,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [storageType, setStorageType] = useState(storageOptions[0].value);
     const [schemas, setSchemas] = useState([]);
+    const [useSchema, setUseSchema] = useState(true);
 
     useEffect(() => {
         getOverviewData();
@@ -345,21 +348,26 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             {!getStarted && schemas.length > 0 && (
                 <div className="schema-type">
                     <Form.Item name="schemaValue">
-                        <TitleComponent headerTitle="Schema" typeTitle="sub-header" headerDescription="Schema that will be attached to the station"></TitleComponent>
-                        <SelectComponent
-                            height="40px"
-                            value={creationForm.schemaValue}
-                            colorType="navy"
-                            backgroundColorType="none"
-                            radiusType="semi-round"
-                            width="450px"
-                            placeholder="Select schema"
-                            options={schemas.map((schema) => schema.name)}
-                            onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                            boxShadowsType="gray"
-                            popupClassName="select-options"
-                            disabled={!allowEdit}
-                        />
+                        <div className="toggle-add-schema">
+                            <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
+                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
+                        </div>
+                        {useSchema && (
+                            <SelectSchema
+                                height="40px"
+                                value={creationForm.schemaValue}
+                                colorType="navy"
+                                backgroundColorType="none"
+                                radiusType="semi-round"
+                                width="450px"
+                                placeholder="Select schema"
+                                options={schemas}
+                                onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                                boxShadowsType="gray"
+                                popupClassName="select-options"
+                                disabled={!allowEdit}
+                            />
+                        )}
                     </Form.Item>
                 </div>
             )}

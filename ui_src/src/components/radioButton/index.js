@@ -24,9 +24,7 @@ import './style.scss';
 import { Radio, Space } from 'antd';
 import React from 'react';
 
-const RadioButton = (props) => {
-    const { options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper } = props;
-
+const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, disabled, vertical, fontFamily, radioWrapper, labelType }) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -48,11 +46,11 @@ const RadioButton = (props) => {
                 {options.map((option) => (
                     <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
                         <div
-                            className={props.labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
-                            onClick={() => (props.labelType ? props.onClick(option.value) : '')}
+                            className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
+                            onClick={() => (labelType ? onClick(option.value) : '')}
                         >
                             <span
-                                className={props.labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : 'label'}
+                                className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : 'label'}
                                 style={{ fontFamily: fontFamily }}
                             >
                                 {option.label}

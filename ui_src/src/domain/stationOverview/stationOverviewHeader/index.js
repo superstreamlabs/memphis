@@ -24,7 +24,6 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
@@ -36,6 +35,9 @@ import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import SdkExample from '../sdkExsample';
 import Auditing from '../auditing';
+import TagsList from '../../../components/tagList';
+import { httpRequest } from '../../../services/http';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -65,11 +67,39 @@ const StationOverviewHeader = () => {
         history.push(pathDomains.stations);
     };
 
+    const updateTags = (tags) => {
+        stationDispatch({ type: 'SET_TAGS', payload: tags });
+    };
+
+    const removeTag = async (tagName) => {
+        try {
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
+            let tags = stationState?.stationMetaData?.tags;
+            let updatedTags = tags.filter((tag) => tag.name !== tagName);
+            stationDispatch({ type: 'SET_TAGS', payload: updatedTags });
+        } catch (error) {}
+    };
+
     return (
         <div className="station-overview-header">
             <div className="title-wrapper">
                 <div className="station-details">
-                    <h1 className="station-name">{stationState?.stationMetaData?.name}</h1>
+                    <h1 className="station-name">
+                        {stationState?.stationMetaData?.name}
+                        <TagsList
+                            tagsToShow={3}
+                            className="tags-list"
+                            tags={stationState?.stationMetaData?.tags}
+                            addNew={true}
+                            editable={true}
+                            handleDelete={(tag) => removeTag(tag)}
+                            entityID={stationState?.stationMetaData?.id}
+                            entityName={stationState?.stationMetaData?.name}
+                            handleTagsUpdate={(tags) => {
+                                updateTags(tags);
+                            }}
+                        />
+                    </h1>
                     <span className="created-by">
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
                     </span>
@@ -98,7 +128,7 @@ const StationOverviewHeader = () => {
                         <b>Replicas:</b> {stationState?.stationMetaData?.replicas}
                     </p>
                     <p>
-                        <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
+                        <b>Storage type:</b> {stationState?.stationMetaData?.storage_type}
                     </p>
                 </div>
                 <div className="icons-wrapper">
@@ -161,12 +191,12 @@ const StationOverviewHeader = () => {
                                 setSdkModal(true);
                             }}
                         >
-                            View Details {'>'}
+                            View details {'>'}
                         </span>
                     </div>
                     <div className="audit">
                         <p>Audit</p>
-                        <span onClick={() => setAuditModal(true)}>View Details {'>'}</span>
+                        <span onClick={() => setAuditModal(true)}>View details {'>'}</span>
                     </div>
                 </div>
                 <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>

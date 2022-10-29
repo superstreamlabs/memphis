@@ -1,4 +1,9 @@
+
 .modal-wrapper {
+    .ant-modal-body {
+        padding-top:10px;
+        padding-bottom:10px;
+    }
     .modal-header {
         .header-img-container {
             background: rgba(101, 87, 255, 0.1);

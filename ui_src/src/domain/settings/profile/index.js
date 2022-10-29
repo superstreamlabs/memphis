@@ -88,7 +88,7 @@ function Profile() {
             <div className="avatar-section">
                 <p className="title">Avatar</p>
                 <div className="avatar-images">
-                    {Array.from(Array(9).keys()).map((item) => {
+                    {Array.from(Array(8).keys()).map((item) => {
                         return (
                             <div
                                 className={process.env.REACT_APP_SANDBOX_ENV ? 'sub-icon-wrapper-sandbox' : avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'}

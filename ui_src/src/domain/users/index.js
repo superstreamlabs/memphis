@@ -47,7 +47,7 @@ function Users() {
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
         getAllUsers();
-    }, []);
+    }, [dispatch]);
 
     const getAllUsers = async () => {
         try {
@@ -141,7 +141,7 @@ function Users() {
                     )}
                     {!isLoading &&
                         userList.map((user) => {
-                            return <UserItem key={user.id} content={user} removeUser={() => removeUser(user.username)} />;
+                            return <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />;
                         })}
                 </div>
             </div>

@@ -52,13 +52,8 @@ const SelectVersion = ({ options, onChange, value }) => {
                                 <p className="created-by">Created by {option?.created_by_user}</p>
                                 {(option.active || index === 0) && <FiberManualRecord />}
                                 {option.active && (
-                                    <div className="current">
-                                        <p>Current</p>
-                                    </div>
-                                )}
-                                {index === 0 && (
-                                    <div className="latest">
-                                        <p>Latest</p>
+                                    <div className="active">
+                                        <p>Active</p>
                                     </div>
                                 )}
                             </div>

@@ -111,11 +111,17 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 
-	messagePayload := models.MessagePayload{
+	var headers []models.MsgHeader
+	for key, value := range headersJson {
+		header := models.MsgHeader{HeaderKey: key, HeaderValue: value}
+		headers = append(headers, header)
+	}
+
+	messagePayload := models.MessagePayloadDb{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
-		Headers:  headersJson,
+		Headers:  headers,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
@@ -140,8 +146,9 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightPoisonMessage, error) {
+func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightPoisonMessageResponse, error) {
 	poisonMessages := make([]models.LightPoisonMessage, 0)
+	poisonMessagesResponse := make([]models.LightPoisonMessageResponse, 0)
 
 	findOptions := options.Find()
 	findOptions.SetSort(bson.M{"creation_date": -1})
@@ -150,20 +157,34 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 		"station_name": station.Name,
 	}, findOptions)
 	if err != nil {
-		return poisonMessages, err
+		return []models.LightPoisonMessageResponse{}, err
 	}
 
 	if err = cursor.All(context.TODO(), &poisonMessages); err != nil {
-		return poisonMessages, err
+		return []models.LightPoisonMessageResponse{}, err
 	}
 
+	poisonMessagesJson := map[string]string{}
 	for i, msg := range poisonMessages {
 		if len(msg.Message.Data) > 100 {
 			poisonMessages[i].Message.Data = msg.Message.Data[0:100]
 		}
-	}
+		for _, value := range msg.Message.Headers {
+			poisonMessagesJson[value.HeaderKey] = value.HeaderValue
+		}
 
-	return poisonMessages, nil
+		msg := models.MessagePayload{
+			TimeSent: poisonMessages[i].Message.TimeSent,
+			Size:     poisonMessages[i].Message.Size,
+			Data:     poisonMessages[i].Message.Data,
+			Headers:  poisonMessagesJson,
+		}
+		poisonMessagesResponse = append(poisonMessagesResponse, models.LightPoisonMessageResponse{
+			ID:      poisonMessages[i].ID,
+			Message: msg,
+		})
+	}
+	return poisonMessagesResponse, nil
 }
 
 func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string) (int, error) {

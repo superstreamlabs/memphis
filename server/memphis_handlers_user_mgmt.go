@@ -519,6 +519,10 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent("", "user-open-ui")
+	}
 	c.IndentedJSON(200, gin.H{"exist": exist})
 }
 

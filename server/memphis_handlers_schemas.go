@@ -64,7 +64,7 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	if len(schemaContent) == 0 {
 		return errors.New("Your schema content is invalid")
 	}
-	
+
 	switch schemaType {
 	case "protobuf":
 		err := validateProtobufContent(schemaContent)
@@ -524,7 +524,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 			return
 		}
 		if exist {
-			DeleteTagsBySchema(schema.ID)
+			DeleteTagsFromSchema(schema.ID)
 			schemaIds = append(schemaIds, schema.ID)
 		}
 	}

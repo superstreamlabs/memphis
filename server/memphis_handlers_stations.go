@@ -112,7 +112,7 @@ func removeStationResources(s *Server, station models.Station) error {
 		return err
 	}
 
-	DeleteTagsByStation(station.ID)
+	DeleteTagsFromStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": station.ID},
@@ -992,7 +992,17 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		stationName := replaceDelimiters(msg.StationName)
 		for _, cg := range msg.PoisonedCgs {
 			cgName := replaceDelimiters(cg.CgName)
-			err := sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data), []byte(msg.Message.Headers))
+			headersJson := map[string]string{}
+			for _, value := range msg.Message.Headers {
+				headersJson[value.HeaderKey] = value.HeaderValue
+			}
+			headers, err := json.Marshal(headersJson)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages error: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			err = sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data), headers)
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1138,13 +1148,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	headersJson, err := getMessageHeaders(hdr)
-
 	if err != nil {
 		serv.Errorf("GetMessageDetails" + err.Error())
 		return
 	}
 
-	msg := models.Message{
+	msg := models.MessageResponse{
 		MessageSeq: body.MessageSeq,
 		Message: models.MessagePayload{
 			TimeSent: sm.Time,
