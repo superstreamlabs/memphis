@@ -271,6 +271,19 @@ function CreateSchema({ goBack }) {
                                 <p className="field-title">Tags</p>
                                 <p className="desc">Tags will help you organize, search and filter your data</p>
                             </div>
+                            {/* <TagsList
+                            tagsToShow={4}
+                            className="tags-list"
+                            tags={stationState?.stationSocketData?.tags}
+                            addNew={true}
+                            editable={true}
+                            handleDelete={(tag) => removeTag(tag)}
+                            entityID={stationState?.stationMetaData?.id}
+                            entityName={stationState?.stationMetaData?.name}
+                            handleTagsUpdate={(tags) => {
+                                updateTags(tags);
+                            }}
+                        /> */}
                         </div>
                         <Form.Item name="tags">
                             <TagsList

@@ -251,7 +251,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         </div>
                         <div className="validation">
                             <Button
-                                width="90px"
+                                width="100px"
                                 height="28px"
                                 placeholder={
                                     <div className="validate-placeholder">

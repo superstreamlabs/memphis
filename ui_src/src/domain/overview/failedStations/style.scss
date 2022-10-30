@@ -79,7 +79,7 @@
                         border-radius: 32px;
                         height: 23px;
                         justify-content: center;
-                        display: none;
+                         display: flex;
                         align-items:center;
                         span{
                             font-family: 'InterSemiBold';
@@ -112,9 +112,9 @@
                     width: 100px;
                 }
             }
-            .stations-row:hover .staion-link{
-                display: flex !important;
-            }
+            // .stations-row:hover .staion-link{
+            //     display: flex !important;
+            // }
             .stations-row:nth-child(even) {
                 background-color: #f8f8f8;
             }
