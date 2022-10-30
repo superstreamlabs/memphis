@@ -39,7 +39,7 @@ const tagsPickerPopInnerStyle = {
     boxShadow: '0px 23px 44px rgba(176, 183, 195, 0.14)'
 };
 
-const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entityID, handleTagsUpdate, newEntity = false }) => {
+const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entityType, handleTagsUpdate, newEntity = false }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [remainingTags, setRemainingTags] = useState([]);
     const saveChangesRef = useRef(null);
@@ -96,8 +96,7 @@ const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entity
                         <TagsPicker
                             ref={saveChangesRef}
                             tags={tags}
-                            entity_id={entityID}
-                            entity_type={'station'}
+                            entity_type={entityType}
                             handleUpdatedTagList={(tags) => {
                                 handleTagsUpdate(tags);
                                 setTagsPop(false);
