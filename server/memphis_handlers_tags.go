@@ -88,7 +88,7 @@ func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, co
 	return nil
 }
 
-func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id primitive.ObjectID) error {
+func AddTagsToEntity(tags []models.Tag, entity_type string, entity_id primitive.ObjectID) error {
 	if len(tags) == 0 {
 		return nil
 	}
@@ -97,46 +97,37 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 	if err != nil {
 		return err
 	}
-	stationArr := []primitive.ObjectID{}
-	schemaArr := []primitive.ObjectID{}
-	userArr := []primitive.ObjectID{}
 	var entityDBList string
 	for _, tagToCreate := range tags {
-		switch entity {
-		case "station":
-			stationArr = append(stationArr, entity_id)
-			entityDBList = "stations"
-		case "schema":
-			schemaArr = append(stationArr, entity_id)
-			entityDBList = "schemas"
-		case "user":
-			userArr = append(stationArr, entity_id)
-			entityDBList = "users"
-		}
-		newTag := models.Tag{
-			ID:       primitive.NewObjectID(),
-			Name:     strings.ToLower(tagToCreate.Name),
-			Color:    tagToCreate.Color,
-			Stations: stationArr,
-			Schemas:  schemaArr,
-			Users:    userArr,
-		}
-		filter := bson.M{"name": newTag.Name}
-		update := bson.M{
-			"$setOnInsert": bson.M{
-				"_id":      newTag.ID,
-				"name":     newTag.Name,
-				"color":    newTag.Color,
-				"stations": newTag.Stations,
-				"schemas":  newTag.Schemas,
-				"users":    newTag.Users,
-			}, "$addToSet": bson.M{entityDBList: entity_id},
-		}
-		opts := options.Update().SetUpsert(true)
-		_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+		exist, _, err := IsTagExist(tagToCreate.Name)
 		if err != nil {
 			return err
 		}
+		if !exist {
+			err = CreateTag(tagToCreate.Name, entity_type, entity_id, tagToCreate.Color)
+			if err != nil {
+				return err
+			}
+		} else {
+			switch entity {
+			case "station":
+				entityDBList = "stations"
+			case "schema":
+				entityDBList = "schemas"
+			case "user":
+				entityDBList = "users"
+			}
+			filter := bson.M{"name": tagToCreate.Name}
+			update := bson.M{
+				"$addToSet": bson.M{entityDBList: entity_id},
+			}
+			opts := options.Update().SetUpsert(true)
+			_, err = tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+			if err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil
