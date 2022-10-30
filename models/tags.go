@@ -46,10 +46,10 @@ type RemoveTagSchema struct {
 }
 
 type UpdateTagsForEntitySchema struct {
-	TagsToAdd    []Tag              `json:"tags_to_add"`
-	TagsToRemove []string           `json:"tags_to_remove"`
-	EntityType   string             `json:"entity_type"`
-	EntityID     primitive.ObjectID `json:"entity_id"`
+	TagsToAdd    []CreateTag    `json:"tags_to_add"`
+	TagsToRemove []string `json:"tags_to_remove"`
+	EntityType   string   `json:"entity_type"`
+	EntityName   string   `json:"entity_name"`
 }
 
 type GetTagsSchema struct {

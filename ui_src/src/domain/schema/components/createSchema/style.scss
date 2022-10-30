@@ -63,6 +63,16 @@
                         }
                     }
                 }
+                .tags-list-wrapper{
+                    justify-content:unset !important;
+                    .edit-tags{
+                        background: unset !important;
+                        border: unset !important;
+                        .edit-content{
+                            font-size: 14px !important;
+                        }
+                    }
+                }
                 .schema-type{
                     display: flex;
                     flex-direction: column;

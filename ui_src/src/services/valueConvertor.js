@@ -136,7 +136,7 @@ export const cutInfoLog = (str) => {
 
 export const filterArray = (arr1, arr2) => {
     const filtered = arr1.filter((el) => {
-        return arr2.indexOf(el) === -1;
+        return arr2.indexOf(el.name) === -1;
     });
     return filtered;
 };
