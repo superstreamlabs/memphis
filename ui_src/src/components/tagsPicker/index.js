@@ -82,7 +82,7 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                     return true;
                 });
                 if (newEntity) {
-                    handleUpdatedTagList(tagsToAdd);
+                    handleUpdatedTagList(checkedList);
                 } else {
                     const tagsToRemove = tags.filter((tag) => {
                         if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;

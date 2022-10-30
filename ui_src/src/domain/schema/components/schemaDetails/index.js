@@ -66,7 +66,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [schemaDetails, setSchemaDetails] = useState({
         schema_name: '',
         type: '',
-        version: []
+        version: [],
+        tags: []
     });
     const [rollBackModal, setRollBackModal] = useState(false);
     const [isDiff, setIsDiff] = useState(true);
@@ -190,6 +191,19 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
+    const removeTag = async (tagName) => {
+        try {
+            // await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'schema', entity_name: stationState?.stationMetaData?.name });
+            // let tags = stationState?.stationSocketData?.tags;
+            // let updatedTags = tags.filter((tag) => tag.name !== tagName);
+            // stationDispatch({ type: 'SET_TAGS', payload: updatedTags });
+        } catch (error) {}
+    };
+
+    const updateTags = (newTags) => {
+        setSchemaDetails(...schemaDetails.tags, newTags);
+    };
+
     return (
         <schema-details is="3xd">
             <div className="scrollable-wrapper">
@@ -205,7 +219,21 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <span>{currentVersion?.created_by_user}</span>
                     </div>
                 </div>
-                <div className="tags">{/* <TagsList tagsToShow={4} tags={schemaDetails?.tags} editable={true} /> */}</div>
+                <div className="tags">
+                    <TagsList
+                        tagsToShow={5}
+                        className="tags-list"
+                        tags={schemaDetails?.tags}
+                        addNew={true}
+                        editable={true}
+                        handleDelete={(tag) => removeTag(tag)}
+                        entityID={schemaDetails?.id}
+                        entityType={'schema'}
+                        handleTagsUpdate={(tags) => {
+                            updateTags(tags);
+                        }}
+                    />
+                </div>
                 <div className="schema-fields">
                     <div className="left">
                         <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema definition</p>
