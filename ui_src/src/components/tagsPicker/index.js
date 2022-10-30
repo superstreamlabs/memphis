@@ -32,7 +32,7 @@ import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
 import emptyTags from '../../assets/images/emptyTags.svg';
 
-const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
+const TagsPicker = forwardRef(({ tags, entityName, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -99,7 +99,7 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
                             tags_to_Add: tagsToAdd,
                             tags_to_Remove: tagsToRemoveNames,
                             entity_type: entity_type,
-                            entity_id: entity_id
+                            entity_name: entityName
                         };
                         const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
                         setEditedList(false);
