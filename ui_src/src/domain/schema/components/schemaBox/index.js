@@ -21,6 +21,7 @@
 
 import './style.scss';
 
+import { CloseRounded } from '@material-ui/icons';
 import { Drawer, Button, Space } from 'antd';
 import React, { useState } from 'react';
 
@@ -29,9 +30,8 @@ import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
 import { parsingDate } from '../../../../services/valueConvertor';
 import CheckboxComponent from '../../../../components/checkBox';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
-import SchemaDetails from '../schemaDetails';
-import { CloseRounded } from '@material-ui/icons';
 import TagsList from '../../../../components/tagList';
+import SchemaDetails from '../schemaDetails';
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     const [open, setOpen] = useState(false);

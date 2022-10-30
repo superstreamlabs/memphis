@@ -21,7 +21,6 @@
 
 import './style.scss';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import Button from '../../components/button';
 import SearchInput from '../searchInput';
 import searchIcon from '../../assets/images/searchIcon.svg';
 import Modal from '../../components/modal';
@@ -32,7 +31,7 @@ import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
 import emptyTags from '../../assets/images/emptyTags.svg';
 
-const TagsPicker = forwardRef(({ tags, entityName, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
+const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -99,7 +98,7 @@ const TagsPicker = forwardRef(({ tags, entityName, entity_type, handleUpdatedTag
                             tags_to_Add: tagsToAdd,
                             tags_to_Remove: tagsToRemoveNames,
                             entity_type: entity_type,
-                            entity_name: entityName
+                            entity_name: entity_name
                         };
                         const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
                         setEditedList(false);

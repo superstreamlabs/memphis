@@ -39,9 +39,6 @@
         align-items: center;
         align-self: center;
         cursor: pointer;
-        svg {
-            width: 18px;
-        }
         .edit-content {
             font-family:'InterMedium';
             font-size: 12px;
@@ -49,8 +46,7 @@
             color: #2e2c34;
         }
         .add {
-            height: 13px;
-            width: 13px;
+            width: 18px;
         }
     }
 

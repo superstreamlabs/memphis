@@ -38,15 +38,14 @@ import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
+import { SchemaStoreContext } from '../..';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
-
+    const [schemaState, schemaDispatch] = useContext(SchemaStoreContext);
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
-    const [schemaList, setSchemaList] = useState([]);
-    const [schemaFilteredList, setSchemaFilteredList] = useState([]);
     const [isLoading, setisLoading] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
@@ -55,8 +54,8 @@ function SchemaList({ createNew }) {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
-            setSchemaList(data);
-            setSchemaFilteredList(data);
+            schemaDispatch({ type: 'SET_SCHEMAS_DETAILS', payload: data });
+            schemaDispatch({ type: 'SET_SCHEMAS_DETAILS_WITH_FILTER', payload: data });
             setisLoading(false);
         } catch (error) {
             setisLoading(false);
@@ -68,10 +67,10 @@ function SchemaList({ createNew }) {
     }, []);
 
     useEffect(() => {
-        if (searchInput !== '' && searchInput.length >= 2) {
-            setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
-        } else setSchemaFilteredList(schemaList);
-    }, [schemaList]);
+        if (searchInput !== '' && searchInput.length >= 2)
+            schemaDispatch({ type: 'SET_SCHEMAS_DETAILS_WITH_FILTER', payload: schemaState?.schemaList?.filter((schema) => schema.name.includes(searchInput)) });
+        else schemaDispatch({ type: 'SET_SCHEMAS_DETAILS_WITH_FILTER', payload: schemaState?.schemaList });
+    }, [schemaState?.schemaList]);
 
     const handleRegisterToSchema = useCallback(() => {
         state.socket?.emit('get_all_schemas_data');
@@ -79,7 +78,7 @@ function SchemaList({ createNew }) {
 
     useEffect(() => {
         state.socket?.on('schemas_overview_data', (data) => {
-            setSchemaList(data);
+            schemaDispatch({ type: 'SET_SCHEMAS_DETAILS', payload: data });
         });
 
         state.socket?.on('error', (error) => {
@@ -96,13 +95,16 @@ function SchemaList({ createNew }) {
     }, [state.socket]);
 
     useEffect(() => {
-        if (searchInput.length >= 2) setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
-        else setSchemaFilteredList(schemaList);
+        if (searchInput.length >= 2) {
+            schemaDispatch({ type: 'SET_SCHEMAS_DETAILS_WITH_FILTER', payload: schemaState?.schemaList?.filter((schema) => schema.name.includes(searchInput)) });
+        } else {
+            schemaDispatch({ type: 'SET_SCHEMAS_DETAILS_WITH_FILTER', payload: schemaState?.schemaList });
+        }
     }, [searchInput]);
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(schemaFilteredList.map((li) => li.name));
+        setIsCheck(schemaState?.schemaFilteredList.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -126,7 +128,7 @@ function SchemaList({ createNew }) {
                 schema_names: isCheck
             });
             if (data) {
-                setSchemaList(filterArray(schemaFilteredList, isCheck));
+                schemaDispatch({ type: 'SET_SCHEMAS_DETAILS', payload: filterArray(schemaState?.schemaFilteredList, isCheck) });
                 setIsCheck([]);
                 setisLoading(false);
             }
@@ -144,7 +146,7 @@ function SchemaList({ createNew }) {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    Schemas <label className="length-list">{schemaList?.length > 0 && `(${schemaList?.length})`}</label>
+                    Schemas <label className="length-list">{schemaState?.schemaList?.length > 0 && `(${schemaState?.schemaList?.length})`}</label>
                 </label>
                 <div className="action-section">
                     <Button
@@ -161,7 +163,7 @@ function SchemaList({ createNew }) {
                         onClick={() => setDeleteModal(true)}
                     />
 
-                    {schemaFilteredList?.length > 1 && (
+                    {schemaState?.schemaFilteredList?.length > 1 && (
                         <Button
                             width="131px"
                             height="34px"
@@ -244,12 +246,12 @@ function SchemaList({ createNew }) {
                         <Loader />
                     </div>
                 )}
-                {schemaFilteredList.map((schema, index) => {
+                {schemaState?.schemaFilteredList?.map((schema, index) => {
                     return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                 })}
-                {!isLoading && schemaList.length === 0 && (
+                {!isLoading && schemaState?.schemaList?.length === 0 && (
                     <div className="no-schema-to-display">
-                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" alt="placeholderSchema" />
+                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
                         <p className="title">No Schema found</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button

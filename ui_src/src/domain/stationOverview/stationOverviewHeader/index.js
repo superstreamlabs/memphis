@@ -40,7 +40,7 @@ import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import VersionBadge from '../../../components/versionBadge';
 import UseSchemaModal from '../components/useSchemaModal';
-import UpdateSchemaModal from '../components/useSchemaModal';
+import UpdateSchemaModal from '../components/updateSchemaModal';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
