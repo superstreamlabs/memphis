@@ -31,6 +31,7 @@ import filterImg from '../../assets/images/filter.svg';
 import CustomCollapse from './customCollapse';
 import { Popover } from 'antd';
 import { filterType } from '../../const/filterConsts';
+import Button from '../button';
 const initialState = {
     isOpen: false,
     counter: 0,
@@ -88,6 +89,7 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
     };
 
     const handleClear = () => {
+        filterDispatch({ type: 'SET_COUNTER', payload: 0 });
         let filter = filterFields;
         filter.map((filterGroup) => {
             switch (filterGroup.filterType) {
@@ -100,7 +102,6 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
             }
         });
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-        filterDispatch({ type: 'SET_COUNTER', payload: 0 });
     };
 
     const handleCancel = () => {
@@ -114,11 +115,25 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
     return (
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
             <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
-                <div className="filter-container" style={{ height: height }}>
-                    <img src={filterImg} width="25" alt="filter" />
-                    Filters
-                    {filterState?.apply && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
-                </div>
+                <Button
+                    className="modal-btn"
+                    width="100%"
+                    height={height}
+                    placeholder={
+                        <div className="filter-container">
+                            <img src={filterImg} width="25" alt="filter" />
+                            <label className="filter-title">Filters</label>
+                            {filterState?.apply && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
+                        </div>
+                    }
+                    colorType="black"
+                    radiusType="circle"
+                    backgroundColorType="white"
+                    fontSize="14px"
+                    fontWeight="bold"
+                    boxShadowStyle="login-input"
+                    onClick={() => {}}
+                />
             </Popover>
         </FilterStoreContext.Provider>
     );

@@ -13,34 +13,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 5px;
     font-size: 10px;
     border-radius: 50%;
 }
 .filter-container {
-    width: 115px;
-    background: #ffffff;
-    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12);
-    border-radius: 32px;
-    font-size: 14px;
     display: flex;
     align-items: center;
-    font-size: 14px;
-    font-weight: 600;
-    padding-left: 10px;
-    cursor: pointer;
-
-    .filter-counter {
-        background: #6557ff;
-        color: white;
-        height: 16px;
-        width: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 5px;
-        font-size: 10px;
-        border-radius: 50%;
+    justify-content: center;
+    .filter-title {
+        margin-right: 5px;
     }
 }
 
@@ -67,6 +48,9 @@
         .header-name-counter {
             display: flex;
             align-items: center;
+            label {
+                margin-right: 5px;
+            }
         }
         .clear {
             color: #6557ff;

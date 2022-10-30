@@ -53,13 +53,16 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 if (filter[filterGroup].fields[filterField].checked) updatedCounter--;
                 else updatedCounter++;
                 filter[filterGroup].fields[filterField].checked = !filter[filterGroup].fields[filterField].checked;
+                break;
             case filterType.RADIOBUTTON:
                 if (filter[filterGroup].radioValue === -1) updatedCounter++;
                 filter[filterGroup].radioValue = filterField;
+                break;
             case filterType.DATE:
                 if (filter[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
                 else if (filter[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
                 filter[filterGroup].fields[filterField].value = value;
+                break;
         }
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
         filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });

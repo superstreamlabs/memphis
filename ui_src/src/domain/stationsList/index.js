@@ -38,7 +38,6 @@ import stationImg from '../../assets/images/stationsIconActive.svg';
 
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
-// import CreateStationDetails from '../../components/createStationDetails';
 import CreateStationForm from '../../components/createStationForm';
 import Loader from '../../components/loader';
 import { filterType, labelType } from '../../const/filterConsts';
@@ -79,7 +78,7 @@ const StationsList = () => {
 
     useEffect(() => {
         handleFilter();
-    }, [filterTerms.length > 0]);
+    }, [filterTerms]);
 
     useEffect(() => {
         if (searchInput !== '' && searchInput.length >= 2) {
