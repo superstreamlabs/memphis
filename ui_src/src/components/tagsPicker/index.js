@@ -21,7 +21,6 @@
 
 import './style.scss';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import Button from '../../components/button';
 import SearchInput from '../searchInput';
 import searchIcon from '../../assets/images/searchIcon.svg';
 import Modal from '../../components/modal';
@@ -32,7 +31,7 @@ import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
 import emptyTags from '../../assets/images/emptyTags.svg';
 
-const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagList, handleCloseWithNoChanges, closeTrigger }, ref) => {
+const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [allTags, setAllTags] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -77,32 +76,36 @@ const TagsPicker = forwardRef(({ tags, entity_id, entity_type, handleUpdatedTagL
     useImperativeHandle(ref, () => ({
         async handleSaveChanges() {
             if (editedList) {
-                const tagsToRemove = tags.filter((tag) => {
-                    if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
-                    return true;
-                });
-                var tagsToRemoveNames;
                 const tagsToAdd = checkedList.filter((checkedTag) => {
                     if (tags.some((tag) => tag.name === checkedTag.name)) return false;
                     return true;
                 });
-                try {
-                    if (!(tagsToRemove.length === 0)) {
-                        tagsToRemoveNames = tagsToRemove.map((tag) => {
-                            return tag.name;
-                        });
-                    }
-                    const reqBody = {
-                        tags_to_Add: tagsToAdd,
-                        tags_to_Remove: tagsToRemoveNames,
-                        entity_type: entity_type,
-                        entity_id: entity_id
-                    };
-                    const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
-                    setEditedList(false);
-                    setSearchInput('');
-                    handleUpdatedTagList(updatedTags);
-                } catch (error) {}
+                if (newEntity) {
+                    handleUpdatedTagList(checkedList);
+                } else {
+                    const tagsToRemove = tags.filter((tag) => {
+                        if (checkedList.some((checkedTag) => tag.name === checkedTag.name)) return false;
+                        return true;
+                    });
+                    var tagsToRemoveNames;
+                    try {
+                        if (!(tagsToRemove.length === 0)) {
+                            tagsToRemoveNames = tagsToRemove.map((tag) => {
+                                return tag.name;
+                            });
+                        }
+                        const reqBody = {
+                            tags_to_Add: tagsToAdd,
+                            tags_to_Remove: tagsToRemoveNames,
+                            entity_type: entity_type,
+                            entity_name: entity_name
+                        };
+                        const updatedTags = await httpRequest('PUT', `${ApiEndpoints.UPDATE_TAGS_FOR_ENTITY}`, reqBody);
+                        setEditedList(false);
+                        setSearchInput('');
+                        handleUpdatedTagList(updatedTags);
+                    } catch (error) {}
+                }
             }
         }
     }));

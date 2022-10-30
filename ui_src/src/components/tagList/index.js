@@ -22,7 +22,7 @@
 import './style.scss';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Space, Popover } from 'antd';
+import { Popover } from 'antd';
 import Tag from '../tag';
 import { Add, AddRounded } from '@material-ui/icons';
 import RemainingTagsList from './remainingTagsList';
@@ -39,7 +39,7 @@ const tagsPickerPopInnerStyle = {
     boxShadow: '0px 23px 44px rgba(176, 183, 195, 0.14)'
 };
 
-const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entityID, handleTagsUpdate }) => {
+const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityType, entityName, handleTagsUpdate, newEntity = false }) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
     const [remainingTags, setRemainingTags] = useState([]);
     const saveChangesRef = useRef(null);
@@ -73,18 +73,15 @@ const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entity
                     placement="bottomLeft"
                     content={<RemainingTagsList tags={remainingTags} handleDelete={(tag) => handleDelete(tag)} editable={editable}></RemainingTagsList>}
                 >
-                    <Space className="space">
-                        <div className="plus-tags">
-                            <Add className="add" />
-                            <p>{remainingTags.length}</p>
-                        </div>
-                    </Space>
+                    <div className="plus-tags">
+                        <Add className="add" />
+                        <p>{remainingTags.length}</p>
+                    </div>
                 </Popover>
             )}
             {editable && (
                 <Popover
                     overlayInnerStyle={tagsPickerPopInnerStyle}
-                    zIndex={2}
                     destroyTooltipOnHide={true}
                     trigger="click"
                     placement="bottomLeft"
@@ -96,22 +93,20 @@ const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityName, entity
                         <TagsPicker
                             ref={saveChangesRef}
                             tags={tags}
-                            entity_id={entityID}
-                            entity_type={'station'}
+                            entity_type={entityType}
+                            entity_name={entityName}
                             handleUpdatedTagList={(tags) => {
                                 handleTagsUpdate(tags);
                                 setTagsPop(false);
                             }}
-                            entityName={entityName}
+                            newEntity={newEntity}
                         />
                     }
                 >
-                    <Space className="space">
-                        <div className="edit-tags">
-                            <AddRounded className="add" />
-                            <div className="edit-content">{tags?.length > 0 ? 'Edit tags' : 'Add new tag'}</div>
-                        </div>
-                    </Space>
+                    <div className="edit-tags">
+                        <AddRounded className="add" />
+                        <div className="edit-content">{tags?.length > 0 ? 'Edit tags' : 'Add new tag'}</div>
+                    </div>
                 </Popover>
             )}
         </div>

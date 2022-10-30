@@ -69,7 +69,6 @@ const StationOverview = () => {
     const getStationDetails = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}`);
-
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             setisLoading(false);

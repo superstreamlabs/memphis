@@ -79,6 +79,9 @@
         height: 40px;
         border-bottom: 1px solid #F5F5F5;
         overflow-x:auto;
+        .tag-wrapper{
+            max-width: 95px !important;
+        }
     }
     date {
         display: flex;
