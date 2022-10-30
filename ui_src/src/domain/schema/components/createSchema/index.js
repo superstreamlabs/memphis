@@ -102,10 +102,12 @@ const SchemaEditorExample = {
 function CreateSchema({ goBack }) {
     const [creationForm] = Form.useForm();
 
+    const [tagsToDisplay, setTagsToDisplay] = useState([]);
+
     const [formFields, setFormFields] = useState({
         name: '',
         type: 'Protobuf',
-        // tags: [],
+        tags: [],
         schema_content: '',
         message_struct_name: 'test'
     });
@@ -156,6 +158,7 @@ function CreateSchema({ goBack }) {
     const handleCreateNewSchema = async () => {
         try {
             const values = await creationForm.validateFields();
+            debugger;
             setLoadingSubmit(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageStructName });
             if (data) {
@@ -211,6 +214,12 @@ function CreateSchema({ goBack }) {
         }
     };
 
+    const removeTag = (tagName) => {
+        let updatedTags = tagsToDisplay.filter((tag) => tag.name !== tagName);
+        setTagsToDisplay(updatedTags);
+        updateFormState('tags', updatedTags);
+    };
+
     return (
         <div className="create-schema-wrapper">
             <Form name="form" form={creationForm} autoComplete="off" className="create-schema-form">
@@ -255,18 +264,30 @@ function CreateSchema({ goBack }) {
                             />
                         </div>
                     </Form.Item>
-                    <Form.Item name="tags">
-                        <div className="schema-field tags">
-                            <div className="title-icon-img">
-                                <img className="icon" src={tagsIcon} alt="tagsIcon" />
-                                <div className="title-desc">
-                                    <p className="field-title">Tags</p>
-                                    <p className="desc">Tags will help you organize, search and filter your data</p>
-                                </div>
+                    <div className="schema-field tags">
+                        <div className="title-icon-img">
+                            <img className="icon" src={tagsIcon} />
+                            <div className="title-desc">
+                                <p className="field-title">Tags</p>
+                                <p className="desc">Tags will help you organize, search and filter your data</p>
                             </div>
-                            {/* <TagsList editable={true} /> */}
                         </div>
-                    </Form.Item>
+                        <Form.Item name="tags">
+                            <TagsList
+                                tagsToShow={3}
+                                className="tags-list"
+                                tags={tagsToDisplay}
+                                newEntity={true}
+                                addNew={true}
+                                editable={true}
+                                handleDelete={(tag) => removeTag(tag)}
+                                handleTagsUpdate={(tags) => {
+                                    updateFormState('tags', tags);
+                                    setTagsToDisplay(tags);
+                                }}
+                            />
+                        </Form.Item>
+                    </div>
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
                             <div className="title-icon-img">
