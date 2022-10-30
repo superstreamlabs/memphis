@@ -144,23 +144,23 @@ function SchemaList({ createNew }) {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    Schema <label className="length-list">{schemaList?.length > 0 && `(${schemaList?.length})`}</label>
+                    Schemas <label className="length-list">{schemaList?.length > 0 && `(${schemaList?.length})`}</label>
                 </label>
                 <div className="action-section">
-                    {isCheck?.length > 0 && (
-                        <Button
-                            width="131px"
-                            height="34px"
-                            placeholder={`Delete selected (${isCheck?.length})`}
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => setDeleteModal(true)}
-                        />
-                    )}
+                    <Button
+                        width="131px"
+                        height="34px"
+                        placeholder={`Delete selected (${isCheck?.length})`}
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        disabled={isCheck?.length === 0}
+                        onClick={() => setDeleteModal(true)}
+                    />
+
                     {schemaFilteredList?.length > 1 && (
                         <Button
                             width="131px"
