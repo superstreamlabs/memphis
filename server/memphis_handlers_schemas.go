@@ -49,10 +49,10 @@ func validateProtobufContent(schemaContent string) error {
 	return nil
 }
 
-func generateProtobufDescriptor(schema string) ([]byte, error) {
-	filename := "tmp_proto"
-	descFilename := "tmp_proto_desc"
-	err := os.WriteFile(filename, []byte(schema), 0644)
+func generateProtobufDescriptor(schemaName string, schemaVersionNum int, schemaContent string) ([]byte, error) {
+	filename := fmt.Sprintf("tmp_proto_%s_%s", schemaName, schemaVersionNum)
+	descFilename := fmt.Sprintf("tmp_proto_%s_%s_desc", schemaName, schemaVersionNum)
+	err := os.WriteFile(filename, []byte(schemaContent), 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -118,14 +118,14 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	return nil
 }
 
-func generateSchemaDescriptor(schemaContent, schemaType string) (string, error) {
+func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaContent, schemaType string) (string, error) {
 	if len(schemaContent) == 0 {
 		panic("attempt to generate schema descriptor with empty schema")
 	}
 
 	switch schemaType {
 	case "protobuf":
-		descriptor, err := generateProtobufDescriptor(schemaContent)
+		descriptor, err := generateProtobufDescriptor(schemaName, schemaVersionNum, schemaContent)
 		if err != nil {
 			return "", err
 		}
@@ -573,8 +573,8 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-
-	descriptor, err := generateSchemaDescriptor(schemaContent, schemaType)
+	schemaVersionNumber := 1
+	descriptor, err := generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
 	if err != nil {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -597,7 +597,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 
 	newSchemaVersion := models.SchemaVersion{
 		ID:                primitive.NewObjectID(),
-		VersionNumber:     1,
+		VersionNumber:     schemaVersionNumber,
 		Active:            true,
 		CreatedByUser:     user.Username,
 		CreationDate:      time.Now(),
@@ -809,13 +809,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
-	descriptor, err := generateSchemaDescriptor(schemaContent, schema.Type)
-	if err != nil {
-		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-
 	countVersions, err := sh.getVersionsCount(schema.ID)
 	if err != nil {
 		serv.Errorf("CreateNewVersion error: " + err.Error())
@@ -824,7 +817,12 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	versionNumber := countVersions + 1
-
+	descriptor, err := generateSchemaDescriptor(schemaName, versionNumber, schemaContent, schema.Type)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
 	newSchemaVersion := models.SchemaVersion{
 		ID:                primitive.NewObjectID(),
 		VersionNumber:     versionNumber,
