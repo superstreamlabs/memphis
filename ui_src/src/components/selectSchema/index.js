@@ -26,6 +26,7 @@ import React from 'react';
 
 import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
 import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
+import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
 
 const { Option } = Select;
 
@@ -60,6 +61,10 @@ const SelectSchema = ({
     const borderRadius = getBorderRadius(radiusType);
     const dropIconColor = getFontColor(iconColor || 'black');
 
+    React.useEffect(() => {
+        console.log(options);
+    }, []);
+
     const fieldProps = {
         onChange: handleChange,
         disabled,
@@ -77,28 +82,40 @@ const SelectSchema = ({
     };
 
     return (
-        <div className="select-container">
-            <div className="select-schema">
-                <Select
-                    {...fieldProps}
-                    className="select"
-                    size={size}
-                    popupClassName={popupClassName}
-                    value={value}
-                    suffixIcon={<ArrowDropDownRounded style={{ color: dropIconColor }} />}
-                    dropdownStyle={dropdownStyle}
-                    placeholder="Select schema"
-                >
-                    {options.map((schema) => {
-                        return (
-                            <Option key={schema?.id || schema?.name} value={schema?.name} disabled={schema?.disabled || false}>
-                                {schema?.name}
-                            </Option>
-                        );
-                    })}
-                </Select>
-            </div>
-        </div>
+        <Select
+            className="select"
+            value={value}
+            // bordered={false}
+            suffixIcon={<ArrowDropDownRounded className="drop-sown-icon" />}
+            onChange={handleChange}
+            placement="bottomRight"
+            popupClassName="select-version-options"
+        >
+            {options.map((schema) => {
+                return (
+                    <Option key={schema?.id || schema?.name} value={schema?.name} disabled={schema?.disabled || false}>
+                        <div className="scheme-details-container">
+                            <div className="schema-details">
+                                <img src={SchemaIconSelect} alt="SchemaIconSelect" height="20px" /> <p className="schema-name">Version {schema?.name}</p>
+                            </div>
+
+                            <p className="created-by">
+                                {schema?.type} &#8226; {schema?.creation_date}
+                            </p>
+                        </div>
+                    </Option>
+
+                    // <Option key={schema?.id || schema?.name} value={schema?.name} disabled={schema?.disabled || false}>
+                    //     {/* <div> */}
+                    //     <div className="select-header">
+                    //         <img src={SchemaIconSelect} alt="schemaIcon" height="25px" /> <p>{schema?.name}</p>
+                    //     </div>
+                    //     <p className="sub-title">{schema?.name}</p>
+                    //     {/* </div> */}
+                    // </Option>
+                );
+            })}
+        </Select>
     );
 };
 

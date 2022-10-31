@@ -230,7 +230,8 @@ function OverView() {
                     createStationRef.current();
                 }}
                 clickOutside={() => modalFlip(false)}
-                open={open}
+                // open={open}
+                open={true}
                 isLoading={creatingProsessd}
             >
                 <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />

@@ -356,15 +356,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <SelectSchema
                                 height="40px"
                                 value={creationForm.schemaValue}
-                                colorType="navy"
+                                // colorType="navy"
                                 backgroundColorType="none"
                                 radiusType="semi-round"
                                 width="450px"
-                                placeholder="Select schema"
+                                placeholder={creationForm.schemaValue || 'Select schema'}
                                 options={schemas}
+                                // onChange={(e) => console.log(e)}
                                 onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                                boxShadowsType="gray"
-                                popupClassName="select-options"
+                                // boxShadowsType="gray"
+                                // popupClassName="select-schema-options"
                                 disabled={!allowEdit}
                             />
                         )}
