@@ -412,8 +412,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			}
 		}
 	}
-	var tags []models.Tag
-	var tagsRes []models.CreateTag
+	var tags []models.CreateTag
 	switch entity {
 	case "station":
 		tags, err = th.GetTagsByStation(entity_id)
@@ -437,6 +436,22 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			return
 		}
 	}
+	c.IndentedJSON(200, tags)
+}
+
+func (th TagsHandler) GetTagsByStation(station_id primitive.ObjectID) ([]models.CreateTag, error) {
+	var tags []models.Tag
+	var tagsRes []models.CreateTag
+	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": station_id})
+	if err != nil {
+		return tagsRes, err
+	}
+	if err = cursor.All(context.TODO(), &tags); err != nil {
+		return tagsRes, err
+	}
+	if len(tags) == 0 {
+		tagsRes = []models.CreateTag{}
+	}
 	for _, tag := range tags {
 		tagRes := models.CreateTag{
 			Name:  tag.Name,
@@ -444,54 +459,53 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		}
 		tagsRes = append(tagsRes, tagRes)
 	}
-	c.IndentedJSON(200, tagsRes)
+	return tagsRes, nil
 }
 
-func (th TagsHandler) GetTagsByStation(station_id primitive.ObjectID) ([]models.Tag, error) {
+func (th TagsHandler) GetTagsBySchema(schema_id primitive.ObjectID) ([]models.CreateTag, error) {
 	var tags []models.Tag
-	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": station_id})
-	if err != nil {
-		return tags, err
-	}
-	if err = cursor.All(context.TODO(), &tags); err != nil {
-		return tags, err
-	}
-	if len(tags) == 0 {
-		tags = []models.Tag{}
-	}
-	return tags, nil
-}
-
-func (th TagsHandler) GetTagsBySchema(schema_id primitive.ObjectID) ([]models.Tag, error) {
-	var tags []models.Tag
+	var tagsRes []models.CreateTag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": schema_id})
 	if err != nil {
-		return tags, err
+		return tagsRes, err
 	}
 	if err = cursor.All(context.TODO(), &tags); err != nil {
-		return tags, err
+		return tagsRes, err
 	}
 	if len(tags) == 0 {
-		tags = []models.Tag{}
+		tagsRes = []models.CreateTag{}
 	}
-
-	return tags, nil
+	for _, tag := range tags {
+		tagRes := models.CreateTag{
+			Name:  tag.Name,
+			Color: tag.Color,
+		}
+		tagsRes = append(tagsRes, tagRes)
+	}
+	return tagsRes, nil
 }
 
-func (th TagsHandler) GetTagsByUser(user_id primitive.ObjectID) ([]models.Tag, error) {
+func (th TagsHandler) GetTagsByUser(user_id primitive.ObjectID) ([]models.CreateTag, error) {
 	var tags []models.Tag
+	var tagsRes []models.CreateTag
 	cursor, err := tagsCollection.Find(context.TODO(), bson.M{"users": user_id})
 	if err != nil {
-		return tags, err
+		return tagsRes, err
 	}
 	if err = cursor.All(context.TODO(), &tags); err != nil {
-		return tags, err
+		return tagsRes, err
 	}
 	if len(tags) == 0 {
-		tags = []models.Tag{}
+		tagsRes = []models.CreateTag{}
 	}
-
-	return tags, nil
+	for _, tag := range tags {
+		tagRes := models.CreateTag{
+			Name:  tag.Name,
+			Color: tag.Color,
+		}
+		tagsRes = append(tagsRes, tagRes)
+	}
+	return tagsRes, nil
 }
 
 func (th TagsHandler) GetTags(c *gin.Context) {
@@ -579,6 +593,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 
 func (th TagsHandler) GetUsedTags(c *gin.Context) {
 	var tags []models.Tag
+	var tagsRes []models.CreateTag
 	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
 	cursor, err := tagsCollection.Find(context.TODO(), filter)
 	if err != nil {
@@ -591,6 +606,16 @@ func (th TagsHandler) GetUsedTags(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	if len(tags) == 0 {
+		tagsRes = []models.CreateTag{}
+	}
+	for _, tag := range tags {
+		tagRes := models.CreateTag{
+			Name:  tag.Name,
+			Color: tag.Color,
+		}
+		tagsRes = append(tagsRes, tagRes)
+	}
 
-	c.IndentedJSON(200, tags)
+	c.IndentedJSON(200, tagsRes)
 }

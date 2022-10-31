@@ -94,7 +94,7 @@ type GetStationResponseSchema struct {
 	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
 	Functions       []Function         `json:"functions" bson:"functions"`
 	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
-	Tags            []Tag              `json:"tags"`
+	Tags            []CreateTag              `json:"tags"`
 }
 
 type ExtendedStation struct {
@@ -112,14 +112,14 @@ type ExtendedStation struct {
 	Functions       []Function         `json:"functions" bson:"functions"`
 	TotalMessages   int                `json:"total_messages"`
 	PoisonMessages  int                `json:"posion_messages"`
-	Tags            []Tag              `json:"tags"`
+	Tags            []CreateTag              `json:"tags"`
 }
 
 type ExtendedStationDetails struct {
 	Station        Station `json:"station"`
 	TotalMessages  int     `json:"total_messages"`
 	PoisonMessages int     `json:"posion_messages"`
-	Tags           []Tag   `json:"tags"`
+	Tags           []CreateTag   `json:"tags"`
 }
 
 type GetStationSchema struct {

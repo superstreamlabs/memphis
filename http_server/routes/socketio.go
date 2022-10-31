@@ -134,7 +134,6 @@ func getStationOverviewData(stationName string, h *server.Handlers) (map[string]
 	}
 
 	schema, err := h.Schemas.GetSchemaByStationName(station.Schema.SchemaName)
-
 	if err != nil {
 		return map[string]any{}, err
 	}
