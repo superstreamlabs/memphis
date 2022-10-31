@@ -1225,7 +1225,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	schemaDetailsResponse := models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: false}
 	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext()}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
 
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())
