@@ -71,7 +71,7 @@ function Users() {
         } else {
             setUsersList(copyOfUserList);
         }
-    }, [searchInput.length > 1]);
+    }, [searchInput]);
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
@@ -102,13 +102,13 @@ function Users() {
                     <SearchInput
                         placeholder="Search here"
                         colorType="navy"
-                        backgroundColorType="none"
-                        width="10vw"
-                        height="27px"
+                        backgroundColorType="gray-dark"
+                        width="288px"
+                        height="34px"
                         borderRadiusType="circle"
-                        borderColorType="gray"
-                        boxShadowsType="gray"
-                        iconComponent={<img src={searchIcon} />}
+                        borderColorType="none"
+                        boxShadowsType="none"
+                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
                         onChange={handleSearch}
                         value={searchInput}
                     />

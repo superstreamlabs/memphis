@@ -82,7 +82,7 @@ function ClusterConfiguration() {
             <div className="configuration-body">
                 <div className="configuration-list-container">
                     <div className="left-side">
-                        <img src={ConfImg1} alt="" />
+                        <img src={ConfImg1} alt="ConfImg1" />
                         <div>
                             <p className="conf-name">ROOT_PASSWORD</p>
                             <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
@@ -92,7 +92,7 @@ function ClusterConfiguration() {
                 </div>
                 <div className="configuration-list-container">
                     <div className="left-side">
-                        <img src={ConfImg2} alt="" />
+                        <img src={ConfImg2} alt="ConfImg2" />
                         <div>
                             <p className="conf-name">POISON_MSGS_RETENTION_IN_HOURS</p>
                             <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
@@ -102,7 +102,7 @@ function ClusterConfiguration() {
                 </div>
                 <div className="configuration-list-container">
                     <div className="left-side">
-                        <img src={ConfImg1} alt="" />
+                        <img src={ConfImg1} alt="ConfImg1" />
                         <div>
                             <p className="conf-name">CONNECTION_TOKEN</p>
                             <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
@@ -112,7 +112,7 @@ function ClusterConfiguration() {
                 </div>
                 <div className="configuration-list-container">
                     <div className="left-side">
-                        <img src={ConfImg2} alt="" />
+                        <img src={ConfImg2} alt="ConfImg2" />
                         <div>
                             <p className="conf-name">POISON_MSGS_RETENTION_IN_HOURS</p>
                             <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>

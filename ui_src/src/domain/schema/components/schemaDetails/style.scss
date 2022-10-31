@@ -195,12 +195,36 @@ schema-details {
                 flex-wrap: wrap;
                 height: calc(100% - 30px);
                 .station-wrapper{
-                    padding: 5px 20px;
                     border-radius: 30px;
                     background: rgba(0, 16, 61, 0.06);
+                    cursor: pointer;
+                    display: flex;
+                    min-width: 100px;
+                    height: 29px;
+                    padding: 0px 15px;
+                    justify-content: center;
+                    align-items:center;
                     p{
                         font-size: 15px;
                         font-family: 'InterSemiBold';
+                    }
+                    .redirect-img{
+                        img{
+                            display: none;
+                            margin-left: 5px;
+                        }
+                    }
+                }
+                .station-wrapper:hover{
+                    display: flex;
+                    padding: 0px 5px;
+                    p{
+                        color: var(--purple);
+                        text-decoration-line: underline;
+                    }
+                    img{
+                        width: 10px;
+                        display: unset;
                     }
                 }
             }
@@ -214,6 +238,7 @@ schema-details {
             display: flex;
             width: 72px;
             justify-content: space-between;
+            align-items:center;
         }
         .left-side{
             display: flex;

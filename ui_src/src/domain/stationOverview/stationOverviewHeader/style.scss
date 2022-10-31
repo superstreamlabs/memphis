@@ -2,41 +2,44 @@
     width: calc(100);
     align-items: center;
     justify-content: space-between;
-    .edit-tags {
-        background-color: rgba(132, 129, 138, 0.1);
-        border-radius: 4px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        align-self: center;
-        cursor: pointer;
-        svg {
-            width: 18px;
-        }
-        .edit-content {
-            font-family: 'InterSemiBold';
-            font-size: 12px;
-            line-height: 12px;
-            color: #2e2c34;
-        }
-        .add {
-            height: 13px;
-            width: 13px;
-        }
-    }
+    // .edit-tags {
+    //     background-color: rgba(132, 129, 138, 0.1);
+    //     border-radius: 4px;
+    //     height: 20px;
+    //     display: flex;
+    //     align-items: center;
+    //     align-self: center;
+    //     cursor: pointer;
+    //     svg {
+    //         width: 18px;
+    //     }
+    //     .edit-content {
+    //         font-family: 'InterSemiBold';
+    //         font-size: 12px;
+    //         line-height: 12px;
+    //         color: #2e2c34;
+    //     }
+    //     .add {
+    //         height: 13px;
+    //         width: 13px;
+    //     }
+    // }
     .title-wrapper {
         display: flex;
         justify-content: space-between;
         height: 35px;
         .station-details {
             .station-name {
-                font-size: 24px;
-                font-weight: 600;
-                line-height: 29px;
-                margin-bottom: 0;
+                margin-bottom: 5px;
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
+                h1{
+                    font-size: 24px;
+                    font-weight: 600;
+                    line-height: 24px;
+                    margin: 0;
+                }
                 .tags-list {
                     justify-content: space-between;
                     margin-bottom: 0px;
@@ -60,15 +63,81 @@
         .main-details {
             font-size: 12px;
             width: 20vw;
-            min-width: 260px;
+            min-width: 320px;
             padding-left: 15px;
             background: #ffffff;
             box-shadow: 0px 23px 44px rgb(176 183 195 / 14%);
             border-radius: 8px;
             height: 100%;
             display: flex;
-            flex-direction: column;
-            justify-content: space-evenly;
+            justify-content:space-between;
+            .left-side{
+                display: flex;
+                flex-direction: column;
+                justify-content: space-evenly;
+                margin:5px 0px;
+                min-width: 102px;
+                b{
+                    font-family: 'InterSemiBold';
+                }
+            }
+            .schema-details{
+                background: #F0EFFF;
+                border-radius: 5px;
+                width: 60%;
+                margin: 5px;
+                padding:10px;
+                min-width: 180px;
+                max-width: 200px;
+                 .add-new {
+                    .use-schema-button{
+                        display: flex;
+                        align-items: center;
+                        svg{
+                            width: 17px;
+                        }
+                        p{
+                            font-family: 'InterSemiBold';
+                        }
+                    }
+                 }
+                 .title-and-badge{
+                    display: flex;
+                    align-items:center;
+                    .title{
+                        font-size: 12px;
+                        line-height:12px;
+                        font-family: 'InterSemiBold';
+                        margin-right: 10px;
+                    }
+                    .version-badge p{
+                        font-size: 10px;
+                    }
+                 }
+                 .name-and-version{
+                    font-size: 12px;
+                    display: flex;
+                    align-items: center;
+                    svg{
+                        width: 6px;
+                        margin: 0px 5px;
+                    }
+                 }
+                 .buttons{
+                    display: flex;
+                    justify-content:space-between;
+                 }
+            }
+            .sd-flex{
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .sd-center{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
             p {
                 margin-bottom: 0;
             }
@@ -142,7 +211,7 @@
         .info-buttons {
             display: flex;
             width: 20vw;
-            min-width: 260px;
+            min-width: 320px;
             height: 100%;
             background: #ffffff;
             box-shadow: 0px 23px 44px rgb(176 183 195 / 14%);

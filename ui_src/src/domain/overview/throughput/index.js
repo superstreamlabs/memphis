@@ -75,7 +75,7 @@ const Throughput = () => {
     return (
         <div className="overview-wrapper throughput-overview-container">
             <div className="coming-soon-wrapper">
-                <img src={comingSoonBox} width={40} height={70} />
+                <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
                 <p>Coming soon</p>
             </div>
             <AntTabs value={value} onChange={handleChangeMenuItem}>

@@ -21,6 +21,7 @@
 
 import './style.scss';
 
+import { CloseRounded } from '@material-ui/icons';
 import { Drawer, Button, Space } from 'antd';
 import React, { useState } from 'react';
 
@@ -29,16 +30,8 @@ import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
 import { parsingDate } from '../../../../services/valueConvertor';
 import CheckboxComponent from '../../../../components/checkBox';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
-import SchemaDetails from '../schemaDetails';
-import { CloseRounded } from '@material-ui/icons';
 import TagsList from '../../../../components/tagList';
-
-const tags = [
-    { name: 'Github', color: '0, 165, 255' },
-    { name: 'R&D', color: '177, 134, 27' },
-    { name: 'Avi_team', color: '85, 66, 246' },
-    { name: 'Logs', color: '252, 52, 0' }
-];
+import SchemaDetails from '../schemaDetails';
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     const [open, setOpen] = useState(false);
@@ -58,13 +51,10 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                                 <p>{schema.name}</p>
                             </div>
                             <div className="is-used">
-                                <img src={schema.used ? usedIcond : notUsedIcond} />
+                                <img src={schema.used ? usedIcond : notUsedIcond} alt="usedIcond" />
                                 {schema.used && <p className="used">Used</p>}
                                 {!schema.used && <p className="not-used"> Not used</p>}
                             </div>
-                            {/* <div className="menu">
-                            <p>***</p>
-                        </div> */}
                         </div>
                     </header>
                     <type is="x3d">
@@ -78,10 +68,10 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                         </div>
                     </type>
                     <tags is="x3d">
-                        <TagsList tagsToShow={3} tags={tags} />
+                        <TagsList tagsToShow={3} tags={schema?.tags} />
                     </tags>
                     <date is="x3d">
-                        <img src={createdDateIcon} />
+                        <img src={createdDateIcon} alt="createdDateIcon" />
                         <p>{parsingDate(schema.creation_date)}</p>
                     </date>
                 </div>

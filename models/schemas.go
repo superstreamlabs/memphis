@@ -46,11 +46,11 @@ type SchemaVersion struct {
 }
 
 type CreateNewSchema struct {
-	Name              string      `json:"name" binding:"required,min=1,max=32"`
-	Type              string      `json:"type"`
-	SchemaContent     string      `json:"schema_content"`
-	Tags              []CreateTag `json:"tags"`
-	MessageStructName string      `json:"message_struct_name"`
+	Name              string `json:"name" binding:"required,min=1,max=32"`
+	Type              string `json:"type"`
+	SchemaContent     string `json:"schema_content"`
+	Tags              []CreateTag  `json:"tags"`
+	MessageStructName string `json:"message_struct_name"`
 }
 
 type ExtendedSchema struct {

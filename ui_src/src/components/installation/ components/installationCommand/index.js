@@ -46,7 +46,7 @@ const InstallationCommand = ({ steps, showLinks, videoLink, docsLink }) => {
                                         {value.icon === 'copy' && <Copy data={value.command} key={key} />}
                                         {value.icon === 'link' && (
                                             <Link to={{ pathname: 'http://localhost:5555' }} target="_blank">
-                                                <img src={redirectIcon} />
+                                                <img src={redirectIcon} alt="redirectIcon" />
                                             </Link>
                                         )}
                                     </div>
@@ -60,14 +60,14 @@ const InstallationCommand = ({ steps, showLinks, videoLink, docsLink }) => {
                 <div className="links">
                     <Link to={{ pathname: videoLink }} target="_blank">
                         <div className="link-wrapper">
-                            <img src={videoIcon} />
+                            <img src={videoIcon} alt="videoIcon" />
                             <p>Installation video</p>
                             <ChevronRightOutlined />
                         </div>
                     </Link>
                     <Link to={{ pathname: docsLink }} target="_blank">
                         <div className="link-wrapper">
-                            <img width={25} height={22} src={docsPurple} />
+                            <img width={25} height={22} src={docsPurple} alt="docsPurple" />
                             <p>Link to docs</p>
                             <ChevronRightOutlined />
                         </div>
