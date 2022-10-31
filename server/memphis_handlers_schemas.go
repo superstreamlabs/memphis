@@ -153,8 +153,9 @@ func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdat
 	var activeIdx int
 	for i, version := range versions {
 		updateVersions[i] = models.ProducerSchemaUpdateVersion{
-			VersionNumber: version.VersionNumber,
-			Descriptor:    version.Descriptor,
+			VersionNumber:     version.VersionNumber,
+			Descriptor:        version.Descriptor,
+			MessageStructName: version.MessageStructName,
 		}
 		if version.Active {
 			activeIdx = i
@@ -264,6 +265,16 @@ func (sh SchemasHandler) updateActiveVersion(s *Server, schema models.Schema, ve
 		return err
 	}
 
+	updateContent, err := generateSchemaUpdateInit(schema)
+	if err != nil {
+		return err
+	}
+
+	update := models.ProducerSchemaUpdate{
+		UpdateType: models.SchemaUpdateTypeInit,
+		Init:       *updateContent,
+	}
+
 	for _, station := range stations {
 		sn, err := StationNameFromStr(station.Name)
 		if err != nil {
@@ -276,14 +287,6 @@ func (sh SchemasHandler) updateActiveVersion(s *Server, schema models.Schema, ve
 		if !exist {
 			serv.Warnf("Station does not exist")
 			continue
-		}
-
-		updateContent := models.ProducerSchemaUpdateChangeVersion{
-			VersionNumber: versionNumber,
-		}
-		update := models.ProducerSchemaUpdate{
-			UpdateType:    models.SchemaUpdateTypeChangeVersion,
-			ChangeVersion: updateContent,
 		}
 
 		s.updateStationProducersOfSchemaChange(sn, update)

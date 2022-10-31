@@ -1253,7 +1253,6 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 		return err
 	}
 	if !exist {
-
 		return errors.New("Station does not exit")
 	}
 
@@ -1313,28 +1312,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(),
-		bson.M{
-			"name": stationName.Ext(),
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"schema": bson.M{}}},
-	)
-	if err != nil {
-		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	c.IndentedJSON(200, gin.H{})
-
-	update := models.ProducerSchemaUpdate{
-		UpdateType: models.SchemaUpdateTypeDrop,
-	}
-
-	sh.S.updateStationProducersOfSchemaChange(stationName, update)
 }
 
 func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {

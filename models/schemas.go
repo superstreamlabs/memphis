@@ -77,16 +77,12 @@ type ProducerSchemaUpdateType int
 
 const (
 	SchemaUpdateTypeInit ProducerSchemaUpdateType = iota + 1
-	SchemaUpdateTypeNewVersion
-	SchemaUpdateTypeChangeVersion
 	SchemaUpdateTypeDrop
 )
 
 type ProducerSchemaUpdate struct {
-	UpdateType    ProducerSchemaUpdateType
-	Init          ProducerSchemaUpdateInit          `json:"init,omitempty"`
-	NewVersion    ProducerSchemaUpdateNewVersion    `json:"new_version,omitempty"`
-	ChangeVersion ProducerSchemaUpdateChangeVersion `json:"change_version,omitempty"`
+	UpdateType ProducerSchemaUpdateType
+	Init       ProducerSchemaUpdateInit `json:"init,omitempty"`
 }
 
 type ProducerSchemaUpdateInit struct {
@@ -97,16 +93,9 @@ type ProducerSchemaUpdateInit struct {
 }
 
 type ProducerSchemaUpdateVersion struct {
-	VersionNumber int    `json:"version_number"`
-	Descriptor    string `json:"descriptor"`
-}
-
-type ProducerSchemaUpdateNewVersion struct {
-	Version ProducerSchemaUpdateVersion `json:"version_details"`
-}
-
-type ProducerSchemaUpdateChangeVersion struct {
-	VersionNumber int `json:"version_number"`
+	VersionNumber     int    `json:"version_number"`
+	Descriptor        string `json:"descriptor"`
+	MessageStructName string `json:"message_struct_name"`
 }
 
 type GetSchemaDetails struct {
