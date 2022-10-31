@@ -117,7 +117,7 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
             <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
-                    width="100%"
+                    width="110px"
                     height={height}
                     placeholder={
                         <div className="filter-container">
