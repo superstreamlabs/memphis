@@ -61,7 +61,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequest
 	var resp createProducerResponse
 	if err := json.Unmarshal(msg, &cpr); err != nil {
-		s.Warnf("failed creating producer: %v", err.Error())
+		s.Errorf("failed creating producer: %v", err.Error())
 		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
