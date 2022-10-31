@@ -105,8 +105,6 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
     };
 
     const handleCancel = () => {
-        handleClear();
-        filtersUpdated([]);
         filterDispatch({ type: 'SET_IS_OPEN', payload: false });
     };
 
