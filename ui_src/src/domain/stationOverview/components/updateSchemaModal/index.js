@@ -166,7 +166,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                 </div>
                 <div className="version-number">
                     <p>
-                        Active version: <span>{activeVersion?.version_number}</span>
+                        Active version: <span>{activeVersion.version_number}</span>
                     </p>
                 </div>
             </div>
