@@ -132,6 +132,9 @@
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
+                .version-badge{
+                    height: 18px;
+                }
             }
             .sd-center{
                 display: flex;

@@ -23,7 +23,6 @@ import './style.scss';
 
 import React, { useState, useEffect, useContext } from 'react';
 import Lottie from 'lottie-react';
-import { CopyBlock, atomOneLight } from 'react-code-blocks';
 
 import SelectComponent from '../../../../components/select';
 import Button from '../../../../components/button';
@@ -35,6 +34,8 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import TitleComponent from '../../../../components/titleComponent';
 import { CODE_EXAMPLE } from '../../../../const/SDKExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
+import Copy from '../../../../components/copy';
+import Editor from '@monaco-editor/react';
 
 export const produceConsumeScreenEnum = {
     DATA_SNIPPET: 0,
@@ -152,7 +153,7 @@ const ProduceConsumeData = (props) => {
             {currentPhase === produceConsumeScreenEnum['DATA_SNIPPET'] && (
                 <div className="code-snippet">
                     <div className="lang">
-                        <p>Language</p>
+                        <p className="title">Language</p>
                         <SelectComponent
                             initialValue={langSelected}
                             value={langSelected}
@@ -168,22 +169,32 @@ const ProduceConsumeData = (props) => {
                         />
                     </div>
                     <div className="installation">
-                        <p>Installation</p>
+                        <p className="title">Installation</p>
                         <div className="install-copy">
-                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="code-example">
-                        <p>{props.produce ? 'Produce data' : 'Consume data'}</p>
+                        <p className="title">{props.produce ? 'Produce data' : 'Consume data'}</p>
                         <div className="code-content">
-                            <CopyBlock
+                            <Editor
+                                options={{
+                                    minimap: { enabled: false },
+                                    scrollbar: { verticalScrollbarSize: 0 },
+                                    scrollBeyondLastLine: false,
+                                    roundedSelection: false,
+                                    formatOnPaste: true,
+                                    formatOnType: true,
+                                    readOnly: true,
+                                    fontSize: '14px'
+                                }}
                                 language={CODE_EXAMPLE[langSelected].langCode}
-                                text={props.produce ? codeExample.producer : codeExample.consumer}
-                                showLineNumbers={true}
-                                theme={atomOneLight}
-                                wrapLines={true}
-                                codeBlock
+                                height="calc(100% - 10px)"
+                                width="calc(100% - 25px)"
+                                value={props.produce ? codeExample.producer : codeExample.consumer}
                             />
+                            <Copy data={props.produce ? codeExample.producer : codeExample.consumer} />
                         </div>
                     </div>
                 </div>
@@ -191,7 +202,7 @@ const ProduceConsumeData = (props) => {
             {currentPhase === produceConsumeScreenEnum['DATA_WAITING'] && (
                 <div className="code-snippet">
                     <div className="lang">
-                        <p>Language</p>
+                        <p className="title">Language</p>
                         <SelectComponent
                             initialValue={langSelected}
                             value={langSelected}
@@ -208,9 +219,10 @@ const ProduceConsumeData = (props) => {
                         />
                     </div>
                     <div className="installation">
-                        <p>Installation</p>
+                        <p className="title">Installation</p>
                         <div className="install-copy">
-                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="data-waiting-container">
@@ -260,7 +272,7 @@ const ProduceConsumeData = (props) => {
             {currentPhase === produceConsumeScreenEnum['DATA_RECIEVED'] && (
                 <div className="code-snippet">
                     <div className="lang">
-                        <p>Language</p>
+                        <p className="title">Language</p>
                         <SelectComponent
                             initialValue={langSelected}
                             value={langSelected}
@@ -277,9 +289,10 @@ const ProduceConsumeData = (props) => {
                         />
                     </div>
                     <div className="installation">
-                        <p>Installation</p>
+                        <p className="title">Installation</p>
                         <div className="install-copy">
-                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="successfully-container">

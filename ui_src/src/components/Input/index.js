@@ -47,7 +47,8 @@ const Input = (props) => {
         id,
         minWidth,
         fontSize,
-        onPressEnter
+        onPressEnter,
+        autoFocus = false
     } = props;
 
     const handleBlurChange = (e) => (onBlur ? onBlur(e) : '');
@@ -83,6 +84,7 @@ const Input = (props) => {
         },
         disabled,
         value,
+        autoFocus,
         onPressEnter
     };
     const suffix = iconComponent !== undefined ? <div className="icon">{iconComponent}</div> : <span />;

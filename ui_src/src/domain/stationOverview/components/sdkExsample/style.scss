@@ -23,7 +23,8 @@
             width: 450px;
             display: flex;
             align-items: center;
-            padding-right:3px;
+            padding: 0px 10px;
+            justify-content: space-between;
             p {
                 margin: 0;
             }
@@ -36,9 +37,15 @@
             border-radius: 4px;
             height: 350px;
             overflow: auto;
+            align-items:flex-start;
+            display: flex;
+            justify-content:space-evenly;
             p {
                 margin: 0;
                 white-space: pre-line;
+            }
+            img {
+                padding-top: 5px;
             }
         }
     }
