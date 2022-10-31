@@ -154,7 +154,11 @@ import (
 )
     
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", "<connection_token>")
+    conn, err := memphis.connect({
+            host: "<memphis-host>",
+            username: "<application type username>",
+            connectionToken: "<connection_token>"
+        });
     if err != nil {
         os.Exit(1)
     }
@@ -183,7 +187,11 @@ import (
 )
     
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", "<connection_token>")
+    conn, err := memphis.connect({
+        host: "<memphis-host>",
+        username: "<application type username>",
+        connectionToken: "<connection_token>"
+    });
     if err != nil {
         os.Exit(1)
     }

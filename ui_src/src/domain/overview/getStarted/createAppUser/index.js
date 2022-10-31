@@ -152,7 +152,7 @@ const CreateAppUser = (props) => {
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && (
                 <div className="information-container">
                     <img src={Information} alt="information" className="information-img" />
-                    <p className="information">Please note when you close this modal, you will not be able to restore your user details!!</p>
+                    <p className="information">Please save the generated credentials for future usage.</p>
                 </div>
             )}
         </div>

@@ -12,8 +12,6 @@
             overflow: auto;
         }
         .buttons{
-            display: flex;
-            justify-content: space-between;
             padding: 15px;
             height: 65px;
         }
@@ -30,9 +28,7 @@
     .ant-modal-header{
         border-radius: 8px 8px 0 0;
         div{
-
             font-family: 'InterSemiBold';
-            // font-size: 14px;
         }
     }
     .ant-modal-body {

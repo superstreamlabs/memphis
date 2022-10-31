@@ -22,8 +22,11 @@
     }
     p {
         margin: 0;
+    }
+    .title{
         font-weight: 600;
         font-size: 16px;
+
     }
     .code-snippet {
         position: relative;
@@ -33,9 +36,7 @@
         height: 100%;
         .code-example {
             position: relative;
-
             height: calc(100% - 200px);
-            // background-color: aquamarine;
             .code-content {
                 border: 1px solid var(--gray);
                 box-sizing: border-box;
@@ -43,11 +44,14 @@
                 overflow: auto;
                 position: relative;
                 height: calc(100% - 50px);
-                // height: calc(100% - 100px);
-                // height: calc(100% - 250px);
+                display: flex;
+                align-items: flex-start;
                 p {
                     margin: 0;
                     white-space: pre-line;
+                }
+                img {
+                    padding-top: 5px;
                 }
             }
         }
@@ -61,7 +65,10 @@
             height: 50px;
             display: flex;
             align-items: center;
-            padding-right: 3px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0px 10px;
+        
         }
     }
 

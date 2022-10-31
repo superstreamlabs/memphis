@@ -22,12 +22,13 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { CopyBlock, atomOneLight } from 'react-code-blocks';
 
 import SelectComponent from '../../../../components/select';
 import { CODE_EXAMPLE } from '../../../../const/SDKExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
 import CustomTabs from '../../../../components/Tabs';
+import Copy from '../../../../components/copy';
+import Editor from '@monaco-editor/react';
 
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -89,14 +90,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
             <div className="installation">
                 <p>Installation</p>
                 <div className="install-copy">
-                    <CopyBlock
-                        className="copyBlock"
-                        text={CODE_EXAMPLE[langSelected].installation}
-                        showLineNumbers={false}
-                        theme={atomOneLight}
-                        wrapLines={true}
-                        codeBlock
-                    />
+                    <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                    <Copy data={CODE_EXAMPLE[langSelected].installation} />
                 </div>
             </div>
             <div className="tabs">
@@ -104,14 +99,23 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 {tabValue === 'Producer' && (
                     <div className="code-example">
                         <div className="code-content">
-                            <CopyBlock
+                            <Editor
+                                options={{
+                                    minimap: { enabled: false },
+                                    scrollbar: { verticalScrollbarSize: 0 },
+                                    scrollBeyondLastLine: false,
+                                    roundedSelection: false,
+                                    formatOnPaste: true,
+                                    formatOnType: true,
+                                    readOnly: true,
+                                    fontSize: '14px'
+                                }}
                                 language={CODE_EXAMPLE[langSelected].langCode}
-                                text={codeExample.producer}
-                                showLineNumbers={true}
-                                theme={atomOneLight}
-                                wrapLines={true}
-                                codeBlock
+                                height="calc(100% - 10px)"
+                                width="calc(100% - 25px)"
+                                value={codeExample.producer}
                             />
+                            <Copy data={codeExample.producer} />
                         </div>
                     </div>
                 )}
@@ -119,14 +123,23 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 {tabValue === 'Consumer' && (
                     <div className="code-example">
                         <div className="code-content">
-                            <CopyBlock
+                            <Editor
+                                options={{
+                                    minimap: { enabled: false },
+                                    scrollbar: { verticalScrollbarSize: 0 },
+                                    scrollBeyondLastLine: false,
+                                    roundedSelection: false,
+                                    formatOnPaste: true,
+                                    formatOnType: true,
+                                    readOnly: true,
+                                    fontSize: '14px'
+                                }}
                                 language={CODE_EXAMPLE[langSelected].langCode}
-                                text={codeExample.consumer}
-                                showLineNumbers={true}
-                                theme={atomOneLight}
-                                wrapLines={true}
-                                codeBlock
+                                height="calc(100% - 10px)"
+                                width="calc(100% - 25px)"
+                                value={codeExample.consumer}
                             />
+                            <Copy data={codeExample.consumer} />
                         </div>
                     </div>
                 )}

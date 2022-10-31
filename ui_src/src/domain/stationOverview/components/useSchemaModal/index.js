@@ -100,21 +100,9 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
             </div>
             <div className="buttons">
                 <Button
-                    width="150px"
+                    width="100%"
                     height="35px"
-                    placeholder="Close"
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType="white"
-                    border="gray-light"
-                    fontSize="13px"
-                    fontFamily="InterSemiBold"
-                    onClick={() => close()}
-                />
-                <Button
-                    width="150px"
-                    height="35px"
-                    placeholder="Add"
+                    placeholder="Apply"
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType="purple"

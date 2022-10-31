@@ -39,6 +39,7 @@ import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import { SchemaStoreContext } from '../..';
+import DeleteItemsModal from '../../../../components/deleteItemsModal';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
@@ -273,42 +274,18 @@ function SchemaList({ createNew }) {
             </div>
             <Modal
                 header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
-                width="450px"
-                height="180px"
+                width="520px"
+                height="240px"
                 displayButtons={false}
                 clickOutside={() => setDeleteModal(false)}
                 open={deleteModal}
             >
-                <div className="roll-back-modal">
-                    <p className="title">Are you sure you want to delete this schema?</p>
-                    <p className="desc">When you delete this schema, it will be permanently deleted.</p>
-                    <div className="buttons">
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Close"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="gray-light"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => setDeleteModal(false)}
-                        />
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Delete"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            loading={isLoading}
-                            onClick={() => handleDeleteSelected()}
-                        />
-                    </div>
-                </div>
+                <DeleteItemsModal
+                    title="Are you sure you want to delete the selected schemas?"
+                    desc="Deleting these schemas means they will be permanently deleted."
+                    buttontxt="I understand this consequences, delete the selected schemas"
+                    handleDeleteSelected={handleDeleteSelected}
+                />
             </Modal>
         </div>
     );
