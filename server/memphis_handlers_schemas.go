@@ -120,19 +120,18 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 
 func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaContent, schemaType string) (string, error) {
 	if len(schemaContent) == 0 {
-		panic("attempt to generate schema descriptor with empty schema")
+		return "", errors.New("attempt to generate schema descriptor with empty schema")
 	}
 
-	switch schemaType {
-	case "protobuf":
-		descriptor, err := generateProtobufDescriptor(schemaName, schemaVersionNum, schemaContent)
-		if err != nil {
-			return "", err
-		}
-		return string(descriptor), nil
-	default:
-		return "", nil
+	if schemaType != "protobuf" {
+		return "", errors.New("Descriptor generation with schema type: " + schemaType + ", while protobuf is expected")
 	}
+
+	descriptor, err := generateProtobufDescriptor(schemaName, schemaVersionNum, schemaContent)
+	if err != nil {
+		return "", err
+	}
+	return string(descriptor), nil
 }
 
 func validateMessageStructName(messageStructName string) error {
@@ -185,6 +184,7 @@ func (s *Server) updateStationProducersOfSchemaChange(sn StationName,
 	msg, err := json.Marshal(schemaUpdate)
 	if err != nil {
 		s.Errorf("schema change update: marshal failed")
+		return
 	}
 	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }
@@ -254,52 +254,16 @@ func (sh SchemasHandler) GetSchemaVersion(stationVersion int, schemaId primitive
 	return schemaVersion, nil
 }
 
-func (sh SchemasHandler) updateActiveVersion(s *Server, schema models.Schema, versionNumber int) error {
-	var stations []models.Station
-	cursor, err := stationsCollection.Find(nil, bson.M{"schema.name": schema.Name})
-	if err != nil {
-		return err
-	}
-
-	if err = cursor.All(nil, &stations); err != nil {
-		return err
-	}
-
-	updateContent, err := generateSchemaUpdateInit(schema)
-	if err != nil {
-		return err
-	}
-
-	update := models.ProducerSchemaUpdate{
-		UpdateType: models.SchemaUpdateTypeInit,
-		Init:       *updateContent,
-	}
-
-	for _, station := range stations {
-		sn, err := StationNameFromStr(station.Name)
-		if err != nil {
-			return err
-		}
-		exist, _, err := IsStationExist(sn)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			serv.Warnf("Station does not exist")
-			continue
-		}
-
-		s.updateStationProducersOfSchemaChange(sn, update)
-	}
-	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
-		bson.M{"schema_id": schema.ID},
+func (sh SchemasHandler) updateActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
+	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
+		bson.M{"schema_id": schemaId},
 		bson.M{"$set": bson.M{"active": false}},
 	)
 	if err != nil {
 		return err
 	}
 
-	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schema.ID, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
+	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
 	if err != nil {
 		return err
 	}
@@ -577,7 +541,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	descriptor, err := generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -869,7 +833,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, extedndedSchemaDetails)
-	//TODO update producers
 }
 
 func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
@@ -916,7 +879,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 	if countVersions > 1 {
-		err = sh.updateActiveVersion(sh.S, schema, body.VersionNumber)
+		err = sh.updateActiveVersion(schema.ID, body.VersionNumber)
 		if err != nil {
 			serv.Errorf("RollBackVersion error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
