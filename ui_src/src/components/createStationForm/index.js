@@ -345,33 +345,29 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </div>
                 </div>
             </div>
-            {!getStarted && schemas.length > 0 && (
-                <div className="schema-type">
-                    <Form.Item name="schemaValue">
-                        <div className="toggle-add-schema">
-                            <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
-                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
-                        </div>
-                        {useSchema && (
-                            <SelectSchema
-                                height="40px"
-                                value={creationForm.schemaValue}
-                                // colorType="navy"
-                                backgroundColorType="none"
-                                radiusType="semi-round"
-                                width="450px"
-                                placeholder={creationForm.schemaValue || 'Select schema'}
-                                options={schemas}
-                                // onChange={(e) => console.log(e)}
-                                onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                                // boxShadowsType="gray"
-                                // popupClassName="select-schema-options"
-                                disabled={!allowEdit}
-                            />
-                        )}
-                    </Form.Item>
-                </div>
-            )}
+            <div className="schema-type">
+                <Form.Item name="schemaValue">
+                    <div className="toggle-add-schema">
+                        <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
+                        <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
+                    </div>
+                    {!getStarted && schemas.length > 0 && useSchema && (
+                        <SelectSchema
+                            height="40px"
+                            width="450px"
+                            placeholder={creationForm.schemaValue || 'Select schema'}
+                            value={creationForm.schemaValue}
+                            colorType="navy"
+                            radiusType="semi-round"
+                            options={schemas}
+                            onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                            // boxShadowsType="gray"
+                            popupClassName="select-schema-options"
+                            disabled={!allowEdit}
+                        />
+                    )}
+                </Form.Item>
+            </div>
         </Form>
     );
 };

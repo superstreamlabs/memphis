@@ -24,98 +24,43 @@ import './style.scss';
 import { Select } from 'antd';
 import React from 'react';
 
-import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
-import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
+import { ArrowDropDownRounded } from '@material-ui/icons';
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-
+import { parsingDate } from '../../services/valueConvertor';
 const { Option } = Select;
 
-const SelectSchema = ({
-    options = [],
-    width,
-    onChange,
-    colorType,
-    value,
-    backgroundColorType,
-    borderColorType,
-    popupClassName,
-    boxShadowsType,
-    radiusType,
-    size,
-    dropdownStyle,
-    height,
-    customOptions,
-    disabled,
-    iconColor,
-    fontSize,
-    fontFamily
-}) => {
+const SelectSchema = ({ options, onChange, value, placeholder }) => {
     const handleChange = (e) => {
         onChange(e);
     };
 
-    const color = getFontColor(colorType);
-    const backgroundColor = getBackgroundColor(backgroundColorType);
-    const borderColor = getBorderColor(borderColorType);
-    const boxShadow = getBoxShadows(boxShadowsType);
-    const borderRadius = getBorderRadius(radiusType);
-    const dropIconColor = getFontColor(iconColor || 'black');
-
-    React.useEffect(() => {
-        console.log(options);
-    }, []);
-
-    const fieldProps = {
-        onChange: handleChange,
-        disabled,
-        style: {
-            width,
-            color,
-            backgroundColor,
-            boxShadow,
-            borderColor,
-            borderRadius,
-            height: height || '40px',
-            fontFamily: fontFamily || 'InterMedium',
-            fontSize: fontSize || '14px'
-        }
-    };
-
     return (
-        <Select
-            className="select"
-            value={value}
-            // bordered={false}
-            suffixIcon={<ArrowDropDownRounded className="drop-sown-icon" />}
-            onChange={handleChange}
-            placement="bottomRight"
-            popupClassName="select-version-options"
-        >
-            {options.map((schema) => {
-                return (
-                    <Option key={schema?.id || schema?.name} value={schema?.name} disabled={schema?.disabled || false}>
-                        <div className="scheme-details-container">
+        <div className="select-schema-container">
+            <Select
+                className="select"
+                placeholder={placeholder}
+                value={value}
+                bordered={false}
+                suffixIcon={<ArrowDropDownRounded className="drop-sown-icon" />}
+                onChange={handleChange}
+                placement="bottomRight"
+                popupClassName="select-schema-options"
+            >
+                {options?.map((schema) => {
+                    return (
+                        <Option key={schema?.id} value={schema?.name}>
                             <div className="schema-details">
-                                <img src={SchemaIconSelect} alt="SchemaIconSelect" height="20px" /> <p className="schema-name">Version {schema?.name}</p>
+                                <img src={SchemaIconSelect} alt="SchemaIconSelect" height="20px" />
+                                <p className="schema-name">{schema?.name}</p>
                             </div>
-
                             <p className="created-by">
-                                {schema?.type} &#8226; {schema?.creation_date}
+                                {schema?.type} &#8226; {parsingDate(schema?.creation_date)}
                             </p>
-                        </div>
-                    </Option>
-
-                    // <Option key={schema?.id || schema?.name} value={schema?.name} disabled={schema?.disabled || false}>
-                    //     {/* <div> */}
-                    //     <div className="select-header">
-                    //         <img src={SchemaIconSelect} alt="schemaIcon" height="25px" /> <p>{schema?.name}</p>
-                    //     </div>
-                    //     <p className="sub-title">{schema?.name}</p>
-                    //     {/* </div> */}
-                    // </Option>
-                );
-            })}
-        </Select>
+                        </Option>
+                    );
+                })}
+            </Select>
+        </div>
     );
 };
 
