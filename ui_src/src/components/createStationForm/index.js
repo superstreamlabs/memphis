@@ -27,12 +27,15 @@ import pathDomains from '../../router';
 import { Form } from 'antd';
 import TitleComponent from '../titleComponent';
 import RadioButton from '../radioButton';
+import Switcher from '../switcher';
 import Input from '../Input';
 import { convertDateToSeconds } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 
 import InputNumberComponent from '../InputNumber';
+import SelectComponent from '../select';
+import SelectSchema from '../selectSchema';
 
 const retanionOptions = [
     {
@@ -72,9 +75,12 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [actualPods, setActualPods] = useState(null);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [storageType, setStorageType] = useState(storageOptions[0].value);
+    const [schemas, setSchemas] = useState([]);
+    const [useSchema, setUseSchema] = useState(true);
 
     useEffect(() => {
         getOverviewData();
+        getAllSchemas();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
         if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
         createStationFormRef.current = onFinish;
@@ -92,18 +98,17 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const onFinish = async () => {
-        if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) {
-            const formFields = await creationForm.validateFields();
-            const retentionValue = getRetentionValue(formFields);
-            const bodyRequest = {
-                name: formFields.name,
-                retention_type: formFields.retention_type,
-                retention_value: retentionValue,
-                storage_type: formFields.storage_type,
-                replicas: formFields.replicas
-            };
-            createStation(bodyRequest);
-        } else getStarted && finishUpdate();
+        const formFields = await creationForm.validateFields();
+        const retentionValue = getRetentionValue(formFields);
+        const bodyRequest = {
+            name: formFields.name,
+            retention_type: formFields.retention_type,
+            retention_value: retentionValue,
+            storage_type: formFields.storage_type,
+            replicas: formFields.replicas,
+            schema_name: formFields.schemaValue
+        };
+        createStation(bodyRequest);
     };
 
     const getOverviewData = async () => {
@@ -112,6 +117,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
             indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
             data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(data?.system_components[indexOfBrokerComponent]?.actual_pods);
+        } catch (error) {}
+    };
+
+    const getAllSchemas = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
+            setSchemas(data);
         } catch (error) {}
     };
 
@@ -297,7 +309,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         headerTitle="Storage type"
                         typeTitle="sub-header"
                         headerDescription="Type of message persistence"
-                        style={{ description: { width: '18vw' } }}
+                        style={{ description: { width: '240px' } }}
                     ></TitleComponent>
                     <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
                         <RadioButton
@@ -318,7 +330,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         headerTitle="Replicas"
                         typeTitle="sub-header"
                         headerDescription="Amount of mirrors per message"
-                        style={{ description: { width: '16vw' } }}
+                        style={{ description: { width: '240px' } }}
                     ></TitleComponent>
                     <div>
                         <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}>
@@ -332,6 +344,22 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </Form.Item>
                     </div>
                 </div>
+            </div>
+            <div className="schema-type">
+                <Form.Item name="schemaValue">
+                    <div className="toggle-add-schema">
+                        <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
+                        <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
+                    </div>
+                    {!getStarted && schemas.length > 0 && useSchema && (
+                        <SelectSchema
+                            placeholder={creationForm.schemaValue || 'Select schema'}
+                            value={creationForm.schemaValue}
+                            options={schemas}
+                            onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                        />
+                    )}
+                </Form.Item>
             </div>
         </Form>
     );

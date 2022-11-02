@@ -23,8 +23,8 @@
     .storage-replicas-container {
         display: flex;
         width: 100%;
+        justify-content: space-between;
         .storage-container {
-            justify-content: space-between;
             display: flex;
             flex-direction: column;
         }
@@ -118,7 +118,6 @@
         }
     }
 
-    //input-number
     .ant-input-number {
         width: 60px;
         height: 38px;
@@ -149,6 +148,15 @@
         p {
             margin-left: 5px;
             margin-bottom: 10px;
+        }
+    }
+    .toggle-add-schema {
+        display: flex;
+        .switch-button {
+            margin-left: 10px;
+        }
+        .ant-switch {
+            min-width: 35px;
         }
     }
 }
