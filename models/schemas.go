@@ -46,11 +46,11 @@ type SchemaVersion struct {
 }
 
 type CreateNewSchema struct {
-	Name              string `json:"name" binding:"required,min=1,max=32"`
-	Type              string `json:"type"`
-	SchemaContent     string `json:"schema_content"`
-	Tags              []CreateTag  `json:"tags"`
-	MessageStructName string `json:"message_struct_name"`
+	Name              string      `json:"name" binding:"required,min=1,max=32"`
+	Type              string      `json:"type"`
+	SchemaContent     string      `json:"schema_content"`
+	Tags              []CreateTag `json:"tags"`
+	MessageStructName string      `json:"message_struct_name"`
 }
 
 type ExtendedSchema struct {
@@ -61,7 +61,7 @@ type ExtendedSchema struct {
 	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
 	Used                bool               `json:"used"`
-	Tags                []CreateTag              `json:"tags"`
+	Tags                []CreateTag        `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {
@@ -70,7 +70,7 @@ type ExtendedSchemaDetails struct {
 	Type         string             `json:"type"`
 	Versions     []SchemaVersion    `json:"versions"`
 	UsedStations []string           `json:"used_stations"`
-	Tags         []CreateTag              `json:"tags"`
+	Tags         []CreateTag        `json:"tags"`
 }
 
 type ProducerSchemaUpdateType int
@@ -86,15 +86,15 @@ type ProducerSchemaUpdate struct {
 }
 
 type ProducerSchemaUpdateInit struct {
-	SchemaName string                        `json:"schema_name"`
-	Versions   []ProducerSchemaUpdateVersion `json:"versions"`
-	ActiveIdx  int                           `json:"active_index"`
-	SchemaType string                        `json:"type"`
+	SchemaName    string                      `json:"schema_name"`
+	ActiveVersion ProducerSchemaUpdateVersion `json:"active_version"`
+	SchemaType    string                      `json:"type"`
 }
 
 type ProducerSchemaUpdateVersion struct {
 	VersionNumber     int    `json:"version_number"`
 	Descriptor        string `json:"descriptor"`
+	Content           string `json:"schema_content"`
 	MessageStructName string `json:"message_struct_name"`
 }
 
