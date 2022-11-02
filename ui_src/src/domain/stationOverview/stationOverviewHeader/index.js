@@ -297,7 +297,7 @@ const StationOverviewHeader = () => {
                     header="Use schema"
                     displayButtons={false}
                     height="400px"
-                    width="312px"
+                    width="352px"
                     clickOutside={() => setUseSchemaModal(false)}
                     open={useSchemaModal}
                     hr={true}
