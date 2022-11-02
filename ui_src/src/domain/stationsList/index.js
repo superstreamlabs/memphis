@@ -37,7 +37,6 @@ import stationImg from '../../assets/images/stationsIconActive.svg';
 
 import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
-// import CreateStationDetails from '../../components/createStationDetails';
 import CreateStationForm from '../../components/createStationForm';
 
 import Loader from '../../components/loader';

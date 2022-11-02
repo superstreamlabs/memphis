@@ -92,16 +92,18 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const onFinish = async () => {
-        const formFields = await creationForm.validateFields();
-        const retentionValue = getRetentionValue(formFields);
-        const bodyRequest = {
-            name: formFields.name,
-            retention_type: formFields.retention_type,
-            retention_value: retentionValue,
-            storage_type: formFields.storage_type,
-            replicas: formFields.replicas
-        };
-        createStation(bodyRequest);
+        if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) {
+            const formFields = await creationForm.validateFields();
+            const retentionValue = getRetentionValue(formFields);
+            const bodyRequest = {
+                name: formFields.name,
+                retention_type: formFields.retention_type,
+                retention_value: retentionValue,
+                storage_type: formFields.storage_type,
+                replicas: formFields.replicas
+            };
+            createStation(bodyRequest);
+        } else getStarted && finishUpdate();
     };
 
     const getOverviewData = async () => {
