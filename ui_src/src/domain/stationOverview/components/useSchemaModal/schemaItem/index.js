@@ -22,27 +22,36 @@
 import './style.scss';
 
 import { FiberManualRecord } from '@material-ui/icons';
-import React from 'react';
+import React, { useState } from 'react';
 
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
+import deleteIcon from '../../../../../assets/images/deleteIcon.svg';
+
 import { parsingDate } from '../../../../../services/valueConvertor';
 
-const SchemaItem = ({ schema, handleSelectedItem, selected }) => {
+const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, handleStopUseSchema }) => {
     return (
         <div
             key={schema?.id}
             className={selected === schema?.name ? 'schema-item-container sch-item-selected' : 'schema-item-container'}
             onClick={() => handleSelectedItem(schema?.name)}
         >
-            <div className="name-wrapper">
-                <img src={schemaItemIcon} />
-                <p className="name">{schema?.name}</p>
+            <div className="content">
+                <div className="name-wrapper">
+                    <img src={schemaItemIcon} />
+                    <p className="name">{schema?.name}</p>
+                </div>
+                <div className="details">
+                    <p className="type">{schema?.type}</p>
+                    <FiberManualRecord />
+                    <p className="date">{parsingDate(schema?.creation_date)}</p>
+                </div>
             </div>
-            <div className="details">
-                <p className="type">{schema?.type}</p>
-                <FiberManualRecord />
-                <p className="date">{parsingDate(schema?.creation_date)}</p>
-            </div>
+            {schema?.name === schemaSelected && (
+                <div className="delete-icon" onClick={handleStopUseSchema}>
+                    <img src={deleteIcon} />
+                </div>
+            )}
         </div>
     );
 };

@@ -29,6 +29,9 @@ import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import SchemaItem from './schemaItem';
 import Button from '../../../../components/button';
+import Modal from '../../../../components/modal';
+import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
 
 const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
     const [schemaList, setSchemasList] = useState([]);
@@ -37,6 +40,7 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [selected, setSelected] = useState(schemaSelected);
     const [useschemaLoading, setUseschemaLoading] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(false);
 
     const getAllSchema = async () => {
         try {
@@ -74,6 +78,18 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
         } catch (error) {}
         setUseschemaLoading(false);
     };
+    const handleStopUseSchema = async () => {
+        try {
+            setUseschemaLoading(true);
+            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA_FROM_STATION, { station_name: stationName });
+            if (data) {
+                dispatch(data);
+                setUseschemaLoading(false);
+                setDeleteModal(false);
+            }
+        } catch (error) {}
+        setUseschemaLoading(false);
+    };
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
@@ -95,7 +111,15 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
             />
             <div className="schemas-list">
                 {schemaList?.map((schema) => {
-                    return <SchemaItem schema={schema} selected={selected} handleSelectedItem={(id) => setSelected(id)} />;
+                    return (
+                        <SchemaItem
+                            schema={schema}
+                            schemaSelected={schemaSelected}
+                            selected={selected}
+                            handleSelectedItem={(id) => setSelected(id)}
+                            handleStopUseSchema={() => setDeleteModal(true)}
+                        />
+                    );
                 })}
             </div>
             <div className="buttons">
@@ -113,6 +137,22 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
                     onClick={useSchema}
                 />
             </div>
+            <Modal
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                width="520px"
+                height="240px"
+                displayButtons={false}
+                clickOutside={() => setDeleteModal(false)}
+                open={deleteModal}
+            >
+                <DeleteItemsModal
+                    title="Are you sure you want to stop using this schema?"
+                    desc="Stopping using this schema will affect future messages."
+                    buttontxt="I understand this consequences, stop using schema"
+                    textToConfirm="remove schema"
+                    handleDeleteSelected={handleStopUseSchema}
+                />
+            </Modal>
         </div>
     );
 };

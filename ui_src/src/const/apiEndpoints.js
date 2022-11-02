@@ -49,6 +49,7 @@ export const ApiEndpoints = {
     RESEND_POISION_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
     USE_SCHEMA: '/stations/useSchema',
     GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
+    REMOVE_SCHEMA_FROM_STATION: '/stations/removeSchemaFromStation',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
