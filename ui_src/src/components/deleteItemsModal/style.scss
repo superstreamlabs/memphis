@@ -1,0 +1,24 @@
+.delete-modal-wrapper{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    p{
+        margin: 0;
+    }
+   .title{
+    font-size: 18px;
+    font-family:'InterMedium'
+   } 
+   .desc{
+    font-size: 14px;
+    color: #667085;
+   }
+   .confirm-section{
+        color: #667085;
+        b{
+            font-family: 'InterSemiBold';
+        }
+
+   }
+}

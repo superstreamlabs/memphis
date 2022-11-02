@@ -98,6 +98,9 @@ func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID)
 func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
 	var schema models.Schema
 	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
+	if err == mongo.ErrNoDocuments {
+		return schema, nil
+	}
 	if err != nil {
 		return models.Schema{}, err
 	}

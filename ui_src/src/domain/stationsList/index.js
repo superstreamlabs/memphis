@@ -41,6 +41,7 @@ import Modal from '../../components/modal';
 import CreateStationForm from '../../components/createStationForm';
 import Loader from '../../components/loader';
 import { stationFilterArray } from '../../services/valueConvertor';
+import DeleteItemsModal from '../../components/deleteItemsModal';
 
 const StationsList = () => {
     const history = useHistory();
@@ -302,41 +303,17 @@ const StationsList = () => {
             <Modal
                 header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
                 width="520px"
-                height="210px"
+                height="240px"
                 displayButtons={false}
                 clickOutside={() => modalDeleteFlip(false)}
                 open={modalDeleteIsOpen}
             >
-                <div className="roll-back-modal">
-                    <p className="title">Are you sure you want to delete the selected stations?</p>
-                    <p className="desc">Deleting these stations means they will be permanently deleted.</p>
-                    <div className="buttons">
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Close"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="gray-light"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => modalDeleteFlip(false)}
-                        />
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Delete"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            loading={isLoading}
-                            onClick={() => handleDeleteSelected()}
-                        />
-                    </div>
-                </div>
+                <DeleteItemsModal
+                    title="Are you sure you want to delete the selected stations?"
+                    desc="Deleting these stations means they will be permanently deleted."
+                    buttontxt="I understand this consequences, delete the selected staions"
+                    handleDeleteSelected={handleDeleteSelected}
+                />
             </Modal>
         </div>
     );

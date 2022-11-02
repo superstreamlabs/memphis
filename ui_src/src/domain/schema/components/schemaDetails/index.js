@@ -121,6 +121,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const handleSelectVersion = (e) => {
         let index = schemaDetails?.versions?.findIndex((version) => version.version_number === e);
         setVersionSelected(schemaDetails?.versions[index]);
+        setMessageStructName(schemaDetails?.versions[index].message_struct_name);
         setNewVersion('');
     };
 
@@ -165,7 +166,14 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         setUpdated(isThereDiff(versionSelected?.schema_content, value));
         if (value.length > 0) {
             try {
-                Schema.parse(value);
+                let parser = Schema.parse(value).messages;
+                if (parser.length > 1) {
+                    setEditable(true);
+                    setMessagesStructNameList(parser);
+                } else {
+                    setMessageStructName(parser[0].name);
+                    setEditable(false);
+                }
                 setValidateSuccess('');
                 setValidateError('');
             } catch (error) {
@@ -407,7 +415,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <Button
                         width="105px"
                         height="34px"
-                        placeholder={'close'}
+                        placeholder={'Close'}
                         colorType="black"
                         radiusType="circle"
                         backgroundColorType="white"

@@ -51,8 +51,12 @@ const SelectVersion = ({ options, onChange, value }) => {
                             <p className="schema-name">Version {option?.version_number}</p>
                             <div className="scheme-details">
                                 <p className="created-by">Created by {option?.created_by_user}</p>
-                                {(option.active || index === 0) && <FiberManualRecord />}
-                                {option.active && <VersionBadge content="Active" active={true} />}
+                                {option.active && (
+                                    <>
+                                        <FiberManualRecord />
+                                        <VersionBadge content="Active" active={true} />
+                                    </>
+                                )}
                             </div>
                         </Option>
                     );
