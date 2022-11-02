@@ -415,7 +415,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <Button
                         width="105px"
                         height="34px"
-                        placeholder={'close'}
+                        placeholder={'Close'}
                         colorType="black"
                         radiusType="circle"
                         backgroundColorType="white"
