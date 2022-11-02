@@ -20,68 +20,50 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useCallback, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect, useContext, useState, useRef } from 'react';
 
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import StationsInstructions from '../../components/stationsInstructions';
+import stationImg from '../../assets/images/stationsIconActive.svg';
+import CreateStationForm from '../../components/createStationForm';
+import { stationFilterArray } from '../../services/valueConvertor';
+import DeleteItemsModal from '../../components/deleteItemsModal';
+import stationsIcon from '../../assets/images/stationIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import StationBoxOverview from './stationBoxOverview';
 import { httpRequest } from '../../services/http';
 import Button from '../../components/button';
-import { Context } from '../../hooks/store';
-import SearchInput from '../../components/searchInput';
-import pathDomains from '../../router';
-import stationsIcon from '../../assets/images/stationIcon.svg';
-import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
-import searchIcon from '../../assets/images/searchIcon.svg';
-import stationImg from '../../assets/images/stationsIconActive.svg';
-
-import StationsInstructions from '../../components/stationsInstructions';
-import Modal from '../../components/modal';
-// import CreateStationDetails from '../../components/createStationDetails';
-import CreateStationForm from '../../components/createStationForm';
-
+import Filter from '../../components/filter';
 import Loader from '../../components/loader';
-import { stationFilterArray } from '../../services/valueConvertor';
-import DeleteItemsModal from '../../components/deleteItemsModal';
+import { Context } from '../../hooks/store';
+import Modal from '../../components/modal';
 
 const StationsList = () => {
-    const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
-    const [stationsList, setStationList] = useState([]);
-    const [filteredList, setFilteredList] = useState([]);
-    const [searchInput, setSearchInput] = useState('');
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
-
     const createStationRef = useRef(null);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getAllStations();
+        return () => {
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+        };
     }, []);
-
-    useEffect(() => {
-        if (searchInput.length >= 2) setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
-        else setFilteredList(stationsList);
-    }, [searchInput]);
-
-    useEffect(() => {
-        if (searchInput !== '' && searchInput.length >= 2) {
-            setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
-        } else setFilteredList(stationsList);
-    }, [stationsList]);
 
     const getAllStations = async () => {
         setisLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
             res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-            setStationList(res.stations);
-            setFilteredList(res.stations);
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: res.stations });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: res.stations });
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -91,69 +73,32 @@ const StationsList = () => {
         }
     };
 
-    const handleSearch = (e) => {
-        setSearchInput(e.target.value);
-    };
-
-    const handleRegisterToStation = useCallback(() => {
-        state.socket?.emit('get_all_stations_data');
-    }, [state.socket]);
-
-    useEffect(() => {
-        state.socket?.on(`stations_overview_data`, (data) => {
-            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-            setStationList(data);
-        });
-
-        state.socket?.on('error', (error) => {
-            history.push(pathDomains.overview);
-        });
-
-        setTimeout(() => {
-            handleRegisterToStation();
-        }, 1000);
-
-        return () => {
-            state.socket?.emit('deregister');
-        };
-    }, [state.socket]);
-
-    const removeStation = async (stationName) => {
-        try {
-            await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
-                station_name: stationName
-            });
-            setStationList(stationsList.filter((station) => station.station.name !== stationName));
-        } catch (error) {
-            return;
-        }
-    };
-
     const renderStationsOverview = () => {
-        if (stationsList?.length > 0) {
-            if (stationsList?.length <= 2) {
+        if (state?.domainList?.length > 0) {
+            if (state.filteredList?.length === 0) {
+                return <StationsInstructions header="No Stations found" des="Please try to search again" image={stationsIcon} />;
+            }
+            if (state?.domainList?.length <= 2) {
                 return (
                     <div>
-                        {filteredList?.map((station) => (
+                        {state.filteredList?.map((station) => (
                             <StationBoxOverview
                                 key={station.station.id}
                                 isCheck={isCheck.includes(station.station.name)}
                                 handleCheckedClick={handleCheckedClick}
                                 station={station}
-                                removeStation={() => removeStation(station.station.name)}
                             />
                         ))}
                         <StationsInstructions header="Add more stations" button="Add Station" newStation={() => modalFlip(true)} />
                     </div>
                 );
             }
-            return filteredList?.map((station) => (
+            return state?.filteredList?.map((station) => (
                 <StationBoxOverview
-                    key={station.station.id}
-                    isCheck={isCheck.includes(station.station.name)}
+                    key={station?.station?.id}
+                    isCheck={isCheck.includes(station?.station?.name)}
                     handleCheckedClick={handleCheckedClick}
                     station={station}
-                    removeStation={() => removeStation(station.station.name)}
                 />
             ));
         }
@@ -162,7 +107,7 @@ const StationsList = () => {
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(filteredList.map((li) => li.station.name));
+        setIsCheck(state.filteredList.map((li) => li.station.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -186,7 +131,7 @@ const StationsList = () => {
                 station_names: isCheck
             });
             if (data) {
-                setStationList(stationFilterArray(stationsList, isCheck));
+                dispatch({ type: 'SET_DOMAIN_LIST', payload: stationFilterArray(state?.filteredList, isCheck) });
                 setIsCheck([]);
                 setisLoading(false);
             }
@@ -201,9 +146,9 @@ const StationsList = () => {
             <div className="stations-details-header">
                 <div className="header-wraper">
                     <label className="main-header-h1">
-                        Stations <label className="length-list">{stationsList?.length > 0 && `(${stationsList?.length})`}</label>
+                        Stations <label className="length-list">{state?.filteredList?.length > 0 && `(${state?.filteredList?.length})`}</label>
                     </label>
-                    {stationsList?.length > 0 && (
+                    {state?.domainList?.length > 0 && (
                         <div className="right-side">
                             <Button
                                 width="131px"
@@ -219,7 +164,7 @@ const StationsList = () => {
                                 onClick={() => modalDeleteFlip(true)}
                             />
 
-                            {filteredList?.length > 1 && (
+                            {state.filteredList?.length > 1 && (
                                 <Button
                                     width="131px"
                                     height="34px"
@@ -233,23 +178,12 @@ const StationsList = () => {
                                     onClick={() => onCheckedAll()}
                                 />
                             )}
-                            <SearchInput
-                                placeholder="Search Stations"
-                                colorType="navy"
-                                backgroundColorType="gray-dark"
-                                width="288px"
-                                height="34px"
-                                borderColorType="none"
-                                boxShadowsType="none"
-                                borderRadiusType="circle"
-                                iconComponent={<img src={searchIcon} alt="searchIcon" />}
-                                onChange={handleSearch}
-                                value={searchInput}
-                            />
+
+                            <Filter filterComponent="stations" height="34px" />
                             <Button
                                 className="modal-btn"
                                 width="180px"
-                                height="37px"
+                                height="34px"
                                 placeholder="Create New Station"
                                 colorType="white"
                                 radiusType="circle"

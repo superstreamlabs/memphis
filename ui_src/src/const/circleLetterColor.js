@@ -19,23 +19,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import './style.scss';
-
-import React, { useEffect, useContext, useState, useReducer, createContext } from 'react';
-
-import { Context } from '../../hooks/store';
-import SchemaList from './components/schemaList';
-import CreateSchema from './components/createSchema';
-
-function SchemaManagment() {
-    const [state, dispatch] = useContext(Context);
-    const [creatNew, setCreatNew] = useState(false);
-
-    useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
-    }, []);
-
-    return <div>{creatNew ? <CreateSchema goBack={() => setCreatNew(false)} /> : <SchemaList createNew={() => setCreatNew(true)} />}</div>;
-}
-
-export default SchemaManagment;
+export const CircleLetterColor = {
+    A: 'rgba(101, 87, 255, 0.4)',
+    B: 'rgba(77, 34, 178, 0.4)',
+    C: 'rgba(177, 140, 254, 0.4)',
+    D: 'rgba(216, 201, 254, 0.4)',
+    E: 'rgba(0, 165, 255, 0.4)',
+    F: 'rgba(238, 113, 158, 0.4)',
+    G: 'rgba(255, 140, 130, 0.4)',
+    H: 'rgba(252, 52, 0, 0.4)',
+    I: 'rgba(97, 223, 155, 0.4)',
+    J: 'rgba(32, 201, 172, 0.4)',
+    K: 'rgba(97, 223, 215, 0.4)',
+    L: 'rgba(255, 160, 67, 0.4)',
+    M: 'rgba(253, 236, 194, 0.4)',
+    N: 'rgba(182, 180, 186, 0.4)',
+    O: 'rgba(100, 100, 103, 0.4)',
+    P: 'rgba(101, 87, 255, 0.4)',
+    Q: 'rgba(77, 34, 178, 0.4)',
+    R: 'rgba(177, 140, 254, 0.4)',
+    S: 'rgba(216, 201, 254, 0.4)',
+    T: 'rgba(0, 165, 255, 0.4)',
+    U: 'rgba(238, 113, 158, 0.4)',
+    V: 'rgba(255, 140, 130, 0.4)',
+    W: 'rgba(252, 52, 0, 0.4)',
+    X: 'rgba(97, 223, 155, 0.4)',
+    Y: 'rgba(32, 201, 172, 0.4)',
+    Z: 'rgba(97, 223, 215, 0.4)'
+};

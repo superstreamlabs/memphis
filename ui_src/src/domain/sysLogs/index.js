@@ -21,13 +21,16 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import LogsWrapper from './components/logsWrapper';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import { filterType, labelType } from '../../const/filterConsts';
+
+import Filter from '../../components/filter';
 
 const SysLogs = () => {
     const [state, dispatch] = useContext(Context);

@@ -43,9 +43,9 @@ import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import Copy from '../../../../components/copy';
 import TagsList from '../../../../components/tagList';
-import { SchemaStoreContext } from '../..';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
+import { Context } from '../../../../hooks/store';
 
 const formatOption = [
     {
@@ -61,7 +61,8 @@ const formatOption = [
 ];
 
 function SchemaDetails({ schemaName, closeDrawer }) {
-    const [schemaState, schemaDispatch] = useContext(SchemaStoreContext);
+    const [state, dispatch] = useContext(Context);
+
     const [versionSelected, setVersionSelected] = useState();
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
@@ -215,7 +216,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             let tags = schemaDetails?.tags;
             let updatedTags = tags.filter((tag) => tag.name !== tagName);
             updateTags(updatedTags);
-            schemaDispatch({ type: 'SET_TAGS', payload: { schemaName: schemaName, tags: updatedTags } });
+            dispatch({ type: 'SET_SCHEMA_TAGS', payload: { schemaName: schemaName, tags: updatedTags } });
         } catch (error) {}
     };
 
@@ -223,7 +224,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         let updatedValue = { ...schemaDetails };
         updatedValue['tags'] = newTags;
         setSchemaDetails((schemaDetails) => ({ ...schemaDetails, ...updatedValue }));
-        schemaDispatch({ type: 'SET_TAGS', payload: { schemaName: schemaName, tags: newTags } });
+        dispatch({ type: 'SET_SCHEMA_TAGS', payload: { schemaName: schemaName, tags: newTags } });
     };
 
     return (

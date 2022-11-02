@@ -142,6 +142,7 @@ const Messages = () => {
                     ]
                 },
                 message: data.message?.data,
+                headers: data.message?.headers,
                 poisionedCGs: poisionedCGs
             };
             setMessageDetails(messageDetails);
@@ -310,8 +311,9 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse header="Details" status={false} data={messageDetails.details} />
-                                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                         </div>
@@ -355,8 +357,9 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse header="Details" status={false} data={messageDetails.details} />
-                                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                             <Button

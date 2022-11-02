@@ -19,23 +19,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import './style.scss';
+export const filterType = {
+    CHECKBOX: 'checkbox',
+    RADIOBUTTON: 'radiobutton',
+    DATE: 'date'
+};
 
-import React, { useEffect, useContext, useState, useReducer, createContext } from 'react';
-
-import { Context } from '../../hooks/store';
-import SchemaList from './components/schemaList';
-import CreateSchema from './components/createSchema';
-
-function SchemaManagment() {
-    const [state, dispatch] = useContext(Context);
-    const [creatNew, setCreatNew] = useState(false);
-
-    useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
-    }, []);
-
-    return <div>{creatNew ? <CreateSchema goBack={() => setCreatNew(false)} /> : <SchemaList createNew={() => setCreatNew(true)} />}</div>;
-}
-
-export default SchemaManagment;
+export const labelType = {
+    BADGE: 'label',
+    CIRCLEDLETTER: 'circle'
+};
