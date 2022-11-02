@@ -2,12 +2,15 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"memphis-broker/models"
 	"memphis-broker/utils"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +28,11 @@ type SchemasHandler struct{ S *Server }
 const (
 	schemaObjectName                    = "Schema"
 	SCHEMA_VALIDATION_ERROR_STATUS_CODE = 555
+	schemaUpdatesSubjectTemplate        = "$memphis_schema_updates_%s"
+)
+
+var (
+	ErrNoSchema = errors.New("No schemas found")
 )
 
 func validateProtobufContent(schemaContent string) error {
@@ -39,6 +47,37 @@ func validateProtobufContent(schemaContent string) error {
 	}
 
 	return nil
+}
+
+func generateProtobufDescriptor(schemaName string, schemaVersionNum int, schemaContent string) ([]byte, error) {
+	filename := fmt.Sprintf("%s_%s.proto", schemaName, schemaVersionNum)
+	descFilename := fmt.Sprintf("%s_%s_desc", schemaName, schemaVersionNum)
+	err := os.WriteFile(filename, []byte(schemaContent), 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	protoCmd := "protoc"
+	args := []string{"--descriptor_set_out=" + descFilename, filename}
+	cmd := exec.Command(protoCmd, args...)
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	descContent, err := ioutil.ReadFile(descFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tmpFile := range []string{filename, descFilename} {
+		err = os.Remove(tmpFile)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return descContent, nil
 }
 
 func validateSchemaName(schemaName string) error {
@@ -79,11 +118,92 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 	return nil
 }
 
+func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaContent, schemaType string) (string, error) {
+	if len(schemaContent) == 0 {
+		return "", errors.New("attempt to generate schema descriptor with empty schema")
+	}
+
+	if schemaType != "protobuf" {
+		return "", errors.New("Descriptor generation with schema type: " + schemaType + ", while protobuf is expected")
+	}
+
+	descriptor, err := generateProtobufDescriptor(schemaName, schemaVersionNum, schemaContent)
+	if err != nil {
+		return "", err
+	}
+	return string(descriptor), nil
+}
+
 func validateMessageStructName(messageStructName string) error {
 	if messageStructName == "" {
 		return errors.New("Message struct name is required when schema type is Protobuf")
 	}
 	return nil
+}
+
+func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdateInit, error) {
+	versions, err := getSchemaVersionsBySchemaId(schema.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	updateVersions := make([]models.ProducerSchemaUpdateVersion, len(versions))
+
+	var activeIdx int
+	for i, version := range versions {
+		updateVersions[i] = models.ProducerSchemaUpdateVersion{
+			VersionNumber:     version.VersionNumber,
+			Descriptor:        version.Descriptor,
+			MessageStructName: version.MessageStructName,
+		}
+		if version.Active {
+			activeIdx = i
+		}
+	}
+
+	return &models.ProducerSchemaUpdateInit{
+		SchemaName: schema.Name,
+		Versions:   updateVersions,
+		ActiveIdx:  activeIdx,
+		SchemaType: schema.Type,
+	}, nil
+}
+
+func getSchemaUpdateInitFromStation(sn StationName) (*models.ProducerSchemaUpdateInit, error) {
+	schema, err := getSchemaByStationName(sn)
+	if err != nil {
+		return nil, err
+	}
+
+	return generateSchemaUpdateInit(schema)
+}
+
+func (s *Server) updateStationProducersOfSchemaChange(sn StationName,
+	schemaUpdate models.ProducerSchemaUpdate) {
+	subject := fmt.Sprintf(schemaUpdatesSubjectTemplate, sn.Intern())
+	msg, err := json.Marshal(schemaUpdate)
+	if err != nil {
+		s.Errorf("schema change update: marshal failed")
+		return
+	}
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
+}
+
+func getSchemaVersionsBySchemaId(id primitive.ObjectID) ([]models.SchemaVersion, error) {
+	var schemaVersions []models.SchemaVersion
+	filter := bson.M{"schema_id": id}
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"creation_date": -1})
+
+	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return []models.SchemaVersion{}, err
+	}
+	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
+		return []models.SchemaVersion{}, err
+	}
+
+	return schemaVersions, nil
 }
 
 func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID) (models.SchemaVersion, error) {
@@ -95,17 +215,33 @@ func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID)
 	return schemaVersion, nil
 }
 
-func (sh SchemasHandler) GetSchemaByStationName(stationName string) (models.Schema, error) {
+func getSchemaByStationName(sn StationName) (models.Schema, error) {
 	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": stationName}).Decode(&schema)
-	if err == mongo.ErrNoDocuments {
-		return schema, nil
-	}
+
+	exist, station, err := IsStationExist(sn)
 	if err != nil {
-		return models.Schema{}, err
+		serv.Errorf("getSchemaByStation error: " + err.Error())
+		return schema, err
+	}
+	if !exist {
+		serv.Warnf("Station does not exist")
+		return schema, err
+	}
+	if station.Schema.SchemaName == "" {
+		return schema, ErrNoSchema
+	}
+
+	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+	if err != nil {
+		serv.Errorf("getSchemaByStation error: " + err.Error())
+		return schema, err
 	}
 
 	return schema, nil
+}
+
+func (sh SchemasHandler) GetSchemaByStationName(stationName StationName) (models.Schema, error) {
+	return getSchemaByStationName(stationName)
 }
 
 func (sh SchemasHandler) GetSchemaVersion(stationVersion int, schemaId primitive.ObjectID) (models.SchemaVersion, error) {
@@ -144,20 +280,7 @@ func (sh SchemasHandler) getVersionsCount(schemaId primitive.ObjectID) (int, err
 }
 
 func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID) ([]models.SchemaVersion, error) {
-	var schemaVersions []models.SchemaVersion
-	filter := bson.M{"schema_id": schemaId}
-	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"creation_date": -1})
-
-	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		return []models.SchemaVersion{}, err
-	}
-	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
-		return []models.SchemaVersion{}, err
-	}
-
-	return schemaVersions, nil
+	return getSchemaVersionsBySchemaId(schemaId)
 }
 
 func (sh SchemasHandler) getUsingStationsByName(schemaName string) ([]string, error) {
@@ -414,6 +537,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
+	schemaVersionNumber := 1
+	descriptor, err := generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
 	newSchema := models.Schema{
 		ID:   primitive.NewObjectID(),
 		Name: schemaName,
@@ -430,14 +561,16 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 
 	newSchemaVersion := models.SchemaVersion{
 		ID:                primitive.NewObjectID(),
-		VersionNumber:     1,
+		VersionNumber:     schemaVersionNumber,
 		Active:            true,
 		CreatedByUser:     user.Username,
 		CreationDate:      time.Now(),
 		SchemaContent:     schemaContent,
 		SchemaId:          newSchema.ID,
 		MessageStructName: messageStructName,
+		Descriptor:        descriptor,
 	}
+
 	opts := options.Update().SetUpsert(true)
 	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
@@ -510,8 +643,36 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	c.IndentedJSON(200, schemaDetails)
 }
 
-func deleteSchemaFromStation(schemaName string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
+func deleteSchemaFromStation(s *Server, schemaName string) error {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(nil, bson.M{"schema.name": schemaName})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(nil, &stations); err != nil {
+		return err
+	}
+
+	for _, station := range stations {
+		sn, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		exist, _, err := IsStationExist(sn)
+		if err != nil {
+			s.Errorf("deleteSchemaFromStation error: " + err.Error())
+			return err
+		}
+		if !exist {
+			serv.Warnf("Station does not exist")
+			continue
+		}
+
+		removeSchemaFromStation(s, sn, false)
+	}
+
+	_, err = stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
 			"schema.name": schemaName,
 		},
@@ -542,7 +703,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		}
 		if exist {
 			DeleteTagsFromSchema(schema.ID)
-			err := deleteSchemaFromStation(schema.Name)
+			err := deleteSchemaFromStation(sh.S, schema.Name)
 			if err != nil {
 				serv.Errorf("RemoveSchema error: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -620,7 +781,12 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	versionNumber := countVersions + 1
-
+	descriptor, err := generateSchemaDescriptor(schemaName, versionNumber, schemaContent, schema.Type)
+	if err != nil {
+		serv.Warnf(err.Error())
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
 	newSchemaVersion := models.SchemaVersion{
 		ID:                primitive.NewObjectID(),
 		VersionNumber:     versionNumber,
@@ -630,6 +796,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		SchemaContent:     schemaContent,
 		SchemaId:          schema.ID,
 		MessageStructName: messageStructName,
+		Descriptor:        descriptor,
 	}
 
 	filter := bson.M{"schema_id": schema.ID, "version_number": newSchemaVersion.VersionNumber}
@@ -641,6 +808,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 			"creation_date":       newSchemaVersion.CreationDate,
 			"schema_content":      newSchemaVersion.SchemaContent,
 			"message_struct_name": newSchemaVersion.MessageStructName,
+			"descriptor":          newSchemaVersion.Descriptor,
 		},
 	}
 
@@ -666,7 +834,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, extedndedSchemaDetails)
-
 }
 
 func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
@@ -727,7 +894,6 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, extedndedSchemaDetails)
-
 }
 
 func (sh SchemasHandler) ValidateSchema(c *gin.Context) {

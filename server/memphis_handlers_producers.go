@@ -59,16 +59,17 @@ func validateProducerType(producerType string) error {
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequest
+	var resp createProducerResponse
 	if err := json.Unmarshal(msg, &cpr); err != nil {
-		s.Warnf("failed creating producer: %v", err.Error())
-		respondWithErr(s, reply, err)
+		s.Errorf("failed creating producer: %v", err.Error())
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 	name := strings.ToLower(cpr.Name)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 
@@ -76,43 +77,43 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		respondWithErr(s, reply, errors.New("memphis: connection id was not found"))
+		respondWithRespErr(s, reply, errors.New("memphis: connection id was not found"), &resp)
 		return
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		respondWithErr(s, reply, errors.New("memphis: connection is not active"))
+		respondWithRespErr(s, reply, errors.New("memphis: connection is not active"), &resp)
 		return
 	}
 
 	stationName, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 	if !exist {
@@ -120,7 +121,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
-			respondWithErr(s, reply, err)
+			respondWithRespErr(s, reply, err, &resp)
 			return
 		}
 
@@ -152,12 +153,12 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	exist, _, err = IsProducerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 	if exist {
 		serv.Warnf("Producer name has to be unique per station")
-		respondWithErr(s, reply, errors.New("memphis: producer name has to be unique per station"))
+		respondWithRespErr(s, reply, errors.New("memphis: producer name has to be unique per station"), &resp)
 		return
 	}
 
@@ -187,7 +188,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 
@@ -215,8 +216,20 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	respondWithErr(s, reply, nil)
-	return
+	schemaUpdate, err := getSchemaUpdateInitFromStation(stationName)
+	if err == ErrNoSchema {
+		respondWithResp(s, reply, &resp)
+		return
+	}
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+
+	resp.SchemaUpdate = *schemaUpdate
+
+	respondWithResp(s, reply, &resp)
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
@@ -425,7 +438,6 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
