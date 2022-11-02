@@ -101,11 +101,10 @@ const SchemaEditorExample = {
 
 function CreateSchema({ goBack }) {
     const [creationForm] = Form.useForm();
-
     const [formFields, setFormFields] = useState({
         name: '',
         type: 'Protobuf',
-        // tags: [],
+        tags: [],
         schema_content: '',
         message_struct_name: 'test'
     });
@@ -115,7 +114,6 @@ function CreateSchema({ goBack }) {
     const [validateSuccess, setValidateSuccess] = useState(false);
     const [messageStructName, setMessageStructName] = useState('Test');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
-
     const [modalOpen, setModalOpen] = useState(false);
 
     const updateFormState = (field, value) => {
@@ -211,6 +209,11 @@ function CreateSchema({ goBack }) {
         }
     };
 
+    const removeTag = (tagName) => {
+        let updatedTags = formFields.tags?.filter((tag) => tag.name !== tagName);
+        updateFormState('tags', updatedTags);
+    };
+
     return (
         <div className="create-schema-wrapper">
             <Form name="form" form={creationForm} autoComplete="off" className="create-schema-form">
@@ -258,13 +261,25 @@ function CreateSchema({ goBack }) {
                     <Form.Item name="tags">
                         <div className="schema-field tags">
                             <div className="title-icon-img">
-                                <img className="icon" src={tagsIcon} alt="tagsIcon" />
+                                <img className="icon" src={tagsIcon} />
                                 <div className="title-desc">
                                     <p className="field-title">Tags</p>
                                     <p className="desc">Tags will help you organize, search and filter your data</p>
                                 </div>
                             </div>
-                            {/* <TagsList editable={true} /> */}
+                            <TagsList
+                                tagsToShow={3}
+                                className="tags-list"
+                                tags={formFields.tags}
+                                newEntity={true}
+                                addNew={true}
+                                editable={true}
+                                handleDelete={(tag) => removeTag(tag)}
+                                handleTagsUpdate={(tags) => {
+                                    updateFormState('tags', tags);
+                                    creationForm?.setFieldValue('tags', tags);
+                                }}
+                            />
                         </div>
                     </Form.Item>
                     <Form.Item name="type" initialValue={formFields.type}>

@@ -40,8 +40,6 @@ import StationsInstructions from '../../components/stationsInstructions';
 import Modal from '../../components/modal';
 import CreateStationForm from '../../components/createStationForm';
 import Loader from '../../components/loader';
-import { filterType, labelType } from '../../const/filterConsts';
-import { CircleLetterColor } from '../../const/circleLetterColor';
 import { stationFilterArray } from '../../services/valueConvertor';
 
 const StationsList = () => {
@@ -54,22 +52,17 @@ const StationsList = () => {
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setisLoading] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
-    const [filterTerms, setFilterTerms] = useState([]);
-    const [tagList, setTagList] = useState([]);
-    const [filterFields, setFilterFields] = useState([]);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
     const createStationRef = useRef(null);
 
+    const stateRef = useRef([]);
+    stateRef.current = [stationsList, filteredList];
+
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getAllStations();
-        getTags();
     }, []);
-
-    useEffect(() => {
-        getTagsFilter();
-    }, [tagList.length > 0]);
 
     useEffect(() => {
         if (searchInput.length >= 2) setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
@@ -77,93 +70,15 @@ const StationsList = () => {
     }, [searchInput]);
 
     useEffect(() => {
-        handleFilter();
-    }, [filterTerms]);
-
-    useEffect(() => {
         if (searchInput !== '' && searchInput.length >= 2) {
             setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
         } else setFilteredList(stationsList);
-        filterTerms.length > 0 && handleFilter();
     }, [stationsList]);
-
-    const getTagsFilter = () => {
-        const fields = tagList.map((tag) => {
-            return {
-                name: tag.name,
-                color: tag.color,
-                checked: false
-            };
-        });
-        const tagFilter = {
-            name: 'tags',
-            value: 'Tags',
-            labelType: labelType.BADGE,
-            filterType: filterType.CHECKBOX,
-            fields: fields
-        };
-        let filteredFields = filterFields;
-        const tagLocation = filterFields.findIndex((x) => x.name === 'tags');
-        tagLocation === -1 ? filteredFields.splice(0, 0, tagFilter) : filteredFields.splice(tagLocation, 1, tagFilter);
-        setFilterFields(filteredFields);
-    };
-
-    const getCreatedByFilter = (stations) => {
-        let createdBy = [];
-        stations.forEach((item) => {
-            createdBy.push(item.station.created_by_user);
-        });
-        const created = [...new Set(createdBy)].map((user) => {
-            return {
-                name: user,
-                color: CircleLetterColor[user[0].toUpperCase()],
-                checked: false
-            };
-        });
-        const cratedFilter = {
-            name: 'created',
-            value: 'Created By',
-            labelType: labelType.CIRCLEDLETTER,
-            filterType: filterType.CHECKBOX,
-            fields: created
-        };
-        let filteredFields = filterFields;
-        filteredFields.push(cratedFilter);
-        setFilterFields(filteredFields);
-    };
-
-    const getStorageTypeFilter = () => {
-        const storageTypeFilter = {
-            name: 'storage',
-            value: 'Storage Type',
-            filterType: filterType.RADIOBUTTON,
-            radioValue: -1,
-            fields: [{ name: 'Memory' }, { name: 'File' }]
-        };
-        let filteredFields = filterFields;
-        filteredFields.push(storageTypeFilter);
-        setFilterFields(filteredFields);
-    };
-
-    const getFilterData = (stations) => {
-        filterFields.findIndex((x) => x.name === 'created') === -1 && getCreatedByFilter(stations);
-        filterFields.findIndex((x) => x.name === 'storage') === -1 && getStorageTypeFilter();
-    };
-
-    const getTags = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_USED_TAGS}`);
-            if (res) setTagList(res);
-        } catch (err) {
-            return;
-        }
-    };
 
     const getAllStations = async () => {
         setisLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
-            getFilterData(res.stations);
             res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
             setStationList(res.stations);
             setFilteredList(res.stations);
@@ -178,26 +93,6 @@ const StationsList = () => {
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
-    };
-
-    const handleFilter = () => {
-        let objTags = [];
-        let objCreated = [];
-        let objStorage = [];
-        try {
-            objTags = filterTerms.find((o) => o.name === 'tags').fields.map((element) => element.toLowerCase());
-        } catch {}
-        try {
-            objCreated = filterTerms.find((o) => o.name === 'created').fields.map((element) => element.toLowerCase());
-        } catch {}
-        try {
-            objStorage = filterTerms.find((o) => o.name === 'storage').fields.map((element) => element.toLowerCase());
-        } catch {}
-        const data = stationsList
-            .filter((item) => (objTags.length > 0 ? item.tags.some((tag) => objTags.includes(tag.name)) : !item.tags.some((tag) => objTags.includes(tag.name))))
-            .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.created_by_user) : !objCreated.includes(item.station.created_by_user)))
-            .filter((item) => (objStorage.length > 0 ? objStorage.includes(item.station.storage_type) : !objStorage.includes(item.station.storage_type)));
-        setFilteredList(data);
     };
 
     const handleRegisterToStation = useCallback(() => {
@@ -351,7 +246,7 @@ const StationsList = () => {
                                 onChange={handleSearch}
                                 value={searchInput}
                             />
-                            <Filter filterFields={filterFields} filtersUpdated={(e) => setFilterTerms(e)} height="34px" />
+                            <Filter filterComponent="stations" stateRef={stateRef} filtersUpdated={(e) => setFilteredList(e)} height="34px" />
                             <Button
                                 className="modal-btn"
                                 width="180px"

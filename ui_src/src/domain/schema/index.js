@@ -21,20 +21,28 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, useReducer, createContext } from 'react';
 
 import { Context } from '../../hooks/store';
 import SchemaList from './components/schemaList';
 import CreateSchema from './components/createSchema';
+import Reducer from './hooks/reducer';
 
 function SchemaManagment() {
     const [state, dispatch] = useContext(Context);
+    const [schemaState, schemaDispatch] = useReducer(Reducer);
+
     const [creatNew, setCreatNew] = useState(false);
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
     }, []);
 
-    return <div>{creatNew ? <CreateSchema goBack={() => setCreatNew(false)} /> : <SchemaList createNew={() => setCreatNew(true)} />}</div>;
+    return (
+        <SchemaStoreContext.Provider value={[schemaState, schemaDispatch]}>
+            <div>{creatNew ? <CreateSchema goBack={() => setCreatNew(false)} /> : <SchemaList createNew={() => setCreatNew(true)} />}</div>
+        </SchemaStoreContext.Provider>
+    );
 }
 
+export const SchemaStoreContext = createContext({});
 export default SchemaManagment;

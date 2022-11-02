@@ -101,7 +101,7 @@ const StationOverviewHeader = () => {
                             addNew={true}
                             editable={true}
                             handleDelete={(tag) => removeTag(tag)}
-                            entityID={stationState?.stationMetaData?.id}
+                            entityType={'station'}
                             entityName={stationState?.stationMetaData?.name}
                             handleTagsUpdate={(tags) => {
                                 updateTags(tags);

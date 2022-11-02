@@ -23,11 +23,12 @@ import './style.scss';
 
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import Editor, { DiffEditor } from '@monaco-editor/react';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
 import { message } from 'antd';
 
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
+import redirectIcon from '../../../../assets/images/redirectIcon.svg';
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
 import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
 import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
@@ -42,6 +43,9 @@ import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import Copy from '../../../../components/copy';
 import TagsList from '../../../../components/tagList';
+import { SchemaStoreContext } from '../..';
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../../../router';
 
 const formatOption = [
     {
@@ -57,6 +61,7 @@ const formatOption = [
 ];
 
 function SchemaDetails({ schemaName, closeDrawer }) {
+    const [schemaState, schemaDispatch] = useContext(SchemaStoreContext);
     const [versionSelected, setVersionSelected] = useState();
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
@@ -66,7 +71,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [schemaDetails, setSchemaDetails] = useState({
         schema_name: '',
         type: '',
-        version: []
+        version: [],
+        tags: []
     });
     const [rollBackModal, setRollBackModal] = useState(false);
     const [isDiff, setIsDiff] = useState(true);
@@ -76,6 +82,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [messageStructName, setMessageStructName] = useState('');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [editable, setEditable] = useState(false);
+    const history = useHistory();
+
+    const goToStation = (stationName) => {
+        history.push(`${pathDomains.stations}/${stationName}`);
+    };
 
     const arrangeData = (schema) => {
         let index = schema.versions?.findIndex((version) => version?.active === true);
@@ -190,6 +201,23 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
+    const removeTag = async (tagName) => {
+        try {
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'schema', entity_name: schemaName });
+            let tags = schemaDetails?.tags;
+            let updatedTags = tags.filter((tag) => tag.name !== tagName);
+            updateTags(updatedTags);
+            schemaDispatch({ type: 'SET_TAGS', payload: { schemaName: schemaName, tags: updatedTags } });
+        } catch (error) {}
+    };
+
+    const updateTags = (newTags) => {
+        let updatedValue = { ...schemaDetails };
+        updatedValue['tags'] = newTags;
+        setSchemaDetails((schemaDetails) => ({ ...schemaDetails, ...updatedValue }));
+        schemaDispatch({ type: 'SET_TAGS', payload: { schemaName: schemaName, tags: newTags } });
+    };
+
     return (
         <schema-details is="3xd">
             <div className="scrollable-wrapper">
@@ -205,7 +233,21 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <span>{currentVersion?.created_by_user}</span>
                     </div>
                 </div>
-                <div className="tags">{/* <TagsList tagsToShow={4} tags={schemaDetails?.tags} editable={true} /> */}</div>
+                <div className="tags">
+                    <TagsList
+                        tagsToShow={5}
+                        className="tags-list"
+                        tags={schemaDetails?.tags}
+                        addNew={true}
+                        editable={true}
+                        handleDelete={(tag) => removeTag(tag)}
+                        entityType={'schema'}
+                        entityName={schemaName}
+                        handleTagsUpdate={(tags) => {
+                            updateTags(tags);
+                        }}
+                    />
+                </div>
                 <div className="schema-fields">
                     <div className="left">
                         <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema definition</p>
@@ -251,7 +293,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         </div>
                         <div className="validation">
                             <Button
-                                width="90px"
+                                width="100px"
                                 height="28px"
                                 placeholder={
                                     <div className="validate-placeholder">
@@ -345,8 +387,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             <div className="stations-list">
                                 {schemaDetails.used_stations?.map((station, index) => {
                                     return (
-                                        <div className="station-wrapper" key={index}>
+                                        <div className="station-wrapper" key={index} onClick={() => goToStation(station)}>
                                             <p>{station}</p>
+                                            <div className="redirect-img">
+                                                <img src={redirectIcon} />
+                                            </div>
                                         </div>
                                     );
                                 })}

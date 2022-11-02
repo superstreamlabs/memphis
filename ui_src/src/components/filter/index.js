@@ -21,39 +21,164 @@
 
 import './style.scss';
 
-import React, { createContext, useEffect, useReducer } from 'react';
+import React, { createContext, useEffect, useReducer, useState } from 'react';
 
 import Reducer from './hooks/reducer';
 
 import './style.scss';
-
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import { httpRequest } from '../../services/http';
 import filterImg from '../../assets/images/filter.svg';
 import CustomCollapse from './customCollapse';
 import { Popover } from 'antd';
-import { filterType } from '../../const/filterConsts';
+import { filterType, labelType } from '../../const/filterConsts';
+import { CircleLetterColor } from '../../const/circleLetterColor';
+
 import Button from '../button';
+
 const initialState = {
     isOpen: false,
     counter: 0,
-    filterFields: [],
-    applied: false
+    filterFields: []
 };
 
-const Filter = ({ filterFields, filtersUpdated, height }) => {
+const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
     const [filterState, filterDispatch] = useReducer(Reducer, initialState);
+    const [tagList, setTagList] = useState([]);
+    const [filterFields, setFilterFields] = useState([]);
+    const [filterTerms, setFilterTerms] = useState([]);
 
     useEffect(() => {
-        const filter = filterFields;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        buildFilter();
     }, []);
+
+    const buildFilter = () => {
+        switch (filterComponent) {
+            case 'stations':
+                getTags();
+                getFilterData(stateRef.current[0]);
+                return;
+            default:
+                return;
+        }
+    };
+
+    useEffect(() => {
+        getTagsFilter();
+    }, [tagList.length > 0]);
+
+    useEffect(() => {
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
+    }, [filterFields]);
+
+    useEffect(() => {
+        handleFilter();
+    }, [filterTerms]);
+
+    const getFilterData = (stations) => {
+        filterFields.findIndex((x) => x.name === 'created') === -1 && getCreatedByFilter(stations);
+        filterFields.findIndex((x) => x.name === 'storage') === -1 && getStorageTypeFilter();
+    };
+
+    const getCreatedByFilter = (stations) => {
+        let createdBy = [];
+        stations.forEach((item) => {
+            createdBy.push(item.station.created_by_user);
+        });
+        const created = [...new Set(createdBy)].map((user) => {
+            return {
+                name: user,
+                color: CircleLetterColor[user[0].toUpperCase()],
+                checked: false
+            };
+        });
+        const cratedFilter = {
+            name: 'created',
+            value: 'Created By',
+            labelType: labelType.CIRCLEDLETTER,
+            filterType: filterType.CHECKBOX,
+            fields: created
+        };
+        let filteredFields = filterFields;
+        filteredFields.push(cratedFilter);
+        setFilterFields(filteredFields);
+    };
+    const getStorageTypeFilter = () => {
+        const storageTypeFilter = {
+            name: 'storage',
+            value: 'Storage Type',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: [{ name: 'Memory' }, { name: 'File' }]
+        };
+        let filteredFields = filterFields;
+        filteredFields.push(storageTypeFilter);
+        setFilterFields(filteredFields);
+    };
+
+    const getTags = async () => {
+        try {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_USED_TAGS}`);
+            if (res) setTagList(res);
+        } catch (err) {
+            return;
+        }
+    };
+
+    const getTagsFilter = () => {
+        const fields = tagList.map((tag) => {
+            return {
+                name: tag.name,
+                color: tag.color,
+                checked: false
+            };
+        });
+        const tagFilter = {
+            name: 'tags',
+            value: 'Tags',
+            labelType: labelType.BADGE,
+            filterType: filterType.CHECKBOX,
+            fields: fields
+        };
+        let filteredFields = filterFields;
+        const tagLocation = filterFields.findIndex((x) => x.name === 'tags');
+        tagLocation === -1 ? filteredFields.splice(0, 0, tagFilter) : filteredFields.splice(tagLocation, 1, tagFilter);
+        setFilterFields(filteredFields);
+    };
 
     const flipOpen = () => {
         filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
     };
 
+    const handleFilter = () => {
+        switch (filterComponent) {
+            case 'stations':
+                let objTags = [];
+                let objCreated = [];
+                let objStorage = [];
+                try {
+                    objTags = filterTerms.find((o) => o.name === 'tags').fields.map((element) => element.toLowerCase());
+                } catch {}
+                try {
+                    objCreated = filterTerms.find((o) => o.name === 'created').fields.map((element) => element.toLowerCase());
+                } catch {}
+                try {
+                    objStorage = filterTerms.find((o) => o.name === 'storage').fields.map((element) => element.toLowerCase());
+                } catch {}
+                const data = stateRef.current[1]
+                    .filter((item) => (objTags.length > 0 ? item.tags.some((tag) => objTags.includes(tag.name)) : !item.tags.some((tag) => objTags.includes(tag.name))))
+                    .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.created_by_user) : !objCreated.includes(item.station.created_by_user)))
+                    .filter((item) => (objStorage.length > 0 ? objStorage.includes(item.station.storage_type) : !objStorage.includes(item.station.storage_type)));
+                filtersUpdated(data);
+                return;
+            default:
+                return;
+        }
+    };
+
     const handleApply = () => {
-        filterDispatch({ type: 'SET_APPLY', payload: true });
         let filterTerms = [];
+        console.log(filterState?.filterFields);
         filterState?.filterFields.forEach((element) => {
             let term = {
                 name: element.name,
@@ -84,7 +209,7 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
             }
             if (term.fields.length > 0) filterTerms.push(term);
         });
-        filtersUpdated(filterTerms);
+        setFilterTerms(filterTerms);
         flipOpen();
     };
 
@@ -115,7 +240,7 @@ const Filter = ({ filterFields, filtersUpdated, height }) => {
             <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
-                    width="100%"
+                    width="110px"
                     height={height}
                     placeholder={
                         <div className="filter-container">
