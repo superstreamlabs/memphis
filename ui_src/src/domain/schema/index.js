@@ -29,8 +29,8 @@ import CreateSchema from './components/createSchema';
 
 function SchemaManagment() {
     const [state, dispatch] = useContext(Context);
-
     const [creatNew, setCreatNew] = useState(false);
+
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
     }, []);

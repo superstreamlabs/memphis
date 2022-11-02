@@ -93,8 +93,10 @@ const Filter = ({ filterComponent, height }) => {
     const buildFilter = () => {
         switch (filterComponent) {
             case 'stations':
-                getTags();
-                getFilterData(state?.domainList);
+                if (state?.route === 'stations') {
+                    getTags();
+                    getFilterData(state?.domainList);
+                }
                 return;
             default:
                 return;

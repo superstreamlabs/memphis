@@ -93,8 +93,13 @@ const StationsList = () => {
                     </div>
                 );
             }
-            return state.filteredList?.map((station) => (
-                <StationBoxOverview key={station.station.id} isCheck={isCheck.includes(station.station.name)} handleCheckedClick={handleCheckedClick} station={station} />
+            return state?.filteredList?.map((station) => (
+                <StationBoxOverview
+                    key={station?.station?.id}
+                    isCheck={isCheck.includes(station?.station?.name)}
+                    handleCheckedClick={handleCheckedClick}
+                    station={station}
+                />
             ));
         }
         return <StationsInstructions header="You don’t have any station yet?" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;

@@ -40,18 +40,17 @@ import pathDomains from '../../../router';
 
 const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
-
     useEffect(() => {
-        switch (station.station.retention_type) {
+        switch (station?.station?.retention_type) {
             case 'message_age_sec':
-                convertSecondsToDate(station.station.retention_value);
-                setRetentionValue(convertSecondsToDate(station.station.retention_value));
+                convertSecondsToDate(station?.station?.retention_value);
+                setRetentionValue(convertSecondsToDate(station?.station?.retention_value));
                 break;
             case 'bytes':
-                setRetentionValue(`${station.station.retention_value} bytes`);
+                setRetentionValue(`${station?.station?.retention_value} bytes`);
                 break;
             case 'messages':
-                setRetentionValue(`${station.station.retention_value} messages`);
+                setRetentionValue(`${station?.station?.retention_value} messages`);
                 break;
             default:
                 break;
@@ -61,31 +60,31 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     return (
         <div>
             <CheckboxComponent className="check-box-station" checked={isCheck} id={station?.station?.name} onChange={handleCheckedClick} name={station?.station?.name} />
-            <Link to={`${pathDomains.stations}/${station.station.name}`}>
+            <Link to={`${pathDomains.stations}/${station?.station?.name}`}>
                 <div className="station-box-container">
                     <div className="left-section">
                         <div className="check-box">
                             <p className="station-name">{station?.station?.name}</p>
                         </div>
-                        <label className="data-labels">Created at {parsingDate(station.station.creation_date)}</label>
+                        <label className="data-labels">Created at {parsingDate(station?.station?.creation_date)}</label>
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
                             <label className="data-labels">Created by</label>
-                            <OverflowTip className="data-info" text={station.station.created_by_user} width={'90px'}>
-                                {station.station.created_by_user}
+                            <OverflowTip className="data-info" text={station?.station?.created_by_user} width={'90px'}>
+                                {station?.station?.created_by_user}
                             </OverflowTip>
                         </div>
                         <div className="station-created">
                             <label className="data-labels">Tags</label>
 
                             <div className="tags-list">
-                                {station.tags.length === 0 ? (
+                                {station?.tags.length === 0 ? (
                                     <p className="data-info">
                                         <MinusOutlined />
                                     </p>
                                 ) : (
-                                    <TagsList tagsToShow={3} tags={station.tags} />
+                                    <TagsList tagsToShow={3} tags={station?.tags} />
                                 )}
                             </div>
                         </div>
@@ -101,12 +100,12 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <div className="station-meta">
                             <img src={storageIcon} alt="storage" />
                             <label className="data-labels storage">Storage Type</label>
-                            <p className="data-info">{station.station.storage_type}</p>
+                            <p className="data-info">{station?.station?.storage_type}</p>
                         </div>
                         <div className="station-meta">
                             <img src={replicasIcon} alt="replicas" />
                             <label className="data-labels replicas">Replicas</label>
-                            <p className="data-info">{station.station.replicas}</p>
+                            <p className="data-info">{station?.station?.replicas}</p>
                         </div>
                         <div className="station-meta">
                             <img src={totalMsgIcon} alt="total messages" />

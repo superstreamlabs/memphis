@@ -48,6 +48,14 @@ function SchemaList({ createNew }) {
     const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
 
+    useEffect(() => {
+        getAllSchemas();
+        return () => {
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+        };
+    }, []);
+
     const getAllSchemas = async () => {
         setisLoading(true);
         try {
@@ -59,14 +67,6 @@ function SchemaList({ createNew }) {
             setisLoading(false);
         }
     };
-
-    useEffect(() => {
-        getAllSchemas();
-        return () => {
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
-        };
-    }, []);
 
     useEffect(() => {
         if (searchInput?.length >= 2) {
