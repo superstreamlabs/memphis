@@ -133,23 +133,15 @@ func getStationOverviewData(stationName string, h *server.Handlers) (map[string]
 		return map[string]any{}, err
 	}
 
-	schema, err := h.Schemas.GetSchemaByStationName(station.Schema.SchemaName)
-	if err != nil {
+	schema, err := h.Schemas.GetSchemaByStationName(sn)
+
+	if err != nil && err != server.ErrNoSchema {
 		return map[string]any{}, err
 	}
 
 	var response map[string]any
-	var emptySchemaDetailsObj models.SchemaDetails
 
-	//Check when the schema object in station is not empty
-	if station.Schema != emptySchemaDetailsObj {
-		schemaVersion, err := h.Schemas.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
-		if err != nil {
-			return map[string]any{}, err
-		}
-		updatesAvailable := !schemaVersion.Active
-		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
-
+	if err == server.ErrNoSchema {
 		response = map[string]any{
 			"connected_producers":    connectedProducers,
 			"disconnected_producers": disconnectedProducers,
@@ -165,29 +157,36 @@ func getStationOverviewData(stationName string, h *server.Handlers) (map[string]
 			"tags":                   tags,
 			"leader":                 leader,
 			"followers":              followers,
-			"schema":                 schemaDetails,
+			"schema":                 struct{}{},
 		}
-
-	} else {
-		var emptyResponse struct{}
-		response = map[string]any{
-			"connected_producers":    connectedProducers,
-			"disconnected_producers": disconnectedProducers,
-			"deleted_producers":      deletedProducers,
-			"connected_cgs":          connectedCgs,
-			"disconnected_cgs":       disconnectedCgs,
-			"deleted_cgs":            deletedCgs,
-			"total_messages":         totalMessages,
-			"average_message_size":   avgMsgSize,
-			"audit_logs":             auditLogs,
-			"messages":               messages,
-			"poison_messages":        poisonMessages,
-			"tags":                   tags,
-			"leader":                 leader,
-			"followers":              followers,
-			"schema":                 emptyResponse,
-		}
+		return response, nil
 	}
+
+	schemaVersion, err := h.Schemas.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+	if err != nil {
+		return map[string]any{}, err
+	}
+	updatesAvailable := !schemaVersion.Active
+	schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+
+	response = map[string]any{
+		"connected_producers":    connectedProducers,
+		"disconnected_producers": disconnectedProducers,
+		"deleted_producers":      deletedProducers,
+		"connected_cgs":          connectedCgs,
+		"disconnected_cgs":       disconnectedCgs,
+		"deleted_cgs":            deletedCgs,
+		"total_messages":         totalMessages,
+		"average_message_size":   avgMsgSize,
+		"audit_logs":             auditLogs,
+		"messages":               messages,
+		"poison_messages":        poisonMessages,
+		"tags":                   tags,
+		"leader":                 leader,
+		"followers":              followers,
+		"schema":                 schemaDetails,
+	}
+
 	return response, nil
 }
 
