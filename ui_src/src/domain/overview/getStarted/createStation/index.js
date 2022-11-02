@@ -29,9 +29,7 @@ const CreateStation = ({ createStationFormRef }) => {
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
 
     useEffect(() => {
-        getStartedState?.completedSteps === 0
-            ? getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: true })
-            : getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+        getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: getStartedState?.completedSteps === 0 || false });
     }, []);
 
     const createStationDone = (data) => {
@@ -48,7 +46,7 @@ const CreateStation = ({ createStationFormRef }) => {
 
     const updateFormState = (field, value) => {
         if (field === 'name') {
-            value.length > 0 ? getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false }) : getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: true });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: value.length === 0 || false });
         }
         getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });
     };
