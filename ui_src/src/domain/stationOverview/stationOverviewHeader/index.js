@@ -165,7 +165,7 @@ const StationOverviewHeader = () => {
                         <div className="schema-details sd-flex">
                             <div className="title-and-badge">
                                 <p className="title">Schema</p>
-                                {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Update available" active={false} />}
+                                {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates available" active={false} />}
                                 {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates" active={true} />}
                             </div>
                             <div className="name-and-version">
