@@ -19,43 +19,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const Reducer = (schemaState, action) => {
-    let updateState = schemaState?.schemaList;
-    let index;
-    if (action.payload?.schemaName) {
-        index = schemaState?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-    }
-
+const Reducer = (filterState, action) => {
     switch (action.type) {
-        case 'SET_SCHEMAS_DETAILS':
+        case 'SET_FILTER_FIELDS':
             return {
-                ...schemaState,
-                schemaList: action.payload
+                ...filterState,
+                filterFields: action.payload
             };
-        case 'SET_SCHEMAS_DETAILS_WITH_FILTER':
+        case 'SET_COUNTER':
             return {
-                ...schemaState,
-                schemaFilteredList: action.payload
+                ...filterState,
+                counter: action.payload
             };
-        case 'SET_SOCKET_DATA':
+        case 'SET_IS_OPEN':
             return {
-                ...schemaState,
-                schemaList: action.payload
+                ...filterState,
+                isOpen: action.payload
             };
-        case 'SET_TAGS':
-            updateState[index].tags = action.payload.tags;
+        case 'SET_APPLY':
             return {
-                ...schemaState,
-                schemaList: updateState
-            };
-        case 'SET_SCHEMA':
-            updateState[index] = action.payload.schemaDetails;
-            return {
-                ...schemaState,
-                schemaList: updateState
+                ...filterState,
+                apply: action.payload
             };
         default:
-            return schemaState;
+            return filterState;
     }
 };
 

@@ -25,7 +25,7 @@ import React, { useState } from 'react';
 import Button from '../button';
 import Input from '../Input';
 
-const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt }) => {
+const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textToConfirm }) => {
     const [confirm, setConfirm] = useState('');
     return (
         <div className="delete-modal-wrapper">
@@ -33,7 +33,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt }) => {
             <p className="desc">{desc}</p>
             <div className="confirm-section">
                 <p>
-                    Please type <b>permanently delete</b> to confirm.
+                    Please type <b>{textToConfirm || 'permanently delete'}</b> to confirm.
                 </p>
                 <Input
                     placeholder="Type here"
@@ -59,7 +59,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt }) => {
                     backgroundColorType="purple"
                     fontSize="12px"
                     fontFamily="InterSemiBold"
-                    disabled={confirm !== 'permanently delete'}
+                    disabled={confirm !== (textToConfirm || 'permanently delete')}
                     onClick={() => handleDeleteSelected()}
                 />
             </div>

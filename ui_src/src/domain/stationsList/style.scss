@@ -5,23 +5,19 @@
     min-width: 700px;
     overflow: auto;
     height: 100%;
-    
+
     .stations-details-header {
         height: 50px;
         min-width: 960px;
         display: flex;
-        flex-direction:column;
-       
+        flex-direction: column;
+
         .right-side {
             display: flex;
             justify-content: flex-end;
-            gap:15px;
+            gap: 15px;
             .search-input-container {
                 margin-right: 0;
-            }
-            .filter-container {
-                margin-left: 15px;
-                margin-right: 15px;
             }
             .search-icon .anticon svg {
                 height: 16.5px;

@@ -21,21 +21,30 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useReducer, createContext } from 'react';
+import React from 'react';
+import { DatePicker } from 'antd';
+import CalendarIcon from '../../assets/images/Calendar.svg';
 
-import { Context } from '../../hooks/store';
-import SchemaList from './components/schemaList';
-import CreateSchema from './components/createSchema';
+const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder }) => {
+    return (
+        <div className="date-picker-container">
+            <DatePicker
+                onChange={(date, dateString) => (dateString ? onChange(date._d) : onChange(''))}
+                placeholder={placeholder}
+                suffixIcon={<img src={CalendarIcon} />}
+                popupClassName="date-picker-popup"
+                style={{
+                    height: height,
+                    width: width,
+                    minWidth: minWidth || '100px',
+                    fontSize: '10px',
+                    border: '1px solid #D8D8D8',
+                    borderRadius: '4px',
+                    zIndex: 9999
+                }}
+            />
+        </div>
+    );
+};
 
-function SchemaManagment() {
-    const [state, dispatch] = useContext(Context);
-    const [creatNew, setCreatNew] = useState(false);
-
-    useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
-    }, []);
-
-    return <div>{creatNew ? <CreateSchema goBack={() => setCreatNew(false)} /> : <SchemaList createNew={() => setCreatNew(true)} />}</div>;
-}
-
-export default SchemaManagment;
+export default DatePickerComponent;
