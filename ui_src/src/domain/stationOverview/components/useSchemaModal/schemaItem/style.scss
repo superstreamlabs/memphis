@@ -2,6 +2,9 @@
     padding: 15px;
     border-bottom: 1px solid #EFEFEF;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     p{
         margin: 0;
     }
@@ -30,7 +33,13 @@
             color: rgba(74,73,92,0.8);
         }
     }
+    .delete-icon img {
+        display: none;
+    }
 }
 .sch-item-selected{
     background: rgba(101, 87, 255, 0.1);
+    .delete-icon img {
+        display: unset;
+    }
 }

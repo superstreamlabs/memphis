@@ -281,6 +281,7 @@ const MessageJourney = () => {
                                                     stationName={stationName}
                                                     messageId={messageId}
                                                     message={messageData.message}
+                                                    headers={messageData.headers}
                                                     details={messageData.details}
                                                     processing={(status) => setProcessing(status)}
                                                     returnBack={() => returnBack()}

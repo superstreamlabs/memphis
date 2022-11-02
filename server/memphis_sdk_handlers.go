@@ -46,11 +46,19 @@ type destroyStationRequest struct {
 	StationName string `json:"station_name"`
 }
 
-type createProducerRequest struct {
+type createProducerRequestV0 struct {
 	Name         string `json:"name"`
 	StationName  string `json:"station_name"`
 	ConnectionId string `json:"connection_id"`
 	ProducerType string `json:"producer_type"`
+}
+
+type createProducerRequestV1 struct {
+	Name           string `json:"name"`
+	StationName    string `json:"station_name"`
+	ConnectionId   string `json:"connection_id"`
+	ProducerType   string `json:"producer_type"`
+	RequestVersion int    `json:"req_version"`
 }
 
 type createProducerResponse struct {

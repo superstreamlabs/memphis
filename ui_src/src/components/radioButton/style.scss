@@ -5,9 +5,10 @@
         color: #777777;
         font-size: 12px;
     }
+
     .ant-radio-checked {
         .ant-radio-inner {
-            border-color: #A9A9A9;
+            border-color: #a9a9a9;
         }
         .ant-radio-inner:after {
             background-color: var(--purple) !important;
@@ -39,7 +40,7 @@
         color: #6557ff;
     }
 }
-.gr-vertical{
+.gr-vertical {
     display: flex;
     flex-direction: column;
 }

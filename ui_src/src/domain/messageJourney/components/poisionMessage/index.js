@@ -29,7 +29,7 @@ import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { message as messageAnt } from 'antd';
 
-const PoisionMessage = ({ stationName, messageId, details, message, processing, returnBack }) => {
+const PoisionMessage = ({ stationName, messageId, details, message, headers, processing, returnBack }) => {
     const [resendProcess, setResendProcess] = useState(false);
     const [ignoreProcess, setIgnoreProcess] = useState(false);
 
@@ -103,8 +103,9 @@ const PoisionMessage = ({ stationName, messageId, details, message, processing, 
             </header>
             <div className="content-wrapper">
                 <Space direction="vertical">
-                    <CustomCollapse header="Details" status={false} defaultOpen={true} data={details} />
-                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={message} message={true} />
+                    <CustomCollapse status={false} header="Details" defaultOpen={true} data={details} />
+                    <CustomCollapse status={false} header="Headers" defaultOpen={true} data={headers} message={true} />
+                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={message} message={true} />
                 </Space>
             </div>
         </div>
