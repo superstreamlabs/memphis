@@ -38,7 +38,10 @@ const CreateStation = ({ createStationFormRef }) => {
             getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
             getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
             getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
-        } else getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+        } else {
+            getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+        }
     };
 
     const updateFormState = (field, value) => {
