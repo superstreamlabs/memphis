@@ -21,7 +21,7 @@
 
 import './style.scss';
 
-import React, { createContext, useEffect, useReducer, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useReducer, useState } from 'react';
 
 import Reducer from './hooks/reducer';
 
@@ -29,12 +29,18 @@ import './style.scss';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import filterImg from '../../assets/images/filter.svg';
+import searchIcon from '../../assets/images/searchIcon.svg';
+
 import CustomCollapse from './customCollapse';
 import { Popover } from 'antd';
 import { filterType, labelType } from '../../const/filterConsts';
 import { CircleLetterColor } from '../../const/circleLetterColor';
 
 import Button from '../button';
+import { Context } from '../../hooks/store';
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../router';
+import SearchInput from '../searchInput';
 
 const initialState = {
     isOpen: false,
@@ -42,21 +48,53 @@ const initialState = {
     filterFields: []
 };
 
-const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
+const Filter = ({ filterComponent, height }) => {
+    const [state, dispatch] = useContext(Context);
     const [filterState, filterDispatch] = useReducer(Reducer, initialState);
+
     const [tagList, setTagList] = useState([]);
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
+    const [searchInput, setSearchInput] = useState('');
+
+    const history = useHistory();
 
     useEffect(() => {
         buildFilter();
     }, []);
 
+    const handleRegisterToStation = useCallback(() => {
+        state.socket?.emit('get_all_stations_data');
+    }, [state.socket]);
+
+    useEffect(() => {
+        state.socket?.on(`stations_overview_data`, (data) => {
+            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+        });
+
+        state.socket?.on('error', (error) => {
+            history.push(pathDomains.overview);
+        });
+
+        setTimeout(() => {
+            handleRegisterToStation();
+        }, 1000);
+
+        return () => {
+            state.socket?.emit('deregister');
+        };
+    }, [state.socket]);
+
+    const handleSearch = (e) => {
+        setSearchInput(e.target.value);
+    };
+
     const buildFilter = () => {
         switch (filterComponent) {
             case 'stations':
                 getTags();
-                getFilterData(stateRef.current[0]);
+                getFilterData(state?.domainList);
                 return;
             default:
                 return;
@@ -73,7 +111,7 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
 
     useEffect(() => {
         handleFilter();
-    }, [filterTerms]);
+    }, [searchInput, filterTerms, state?.domainList]);
 
     const getFilterData = (stations) => {
         filterFields.findIndex((x) => x.name === 'created') === -1 && getCreatedByFilter(stations);
@@ -103,6 +141,7 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
         filteredFields.push(cratedFilter);
         setFilterFields(filteredFields);
     };
+
     const getStorageTypeFilter = () => {
         const storageTypeFilter = {
             name: 'storage',
@@ -156,20 +195,30 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
                 let objTags = [];
                 let objCreated = [];
                 let objStorage = [];
-                try {
-                    objTags = filterTerms.find((o) => o.name === 'tags').fields.map((element) => element.toLowerCase());
-                } catch {}
-                try {
-                    objCreated = filterTerms.find((o) => o.name === 'created').fields.map((element) => element.toLowerCase());
-                } catch {}
-                try {
-                    objStorage = filterTerms.find((o) => o.name === 'storage').fields.map((element) => element.toLowerCase());
-                } catch {}
-                const data = stateRef.current[1]
-                    .filter((item) => (objTags.length > 0 ? item.tags.some((tag) => objTags.includes(tag.name)) : !item.tags.some((tag) => objTags.includes(tag.name))))
-                    .filter((item) => (objCreated.length > 0 ? objCreated.includes(item.station.created_by_user) : !objCreated.includes(item.station.created_by_user)))
-                    .filter((item) => (objStorage.length > 0 ? objStorage.includes(item.station.storage_type) : !objStorage.includes(item.station.storage_type)));
-                filtersUpdated(data);
+                let data = state?.domainList;
+                if (filterTerms?.find((o) => o.name === 'tags')) {
+                    objTags = filterTerms?.find((o) => o.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
+                }
+                if (filterTerms?.find((o) => o.name === 'created')) {
+                    objCreated = filterTerms?.find((o) => o.name === 'created')?.fields?.map((element) => element?.toLowerCase());
+                }
+                if (filterTerms?.find((o) => o.name === 'storage')) {
+                    objStorage = filterTerms?.find((o) => o.name === 'storage')?.fields?.map((element) => element?.toLowerCase());
+                }
+                if (searchInput !== '' && searchInput?.length >= 2) {
+                    data = data.filter((station) => station.station.name.includes(searchInput));
+                }
+                if (objTags?.length > 0 || objCreated?.length > 0 || objStorage?.length > 0) {
+                    data = data
+                        ?.filter((item) =>
+                            objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag.name)) : !item.tags.some((tag) => objTags?.includes(tag.name))
+                        )
+                        .filter((item) =>
+                            objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
+                        )
+                        .filter((item) => (objStorage?.length > 0 ? objStorage?.includes(item.station.storage_type) : !objStorage?.includes(item.station.storage_type)));
+                }
+                dispatch({ type: 'SET_FILTERED_LIST', payload: data });
                 return;
             default:
                 return;
@@ -178,7 +227,6 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
 
     const handleApply = () => {
         let filterTerms = [];
-        console.log(filterState?.filterFields);
         filterState?.filterFields.forEach((element) => {
             let term = {
                 name: element.name,
@@ -198,7 +246,7 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
                 term.fields = t;
             } else {
                 element.fields.forEach((field) => {
-                    if (field.value !== '') {
+                    if (field?.value !== undefined && field?.value !== '') {
                         let t = term.fields;
                         let d = {};
                         d[field.name] = field.value;
@@ -227,6 +275,7 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
             }
         });
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        setFilterTerms([]);
     };
 
     const handleCancel = () => {
@@ -237,6 +286,19 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
 
     return (
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
+            <SearchInput
+                placeholder="Search Stations"
+                colorType="navy"
+                backgroundColorType="gray-dark"
+                width="288px"
+                height="34px"
+                borderColorType="none"
+                boxShadowsType="none"
+                borderRadiusType="circle"
+                iconComponent={<img src={searchIcon} alt="searchIcon" />}
+                onChange={handleSearch}
+                value={searchInput}
+            />
             <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
@@ -246,7 +308,7 @@ const Filter = ({ filterComponent, stateRef, filtersUpdated, height }) => {
                         <div className="filter-container">
                             <img src={filterImg} width="25" alt="filter" />
                             <label className="filter-title">Filters</label>
-                            {filterState?.apply && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
+                            {filterTerms?.length > 0 && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
                         </div>
                     }
                     colorType="black"

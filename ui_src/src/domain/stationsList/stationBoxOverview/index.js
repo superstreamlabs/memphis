@@ -38,7 +38,7 @@ import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
 import pathDomains from '../../../router';
 
-const StationBoxOverview = ({ station, handleCheckedClick, removeStation, isCheck }) => {
+const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
 
     useEffect(() => {
