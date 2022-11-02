@@ -101,11 +101,10 @@ const SchemaEditorExample = {
 
 function CreateSchema({ goBack }) {
     const [creationForm] = Form.useForm();
-
     const [formFields, setFormFields] = useState({
         name: '',
         type: 'Protobuf',
-        // tags: [],
+        tags: [],
         schema_content: '',
         message_struct_name: 'test'
     });
@@ -115,7 +114,6 @@ function CreateSchema({ goBack }) {
     const [validateSuccess, setValidateSuccess] = useState(false);
     const [messageStructName, setMessageStructName] = useState('Test');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
-
     const [modalOpen, setModalOpen] = useState(false);
 
     const updateFormState = (field, value) => {
@@ -211,13 +209,18 @@ function CreateSchema({ goBack }) {
         }
     };
 
+    const removeTag = (tagName) => {
+        let updatedTags = formFields.tags?.filter((tag) => tag.name !== tagName);
+        updateFormState('tags', updatedTags);
+    };
+
     return (
         <div className="create-schema-wrapper">
             <Form name="form" form={creationForm} autoComplete="off" className="create-schema-form">
                 <div className="left-side">
                     <div className="header">
                         <div className="flex-title">
-                            <img src={BackIcon} onClick={() => goBack()} />
+                            <img src={BackIcon} onClick={() => goBack()} alt="backIcon" />
                             <p>Create schema</p>
                         </div>
                         <span>
@@ -264,13 +267,25 @@ function CreateSchema({ goBack }) {
                                     <p className="desc">Tags will help you organize, search and filter your data</p>
                                 </div>
                             </div>
-                            {/* <TagsList editable={true} /> */}
+                            <TagsList
+                                tagsToShow={3}
+                                className="tags-list"
+                                tags={formFields.tags}
+                                newEntity={true}
+                                addNew={true}
+                                editable={true}
+                                handleDelete={(tag) => removeTag(tag)}
+                                handleTagsUpdate={(tags) => {
+                                    updateFormState('tags', tags);
+                                    creationForm?.setFieldValue('tags', tags);
+                                }}
+                            />
                         </div>
                     </Form.Item>
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
                             <div className="title-icon-img">
-                                <img className="icon" src={schemaTypeIcon} />
+                                <img className="icon" src={schemaTypeIcon} alt="schemaTypeIcon" />
                                 <div className="title-desc">
                                     <p className="field-title">Schema type</p>
                                     <p className="desc">Tags will help you organize, search and filter your data</p>
@@ -368,7 +383,14 @@ function CreateSchema({ goBack }) {
                     </Form.Item>
                 </div>
             </Form>
-            <Modal header={<img src={errorModal} />} width="400px" height="300px" displayButtons={false} clickOutside={() => setModalOpen(false)} open={modalOpen}>
+            <Modal
+                header={<img src={errorModal} alt="errorModal" />}
+                width="400px"
+                height="300px"
+                displayButtons={false}
+                clickOutside={() => setModalOpen(false)}
+                open={modalOpen}
+            >
                 <div className="roll-back-modal">
                     <p className="title">Too many message types specified in schema definition</p>
                     <p className="desc">Please choose your master message as a schema definition</p>

@@ -569,7 +569,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 	if count == 0 { // no other members in this group
 		err = s.RemoveConsumer(stationName, consumer.ConsumersGroup)
-		if err != nil {
+		if  err != nil  && !IsNatsErr(err, JSConsumerNotFoundErr){
 			serv.Errorf("DestroyConsumer error: " + err.Error())
 			respondWithErr(s, reply, err)
 			return

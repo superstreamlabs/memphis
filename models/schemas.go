@@ -42,6 +42,7 @@ type SchemaVersion struct {
 	SchemaContent     string             `json:"schema_content" bson:"schema_content"`
 	SchemaId          primitive.ObjectID `json:"schema_id" bson:"schema_id"`
 	MessageStructName string             `json:"message_struct_name" bson:"message_struct_name"`
+	Descriptor        string             `json:"-" bson:"descriptor"`
 }
 
 type CreateNewSchema struct {
@@ -60,7 +61,7 @@ type ExtendedSchema struct {
 	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
 	Used                bool               `json:"used"`
-	Tags                []Tag              `json:"tags"`
+	Tags                []CreateTag        `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {
@@ -69,7 +70,32 @@ type ExtendedSchemaDetails struct {
 	Type         string             `json:"type"`
 	Versions     []SchemaVersion    `json:"versions"`
 	UsedStations []string           `json:"used_stations"`
-	Tags         []Tag              `json:"tags"`
+	Tags         []CreateTag        `json:"tags"`
+}
+
+type ProducerSchemaUpdateType int
+
+const (
+	SchemaUpdateTypeInit ProducerSchemaUpdateType = iota + 1
+	SchemaUpdateTypeDrop
+)
+
+type ProducerSchemaUpdate struct {
+	UpdateType ProducerSchemaUpdateType
+	Init       ProducerSchemaUpdateInit `json:"init,omitempty"`
+}
+
+type ProducerSchemaUpdateInit struct {
+	SchemaName    string                      `json:"schema_name"`
+	ActiveVersion ProducerSchemaUpdateVersion `json:"active_version"`
+	SchemaType    string                      `json:"type"`
+}
+
+type ProducerSchemaUpdateVersion struct {
+	VersionNumber     int    `json:"version_number"`
+	Descriptor        string `json:"descriptor"`
+	Content           string `json:"schema_content"`
+	MessageStructName string `json:"message_struct_name"`
 }
 
 type GetSchemaDetails struct {

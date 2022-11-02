@@ -10,7 +10,7 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
-    min-width: 1370px;
+    min-width: 1390px;
     .data-labels {
         color: #84818a;
         font-size: 12px;
@@ -36,7 +36,7 @@
         }
     }
     .left-section {
-        width: 237px;
+        width: 255px;
         .check-box{
             display: flex;
             align-items: center;
@@ -45,7 +45,7 @@
                 font-size: 17px;
                 font-weight: 600;
                 margin: 0;
-                margin-left: 10px;
+                margin-left: 25px;
                 color: #2e2c34;
             }
         }
@@ -101,8 +101,11 @@
 
 }
 .station-box-container:hover{
-   a{
+   .action{
        display: flex !important;
    } 
 }
-
+.check-box-station{
+    position: absolute;
+    padding: 22px;
+}

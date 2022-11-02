@@ -23,7 +23,7 @@ export const ColorPalette = [
     '101, 87, 255', // memphis-purple
     '77, 34, 178', // deep-purple
     '177, 140, 254', // lilac-purple
-    '216, 201, 254', // baby-purple
+    '29, 4, 93', // baby-purple
     '0, 165, 255', // light-blue
     '238, 113, 158', // pink
     '255, 140, 130', // peach

@@ -29,20 +29,25 @@ const CreateStation = ({ createStationFormRef }) => {
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
 
     useEffect(() => {
-        getStartedState?.completedSteps === 0 && getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: true });
+        getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: getStartedState?.completedSteps === 0 || false });
     }, []);
 
     const createStationDone = (data) => {
-        getStartedDispatch({ type: 'SET_STATION', payload: data.name });
-        getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
-        getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-        getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+        if (data) {
+            getStartedDispatch({ type: 'SET_STATION', payload: data.name });
+            getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
+            getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+        } else {
+            getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+        }
     };
 
     const updateFormState = (field, value) => {
-        if (field === 'name')
-            value.length > 0 ? getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false }) : getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: true });
-
+        if (field === 'name') {
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: value.length === 0 || false });
+        }
         getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });
     };
 

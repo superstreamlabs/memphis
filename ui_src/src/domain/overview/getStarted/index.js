@@ -108,7 +108,7 @@ const GetStarted = ({ username, dataSentence }) => {
             case 1:
                 return 'A station is a distributed unit that stores the produced data';
             case 2:
-                return 'Each data producer/consumer has to have a username and a connection-token';
+                return 'Each producer/consumer has to have a username and a connection-token';
             case 3:
                 return 'A producer is the source application/service that pushes data or messages to the broker or station';
             case 4:

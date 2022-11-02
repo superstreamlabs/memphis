@@ -142,6 +142,7 @@ const Messages = () => {
                     ]
                 },
                 message: data.message?.data,
+                headers: data.message?.headers,
                 poisionedCGs: poisionedCGs
             };
             setMessageDetails(messageDetails);
@@ -310,8 +311,9 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse header="Details" status={false} data={messageDetails.details} />
-                                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                         </div>
@@ -355,8 +357,9 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse header="Details" status={false} data={messageDetails.details} />
-                                    <CustomCollapse header="Payload" status={false} defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
                             <Button
@@ -381,7 +384,7 @@ const Messages = () => {
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder">
-                    <img width={100} src={waitingMessages} />
+                    <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
                     <span className="des">Create your 1st producer and start producing data.</span>
                     {process.env.REACT_APP_SANDBOX_ENV && stationName !== 'demo-app' && (

@@ -25,51 +25,29 @@
             width: 16px;
             cursor: pointer;
             display: flex;
+            color: #2e2c34;
+
         }
     }
     .edit-tags {
-        background-color: #f0f1f2;
-        border: 1px solid #e3e3e3;
+        background: #F0F1F2;
+        border: 1px solid #E3E3E3;
         border-radius: 4px;
         height: 24px;
-        padding: 10px;
+        padding: 0px 5px;
         display: flex;
+        align-items: center;
+        align-self: center;
         cursor: pointer;
-        svg {
-            width: 18px;
-        }
         .edit-content {
-            font-family: 'InterSemiBold';
+            font-family:'InterMedium';
             font-size: 12px;
             line-height: 12px;
             color: #2e2c34;
         }
         .add {
-            width: 20px;
-            height: 20px;
-            margin-right: 5px;
+            width: 18px;
         }
-    }
-    .tag-wrapper {
-        border-radius: 4px;
-        font-family: 'InterSemiBold';
-        font-size: 14px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        white-space: nowrap;
-        max-width: 100px;
-        text-overflow: ellipsis;
-    }
-    .plus-tag-wrapper {
-        padding-right: 5px;
-        padding-left: 5px;
-        border-radius: 4px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
     }
 
     .space {

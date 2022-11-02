@@ -25,6 +25,7 @@ import { Select } from 'antd';
 import React from 'react';
 
 import { ArrowDropDownRounded, FiberManualRecord } from '@material-ui/icons';
+import VersionBadge from '../versionBadge';
 
 const { Option } = Select;
 
@@ -50,11 +51,11 @@ const SelectVersion = ({ options, onChange, value }) => {
                             <p className="schema-name">Version {option?.version_number}</p>
                             <div className="scheme-details">
                                 <p className="created-by">Created by {option?.created_by_user}</p>
-                                {(option.active || index === 0) && <FiberManualRecord />}
                                 {option.active && (
-                                    <div className="active">
-                                        <p>Active</p>
-                                    </div>
+                                    <>
+                                        <FiberManualRecord />
+                                        <VersionBadge content="Active" active={true} />
+                                    </>
                                 )}
                             </div>
                         </Option>

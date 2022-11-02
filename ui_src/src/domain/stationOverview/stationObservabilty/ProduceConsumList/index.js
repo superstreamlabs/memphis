@@ -34,9 +34,9 @@ import CustomCollapse from '../components/customCollapse';
 import MultiCollapse from '../components/multiCollapse';
 import { StationStoreContext } from '../..';
 import Button from '../../../../components/button';
-import SdkExample from '../../sdkExsample';
+import SdkExample from '../../components/sdkExsample';
 
-const ProduceConsumList = (props) => {
+const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(0);
     const [producersList, setProducersList] = useState([]);
@@ -47,7 +47,7 @@ const ProduceConsumList = (props) => {
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
 
     useEffect(() => {
-        if (props.producer) {
+        if (producer) {
             let result = concatFunction('producer', stationState?.stationSocketData);
             setProducersList(result);
         } else {
@@ -175,17 +175,17 @@ const ProduceConsumList = (props) => {
     return (
         <div className="pubSub-list-container">
             <div className="header">
-                <p className="title">{props.producer ? 'Producers' : 'Consumer groups'}</p>
-                {/* <p className="add-connector-button">{props.producer ? 'Add producer' : 'Add consumer'}</p> */}
+                <p className="title">{producer ? 'Producers' : 'Consumer groups'}</p>
+                {/* <p className="add-connector-button">{producer ? 'Add producer' : 'Add consumer'}</p> */}
             </div>
-            {props.producer && producersList?.length > 0 && (
+            {producer && producersList?.length > 0 && (
                 <div className="coulmns-table">
                     <span style={{ width: '100px' }}>Name</span>
                     <span style={{ width: '80px' }}>User</span>
                     <span style={{ width: '35px' }}>Status</span>
                 </div>
             )}
-            {!props.producer && cgsList.length > 0 && (
+            {!producer && cgsList.length > 0 && (
                 <div className="coulmns-table">
                     <span style={{ width: '75px' }}>Name</span>
                     <span style={{ width: '65px', textAlign: 'center' }}>Poison</span>
@@ -196,7 +196,7 @@ const ProduceConsumList = (props) => {
 
             <div className="rows-wrapper">
                 <div className="list-container">
-                    {props.producer &&
+                    {producer &&
                         producersList?.length > 0 &&
                         producersList?.map((row, index) => {
                             return (
@@ -213,7 +213,7 @@ const ProduceConsumList = (props) => {
                                 </div>
                             );
                         })}
-                    {!props.producer &&
+                    {!producer &&
                         cgsList?.length > 0 &&
                         cgsList?.map((row, index) => {
                             return (
@@ -235,8 +235,8 @@ const ProduceConsumList = (props) => {
                         })}
                 </div>
                 <div style={{ marginRight: '10px' }}>
-                    {props.producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
-                    {!props.producer && cgsList?.length > 0 && (
+                    {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
+                    {!producer && cgsList?.length > 0 && (
                         <Space direction="vertical">
                             <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
                             <MultiCollapse header="Consumers" data={cgDetails.consumers} />
@@ -244,24 +244,24 @@ const ProduceConsumList = (props) => {
                     )}
                 </div>
             </div>
-            {((props.producer && producersList?.length === 0) || (!props.producer && cgsList?.length === 0)) && (
+            {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
                 <div className="waiting-placeholder">
-                    <img width={62} src={props.producer ? waitingProducer : waitingConsumer} />
-                    <p>Waiting for the 1st {props.producer ? 'producer' : 'consumer'}</p>
-                    {props.producer && <span className="des">A producer is the source application that pushes data to the station</span>}
-                    {!props.producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
+                    <img width={62} src={producer ? waitingProducer : waitingConsumer} alt="producer" />
+                    <p>Waiting for the 1st {producer ? 'producer' : 'consumer'}</p>
+                    {producer && <span className="des">A producer is the source application that pushes data to the station</span>}
+                    {!producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
                     <Button
                         className="open-sdk"
                         width="200px"
                         height="37px"
-                        placeholder={`Create your first ${props.producer ? 'producer' : 'consumer'}`}
+                        placeholder={`Create your first ${producer ? 'producer' : 'consumer'}`}
                         colorType={'black'}
                         radiusType="circle"
                         border={'gray-light'}
                         backgroundColorType={'none'}
                         fontSize="12px"
                         fontFamily="InterSemiBold"
-                        onClick={() => (props.producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
+                        onClick={() => (producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
                     />
                 </div>
             )}

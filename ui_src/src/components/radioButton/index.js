@@ -24,7 +24,7 @@ import './style.scss';
 import { Radio, Space } from 'antd';
 import React from 'react';
 
-const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, disabled, vertical, fontFamily, radioWrapper, labelType }) => {
+const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, disabled, vertical, fontFamily, radioWrapper, labelType, height }) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -46,6 +46,7 @@ const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, 
                 {options.map((option) => (
                     <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
                         <div
+                            style={{ height: height }}
                             className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
                             onClick={() => (labelType ? onClick(option.value) : '')}
                         >

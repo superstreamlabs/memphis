@@ -52,7 +52,7 @@
     top: 30px;
 }
 
-.header-wraper{
+.header-wraper {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -69,7 +69,6 @@
         color: #b4b4b4;
         font-weight: 400;
     }
-      
 }
 
 ::-webkit-scrollbar {
@@ -151,4 +150,8 @@
     p {
         color: #ff4d4f;
     }
+}
+
+.ant-popover-arrow {
+    display: none;
 }

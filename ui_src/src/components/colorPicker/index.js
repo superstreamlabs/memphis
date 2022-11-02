@@ -20,7 +20,7 @@
 // SOFTWARE.
 
 import './style.scss';
-import React, { useState } from 'react';
+import React from 'react';
 import { ColorPalette } from '../../const/colorPalette';
 
 const ColorPicker = ({ onChange, value }) => {

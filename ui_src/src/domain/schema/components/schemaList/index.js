@@ -22,7 +22,6 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useCallback } from 'react';
-import { SearchOutlined } from '@ant-design/icons';
 import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
@@ -38,25 +37,31 @@ import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
+import DeleteItemsModal from '../../../../components/deleteItemsModal';
 
 function SchemaList({ createNew }) {
     const history = useHistory();
-
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
-    const [schemaList, setSchemaList] = useState([]);
-    const [schemaFilteredList, setSchemaFilteredList] = useState([]);
     const [isLoading, setisLoading] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
+
+    useEffect(() => {
+        getAllSchemas();
+        return () => {
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+        };
+    }, []);
 
     const getAllSchemas = async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
-            setSchemaList(data);
-            setSchemaFilteredList(data);
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: data });
             setisLoading(false);
         } catch (error) {
             setisLoading(false);
@@ -64,14 +69,12 @@ function SchemaList({ createNew }) {
     };
 
     useEffect(() => {
-        getAllSchemas();
-    }, []);
-
-    useEffect(() => {
-        if (searchInput !== '' && searchInput.length >= 2) {
-            setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
-        } else setSchemaFilteredList(schemaList);
-    }, [schemaList]);
+        if (searchInput?.length >= 2) {
+            dispatch({ type: 'SET_FILTERED_LIST', payload: state?.domainList.filter((schema) => schema.name.includes(searchInput)) });
+        } else {
+            dispatch({ type: 'SET_FILTERED_LIST', payload: state?.domainList });
+        }
+    }, [searchInput, state?.domainList]);
 
     const handleRegisterToSchema = useCallback(() => {
         state.socket?.emit('get_all_schemas_data');
@@ -79,7 +82,7 @@ function SchemaList({ createNew }) {
 
     useEffect(() => {
         state.socket?.on('schemas_overview_data', (data) => {
-            setSchemaList(data);
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
         });
 
         state.socket?.on('error', (error) => {
@@ -95,14 +98,9 @@ function SchemaList({ createNew }) {
         };
     }, [state.socket]);
 
-    useEffect(() => {
-        if (searchInput.length >= 2) setSchemaFilteredList(schemaList.filter((schema) => schema.name.includes(searchInput)));
-        else setSchemaFilteredList(schemaList);
-    }, [searchInput]);
-
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(schemaFilteredList.map((li) => li.name));
+        setIsCheck(state.filteredList.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -126,7 +124,7 @@ function SchemaList({ createNew }) {
                 schema_names: isCheck
             });
             if (data) {
-                setSchemaList(filterArray(schemaFilteredList, isCheck));
+                dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
                 setIsCheck([]);
                 setisLoading(false);
             }
@@ -144,24 +142,24 @@ function SchemaList({ createNew }) {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    Schema <label className="length-list">{schemaList?.length > 0 && `(${schemaList?.length})`}</label>
+                    Schemas <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
                 </label>
                 <div className="action-section">
-                    {isCheck?.length > 0 && (
-                        <Button
-                            width="131px"
-                            height="34px"
-                            placeholder={`Delete selected (${isCheck?.length})`}
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => setDeleteModal(true)}
-                        />
-                    )}
-                    {schemaFilteredList?.length > 1 && (
+                    <Button
+                        width="131px"
+                        height="34px"
+                        placeholder={`Delete selected (${isCheck?.length})`}
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        disabled={isCheck?.length === 0}
+                        onClick={() => setDeleteModal(true)}
+                    />
+
+                    {state.filteredList?.length > 1 && (
                         <Button
                             width="131px"
                             height="34px"
@@ -184,11 +182,11 @@ function SchemaList({ createNew }) {
                         borderRadiusType="circle"
                         borderColorType="none"
                         boxShadowsType="none"
-                        iconComponent={<img src={searchIcon} />}
+                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
                         onChange={handleSearch}
                         value={searchInput}
                     />
-                    <Button
+                    {/* <Button
                         width="111px"
                         height="34px"
                         placeholder={'Filters'}
@@ -199,7 +197,7 @@ function SchemaList({ createNew }) {
                         fontWeight="600"
                         aria-haspopup="true"
                         // onClick={() => addUserModalFlip(true)}
-                    />
+                    /> */}
                     {/* <Button
                         width="81px"
                         height="34px"
@@ -244,10 +242,10 @@ function SchemaList({ createNew }) {
                         <Loader />
                     </div>
                 )}
-                {schemaFilteredList.map((schema, index) => {
+                {state.filteredList?.map((schema, index) => {
                     return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                 })}
-                {!isLoading && schemaList.length === 0 && (
+                {!isLoading && state.domainList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
                         <p className="title">No Schema found</p>
@@ -268,45 +266,28 @@ function SchemaList({ createNew }) {
                         />
                     </div>
                 )}
+                {!isLoading && state.domainList?.length > 0 && state.filteredList?.length === 0 && (
+                    <div className="no-schema-to-display">
+                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
+                        <p className="title">No Schema found</p>
+                        <p className="sub-title">Please try to search again</p>
+                    </div>
+                )}
             </div>
             <Modal
-                header={<img src={deleteWrapperIcon} />}
-                width="450px"
-                height="180px"
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                width="520px"
+                height="240px"
                 displayButtons={false}
                 clickOutside={() => setDeleteModal(false)}
                 open={deleteModal}
             >
-                <div className="roll-back-modal">
-                    <p className="title">Are you sure you want to delete this schema?</p>
-                    <p className="desc">When you delete this schema, it will be permanently deleted.</p>
-                    <div className="buttons">
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Close"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="gray-light"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => setDeleteModal(false)}
-                        />
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Delete"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            loading={isLoading}
-                            onClick={() => handleDeleteSelected()}
-                        />
-                    </div>
-                </div>
+                <DeleteItemsModal
+                    title="Are you sure you want to delete the selected schemas?"
+                    desc="Deleting these schemas means they will be permanently deleted."
+                    buttontxt="I understand this consequences, delete the selected schemas"
+                    handleDeleteSelected={handleDeleteSelected}
+                />
             </Modal>
         </div>
     );

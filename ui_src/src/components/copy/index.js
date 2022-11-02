@@ -43,8 +43,8 @@ const Copy = ({ data, key }) => {
     };
     return (
         <>
-            {key && <img style={{ cursor: 'pointer' }} src={copied === key ? copiedIcon : copy} onClick={() => handleCopyWithKey(key, data)} />}
-            {!key && <img style={{ cursor: 'pointer' }} src={copied ? copiedIcon : copy} onClick={() => handleCopy(data)} />}
+            {key && <img alt="copy" style={{ cursor: 'pointer' }} src={copied === key ? copiedIcon : copy} onClick={() => handleCopyWithKey(key, data)} />}
+            {!key && <img alt="copy" style={{ cursor: 'pointer' }} src={copied ? copiedIcon : copy} onClick={() => handleCopy(data)} />}
         </>
     );
 };

@@ -13,10 +13,10 @@ const GetStartedItem = (props) => {
         <div className="get-started-wrapper">
             {getStartedState?.currentStep !== 5 && (
                 <>
-                    <img className="get-started-bg-img" src={bgGetStarted} alt=""></img>
+                    <img className="get-started-bg-img" src={bgGetStarted} alt="bgGetStarted" />
                     <div className="get-started-top">
                         <div className="get-started-top-header">
-                            <img className="header-image" src={headerImage} alt={headerImage}></img>
+                            <img className="header-image" src={headerImage} alt={headerImage} />
                             <p className="header-title">{headerTitle}</p>
                             <p className="header-description">{headerDescription}</p>
                         </div>
@@ -26,8 +26,8 @@ const GetStartedItem = (props) => {
             )}
             {getStartedState?.currentStep === 5 && (
                 <>
-                    <img className="get-started-bg-img" src={bgGetStarted} alt=""></img>
-                    <img className="get-started-bg-img-bottom" src={bgGetStartedBottom} alt=""></img>
+                    <img className="get-started-bg-img" src={bgGetStarted} alt="bgGetStarted" />
+                    <img className="get-started-bg-img-bottom" src={bgGetStartedBottom} alt="bgGetStartedBottom"></img>
                     <div className="get-started-top">
                         <div className="get-started-top-header finish">
                             <img style={style?.image} src={headerImage} alt={headerImage}></img>

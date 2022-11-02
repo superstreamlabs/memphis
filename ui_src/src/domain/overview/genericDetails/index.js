@@ -23,10 +23,8 @@ import './style.scss';
 
 import React, { useContext } from 'react';
 
-import stationIdleIcon from '../../../assets/images/stationIdleIcon.svg';
 import liveMessagesIcon from '../../../assets/images/liveMessagesIcon.svg';
 import stationActionIcon from '../../../assets/images/stationActionIcon.svg';
-import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
 import { Context } from '../../../hooks/store';
 import { numberWithCommas } from '../../../services/valueConvertor';
 
@@ -36,10 +34,6 @@ const GenericDetails = () => {
     return (
         <div className="generic-container">
             <div className="overview-wrapper data-box">
-                {/* <div className="coming-soon-small">
-                    <img src={comingSoonBox} width={25} height={45} />
-                    <p>Coming soon</p>
-                </div> */}
                 <div className="icon-wrapper sta-act">
                     <img src={stationActionIcon} width={35} height={27} alt="stationActionIcon" />
                 </div>
@@ -49,10 +43,6 @@ const GenericDetails = () => {
                 </div>
             </div>
             <div className="overview-wrapper data-box">
-                {/* <div className="coming-soon-small">
-                    <img src={comingSoonBox} width={25} height={45} />
-                    <p>Coming soon</p>
-                </div> */}
                 <div className="icon-wrapper lve-msg">
                     <img src={liveMessagesIcon} width={35} height={26} alt="liveMessagesIcon" />
                 </div>
@@ -61,21 +51,6 @@ const GenericDetails = () => {
                     <p> {numberWithCommas(state?.monitor_data?.total_messages)}</p>
                 </div>
             </div>
-            {/* <div className="overview-wrapper data-box">
-                <div className="coming-soon-small">
-                    <img src={comingSoonBox} width={25} height={45} />
-                    <p>Coming soon</p>
-                </div>
-                <div className="icon-wrapper sta-idl">
-                    <img src={stationIdleIcon} width={35} height={27} alt="stationIdleIcon" />
-                </div>
-                <div className="data-wrapper">
-                    <span>Total stations</span>
-                    <p>
-                        3 <span>on idle</span>
-                    </p>
-                </div>
-            </div> */}
         </div>
     );
 };
