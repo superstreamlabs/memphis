@@ -345,22 +345,24 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </div>
                 </div>
             </div>
-            <div className="schema-type">
-                <Form.Item name="schemaValue">
-                    <div className="toggle-add-schema">
-                        <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
-                        <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
-                    </div>
-                    {!getStarted && schemas.length > 0 && useSchema && (
-                        <SelectSchema
-                            placeholder={creationForm.schemaValue || 'Select schema'}
-                            value={creationForm.schemaValue}
-                            options={schemas}
-                            onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                        />
-                    )}
-                </Form.Item>
-            </div>
+            {!getStarted && (
+                <div className="schema-type">
+                    <Form.Item name="schemaValue">
+                        <div className="toggle-add-schema">
+                            <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
+                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
+                        </div>
+                        {!getStarted && schemas.length > 0 && useSchema && (
+                            <SelectSchema
+                                placeholder={creationForm.schemaValue || 'Select schema'}
+                                value={creationForm.schemaValue}
+                                options={schemas}
+                                onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                            />
+                        )}
+                    </Form.Item>
+                </div>
+            )}
         </Form>
     );
 };
