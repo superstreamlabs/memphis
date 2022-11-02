@@ -4,6 +4,7 @@
         margin-right: 21px;
         color: #777777;
         font-size: 12px;
+        position: relative;
     }
 
     .ant-radio-checked {
@@ -27,17 +28,25 @@
         margin-right: 10px;
         border-radius: 8px;
         cursor: pointer;
-        .radio-style {
-            font-size: 14px;
-        }
         .radio-selected {
-            color: #6557ff;
+            .label-option-text {
+                color: #6557ff;
+            }
+        }
+        .label-option-text {
+            margin: 0;
+            font-size: 14px;
+            color: #777777;
         }
     }
     .radio-value {
         background: rgba(101, 87, 255, 0.1);
         border: 1px solid #6557ff;
-        color: #6557ff;
+        color: #101828;
+        font-family: 'InterMedium';
+        // .radio-selected {
+        //     color: #6557ff;
+        // }
     }
 }
 .gr-vertical {

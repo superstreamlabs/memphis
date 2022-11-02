@@ -44,21 +44,21 @@ const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, 
                 defaultValue={radioValue || options[0]?.value}
             >
                 {options.map((option) => (
-                    <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
-                        <div
-                            style={{ height: height }}
-                            className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
-                            onClick={() => (labelType ? onClick(option.value) : '')}
+                    <div
+                        style={{ height: height }}
+                        className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
+                        onClick={() => (labelType ? onClick(option.value) : '')}
+                    >
+                        <span
+                            className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : 'label'}
+                            style={{ fontFamily: fontFamily }}
                         >
-                            <span
-                                className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : 'label'}
-                                style={{ fontFamily: fontFamily }}
-                            >
-                                {option.label}
-                            </span>
-                            {option.description && <span className="des">{option.description}</span>}
-                        </div>
-                    </Radio>
+                            <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
+                                <p className="label-option-text"> {option.label}</p>
+                            </Radio>
+                        </span>
+                        {option.description && <span className="des">{option.description}</span>}
+                    </div>
                 ))}
             </Radio.Group>
         </div>
