@@ -84,11 +84,11 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		return err
+		return errors.New("memphis: connection id was not found")
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		return err
+		return errors.New("memphis: connection is not active")
 	}
 
 	exist, station, err := IsStationExist(pStationName)
@@ -136,7 +136,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if exist {
 		serv.Warnf("Producer name has to be unique per station")
-		return err
+		return errors.New("memphis: producer name has to be unique per station")
 	}
 
 	newProducer := models.Producer{
@@ -223,11 +223,15 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
-		respondWithResp(s, reply, &resp)
+		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
 
 	err = s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
+	if err != nil {
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
 
 	schemaUpdate, err := getSchemaUpdateInitFromStation(sn)
 	if err == ErrNoSchema {
