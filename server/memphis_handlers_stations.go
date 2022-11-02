@@ -475,8 +475,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
 			return
 		}
-		schemasHandler := SchemasHandler{S: sh.S}
-		schemaVersion, err := schemasHandler.getActiveVersionBySchemaId(schema.ID)
+
+		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 		if err != nil {
 			serv.Errorf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -1213,8 +1213,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
-	schemasHandler := SchemasHandler{S: sh.S}
-	schemaVersion, err := schemasHandler.getActiveVersionBySchemaId(schema.ID)
+	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())

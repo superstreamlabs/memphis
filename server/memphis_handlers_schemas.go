@@ -142,29 +142,19 @@ func validateMessageStructName(messageStructName string) error {
 }
 
 func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdateInit, error) {
-	versions, err := getSchemaVersionsBySchemaId(schema.ID)
+	activeVersion, err := getActiveVersionBySchemaId(schema.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	updateVersions := make([]models.ProducerSchemaUpdateVersion, len(versions))
-
-	var activeIdx int
-	for i, version := range versions {
-		updateVersions[i] = models.ProducerSchemaUpdateVersion{
-			VersionNumber:     version.VersionNumber,
-			Descriptor:        version.Descriptor,
-			MessageStructName: version.MessageStructName,
-		}
-		if version.Active {
-			activeIdx = i
-		}
-	}
-
 	return &models.ProducerSchemaUpdateInit{
 		SchemaName: schema.Name,
-		Versions:   updateVersions,
-		ActiveIdx:  activeIdx,
+		ActiveVersion: models.ProducerSchemaUpdateVersion{
+			VersionNumber:     activeVersion.VersionNumber,
+			Descriptor:        activeVersion.Descriptor,
+			Content:           activeVersion.SchemaContent,
+			MessageStructName: activeVersion.MessageStructName,
+		},
 		SchemaType: schema.Type,
 	}, nil
 }
@@ -206,7 +196,7 @@ func getSchemaVersionsBySchemaId(id primitive.ObjectID) ([]models.SchemaVersion,
 	return schemaVersions, nil
 }
 
-func (sh SchemasHandler) getActiveVersionBySchemaId(schemaId primitive.ObjectID) (models.SchemaVersion, error) {
+func getActiveVersionBySchemaId(schemaId primitive.ObjectID) (models.SchemaVersion, error) {
 	var schemaVersion models.SchemaVersion
 	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": schemaId, "active": true}).Decode(&schemaVersion)
 	if err != nil {
@@ -328,7 +318,7 @@ func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion i
 	}
 
 	if !usedSchemaVersion.Active {
-		activeSchemaVersion, err := sh.getActiveVersionBySchemaId(schema.ID)
+		activeSchemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 		if err != nil {
 			return models.ExtendedSchemaDetails{}, err
 		}
