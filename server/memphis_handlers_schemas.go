@@ -808,6 +808,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 			"creation_date":       newSchemaVersion.CreationDate,
 			"schema_content":      newSchemaVersion.SchemaContent,
 			"message_struct_name": newSchemaVersion.MessageStructName,
+			"descriptor":          newSchemaVersion.Descriptor,
 		},
 	}
 
