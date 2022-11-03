@@ -100,7 +100,6 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) db.DbInstance {
-
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
