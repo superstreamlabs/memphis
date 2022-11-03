@@ -131,6 +131,9 @@ function CreateSchema() {
 
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
+        return () => {
+            goBack();
+        };
     }, []);
 
     const goBack = () => {
@@ -233,7 +236,7 @@ function CreateSchema() {
                         </div>
                         <span>
                             Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
-                            <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
+                            <a href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank">
                                 Learn more
                             </a>
                         </span>
@@ -243,7 +246,7 @@ function CreateSchema() {
                         rules={[
                             {
                                 required: true,
-                                message: 'Please input schema name!'
+                                message: 'Please name this schema.'
                             }
                         ]}
                         style={{ height: '114px' }}
@@ -272,7 +275,7 @@ function CreateSchema() {
                                 <img className="icon" src={tagsIcon} />
                                 <div className="title-desc">
                                     <p className="field-title">Tags</p>
-                                    <p className="desc">Tags will help you organize, search and filter your data</p>
+                                    <p className="desc">Tags will help you control, group, search, and filter your different entities</p>
                                 </div>
                             </div>
                             <TagsList
@@ -295,8 +298,10 @@ function CreateSchema() {
                             <div className="title-icon-img">
                                 <img className="icon" src={schemaTypeIcon} alt="schemaTypeIcon" />
                                 <div className="title-desc">
-                                    <p className="field-title">Schema type</p>
-                                    <p className="desc">Tags will help you organize, search and filter your data</p>
+                                    <p className="field-title">Data format</p>
+                                    <p className="desc">
+                                        Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation
+                                    </p>
                                 </div>
                             </div>
                             <RadioButton
@@ -312,7 +317,7 @@ function CreateSchema() {
                 <div className="right-side">
                     <div className="schema-field schema">
                         <div className="title-wrapper">
-                            <p className="field-title">Schema definition</p>
+                            <p className="field-title">Schema structure</p>
                             <Button
                                 width="115px"
                                 height="34px"
@@ -400,8 +405,8 @@ function CreateSchema() {
                 open={modalOpen}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Too many message types specified in schema definition</p>
-                    <p className="desc">Please choose your master message as a schema definition</p>
+                    <p className="title">Too many message types specified in schema structure</p>
+                    <p className="desc">Please choose your master message as a schema structure</p>
                     <SelectComponent
                         value={messageStructName}
                         colorType="black"

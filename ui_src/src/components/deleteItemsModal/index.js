@@ -36,7 +36,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
                     Please type <b>{textToConfirm || 'permanently delete'}</b> to confirm.
                 </p>
                 <Input
-                    placeholder="Type here"
+                    placeholder={textToConfirm || 'permanently delete'}
                     autoFocus={true}
                     type="text"
                     radiusType="semi-round"

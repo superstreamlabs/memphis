@@ -33,13 +33,15 @@
             color: rgba(74,73,92,0.8);
         }
     }
-    .delete-icon img {
+    .delete-icon svg {
         display: none;
     }
 }
 .sch-item-selected{
     background: rgba(101, 87, 255, 0.1);
-    .delete-icon img {
+    .delete-icon svg {
+        width: 14px;
         display: unset;
+
     }
 }

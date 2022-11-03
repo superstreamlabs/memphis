@@ -277,7 +277,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
                 <div className="schema-fields">
                     <div className="left">
-                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema definition</p>
+                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema structure</p>
                         {!versionSelected?.active && (
                             <>
                                 <span>Diff : </span>

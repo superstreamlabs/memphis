@@ -24,7 +24,7 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
-import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
+import stopUsingIcon from '../../../../assets/images/stopUsingIcon.svg';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
 import searchIcon from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -175,7 +175,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                 </div>
             )}
             <Modal
-                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                header={<img src={stopUsingIcon} alt="stopUsingIcon" />}
                 width="520px"
                 height="240px"
                 displayButtons={false}
@@ -183,9 +183,9 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                 open={deleteModal}
             >
                 <DeleteItemsModal
-                    title="Are you sure you want to stop using this schema?"
-                    desc="Stopping using this schema will affect future messages."
-                    buttontxt="I understand this consequences, stop using schema"
+                    title="Are you sure you want to detach the schema from the station?"
+                    desc="Detaching schema might interrupt producers from producing data"
+                    buttontxt="I understand, detach the schem"
                     textToConfirm="remove schema"
                     handleDeleteSelected={handleStopUseSchema}
                 />

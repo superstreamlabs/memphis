@@ -21,7 +21,7 @@
 
 import './style.scss';
 
-import { FiberManualRecord } from '@material-ui/icons';
+import { BrokenImageRounded, CancelRounded, CloseRounded, FiberManualRecord, LinkOffRounded } from '@material-ui/icons';
 import React, { useState } from 'react';
 
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
@@ -49,7 +49,7 @@ const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, hand
             </div>
             {schema?.name === schemaSelected && (
                 <div className="delete-icon" onClick={handleStopUseSchema}>
-                    <img src={deleteIcon} />
+                    <CloseRounded />
                 </div>
             )}
         </div>
