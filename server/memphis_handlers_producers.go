@@ -210,9 +210,9 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequestV1
 	var resp createProducerResponse
 
-	if err := json.Unmarshal(msg, &cpr); err != nil {
+	if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
 		var cprV0 createProducerRequestV0
-		if err := json.Unmarshal(msg, cprV0); err != nil {
+		if err := json.Unmarshal(msg, &cprV0); err != nil {
 			s.Errorf("failed creating producer: %v", err.Error())
 			respondWithRespErr(s, reply, err, &resp)
 			return
