@@ -292,7 +292,7 @@ function SchemaList() {
                 <DeleteItemsModal
                     title="Are you sure you want to delete the selected schemas?"
                     desc="Deleting these schemas means they will be permanently deleted."
-                    buttontxt="I understand, delete the selected schema"
+                    buttontxt="I understand, delete the selected schemas"
                     handleDeleteSelected={handleDeleteSelected}
                 />
             </Modal>

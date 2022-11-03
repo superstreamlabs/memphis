@@ -239,7 +239,7 @@ const StationsList = () => {
                 <DeleteItemsModal
                     title="Are you sure you want to delete the selected stations?"
                     desc="Deleting these stations means they will be permanently deleted."
-                    buttontxt="I understand, delete the selected staion"
+                    buttontxt="I understand, delete the selected staions"
                     handleDeleteSelected={handleDeleteSelected}
                 />
             </Modal>
