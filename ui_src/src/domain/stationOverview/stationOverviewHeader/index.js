@@ -166,7 +166,7 @@ const StationOverviewHeader = () => {
                             <div className="title-and-badge">
                                 <p className="title">Schema</p>
                                 {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates available" active={false} />}
-                                {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates" active={true} />}
+                                {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updated" active={true} />}
                             </div>
                             <div className="name-and-version">
                                 <p>{stationState?.stationSocketData?.schema?.name}</p>

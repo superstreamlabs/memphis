@@ -40,6 +40,7 @@ import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import TagsList from '../../../../components/tagList';
 import { Context } from '../../../../hooks/store';
+import { getUnique } from '../../../../services/valueConvertor';
 
 const schemaTypes = [
     {
@@ -148,7 +149,7 @@ function CreateSchema() {
                     handleCreateNewSchema();
                 } else {
                     setMessageStructName(parser[0].name);
-                    setMessagesStructNameList(parser);
+                    setMessagesStructNameList(getUnique(parser));
                     setModalOpen(true);
                 }
             } else {

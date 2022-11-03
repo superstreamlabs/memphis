@@ -33,7 +33,7 @@ import redirectIcon from '../../../../assets/images/redirectIcon.svg';
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
 import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
 import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
-import { isThereDiff, parsingDate } from '../../../../services/valueConvertor';
+import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -184,7 +184,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 let parser = Schema.parse(value).messages;
                 if (parser.length > 1) {
                     setEditable(true);
-                    setMessagesStructNameList(parser);
+                    setMessagesStructNameList(getUnique(parser));
                 } else {
                     setMessageStructName(parser[0].name);
                     setEditable(false);

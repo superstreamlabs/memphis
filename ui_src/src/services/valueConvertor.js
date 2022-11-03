@@ -154,3 +154,20 @@ export const isThereDiff = (s1, s2) => {
     }
     return true;
 };
+
+export const getUnique = (obj) => {
+    const uniqueIds = [];
+
+    const unique = obj.filter((element) => {
+        const isDuplicate = uniqueIds.includes(element.name);
+
+        if (!isDuplicate) {
+            uniqueIds.push(element.name);
+
+            return true;
+        }
+
+        return false;
+    });
+    return unique;
+};
