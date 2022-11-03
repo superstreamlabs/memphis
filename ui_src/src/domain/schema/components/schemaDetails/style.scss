@@ -10,9 +10,9 @@ schema-details {
             height: 36px;
             padding: 16px 30px;
             border-bottom: 1px solid #ECECEC;
+            justify-content:space-between;
             .wrapper{
                 display: flex;
-                width: 200px;
                 align-items: center;
                 img{
                     padding-right:6px;

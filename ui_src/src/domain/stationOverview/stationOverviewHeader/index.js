@@ -306,7 +306,7 @@ const StationOverviewHeader = () => {
                     <UseSchemaModal
                         schemaSelected={stationState?.stationSocketData?.schema?.name || ''}
                         stationName={stationState?.stationMetaData?.name}
-                        dispatch={(schema) => {
+                        handleSetSchema={(schema) => {
                             setSchema(schema);
                             setUseSchemaModal(false);
                         }}

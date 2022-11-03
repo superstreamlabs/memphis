@@ -39,7 +39,10 @@ const initialState = {
     isAuthentication: false,
     analytics_modal: true,
     socket: null,
-    skipSignup: false
+    skipSignup: false,
+    createSchema: false,
+    domainList: [],
+    filteredList: []
 };
 
 const Store = ({ children }) => {

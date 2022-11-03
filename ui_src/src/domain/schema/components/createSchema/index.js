@@ -22,7 +22,7 @@
 import './style.scss';
 
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
 import Editor from '@monaco-editor/react';
 import { Form } from 'antd';
@@ -39,6 +39,7 @@ import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import TagsList from '../../../../components/tagList';
+import { Context } from '../../../../hooks/store';
 
 const schemaTypes = [
     {
@@ -99,7 +100,7 @@ const SchemaEditorExample = {
     }
 };
 
-function CreateSchema({ goBack }) {
+function CreateSchema() {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: '',
@@ -115,6 +116,7 @@ function CreateSchema({ goBack }) {
     const [messageStructName, setMessageStructName] = useState('Test');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
+    const [state, dispatch] = useContext(Context);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -129,6 +131,10 @@ function CreateSchema({ goBack }) {
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
     }, []);
+
+    const goBack = () => {
+        dispatch({ type: 'SET_CREATE_SCHEMA', payload: false });
+    };
 
     const handleSubmit = async () => {
         const values = await creationForm.validateFields();
@@ -163,6 +169,7 @@ function CreateSchema({ goBack }) {
             if (err.status === 555) {
                 setValidateSuccess('');
                 setValidateError(err.data.message);
+                setModalOpen(false);
             }
         }
         setLoadingSubmit(false);

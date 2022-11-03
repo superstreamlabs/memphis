@@ -27,12 +27,13 @@ import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
 import { message } from 'antd';
 
+import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
 import redirectIcon from '../../../../assets/images/redirectIcon.svg';
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
 import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
 import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
-import { isThereDiff } from '../../../../services/valueConvertor';
+import { isThereDiff, parsingDate } from '../../../../services/valueConvertor';
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -76,6 +77,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         tags: []
     });
     const [rollBackModal, setRollBackModal] = useState(false);
+    const [activateVersionModal, setActivateVersionModal] = useState(false);
     const [isDiff, setIsDiff] = useState(true);
     const [validateLoading, setValidateLoading] = useState(false);
     const [validateError, setValidateError] = useState('');
@@ -83,6 +85,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [messageStructName, setMessageStructName] = useState('');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [editable, setEditable] = useState(false);
+    const [latestVersion, setLatest] = useState({});
     const history = useHistory();
 
     const goToStation = (stationName) => {
@@ -143,19 +146,30 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     style: { cursor: 'pointer' },
                     onClick: () => message.destroy('memphisSuccessMessage')
                 });
+                setLatest(data);
+                setActivateVersionModal(true);
                 setIsLoading(false);
             }
-        } catch (err) {}
+        } catch (err) {
+            if (err.status === 555) {
+                setValidateSuccess('');
+                setValidateError(err.data.message);
+            }
+        }
         setIsLoading(false);
     };
 
-    const rollBackVersion = async () => {
+    const rollBackVersion = async (latest = false) => {
         try {
             setIsLoading(true);
-            const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, { schema_name: schemaName, version_number: versionSelected?.version_number });
+            const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, {
+                schema_name: schemaName,
+                version_number: latest ? latestVersion?.versions[0]?.version_number : versionSelected?.version_number
+            });
             if (data) {
                 arrangeData(data);
                 setRollBackModal(false);
+                setActivateVersionModal(false);
             }
         } catch (err) {}
         setIsLoading(false);
@@ -240,6 +254,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
                         <span>{currentVersion?.created_by_user}</span>
+                    </div>
+                    <div className="wrapper">
+                        <img src={createdDateIcon} alt="typeIcon" />
+                        <span>{parsingDate(currentVersion?.creation_date)}</span>
                     </div>
                 </div>
                 <div className="tags">
@@ -432,7 +450,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             placeholder={
                                 <div className="placeholder-button">
                                     <img src={scrollBackIcon} alt="scrollBackIcon" />
-                                    <p>Roll back</p>
+                                    <p>Activate</p>
                                 </div>
                             }
                             colorType="white"
@@ -468,7 +486,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 open={rollBackModal}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Are you sure you want to roll back?</p>
+                    <p className="title">Are you sure you want to activate this version?</p>
                     <p className="desc">Your current schema will be changed to this version.</p>
                     <div className="buttons">
                         <Button
@@ -494,6 +512,45 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             fontFamily="InterSemiBold"
                             loading={rollLoading}
                             onClick={() => rollBackVersion()}
+                        />
+                    </div>
+                </div>
+            </Modal>
+            <Modal
+                header={<img src={rollBackIcon} alt="rollBackIcon" />}
+                width="430px"
+                height="200px"
+                displayButtons={false}
+                clickOutside={() => setActivateVersionModal(false)}
+                open={activateVersionModal}
+            >
+                <div className="roll-back-modal">
+                    <p className="title">Are you want to activate the new version?</p>
+                    <p className="desc">Your current schema will be changed to the new version.</p>
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="No"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => setActivateVersionModal(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Yes"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            loading={rollLoading}
+                            onClick={() => rollBackVersion(true)}
                         />
                     </div>
                 </div>

@@ -35,7 +35,7 @@ function SchemaManagment() {
         dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
     }, []);
 
-    return <div>{creatNew ? <CreateSchema goBack={() => setCreatNew(false)} /> : <SchemaList createNew={() => setCreatNew(true)} />}</div>;
+    return <div>{state?.createSchema ? <CreateSchema /> : <SchemaList />}</div>;
 }
 
 export default SchemaManagment;

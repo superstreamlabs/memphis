@@ -39,7 +39,7 @@ import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
 
-function SchemaList({ createNew }) {
+function SchemaList() {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
@@ -138,6 +138,10 @@ function SchemaList({ createNew }) {
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
+    };
+
+    const createNew = () => {
+        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
     };
 
     return (

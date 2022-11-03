@@ -21,19 +21,25 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
+import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
+import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
+import DeleteItemsModal from '../../../../components/deleteItemsModal';
 import searchIcon from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
-import SchemaItem from './schemaItem';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
-import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
+import SchemaItem from './schemaItem';
+import { Context } from '../../../../hooks/store';
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../../../router';
 
-const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
+const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close }) => {
+    const [state, dispatch] = useContext(Context);
+
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -41,6 +47,7 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
     const [selected, setSelected] = useState(schemaSelected);
     const [useschemaLoading, setUseschemaLoading] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
+    const history = useHistory();
 
     const getAllSchema = async () => {
         try {
@@ -72,18 +79,19 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
             setUseschemaLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_name: stationName, schema_name: selected });
             if (data) {
-                dispatch(data);
+                handleSetSchema(data);
                 setUseschemaLoading(false);
             }
         } catch (error) {}
         setUseschemaLoading(false);
     };
+
     const handleStopUseSchema = async () => {
         try {
             setUseschemaLoading(true);
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA_FROM_STATION, { station_name: stationName });
             if (data) {
-                dispatch(data);
+                handleSetSchema(data);
                 setUseschemaLoading(false);
                 setDeleteModal(false);
             }
@@ -95,48 +103,77 @@ const UseSchemaModal = ({ stationName, dispatch, schemaSelected, close }) => {
         setSearchInput(e.target.value);
     };
 
+    const createNew = () => {
+        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
+        history.push(pathDomains.schemas);
+    };
     return (
         <div className="use-schema-modal-container">
-            <SearchInput
-                placeholder="Search schema"
-                colorType="navy"
-                backgroundColorType="none"
-                borderRadiusType="circle"
-                borderColorType="search-input"
-                iconComponent={<img alt="search tag" src={searchIcon} />}
-                onChange={handleSearch}
-                value={searchInput}
-                width="100%"
-                height="35px"
-            />
-            <div className="schemas-list">
-                {schemaList?.map((schema) => {
-                    return (
-                        <SchemaItem
-                            schema={schema}
-                            schemaSelected={schemaSelected}
-                            selected={selected}
-                            handleSelectedItem={(id) => setSelected(id)}
-                            handleStopUseSchema={() => setDeleteModal(true)}
+            {!isLoading && schemaList?.length > 0 && (
+                <>
+                    <SearchInput
+                        placeholder="Search schema"
+                        colorType="navy"
+                        backgroundColorType="none"
+                        borderRadiusType="circle"
+                        borderColorType="search-input"
+                        iconComponent={<img alt="search tag" src={searchIcon} />}
+                        onChange={handleSearch}
+                        value={searchInput}
+                        width="100%"
+                        height="35px"
+                    />
+                    <div className="schemas-list">
+                        {schemaList?.map((schema) => {
+                            return (
+                                <SchemaItem
+                                    schema={schema}
+                                    schemaSelected={schemaSelected}
+                                    selected={selected}
+                                    handleSelectedItem={(id) => setSelected(id)}
+                                    handleStopUseSchema={() => setDeleteModal(true)}
+                                />
+                            );
+                        })}
+                    </div>
+                    <div className="buttons">
+                        <Button
+                            width="100%"
+                            height="35px"
+                            placeholder="Apply"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="13px"
+                            fontFamily="InterSemiBold"
+                            disabled={selected === schemaSelected || selected === ''}
+                            isLoading={useschemaLoading}
+                            onClick={useSchema}
                         />
-                    );
-                })}
-            </div>
-            <div className="buttons">
-                <Button
-                    width="100%"
-                    height="35px"
-                    placeholder="Apply"
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="purple"
-                    fontSize="13px"
-                    fontFamily="InterSemiBold"
-                    disabled={selected === schemaSelected || selected === ''}
-                    isLoading={useschemaLoading}
-                    onClick={useSchema}
-                />
-            </div>
+                    </div>
+                </>
+            )}
+            {!isLoading && schemaList?.length === 0 && (
+                <div className="no-schema-to-display">
+                    <img src={placeholderSchema} width="50" alt="placeholderSchema" />
+                    <p className="title">No Schema exist</p>
+                    <p className="sub-title">Get started by creating your first schema</p>
+                    <Button
+                        className="modal-btn"
+                        width="160px"
+                        height="34px"
+                        placeholder="Create new schema"
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="12px"
+                        fontFamily="InterSemiBold"
+                        aria-controls="usecse-menu"
+                        aria-haspopup="true"
+                        onClick={() => createNew()}
+                    />
+                </div>
+            )}
             <Modal
                 header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
                 width="520px"
