@@ -61,7 +61,7 @@ const Filter = ({ filterComponent, height }) => {
 
     useEffect(() => {
         buildFilter();
-    }, []);
+    }, [state?.domainList]);
 
     const handleRegisterToStation = useCallback(() => {
         state.socket?.emit('get_all_stations_data');
@@ -148,9 +148,12 @@ const Filter = ({ filterComponent, height }) => {
         const storageTypeFilter = {
             name: 'storage',
             value: 'Storage Type',
-            filterType: filterType.RADIOBUTTON,
-            radioValue: -1,
-            fields: [{ name: 'Memory' }, { name: 'File' }]
+            filterType: filterType.CHECKBOX,
+            labelType: '',
+            fields: [
+                { name: 'Memory', value: 'memory' },
+                { name: 'File', value: 'file' }
+            ]
         };
         let filteredFields = filterFields;
         filteredFields.push(storageTypeFilter);
