@@ -1230,6 +1230,13 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-attach-schema-to-station")
+	}
+
 	c.IndentedJSON(200, schemaDetailsResponse)
 
 	updateContent, err := generateSchemaUpdateInit(schema)
@@ -1311,6 +1318,12 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-remove-schema-from-station")
+	}
+
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -1355,6 +1368,12 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		serv.Errorf("GetUpdatesForSchemaByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-apply-schema-updates-on-station")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)

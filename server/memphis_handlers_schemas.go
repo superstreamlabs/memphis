@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"os"
@@ -168,8 +169,7 @@ func getSchemaUpdateInitFromStation(sn StationName) (*models.ProducerSchemaUpdat
 	return generateSchemaUpdateInit(schema)
 }
 
-func (s *Server) updateStationProducersOfSchemaChange(sn StationName,
-	schemaUpdate models.ProducerSchemaUpdate) {
+func (s *Server) updateStationProducersOfSchemaChange(sn StationName, schemaUpdate models.ProducerSchemaUpdate) {
 	subject := fmt.Sprintf(schemaUpdatesSubjectTemplate, sn.Intern())
 	msg, err := json.Marshal(schemaUpdate)
 	if err != nil {
@@ -592,6 +592,12 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-create-schema")
+	}
+
 	c.IndentedJSON(200, newSchema)
 }
 
@@ -602,6 +608,13 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-schema-page")
+	}
+	
 	c.IndentedJSON(200, schemas)
 }
 
@@ -630,6 +643,13 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-schema-details")
+	}
+
 	c.IndentedJSON(200, schemaDetails)
 }
 
@@ -714,6 +734,12 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		for _, name := range body.SchemaNames {
 			serv.Noticef("Schema " + name + " has been deleted")
 		}
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-remove-schema")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -823,6 +849,13 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-create-new-schema-version")
+	}
+
 	c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
@@ -883,6 +916,13 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-rollback-schema-version")
+	}
+
 	c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
@@ -907,6 +947,12 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 		serv.Warnf(err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-validate-schema")
 	}
 
 	c.IndentedJSON(200, gin.H{
