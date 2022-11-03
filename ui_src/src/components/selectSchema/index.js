@@ -41,7 +41,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
                 placeholder={placeholder}
                 value={value}
                 bordered={false}
-                suffixIcon={<ArrowDropDownRounded className="drop-sown-icon" />}
+                suffixIcon={<ArrowDropDownRounded className="drop-down-icon" />}
                 onChange={handleChange}
                 placement="bottomRight"
                 popupClassName="select-schema-options"

@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.ef0b1ef4.css",
-    "main.js": "/static/js/main.819e2e4f.js",
+    "main.css": "/static/css/main.42efc222.css",
+    "main.js": "/static/js/main.57ea2609.js",
     "static/js/27.6c7f6379.chunk.js": "/static/js/27.6c7f6379.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -83,6 +83,7 @@
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
+    "static/media/stopUsingIcon.svg": "/static/media/stopUsingIcon.7e0db2ab31e9777c5ec29a204dd7a982.svg",
     "static/media/integrationColor.svg": "/static/media/integrationColor.2fd008279d28c20ed1e0a0073f4affd7.svg",
     "static/media/integrationGray.svg": "/static/media/integrationGray.4ecca2d6db61383fa5331af4542ca458.svg",
     "static/media/videoIcon.svg": "/static/media/videoIcon.9ecec4435f899d20018c52f88070c99f.svg",
@@ -116,7 +117,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.ef0b1ef4.css",
-    "static/js/main.819e2e4f.js"
+    "static/css/main.42efc222.css",
+    "static/js/main.57ea2609.js"
   ]
 }
