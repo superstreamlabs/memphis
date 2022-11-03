@@ -283,7 +283,9 @@ const Filter = ({ filterComponent, height }) => {
     const handleCancel = () => {
         filterDispatch({ type: 'SET_IS_OPEN', payload: false });
     };
-
+    const handleOpenChange = () => {
+        flipOpen();
+    };
     const content = <CustomCollapse header="Details" data={filterState?.filterFields} cancel={handleCancel} apply={handleApply} clear={handleClear} />;
 
     return (
@@ -301,7 +303,7 @@ const Filter = ({ filterComponent, height }) => {
                 onChange={handleSearch}
                 value={searchInput}
             />
-            <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onClick={() => flipOpen()} open={filterState.isOpen}>
+            <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
                     width="110px"
