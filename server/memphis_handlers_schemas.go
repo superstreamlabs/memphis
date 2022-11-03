@@ -50,8 +50,8 @@ func validateProtobufContent(schemaContent string) error {
 }
 
 func generateProtobufDescriptor(schemaName string, schemaVersionNum int, schemaContent string) ([]byte, error) {
-	filename := fmt.Sprintf("%s_%s.proto", schemaName, schemaVersionNum)
-	descFilename := fmt.Sprintf("%s_%s_desc", schemaName, schemaVersionNum)
+	filename := fmt.Sprintf("%v_%v.proto", schemaName, schemaVersionNum)
+	descFilename := fmt.Sprintf("%v_%v_desc", schemaName, schemaVersionNum)
 	err := os.WriteFile(filename, []byte(schemaContent), 0644)
 	if err != nil {
 		return nil, err
