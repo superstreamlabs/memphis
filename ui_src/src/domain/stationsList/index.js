@@ -42,7 +42,7 @@ const StationsList = () => {
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
-    const [isLoading, setisLoading] = useState(false);
+    const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
@@ -148,54 +148,50 @@ const StationsList = () => {
                     <label className="main-header-h1">
                         Stations <label className="length-list">{state?.filteredList?.length > 0 && `(${state?.filteredList?.length})`}</label>
                     </label>
-                    {state?.domainList?.length > 0 && (
-                        <div className="right-side">
+                    <div className="right-side">
+                        <Button
+                            width="131px"
+                            height="34px"
+                            placeholder={`Delete selected (${isCheck?.length})`}
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            disabled={isCheck?.length === 0}
+                            onClick={() => modalDeleteFlip(true)}
+                        />
+
+                        {state.filteredList?.length > 1 && (
                             <Button
                                 width="131px"
                                 height="34px"
-                                placeholder={`Delete selected (${isCheck?.length})`}
+                                placeholder="Select all"
                                 colorType="black"
                                 radiusType="circle"
                                 backgroundColorType="white"
                                 fontSize="12px"
                                 fontWeight="600"
                                 aria-haspopup="true"
-                                disabled={isCheck?.length === 0}
-                                onClick={() => modalDeleteFlip(true)}
+                                onClick={() => onCheckedAll()}
                             />
+                        )}
 
-                            {state.filteredList?.length > 1 && (
-                                <Button
-                                    width="131px"
-                                    height="34px"
-                                    placeholder="Select all"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    aria-haspopup="true"
-                                    onClick={() => onCheckedAll()}
-                                />
-                            )}
-
-                            <Filter filterComponent="stations" height="34px" />
-                            <Button
-                                className="modal-btn"
-                                width="180px"
-                                height="34px"
-                                placeholder="Create New Station"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="14px"
-                                fontWeight="bold"
-                                aria-controls="usecse-menu"
-                                aria-haspopup="true"
-                                onClick={() => modalFlip(true)}
-                            />
-                        </div>
-                    )}
+                        <Filter filterComponent="stations" height="34px" />
+                        <Button
+                            width="160px"
+                            height="34px"
+                            placeholder={'Create new station'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => modalFlip(true)}
+                        />
+                    </div>
                 </div>
             </div>
             {isLoading && (

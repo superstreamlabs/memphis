@@ -42,7 +42,8 @@ const TransitionsModal = ({
     rBtnClick,
     children,
     hr = false,
-    className
+    className,
+    zIndex = null
 }) => {
     const contentStyle = {
         height: height,
@@ -60,6 +61,7 @@ const TransitionsModal = ({
             bodyStyle={contentStyle}
             centered
             destroyOnClose={true}
+            zIndex={zIndex}
             footer={
                 displayButtons
                     ? [

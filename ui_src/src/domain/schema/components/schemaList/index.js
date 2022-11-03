@@ -44,7 +44,7 @@ function SchemaList({ createNew }) {
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
-    const [isLoading, setisLoading] = useState(false);
+    const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
 
@@ -62,7 +62,9 @@ function SchemaList({ createNew }) {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
             dispatch({ type: 'SET_FILTERED_LIST', payload: data });
-            setisLoading(false);
+            setTimeout(() => {
+                setisLoading(false);
+            }, 500);
         } catch (error) {
             setisLoading(false);
         }
@@ -242,9 +244,10 @@ function SchemaList({ createNew }) {
                         <Loader />
                     </div>
                 )}
-                {state.filteredList?.map((schema, index) => {
-                    return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
-                })}
+                {!isLoading &&
+                    state.filteredList?.map((schema, index) => {
+                        return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
+                    })}
                 {!isLoading && state.domainList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />

@@ -33,7 +33,7 @@
                 }
                 span{
                     font-size: 12px;
-                    color: #B4B4B4;
+                    color: #979797;
                     a{
                         color: var(--purple);
                         font-weight: 600;
@@ -57,7 +57,7 @@
                             margin: 0;
                         }
                         .desc{
-                            color: #B4B4B4;
+                            color: #979797;
                             font-size: 12px;
                             margin: 0;
                         }
@@ -78,13 +78,15 @@
                     flex-direction: column;
                     margin-bottom: 10px;
                     max-width:490px;
-                    .label{
+                    .label-option-text{
                         font-family: 'InterSemiBold';
                         font-size: 14px;
                         color: #1D1D1D;
+                        margin: 0;
                     }
                     .des{
                         margin-top: 5px;
+                        margin-left:24px;
                         font-size: 12px;
                         color: #B4B4B4;
                         a{
@@ -93,6 +95,9 @@
                             text-decoration-line: underline;
                             margin-left: 5px;
                         }
+                    }
+                    .ant-radio-wrapper-disabled .label-option-text{
+                        opacity: 0.5;
                     }
                 }
             }
