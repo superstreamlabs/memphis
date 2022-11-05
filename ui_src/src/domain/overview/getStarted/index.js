@@ -114,7 +114,13 @@ const GetStarted = ({ username, dataSentence }) => {
             case 4:
                 return 'A consumer is the application/service that consume data or messages from the broker or station';
             case 5:
-                return 'Congratulations - You’ve created your first broker app';
+                return (
+                    <div className="congratulations-section">
+                        <label>Congratulations!</label>
+                        <label>You've created your first fully-operational station.</label>
+                        <label>Continue your journey and connect Memphis with more clients.</label>
+                    </div>
+                );
         }
     };
 
@@ -214,7 +220,7 @@ const GetStarted = ({ username, dataSentence }) => {
                     {getStartedState?.currentStep === 2 && (
                         <GetStartedItem
                             headerImage={AppUserIcon}
-                            headerTitle="Create user"
+                            headerTitle="Create app user"
                             headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
@@ -247,7 +253,7 @@ const GetStarted = ({ username, dataSentence }) => {
                     {getStartedState?.currentStep === 5 && (
                         <GetStartedItem
                             headerImage={finishStep}
-                            headerTitle="You are ready to roll"
+                            headerTitle="You are ready to stream"
                             headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}

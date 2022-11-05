@@ -23,10 +23,17 @@
     p {
         margin: 0;
     }
-    .title{
+    .title {
         font-weight: 600;
         font-size: 16px;
-
+    }
+    .description {
+        font-weight: 400;
+        font-size: 12px;
+        color: #b4b4b4;
+    }
+    .waiting-message {
+        margin-bottom: 5px;
     }
     .code-snippet {
         position: relative;
@@ -68,7 +75,6 @@
             display: flex;
             justify-content: space-between;
             padding: 0px 10px;
-        
         }
     }
 

@@ -525,7 +525,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 open={activateVersionModal}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Are you want to activate the new version?</p>
+                    <p className="title">Do you want to activate the new version?</p>
                     <p className="desc">Your current schema will be changed to the new version.</p>
                     <div className="buttons">
                         <Button

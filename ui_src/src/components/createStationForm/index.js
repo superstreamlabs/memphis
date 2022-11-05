@@ -182,9 +182,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             </div>
             <div className="retention-type-section">
                 <TitleComponent
-                    headerTitle="Retention type"
+                    headerTitle="Retention policy"
                     typeTitle="sub-header"
-                    headerDescription="By which criteria messages will be expelled from the station"
+                    headerDescription={
+                        <span>
+                            By which criteria will messages be expelled from the station.&nbsp;
+                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
+                                Learn More
+                            </a>
+                        </span>
+                    }
                 ></TitleComponent>
                 <Form.Item name="retention_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : 'message_age_sec'}>
                     <RadioButton
@@ -308,8 +315,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <TitleComponent
                         headerTitle="Storage type"
                         typeTitle="sub-header"
-                        headerDescription="Type of message persistence"
-                        style={{ description: { width: '240px' } }}
+                        headerDescription={
+                            <span>
+                                By which type of storage will the station be stored.&nbsp;
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                    Learn More
+                                </a>
+                            </span>
+                        }
                     ></TitleComponent>
                     <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
                         <RadioButton

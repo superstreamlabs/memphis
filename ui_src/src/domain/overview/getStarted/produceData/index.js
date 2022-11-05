@@ -51,7 +51,16 @@ const ProduceData = (props) => {
         <div className="produce-consume-data" id="e2e-getstarted-step3">
             <ProduceConsumeData
                 waitingImage={prodWaiting}
-                waitingTitle={'Waiting for produced data'}
+                waitingTitle={
+                    <div>
+                        <p className="waiting-message">Waiting for produced data</p>
+                        <p className="description">
+                            Please run the copied code snippet to test your connectivity.
+                            <br />
+                            Make sure you the broker host address is available to your location
+                        </p>
+                    </div>
+                }
                 successfullTitle={'Success! You created your first producer'}
                 languages={selectLngOption}
                 activeData={'connected_producers'}
