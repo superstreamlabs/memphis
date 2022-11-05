@@ -88,7 +88,7 @@ function SchemaList() {
         });
 
         state.socket?.on('error', (error) => {
-            history.push(pathDomains.overview);
+            // history.push(pathDomains.overview);
         });
 
         setTimeout(() => {

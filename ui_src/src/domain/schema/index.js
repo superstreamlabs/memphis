@@ -21,7 +21,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useReducer, createContext } from 'react';
+import React, { useEffect, useContext } from 'react';
 
 import { Context } from '../../hooks/store';
 import SchemaList from './components/schemaList';
@@ -29,7 +29,6 @@ import CreateSchema from './components/createSchema';
 
 function SchemaManagment() {
     const [state, dispatch] = useContext(Context);
-    const [creatNew, setCreatNew] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
