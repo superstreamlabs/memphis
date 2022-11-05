@@ -88,7 +88,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 />
             </div>
             <div className="installation">
-                <p>Installation</p>
+                <p>Package installation</p>
                 <div className="install-copy">
                     <p>{CODE_EXAMPLE[langSelected].installation}</p>
                     <Copy data={CODE_EXAMPLE[langSelected].installation} />

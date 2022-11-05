@@ -214,7 +214,7 @@ const GetStarted = ({ username, dataSentence }) => {
                     {getStartedState?.currentStep === 2 && (
                         <GetStartedItem
                             headerImage={AppUserIcon}
-                            headerTitle="Create user"
+                            headerTitle="Create app user"
                             headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}
@@ -247,7 +247,7 @@ const GetStarted = ({ username, dataSentence }) => {
                     {getStartedState?.currentStep === 5 && (
                         <GetStartedItem
                             headerImage={finishStep}
-                            headerTitle="You are ready to roll"
+                            headerTitle="You are ready to stream"
                             headerDescription={getStepsDescription(getStartedState?.currentStep)}
                             onNext={onNext}
                             onBack={onBack}

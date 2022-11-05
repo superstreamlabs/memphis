@@ -51,7 +51,16 @@ const ConsumeData = (props) => {
         <div className="produce-consume-data" id="e2e-getstarted-step4">
             <ProduceConsumeData
                 waitingImage={consWaiting}
-                waitingTitle={'Waiting to consume messages from the station'}
+                waitingTitle={
+                    <div>
+                        <p className="waiting-message">Waiting to consume messages from the station</p>
+                        <p className="description">
+                            Please run the copied code snippet to test your connectivity.
+                            <br />
+                            Make sure you the broker host address is available to your location
+                        </p>
+                    </div>
+                }
                 successfullTitle={'Success! You created your first consumer'}
                 languages={selectLngOption}
                 activeData={'connected_cgs'}
