@@ -323,7 +323,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 </a>
                             </span>
                         }
-                        style={{ description: { width: '240px' } }}
                     ></TitleComponent>
                     <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
                         <RadioButton

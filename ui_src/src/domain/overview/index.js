@@ -159,7 +159,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-
+            <GetStarted />
             {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || allStations.length > 0) && (
                 <div className="overview-wrapper">
                     <div className="header">
@@ -206,9 +206,9 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading &&
+            {/* {!isLoading &&
                 (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') &&
-                allStations.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
+                allStations.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />} */}
             <Modal
                 header={
                     <div className="modal-header">

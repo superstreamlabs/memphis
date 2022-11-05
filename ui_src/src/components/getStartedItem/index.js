@@ -18,7 +18,7 @@ const GetStartedItem = (props) => {
                         <div className="get-started-top-header">
                             <img className="header-image" src={headerImage} alt={headerImage} />
                             <p className="header-title">{headerTitle}</p>
-                            <p className="header-description">{headerDescription}</p>
+                            <div className="header-description">{headerDescription}</div>
                         </div>
                         <div className="get-started-body">{children}</div>
                     </div>
@@ -32,7 +32,7 @@ const GetStartedItem = (props) => {
                         <div className="get-started-top-header finish">
                             <img style={style?.image} src={headerImage} alt={headerImage}></img>
                             <p className="header-title">{headerTitle}</p>
-                            <p className="header-description">{headerDescription}</p>
+                            <div className="header-description">{headerDescription}</div>
                         </div>
                         <div className="get-started-body-finish">{children}</div>
                     </div>
