@@ -69,19 +69,19 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 
-	hdr, err := DecodeHeader(poisonMessageContent.Header)
+	headersJson, err := DecodeHeader(poisonMessageContent.Header)
 
 	if err != nil {
 		serv.Errorf(err.Error())
 		return
 	}
-	connectionIdHeader := hdr["$memphis_connectionId"]
-	producedByHeader := hdr["$memphis_producedBy"]
+	connectionIdHeader := headersJson["$memphis_connectionId"]
+	producedByHeader := headersJson["$memphis_producedBy"]
 
 	//This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
-		connectionIdHeader = hdr["connectionId"]
-		producedByHeader = hdr["producedBy"]
+		connectionIdHeader = headersJson["connectionId"]
+		producedByHeader = headersJson["producedBy"]
 		if connectionIdHeader == "" || producedByHeader == "" {
 			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			return
@@ -103,12 +103,6 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		Name:          producedByHeader,
 		ClientAddress: conn.ClientAddress,
 		ConnectionId:  connId,
-	}
-
-	headersJson, err := getMessageHeaders(hdr)
-	if err != nil {
-		serv.Errorf("HandleNewMessage" + err.Error())
-		return
 	}
 
 	var headers []models.MsgHeader
@@ -164,20 +158,15 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 		return []models.LightPoisonMessageResponse{}, err
 	}
 
-	poisonMessagesJson := map[string]string{}
 	for i, msg := range poisonMessages {
 		if len(msg.Message.Data) > 100 {
 			poisonMessages[i].Message.Data = msg.Message.Data[0:100]
-		}
-		for _, value := range msg.Message.Headers {
-			poisonMessagesJson[value.HeaderKey] = value.HeaderValue
 		}
 
 		msg := models.MessagePayload{
 			TimeSent: poisonMessages[i].Message.TimeSent,
 			Size:     poisonMessages[i].Message.Size,
 			Data:     poisonMessages[i].Message.Data,
-			Headers:  poisonMessagesJson,
 		}
 		poisonMessagesResponse = append(poisonMessagesResponse, models.LightPoisonMessageResponse{
 			ID:      poisonMessages[i].ID,

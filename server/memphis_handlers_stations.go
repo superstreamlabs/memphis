@@ -850,32 +850,33 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessage, error) {
+func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessageResponse, error) {
 	messageId, _ := primitive.ObjectIDFromHex(poisonMsgId)
 	poisonMessage, err := GetPoisonMsgById(messageId)
+	var results models.PoisonMessageResponse
 	if err != nil {
-		return poisonMessage, err
+		return results, err
 	}
 
 	stationName, err := StationNameFromStr(poisonMessage.StationName)
 	if err != nil {
-		return poisonMessage, err
+		return results, err
 	}
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
-		return poisonMessage, err
+		return results, err
 	}
 	if !exist {
-		return poisonMessage, errors.New("Station does not exist")
+		return results, errors.New("Station does not exist")
 	}
 
 	filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
 	var producer models.Producer
 	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
 	if err == mongo.ErrNoDocuments {
-		return poisonMessage, errors.New("Producer does not exist")
+		return results, errors.New("Producer does not exist")
 	} else if err != nil {
-		return poisonMessage, err
+		return results, err
 	}
 
 	poisonMessage.Producer.CreatedByUser = producer.CreatedByUser
@@ -885,23 +886,23 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 	for i, _ := range poisonMessage.PoisonedCgs {
 		cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
 		if err != nil {
-			return poisonMessage, err
+			return results, err
 		}
 
 		isActive, isDeleted := getCgStatus(cgMembers)
 
 		stationName, err := StationNameFromStr(poisonMessage.StationName)
 		if err != nil {
-			return poisonMessage, err
+			return results, err
 		}
 		cgInfo, err := sh.S.GetCgInfo(stationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
-			return poisonMessage, err
+			return results, err
 		}
 
 		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
 		if err != nil {
-			return poisonMessage, err
+			return results, err
 		}
 
 		poisonMessage.PoisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
@@ -914,7 +915,28 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		poisonMessage.PoisonedCgs[i].IsDeleted = isDeleted
 	}
 
-	return poisonMessage, nil
+	headers := map[string]string{}
+	for _, value := range poisonMessage.Message.Headers {
+		headers[value.HeaderKey] = value.HeaderValue
+	}
+
+	msg := models.MessagePayload{
+		TimeSent: poisonMessage.Message.TimeSent,
+		Size:     poisonMessage.Message.Size,
+		Data:     poisonMessage.Message.Data,
+		Headers:  headers,
+	}
+	results = models.PoisonMessageResponse{
+		ID:           poisonMessage.ID,
+		StationName:  poisonMessage.StationName,
+		MessageSeq:   poisonMessage.MessageSeq,
+		Producer:     poisonMessage.Producer,
+		PoisonedCgs:  poisonMessage.PoisonedCgs,
+		Message:      msg,
+		CreationDate: poisonMessage.CreationDate,
+	}
+
+	return results, nil
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
@@ -1069,20 +1091,20 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	hdr, err := DecodeHeader(sm.Header)
+	headersJson, err := DecodeHeader(sm.Header)
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	connectionIdHeader := hdr["$memphis_connectionId"]
-	producedByHeader := strings.ToLower(hdr["$memphis_producedBy"])
+	connectionIdHeader := headersJson["$memphis_connectionId"]
+	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 	//This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
-		connectionIdHeader = hdr["connectionId"]
-		producedByHeader = strings.ToLower(hdr["producedBy"])
+		connectionIdHeader = headersJson["connectionId"]
+		producedByHeader = strings.ToLower(headersJson["producedBy"])
 		if connectionIdHeader == "" || producedByHeader == "" {
 			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
@@ -1144,12 +1166,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetMessageDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	headersJson, err := getMessageHeaders(hdr)
-	if err != nil {
-		serv.Errorf("GetMessageDetails" + err.Error())
 		return
 	}
 

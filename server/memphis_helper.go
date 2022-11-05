@@ -82,14 +82,6 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	}
 }
 
-func getMessageHeaders(hdr map[string]string) (map[string]string, error) {
-	jsonMsgHeaders := map[string]string{}
-	for key, value := range hdr {
-		jsonMsgHeaders[key] = value
-	}
-	return jsonMsgHeaders, nil
-}
-
 func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {
 	reply := s.getJsApiReplySubject()
 
@@ -479,18 +471,18 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	}
 
 	for _, msg := range msgs {
-		hdr, err := DecodeHeader(msg.Header)
+		headersJson, err := DecodeHeader(msg.Header)
 		if err != nil {
 			return nil, err
 		}
 
-		connectionIdHeader := hdr["$memphis_connectionId"]
-		producedByHeader := strings.ToLower(hdr["$memphis_producedBy"])
+		connectionIdHeader := headersJson["$memphis_connectionId"]
+		producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
 		//This check for backward compatability
 		if connectionIdHeader == "" || producedByHeader == "" {
-			connectionIdHeader = hdr["connectionId"]
-			producedByHeader = strings.ToLower(hdr["producedBy"])
+			connectionIdHeader = headersJson["connectionId"]
+			producedByHeader = strings.ToLower(headersJson["producedBy"])
 			if connectionIdHeader == "" || producedByHeader == "" {
 				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			}
@@ -504,10 +496,10 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			data = data[0:100]
 		}
 
-		headersJson, err := getMessageHeaders(hdr)
-		if err != nil {
-			return []models.MessageDetails{}, err
-		}
+		// headersJson, err := getMessageHeaders(hdr)
+		// if err != nil {
+		// 	return []models.MessageDetails{}, err
+		// }
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(msg.Sequence),
 			Data:         data,
