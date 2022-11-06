@@ -108,7 +108,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             replicas: formFields.replicas,
             schema_name: formFields.schemaValue
         };
-        createStation(bodyRequest);
+        if (getStarted && getStartedStateRef?.completedSteps === 0) createStation(bodyRequest);
+        else finishUpdate();
     };
 
     const getOverviewData = async () => {
@@ -132,10 +133,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             getStarted && setLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                if (!getStartedStateRef) history.push(`${pathDomains.stations}/${data.name}`);
-                else {
-                    finishUpdate(data);
-                }
+                if (!getStarted) history.push(`${pathDomains.stations}/${data.name}`);
+                else finishUpdate(data);
             }
         } catch (error) {
             console.log(error);
