@@ -66,6 +66,7 @@ func StationNameFromStr(name string) (StationName, error) {
 	}
 
 	intern := replaceDelimiters(name)
+	intern = strings.ToLower(intern)
 
 	return StationName{internal: intern, external: extern}, nil
 }
@@ -543,8 +544,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
-		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		serv.Errorf("CreateStation error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
