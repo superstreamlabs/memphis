@@ -80,7 +80,9 @@ export const convertSecondsToDate = (seconds) => {
     } else if (seconds > 0) {
         result = seconds === 1 ? 'one second' : `${seconds} seconds`;
     }
+
     const spliter = result.split(',');
+
     for (let i = 0; i < spliter.length; i++) {
         if (i === 0) {
             result = spliter[0];
@@ -130,4 +132,42 @@ export const capitalizeFirst = (str) => {
 
 export const cutInfoLog = (str) => {
     return str?.split('] ')[2];
+};
+
+export const filterArray = (arr1, arr2) => {
+    const filtered = arr1.filter((el) => {
+        return arr2.indexOf(el.name) === -1;
+    });
+    return filtered;
+};
+
+export const stationFilterArray = (arr1, arr2) => {
+    const filtered = arr1.filter((station) => {
+        return arr2.indexOf(station.station.name) === -1;
+    });
+    return filtered;
+};
+
+export const isThereDiff = (s1, s2) => {
+    if (s1 === s2) {
+        return false;
+    }
+    return true;
+};
+
+export const getUnique = (obj) => {
+    const uniqueIds = [];
+
+    const unique = obj.filter((element) => {
+        const isDuplicate = uniqueIds.includes(element.name);
+
+        if (!isDuplicate) {
+            uniqueIds.push(element.name);
+
+            return true;
+        }
+
+        return false;
+    });
+    return unique;
 };

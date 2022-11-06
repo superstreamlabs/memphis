@@ -20,59 +20,50 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useCallback, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect, useContext, useState, useRef } from 'react';
 
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import StationsInstructions from '../../components/stationsInstructions';
+import stationImg from '../../assets/images/stationsIconActive.svg';
+import CreateStationForm from '../../components/createStationForm';
+import { stationFilterArray } from '../../services/valueConvertor';
+import DeleteItemsModal from '../../components/deleteItemsModal';
+import stationsIcon from '../../assets/images/stationIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import StationBoxOverview from './stationBoxOverview';
 import { httpRequest } from '../../services/http';
 import Button from '../../components/button';
-import { Context } from '../../hooks/store';
-import SearchInput from '../../components/searchInput';
-import pathDomains from '../../router';
-import stationsIcon from '../../assets/images/stationIcon.svg';
-import searchIcon from '../../assets/images/searchIcon.svg';
-import StationsInstructions from '../../components/stationsInstructions';
-import Modal from '../../components/modal';
-import CreateStationDetails from '../../components/createStationDetails';
+import Filter from '../../components/filter';
 import Loader from '../../components/loader';
+import { Context } from '../../hooks/store';
+import Modal from '../../components/modal';
 
 const StationsList = () => {
-    const history = useHistory();
-
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
-    const [stationsList, setStationList] = useState([]);
-    const [filteredList, setFilteredList] = useState([]);
-    const [searchInput, setSearchInput] = useState('');
-    const [isLoading, setisLoading] = useState(false);
+    const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
+    const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
-
+    const [isCheck, setIsCheck] = useState([]);
+    const [isCheckAll, setIsCheckAll] = useState(false);
     const createStationRef = useRef(null);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getAllStations();
+        return () => {
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+        };
     }, []);
-
-    useEffect(() => {
-        if (searchInput.length >= 2) setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
-        else setFilteredList(stationsList);
-    }, [searchInput]);
-
-    useEffect(() => {
-        if (searchInput !== '' && searchInput.length >= 2) {
-            setFilteredList(stationsList.filter((station) => station.station.name.includes(searchInput)));
-        } else setFilteredList(stationsList);
-    }, [stationsList]);
 
     const getAllStations = async () => {
         setisLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
             res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-            setStationList(res.stations);
-            setFilteredList(res.stations);
+            dispatch({ type: 'SET_DOMAIN_LIST', payload: res.stations });
+            dispatch({ type: 'SET_FILTERED_LIST', payload: res.stations });
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -82,101 +73,122 @@ const StationsList = () => {
         }
     };
 
-    const handleSearch = (e) => {
-        setSearchInput(e.target.value);
-    };
-
-    const handleRegisterToStation = useCallback(() => {
-        state.socket?.emit('get_all_stations_data');
-    }, [state.socket]);
-
-    useEffect(() => {
-        state.socket?.on(`stations_overview_data`, (data) => {
-            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-            setStationList(data);
-        });
-
-        state.socket?.on('error', (error) => {
-            history.push(pathDomains.overview);
-        });
-
-        setTimeout(() => {
-            handleRegisterToStation();
-        }, 1000);
-
-        return () => {
-            state.socket?.emit('deregister');
-        };
-    }, [state.socket]);
-
-    const removeStation = async (stationName) => {
-        try {
-            await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
-                station_name: stationName
-            });
-            setStationList(stationsList.filter((station) => station.station.name !== stationName));
-        } catch (error) {
-            return;
-        }
-    };
-
     const renderStationsOverview = () => {
-        if (stationsList?.length > 0) {
-            if (stationsList?.length <= 2) {
+        if (state?.domainList?.length > 0) {
+            if (state.filteredList?.length === 0) {
+                return <StationsInstructions header="No Stations found" des="Please try to search again" image={stationsIcon} />;
+            }
+            if (state?.domainList?.length <= 2) {
                 return (
                     <div>
-                        {filteredList?.map((station) => (
-                            <StationBoxOverview key={station.station.id} station={station} removeStation={() => removeStation(station.station.name)} />
+                        {state.filteredList?.map((station) => (
+                            <StationBoxOverview
+                                key={station.station.id}
+                                isCheck={isCheck.includes(station.station.name)}
+                                handleCheckedClick={handleCheckedClick}
+                                station={station}
+                            />
                         ))}
                         <StationsInstructions header="Add more stations" button="Add Station" newStation={() => modalFlip(true)} />
                     </div>
                 );
             }
-            return filteredList?.map((station) => (
-                <StationBoxOverview key={station.station.id} station={station} removeStation={() => removeStation(station.station.name)} />
+            return state?.filteredList?.map((station) => (
+                <StationBoxOverview
+                    key={station?.station?.id}
+                    isCheck={isCheck.includes(station?.station?.name)}
+                    handleCheckedClick={handleCheckedClick}
+                    station={station}
+                />
             ));
         }
         return <StationsInstructions header="You don’t have any station yet?" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
     };
 
+    const onCheckedAll = (e) => {
+        setIsCheckAll(!isCheckAll);
+        setIsCheck(state.filteredList.map((li) => li.station.name));
+        if (isCheckAll) {
+            setIsCheck([]);
+        }
+    };
+
+    const handleCheckedClick = (e) => {
+        const { id, checked } = e.target;
+        setIsCheck([...isCheck, id]);
+        if (!checked) {
+            setIsCheck(isCheck.filter((item) => item !== id));
+        }
+        if (isCheck.length === 1 && !checked) {
+            setIsCheckAll(false);
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        setisLoading(true);
+        try {
+            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
+                station_names: isCheck
+            });
+            if (data) {
+                dispatch({ type: 'SET_DOMAIN_LIST', payload: stationFilterArray(state?.filteredList, isCheck) });
+                setIsCheck([]);
+                setisLoading(false);
+            }
+        } catch (error) {
+            setisLoading(false);
+        }
+        modalDeleteFlip(false);
+    };
+
     return (
         <div className="stations-details-container">
             <div className="stations-details-header">
-                <div className="left-side">
+                <div className="header-wraper">
                     <label className="main-header-h1">
-                        Stations <label className="num-stations">{stationsList?.length > 0 && `(${stationsList?.length})`}</label>
+                        Stations <label className="length-list">{state?.filteredList?.length > 0 && `(${state?.filteredList?.length})`}</label>
                     </label>
-                </div>
-                {stationsList?.length > 0 ? (
                     <div className="right-side">
-                        <SearchInput
-                            placeholder="Search Stations"
-                            placeholderColor="red"
-                            width="280px"
-                            height="37px"
-                            borderRadiusType="circle"
-                            backgroundColorType="gray-dark"
-                            iconComponent={<img src={searchIcon} />}
-                            onChange={handleSearch}
-                            value={searchInput}
+                        <Button
+                            width="131px"
+                            height="34px"
+                            placeholder={`Delete selected (${isCheck?.length})`}
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            disabled={isCheck?.length === 0}
+                            onClick={() => modalDeleteFlip(true)}
                         />
                         <Button
-                            className="modal-btn"
-                            width="180px"
-                            height="37px"
-                            placeholder="Create New Station"
+                            width="131px"
+                            height="34px"
+                            placeholder={isCheckAll ? 'Unselect all' : 'Select all'}
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => onCheckedAll()}
+                        />
+                        <Filter filterComponent="stations" height="34px" />
+                        <Button
+                            width="160px"
+                            height="34px"
+                            placeholder={'Create new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            marginLeft="15px"
-                            aria-controls="usecse-menu"
+                            fontSize="12px"
+                            fontWeight="600"
                             aria-haspopup="true"
                             onClick={() => modalFlip(true)}
                         />
                     </div>
-                ) : null}
+                </div>
             </div>
             {isLoading && (
                 <div className="loader-uploading">
@@ -186,8 +198,17 @@ const StationsList = () => {
             {!isLoading && <div className="stations-content">{renderStationsOverview()}</div>}
             <div id="e2e-createstation-modal">
                 <Modal
-                    header="Your station details"
-                    height="460px"
+                    header={
+                        <div className="modal-header">
+                            <div className="header-img-container">
+                                <img className="headerImage" src={stationImg} alt="stationImg" />
+                            </div>
+                            <p>Create new station</p>
+                            <label>A station is a distributed unit that stores the produced data.</label>
+                        </div>
+                    }
+                    height="540px"
+                    width="550px"
                     rBtnText="Add"
                     lBtnText="Cancel"
                     lBtnClick={() => {
@@ -200,9 +221,24 @@ const StationsList = () => {
                     open={modalIsOpen}
                     isLoading={creatingProsessd}
                 >
-                    <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                    <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
                 </Modal>
             </div>
+            <Modal
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                width="520px"
+                height="240px"
+                displayButtons={false}
+                clickOutside={() => modalDeleteFlip(false)}
+                open={modalDeleteIsOpen}
+            >
+                <DeleteItemsModal
+                    title="Are you sure you want to delete the selected stations?"
+                    desc="Deleting these stations means they will be permanently deleted."
+                    buttontxt="I understand, delete the selected stations"
+                    handleDeleteSelected={handleDeleteSelected}
+                />
+            </Modal>
         </div>
     );
 };

@@ -47,6 +47,9 @@ export const ApiEndpoints = {
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
     ACK_POISION_MESSAGE: '/stations/ackPoisonMessages',
     RESEND_POISION_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
+    USE_SCHEMA: '/stations/useSchema',
+    GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
+    REMOVE_SCHEMA_FROM_STATION: '/stations/removeSchemaFromStation',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
@@ -58,5 +61,22 @@ export const ApiEndpoints = {
     GET_CLUSTER_INFO: '/monitoring/getClusterInfo',
     GET_MAIN_OVERVIEW_DATA: '/monitoring/getMainOverviewData',
     GET_STATION_DATA: '/monitoring/getStationOverviewData',
-    GET_SYS_LOGS: '/monitoring/getSystemLogs'
+    GET_SYS_LOGS: '/monitoring/getSystemLogs',
+    DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
+
+    //Tags
+    GET_TAGS: '/tags/getTags',
+    GET_USED_TAGS: '/tags/getUsedTags',
+    REMOVE_TAG: '/tags/removeTag',
+    CREATE_NEW_TAG: '/tags/createNewTag',
+    UPDATE_TAGS_FOR_ENTITY: '/tags/updateTagsForEntity',
+
+    //Schemas
+    GET_ALL_SCHEMAS: '/schemas/getAllSchemas',
+    CREATE_NEW_SCHEMA: '/schemas/createNewSchema',
+    GET_SCHEMA_DETAILS: '/schemas/getSchemaDetails',
+    REMOVE_SCHEMA: '/schemas/removeSchema',
+    CREATE_NEW_VERSION: '/schemas/createNewVersion',
+    ROLL_BACK_VERSION: '/schemas/rollBackVersion',
+    VALIDATE_SCHEMA: '/schemas/validateSchema'
 };

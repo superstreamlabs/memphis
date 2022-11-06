@@ -20,7 +20,7 @@
 // SOFTWARE.
 
 import React, { useContext, useEffect, useState } from 'react';
-import consWaiting from '../../../../assets/lotties/consWaiting.json';
+import consWaiting from '../../../../assets/images/waitingForConsumer.svg';
 import ProduceConsumeData, { produceConsumeScreenEnum } from '../produceConsumeData';
 import { GetStartedStoreContext } from '..';
 
@@ -48,10 +48,19 @@ const ConsumeData = (props) => {
     }, []);
 
     return (
-        <div id="e2e-getstarted-step4">
+        <div className="produce-consume-data" id="e2e-getstarted-step4">
             <ProduceConsumeData
                 waitingImage={consWaiting}
-                waitingTitle={'Waiting to consume messages from the station'}
+                waitingTitle={
+                    <div>
+                        <p className="waiting-message">Waiting to consume messages from the station</p>
+                        <p className="description">
+                            Please run the copied code snippet to test your connectivity.
+                            <br />
+                            Make sure you the broker host address is available to your location
+                        </p>
+                    </div>
+                }
                 successfullTitle={'Success! You created your first consumer'}
                 languages={selectLngOption}
                 activeData={'connected_cgs'}

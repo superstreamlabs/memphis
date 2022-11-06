@@ -1,0 +1,39 @@
+.ant-picker-cell-selected {
+    .ant-picker-cell-inner {
+        background: #6557ff !important;
+        border-radius: 4px !important;
+    }
+}
+.ant-picker-cell-today {
+    .ant-picker-cell-inner::before {
+        border: 1px solid #6557ff !important;
+        border-radius: 4px !important;
+    }
+}
+
+.ant-picker-header {
+    date-picker-container .ant-picker-header-view {
+        font-weight: 600;
+    }
+    .ant-picker-header-view:hover {
+        color: #202223 !important;
+    }
+    button:hover {
+        color: #202223 !important;
+    }
+}
+.ant-picker-footer {
+    display: none;
+}
+
+.ant-picker-panel-container {
+    border-radius: 8px !important;
+}
+
+.ant-picker-focused {
+    box-shadow: none !important;
+}
+
+.date-picker-popup {
+    z-index: 9999;
+}

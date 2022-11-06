@@ -21,7 +21,16 @@
 // SOFTWARE.
 package server
 
+import (
+	"encoding/json"
+	"memphis-broker/models"
+)
+
 type simplifiedMsgHandler func(*client, string, string, []byte)
+
+type memphisResponse interface {
+	SetError(error)
+}
 
 type createStationRequest struct {
 	StationName       string `json:"name"`
@@ -37,11 +46,24 @@ type destroyStationRequest struct {
 	StationName string `json:"station_name"`
 }
 
-type createProducerRequest struct {
+type createProducerRequestV0 struct {
 	Name         string `json:"name"`
 	StationName  string `json:"station_name"`
 	ConnectionId string `json:"connection_id"`
 	ProducerType string `json:"producer_type"`
+}
+
+type createProducerRequestV1 struct {
+	Name           string `json:"name"`
+	StationName    string `json:"station_name"`
+	ConnectionId   string `json:"connection_id"`
+	ProducerType   string `json:"producer_type"`
+	RequestVersion int    `json:"req_version"`
+}
+
+type createProducerResponse struct {
+	SchemaUpdate models.ProducerSchemaUpdateInit `json:"schema_update"`
+	Err          string                          `json:"error"`
 }
 
 type destroyProducerRequest struct {
@@ -62,6 +84,10 @@ type createConsumerRequest struct {
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
+}
+
+func (cpr *createProducerResponse) SetError(err error) {
+	cpr.Err = err.Error()
 }
 
 func (s *Server) initializeSDKHandlers() {
@@ -92,37 +118,37 @@ func (s *Server) initializeSDKHandlers() {
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createStationDirect(c, reply, msg)
+		go s.createStationDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func destroyStationHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, subject, reply string, msg []byte) {
-		go s.removeStationDirect(reply, msg)
+		go s.removeStationDirect(reply, copyBytes(msg))
 	}
 }
 
 func createProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createProducerDirect(c, reply, msg)
+		go s.createProducerDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func destroyProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.destroyProducerDirect(c, reply, msg)
+		go s.destroyProducerDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func createConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createConsumerDirect(c, reply, msg)
+		go s.createConsumerDirect(c, reply, copyBytes(msg))
 	}
 }
 
 func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.destroyConsumerDirect(c, reply, msg)
+		go s.destroyConsumerDirect(c, reply, copyBytes(msg))
 	}
 }
 
@@ -131,5 +157,19 @@ func respondWithErr(s *Server, replySubject string, err error) {
 	if err != nil {
 		resp = []byte(err.Error())
 	}
-	s.Respond(replySubject, resp)
+	s.respondOnGlobalAcc(replySubject, resp)
+}
+
+func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
+	rawResp, err := json.Marshal(resp)
+	if err != nil {
+		serv.Errorf("response marshal error: " + err.Error())
+		return
+	}
+	s.respondOnGlobalAcc(replySubject, rawResp)
+}
+
+func respondWithRespErr(s *Server, replySubject string, err error, resp memphisResponse) {
+	resp.SetError(err)
+	respondWithResp(s, replySubject, resp)
 }

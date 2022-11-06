@@ -100,7 +100,6 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) db.DbInstance {
-
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
@@ -128,9 +127,13 @@ func runMemphis(s *server.Server) db.DbInstance {
 
 	go http_server.InitializeHttpServer(s)
 	s.ListenForPoisonMessages()
-	s.ListenForZombieConnCheckRequests()
-	go s.KillZombieResources()
+	err = s.ListenForZombieConnCheckRequests()
+	if err != nil {
+		s.Errorf("Failed subscribing for zombie conns check requests:" + " " + err.Error())
+		os.Exit(1)
+	}
 
+	go s.KillZombieResources()
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

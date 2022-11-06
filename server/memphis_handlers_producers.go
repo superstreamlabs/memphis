@@ -57,75 +57,60 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
-	var cpr createProducerRequest
-	if err := json.Unmarshal(msg, &cpr); err != nil {
-		s.Warnf("failed creating producer: %v", err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	name := strings.ToLower(cpr.Name)
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName) error {
+	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 
-	producerType := strings.ToLower(cpr.ProducerType)
+	producerType := strings.ToLower(pType)
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 
-	connectionIdObj, err := primitive.ObjectIDFromHex(cpr.ConnectionId)
+	connectionIdObj, err := primitive.ObjectIDFromHex(pConnectionId)
 	if err != nil {
 		serv.Warnf("Connection id is not valid")
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 	if !exist {
 		serv.Warnf("Connection id was not found")
-		respondWithErr(s, reply, errors.New("memphis: connection id was not found"))
-		return
+		return errors.New("memphis: connection id was not found")
 	}
 	if !connection.IsActive {
 		serv.Warnf("Connection is not active")
-		respondWithErr(s, reply, errors.New("memphis: connection id is not active"))
-		return
+		return errors.New("memphis: connection is not active")
 	}
 
-	stationName := strings.ToLower(cpr.StationName)
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := IsStationExist(pStationName)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("creating default station error: " + err.Error())
-			respondWithErr(s, reply, err)
-			return
+			return err
 		}
 
 		if created {
-			message := "Station " + stationName + " has been created"
+			message := "Station " + pStationName.Ext() + " has been created"
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				ID:            primitive.NewObjectID(),
-				StationName:   stationName,
+				StationName:   pStationName.Ext(),
 				Message:       message,
 				CreatedByUser: c.memphisInfo.username,
 				CreationDate:  time.Now(),
@@ -147,13 +132,11 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	exist, _, err = IsProducerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 	if exist {
 		serv.Warnf("Producer name has to be unique per station")
-		respondWithErr(s, reply, errors.New("memphis: producer name has to be unique per station"))
-		return
+		return errors.New("memphis: producer name has to be unique per station")
 	}
 
 	newProducer := models.Producer{
@@ -182,17 +165,16 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("CreateProducer error: " + err.Error())
-		respondWithErr(s, reply, err)
-		return
+		return err
 	}
 
-	if updateResults.MatchedCount > 0 {
+	if updateResults.MatchedCount == 0 {
 		message := "Producer " + name + " has been created"
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
+			StationName:   pStationName.Ext(),
 			Message:       message,
 			CreatedByUser: c.memphisInfo.username,
 			CreationDate:  time.Now(),
@@ -210,8 +192,61 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	respondWithErr(s, reply, nil)
-	return
+	return nil
+}
+
+func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
+	sn, err := StationNameFromStr(cpr.StationName)
+	if err != nil {
+		respondWithErr(s, reply, err)
+		return
+	}
+	err = s.createProducerDirectCommon(c, cpr.Name,
+		cpr.ProducerType, cpr.ConnectionId, sn)
+	respondWithErr(s, reply, err)
+}
+
+func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
+	var cpr createProducerRequestV1
+	var resp createProducerResponse
+
+	if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
+		var cprV0 createProducerRequestV0
+		if err := json.Unmarshal(msg, &cprV0); err != nil {
+			s.Errorf("failed creating producer: %v", err.Error())
+			respondWithRespErr(s, reply, err, &resp)
+			return
+		}
+		s.createProducerDirectV0(c, reply, cprV0)
+		return
+	}
+
+	sn, err := StationNameFromStr(cpr.StationName)
+	if err != nil {
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+
+	err = s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
+	if err != nil {
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+
+	schemaUpdate, err := getSchemaUpdateInitFromStation(sn)
+	if err == ErrNoSchema {
+		respondWithResp(s, reply, &resp)
+		return
+	}
+	if err != nil {
+		serv.Errorf("CreateProducer error: " + err.Error())
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+
+	resp.SchemaUpdate = *schemaUpdate
+
+	respondWithResp(s, reply, &resp)
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
@@ -225,7 +260,6 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		serv.Errorf("GetAllProducers error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -258,7 +292,6 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		return producers, producers, producers, err
 	}
@@ -318,7 +351,8 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 
-	exist, station, err := IsStationExist(body.StationName)
+	stationName, err := StationNameFromStr(body.StationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -339,7 +373,6 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
 		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
 	})
-
 	if err != nil {
 		serv.Errorf("GetAllProducersByStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -366,7 +399,14 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	stationName := strings.ToLower(dpr.StationName)
+
+	stationName, err := StationNameFromStr(dpr.StationName)
+	if err != nil {
+		serv.Errorf("DestroyProducer error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := IsStationExist(stationName)
 	if err != nil {
@@ -397,7 +437,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
-		StationName:   stationName,
+		StationName:   stationName.Ext(),
 		Message:       message,
 		CreatedByUser: c.memphisInfo.username,
 		CreationDate:  time.Now(),
@@ -415,7 +455,6 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {

@@ -5,12 +5,9 @@
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-
 // This license limiting reselling the software itself "AS IS".
-
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,15 +15,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
 import './style.scss';
-
 import { Tabs } from 'antd';
 import React from 'react';
 
-const CustomTabs = (props) => {
-    const { tabs, onChange, value, disabled } = props;
-
+const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
             <Tabs
@@ -36,7 +29,16 @@ const CustomTabs = (props) => {
                     return {
                         key: tab,
                         disabled: disabled,
-                        label: tab
+                        label: (
+                            <label className="tabs-name">
+                                {tab}{' '}
+                                {length && length[index] && (
+                                    <p className="badge">
+                                        <span>{length[index]}</span>
+                                    </p>
+                                )}
+                            </label>
+                        )
                     };
                 })}
                 disabled={disabled}

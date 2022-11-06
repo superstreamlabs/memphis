@@ -22,6 +22,8 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -32,10 +34,10 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -192,13 +194,15 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	consumersHandler := ConsumersHandler{S: mh.S}
 	auditLogsHandler := AuditLogsHandler{}
 	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
+	tagsHandler := TagsHandler{S: mh.S}
+	schemasHandler := SchemasHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 
-	stationName := strings.ToLower(body.StationName)
+	stationName, err := StationNameFromStr(body.StationName)
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())
@@ -218,7 +222,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(stationName, station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -259,18 +263,78 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	response := models.StationOverviewData{
-		ConnectedProducers:    connectedProducers,
-		DisconnectedProducers: disconnectedProducers,
-		DeletedProducers:      deletedProducers,
-		ConnectedCgs:          connectedCgs,
-		DisconnectedCgs:       disconnectedCgs,
-		DeletedCgs:            deletedCgs,
-		TotalMessages:         totalMessages,
-		AvgMsgSize:            avgMsgSize,
-		AuditLogs:             auditLogs,
-		Messages:              messages,
-		PoisonMessages:        poisonMessages,
+	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	var emptySchemaDetailsObj models.SchemaDetails
+	var response gin.H
+
+	//Check when the schema object in station is not empty
+	if station.Schema != emptySchemaDetailsObj {
+		var schema models.Schema
+		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		updatesAvailable := !schemaVersion.Active
+		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+
+		response = gin.H{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 schemaDetails,
+		}
+
+	} else {
+		var emptyResponse struct{}
+		response = gin.H{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 emptyResponse,
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -312,7 +376,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
 	}
 
-	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject)
+	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
 		serv.Errorf("GetSystemLogs error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -320,6 +384,32 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
+	const timeout = 20 * time.Second
+
+	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
+	if err != nil {
+		serv.Errorf("DownloadSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if err != nil {
+		serv.Errorf("DownloadSystemLogs error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	b := new(bytes.Buffer)
+	datawriter := bufio.NewWriter(b)
+
+	for _, log := range response.Logs {
+		_, _ = datawriter.WriteString(log.Data + "\n")
+	}
+
+	datawriter.Flush()
+	c.Writer.Write(b.Bytes())
 }
 
 func min(x, y uint64) uint64 {
@@ -333,7 +423,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 	timeout time.Duration,
 	fromLast bool,
 	lastKnownSeq uint64,
-	filterSubject string) (models.SystemLogsResponse, error) {
+	filterSubject string,
+	getAll bool) (models.SystemLogsResponse, error) {
 	uid := s.memphis.nuid.Next()
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 
@@ -345,8 +436,18 @@ func (s *Server) GetSystemLogs(amount uint64,
 	amount = min(streamInfo.State.Msgs, amount)
 	startSeq := lastKnownSeq - amount + 1
 
-	if fromLast {
-
+	if getAll {
+		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
+		startSeq = streamInfo.State.FirstSeq
+		amount = streamInfo.State.Msgs
+	} else if fromLast {
+		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+		if err != nil {
+			return models.SystemLogsResponse{}, err
+		}
 		startSeq = streamInfo.State.LastSeq - amount + 1
 
 		//handle uint wrap around
@@ -420,7 +521,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 cleanup:
 	timer.Stop()
 	sub.close()
-	err = s.RemoveConsumer(syslogsStreamName, durableName)
+	err = s.memphisRemoveConsumer(syslogsStreamName, durableName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -443,9 +544,15 @@ cleanup:
 		})
 	}
 
-	sort.Slice(resMsgs, func(i, j int) bool {
-		return resMsgs[j].TimeSent.Before(resMsgs[i].TimeSent)
-	})
+	if getAll {
+		sort.Slice(resMsgs, func(i, j int) bool {
+			return resMsgs[i].MessageSeq < resMsgs[j].MessageSeq
+		})
+	} else {
+		sort.Slice(resMsgs, func(i, j int) bool {
+			return resMsgs[i].MessageSeq > resMsgs[j].MessageSeq
+		})
+	}
 
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }

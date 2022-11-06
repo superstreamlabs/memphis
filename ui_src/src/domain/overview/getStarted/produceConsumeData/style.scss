@@ -1,48 +1,80 @@
 .create-produce-data {
-    height: calc(100%);
     position: relative;
+    height: 100%;
     margin-right: 20px;
     overflow-y: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
-   p{
-    margin: 0;
-    font-weight: 600;
-    font-size: 16px;
-   }
+
+    .image-waiting-successful {
+        margin-top: 10px;
+        margin-bottom: 15px;
+        width: 150px;
+        height: 150px;
+    }
+    .waiting-for-data-btn {
+        display: flex;
+        justify-content: center;
+        .waiting-for-data-space {
+            width: 20px;
+        }
+    }
+    p {
+        margin: 0;
+    }
+    .title {
+        font-weight: 600;
+        font-size: 16px;
+    }
+    .description {
+        font-weight: 400;
+        font-size: 12px;
+        color: #b4b4b4;
+    }
+    .waiting-message {
+        margin-bottom: 5px;
+    }
     .code-snippet {
         position: relative;
-        height: calc(100% - 30px);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        height: 100%;
         .code-example {
-            height: calc(100% - 170px);
             position: relative;
+            height: calc(100% - 200px);
             .code-content {
                 border: 1px solid var(--gray);
                 box-sizing: border-box;
                 border-radius: 4px;
                 overflow: auto;
                 position: relative;
-                height: calc(100% - 25px);
+                height: calc(100% - 50px);
+                display: flex;
+                align-items: flex-start;
                 p {
                     margin: 0;
                     white-space: pre-line;
+                }
+                img {
+                    padding-top: 5px;
                 }
             }
         }
     }
     .installation {
         .install-copy {
+            width: 450px;
             border: 1px solid var(--gray);
             box-sizing: border-box;
             border-radius: 4px;
             height: 50px;
             display: flex;
             align-items: center;
-            padding-right:3px
+            display: flex;
+            justify-content: space-between;
+            padding: 0px 10px;
         }
     }
 
@@ -68,6 +100,7 @@
 
     .data-waiting-container,
     .successfully-container {
+        height: calc(100% - 200px);
         .waiting-for-data-btn {
             display: flex;
             .waiting-for-data-space {
@@ -105,4 +138,9 @@
             box-shadow: none;
         }
     }
+}
+
+.produce-consume-data {
+    height: 100%;
+    position: relative;
 }

@@ -38,7 +38,11 @@ const initialState = {
     route: '',
     isAuthentication: false,
     analytics_modal: true,
-    socket: null
+    socket: null,
+    skipSignup: false,
+    createSchema: false,
+    domainList: [],
+    filteredList: []
 };
 
 const Store = ({ children }) => {

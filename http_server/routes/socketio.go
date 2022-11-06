@@ -22,6 +22,7 @@
 package routes
 
 import (
+	"memphis-broker/conf"
 	"memphis-broker/middlewares"
 	"memphis-broker/models"
 	"memphis-broker/server"
@@ -37,6 +38,7 @@ import (
 )
 
 var socketServer = socketio.NewServer(nil)
+var configuration = conf.GetConfig()
 
 func getMainOverviewData(h *server.Handlers) (models.MainOverviewData, error) {
 	stations, err := h.Stations.GetAllStationsDetails()
@@ -68,68 +70,131 @@ func getStationsOverviewData(h *server.Handlers) ([]models.ExtendedStationDetail
 	return stations, nil
 }
 
-func getStationOverviewData(stationName string, h *server.Handlers) (models.StationOverviewData, error) {
-	stationName = strings.ToLower(stationName)
-	exist, station, err := server.IsStationExist(stationName)
+func getSchemasOverviewData(h *server.Handlers) ([]models.ExtendedSchema, error) {
+	schemas, err := h.Schemas.GetAllSchemasDetails()
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return schemas, err
+	}
+	return schemas, nil
+}
+
+func getStationOverviewData(stationName string, h *server.Handlers) (map[string]any, error) {
+	sn, err := server.StationNameFromStr(stationName)
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	exist, station, err := server.IsStationExist(sn)
+	if err != nil {
+		return map[string]any{}, err
 	}
 	if !exist {
-		return models.StationOverviewData{}, errors.New("Station does not exist")
+		return map[string]any{}, errors.New("Station does not exist")
 	}
 
 	connectedProducers, disconnectedProducers, deletedProducers, err := h.Producers.GetProducersByStation(station)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(station)
+	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(sn, station)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
 	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
 	totalMessages, err := h.Stations.GetTotalMessages(station.Name)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
 	avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
 
 	messagesToFetch := 1000
 	messages, err := h.Stations.GetMessages(station, messagesToFetch)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
 
 	poisonMessages, err := h.PoisonMsgs.GetPoisonMsgsByStation(station)
 	if err != nil {
-		return models.StationOverviewData{}, err
+		return map[string]any{}, err
 	}
 
-	return models.StationOverviewData{
-		ConnectedProducers:    connectedProducers,
-		DisconnectedProducers: disconnectedProducers,
-		DeletedProducers:      deletedProducers,
-		ConnectedCgs:          connectedCgs,
-		DisconnectedCgs:       disconnectedCgs,
-		DeletedCgs:            deletedCgs,
-		TotalMessages:         totalMessages,
-		AvgMsgSize:            avgMsgSize,
-		AuditLogs:             auditLogs,
-		Messages:              messages,
-		PoisonMessages:        poisonMessages,
-	}, nil
+	tags, err := h.Tags.GetTagsByStation(station.ID)
+	if err != nil {
+		return map[string]any{}, err
+	}
+	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	schema, err := h.Schemas.GetSchemaByStationName(sn)
+
+	if err != nil && err != server.ErrNoSchema {
+		return map[string]any{}, err
+	}
+
+	var response map[string]any
+
+	if err == server.ErrNoSchema {
+		response = map[string]any{
+			"connected_producers":    connectedProducers,
+			"disconnected_producers": disconnectedProducers,
+			"deleted_producers":      deletedProducers,
+			"connected_cgs":          connectedCgs,
+			"disconnected_cgs":       disconnectedCgs,
+			"deleted_cgs":            deletedCgs,
+			"total_messages":         totalMessages,
+			"average_message_size":   avgMsgSize,
+			"audit_logs":             auditLogs,
+			"messages":               messages,
+			"poison_messages":        poisonMessages,
+			"tags":                   tags,
+			"leader":                 leader,
+			"followers":              followers,
+			"schema":                 struct{}{},
+		}
+		return response, nil
+	}
+
+	schemaVersion, err := h.Schemas.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+	if err != nil {
+		return map[string]any{}, err
+	}
+	updatesAvailable := !schemaVersion.Active
+	schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+
+	response = map[string]any{
+		"connected_producers":    connectedProducers,
+		"disconnected_producers": disconnectedProducers,
+		"deleted_producers":      deletedProducers,
+		"connected_cgs":          connectedCgs,
+		"disconnected_cgs":       disconnectedCgs,
+		"deleted_cgs":            deletedCgs,
+		"total_messages":         totalMessages,
+		"average_message_size":   avgMsgSize,
+		"audit_logs":             auditLogs,
+		"messages":               messages,
+		"poison_messages":        poisonMessages,
+		"tags":                   tags,
+		"leader":                 leader,
+		"followers":              followers,
+		"schema":                 schemaDetails,
+	}
+
+	return response, nil
 }
 
 func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
 
-	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "")
+	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "", false)
 }
 
 func ginMiddleware() gin.HandlerFunc {
@@ -186,8 +251,14 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		return "recv " + msg
 	})
 
+	socketServer.OnEvent("/api", "get_all_schemas_data", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("all_schemas_group")
+		return "recv " + msg
+	})
+
 	socketServer.OnError("/", func(s socketio.Conn, e error) {
-		serv.Warnf("An error occured during a socket connection " + e.Error())
+		serv.Warnf("An error occurred during a socket connection " + e.Error())
 	})
 
 	go socketServer.Serve()
@@ -209,6 +280,15 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 					serv.Errorf("Error while trying to get stations overview data - " + err.Error())
 				} else {
 					socketServer.BroadcastToRoom("/api", "all_stations_group", "stations_overview_data", data)
+				}
+			}
+
+			if socketServer.RoomLen("/api", "all_schemas_group") > 0 {
+				data, err := getSchemasOverviewData(h)
+				if err != nil {
+					serv.Errorf("Error while trying to get schemas overview data - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "all_schemas_group", "schemas_overview_data", data)
 				}
 			}
 
@@ -242,7 +322,6 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 						socketServer.BroadcastToRoom("/api", room, "poison_message_journey_data_"+poisonMsgId, data)
 					}
 				}
-
 			}
 		}
 	}()

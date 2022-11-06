@@ -25,29 +25,30 @@ import { Select } from 'antd';
 import React from 'react';
 
 import { getFontColor, getBackgroundColor, getBorderColor, getBoxShadows, getBorderRadius } from '../../utils/styleTemplates';
-import Arrow from '../../assets/images/arrow.svg';
+import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
 
 const { Option } = Select;
 
-const SelectComponent = (props) => {
-    const {
-        options = [],
-        width,
-        onChange,
-        colorType,
-        value,
-        backgroundColorType,
-        borderColorType,
-        dropdownClassName,
-        boxShadowsType,
-        radiusType,
-        size,
-        dropdownStyle,
-        height,
-        customOptions,
-        disabled
-    } = props;
-
+const SelectComponent = ({
+    options = [],
+    width,
+    onChange,
+    colorType,
+    value,
+    backgroundColorType,
+    borderColorType,
+    popupClassName,
+    boxShadowsType,
+    radiusType,
+    size,
+    dropdownStyle,
+    height,
+    customOptions,
+    disabled,
+    iconColor,
+    fontSize,
+    fontFamily
+}) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -57,6 +58,7 @@ const SelectComponent = (props) => {
     const borderColor = getBorderColor(borderColorType);
     const boxShadow = getBoxShadows(boxShadowsType);
     const borderRadius = getBorderRadius(radiusType);
+    const dropIconColor = getFontColor(iconColor || 'black');
 
     const fieldProps = {
         onChange: handleChange,
@@ -68,7 +70,9 @@ const SelectComponent = (props) => {
             boxShadow,
             borderColor,
             borderRadius,
-            height: height || '40px'
+            height: height || '40px',
+            fontFamily: fontFamily || 'InterMedium',
+            fontSize: fontSize || '14px'
         }
     };
 
@@ -78,15 +82,15 @@ const SelectComponent = (props) => {
                 {...fieldProps}
                 className="select"
                 size={size}
-                dropdownClassName={dropdownClassName}
+                popupClassName={popupClassName}
                 value={value}
-                suffixIcon={<img src={Arrow} alt="select-arrow" />}
+                suffixIcon={<ArrowDropDownRounded style={{ color: dropIconColor }} />}
                 dropdownStyle={dropdownStyle}
             >
                 {customOptions && options}
                 {!customOptions &&
                     options.map((option) => (
-                        <Option key={option?.id || option} disabled={option?.disabled || false}>
+                        <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
                             {option?.name || option}
                         </Option>
                     ))}

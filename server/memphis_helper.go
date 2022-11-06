@@ -46,6 +46,13 @@ const (
 	descrHdr  = "Description"
 )
 
+const (
+	syslogsStreamName  = "$memphis_syslogs"
+	syslogsInfoSubject = "info"
+	syslogsWarnSubject = "warn"
+	syslogsErrSubject  = "err"
+)
+
 // JetStream API request kinds
 const (
 	kindStreamInfo     = "$memphis_stream_info"
@@ -69,31 +76,38 @@ func (s *Server) MemphisInitialized() bool {
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
-		respCh <- msg
+		go func(msg []byte) {
+			respCh <- msg
+		}(copyBytes(msg))
 	}
 }
 
-func (s *Server) jsApiRequest(subject, kind string, msg []byte) ([]byte, error) {
+func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {
 	reply := s.getJsApiReplySubject()
 
-	timeout := time.After(20 * time.Second)
+	s.memphis.jsApiMu.Lock()
+	defer s.memphis.jsApiMu.Unlock()
+
+	timeout := time.After(30 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// send on golbal account
+	// send on global account
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
 
 	// wait for response to arrive
+	var rawResp []byte
 	select {
-	case rawResp := <-respCh:
+	case rawResp = <-respCh:
 		sub.close()
-		return rawResp, nil
 	case <-timeout:
 		sub.close()
-		return nil, fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
+		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
 	}
+
+	return json.Unmarshal(rawResp, resp)
 }
 
 func (s *Server) getJsApiReplySubject() string {
@@ -111,7 +125,7 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(station models.Station) error {
+func (s *Server) CreateStream(sn StationName, station models.Station) error {
 	var maxMsgs int
 	if station.RetentionType == "messages" && station.RetentionValue > 0 {
 		maxMsgs = station.RetentionValue
@@ -149,8 +163,8 @@ func (s *Server) CreateStream(station models.Station) error {
 
 	return s.
 		memphisAddStream(&StreamConfig{
-			Name:         station.Name,
-			Subjects:     []string{station.Name + ".>"},
+			Name:         sn.Intern(),
+			Subjects:     []string{sn.Intern() + ".>"},
 			Retention:    LimitsPolicy,
 			MaxConsumers: -1,
 			MaxMsgs:      int64(maxMsgs),
@@ -165,13 +179,6 @@ func (s *Server) CreateStream(station models.Station) error {
 			Duplicates:   dedupWindow,
 		})
 }
-
-const (
-	syslogsStreamName  = "$memphis_syslogs"
-	syslogsInfoSubject = "info"
-	syslogsWarnSubject = "warn"
-	syslogsErrSubject  = "err"
-)
 
 func (s *Server) memphisClusterReady() {
 	if !s.memphis.mcrReported {
@@ -215,7 +222,6 @@ func (s *Server) CreateSystemLogsStream() {
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
-
 	if err != nil {
 		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
 	}
@@ -234,18 +240,17 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 		return err
 	}
 
-	rawResp, err := s.jsApiRequest(requestSubject, kindCreateStream, request)
-	if err != nil {
-		return err
-	}
-
 	var resp JSApiStreamCreateResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err = jsApiRequest(s, requestSubject, kindCreateStream, request, &resp)
 	if err != nil {
 		return err
 	}
 
 	return resp.ToError()
+}
+
+func getInternalConsumerName(cn string) string {
+	return replaceDelimiters(cn)
 }
 
 func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station) error {
@@ -255,6 +260,8 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	} else {
 		consumerName = consumer.Name
 	}
+
+	consumerName = getInternalConsumerName(consumerName)
 
 	var maxAckTimeMs int64
 	if consumer.MaxAckTimeMs <= 0 {
@@ -270,13 +277,18 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		MaxMsgDeliveries = consumer.MaxMsgDeliveries
 	}
 
-	err := s.memphisAddConsumer(station.Name, &ConsumerConfig{
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return err
+	}
+
+	err = s.memphisAddConsumer(stationName.Intern(), &ConsumerConfig{
 		Durable:       consumerName,
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
 		MaxDeliver:    MaxMsgDeliveries,
-		FilterSubject: station.Name + ".final",
+		FilterSubject: stationName.Intern() + ".final",
 		ReplayPolicy:  ReplayInstant,
 		MaxAckPending: -1,
 		HeadersOnly:   false,
@@ -294,56 +306,41 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 
 	request := CreateConsumerRequest{Stream: streamName, Config: *cc}
 	rawRequest, err := json.Marshal(request)
-
 	if err != nil {
 		return err
 	}
-
-	rawResp, err := s.jsApiRequest(requestSubject, kindCreateConsumer, []byte(rawRequest))
-	if err != nil {
-		return err
-	}
-
 	var resp JSApiConsumerCreateResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err = jsApiRequest(s, requestSubject, kindCreateConsumer, []byte(rawRequest), &resp)
 	if err != nil {
-		s.Errorf("ConsumerCreate json response unmarshal error")
 		return err
 	}
 
 	return resp.ToError()
 }
 
-func (s *Server) RemoveConsumer(streamName string, cn string) error {
+func (s *Server) RemoveConsumer(stationName StationName, cn string) error {
+	cn = getInternalConsumerName(cn)
+	return s.memphisRemoveConsumer(stationName.Intern(), cn)
+}
+
+func (s *Server) memphisRemoveConsumer(streamName, cn string) error {
 	requestSubject := fmt.Sprintf(JSApiConsumerDeleteT, streamName, cn)
-
-	rawResp, err := s.jsApiRequest(requestSubject, kindDeleteConsumer, []byte(_EMPTY_))
-	if err != nil {
-		return err
-	}
-
 	var resp JSApiConsumerDeleteResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err := jsApiRequest(s, requestSubject, kindDeleteConsumer, []byte(_EMPTY_), &resp)
 	if err != nil {
-		s.Errorf("ConsumerDelete json response unmarshal error")
 		return err
 	}
 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(stationName, cgName string) (*ConsumerInfo, error) {
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName, cgName)
-
-	rawResp, err := s.jsApiRequest(requestSubject, kindConsumerInfo, []byte(_EMPTY_))
-	if err != nil {
-		return nil, err
-	}
+func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInfo, error) {
+	cgName = replaceDelimiters(cgName)
+	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
 
 	var resp JSApiConsumerInfoResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err := jsApiRequest(s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
 	if err != nil {
-		s.Errorf("ConsumerInfo json response unmarshal error")
 		return nil, err
 	}
 
@@ -358,23 +355,17 @@ func (s *Server) GetCgInfo(stationName, cgName string) (*ConsumerInfo, error) {
 func (s *Server) RemoveStream(streamName string) error {
 	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
 
-	rawResp, err := s.jsApiRequest(requestSubject, kindDeleteStream, []byte(_EMPTY_))
-	if err != nil {
-		return err
-	}
-
 	var resp JSApiStreamDeleteResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err := jsApiRequest(s, requestSubject, kindDeleteStream, []byte(_EMPTY_), &resp)
 	if err != nil {
-		s.Errorf("StreamDelete json response unmarshal error")
 		return err
 	}
 
 	return resp.ToError()
 }
 
-func (s *Server) GetTotalMessagesInStation(stationName string) (int, error) {
-	streamInfo, err := s.memphisStreamInfo(stationName)
+func (s *Server) GetTotalMessagesInStation(stationName StationName) (int, error) {
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
 	if err != nil {
 		return 0, err
 	}
@@ -399,19 +390,13 @@ func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
 	return messagesCounter, nil
 }
 
+// low level call, call only with internal station name (i.e stream name)!
 func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
-
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
 
-	rawResp, err := s.jsApiRequest(requestSubject, kindStreamInfo, []byte(_EMPTY_))
-	if err != nil {
-		return nil, err
-	}
-
 	var resp JSApiStreamInfoResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err := jsApiRequest(s, requestSubject, kindStreamInfo, []byte(_EMPTY_), &resp)
 	if err != nil {
-		s.Errorf("StreamInfo json response unmarshal error")
 		return nil, err
 	}
 
@@ -424,7 +409,12 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 }
 
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
-	streamInfo, err := s.memphisStreamInfo(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return 0, err
+	}
+
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
 	if err != nil || streamInfo.State.Bytes == 0 {
 		return 0, err
 	}
@@ -437,15 +427,9 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 
 	request := JSApiStreamListRequest{}
 	rawRequest, err := json.Marshal(request)
-	rawResp, err := s.jsApiRequest(requestSubject, kindStreamList, []byte(rawRequest))
-	if err != nil {
-		return nil, err
-	}
-
 	var resp JSApiStreamListResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 	if err != nil {
-		s.Errorf("StreamList json response unmarshal error")
 		return nil, err
 	}
 
@@ -458,7 +442,11 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 }
 
 func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
-	streamInfo, err := s.memphisStreamInfo(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return []models.MessageDetails{}, err
+	}
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
@@ -472,8 +460,8 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	msgs, err := s.memphisGetMsgs(station.Name+".final",
-		station.Name,
+	msgs, err := s.memphisGetMsgs(stationName.Intern()+".final",
+		stationName.Intern(),
 		startSequence,
 		messagesToFetch,
 		5*time.Second)
@@ -483,11 +471,23 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	}
 
 	for _, msg := range msgs {
-		hdr, err := DecodeHeader(msg.Header)
+		headersJson, err := DecodeHeader(msg.Header)
 		if err != nil {
 			return nil, err
 		}
-		if hdr["producedBy"] == "$memphis_dlq" { // skip poison messages which have been resent
+
+		connectionIdHeader := headersJson["$memphis_connectionId"]
+		producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
+
+		//This check for backward compatability
+		if connectionIdHeader == "" || producedByHeader == "" {
+			connectionIdHeader = headersJson["connectionId"]
+			producedByHeader = strings.ToLower(headersJson["producedBy"])
+			if connectionIdHeader == "" || producedByHeader == "" {
+				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			}
+		}
+		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
 			continue
 		}
 
@@ -495,13 +495,19 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		if len(data) > 100 { // get the first chars for preview needs
 			data = data[0:100]
 		}
+
+		// headersJson, err := getMessageHeaders(hdr)
+		// if err != nil {
+		// 	return []models.MessageDetails{}, err
+		// }
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(msg.Sequence),
 			Data:         data,
-			ProducedBy:   hdr["producedBy"],
-			ConnectionId: hdr["connectionId"],
+			ProducedBy:   producedByHeader,
+			ConnectionId: connectionIdHeader,
 			TimeSent:     msg.Time,
 			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
+			Headers:      headersJson,
 		})
 	}
 
@@ -601,7 +607,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 cleanup:
 	timer.Stop()
 	sub.close()
-	err = s.RemoveConsumer(streamName, durableName)
+	err = s.memphisRemoveConsumer(streamName, durableName)
 	if err != nil {
 		return nil, err
 	}
@@ -609,7 +615,30 @@ cleanup:
 	return msgs, nil
 }
 
-func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
+func (s *Server) GetMessage(stationName StationName, msgSeq uint64) (*StoredMsg, error) {
+	return s.memphisGetMessage(stationName.Intern(), msgSeq)
+}
+
+func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+	var followers []string
+	stationName, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return "", followers, err
+	}
+
+	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
+	if err != nil {
+		return "", followers, err
+	}
+
+	for _, replica := range streamInfo.Cluster.Replicas {
+		followers = append(followers, replica.Name)
+	}
+
+	return streamInfo.Cluster.Leader, followers, nil
+}
+
+func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
 	requestSubject := fmt.Sprintf(JSApiMsgGetT, streamName)
 
 	request := JSApiMsgGetRequest{Seq: msgSeq}
@@ -619,15 +648,9 @@ func (s *Server) GetMessage(streamName string, msgSeq uint64) (*StoredMsg, error
 		return nil, err
 	}
 
-	rawResp, err := s.jsApiRequest(requestSubject, kindGetMsg, rawRequest)
-	if err != nil {
-		return nil, err
-	}
-
 	var resp JSApiMsgGetResponse
-	err = json.Unmarshal(rawResp, &resp)
+	err = jsApiRequest(s, requestSubject, kindGetMsg, rawRequest, &resp)
 	if err != nil {
-		s.Errorf("MsgGet json response unmarshal error")
 		return nil, err
 	}
 
@@ -667,14 +690,25 @@ func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler)
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
-func (s *Server) Respond(reply string, msg []byte) {
+func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {
 	acc := s.GlobalAccount()
 	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
-func (s *Server) ResendPoisonMessage(subject string, data []byte) error {
-	hdr := map[string]string{"producedBy": "$memphis_dlq"}
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdr, data)
+func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error {
+	hdrs := make(map[string]string)
+	err := json.Unmarshal(headers, &hdrs)
+	if err != nil {
+		return err
+	}
+
+	hdrs["$memphis_producedBy"] = "$memphis_dlq"
+
+	if hdrs["producedBy"] != "" {
+		delete(hdrs, "producedBy")
+	}
+
+	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdrs, data)
 	return nil
 }
 

@@ -22,6 +22,7 @@
 package server
 
 import (
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 
 	"context"
@@ -42,7 +43,7 @@ var consumersHandler ConsumersHandler
 func handleConnectMessage(client *client) error {
 	splittedMemphisInfo := strings.Split(client.opts.Name, "::")
 	if len(splittedMemphisInfo) != 2 {
-		client.Errorf("handleConnectMessage: missing username or connectionId")
+		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
 	objIdString := splittedMemphisInfo[0]
@@ -54,9 +55,11 @@ func handleConnectMessage(client *client) error {
 		return err
 	}
 	if !exist {
+		client.Warnf("handleConnectMessage: User is not exist")
 		return errors.New("User is not exist")
 	}
 	if user.UserType != "root" && user.UserType != "application" {
+		client.Warnf("handleConnectMessage: Please use a user of type Root/Application and not Management")
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}
 
@@ -96,6 +99,17 @@ func handleConnectMessage(client *client) error {
 			return err
 		}
 	}
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if !shouldSendAnalytics {
+		splitted := strings.Split(client.opts.Lang, ".")
+		sdkName := splitted[len(splitted) - 1]
+		param := analytics.EventParam{
+			Name:  "sdk",
+			Value: sdkName,
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-connect-sdk")
+	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID}
 	return nil
@@ -128,19 +142,6 @@ func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, co
 	return nil
 }
 
-func (ch ConnectionsHandler) KillConnection(connectionId primitive.ObjectID) error {
-	_, err := connectionsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		serv.Errorf("KillConnection error: " + err.Error())
-		return err
-	}
-
-	return nil
-}
-
 func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
@@ -155,6 +156,10 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 }
 
 func (mci *memphisClientInfo) updateDisconnection() error {
+	if mci.connectionId.IsZero() {
+		return nil
+	}
+
 	ctx := context.TODO()
 	_, err := connectionsCollection.UpdateOne(ctx,
 		bson.M{"_id": mci.connectionId},
@@ -175,5 +180,6 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 
+	serv.Noticef("Client has been disconnected from Memphis")
 	return err
 }

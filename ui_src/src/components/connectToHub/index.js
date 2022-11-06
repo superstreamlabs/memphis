@@ -25,11 +25,11 @@ import DialogContent from '@material-ui/core/DialogContent';
 import { makeStyles } from '@material-ui/core/styles';
 import Dialog from '@material-ui/core/Dialog';
 import React, { useState } from 'react';
-import { Checkbox } from 'antd';
 
 import Close from '../../assets/images/close.svg';
 import Input from '../Input';
 import Button from '../button';
+import CheckboxComponent from '../checkBox';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -128,7 +128,7 @@ function ConnectToHub(props) {
                         </div>
 
                         <span className="remember-me-checkbox" onClick={handelChangeRememberMe}>
-                            <Checkbox checked={formFields.rememberMe} onChange={handelChangeRememberMe} name="checkedG" />
+                            <CheckboxComponent checked={formFields.rememberMe} id={'checkedG'} onChange={handelChangeRememberMe} name={'checkedG'} />
                             <p>Remember me</p>
                         </span>
                     </div>
