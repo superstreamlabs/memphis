@@ -182,12 +182,12 @@ function OverView() {
                         <Button
                             className="modal-btn"
                             width="160px"
-                            height="36px"
+                            height="34px"
                             placeholder={'Create new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
-                            fontSize="14px"
+                            fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
                             onClick={() => modalFlip(true)}

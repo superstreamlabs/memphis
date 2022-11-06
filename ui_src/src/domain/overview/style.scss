@@ -11,7 +11,7 @@
         flex-direction: column;
         padding: 20px;
         .header {
-            height: 110px;
+            height: 60px;
             width: 100%;
             min-width: 600px;
             display: flex;
@@ -72,6 +72,7 @@
             width: 100%;
             min-width: 600px;
             height: calc(100% - 110px);
+            margin-top:20px;
 
             .left-side {
                 width: 65%;

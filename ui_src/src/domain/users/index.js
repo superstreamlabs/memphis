@@ -115,12 +115,12 @@ function Users() {
                     <Button
                         className="modal-btn"
                         width="160px"
-                        height="36px"
+                        height="34px"
                         placeholder={'Add a new user'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
-                        fontSize="14px"
+                        fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
                         onClick={() => addUserModalFlip(true)}
