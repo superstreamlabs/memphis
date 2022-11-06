@@ -46,20 +46,20 @@
         }
 
         .button-container {
-            margin-top: 25px;
+            margin-top: 15px;
             display: flex;
             justify-content: center;
-            .placeholder-btn{
+            .placeholder-btn {
                 display: flex;
                 align-items: center;
-                p{
+                p {
                     margin: 0;
                     font-size: 12px;
                 }
-                svg{
+                svg {
                     width: 22px;
                     position: absolute;
-                    right: 10px;                    
+                    right: 10px;
                 }
             }
         }
@@ -76,15 +76,32 @@
             }
         }
     }
-    .form-fields {
-        z-index: 3;
+    .ant-form-item {
+        margin-bottom: 20px;
+        .form-fields {
+            z-index: 3;
+        }
+        .error-message {
+            margin-top: 10px;
+        }
     }
-    .error-message{
-        margin-top: 10px;
-    }
-    .version{
+    .signin-with-root {
+        cursor: pointer;
         display: flex;
-        p{
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 20px;
+        label {
+            cursor: pointer;
+            margin-right: 10px;
+        }
+    }
+    .signin-with-root:hover {
+        text-decoration: underline;
+    }
+    .version {
+        display: flex;
+        p {
             font-weight: 400;
             font-size: 12px;
             margin-bottom: 0;

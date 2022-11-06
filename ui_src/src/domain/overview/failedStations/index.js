@@ -23,6 +23,7 @@ import './style.scss';
 
 import React, { useContext } from 'react';
 import { Link, useHistory } from 'react-router-dom';
+import { KeyboardArrowRightRounded } from '@material-ui/icons';
 
 import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
@@ -61,15 +62,13 @@ const FailedStations = () => {
                                 <OverflowTip className="station-creation" text={parsingDate(station.creation_date)} width={'200px'}>
                                     {parsingDate(station.creation_date)}
                                 </OverflowTip>
-                                <span className="station-details" style={{ width: '120px' }}>
-                                    {numberWithCommas(station.total_messages)}
-                                </span>
-                                <span className="station-details" style={{ width: '120px' }}>
-                                    {numberWithCommas(station.posion_messages)}
-                                </span>
-                                <div className="staion-link" onClick={() => goToStation(station.name)}>
-                                    <span>View Station</span>
-                                    <img src={staionLink} />
+                                <span className="station-details centered">{numberWithCommas(station.total_messages)}</span>
+                                <span className="station-details centered">{numberWithCommas(station.posion_messages)}</span>
+                                <div className="link-wrapper" onClick={() => goToStation(station.name)}>
+                                    <div className="staion-link">
+                                        <span>View Station</span>
+                                        <KeyboardArrowRightRounded />
+                                    </div>
                                 </div>
                             </div>
                         );

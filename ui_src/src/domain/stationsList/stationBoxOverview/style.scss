@@ -10,26 +10,11 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
-    min-width:1000px;
+    min-width: 1390px;
     .data-labels {
         color: #84818a;
         font-size: 12px;
         font-family: 'InterSemiBold';
-    }
-    .retention {
-        color: #00A5FF;
-    }
-    .storage{
-        color: #FFA043;
-    }
-    .replicas {
-        color: var(--purple);
-    }
-    .total {
-        color: #20C9AC;
-    }
-    .poison {
-        color: #FF8C82;
     }
     .data-info {
         color: #2e2c34;
@@ -51,20 +36,33 @@
         }
     }
     .left-section {
-        .station-name {
-            font-size: 17px;
-            font-weight: 600;
+        width: 255px;
+        .check-box{
+            display: flex;
+            align-items: center;
             margin-bottom: 10px;
-            color: #2e2c34;
+            .station-name {
+                font-size: 17px;
+                font-weight: 600;
+                margin: 0;
+                margin-left: 25px;
+                color: #2e2c34;
+            }
         }
     }
     .middle-section {
         border-left: 1px solid #e9e9e9;
-        justify-content: space-between;
         padding-left: 20px;
         display: flex;
+        width: 310px;
         .station-created {
             margin-right: 15px;
+        }
+        .tags-list {
+            margin-bottom: 0px;
+            margin-left: 1px;
+            margin-top: 10px;
+            max-width: 230px;
         }
     }
     .right-section {
@@ -78,18 +76,36 @@
                 margin-right: 3px;
             }
         }
+        .station-actions{
+            display: flex;
+            width: 35px;
+            height: 100%;
+            align-items: center;
+            .action{
+                border: 1px solid #ECECEC;
+                border-radius: 8px;
+                width: 30px;
+                height: 30px;
+                justify-content:center;
+                cursor: pointer;
+                img{
+                    width: 15px;
+                }
+                display: none;
+            }
+            .action:hover{
+                opacity: 0.8;
+            }
+        }
     }
 
-    .threedots-menu {
-        margin-left: 30px;
-    }
-    .MuiSvgIcon-root {
-        color: #84818a;
-    }
 }
-
-.station-box-container:hover {
-    opacity: 0.8;
+.station-box-container:hover{
+   .action{
+       display: flex !important;
+   } 
 }
-
-
+.check-box-station{
+    position: absolute;
+    padding: 22px;
+}

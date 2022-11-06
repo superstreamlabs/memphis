@@ -5,27 +5,14 @@
     min-width: 700px;
     overflow: auto;
     height: 100%;
+
     .stations-details-header {
-        height: 75px;
-        display: flex;
-        justify-content: space-between;
-        .left-side {
-            .num-stations {
-                color: #b4b4b4;
-                font-weight: 400;
-                font-size: 24px;
-            }
-        }
         .right-side {
             display: flex;
             justify-content: flex-end;
-            align-items: center;
+            gap: 15px;
             .search-input-container {
                 margin-right: 0;
-            }
-            .filter-container {
-                margin-left: 15px;
-                margin-right: 15px;
             }
             .search-icon .anticon svg {
                 height: 16.5px;
@@ -38,6 +25,7 @@
         }
     }
     .stations-content {
+        margin-top: 20px;
         height: calc(100% - 80px);
         padding: 3px 3px 2px 3px;
         position: relative;

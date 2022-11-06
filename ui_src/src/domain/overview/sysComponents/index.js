@@ -34,7 +34,7 @@ const SysComponents = () => {
 
     return (
         <div className="overview-wrapper sys-components-container">
-            <span className="overview-components-header">System Components</span>
+            <span className="overview-components-header">System components</span>
             <div className="sys-components sys-components-header">
                 <p>Component</p>
                 <p>Pods</p>

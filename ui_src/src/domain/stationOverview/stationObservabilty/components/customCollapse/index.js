@@ -26,6 +26,7 @@ import { Collapse } from 'antd';
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
 import StatusIndication from '../../../../../components/indication';
 import Copy from '../../../../../components/copy';
+import OverflowTip from '../../../../../components/tooltip/overflowtip';
 
 const { Panel } = Collapse;
 
@@ -35,6 +36,32 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
         setActiveKey(key);
     };
 
+    const isJsonString = (str) => {
+        try {
+            JSON.parse(str);
+        } catch (e) {
+            return false;
+        }
+        return true;
+    };
+
+    const drawHeaders = (headers) => {
+        let obj = [];
+        for (const property in headers) {
+            obj.push(
+                <div className="headers-container">
+                    <p>{property}</p>
+                    <div className="copy-section">
+                        <Copy data={headers[property]}></Copy>
+                        <OverflowTip text={headers[property]} width={'calc(100% - 10px)'}>
+                            {headers[property]}
+                        </OverflowTip>
+                    </div>
+                </div>
+            );
+        }
+        return obj;
+    };
     return (
         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse">
             <Panel
@@ -52,8 +79,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
             >
                 {message ? (
                     <div className="message">
-                        {message && activeKey.length > 0 && <Copy data={data} />}
-                        <p>{data}</p>
+                        {header === 'Payload' && isJsonString(data) && <pre>{JSON.stringify(JSON.parse(data), null, 2)}</pre>}
+                        {header === 'Payload' && !isJsonString(data) && <p>{data}</p>}
+                        {header === 'Headers' && drawHeaders(data)}
                     </div>
                 ) : (
                     <>

@@ -21,10 +21,16 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 
+import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import LogsWrapper from './components/logsWrapper';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import { httpRequest } from '../../services/http';
+import { filterType, labelType } from '../../const/filterConsts';
+
+import Filter from '../../components/filter';
 
 const SysLogs = () => {
     const [state, dispatch] = useContext(Context);
@@ -33,11 +39,37 @@ const SysLogs = () => {
         dispatch({ type: 'SET_ROUTE', payload: 'logs' });
     }, []);
 
+    const downloadLogs = async () => {
+        try {
+            const response = await httpRequest('GET', `${ApiEndpoints.DOWNLOAD_SYS_LOGS}`, {}, {}, {}, true, 0);
+            const url = window.URL.createObjectURL(new Blob([response]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `logs.log`);
+            document.body.appendChild(link);
+            link.click();
+        } catch (error) {}
+    };
+
     return (
         <div className="logs-container">
-            <header is="3xd">
-                <h1 className="main-header-h1">System Logs</h1>
-            </header>
+            <div className="header-wraper">
+                <h1 className="main-header-h1">System Logs </h1>
+                <Button
+                    className="modal-btn"
+                    width="160px"
+                    height="36px"
+                    placeholder="Download logs"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="purple"
+                    fontSize="14px"
+                    fontWeight="600"
+                    aria-haspopup="true"
+                    onClick={downloadLogs}
+                />
+            </div>
+
             <LogsWrapper />
         </div>
     );

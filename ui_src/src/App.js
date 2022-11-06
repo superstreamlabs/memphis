@@ -36,6 +36,7 @@ import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SandboxLogin from './domain/sandboxLogin';
 import { useHistory } from 'react-router-dom';
+import SchemaManagment from './domain/schema';
 import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
@@ -140,19 +141,7 @@ const App = withRouter(() => {
                                 ></AppWrapper>
                             }
                         />
-                        <PrivateRoute
-                            exact
-                            path={pathDomains.settings}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <Settings />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
+                        <PrivateRoute exact path={pathDomains.settings} component={<AppWrapper content={<Settings />}></AppWrapper>} />
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}
@@ -187,6 +176,19 @@ const App = withRouter(() => {
                                     content={
                                         <div>
                                             <MessageJourney />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <PrivateRoute
+                            exact
+                            path={pathDomains.schemas}
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <SchemaManagment />
                                         </div>
                                     }
                                 ></AppWrapper>

@@ -6,8 +6,30 @@
         background: var(--purple);
         border-radius: 10px;
     }
+    .ant-tabs-tab .tabs-name {
+        cursor: pointer;
+    }
+    .ant-tabs-tab-disabled {
+        .tabs-name {
+            cursor:not-allowed
+        }
+    }
+    .tabs-name{
+        display: flex;
+        .badge {
+            background-color: #f7685b;
+            color: #ffffff;
+            font-size: 12px;
+            align-items: center;
+            border-radius: 50px;
+            margin: 0 5px;
+            padding: 0px 5px;
+        }
+    }
 
 }
+
 .hover .ant-tabs-tab:hover{
     color: var(--purple) !important;
 }
+

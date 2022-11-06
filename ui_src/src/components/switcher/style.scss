@@ -1,3 +1,6 @@
 .switch-button {
-    max-width:60px
+    max-width: 60px;
+    .ant-click-animating-node {
+        display: none;
+    }
 }

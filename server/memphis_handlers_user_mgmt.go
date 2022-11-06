@@ -163,6 +163,14 @@ func updateUserResources(user models.User) error {
 		return err
 	}
 
+	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
+		bson.M{"created_by_user": user.Username},
+		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -510,6 +518,10 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 		serv.Errorf("GetSignUpFlag error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent("", "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"exist": exist})
 }

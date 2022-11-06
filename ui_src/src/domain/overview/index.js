@@ -28,11 +28,14 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_WELCOME_MESSAGE
+    LOCAL_STORAGE_WELCOME_MESSAGE,
+    LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
-import CreateStationDetails from '../../components/createStationDetails';
+import CreateStationForm from '../../components/createStationForm';
+
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
@@ -60,18 +63,36 @@ const Mobile = ({ children }) => {
     return isMobile ? children : null;
 };
 
+const dataSentences = [
+    `“Data is the new oil” — Clive Humby`,
+    `“With data collection, ‘the sooner the better’ is always the best answer” — Marissa Mayer`,
+    `“Data are just summaries of thousands of stories – tell a few of those stories to help make the data meaningful” — Chip and Dan Heath`,
+    `“Data really powers everything that we do” — Jeff Weiner`,
+    `“Without big data, you are blind and deaf and in the middle of a freeway” — Geoffrey Moore`
+];
+
 function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
     const createStationRef = useRef(null);
-    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/1.svg'));
+    const [botUrl, SetBotUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [username, SetUsername] = useState('');
-    const [isLoading, setisLoading] = useState(false);
+    const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
 
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [allStations, setAllStations] = useState([]);
     const [showWelcome, setShowWelcome] = useState(false);
+
+    const [dataSentence, setDataSentence] = useState(dataSentences[0]);
+
+    const getRandomInt = (max) => {
+        return Math.floor(Math.random() * max);
+    };
+
+    const generateSentence = () => {
+        setDataSentence(dataSentences[getRandomInt(5)]);
+    };
 
     const getOverviewData = async () => {
         setisLoading(true);
@@ -86,17 +107,27 @@ function OverView() {
         }
     };
 
+    const getAllStations = async () => {
+        try {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
+            setAllStations(res);
+        } catch (err) {
+            return;
+        }
+    };
+
     useEffect(() => {
         getAllStations();
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
         setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
-        setBotImage(state?.userData?.avatar_id || localStorage.getItem(LOCAL_STORAGE_AVATAR_ID));
+        setBotImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         SetUsername(
             localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))
                 : capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME))
         );
+        generateSentence();
     }, []);
 
     useEffect(() => {
@@ -104,7 +135,6 @@ function OverView() {
             data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
             dispatch({ type: 'SET_MONITOR_DATA', payload: data });
         });
-
         setTimeout(() => {
             state.socket?.emit('register_main_overview_data');
             setisLoading(false);
@@ -115,23 +145,14 @@ function OverView() {
     }, [state.socket]);
 
     const setBotImage = (botId) => {
-        SetBotUrl(require(`../../assets/images/bots/${botId}.svg`));
+        SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
     const capitalizeFirst = (str) => {
         return str.charAt(0).toUpperCase() + str.slice(1);
     };
 
-    const getAllStations = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
-            setAllStations(res);
-        } catch (err) {
-            return;
-        }
-    };
-
-    const stationsOfUser = allStations.filter((station) => station.created_by_user === localStorage.getItem(LOCAL_STORAGE_USER_NAME));
+    const userStations = allStations?.filter((station) => station.created_by_user !== username);
     return (
         <div className="overview-container">
             {isLoading && (
@@ -139,7 +160,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-            {!isLoading && (
+            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || userStations?.length > 0) && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -150,40 +171,34 @@ function OverView() {
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 60 : 40}
                                     height={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    alt="bot"
+                                    alt="avatar"
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
-                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome Back, {username}</h1> : <h1>Welcome, {username}</h1>}
+                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome back, {username}</h1> : <h1>Welcome, {username}</h1>}
                                 {/* <p className="ok-status">You’re a memphis superhero! All looks good!</p> */}
                             </div>
                         </div>
                         <Button
                             className="modal-btn"
                             width="160px"
-                            height="36px"
+                            height="34px"
                             placeholder={'Create new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
-                            fontSize="14px"
+                            fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
                             onClick={() => modalFlip(true)}
                         />
                     </div>
                     <div className="overview-components">
-                        {stationsOfUser.length === 0 ? (
-                            <div className="left-side">
-                                <GetStarted />
-                            </div>
-                        ) : (
-                            <div className="left-side">
-                                <GenericDetails />
-                                <FailedStations />
-                                <Throughput />
-                            </div>
-                        )}
+                        <div className="left-side">
+                            <GenericDetails />
+                            <FailedStations />
+                            <Throughput />
+                        </div>
                         <div className="right-side">
                             <Resources />
                             <SysComponents />
@@ -191,9 +206,21 @@ function OverView() {
                     </div>
                 </div>
             )}
+            {!isLoading &&
+                (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') &&
+                userStations?.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
-                header="Your station details"
-                height="460px"
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={stationImg} alt="stationImg" />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
+                height="540px"
+                width="560px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {
@@ -206,7 +233,7 @@ function OverView() {
                 open={open}
                 isLoading={creatingProsessd}
             >
-                <CreateStationDetails createStationRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
             </Modal>
             <Modal
                 header={''}

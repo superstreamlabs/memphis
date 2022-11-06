@@ -236,6 +236,7 @@ const MessageJourney = () => {
                     ]
                 },
                 message: data.message?.data,
+                headers: data.message?.headers,
                 poisionedCGs: poisionedCGs
             };
             setMessageData(messageDetails);
@@ -257,7 +258,7 @@ const MessageJourney = () => {
             {!isLoading && (
                 <div className="message-journey-container">
                     <div className="bread-crumbs">
-                        <img src={BackIcon} onClick={() => returnBack()} />
+                        <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
                             {stationName} / Poision message #{messageId.substring(0, 5)}
                         </p>
@@ -281,6 +282,7 @@ const MessageJourney = () => {
                                                     stationName={stationName}
                                                     messageId={messageId}
                                                     message={messageData.message}
+                                                    headers={messageData.headers}
                                                     details={messageData.details}
                                                     processing={(status) => setProcessing(status)}
                                                     returnBack={() => returnBack()}

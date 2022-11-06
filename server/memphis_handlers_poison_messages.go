@@ -56,29 +56,36 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 
-	stationName := message["stream"].(string)
+	streamName := message["stream"].(string)
+	stationName := StationNameFromStreamName(streamName)
 	cgName := message["consumer"].(string)
+	cgName = revertDelimiters(cgName)
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
-	poisonMessageContent, err := s.GetMessage(stationName, uint64(messageSeq))
+	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
-	hdr, err := DecodeHeader(poisonMessageContent.Header)
+	headersJson, err := DecodeHeader(poisonMessageContent.Header)
 
 	if err != nil {
 		serv.Errorf(err.Error())
 		return
 	}
-	connectionIdHeader := hdr["connectionId"]
-	producedByHeader := hdr["producedBy"]
+	connectionIdHeader := headersJson["$memphis_connectionId"]
+	producedByHeader := headersJson["$memphis_producedBy"]
 
+	//This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
-		serv.Errorf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-		return
+		connectionIdHeader = headersJson["connectionId"]
+		producedByHeader = headersJson["producedBy"]
+		if connectionIdHeader == "" || producedByHeader == "" {
+			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			return
+		}
 	}
 
 	if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
@@ -98,10 +105,17 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		ConnectionId:  connId,
 	}
 
-	messagePayload := models.MessagePayload{
+	var headers []models.MsgHeader
+	for key, value := range headersJson {
+		header := models.MsgHeader{HeaderKey: key, HeaderValue: value}
+		headers = append(headers, header)
+	}
+
+	messagePayload := models.MessagePayloadDb{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
+		Headers:  headers,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
@@ -109,7 +123,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		DeliveriesCount: int(deliveriesCount),
 	}
 	filter := bson.M{
-		"station_name":      stationName,
+		"station_name":      stationName.Ext(),
 		"message_seq":       int(messageSeq),
 		"producer.name":     producedByHeader,
 		"message.time_sent": poisonMessageContent.Time,
@@ -126,8 +140,9 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightPoisonMessage, error) {
+func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) ([]models.LightPoisonMessageResponse, error) {
 	poisonMessages := make([]models.LightPoisonMessage, 0)
+	poisonMessagesResponse := make([]models.LightPoisonMessageResponse, 0)
 
 	findOptions := options.Find()
 	findOptions.SetSort(bson.M{"creation_date": -1})
@@ -136,20 +151,29 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 		"station_name": station.Name,
 	}, findOptions)
 	if err != nil {
-		return poisonMessages, err
+		return []models.LightPoisonMessageResponse{}, err
 	}
 
 	if err = cursor.All(context.TODO(), &poisonMessages); err != nil {
-		return poisonMessages, err
+		return []models.LightPoisonMessageResponse{}, err
 	}
 
 	for i, msg := range poisonMessages {
 		if len(msg.Message.Data) > 100 {
 			poisonMessages[i].Message.Data = msg.Message.Data[0:100]
 		}
-	}
 
-	return poisonMessages, nil
+		msg := models.MessagePayload{
+			TimeSent: poisonMessages[i].Message.TimeSent,
+			Size:     poisonMessages[i].Message.Size,
+			Data:     poisonMessages[i].Message.Data,
+		}
+		poisonMessagesResponse = append(poisonMessagesResponse, models.LightPoisonMessageResponse{
+			ID:      poisonMessages[i].ID,
+			Message: msg,
+		})
+	}
+	return poisonMessagesResponse, nil
 }
 
 func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string) (int, error) {
@@ -157,7 +181,6 @@ func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string)
 	count, err := poisonMessagesCollection.CountDocuments(context.TODO(), bson.M{
 		"station_name": stationName,
 	})
-
 	if err != nil {
 		return int(count), err
 	}
@@ -184,9 +207,9 @@ func RemovePoisonMsgsByStation(stationName string) error {
 	return nil
 }
 
-func RemovePoisonedCg(stationName, cgName string) error {
+func RemovePoisonedCg(stationName StationName, cgName string) error {
 	_, err := poisonMessagesCollection.UpdateMany(context.TODO(),
-		bson.M{"station_name": stationName},
+		bson.M{"station_name": stationName.Ext()},
 		bson.M{"$pull": bson.M{"poisoned_cgs": bson.M{"cg_name": cgName}}},
 	)
 	if err != nil {
@@ -207,10 +230,10 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	return int(count), nil
 }
 
-func GetPoisonedCgsByMessage(stationName string, message models.MessageDetails) ([]models.PoisonedCg, error) {
+func GetPoisonedCgsByMessage(stationNameExt string, message models.MessageDetails) ([]models.PoisonedCg, error) {
 	var poisonMessage models.PoisonMessage
 	err := poisonMessagesCollection.FindOne(context.TODO(), bson.M{
-		"station_name":      stationName,
+		"station_name":      stationNameExt,
 		"message_seq":       message.MessageSeq,
 		"producer.name":     message.ProducedBy,
 		"message.time_sent": message.TimeSent,

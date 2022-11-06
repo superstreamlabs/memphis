@@ -20,6 +20,8 @@
 // SOFTWARE.
 
 const Reducer = (state, action) => {
+    let index;
+    let updateState = state?.domainList;
     switch (action.type) {
         case 'SET_USER_DATA':
             return {
@@ -56,7 +58,6 @@ const Reducer = (state, action) => {
                 ...state,
                 monitor_data: action.payload
             };
-
         case 'SET_AVATAR_ID':
             let newUserData = state.userData;
             newUserData.avatar_id = action.payload;
@@ -68,6 +69,46 @@ const Reducer = (state, action) => {
             return {
                 ...state,
                 socket: action.payload
+            };
+        case 'SKIP_SIGNUP':
+            return {
+                ...state,
+                skipSignup: action.payload
+            };
+        case 'SET_DOMAIN_LIST':
+            return {
+                ...state,
+                domainList: action.payload
+            };
+        case 'SET_FILTERED_LIST':
+            return {
+                ...state,
+                filteredList: action.payload
+            };
+        case 'SET_FILTERED_OPTION':
+            return {
+                ...state,
+                FilterOption: action.payload
+            };
+        case 'SET_CREATE_SCHEMA':
+            return {
+                ...state,
+                createSchema: action.payload
+            };
+
+        case 'SET_SCHEMA_TAGS':
+            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateState[index].tags = action.payload.tags;
+            return {
+                ...state,
+                domainList: updateState
+            };
+        case 'SET_UPDATE_SCHEMA':
+            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateState[index] = action.payload.schemaDetails;
+            return {
+                ...state,
+                domainList: updateState
             };
 
         default:

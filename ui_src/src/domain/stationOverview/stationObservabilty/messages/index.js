@@ -29,7 +29,6 @@ import { Checkbox, Space } from 'antd';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
@@ -39,6 +38,7 @@ import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
+import CheckboxComponent from '../../../../components/checkBox';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -57,10 +57,10 @@ const Messages = () => {
     const history = useHistory();
 
     useEffect(() => {
-        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 'All')) {
+        if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 'All') && selectedRowIndex === 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, false);
         }
-        if (tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+        if (tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && selectedRowIndex === 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, false);
         }
     }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages]);
@@ -142,6 +142,7 @@ const Messages = () => {
                     ]
                 },
                 message: data.message?.data,
+                headers: data.message?.headers,
                 poisionedCGs: poisionedCGs
             };
             setMessageDetails(messageDetails);
@@ -279,6 +280,7 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
+                    length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
                     disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
                 ></CustomTabs>
             </div>
@@ -310,6 +312,7 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
@@ -321,7 +324,8 @@ const Messages = () => {
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
-                            <Checkbox checked={isCheckAll} id="selectAll" onChange={onCheckedAll} name="selectAll" />
+                            <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
+
                             <p>Message</p>
                         </div>
                         <p className="right-coulmn">Details</p>
@@ -336,8 +340,7 @@ const Messages = () => {
                                         onClick={() => onSelectedRow(true, message._id, id)}
                                     >
                                         {tabValue === 'Dead-letter' && (
-                                            <Checkbox
-                                                key={message._id}
+                                            <CheckboxComponent
                                                 checked={isCheck.includes(message._id)}
                                                 id={message._id}
                                                 onChange={handleCheckedClick}
@@ -355,6 +358,7 @@ const Messages = () => {
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
                             </div>
@@ -380,10 +384,10 @@ const Messages = () => {
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder">
-                    <img width={100} src={waitingMessages} />
+                    <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
                     <span className="des">Create your 1st producer and start producing data.</span>
-                    {process.env.REACT_APP_SANDBOX_ENV && (
+                    {process.env.REACT_APP_SANDBOX_ENV && stationName !== 'demo-app' && (
                         <a className="explore-button" href={`${pathDomains.stations}/demo-app`} target="_parent">
                             Explore demo
                         </a>

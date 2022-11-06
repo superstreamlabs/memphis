@@ -137,7 +137,7 @@ function HubMarketplace(props) {
             <div className="functions-modal-header">
                 <div>
                     <label className="visit-hub">Visit hub</label>
-                    <img src={Seperator} alt="|" width="20" height="20" className="seperator" />
+                    <img src={Seperator} alt="seperator" width="20" height="20" className="seperator" />
                     {signedToHub ? (
                         <>
                             <img src={Connect} alt="connect to hub" width="20" height="20" className="pointer" />

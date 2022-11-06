@@ -20,6 +20,7 @@
 // SOFTWARE.
 
 const Reducer = (stationState, action) => {
+    let updatedSocketState = stationState?.stationSocketData;
     switch (action.type) {
         case 'SET_STATION_META_DATA':
             return {
@@ -32,11 +33,22 @@ const Reducer = (stationState, action) => {
                 stationSocketData: action.payload
             };
         case 'SET_POISINS_MESSAGES':
-            let newState = stationState.stationSocketData;
-            newState.poison_messages = action.payload;
+            updatedSocketState.poison_messages = action.payload;
             return {
                 ...stationState,
-                stationSocketData: newState
+                stationSocketData: updatedSocketState
+            };
+        case 'SET_TAGS':
+            updatedSocketState.tags = action.payload;
+            return {
+                ...stationState,
+                stationSocketData: updatedSocketState
+            };
+        case 'SET_SCHEMA':
+            updatedSocketState.schema = action.payload;
+            return {
+                ...stationState,
+                stationSocketData: updatedSocketState
             };
         default:
             return stationState;

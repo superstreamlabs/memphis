@@ -19,19 +19,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import './style.scss';
+
 import React, { useState, useEffect, useContext } from 'react';
 import Lottie from 'lottie-react';
-import { CopyBlock, atomOneLight } from 'react-code-blocks';
+
 import SelectComponent from '../../../../components/select';
 import Button from '../../../../components/button';
-import successProdCons from '../../../../assets/lotties/successProdCons.json';
+import successProd from '../../../../assets/images/dataProduced.svg';
+import successCons from '../../../../assets/images/stationsIconActive.svg';
 import { GetStartedStoreContext } from '..';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import './style.scss';
 import TitleComponent from '../../../../components/titleComponent';
 import { CODE_EXAMPLE } from '../../../../const/SDKExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
+import Copy from '../../../../components/copy';
+import Editor from '@monaco-editor/react';
 
 export const produceConsumeScreenEnum = {
     DATA_SNIPPET: 0,
@@ -70,10 +74,10 @@ const ProduceConsumeData = (props) => {
         codeEx.consumer = codeEx.consumer.replaceAll('<memphis-host>', host);
         codeEx.producer = codeEx.producer.replaceAll('<application type username>', getStartedState?.username);
         codeEx.consumer = codeEx.consumer.replaceAll('<application type username>', getStartedState?.username);
-        codeEx.producer = codeEx.producer.replaceAll('<connection_token>', getStartedState?.connectionCreds);
-        codeEx.consumer = codeEx.consumer.replaceAll('<connection_token>', getStartedState?.connectionCreds);
-        codeEx.producer = codeEx.producer.replaceAll('<station_name>', getStartedState?.stationName);
-        codeEx.consumer = codeEx.consumer.replaceAll('<station_name>', getStartedState?.stationName);
+        codeEx.producer = codeEx.producer.replaceAll('<broker-token>', getStartedState?.connectionCreds);
+        codeEx.consumer = codeEx.consumer.replaceAll('<broker-token>', getStartedState?.connectionCreds);
+        codeEx.producer = codeEx.producer.replaceAll('<station-name>', getStartedState?.stationName);
+        codeEx.consumer = codeEx.consumer.replaceAll('<station-name>', getStartedState?.stationName);
         setCodeExample(codeEx);
     };
 
@@ -149,7 +153,7 @@ const ProduceConsumeData = (props) => {
             {currentPhase === produceConsumeScreenEnum['DATA_SNIPPET'] && (
                 <div className="code-snippet">
                     <div className="lang">
-                        <p>Language</p>
+                        <p className="title">Language</p>
                         <SelectComponent
                             initialValue={langSelected}
                             value={langSelected}
@@ -157,81 +161,159 @@ const ProduceConsumeData = (props) => {
                             backgroundColorType="none"
                             borderColorType="gray"
                             radiusType="semi-round"
-                            width="450px"
+                            width="250px"
                             height="50px"
                             options={props.languages}
                             onChange={(e) => handleSelectLang(e)}
-                            dropdownClassName="select-options"
+                            popupClassName="select-options"
                         />
                     </div>
                     <div className="installation">
-                        <p>Installation</p>
+                        <p className="title">Installation</p>
                         <div className="install-copy">
-                            <CopyBlock text={CODE_EXAMPLE[langSelected].installation} showLineNumbers={false} theme={atomOneLight} wrapLines={true} codeBlock />
+                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="code-example">
-                        <p>{props.produce ? 'Produce data' : 'Consume data'}</p>
+                        {props.produce ? (
+                            <div>
+                                <p className="title">Code snippet for producing data</p>
+                                <p className="description">Just copy and paste the following code to your preferred IDE</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="title">Code snippet for consuming data</p>
+                                <p className="description">Just copy and paste the following code to your preferred IDE</p>
+                            </div>
+                        )}
                         <div className="code-content">
-                            <CopyBlock
+                            <Editor
+                                options={{
+                                    minimap: { enabled: false },
+                                    scrollbar: { verticalScrollbarSize: 0 },
+                                    scrollBeyondLastLine: false,
+                                    roundedSelection: false,
+                                    formatOnPaste: true,
+                                    formatOnType: true,
+                                    readOnly: true,
+                                    fontSize: '14px'
+                                }}
                                 language={CODE_EXAMPLE[langSelected].langCode}
-                                text={props.produce ? codeExample.producer : codeExample.consumer}
-                                showLineNumbers={true}
-                                theme={atomOneLight}
-                                wrapLines={true}
-                                codeBlock
+                                height="calc(100% - 10px)"
+                                width="calc(100% - 25px)"
+                                value={props.produce ? codeExample.producer : codeExample.consumer}
                             />
+                            <Copy data={props.produce ? codeExample.producer : codeExample.consumer} />
                         </div>
                     </div>
                 </div>
             )}
             {currentPhase === produceConsumeScreenEnum['DATA_WAITING'] && (
-                <div className="data-waiting-container">
-                    <Lottie className="image-waiting-successful" animationData={waitingImage} loop={true} />
-                    <TitleComponent headerTitle={waitingTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
-                    <div className="waiting-for-data-btn">
-                        <Button
-                            width="129px"
-                            height="40px"
-                            placeholder="Back"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="black"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            marginBottom="3px"
-                            onClick={() => {
-                                clearInterval(intervalStationDetails);
-                                screen(produceConsumeScreenEnum['DATA_SNIPPET']);
-                            }}
+                <div className="code-snippet">
+                    <div className="lang">
+                        <p className="title">Language</p>
+                        <SelectComponent
+                            initialValue={langSelected}
+                            value={langSelected}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            radiusType="semi-round"
+                            width="250px"
+                            height="50px"
+                            options={props.languages}
+                            onChange={(e) => handleSelectLang(e)}
+                            dropdownClassName="select-options"
+                            disabled
                         />
-                        <div className="waiting-for-data-space"></div>
-                        <div id="e2e-getstarted-skip">
+                    </div>
+                    <div className="installation">
+                        <p className="title">Installation</p>
+                        <div className="install-copy">
+                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
+                        </div>
+                    </div>
+                    <div className="data-waiting-container">
+                        <img className="image-waiting-successful" src={waitingImage} alt={'waitingImage'} />
+                        <TitleComponent headerTitle={waitingTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
+                        <div className="waiting-for-data-btn">
                             <Button
                                 width="129px"
                                 height="40px"
-                                placeholder="Skip"
-                                colorType="black"
+                                placeholder="Back"
+                                colorType="white"
                                 radiusType="circle"
-                                backgroundColorType="white"
-                                border="gray-light"
+                                backgroundColorType="black"
+                                border="gray"
                                 fontSize="14px"
                                 fontWeight="bold"
                                 marginBottom="3px"
                                 onClick={() => {
                                     clearInterval(intervalStationDetails);
-                                    getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
-                                    getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+                                    screen(produceConsumeScreenEnum['DATA_SNIPPET']);
                                 }}
                             />
+                            <div className="waiting-for-data-space"></div>
+                            <div id="e2e-getstarted-skip">
+                                <Button
+                                    width="129px"
+                                    height="40px"
+                                    placeholder="Skip"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    border="gray"
+                                    fontSize="14px"
+                                    fontWeight="bold"
+                                    marginBottom="3px"
+                                    onClick={() => {
+                                        clearInterval(intervalStationDetails);
+                                        getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
+                                        getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
             {currentPhase === produceConsumeScreenEnum['DATA_RECIEVED'] && (
-                <div className="successfully-container">
-                    <Lottie className="image-waiting-successful" animationData={successProdCons} loop={true} />
-                    <TitleComponent headerTitle={successfullTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
+                <div className="code-snippet">
+                    <div className="lang">
+                        <p className="title">Language</p>
+                        <SelectComponent
+                            initialValue={langSelected}
+                            value={langSelected}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            radiusType="semi-round"
+                            width="250px"
+                            height="50px"
+                            options={props.languages}
+                            onChange={(e) => handleSelectLang(e)}
+                            dropdownClassName="select-options"
+                            disabled
+                        />
+                    </div>
+                    <div className="installation">
+                        <p className="title">Installation</p>
+                        <div className="install-copy">
+                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
+                        </div>
+                    </div>
+                    <div className="successfully-container">
+                        {props.produce ? (
+                            <img className="image-waiting-successful" src={successProd} alt="successProd" />
+                        ) : (
+                            <img className="image-waiting-successful" src={successCons} alt="successCons" />
+                        )}
+
+                        <TitleComponent headerTitle={successfullTitle} typeTitle="sub-header" style={{ header: { fontSize: '18px' } }}></TitleComponent>
+                    </div>
                 </div>
             )}
         </div>

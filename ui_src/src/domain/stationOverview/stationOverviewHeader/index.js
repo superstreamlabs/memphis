@@ -22,9 +22,8 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { InfoOutlined } from '@material-ui/icons';
+import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
@@ -34,8 +33,14 @@ import { Context } from '../../../hooks/store';
 import Modal from '../../../components/modal';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import SdkExample from '../sdkExsample';
-import Auditing from '../auditing';
+import SdkExample from '../components/sdkExsample';
+import Auditing from '../components/auditing';
+import TagsList from '../../../components/tagList';
+import { httpRequest } from '../../../services/http';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import VersionBadge from '../../../components/versionBadge';
+import UseSchemaModal from '../components/useSchemaModal';
+import UpdateSchemaModal from '../components/updateSchemaModal';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -44,6 +49,8 @@ const StationOverviewHeader = () => {
     const [retentionValue, setRetentionValue] = useState('');
     const [sdkModal, setSdkModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
+    const [useSchemaModal, setUseSchemaModal] = useState(false);
+    const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -65,11 +72,42 @@ const StationOverviewHeader = () => {
         history.push(pathDomains.stations);
     };
 
+    const updateTags = (tags) => {
+        stationDispatch({ type: 'SET_TAGS', payload: tags });
+    };
+
+    const removeTag = async (tagName) => {
+        try {
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'station', entity_name: stationState?.stationMetaData?.name });
+            let tags = stationState?.stationSocketData?.tags;
+            let updatedTags = tags.filter((tag) => tag.name !== tagName);
+            stationDispatch({ type: 'SET_TAGS', payload: updatedTags });
+        } catch (error) {}
+    };
+
+    const setSchema = (schema) => {
+        stationDispatch({ type: 'SET_SCHEMA', payload: schema });
+    };
     return (
         <div className="station-overview-header">
             <div className="title-wrapper">
                 <div className="station-details">
-                    <h1 className="station-name">{stationState?.stationMetaData?.name}</h1>
+                    <div className="station-name">
+                        <h1>{stationState?.stationMetaData?.name}</h1>
+                        <TagsList
+                            tagsToShow={3}
+                            className="tags-list"
+                            tags={stationState?.stationSocketData?.tags}
+                            addNew={true}
+                            editable={true}
+                            handleDelete={(tag) => removeTag(tag)}
+                            entityType={'station'}
+                            entityName={stationState?.stationMetaData?.name}
+                            handleTagsUpdate={(tags) => {
+                                updateTags(tags);
+                            }}
+                        />
+                    </div>
                     <span className="created-by">
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
                     </span>
@@ -91,15 +129,79 @@ const StationOverviewHeader = () => {
             </div>
             <div className="details">
                 <div className="main-details">
-                    <p>
-                        <b>Retention:</b> {retentionValue}
-                    </p>
-                    <p>
-                        <b>Replicas:</b> {stationState?.stationMetaData?.replicas}
-                    </p>
-                    <p>
-                        <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
-                    </p>
+                    <div className="left-side">
+                        <p>
+                            <b>Retention:</b> {retentionValue}
+                        </p>
+                        <p>
+                            <b>Replicas:</b> {stationState?.stationMetaData?.replicas}
+                        </p>
+                        <p>
+                            <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
+                        </p>
+                    </div>
+                    {stationState?.stationSocketData?.schema === undefined || Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
+                        <div className="schema-details sd-center">
+                            <div className="add-new">
+                                <Button
+                                    width="120px"
+                                    height="25px"
+                                    placeholder={
+                                        <div className="use-schema-button">
+                                            <Add />
+                                            <p>Attach schema</p>
+                                        </div>
+                                    }
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => setUseSchemaModal(true)}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="schema-details sd-flex">
+                            <div className="title-and-badge">
+                                <p className="title">Schema</p>
+                                {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates available" active={false} />}
+                                {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updated" active={true} />}
+                            </div>
+                            <div className="name-and-version">
+                                <p>{stationState?.stationSocketData?.schema?.name}</p>
+                                <FiberManualRecord />
+                                <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
+                            </div>
+                            <div className="buttons">
+                                <Button
+                                    width="80px"
+                                    minWidth="80px"
+                                    height="16px"
+                                    placeholder="Edit / Detach"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="10px"
+                                    fontFamily="InterMedium"
+                                    onClick={() => setUseSchemaModal(true)}
+                                />
+                                {stationState?.stationSocketData?.schema?.updates_available && (
+                                    <Button
+                                        width="80px"
+                                        height="16px"
+                                        placeholder="Update now"
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="10px"
+                                        fontFamily="InterMedium"
+                                        onClick={() => setUpdateSchemaModal(true)}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="icons-wrapper">
                     <div className="details-wrapper">
@@ -111,7 +213,7 @@ const StationOverviewHeader = () => {
                             <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
-                    <TooltipComponent text="Include extra bytes added by memphis." width={'220px'} cursor="pointer">
+                    <TooltipComponent text="Gross size. Payload + headers + Memphis metadata" width={'220px'} cursor="pointer">
                         <div className="details-wrapper average">
                             <div className="icon">
                                 <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
@@ -161,12 +263,12 @@ const StationOverviewHeader = () => {
                                 setSdkModal(true);
                             }}
                         >
-                            View Details {'>'}
+                            View details {'>'}
                         </span>
                     </div>
                     <div className="audit">
                         <p>Audit</p>
-                        <span onClick={() => setAuditModal(true)}>View Details {'>'}</span>
+                        <span onClick={() => setAuditModal(true)}>View details {'>'}</span>
                     </div>
                 </div>
                 <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
@@ -190,6 +292,45 @@ const StationOverviewHeader = () => {
                     hr={false}
                 >
                     <Auditing />
+                </Modal>
+                <Modal
+                    header="Attach schema"
+                    displayButtons={false}
+                    height="400px"
+                    width="352px"
+                    clickOutside={() => setUseSchemaModal(false)}
+                    open={useSchemaModal}
+                    hr={true}
+                    className="use-schema-modal"
+                >
+                    <UseSchemaModal
+                        schemaSelected={stationState?.stationSocketData?.schema?.name || ''}
+                        stationName={stationState?.stationMetaData?.name}
+                        handleSetSchema={(schema) => {
+                            setSchema(schema);
+                            setUseSchemaModal(false);
+                        }}
+                        close={() => setUseSchemaModal(false)}
+                    />
+                </Modal>
+                <Modal
+                    header="Update schema"
+                    displayButtons={false}
+                    height="550px"
+                    width="450px"
+                    clickOutside={() => setUpdateSchemaModal(false)}
+                    open={updateSchemaModal}
+                    className="update-schema-modal"
+                >
+                    <UpdateSchemaModal
+                        schemaSelected={stationState?.stationSocketData?.schema?.name}
+                        stationName={stationState?.stationMetaData?.name}
+                        dispatch={(schema) => {
+                            setSchema(schema);
+                            setUpdateSchemaModal(false);
+                        }}
+                        close={() => setUpdateSchemaModal(false)}
+                    />
                 </Modal>
             </div>
         </div>
