@@ -52,7 +52,6 @@ const Login = (props) => {
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [isLoading, setisLoading] = useState(false);
     const [isSignup, setIsSignup] = useState(false);
-    const [swit, setSw] = useState(false);
 
     useEffect(() => {
         if (localStorage.getItem(LOCAL_STORAGE_TOKEN) && AuthService.isValidToken()) {
