@@ -175,10 +175,10 @@ const StationOverviewHeader = () => {
                             </div>
                             <div className="buttons">
                                 <Button
-                                    width="40px"
-                                    minWidth="35px"
+                                    width="80px"
+                                    minWidth="80px"
                                     height="16px"
-                                    placeholder="Edit"
+                                    placeholder="Edit / Detach"
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"

@@ -108,6 +108,11 @@
         display: flex;
         justify-content: center;
         margin-right: 10px;
+        .logoimg{
+            border-radius: 25px;
+            width: 26px;
+            height: 26px;
+        }
     }
 }
 .item-wrapp {

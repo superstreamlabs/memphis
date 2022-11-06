@@ -107,6 +107,15 @@ function OverView() {
         }
     };
 
+    const getAllStations = async () => {
+        try {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
+            setAllStations(res);
+        } catch (err) {
+            return;
+        }
+    };
+
     useEffect(() => {
         getAllStations();
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
@@ -143,15 +152,7 @@ function OverView() {
         return str.charAt(0).toUpperCase() + str.slice(1);
     };
 
-    const getAllStations = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
-            setAllStations(res);
-        } catch (err) {
-            return;
-        }
-    };
-
+    const userStations = allStations?.filter((station) => station.created_by_user !== username);
     return (
         <div className="overview-container">
             {isLoading && (
@@ -159,8 +160,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-
-            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || allStations.length > 0) && (
+            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || userStations?.length > 0) && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -208,7 +208,7 @@ function OverView() {
             )}
             {!isLoading &&
                 (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === null || localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'undefined') &&
-                allStations.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
+                userStations?.length === 0 && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
                 header={
                     <div className="modal-header">

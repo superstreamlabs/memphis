@@ -163,6 +163,9 @@ const GetStarted = ({ username, dataSentence }) => {
 
     useEffect(() => {
         getOverviewData();
+        return () => {
+            getStartedDispatch({ type: 'INITIAL_STATE', payload: {} });
+        };
     }, []);
 
     useEffect(() => {
