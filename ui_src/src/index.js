@@ -21,6 +21,7 @@ import './style.scss';
 import { BrowserRouter } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import React from 'react';
+import { hotjar } from 'react-hotjar';
 
 import reportWebVitals from './reportWebVitals';
 import Store from './hooks/store';
