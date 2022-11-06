@@ -108,7 +108,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             replicas: formFields.replicas,
             schema_name: formFields.schemaValue
         };
-        if (getStarted && getStartedStateRef?.completedSteps === 0) createStation(bodyRequest);
+        if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
     };
 
