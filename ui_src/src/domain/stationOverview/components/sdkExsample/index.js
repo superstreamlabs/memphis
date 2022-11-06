@@ -56,8 +56,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
             : 'memphis-cluster.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
         codeEx.producer = codeEx.producer.replaceAll('<memphis-host>', host);
         codeEx.consumer = codeEx.consumer.replaceAll('<memphis-host>', host);
-        codeEx.producer = codeEx.producer.replaceAll('<station_name>', stationName);
-        codeEx.consumer = codeEx.consumer.replaceAll('<station_name>', stationName);
+        codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
+        codeEx.consumer = codeEx.consumer.replaceAll('<station-name>', stationName);
         setCodeExample(codeEx);
     };
 

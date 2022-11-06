@@ -74,10 +74,10 @@ const ProduceConsumeData = (props) => {
         codeEx.consumer = codeEx.consumer.replaceAll('<memphis-host>', host);
         codeEx.producer = codeEx.producer.replaceAll('<application type username>', getStartedState?.username);
         codeEx.consumer = codeEx.consumer.replaceAll('<application type username>', getStartedState?.username);
-        codeEx.producer = codeEx.producer.replaceAll('<connection_token>', getStartedState?.connectionCreds);
-        codeEx.consumer = codeEx.consumer.replaceAll('<connection_token>', getStartedState?.connectionCreds);
-        codeEx.producer = codeEx.producer.replaceAll('<station_name>', getStartedState?.stationName);
-        codeEx.consumer = codeEx.consumer.replaceAll('<station_name>', getStartedState?.stationName);
+        codeEx.producer = codeEx.producer.replaceAll('<broker-token>', getStartedState?.connectionCreds);
+        codeEx.consumer = codeEx.consumer.replaceAll('<broker-token>', getStartedState?.connectionCreds);
+        codeEx.producer = codeEx.producer.replaceAll('<station-name>', getStartedState?.stationName);
+        codeEx.consumer = codeEx.consumer.replaceAll('<station-name>', getStartedState?.stationName);
         setCodeExample(codeEx);
     };
 
