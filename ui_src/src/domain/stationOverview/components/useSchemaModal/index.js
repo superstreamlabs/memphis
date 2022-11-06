@@ -140,7 +140,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                         <Button
                             width="100%"
                             height="35px"
-                            placeholder="Apply"
+                            placeholder="Attach"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -183,9 +183,9 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                 open={deleteModal}
             >
                 <DeleteItemsModal
-                    title="Are you sure you want to detach the schema from the station?"
+                    title="Are you sure you want to detach schema from the station?"
                     desc="Detaching schema might interrupt producers from producing data"
-                    buttontxt="I understand, detach the schema"
+                    buttontxt="I understand, detach schema"
                     textToConfirm="remove schema"
                     handleDeleteSelected={handleStopUseSchema}
                 />

@@ -148,7 +148,7 @@ function SchemaList() {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    Schemas <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
+                    SchemaVerse <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
                 </label>
                 <div className="action-section">
                     <Button
@@ -164,21 +164,18 @@ function SchemaList() {
                         disabled={isCheck?.length === 0}
                         onClick={() => setDeleteModal(true)}
                     />
-
-                    {state.filteredList?.length > 1 && (
-                        <Button
-                            width="131px"
-                            height="34px"
-                            placeholder="Select all"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => onCheckedAll()}
-                        />
-                    )}
+                    <Button
+                        width="131px"
+                        height="34px"
+                        placeholder="Select all"
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={() => onCheckedAll()}
+                    />
                     <SearchInput
                         placeholder="Search schema"
                         colorType="navy"

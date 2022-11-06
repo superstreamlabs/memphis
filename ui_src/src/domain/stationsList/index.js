@@ -162,22 +162,18 @@ const StationsList = () => {
                             disabled={isCheck?.length === 0}
                             onClick={() => modalDeleteFlip(true)}
                         />
-
-                        {state.filteredList?.length > 1 && (
-                            <Button
-                                width="131px"
-                                height="34px"
-                                placeholder="Select all"
-                                colorType="black"
-                                radiusType="circle"
-                                backgroundColorType="white"
-                                fontSize="12px"
-                                fontWeight="600"
-                                aria-haspopup="true"
-                                onClick={() => onCheckedAll()}
-                            />
-                        )}
-
+                        <Button
+                            width="131px"
+                            height="34px"
+                            placeholder="Select all"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => onCheckedAll()}
+                        />
                         <Filter filterComponent="stations" height="34px" />
                         <Button
                             width="160px"

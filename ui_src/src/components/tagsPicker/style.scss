@@ -171,6 +171,22 @@
             }
         }
     }
+    .loader-uploading{
+        height: 100%;
+        position: relative !important;
+        max-height:unset !important;
+        .loader-container{
+            position: relative;
+            .gif-wrapper{
+                position: relative;
+            }
+            .memphis-gif{
+                position: relative !important;
+                transform: unset !important;
+                left: unset !important;
+            }
+        }
+    }
 }
 .generator-modal {
     padding: 0;

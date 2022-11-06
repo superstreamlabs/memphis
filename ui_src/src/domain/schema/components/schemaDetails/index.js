@@ -139,13 +139,6 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             });
             if (data) {
                 arrangeData(data);
-                message.success({
-                    key: 'memphisSuccessMessage',
-                    content: 'New version was created successfully',
-                    duration: 5,
-                    style: { cursor: 'pointer' },
-                    onClick: () => message.destroy('memphisSuccessMessage')
-                });
                 setLatest(data);
                 setActivateVersionModal(true);
                 setIsLoading(false);
@@ -168,6 +161,13 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             });
             if (data) {
                 arrangeData(data);
+                message.success({
+                    key: 'memphisSuccessMessage',
+                    content: 'Your selected version is now the primary version',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisSuccessMessage')
+                });
                 setRollBackModal(false);
                 setActivateVersionModal(false);
             }
@@ -525,7 +525,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 open={activateVersionModal}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Do you want to activate the new version?</p>
+                    <p className="title">You have created a new version - do you want to activate it?</p>
                     <p className="desc">Your current schema will be changed to the new version.</p>
                     <div className="buttons">
                         <Button

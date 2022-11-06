@@ -30,6 +30,7 @@ import NewTagGenerator from './newTagGenerator';
 import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
 import emptyTags from '../../assets/images/emptyTags.svg';
+import Loader from '../loader';
 
 const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
     const [tagsToDisplay, setTagsToDisplay] = useState([]);
@@ -38,6 +39,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
     const [checkedList, setCheckedList] = useState(tags);
     const [editedList, setEditedList] = useState(false);
     const [newTagModal, setNewTagModal] = useState(false);
+    const [getTagsLoading, setGetTagsLoading] = useState(true);
 
     const handleCheck = (tagToHandle) => {
         const checked = checkedList?.some((item) => tagToHandle.name === item.name);
@@ -51,9 +53,14 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
 
     useEffect(() => {
         const getAllTags = async () => {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}`);
-            setTagsToDisplay(res);
-            setAllTags(res);
+            try {
+                const res = await httpRequest('GET', `${ApiEndpoints.GET_TAGS}`);
+                setTagsToDisplay(res);
+                setAllTags(res);
+                setGetTagsLoading(false);
+            } catch (error) {
+                setGetTagsLoading(false);
+            }
         };
         getAllTags();
     }, []);
@@ -121,8 +128,13 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
 
     return (
         <div className="tags-picker-wrapper">
-            <div className="tags-picker-title">Apply tags to this {entity_type}</div>
-            {allTags?.length > 0 && (
+            <div className="tags-picker-title">Apply tags</div>
+            {getTagsLoading && (
+                <div className="loader-uploading">
+                    <Loader />
+                </div>
+            )}
+            {!getTagsLoading && allTags?.length > 0 && (
                 <>
                     <div className="search-input">
                         <SearchInput
@@ -167,7 +179,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
                     </div>
                 </>
             )}
-            {allTags?.length === 0 && (
+            {!getTagsLoading && allTags?.length === 0 && (
                 <div className="no-tags">
                     <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
                     <span className="no-tags-message">No Tags Exist</span>
