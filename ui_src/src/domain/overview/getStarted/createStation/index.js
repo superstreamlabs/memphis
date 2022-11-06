@@ -37,10 +37,10 @@ const CreateStation = ({ createStationFormRef }) => {
             getStartedDispatch({ type: 'SET_STATION', payload: data.name });
             getStartedDispatch({ type: 'SET_COMPLETED_STEPS', payload: getStartedState?.currentStep });
             getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: true });
         } else {
             getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep + 1 });
-            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: getStartedState?.username ? false : true });
         }
     };
 
