@@ -100,8 +100,9 @@ func handleConnectMessage(client *client) error {
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		sdkName := strings.Split(client.opts.Lang, ".")[1]
+	if !shouldSendAnalytics {
+		splitted := strings.Split(client.opts.Lang, ".")
+		sdkName := splitted[len(splitted) - 1]
 		param := analytics.EventParam{
 			Name:  "sdk",
 			Value: sdkName,
