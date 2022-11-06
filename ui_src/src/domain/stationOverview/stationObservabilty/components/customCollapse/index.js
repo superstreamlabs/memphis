@@ -26,6 +26,7 @@ import { Collapse } from 'antd';
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
 import StatusIndication from '../../../../../components/indication';
 import Copy from '../../../../../components/copy';
+import OverflowTip from '../../../../../components/tooltip/overflowtip';
 
 const { Panel } = Collapse;
 
@@ -52,7 +53,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                     <p>{property}</p>
                     <div className="copy-section">
                         <Copy data={headers[property]}></Copy>
-                        <p>{headers[property]}</p>
+                        <OverflowTip text={headers[property]} width={'calc(100% - 10px)'}>
+                            {headers[property]}
+                        </OverflowTip>
                     </div>
                 </div>
             );
