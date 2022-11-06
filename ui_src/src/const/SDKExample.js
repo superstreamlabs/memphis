@@ -88,7 +88,7 @@ export const CODE_EXAMPLE = {
     },
 
     Typescript: {
-        langCode: 'typescript',
+        langCode: 'javascript',
         installation: `npm i memphis-dev --save`,
         producer: `import memphis from 'memphis-dev';
         import type { Memphis } from 'memphis-dev/types';
