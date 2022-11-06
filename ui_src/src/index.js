@@ -26,7 +26,13 @@ import reportWebVitals from './reportWebVitals';
 import Store from './hooks/store';
 import App from './App';
 
+const sandboxSiteId = 3089915;
+const hotjarVersion = 6;
+
 function MemphisApp() {
+    if (process.env.REACT_APP_SANDBOX_ENV) {
+        hotjar.initialize(sandboxSiteId, hotjarVersion);
+    }
     return (
         <Store>
             <BrowserRouter>
