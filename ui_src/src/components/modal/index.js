@@ -51,6 +51,19 @@ const TransitionsModal = ({
         borderTop: hr ? '1px solid #EAEAEA' : null
     };
 
+    useEffect(() => {
+        const keyDownHandler = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                rBtnClick();
+            }
+        };
+        document.addEventListener('keydown', keyDownHandler);
+        return () => {
+            document.removeEventListener('keydown', keyDownHandler);
+        };
+    }, []);
+
     return (
         <Modal
             wrapClassName={className || 'modal-wrapper'}

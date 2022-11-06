@@ -39,6 +39,20 @@ const { Panel } = Collapse;
 const CustomCollapse = ({ cancel, apply, clear }) => {
     const [filterState, filterDispatch] = useContext(FilterStoreContext);
     const [activeKey, setActiveKey] = useState(['0']);
+
+    useEffect(() => {
+        const keyDownHandler = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                apply();
+            }
+        };
+        document.addEventListener('keydown', keyDownHandler);
+        return () => {
+            document.removeEventListener('keydown', keyDownHandler);
+        };
+    }, []);
+
     const onChange = (key) => {
         setActiveKey(key);
     };

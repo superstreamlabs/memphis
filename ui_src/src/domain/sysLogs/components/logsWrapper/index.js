@@ -68,9 +68,7 @@ const LogsWrapper = () => {
                     setLogs((users) => [...users, ...data.logs]);
                 }
             }
-        } catch (error) {
-            console.log(error);
-        }
+        } catch (error) {}
     };
 
     const loadMore = useCallback(() => {

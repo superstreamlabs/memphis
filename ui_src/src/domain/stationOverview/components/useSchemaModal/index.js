@@ -186,7 +186,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                     title="Are you sure you want to detach schema from the station?"
                     desc="Detaching schema might interrupt producers from producing data"
                     buttontxt="I understand, detach schema"
-                    textToConfirm="remove schema"
+                    textToConfirm="detach schema"
                     handleDeleteSelected={handleStopUseSchema}
                 />
             </Modal>

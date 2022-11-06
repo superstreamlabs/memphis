@@ -137,7 +137,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 else finishUpdate(data);
             }
         } catch (error) {
-            console.log(error);
         } finally {
             getStarted && setLoading(false);
         }
@@ -361,7 +360,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 <div className="schema-type">
                     <Form.Item name="schemaValue">
                         <div className="toggle-add-schema">
-                            <TitleComponent headerTitle="Use schema" typeTitle="sub-header"></TitleComponent>
+                            <TitleComponent headerTitle="Attach schema" typeTitle="sub-header"></TitleComponent>
                             <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
                         </div>
                         {!getStarted && schemas.length > 0 && useSchema && (

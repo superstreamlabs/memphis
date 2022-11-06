@@ -149,7 +149,7 @@ const StationOverviewHeader = () => {
                                     placeholder={
                                         <div className="use-schema-button">
                                             <Add />
-                                            <p>Use schema</p>
+                                            <p>Attach schema</p>
                                         </div>
                                     }
                                     colorType="white"
@@ -294,7 +294,7 @@ const StationOverviewHeader = () => {
                     <Auditing />
                 </Modal>
                 <Modal
-                    header="Use schema"
+                    header="Attach schema"
                     displayButtons={false}
                     height="400px"
                     width="352px"

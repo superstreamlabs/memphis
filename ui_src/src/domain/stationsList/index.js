@@ -165,7 +165,7 @@ const StationsList = () => {
                         <Button
                             width="131px"
                             height="34px"
-                            placeholder="Select all"
+                            placeholder={isCheckAll ? 'Unselect all' : 'Select all'}
                             colorType="black"
                             radiusType="circle"
                             backgroundColorType="white"

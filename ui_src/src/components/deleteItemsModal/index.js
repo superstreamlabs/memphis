@@ -21,12 +21,26 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '../button';
 import Input from '../Input';
 
 const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textToConfirm }) => {
     const [confirm, setConfirm] = useState('');
+
+    useEffect(() => {
+        const keyDownHandler = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleDeleteSelected();
+            }
+        };
+        document.addEventListener('keydown', keyDownHandler);
+        return () => {
+            document.removeEventListener('keydown', keyDownHandler);
+        };
+    }, []);
+
     return (
         <div className="delete-modal-wrapper">
             <p className="title">{title}</p>
