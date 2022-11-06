@@ -236,6 +236,7 @@ const MessageJourney = () => {
                     ]
                 },
                 message: data.message?.data,
+                headers: data.message?.headers,
                 poisionedCGs: poisionedCGs
             };
             setMessageData(messageDetails);
