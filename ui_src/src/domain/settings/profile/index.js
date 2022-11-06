@@ -43,7 +43,7 @@ function Profile() {
 
     useEffect(() => {
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
-        setAvatar(localStorage.getItem('profile_pic') || Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id); // profile_pic is available only in sandbox env
+        setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
         setAllowAnalytics(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) === 'false' ? false : true);
     }, []);
 
@@ -88,18 +88,24 @@ function Profile() {
             <div className="avatar-section">
                 <p className="title">Avatar</p>
                 <div className="avatar-images">
+                    {process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic') && (
+                        <div className={'avatar-img selected'}>
+                            <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
+                        </div>
+                    )}
                     {Array.from(Array(8).keys()).map((item) => {
                         return (
                             <div
-                                className={process.env.REACT_APP_SANDBOX_ENV ? 'sub-icon-wrapper-sandbox' : avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'}
+                                className={
+                                    process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic')
+                                        ? 'avatar-img avatar-disable'
+                                        : avatar === item + 1
+                                        ? 'avatar-img selected'
+                                        : 'avatar-img'
+                                }
                                 onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
                             >
-                                <img
-                                    src={localStorage.getItem('profile_pic') || require(`../../../assets/images/bots/avatar${item + 1}.svg`)} // profile_pic is available only in sandbox env
-                                    width={localStorage.getItem('profile_pic') ? 35 : ''}
-                                    height={localStorage.getItem('profile_pic') ? 35 : ''}
-                                    alt="avater"
-                                />
+                                <img src={require(`../../../assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
                             </div>
                         );
                     })}
@@ -184,3 +190,17 @@ function Profile() {
 }
 
 export default Profile;
+
+{
+    /* <div
+                                className={process.env.REACT_APP_SANDBOX_ENV ? 'sub-icon-wrapper-sandbox' : avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'}
+                                onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
+                            >
+                                <img
+                                    src={localStorage.getItem('profile_pic') || require(`../../../assets/images/bots/avatar${item + 1}.svg`)} // profile_pic is available only in sandbox env
+                                    width={localStorage.getItem('profile_pic') ? 35 : ''}
+                                    height={localStorage.getItem('profile_pic') ? 35 : ''}
+                                    alt="avater"
+                                />
+                            </div> */
+}

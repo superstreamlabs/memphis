@@ -37,7 +37,7 @@ import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED } from '.
 const Finish = ({ createStationFormRef }) => {
     const history = useHistory();
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
-    const [allowAnalytics, setAllowAnalytics] = useState(false);
+    const [allowAnalytics, setAllowAnalytics] = useState(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) || false);
 
     useEffect(() => {
         createStationFormRef.current = onNext;

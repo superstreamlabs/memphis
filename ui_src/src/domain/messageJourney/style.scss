@@ -1,5 +1,5 @@
 .message-journey-container {
-    width: calc(100% - 70px);
+    width: calc(100% - 90px);
     position: absolute;
     padding: 1vw;
     min-width: 700px;
@@ -51,7 +51,7 @@
         bottom: 0;
         left: 0;
         right: 0;
-        height: calc(100% - 70px);
+        height: calc(100% - 90px);
         .edge {
             stroke-width: 8;
             // stroke-dasharray: 5;
