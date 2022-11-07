@@ -148,7 +148,7 @@ function SchemaList() {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    SchemaVerse <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
+                    Schemaverse <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
                 </label>
                 <div className="action-section">
                     <Button

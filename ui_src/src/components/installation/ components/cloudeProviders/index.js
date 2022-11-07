@@ -52,11 +52,6 @@ const CloudeProviders = ({ steps }) => {
                                         className={cloudSelected === value.name ? 'img-cloud selected' : 'img-cloud'}
                                         onClick={() => handleSelectedCloud(value.name, value.docsLink)}
                                     >
-                                        {cloudSelected === value.name && (
-                                            <div className="selected-icon">
-                                                <CheckCircleIcon />
-                                            </div>
-                                        )}
                                         {value.src}
                                     </div>
                                 );
