@@ -137,7 +137,7 @@ Memphis{dev} is currently in Beta version. This means that we are still working 
 How does it affect you? Well... mostly it doesn't.<br>
 (a) The core of memphis broker is highly stable<br>
 (b) We learn and fix fast<br><br>
-But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
+But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancements.<br>
 Read more on [Memphis{dev} Documentation 📃](https://memphis.dev/docs).
 
 ## Support 🙋‍♂️🤝
