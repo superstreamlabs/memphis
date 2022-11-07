@@ -1,13 +1,12 @@
 {
   "files": {
-    "main.css": "/static/css/main.ff1e6698.css",
-    "main.js": "/static/js/main.a3b2c8e8.js",
+    "main.css": "/static/css/main.f94061e8.css",
+    "main.js": "/static/js/main.9cc2da5d.js",
     "static/js/27.6c7f6379.chunk.js": "/static/js/27.6c7f6379.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
     "static/media/Inter-Medium.ttf": "/static/media/Inter-Medium.e7231ba33760832432b8.ttf",
     "static/media/Inter-Regular.ttf": "/static/media/Inter-Regular.2391725004ae05a27e8e.ttf",
-    "static/media/avatar8 2.svg": "/static/media/avatar8 2.d92b08274080e4344acf.svg",
     "static/media/avatar8.svg": "/static/media/avatar8.d92b08274080e4344acf.svg",
     "static/media/avatar1.svg": "/static/media/avatar1.eb536756efe5829f2adecb07a6af1840.svg",
     "static/media/avatar4.svg": "/static/media/avatar4.5c001efb1cef44f249c9.svg",
@@ -29,6 +28,7 @@
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
     "static/media/confImg1.svg": "/static/media/confImg1.cf98f3c124b944df126f52a16d6acb5e.svg",
     "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
+    "index.html": "/index.html",
     "static/media/deleteIcon.svg": "/static/media/deleteIcon.e76f839b4ec7f8256d25129ff77aa40b.svg",
     "static/media/placeholderSchema.svg": "/static/media/placeholderSchema.cde9d3484259f8c40b67644cd987432c.svg",
     "static/media/welcome.svg": "/static/media/welcome.61578d1269fb9f6d07c1f449ed40be03.svg",
@@ -47,7 +47,6 @@
     "static/media/supportIcon.svg": "/static/media/supportIcon.c75670ecf7e65f3cbec1080ebd2b868b.svg",
     "static/media/signupInfo.svg": "/static/media/signupInfo.b9c2b723742579de9fa69a8f6beb6614.svg",
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
-    "index.html": "/index.html",
     "static/media/sharps.svg": "/static/media/sharps.2972a151b1a17897c4e67e6ff24b414c.svg",
     "static/media/sourceIcon.svg": "/static/media/sourceIcon.861e550f98f7961a69d58df1977bae8d.svg",
     "static/media/confImg2.svg": "/static/media/confImg2.1c3268df21a546024aff034eb843c214.svg",
@@ -117,7 +116,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.ff1e6698.css",
-    "static/js/main.a3b2c8e8.js"
+    "static/css/main.f94061e8.css",
+    "static/js/main.9cc2da5d.js"
   ]
 }
