@@ -480,14 +480,11 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			}
 		}
 
-		for key, _ := range headersJson {
-			if strings.HasPrefix(key, "$memphis") {
-				delete(headersJson, key)
+		for header := range headersJson {
+			if strings.HasPrefix(header, "$memphis") {
+				delete(headersJson, header)
 			}
 		}
-
-		// delete(headersJson, "$memphis_connectionId")
-		// delete(headersJson, "$memphis_producedBy")
 
 		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
 			continue

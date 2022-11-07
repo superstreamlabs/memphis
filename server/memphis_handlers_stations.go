@@ -1105,14 +1105,11 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 	}
 
-	for key, _ := range headersJson {
-		if strings.HasPrefix(key, "$memphis") {
-			delete(headersJson, key)
+	for header := range headersJson {
+		if strings.HasPrefix(header, "$memphis") {
+			delete(headersJson, header)
 		}
 	}
-
-	// delete(headersJson, "$memphis_connectionId")
-	// delete(headersJson, "$memphis_producedBy")
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	poisonedCgs, err := GetPoisonedCgsByMessage(stationName.Ext(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
