@@ -29,6 +29,7 @@ import CreateStationForm from '../../components/createStationForm';
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
 import stationImg from '../../assets/images/stationsIconActive.svg';
+import installationIcon from '../../assets/images/installationIcon.svg';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
@@ -46,6 +47,8 @@ import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Resources from './resources';
+import Installation from '../../components/installation';
+import { CloudDownloadRounded } from '@material-ui/icons';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -72,6 +75,7 @@ function OverView() {
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [showInstallaion, setShowInstallaion] = useState(false);
 
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [allStations, setAllStations] = useState([]);
@@ -145,7 +149,7 @@ function OverView() {
         return str.charAt(0).toUpperCase() + str.slice(1);
     };
 
-    const userStations = allStations?.filter((station) => station.created_by_user !== username);
+    const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
     return (
         <div className="overview-container">
             {isLoading && (
@@ -172,19 +176,42 @@ function OverView() {
                                 {/* <p className="ok-status">You’re a memphis superhero! All looks good!</p> */}
                             </div>
                         </div>
-                        <Button
-                            className="modal-btn"
-                            width="160px"
-                            height="34px"
-                            placeholder={'Create new station'}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
-                        />
+                        <div className={process.env.REACT_APP_SANDBOX_ENV ? 'overview-actions' : ''}>
+                            {process.env.REACT_APP_SANDBOX_ENV && (
+                                <Button
+                                    className="modal-btn"
+                                    width="130px"
+                                    height="34px"
+                                    placeholder={
+                                        <div className="title">
+                                            <CloudDownloadRounded className="download-icon" />
+                                            <p>Install now</p>
+                                        </div>
+                                    }
+                                    colorType="purple"
+                                    radiusType="circle"
+                                    backgroundColorType="none"
+                                    border="purple"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    aria-haspopup="true"
+                                    onClick={() => setShowInstallaion(true)}
+                                />
+                            )}
+                            <Button
+                                className="modal-btn"
+                                width="160px"
+                                height="34px"
+                                placeholder={'Create new station'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                aria-haspopup="true"
+                                onClick={() => modalFlip(true)}
+                            />
+                        </div>
                     </div>
                     <div className="overview-components">
                         <div className="left-side">
@@ -276,6 +303,21 @@ function OverView() {
                         }}
                     />
                 </div>
+            </Modal>
+            <Modal
+                header={
+                    <label className="installation-icon-wrapper">
+                        <img src={installationIcon} alt="installationIcon" />
+                    </label>
+                }
+                height="700px"
+                clickOutside={() => {
+                    setShowInstallaion(false);
+                }}
+                open={showInstallaion}
+                displayButtons={false}
+            >
+                <Installation closeModal={() => setShowInstallaion(false)} />
             </Modal>
         </div>
     );

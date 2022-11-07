@@ -33,6 +33,8 @@ export function getBorderColor(borderColorType) {
             return '#d8d8d8';
         case 'gray-light':
             return '#E9E9E9';
+        case 'purple':
+            return '#6557FF';
         case 'navy':
             return '#1D1D1D';
         case 'search-input':

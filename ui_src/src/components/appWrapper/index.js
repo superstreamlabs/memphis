@@ -13,12 +13,10 @@
 // limitations under the License.package server
 
 import SideBar from '../sideBar';
-import FloatingButton from '../floatingButton';
 
 function AppWrapper({ content }) {
     return (
         <div className="sidebar-and-containers">
-            {process.env.REACT_APP_SANDBOX_ENV && <FloatingButton />}
             <SideBar />
             {content}
         </div>
