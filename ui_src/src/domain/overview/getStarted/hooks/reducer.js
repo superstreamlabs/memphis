@@ -34,6 +34,28 @@ const initialState = {
     actualPods: null
 };
 
+const initialState = {
+    currentStep: 1,
+    completedSteps: 0,
+    formFieldsCreateStation: {
+        name: '',
+        retention_type: 'message_age_sec',
+        retention_value: 604800,
+        storage_type: 'file',
+        replicas: 1,
+        days: 7,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        retentionSizeValue: '1000',
+        retentionMessagesValue: '10'
+    },
+    nextDisable: false,
+    isLoading: false,
+    isHiddenButton: false,
+    actualPods: null
+};
+
 const Reducer = (getStartedState, action) => {
     switch (action.type) {
         case 'SET_NEXT_DISABLE':
