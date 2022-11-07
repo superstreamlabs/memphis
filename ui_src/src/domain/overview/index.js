@@ -1,23 +1,16 @@
+// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
-// Licensed under the MIT License (the "License");
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-
-// This license limiting reselling the software itself "AS IS".
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+// Licensed under the Apache License, Version 2.0 (the “License”);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an “AS IS” BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.package server
 
 import './style.scss';
 
@@ -36,6 +29,7 @@ import CreateStationForm from '../../components/createStationForm';
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
 import stationImg from '../../assets/images/stationsIconActive.svg';
+import installationIcon from '../../assets/images/installationIcon.svg';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
@@ -53,6 +47,8 @@ import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Resources from './resources';
+import Installation from '../../components/installation';
+import { CloudDownloadRounded } from '@material-ui/icons';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -79,6 +75,7 @@ function OverView() {
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [showInstallaion, setShowInstallaion] = useState(false);
 
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [allStations, setAllStations] = useState([]);
@@ -152,7 +149,7 @@ function OverView() {
         return str.charAt(0).toUpperCase() + str.slice(1);
     };
 
-    const userStations = allStations?.filter((station) => station.created_by_user !== username);
+    const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
     return (
         <div className="overview-container">
             {isLoading && (
@@ -179,19 +176,42 @@ function OverView() {
                                 {/* <p className="ok-status">You’re a memphis superhero! All looks good!</p> */}
                             </div>
                         </div>
-                        <Button
-                            className="modal-btn"
-                            width="160px"
-                            height="34px"
-                            placeholder={'Create new station'}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
-                        />
+                        <div className={process.env.REACT_APP_SANDBOX_ENV ? 'overview-actions' : ''}>
+                            {process.env.REACT_APP_SANDBOX_ENV && (
+                                <Button
+                                    className="modal-btn"
+                                    width="130px"
+                                    height="34px"
+                                    placeholder={
+                                        <div className="title">
+                                            <CloudDownloadRounded className="download-icon" />
+                                            <p>Install now</p>
+                                        </div>
+                                    }
+                                    colorType="purple"
+                                    radiusType="circle"
+                                    backgroundColorType="none"
+                                    border="purple"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    aria-haspopup="true"
+                                    onClick={() => setShowInstallaion(true)}
+                                />
+                            )}
+                            <Button
+                                className="modal-btn"
+                                width="160px"
+                                height="34px"
+                                placeholder={'Create new station'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                aria-haspopup="true"
+                                onClick={() => modalFlip(true)}
+                            />
+                        </div>
                     </div>
                     <div className="overview-components">
                         <div className="left-side">
@@ -283,6 +303,21 @@ function OverView() {
                         }}
                     />
                 </div>
+            </Modal>
+            <Modal
+                header={
+                    <label className="installation-icon-wrapper">
+                        <img src={installationIcon} alt="installationIcon" />
+                    </label>
+                }
+                height="700px"
+                clickOutside={() => {
+                    setShowInstallaion(false);
+                }}
+                open={showInstallaion}
+                displayButtons={false}
+            >
+                <Installation closeModal={() => setShowInstallaion(false)} />
             </Modal>
         </div>
     );

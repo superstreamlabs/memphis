@@ -59,6 +59,28 @@
                     color: #2ed47a;
                 }
             }
+            
+            .overview-actions{
+                display: flex;
+                width: 300px;
+                justify-content: space-between;                
+                .title{
+                    display: flex;
+                    align-items: center;
+                    width: 85px;
+                    justify-content: space-between;
+                    p{
+                        margin: 0;
+                    }
+                    img{
+                        width: 16px;
+                    }
+                }
+                .download-icon{
+                    width: 18px;
+                    animation : pulse 3s infinite;
+                }
+            }
         }
 
         .sandboxUserImg {
@@ -181,5 +203,19 @@
         margin-bottom: 30px;
         padding: 6px;
         cursor: pointer;
+    }
+}
+@keyframes pulse {
+    from {
+        transform : scale(1);
+        opacity   : 1;
+    }
+    50% {
+        transform : scale(0.75);
+        opacity   : 0.8;
+    }
+    to {
+        transform : scale(1);
+        opacity   : 1;
     }
 }
