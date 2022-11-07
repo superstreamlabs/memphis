@@ -14,8 +14,6 @@
 
 import './style.scss';
 
-import './style.scss';
-
 import React, { useState, useEffect, useContext } from 'react';
 import Lottie from 'lottie-react';
 
