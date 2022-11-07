@@ -158,7 +158,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         <div className="circle-container" key={filterField.name}>
                             <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
                             <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
-                                {filterField.name[0].toUpperCase()}
+                                {filterField.name[0]?.toUpperCase()}
                             </p>
                             <label>{filterField.name}</label>
                         </div>
