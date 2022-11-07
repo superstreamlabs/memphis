@@ -124,17 +124,36 @@ func getActiveConnections() ([]models.Connection, error) {
 	return connections, nil
 }
 
+func checkAndReportConnFound(s *Server, message, reply string) bool {
+	connInfo := &ConnzOptions{}
+	conns, _ := s.Connz(connInfo)
+	for _, conn := range conns.Conns {
+		connId := strings.Split(conn.Name, "::")[0]
+		if connId == message {
+			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("connExists"), true)
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			message := strings.TrimSuffix(string(msg), "\r\n")
-			connInfo := &ConnzOptions{}
-			conns, _ := s.Connz(connInfo)
-			for _, conn := range conns.Conns {
-				connId := strings.Split(conn.Name, "::")[0]
-				if connId == message {
-					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, []byte("connExists"), true)
-					return
+			reported := checkAndReportConnFound(s, message, reply)
+
+			if !reported {
+				maxIterations := 14
+				for range time.Tick(time.Second * 2) {
+					reported = checkAndReportConnFound(s, message, reply)
+					if reported {
+						return
+					}
+					maxIterations--
+					if maxIterations == 0 {
+						return
+					}
 				}
 			}
 		}(copyBytes(msg))
