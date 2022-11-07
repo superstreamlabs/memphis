@@ -121,7 +121,7 @@ const Filter = ({ filterComponent, height }) => {
         const created = [...new Set(createdBy)].map((user) => {
             return {
                 name: user,
-                color: CircleLetterColor[user[0].toUpperCase()],
+                color: CircleLetterColor[user[0]?.toUpperCase()],
                 checked: false
             };
         });

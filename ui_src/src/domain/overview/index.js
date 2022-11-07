@@ -42,13 +42,13 @@ import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import SysComponents from './sysComponents';
 import Modal from '../../components/modal';
-import { PRIVACY_URL } from '../../config';
 import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Resources from './resources';
 import Installation from '../../components/installation';
 import { CloudDownloadRounded } from '@material-ui/icons';
+import { capitalizeFirst } from '../../services/valueConvertor';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -143,10 +143,6 @@ function OverView() {
 
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
-    };
-
-    const capitalizeFirst = (str) => {
-        return str.charAt(0).toUpperCase() + str.slice(1);
     };
 
     const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
