@@ -910,6 +910,9 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 
 	headers := map[string]string{}
 	for _, value := range poisonMessage.Message.Headers {
+		if strings.HasPrefix(value.HeaderKey, "$memphis") {
+			continue
+		}
 		headers[value.HeaderKey] = value.HeaderValue
 	}
 

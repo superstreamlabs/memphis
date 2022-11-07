@@ -16,7 +16,6 @@ package server
 import (
 	"encoding/json"
 	"memphis-broker/models"
-	"strings"
 
 	"context"
 	"time"
@@ -78,12 +77,6 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		if connectionIdHeader == "" || producedByHeader == "" {
 			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			return
-		}
-	}
-
-	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
-			delete(headersJson, header)
 		}
 	}
 

@@ -495,10 +495,6 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			data = data[0:100]
 		}
 
-		// headersJson, err := getMessageHeaders(hdr)
-		// if err != nil {
-		// 	return []models.MessageDetails{}, err
-		// }
 		messages = append(messages, models.MessageDetails{
 			MessageSeq:   int(msg.Sequence),
 			Data:         data,
