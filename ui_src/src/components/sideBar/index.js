@@ -145,7 +145,7 @@ function SideBar() {
                                     <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
                                 )}
                             </div>
-                            <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemas</p>
+                            <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemaverse</p>
                         </Link>
                     </div>
                 </div>
