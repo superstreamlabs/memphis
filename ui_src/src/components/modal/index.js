@@ -51,11 +51,13 @@ const TransitionsModal = ({
                 rBtnClick();
             }
         };
-        document.addEventListener('keydown', keyDownHandler);
+        if (open) {
+            document.addEventListener('keydown', keyDownHandler);
+        }
         return () => {
             document.removeEventListener('keydown', keyDownHandler);
         };
-    }, []);
+    }, [open]);
 
     return (
         <Modal
