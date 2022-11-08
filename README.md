@@ -12,6 +12,7 @@
 
 <div align="center">
 <h1>Real-Time Data Processing Platform</h1>
+<h4>"It took me three minutes to build in Memphis what took me weeks in Kafka"</h4>
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png"><br>
   
