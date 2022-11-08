@@ -4,6 +4,7 @@ import Button from '../button';
 import { GetStartedStoreContext } from '../../domain/overview/getStarted';
 import bgGetStarted from '../../assets/images/bgGetStarted.svg';
 import bgGetStartedBottom from '../../assets/images/bgGetStartedBottom.svg';
+import VideoPlayer from '../videoPlayer';
 
 const GetStartedItem = (props) => {
     const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;
@@ -29,8 +30,17 @@ const GetStartedItem = (props) => {
                     <img className="get-started-bg-img" src={bgGetStarted} alt="bgGetStarted" />
                     <img className="get-started-bg-img-bottom" src={bgGetStartedBottom} alt="bgGetStartedBottom"></img>
                     <div className="get-started-top">
+                        <div className="video-container">
+                            <div>
+                                <VideoPlayer url={'https://www.youtube.com/watch?v=kp_l2qFokso'} />
+                                <p className="video-description">Watch starting Demo video ✨</p>
+                            </div>
+                            <div>
+                                <VideoPlayer url={'https://www.youtube.com/watch?v=kp_l2qFokso'} />
+                                <p className="video-description">Explore the system in 3 min ⭐</p>
+                            </div>
+                        </div>
                         <div className="get-started-top-header finish">
-                            <img style={style?.image} src={headerImage} alt={headerImage}></img>
                             <p className="header-title">{headerTitle}</p>
                             <div className="header-description">{headerDescription}</div>
                         </div>

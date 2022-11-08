@@ -21,6 +21,20 @@
         height: calc(100% - 120px);
         position: relative;
         padding-left: 40px;
+        .video-container {
+            display: flex;
+            justify-content: space-evenly;
+            padding-top: 10%;
+
+            .video-description {
+                text-align: center;
+                font-weight: 500;
+                font-size: 14px;
+                color: #4a495c;
+                opacity: 0.8;
+                margin-top: 11px;
+            }
+        }
         .get-started-top-header {
             height: 150px;
             display: flex;
@@ -43,8 +57,7 @@
             }
         }
         .finish {
-            margin-top: 10%;
-            height: 350px !important;
+            height: 100px !important;
         }
         .get-started-header {
             padding-left: 3px;
