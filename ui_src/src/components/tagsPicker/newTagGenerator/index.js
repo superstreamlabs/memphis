@@ -35,6 +35,19 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
+    useEffect(() => {
+        const keyDownHandler = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                onFinish();
+            }
+        };
+        document.addEventListener('keydown', keyDownHandler);
+        return () => {
+            document.removeEventListener('keydown', keyDownHandler);
+        };
+    }, []);
+
     const onFinish = async () => {
         const values = await creationForm.validateFields();
         if (values?.errorFields) {
@@ -93,7 +106,6 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
                             onBlur={(e) => updateFormState('name', e.target.value)}
                             onChange={(e) => updateFormState('name', e.target.value)}
                             value={formFields.name}
-                            onPressEnter={onFinish}
                         />
                     </div>
                 </Form.Item>

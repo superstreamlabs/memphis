@@ -16,9 +16,17 @@
             overflow: scroll;
             margin-right: 5px;
             padding: 1vw;
+            .field-title{
+                font-family: 'InterSemiBold';
+                font-size: 16px;  
+                margin: 0;
+            }
             .header{
                 width: 450px;
                 margin-bottom: 2vw;
+                .ant-input ::placeholder{
+                    color: red !important;
+                }
                 .flex-title{
                     display: flex;
                     p{
@@ -51,11 +59,7 @@
                     margin-bottom: 20px;
                     .title-desc{
                         margin-left: 10px;
-                        .field-title{
-                            font-family: 'InterSemiBold';
-                            font-size: 16px;  
-                            margin: 0;
-                        }
+                        
                         .desc{
                             color: #979797;
                             font-size: 12px;
@@ -63,7 +67,12 @@
                         }
                     }
                 }
+                .radio-button{
+                    padding-left: 55px;
+                }
                 .tags-list-wrapper{
+                    padding-left: 55px;
+
                     justify-content:unset !important;
                     .edit-tags{
                         background: unset !important;

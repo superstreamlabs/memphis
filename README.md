@@ -70,12 +70,13 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**v0.3.6**
+**[v0.4.0](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.0-beta)**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
+- 🔤 Schemaverse - Embedded schema management for produced data
 - ⛓  SDKs: Node.JS, Go, Python, Typescript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
@@ -137,7 +138,7 @@ Memphis{dev} is currently in Beta version. This means that we are still working 
 How does it affect you? Well... mostly it doesn't.<br>
 (a) The core of memphis broker is highly stable<br>
 (b) We learn and fix fast<br><br>
-But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancments.<br>
+But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancements.<br>
 Read more on [Memphis{dev} Documentation 📃](https://memphis.dev/docs).
 
 ## Support 🙋‍♂️🤝
