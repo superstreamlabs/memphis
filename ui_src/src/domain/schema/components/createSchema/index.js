@@ -50,7 +50,7 @@ const schemaTypes = [
     {
         id: 2,
         value: 'avro',
-        label: 'Avro - Comming soon',
+        label: 'Avro (Coming soon)',
         description: (
             <span>
                 The popular. Apache Avro™ is the leading serialization format for record data, and first choice for streaming data pipelines. It offers excellent schema
@@ -62,7 +62,7 @@ const schemaTypes = [
     {
         id: 3,
         value: 'json',
-        label: 'Json - Comming soon',
+        label: 'Json (Coming soon)',
         description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>,
         disabled: true
     }
