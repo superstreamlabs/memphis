@@ -34,7 +34,7 @@ node {
     stage('Remove memphis'){
       sh "aws eks --region eu-central-1 update-kubeconfig --name sandbox-cluster"
       sh "helm uninstall my-memphis -n memphis"
-      sh "kubectl delete ns memphis"
+      //sh "kubectl delete ns memphis"
    }
     stage('Create memphis namespace in Kubernetes'){
       sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
