@@ -1308,6 +1308,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
+
 	var body models.RemoveSchemaFromStation
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
