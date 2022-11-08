@@ -50,7 +50,7 @@ const schemaTypes = [
     {
         id: 2,
         value: 'avro',
-        label: 'Avro',
+        label: 'Avro - Comming soon',
         description: (
             <span>
                 The popular. Apache Avro™ is the leading serialization format for record data, and first choice for streaming data pipelines. It offers excellent schema
@@ -62,7 +62,7 @@ const schemaTypes = [
     {
         id: 3,
         value: 'json',
-        label: 'Json',
+        label: 'Json - Comming soon',
         description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>,
         disabled: true
     }
@@ -100,14 +100,13 @@ function CreateSchema() {
         name: '',
         type: 'Protobuf',
         tags: [],
-        schema_content: '',
-        message_struct_name: 'test'
+        schema_content: ''
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [validateLoading, setValidateLoading] = useState(false);
     const [validateError, setValidateError] = useState('');
     const [validateSuccess, setValidateSuccess] = useState(false);
-    const [messageStructName, setMessageStructName] = useState('Test');
+    const [messageStructName, setMessageStructName] = useState('');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [state, dispatch] = useContext(Context);
@@ -142,7 +141,7 @@ function CreateSchema() {
                 let parser = Schema.parse(values.schema_content).messages;
                 if (parser.length === 1) {
                     setMessageStructName(parser[0].name);
-                    handleCreateNewSchema();
+                    handleCreateNewSchema(parser[0].name);
                 } else {
                     setMessageStructName(parser[0].name);
                     setMessagesStructNameList(getUnique(parser));
@@ -154,11 +153,11 @@ function CreateSchema() {
         }
     };
 
-    const handleCreateNewSchema = async () => {
+    const handleCreateNewSchema = async (messageName = null) => {
         try {
             const values = await creationForm.validateFields();
             setLoadingSubmit(true);
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageStructName });
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageName || messageStructName });
             if (data) {
                 goBack();
             }
