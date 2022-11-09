@@ -214,14 +214,32 @@ func (s *Server) CreateSystemLogsStream() {
 		Storage:      FileStorage,
 	})
 
-	if err == nil || IsNatsErr(err, JSStreamNameExistErr) {
-		if s.memphis.activateSysLogsPubFunc == nil {
-			s.Fatalf("internal error: publish activation func is not initialised")
-		}
-		s.memphis.activateSysLogsPubFunc()
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		s.Fatalf("Failed to create syslogs stream: " + err.Error())
+	}
+
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: publish activation func is not initialised")
+	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
+	return
+}
+
+func (s *Server) popFallbackLogs() {
+	select {
+	case <-s.memphis.fallbackLogQ.ch:
+		break
+	default:
+		// if there were not fallback logs, exit
 		return
 	}
-	s.Fatalf("Failed to create syslogs stream: " + err.Error())
+	logs := s.memphis.fallbackLogQ.pop()
+
+	for _, l := range logs {
+		log := l.(fallbackLog)
+		publishLogToSubjectAndAnalytics(s, log.label, log.log)
+	}
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {

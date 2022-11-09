@@ -66,9 +66,9 @@ type srvMemphis struct {
 	dbCtx                  context.Context
 	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
+	fallbackLogQ           *ipQueue
 	mcrReported            bool
 	mcr                    chan struct{} // memphis cluster ready
-	logStreamCreated       bool
 	jsApiMu                sync.Mutex
 }
 
@@ -81,7 +81,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.memphis.serverID = configuration.SERVER_NAME
 	s.memphis.mcrReported = false
 	s.memphis.mcr = make(chan struct{})
-	s.memphis.logStreamCreated = false
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
