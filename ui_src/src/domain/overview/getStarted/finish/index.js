@@ -25,7 +25,7 @@ import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../../const/localStorageConsts';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../../const/localStorageConsts';
 
 const Finish = ({ createStationFormRef }) => {
     const history = useHistory();
@@ -34,6 +34,7 @@ const Finish = ({ createStationFormRef }) => {
 
     useEffect(() => {
         createStationFormRef.current = onNext;
+        httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, localStorage.getItem(LOCAL_STORAGE_USER_NAME));
     }, []);
 
     const onNext = () => {
