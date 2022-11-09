@@ -29,6 +29,7 @@ export const ApiEndpoints = {
     SANDBOX_LOGIN: '/sandbox/login',
     DONE_NEXT_STEPS: '/usermgmt/doneNextSteps',
     GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
+    SKIP_NEXT_STEP:'/usermgmt/skipNextStep',
 
     //Station
     CREATE_STATION: '/stations/createStation',

@@ -33,6 +33,7 @@ type SandboxUser struct {
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 	ProfilePic      string             `json:"profile_pic" bson:"profile_pic"`
+	SkipNextStep    bool               `json:"skip_next_step" bson:"skip_next_step"`
 }
 
 type SandboxLoginSchema struct {

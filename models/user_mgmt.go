@@ -31,6 +31,7 @@ type User struct {
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 	FullName        string             `json:"full_name" bson:"full_name"`
 	Subscribtion    bool               `json:"subscription" bson:"subscription"`
+	SkipNextStep    bool               `json:"skip_next_step" bson:"skip_next_step"`
 }
 
 type Image struct {
@@ -75,4 +76,8 @@ type EditAvatarSchema struct {
 
 type EditAnalyticsSchema struct {
 	SendAnalytics bool `json:"send_analytics"`
+}
+
+type SkipNextStep struct {
+	Username string `json:"username" binding:"required,min=1,max=60"`
 }
