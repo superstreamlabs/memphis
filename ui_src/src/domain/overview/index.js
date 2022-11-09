@@ -222,7 +222,7 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== true && userStations?.length === 0 && (
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && userStations?.length === 0 && (
                 <GetStarted username={username} dataSentence={dataSentence} />
             )}
             <Modal
