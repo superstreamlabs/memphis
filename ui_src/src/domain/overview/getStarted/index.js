@@ -153,10 +153,9 @@ const GetStarted = ({ username, dataSentence }) => {
         } catch (error) {}
     };
 
-    const skipNextStep = async (bodyRequest) => {
+    const skipGetStarted = async (bodyRequest) => {
         try {
-            const userData = await httpRequest('POST', ApiEndpoints.SKIP_NEXT_STEP, bodyRequest);
-            userData.skipNextStep = true;
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, bodyRequest);
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
         } catch (error) {}
     };
@@ -202,7 +201,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
-                                skipNextStep({ username });
+                                skipGetStarted({ username });
                                 history.push(pathDomains.overview);
                             }}
                         />
