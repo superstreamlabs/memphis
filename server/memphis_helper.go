@@ -180,27 +180,26 @@ func (s *Server) memphisClusterReady() {
 }
 
 func (s *Server) CreateSystemLogsStream() {
-	if s.JetStreamIsClustered() {
-		if !s.memphis.logStreamCreated {
-			timeout := time.NewTimer(2 * time.Minute)
-			select {
-			case <-timeout.C:
-				s.Fatalf("Failed to create syslogs stream: cluster readiness timeout")
-			case <-s.memphis.mcr:
-				timeout.Stop()
-				s.memphis.logStreamCreated = true
-			}
+	ready := !s.JetStreamIsClustered()
 
-			if !s.JetStreamIsLeader() {
-				return
-			}
+	for !ready { // wait for cluster to be ready if we are in cluster mode
+		timeout := time.NewTimer(2 * time.Minute)
+		select {
+		case <-timeout.C:
+			s.Errorf("Failed to create syslogs stream within cluster readiness timeout")
+		case <-s.memphis.mcr:
+			timeout.Stop()
+			ready = true
 		}
 
+		if ready && !s.JetStreamIsLeader() {
+			return
+		}
 	}
 
 	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 	if err != nil {
-		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
+		s.Errorf("Failed to create syslogs stream: " + err.Error())
 
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
@@ -214,14 +213,15 @@ func (s *Server) CreateSystemLogsStream() {
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
-	if err != nil {
-		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
-	}
 
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("publish activation func is not initialised")
+	if err == nil || IsNatsErr(err, JSStreamNameExistErr) {
+		if s.memphis.activateSysLogsPubFunc == nil {
+			s.Fatalf("internal error: publish activation func is not initialised")
+		}
+		s.memphis.activateSysLogsPubFunc()
+		return
 	}
-	s.memphis.activateSysLogsPubFunc()
+	s.Fatalf("Failed to create syslogs stream: " + err.Error())
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {
