@@ -256,8 +256,9 @@ func (s *Server) executeLogCall(f func(logger Logger, format string, v ...interf
 
 func (s *Server) createMemphisLoggerFunc() srvlog.HybridLogPublishFunc {
 	return func(label string, log []byte) {
-		s.sendLogToSubject(label, log)
-		s.sendLogToAnalytics(label, log)
+		copiedLog := copyBytes(log)
+		s.sendLogToSubject(label, copiedLog)
+		s.sendLogToAnalytics(label, copiedLog)
 	}
 }
 
