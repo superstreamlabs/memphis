@@ -172,12 +172,12 @@ const ProduceConsumeData = (props) => {
                         {props.produce ? (
                             <div>
                                 <p className="title">Code snippet for producing data</p>
-                                <p className="description">Just copy and paste the following code to your preferred IDE</p>
+                                {/* <p className="description">Just copy and paste the following code to your preferred IDE</p> */}
                             </div>
                         ) : (
                             <div>
                                 <p className="title">Code snippet for consuming data</p>
-                                <p className="description">Just copy and paste the following code to your preferred IDE</p>
+                                {/* <p className="description">Just copy and paste the following code to your preferred IDE</p> */}
                             </div>
                         )}
                         <div className="code-content">
