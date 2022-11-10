@@ -182,11 +182,14 @@ func getStationOverviewData(stationName string, h *server.Handlers) (map[string]
 	return response, nil
 }
 
-func getSystemLogs(h *server.Handlers) (models.SystemLogsResponse, error) {
+func getSystemLogs(h *server.Handlers, filterSubjectSuffix string) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
-
-	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, "", false)
+	filterSubject := ""
+	if filterSubjectSuffix != "" {
+		filterSubject = "$memphis_syslogs." + filterSubjectSuffix
+	}
+	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }
 
 func ginMiddleware() gin.HandlerFunc {
@@ -237,9 +240,28 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 		s.Join("all_stations_group")
 		return "recv " + msg
 	})
+
 	socketServer.OnEvent("/api", "register_syslogs_data", func(s socketio.Conn, msg string) string {
 		s.LeaveAll()
 		s.Join("syslogs_group")
+		return "recv " + msg
+	})
+
+	socketServer.OnEvent("/api", "register_syslogs_data_warn", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("syslogs_warn")
+		return "recv " + msg
+	})
+
+	socketServer.OnEvent("/api", "register_syslogs_data_err", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("syslogs_err")
+		return "recv " + msg
+	})
+
+	socketServer.OnEvent("/api", "register_syslogs_data_info", func(s socketio.Conn, msg string) string {
+		s.LeaveAll()
+		s.Join("syslogs_info")
 		return "recv " + msg
 	})
 
@@ -285,11 +307,38 @@ func InitializeSocketio(router *gin.Engine, h *server.Handlers) *socketio.Server
 			}
 
 			if socketServer.RoomLen("/api", "syslogs_group") > 0 {
-				data, err := getSystemLogs(h)
+				data, err := getSystemLogs(h, "")
 				if err != nil {
 					serv.Errorf("Error while trying to get system logs - " + err.Error())
 				} else {
 					socketServer.BroadcastToRoom("/api", "syslogs_group", "syslogs_data", data)
+				}
+			}
+
+			if socketServer.RoomLen("/api", "syslogs_warn") > 0 {
+				data, err := getSystemLogs(h, "warn")
+				if err != nil {
+					serv.Errorf("Error while trying to get system logs - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "syslogs_warn", "syslogs_data", data)
+				}
+			}
+
+			if socketServer.RoomLen("/api", "syslogs_err") > 0 {
+				data, err := getSystemLogs(h, "err")
+				if err != nil {
+					serv.Errorf("Error while trying to get system logs - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "syslogs_err", "syslogs_data", data)
+				}
+			}
+
+			if socketServer.RoomLen("/api", "syslogs_info") > 0 {
+				data, err := getSystemLogs(h, "info")
+				if err != nil {
+					serv.Errorf("Error while trying to get system logs - " + err.Error())
+				} else {
+					socketServer.BroadcastToRoom("/api", "syslogs_info", "syslogs_data", data)
 				}
 			}
 
