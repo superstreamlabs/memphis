@@ -1062,6 +1062,11 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 		bson.M{"username": userName},
 		bson.M{"$set": bson.M{"skip_get_started": true}},
 	)
+
+	_, err = sandboxUsersCollection.UpdateOne(context.TODO(),
+		bson.M{"username": userName},
+		bson.M{"$set": bson.M{"skip_get_started": true}},
+	)
 	if err != nil {
 		serv.Errorf("SkipGetStarted error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

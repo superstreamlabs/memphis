@@ -56,6 +56,7 @@ var poisonMessagesCollection *mongo.Collection
 var tagsCollection *mongo.Collection
 var schemasCollection *mongo.Collection
 var schemaVersionCollection *mongo.Collection
+var sandboxUsersCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -95,6 +96,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	tagsCollection = db.GetCollection("tags", dbInstance.Client)
 	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
 	schemaVersionCollection = db.GetCollection("schema_versions", dbInstance.Client)
+	sandboxUsersCollection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,

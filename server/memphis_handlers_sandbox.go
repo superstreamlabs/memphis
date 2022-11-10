@@ -189,7 +189,6 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		return
 	}
 	if !user.AlreadyLoggedIn {
-		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 		sandboxUsersCollection.UpdateOne(context.TODO(),
 			bson.M{"_id": user.ID},
 			bson.M{"$set": bson.M{"already_logged_in": true}},
@@ -216,6 +215,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		"avatar_id":         user.AvatarId,
 		"profile_pic":       profilePic,
 		"env":               "K8S",
+		"skip_get_started":  user.SkipGetStarted,
 	})
 }
 
