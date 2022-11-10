@@ -34,7 +34,7 @@ export const CODE_EXAMPLE = {
                 });
         
                 const headers = memphis.headers()
-                headers.add('<key>', '<value>')
+                headers.add('key', 'value')
                 await producer.produce({
                     message: Buffer.from("Message: Hello world"),
                     headers: headers
@@ -102,7 +102,7 @@ export const CODE_EXAMPLE = {
                 });
         
                     const headers = memphis.headers()
-                    headers.add('<key>', '<value>');
+                    headers.add('key', 'value');
                     await producer.produce({
                         message: Buffer.from("Message: Hello world"),
                         headers: headers
@@ -173,7 +173,7 @@ export const CODE_EXAMPLE = {
         
             hdrs := memphis.Headers{}
             hdrs.New()
-            err = hdrs.Add("<key>", "<value>")
+            err = hdrs.Add("key", "value")
         
             if err != nil {
                 fmt.Errorf("Header failed: %v", err)
@@ -251,7 +251,7 @@ export const CODE_EXAMPLE = {
                 producer = await memphis.producer(
                     station_name="<station-name>", producer_name="<producer-name>")
                 headers = Headers()
-                headers.add("<key>", "<value>") 
+                headers.add("key", "value") 
                 for i in range(5):
                     await producer.produce(bytearray('Message #'+str(i)+': Hello world', 'utf-8'), headers=headers)
         
