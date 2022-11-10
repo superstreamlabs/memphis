@@ -409,6 +409,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
 		"full_name":         user.FullName,
+		"skip_get_started":  user.SkipGetStarted,
 	})
 }
 
@@ -457,6 +458,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 				"send_analytics":    true,
 				"env":               "K8S",
 				"namespace":         configuration.K8S_NAMESPACE,
+				"skip_get_started":  sandboxUser.SkipGetStarted,
 			})
 			return
 		}
@@ -501,6 +503,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"env":               env,
 		"namespace":         configuration.K8S_NAMESPACE,
 		"full_name":         user.FullName,
+		"skip_get_started":  user.SkipGetStarted,
 	})
 }
 
@@ -1042,6 +1045,37 @@ func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-done-next-steps")
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("SkipGetStarted error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
+	userName := strings.ToLower(user.Username)
+	_, err = usersCollection.UpdateOne(context.TODO(),
+		bson.M{"username": userName},
+		bson.M{"$set": bson.M{"skip_get_started": true}},
+	)
+
+	_, err = sandboxUsersCollection.UpdateOne(context.TODO(),
+		bson.M{"username": userName},
+		bson.M{"$set": bson.M{"skip_get_started": true}},
+	)
+	if err != nil {
+		serv.Errorf("SkipGetStarted error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.Username, "user-skip-get-started")
 	}
 
 	c.IndentedJSON(200, gin.H{})

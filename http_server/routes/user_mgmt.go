@@ -37,4 +37,5 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.DELETE("/removeCompanyLogo", userMgmtHandler.RemoveCompanyLogo)
 	userMgmtRoutes.GET("/getCompanyLogo", userMgmtHandler.GetCompanyLogo)
 	userMgmtRoutes.PUT("/editAnalytics", userMgmtHandler.EditAnalytics)
+	userMgmtRoutes.POST("/skipGetStarted", userMgmtHandler.SkipGetStarted)
 }
