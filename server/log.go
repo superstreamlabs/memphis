@@ -85,7 +85,14 @@ func (s *Server) ConfigureLogger() {
 		if err != nil || (stat.Mode()&os.ModeCharDevice) == 0 {
 			colors = false
 		}
-		log, s.memphis.activateSysLogsPubFunc = srvlog.NewMemphisLogger(s.createMemphisLoggerFunc(), opts.Logtime, opts.Debug, opts.Trace, colors, true)
+		s.memphis.fallbackLogQ = s.newIPQueue("memphis_fallback_logs")
+		log, s.memphis.activateSysLogsPubFunc = srvlog.NewMemphisLogger(s.createMemphisLoggerFunc(),
+			s.createMemphisLoggerFallbackFunc(),
+			opts.Logtime,
+			opts.Debug,
+			opts.Trace,
+			colors,
+			true)
 	}
 
 	s.SetLoggerV2(log, opts.Debug, opts.Trace, opts.TraceVerbose)
@@ -253,12 +260,26 @@ func (s *Server) executeLogCall(f func(logger Logger, format string, v ...interf
 
 	f(s.logging.logger, format, args...)
 }
+func publishLogToSubjectAndAnalytics(s *Server, label string, log []byte) {
+	copiedLog := copyBytes(log)
+	s.sendLogToSubject(label, copiedLog)
+	s.sendLogToAnalytics(label, copiedLog)
+}
 
 func (s *Server) createMemphisLoggerFunc() srvlog.HybridLogPublishFunc {
 	return func(label string, log []byte) {
-		copiedLog := copyBytes(log)
-		s.sendLogToSubject(label, copiedLog)
-		s.sendLogToAnalytics(label, copiedLog)
+		publishLogToSubjectAndAnalytics(s, label, log)
+	}
+}
+
+type fallbackLog struct {
+	label string
+	log   []byte
+}
+
+func (s *Server) createMemphisLoggerFallbackFunc() srvlog.HybridLogPublishFunc {
+	return func(label string, log []byte) {
+		s.memphis.fallbackLogQ.push(fallbackLog{label: label, log: copyBytes(log)})
 	}
 }
 

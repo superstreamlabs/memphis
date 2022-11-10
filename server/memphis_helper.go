@@ -180,27 +180,26 @@ func (s *Server) memphisClusterReady() {
 }
 
 func (s *Server) CreateSystemLogsStream() {
-	if s.JetStreamIsClustered() {
-		if !s.memphis.logStreamCreated {
-			timeout := time.NewTimer(2 * time.Minute)
-			select {
-			case <-timeout.C:
-				s.Fatalf("Failed to create syslogs stream: cluster readiness timeout")
-			case <-s.memphis.mcr:
-				timeout.Stop()
-				s.memphis.logStreamCreated = true
-			}
+	ready := !s.JetStreamIsClustered()
 
-			if !s.JetStreamIsLeader() {
-				return
-			}
+	for !ready { // wait for cluster to be ready if we are in cluster mode
+		timeout := time.NewTimer(2 * time.Minute)
+		select {
+		case <-timeout.C:
+			s.Errorf("Failed to create syslogs stream within cluster readiness timeout")
+		case <-s.memphis.mcr:
+			timeout.Stop()
+			ready = true
 		}
 
+		if ready && !s.JetStreamIsLeader() {
+			return
+		}
 	}
 
 	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 	if err != nil {
-		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
+		s.Errorf("Failed to create syslogs stream: " + err.Error())
 
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
@@ -214,14 +213,33 @@ func (s *Server) CreateSystemLogsStream() {
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
-	if err != nil {
-		s.Fatalf("Failed to create syslogs stream: " + " " + err.Error())
+
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		s.Fatalf("Failed to create syslogs stream: " + err.Error())
 	}
 
 	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("publish activation func is not initialised")
+		s.Fatalf("internal error: publish activation func is not initialised")
 	}
 	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
+	return
+}
+
+func (s *Server) popFallbackLogs() {
+	select {
+	case <-s.memphis.fallbackLogQ.ch:
+		break
+	default:
+		// if there were not fallback logs, exit
+		return
+	}
+	logs := s.memphis.fallbackLogQ.pop()
+
+	for _, l := range logs {
+		log := l.(fallbackLog)
+		publishLogToSubjectAndAnalytics(s, log.label, log.log)
+	}
 }
 
 func (s *Server) memphisAddStream(sc *StreamConfig) error {

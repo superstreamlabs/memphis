@@ -68,16 +68,18 @@ func NewStdLogger(time, debug, trace, colors, pid bool) *Logger {
 type HybridLogPublishFunc func(string, []byte)
 
 type hybridStreamLogger struct {
-	labelStart   int
-	canPublish   bool
-	canPublishMu sync.Mutex
-	publishFunc  HybridLogPublishFunc
+	labelStart          int
+	canPublish          bool
+	canPublishMu        sync.Mutex
+	publishFunc         HybridLogPublishFunc
+	fallbackPublishFunc HybridLogPublishFunc
 }
 
-func newHybridStreamLogger(publishFunc HybridLogPublishFunc, labelStart int) *hybridStreamLogger {
+func newHybridStreamLogger(publishFunc HybridLogPublishFunc, fallbackFunc HybridLogPublishFunc, labelStart int) *hybridStreamLogger {
 	return &hybridStreamLogger{
-		labelStart:  labelStart,
-		publishFunc: publishFunc,
+		labelStart:          labelStart,
+		publishFunc:         publishFunc,
+		fallbackPublishFunc: fallbackFunc,
 	}
 }
 
@@ -88,16 +90,19 @@ func (hsl *hybridStreamLogger) Write(b []byte) (int, error) {
 	canPublish := hsl.canPublish
 	hsl.canPublishMu.Unlock()
 
+	label := string(b[hsl.labelStart : hsl.labelStart+labelLen])
+
 	if canPublish {
-		label := string(b[hsl.labelStart : hsl.labelStart+labelLen])
 		hsl.publishFunc(label, b)
+	} else {
+		hsl.fallbackPublishFunc(label, b)
 	}
 
 	return os.Stderr.Write(b)
 }
 
 // NewMemphisLogger creates a logger with output directed to Stderr and to a subject
-func NewMemphisLogger(publishFunc HybridLogPublishFunc, time, debug, trace, colors, pid bool) (*Logger, func()) {
+func NewMemphisLogger(publishFunc HybridLogPublishFunc, fallbackPublishFunc HybridLogPublishFunc, time, debug, trace, colors, pid bool) (*Logger, func()) {
 	flags := 0
 	labelStart := 1 // skip the [
 	if time {
@@ -115,7 +120,7 @@ func NewMemphisLogger(publishFunc HybridLogPublishFunc, time, debug, trace, colo
 		labelStart += 1 // skip a space
 	}
 
-	hsl := newHybridStreamLogger(publishFunc, labelStart)
+	hsl := newHybridStreamLogger(publishFunc, fallbackPublishFunc, labelStart)
 
 	l := &Logger{
 		logger: log.New(hsl, pre, flags),
