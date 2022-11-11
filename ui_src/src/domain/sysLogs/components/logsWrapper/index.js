@@ -35,6 +35,7 @@ const LogsWrapper = () => {
         startIndex: 0,
         endIndex: 0
     });
+    const [logType, setLogType] = useState('');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
@@ -46,7 +47,7 @@ const LogsWrapper = () => {
 
     const getLogs = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=all&start_index=${stateRef.current[0]}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${logType || 'all'}&start_index=${stateRef.current[0]}`);
             if (data.logs) {
                 if (stateRef.current[0] === -1) {
                     setLastMgsSeq(data.logs[0].message_seq);
@@ -88,7 +89,20 @@ const LogsWrapper = () => {
 
     const startListen = () => {
         setTimeout(() => {
-            state.socket?.emit('register_syslogs_data');
+            switch (logType) {
+                case 'err':
+                    state.socket?.emit('register_syslogs_data_err');
+                    break;
+                case 'warn':
+                    state.socket?.emit('register_syslogs_data_warn');
+                    break;
+                case 'info':
+                    state.socket?.emit('register_syslogs_data_info');
+                    break;
+                default:
+                    state.socket?.emit('register_syslogs_data');
+                    break;
+            }
         }, 2000);
     };
 
