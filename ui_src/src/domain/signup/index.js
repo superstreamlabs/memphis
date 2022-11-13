@@ -157,7 +157,7 @@ const Signup = (props) => {
                                     }
                                 ]}
                             >
-                                <div className="field name" id="e2e-tests-field-email">
+                                <div className="field name">
                                     <p>Your email</p>
                                     <Input
                                         placeholder="name@gmail.com"
@@ -184,7 +184,7 @@ const Signup = (props) => {
                                     }
                                 ]}
                             >
-                                <div className="field" id="e2e-tests-field-fullname">
+                                <div className="field">
                                     <p>Full name</p>
                                     <Input
                                         placeholder="Type your name"
@@ -213,22 +213,20 @@ const Signup = (props) => {
                             >
                                 <div className="field password">
                                     <p>Password</p>
-                                    <div id="e2e-tests-field-password">
-                                        <Input
-                                            placeholder="Password"
-                                            type="password"
-                                            radiusType="semi-round"
-                                            colorType="gray"
-                                            backgroundColorType="none"
-                                            borderColorType="gray"
-                                            width="470px"
-                                            height="43px"
-                                            minWidth="200px"
-                                            onChange={handlePasswordChange}
-                                            onBlur={handlePasswordChange}
-                                            value={formFields.password}
-                                        />
-                                    </div>
+                                    <Input
+                                        placeholder="Password"
+                                        type="password"
+                                        radiusType="semi-round"
+                                        colorType="gray"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        width="470px"
+                                        height="43px"
+                                        minWidth="200px"
+                                        onChange={handlePasswordChange}
+                                        onBlur={handlePasswordChange}
+                                        value={formFields.password}
+                                    />
                                 </div>
                             </Form.Item>
                             <p className="future-updates">Features and releases updates</p>
@@ -244,24 +242,22 @@ const Signup = (props) => {
                                 </div>
                             )}
                             <Form.Item className="button-container">
-                                <div id="e2e-tests-signup-btn">
-                                    <Button
-                                        width="276px"
-                                        height="43px"
-                                        placeholder={
-                                            <div className="placeholder-btn">
-                                                <p>Continue</p> <KeyboardArrowRightRounded />
-                                            </div>
-                                        }
-                                        colorType="white"
-                                        radiusType="circle"
-                                        backgroundColorType="purple"
-                                        fontSize="12px"
-                                        fontWeight="600"
-                                        isLoading={loadingSubmit}
-                                        onClick={handleSubmit}
-                                    />
-                                </div>
+                                <Button
+                                    width="276px"
+                                    height="43px"
+                                    placeholder={
+                                        <div className="placeholder-btn">
+                                            <p>Continue</p> <KeyboardArrowRightRounded />
+                                        </div>
+                                    }
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    isLoading={loadingSubmit}
+                                    onClick={handleSubmit}
+                                />
                             </Form.Item>
                         </Form>
                         <div
