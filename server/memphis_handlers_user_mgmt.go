@@ -574,8 +574,13 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		user, err := getUserDetailsFromMiddleware(c)
+		if err != nil {
+			serv.Errorf("AddUserSignUp error: " + err.Error())
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		}
 
-		serv.Noticef("User " + username + " has been created")
+		serv.Noticef("User " + username + " has been created by user" + user.Username)
 		token, refreshToken, err := CreateTokens(newUser)
 		if err != nil {
 			serv.Errorf("CreateUserSignUp error: " + err.Error())
@@ -818,7 +823,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-user")
 	}
 
-	serv.Noticef("User " + username + " has been deleted")
+	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
 	c.IndentedJSON(200, gin.H{})
 }
 

@@ -176,7 +176,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		}
 
 		if created {
-			message := "Station " + stationName.Ext() + " has been created"
+			message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
@@ -274,7 +274,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if updateResults.MatchedCount == 0 {
-		message := "Consumer " + name + " has been created"
+		message := "Consumer " + name + " has been created by user " + c.memphisInfo.username
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
@@ -575,7 +575,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	message := "Consumer " + name + " has been deleted"
+	message := "Consumer " + name + " has been deleted by user " + c.memphisInfo.username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
@@ -636,7 +636,7 @@ func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error 
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
 		for _, consumer := range consumers {
-			message = "Consumer " + consumer.Name + " has been disconnected"
+			message = "Consumer " + consumer.Name + " has been disconnected by user " + consumers[0].CreatedByUser
 			newAuditLog = models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   station.Name,
