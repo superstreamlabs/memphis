@@ -97,7 +97,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 
 		if created {
-			message := "Station " + pStationName.Ext() + " has been created"
+			message := "Station " + pStationName.Ext() + " has been created by user " + c.memphisInfo.username
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
@@ -161,7 +161,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 
 	if updateResults.MatchedCount == 0 {
-		message := "Producer " + name + " has been created"
+		message := "Producer " + name + " has been created by user " + c.memphisInfo.username
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
@@ -424,7 +424,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	message := "Producer " + name + " has been deleted"
+	message := "Producer " + name + " has been deleted by user " + c.memphisInfo.username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
@@ -485,7 +485,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
 		for _, producer := range producers {
-			message = "Producer " + producer.Name + " has been disconnected"
+			message = "Producer " + producer.Name + " has been disconnected by user " + producers[0].CreatedByUser
 			newAuditLog = models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   station.Name,
