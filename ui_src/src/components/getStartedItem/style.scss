@@ -25,7 +25,34 @@
             display: flex;
             justify-content: space-evenly;
             padding-top: 10%;
+            padding-right: 40px;
 
+            .react-player__preview {
+                border-radius: 10px !important;
+                border: 1px solid #b4b4b4;
+                background-size: auto !important;
+                z-index: 1 !important;
+            }
+            .pink-ball {
+                top: 41.5%;
+                right: 10%;
+                position: absolute;
+            }
+            .purple-ball {
+                right: 33%;
+                top: 12%;
+                position: absolute;
+            }
+            .black-ball {
+                left: 41%;
+                top: 11%;
+                position: absolute;
+            }
+            .orange-ball {
+                left: 9%;
+                top: 40%;
+                position: absolute;
+            }
             .video-description {
                 text-align: center;
                 font-weight: 500;
@@ -40,6 +67,7 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
+            margin-top: 20px;
             .header-image {
                 height: 45px;
                 width: 50px;
@@ -54,6 +82,7 @@
                 font-weight: 400;
                 font-size: 12px;
                 color: #b4b4b4;
+                margin-top: 20px;
             }
         }
         .finish {

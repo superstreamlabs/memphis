@@ -74,7 +74,7 @@ const Finish = ({ createStationFormRef }) => {
                 </div>
                 <div id="e2e-getstarted-finish-btn">
                     <Button
-                        width="192px"
+                        width="182px"
                         height="42px"
                         placeholder="Go to dashboard"
                         radiusType="circle"
@@ -84,6 +84,7 @@ const Finish = ({ createStationFormRef }) => {
                         colorType="white"
                         borderRadius="31px"
                         boxShadowStyle="none"
+                        marginTop="20px"
                         onClick={(e) => {
                             onFinish(e);
                         }}
