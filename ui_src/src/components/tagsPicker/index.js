@@ -138,7 +138,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
                 <>
                     <div className="search-input">
                         <SearchInput
-                            placeholder="Tag Name"
+                            placeholder="Tag name"
                             colorType="navy"
                             backgroundColorType="none"
                             borderRadiusType="circle"
