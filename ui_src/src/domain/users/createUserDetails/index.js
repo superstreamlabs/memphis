@@ -108,7 +108,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                         }
                     ]}
                 >
-                    <div id="e2e-tests-user-name" className="field username">
+                    <div className="field username">
                         <p>
                             <span className="required-field-mark">* </span>Username
                         </p>
@@ -129,7 +129,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                 </Form.Item>
                 <div className="field user-type">
                     <p>Type</p>
-                    <div id="e2e-tests-user-type" className="field username">
+                    <div className="field username">
                         <Form.Item name="user_type" initialValue={formFields.user_type}>
                             <SelectComponent
                                 value={formFields.user_type}

@@ -105,20 +105,18 @@ const StationOverviewHeader = () => {
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
                     </span>
                 </div>
-                <div id="e2e-tests-station-close-btn">
-                    <Button
-                        width="80px"
-                        height="32px"
-                        placeholder="Back"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="navy"
-                        fontSize="13px"
-                        fontWeight="600"
-                        border="navy"
-                        onClick={() => returnToStaionsList()}
-                    />
-                </div>
+                <Button
+                    width="80px"
+                    height="32px"
+                    placeholder="Back"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="navy"
+                    fontSize="13px"
+                    fontWeight="600"
+                    border="navy"
+                    onClick={() => returnToStaionsList()}
+                />
             </div>
             <div className="details">
                 <div className="main-details">
