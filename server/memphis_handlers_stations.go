@@ -252,7 +252,12 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+		param := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -620,7 +625,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-create-station")
+		param := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
 	}
 
 	if schemaName != "" {

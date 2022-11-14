@@ -116,7 +116,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+				param := analytics.EventParam{
+					Name:  "station-name",
+					Value: pStationName.Ext(),
+				}
+				analyticsParams := []analytics.EventParam{param}
+				analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
 			}
 		}
 	}
@@ -180,7 +185,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.SendEvent(c.memphisInfo.username, "user-create-producer")
+			param := analytics.EventParam{
+				Name:  "producer-name",
+				Value: newProducer.Name,
+			}
+			analyticsParams := []analytics.EventParam{param}
+			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-producer")
 		}
 	}
 

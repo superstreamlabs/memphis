@@ -334,7 +334,17 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		if configuration.ANALYTICS == "true" {
-			analytics.SendEvent("", "installation")
+			installationType := "stand-alone"
+			if configuration.DOCKER_ENV != "true" {
+				installationType = "cluster"
+			}
+
+			param := analytics.EventParam{
+				Name:  "installation-type",
+				Value: installationType,
+			}
+			analyticsParams := []analytics.EventParam{param}
+			analytics.SendEventWithParams("", analyticsParams, "installation")
 		}
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),

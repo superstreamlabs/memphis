@@ -195,7 +195,12 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+				param := analytics.EventParam{
+					Name:  "station-name",
+					Value: stationName.Ext(),
+				}
+				analyticsParams := []analytics.EventParam{param}
+				analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
 			}
 		}
 	}
@@ -293,7 +298,12 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.SendEvent(c.memphisInfo.username, "user-create-consumer")
+			param := analytics.EventParam{
+				Name:  "consumer-name",
+				Value: newConsumer.Name,
+			}
+			analyticsParams := []analytics.EventParam{param}
+			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-consumer")
 		}
 	}
 
