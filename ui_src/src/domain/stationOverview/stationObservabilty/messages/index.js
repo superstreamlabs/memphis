@@ -304,7 +304,7 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
@@ -318,7 +318,6 @@ const Messages = () => {
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-
                             <p>Message</p>
                         </div>
                         <p className="right-coulmn">Details</p>
@@ -350,7 +349,7 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
+                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
                                 </Space>
