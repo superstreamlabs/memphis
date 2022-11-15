@@ -71,6 +71,13 @@ type srvMemphis struct {
 	mcrReported            bool
 	mcr                    chan struct{} // memphis cluster ready
 	jsApiMu                sync.Mutex
+	ws                     memphisWS
+}
+
+type memphisWS struct {
+	subscriptions map[string]memphisWSSubscription
+	webSocketMu   sync.Mutex
+	quitCh        chan struct{}
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
@@ -102,6 +109,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	})
 
 	s.initializeSDKHandlers()
+	s.initWS()
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
