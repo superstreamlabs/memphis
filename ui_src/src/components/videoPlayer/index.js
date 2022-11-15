@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import playVideoIcon from '../../assets/images/playVideoIcon.svg';
 import ReactPlayer from 'react-player';
 
-const VideoPlayer = (props) => {
-    const { url, style } = props;
+const VideoPlayer = ({ url }) => {
     const [playState, setPlayState] = useState(false);
 
     return (
         <ReactPlayer
-            style={style}
+            className="video-player"
             controls={true}
             playing={playState}
             light={true}

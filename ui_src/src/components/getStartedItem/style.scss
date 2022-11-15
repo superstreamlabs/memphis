@@ -24,7 +24,7 @@
         .video-container {
             display: flex;
             justify-content: space-evenly;
-            padding-top: 10%;
+            padding-top: 95px;
             padding-right: 40px;
 
             .react-player__preview {
@@ -34,23 +34,23 @@
                 z-index: 1 !important;
             }
             .pink-ball {
-                top: 41.5%;
-                right: 10%;
+                top: 300px;
+                right: 125px;
                 position: absolute;
             }
             .purple-ball {
-                right: 33%;
-                top: 12%;
+                right: 350px;
+                top: 70px;
                 position: absolute;
             }
             .black-ball {
-                left: 41%;
-                top: 11%;
+                left: 450px;
+                top: 60px;
                 position: absolute;
             }
             .orange-ball {
-                left: 9%;
-                top: 40%;
+                left: 115px;
+                top: 300px;
                 position: absolute;
             }
             .video-description {

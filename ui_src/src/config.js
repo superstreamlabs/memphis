@@ -28,3 +28,4 @@ export const SOCKET_URL = environment === 'production' ? `${SSL_PREFIX}${SERVER_
 export const GOOGLE_CLIENT_ID = '916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com';
 export const REDIRECT_URI = environment === 'production' ? 'https://sandbox.memphis.dev/login' : 'http://localhost:9000/login';
 export const GITHUB_CLIENT_ID = environment === 'production' ? '4dc1b3238c4d7563e426' : '51b0330eb3b34bc8f641';
+export const VIDEO = 'https://www.youtube.com/watch?v=kp_l2qFokso';

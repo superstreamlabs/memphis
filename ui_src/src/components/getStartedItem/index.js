@@ -9,6 +9,7 @@ import blackBall from '../../assets/images/blackBall.svg';
 import orangeBall from '../../assets/images/orangeBall.svg';
 import pinkBall from '../../assets/images/pinkBall.svg';
 import purpleBall from '../../assets/images/purpleBall.svg';
+import { VIDEO } from '../../config';
 
 const GetStartedItem = (props) => {
     const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;
@@ -38,30 +39,14 @@ const GetStartedItem = (props) => {
                             <div>
                                 <img className="black-ball" src={blackBall} alt="black-ball"></img>
                                 <img className="orange-ball" src={orangeBall} alt="orange-ball"></img>
-                                <VideoPlayer
-                                    url={'https://www.youtube.com/watch?v=kp_l2qFokso'}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        borderRadius: '10px',
-                                        justifyContent: 'center',
-                                    }}
-                                />
+                                <VideoPlayer url={VIDEO} />
                                 <p className="video-description">Watch starting Demo video ✨</p>
                             </div>
                             <div>
                                 <img className="pink-ball" src={pinkBall} alt="pink-ball"></img>
                                 <img className="purple-ball" src={purpleBall} alt="purple-ball"></img>
 
-                                <VideoPlayer
-                                    url={'https://www.youtube.com/watch?v=kp_l2qFokso'}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        borderRadius: '10px',
-                                        justifyContent: 'center',
-                                    }}
-                                />
+                                <VideoPlayer url={VIDEO} />
                                 <p className="video-description">Explore the system in 3 min ⭐</p>
                             </div>
                         </div>
