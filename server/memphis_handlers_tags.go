@@ -16,6 +16,7 @@ package server
 import (
 	"context"
 	"errors"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strings"
@@ -432,6 +433,8 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					return
 				}
 			}
+
+			analyticsEventName := ""
 			if entity == "station" {
 				message = "Tag " + name + " has been added to station " + stationName.Ext() + " by user " + user.Username
 
@@ -450,14 +453,27 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				if err != nil {
 					serv.Warnf("create audit logs error: " + err.Error())
 				}
+
+				analyticsEventName = "user-tag-station"
 			} else if entity == "schema" {
 				message = "Tag " + name + " has been added to schema " + schemaName + " by user " + user.Username
+				analyticsEventName = "user-tag-schema"
 			} else {
-				message = "Tag " + name + " has been added " + "by user " + user.Username
-
+				message = "Tag " + name + " has been added to user " + "by user " + user.Username
+				analyticsEventName = "user-tag-user"
 			}
-			serv.Noticef(message)
 
+			shouldSendAnalytics, _ := shouldSendAnalytics()
+			if shouldSendAnalytics {
+				param := analytics.EventParam{
+					Name:  "tag-name",
+					Value: name,
+				}
+				analyticsParams := []analytics.EventParam{param}
+				analytics.SendEventWithParams(user.Username, analyticsParams, analyticsEventName)
+			}
+
+			serv.Noticef(message)
 		}
 	}
 	if len(body.TagsToRemove) > 0 {

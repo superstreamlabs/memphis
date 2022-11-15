@@ -335,7 +335,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 
 		if configuration.ANALYTICS == "true" {
 			installationType := "stand-alone"
-			if configuration.DOCKER_ENV != "true" {
+			if serv.JetStreamIsClustered() {
 				installationType = "cluster"
 			}
 

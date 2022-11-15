@@ -102,8 +102,8 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
                             });
                         }
                         const reqBody = {
-                            tags_to_Add: tagsToAdd,
-                            tags_to_Remove: tagsToRemoveNames,
+                            tags_to_add: tagsToAdd,
+                            tags_to_remove: tagsToRemoveNames,
                             entity_type: entity_type,
                             entity_name: entity_name
                         };
