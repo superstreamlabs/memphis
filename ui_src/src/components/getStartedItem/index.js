@@ -36,13 +36,15 @@ const GetStartedItem = (props) => {
                     <img className="get-started-bg-img-bottom" src={bgGetStartedBottom} alt="bgGetStartedBottom"></img>
                     <div className="get-started-top">
                         <div className="video-container">
-                            <div>
-                                <img className="black-ball" src={blackBall} alt="black-ball"></img>
+                            <div className="video-section">
+                                <div className="video-section-black-ball">
+                                    <img className="black-ball" src={blackBall} alt="black-ball"></img>
+                                </div>
                                 <img className="orange-ball" src={orangeBall} alt="orange-ball"></img>
                                 <VideoPlayer url={VIDEO} />
                                 <p className="video-description">Watch starting Demo video ✨</p>
                             </div>
-                            <div>
+                            <div className="video-section">
                                 <img className="pink-ball" src={pinkBall} alt="pink-ball"></img>
                                 <img className="purple-ball" src={purpleBall} alt="purple-ball"></img>
 

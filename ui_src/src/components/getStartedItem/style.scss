@@ -26,6 +26,13 @@
             justify-content: space-evenly;
             padding-top: 95px;
             padding-right: 40px;
+            z-index: 1;
+            .video-section {
+                z-index: 0;
+            }
+            .video-section-black-ball {
+                z-index: -1;
+            }
 
             .react-player__preview {
                 border-radius: 10px !important;
@@ -34,24 +41,27 @@
                 z-index: 1 !important;
             }
             .pink-ball {
-                top: 300px;
-                right: 125px;
+                top: 354px;
+                right: 40px;
                 position: absolute;
             }
             .purple-ball {
                 right: 350px;
                 top: 70px;
                 position: absolute;
+                z-index: -3;
             }
             .black-ball {
                 left: 450px;
                 top: 60px;
                 position: absolute;
+                z-index: -2;
             }
             .orange-ball {
-                left: 115px;
-                top: 300px;
+                left: 40px;
+                top: 354px;
                 position: absolute;
+                z-index: 0;
             }
             .video-description {
                 text-align: center;
