@@ -22,6 +22,8 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
+	"memphis-broker/slack"
+
 	"os"
 
 	"go.uber.org/automaxprocs/maxprocs"
@@ -104,6 +106,11 @@ func runMemphis(s *server.Server) db.DbInstance {
 	err = analytics.InitializeAnalytics(dbInstance.Client)
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
+	}
+
+	err = slack.InitializeSlackConnection(dbInstance.Client)
+	if err != nil {
+		s.Errorf("Failed initializing slack connection: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
