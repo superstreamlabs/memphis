@@ -32,5 +32,5 @@ type SlackIntegrationRequest struct {
 }
 
 type GetIntegrationDetailsRequest struct {
-	Name string `json:"name"`
+	Name string `form:"name" json:"name" binding:"required"`
 }
