@@ -17,7 +17,7 @@ import (
 	"context"
 
 	"memphis-broker/models"
-	"memphis-broker/slack"
+	"memphis-broker/notifications"
 	"memphis-broker/utils"
 
 	"github.com/gin-gonic/gin"
@@ -58,7 +58,7 @@ func (it IntegrationsHandler) CreateSlackIntegration(c *gin.Context) {
 		return
 	}
 
-	slack.UpdateSlackDetails(body.AuthToken, body.ChannelID, body.PoisonMessageAlert, body.SchemaValidationFailAlert)
+	notifications.UpdateSlackDetails(body.AuthToken, body.ChannelID, body.PoisonMessageAlert, body.SchemaValidationFailAlert)
 
 	c.IndentedJSON(200, slackIntegration)
 }
@@ -94,7 +94,7 @@ func (it IntegrationsHandler) UpdateSlackIntegration(c *gin.Context) {
 		return
 	}
 
-	slack.UpdateSlackDetails(body.AuthToken, body.ChannelID, body.PoisonMessageAlert, body.SchemaValidationFailAlert)
+	notifications.UpdateSlackDetails(body.AuthToken, body.ChannelID, body.PoisonMessageAlert, body.SchemaValidationFailAlert)
 
 	c.IndentedJSON(200, slackIntegration)
 }
