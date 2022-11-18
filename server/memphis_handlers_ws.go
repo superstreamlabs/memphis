@@ -16,21 +16,32 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/models"
+	"strings"
 	"time"
 )
 
 const (
-	memphisWS_SubscribeMsg                 = "SUB"
-	memphisWS_UnsubscribeMsg               = "UNSUB"
-	memphisWS_subsSubject                  = "$memphis_ws_subs"
-	memphisWS_sub_StationOverviewData      = "$memphis_sub__station_overview_data"
-	memphisWS_template_StationOverviewData = "station_overview_data.%s"
+	memphisWS_SubscribeMsg              = "SUB"
+	memphisWS_UnsubscribeMsg            = "UNSUB"
+	memphisWS_Subj_Subs                 = "$memphis_ws_subs.>"
+	memphisWs_Cgroup_Subs               = "$memphis_ws_subs_cg"
+	memphisWS_TemplSubj_Publish         = "$memphis_ws_pubs.%s"
+	memphisWS_Subj_MainOverviewData     = "main_overview_data"
+	memphisWS_Subj_StationOverviewData  = "station_overview_data"
+	memphisWS_Subj_PoisonMsgJourneyData = "poison_message_journey_data"
+	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
+	memphisWS_Subj_SysLogsData          = "syslogs_data"
+	memphisWS_Subj_SysLogsDataInf       = "syslogs_data_info"
+	memphisWS_Subj_SysLogsDataWrn       = "syslogs_data_warn"
+	memphisWS_Subj_SysLogsDataErr       = "syslogs_data_err"
+	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 )
 
 type memphisWSSubscription struct {
 	refCount   int
-	updateFunc func() map[string]any
+	updateFunc func() any
 }
 
 func (s *Server) initWS() {
@@ -46,8 +57,8 @@ func (s *Server) initWS() {
 		Schemas:    SchemasHandler{S: s},
 	}
 
-	s.queueSubscribe(memphisWS_subsSubject,
-		memphisWS_subsSubject,
+	s.queueSubscribe(memphisWS_Subj_Subs,
+		memphisWs_Cgroup_Subs,
 		s.createWSRegistrationHandler(&handlers))
 
 	go memphisWSLoop(s, ws.subscriptions, ws.quitCh)
@@ -64,7 +75,8 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSSubscription, quitCh chan
 				if err != nil {
 					s.Errorf(err.Error())
 				}
-				s.respondOnGlobalAcc(k, updateRaw)
+				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
+				s.respondOnGlobalAcc(replySubj, updateRaw)
 			}
 		case <-quitCh:
 			ticker.Stop()
@@ -73,55 +85,148 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSSubscription, quitCh chan
 	}
 }
 
+func tokensFromToEnd(subject string, index uint8) string {
+	ti, start := uint8(1), 0
+	for i := 0; i < len(subject); i++ {
+		if subject[i] == btsep {
+			if ti == index {
+				return subject[start:]
+			}
+			start = i + 1
+			ti++
+		}
+	}
+	if ti == index {
+		return subject[start:]
+	}
+	return _EMPTY_
+}
+
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
+		s.Debugf("memphisWS registration - %s,%s,%s", subj, reply, string(msg))
 		subscriptions := s.memphis.ws.subscriptions
-		switch string(msg) {
+		filteredSubj := tokensFromToEnd(subj, 2)
+		trimmedMsg := strings.TrimSuffix(string(msg), "\r\n")
+		switch trimmedMsg {
 		case memphisWS_SubscribeMsg:
-			if sub, ok := subscriptions[subj]; ok {
+			if sub, ok := subscriptions[filteredSubj]; ok {
 				sub.refCount += 1
-				subscriptions[subj] = sub
+				subscriptions[filteredSubj] = sub
 				return
 			}
-			subscriptions[subj] = memphisWSParseSubscriptionSubject(s, h, subj)
+			subscriptions[filteredSubj] = memphisWSNewSubFromSubject(s, h, filteredSubj)
 
 		case memphisWS_UnsubscribeMsg:
-			sub := subscriptions[subj]
+			sub := subscriptions[filteredSubj]
 			sub.refCount -= 1
 			if sub.refCount <= 0 {
-				delete(subscriptions, subj)
+				delete(subscriptions, filteredSubj)
 				return
 			}
-			subscriptions[subj] = sub
+			subscriptions[filteredSubj] = sub
 		default:
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
 	}
 }
 
-func memphisWSParseSubscriptionSubject(s *Server, h *Handlers, subj string) memphisWSSubscription {
+func memphisWSNewSubFromSubject(s *Server, h *Handlers, subj string) memphisWSSubscription {
 	subjectHead := tokenAt(subj, 1)
+	newSub := memphisWSNewSubscription()
 	switch subjectHead {
-	case memphisWS_sub_StationOverviewData:
+	case memphisWS_Subj_MainOverviewData:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetMainOverviewData(h)
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_StationOverviewData:
 		stationName := tokenAt(subj, 2)
 		if stationName == _EMPTY_ {
-			s.Errorf("memphis websocket invalid station name")
+			s.Errorf("memphis websocket: invalid station name")
+		}
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetStationOverviewData(s, h, stationName)
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_PoisonMsgJourneyData:
+		poisonMsgId := tokenAt(subj, 2)
+
+		newSub.updateFunc = func() any {
+			result, err := h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_AllStationsData:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetStationsOverviewData(h)
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_SysLogsData:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetSystemLogs(h, _EMPTY_)
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_SysLogsDataInf:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetSystemLogs(h, "info")
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_SysLogsDataWrn:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetSystemLogs(h, "warn")
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_SysLogsDataErr:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetSystemLogs(h, "err")
+			return memphisWSExtractErr(s, result, err)
+		}
+	case memphisWS_Subj_AllSchemasData:
+		newSub.updateFunc = func() any {
+			result, err := memphisWSGetSchemasOverviewData(h)
+			return memphisWSExtractErr(s, result, err)
 		}
 
-		return memphisWSSubscription{
-			refCount: 1,
-			updateFunc: func() map[string]any {
-				result, err := memphisWSGetStationOverviewData(s, h, stationName)
-				if err != nil {
-					s.Errorf(err.Error())
-				}
-				return result
-			},
-		}
 	default:
 		s.Errorf("memphis websocket: invalid subject")
+		return memphisWSSubscription{}
 	}
-	return memphisWSSubscription{}
+	return newSub
+}
+
+func memphisWSNewSubscription() memphisWSSubscription {
+	return memphisWSSubscription{
+		refCount: 1,
+	}
+}
+
+func memphisWSExtractErr(s *Server, result any, err error) any {
+	if err != nil {
+		s.Errorf(err.Error())
+	}
+	return result
+}
+
+func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
+	stations, err := h.Stations.GetAllStationsDetails()
+	if err != nil {
+		return models.MainOverviewData{}, nil
+	}
+	totalMessages, err := h.Stations.GetTotalMessagesAcrossAllStations()
+	if err != nil {
+		return models.MainOverviewData{}, err
+	}
+	systemComponents, err := h.Monitoring.GetSystemComponents()
+	if err != nil {
+		return models.MainOverviewData{}, err
+	}
+
+	return models.MainOverviewData{
+		TotalStations:    len(stations),
+		TotalMessages:    totalMessages,
+		SystemComponents: systemComponents,
+		Stations:         stations,
+	}, nil
 }
 
 func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string) (map[string]any, error) {
@@ -234,4 +339,30 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	}
 
 	return response, nil
+}
+
+func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, error) {
+	schemas, err := h.Schemas.GetAllSchemasDetails()
+	if err != nil {
+		return schemas, err
+	}
+	return schemas, nil
+}
+
+func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDetails, error) {
+	stations, err := h.Stations.GetStationsDetails()
+	if err != nil {
+		return stations, err
+	}
+	return stations, nil
+}
+
+func memphisWSGetSystemLogs(h *Handlers, filterSubjectSuffix string) (models.SystemLogsResponse, error) {
+	const amount = 100
+	const timeout = 3 * time.Second
+	filterSubject := ""
+	if filterSubjectSuffix != "" {
+		filterSubject = "$memphis_syslogs." + filterSubjectSuffix
+	}
+	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }
