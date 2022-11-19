@@ -49,6 +49,7 @@ import Resources from './resources';
 import Installation from '../../components/installation';
 import { CloudDownloadRounded } from '@material-ui/icons';
 import { capitalizeFirst } from '../../services/valueConvertor';
+import { StringCodec, JSONCodec } from "nats.ws"
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -128,16 +129,25 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        state.socket?.on('main_overview_data', (data) => {
-            data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-            dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-        });
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data`)
+        const jc = JSONCodec();
+        const sc = StringCodec();
+        (async () => {
+            for await (const msg of sub) {
+                let data = jc.decode(msg.data);
+                data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+                dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+            }
+        })();
+
         setTimeout(() => {
-            state.socket?.emit('register_main_overview_data');
+            state.socket?.publish(`$memphis_ws_subs.main_overview_data`,
+                                  sc.encode("SUB"));
             setisLoading(false);
         }, 1000);
         return () => {
-            state.socket?.emit('deregister');
+            state.socket?.publish(`$memphis_ws_subs.main_overview_data`,
+                                  sc.encode("UNSUB"));
         };
     }, [state.socket]);
 

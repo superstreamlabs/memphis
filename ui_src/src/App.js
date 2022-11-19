@@ -18,6 +18,8 @@ import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import io from 'socket.io-client';
+import { connect, credsAuthenticator } from "nats.ws";
+
 import { message } from 'antd';
 
 import { LOCAL_STORAGE_TOKEN } from './const/localStorageConsts';
@@ -80,17 +82,28 @@ const App = withRouter(() => {
         if (window.location.pathname === pathDomains.login) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+
             const handleRefreshStatus = await handleRefreshTokenRequest();
             if (handleRefreshStatus) {
                 if (firstTime) {
-                    const socket = await io.connect(SOCKET_URL, {
-                        path: '/api/socket.io',
-                        query: {
-                            authorization: localStorage.getItem(LOCAL_STORAGE_TOKEN)
-                        },
-                        reconnection: false
-                    });
-                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
+                    // const socket = await io.connect(socket_url, {
+                    //     path: '/api/socket.io',
+                    //     query: {
+                    //         authorization: localstorage.getitem(local_storage_token)
+                    //     },
+                    //     reconnection: false
+                    // });
+                    // dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
+                    const conn = await connect(
+                        {
+                            servers: ["ws://localhost:8080"],
+                            // authenticator: credsAuthenticator(new TextEncoder().encode(token))
+                            token: "memphis",
+                        }
+                    );
+                    console.log(`connected to ${conn.getServer()}`);
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+
                 }
                 return true;
             }

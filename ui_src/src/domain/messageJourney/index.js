@@ -28,6 +28,7 @@ import Producer from './components/producer';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
+import { StringCodec, JSONCodec } from "nats.ws"
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
@@ -61,14 +62,24 @@ const MessageJourney = () => {
     }, []);
 
     useEffect(() => {
-        state.socket?.on(`poison_message_journey_data_${messageId}`, (data) => {
-            arrangeData(data);
-        });
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.message_journey_data.${messageId}`)
+        const jc = JSONCodec();
+        const sc = StringCodec();
+        (async () => {
+            for await (const msg of sub) {
+                let data = jc.decode(msg.data);
+                arrangeData(data);
+            }
+        })();
+
         setTimeout(() => {
-            state.socket?.emit('register_poison_message_journey_data', messageId);
+            state.socket?.publish(`$memphis_ws_subs.message_journey_data.${messageId}`,
+                                  sc.encode("SUB"));
+
         }, 1000);
         return () => {
-            state.socket?.emit('deregister');
+            state.socket?.publish(`$memphis_ws_subs.message_journey_data.${messageId}`,
+                                  sc.encode("UNSUB"));
         };
     }, [state.socket]);
 

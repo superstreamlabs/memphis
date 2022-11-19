@@ -31,6 +31,7 @@ import Input from '../../components/Input';
 import { SOCKET_URL } from '../../config';
 import io from 'socket.io-client';
 import pathDomains from '../../router';
+import { connect, credsAuthenticator } from "nats.ws";
 
 const Login = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -88,15 +89,24 @@ const Login = (props) => {
                 const data = await httpRequest('POST', ApiEndpoints.LOGIN, { username, password }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
-                    const socket = await io.connect(SOCKET_URL, {
-                        path: '/api/socket.io',
-                        query: {
-                            authorization: data.jwt
-                        },
-                        reconnection: false
-                    });
+                    // const socket = await io.connect(SOCKET_URL, {
+                    //     path: '/api/socket.io',
+                    //     query: {
+                    //         authorization: data.jwt
+                    //     },
+                    //     reconnection: false
+                    // });
+                    // dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
+                    const conn = await connect(
+                        {
+                            servers: ["ws://localhost:8080"],
+                            // authenticator: credsAuthenticator(new TextEncoder().encode(token))
+                            token: "memphis",
+                        }
+                    );
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     dispatch({ type: 'SET_USER_DATA', payload: data });
-                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
+
                     history.push(referer);
                 }
             } catch (err) {

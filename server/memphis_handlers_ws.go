@@ -33,9 +33,9 @@ const (
 	memphisWS_Subj_PoisonMsgJourneyData = "poison_message_journey_data"
 	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
-	memphisWS_Subj_SysLogsDataInf       = "syslogs_data_info"
-	memphisWS_Subj_SysLogsDataWrn       = "syslogs_data_warn"
-	memphisWS_Subj_SysLogsDataErr       = "syslogs_data_err"
+	memphisWS_Subj_SysLogsDataInf       = "syslogs_data.info"
+	memphisWS_Subj_SysLogsDataWrn       = "syslogs_data.warn"
+	memphisWS_Subj_SysLogsDataErr       = "syslogs_data.err"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 )
 
@@ -162,23 +162,9 @@ func memphisWSNewSubFromSubject(s *Server, h *Handlers, subj string) memphisWSSu
 			return memphisWSExtractErr(s, result, err)
 		}
 	case memphisWS_Subj_SysLogsData:
+		logLevel := tokenAt(subj, 2)
 		newSub.updateFunc = func() any {
-			result, err := memphisWSGetSystemLogs(h, _EMPTY_)
-			return memphisWSExtractErr(s, result, err)
-		}
-	case memphisWS_Subj_SysLogsDataInf:
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetSystemLogs(h, "info")
-			return memphisWSExtractErr(s, result, err)
-		}
-	case memphisWS_Subj_SysLogsDataWrn:
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetSystemLogs(h, "warn")
-			return memphisWSExtractErr(s, result, err)
-		}
-	case memphisWS_Subj_SysLogsDataErr:
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetSystemLogs(h, "err")
+			result, err := memphisWSGetSystemLogs(h, logLevel)
 			return memphisWSExtractErr(s, result, err)
 		}
 	case memphisWS_Subj_AllSchemasData:
