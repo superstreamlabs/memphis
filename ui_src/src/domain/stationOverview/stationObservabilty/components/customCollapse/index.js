@@ -14,28 +14,21 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import Schema from 'protocol-buffers-schema';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
 import StatusIndication from '../../../../../components/indication';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
+import { decodeMessage } from '../../../../../services/decoder';
 
 const { Panel } = Collapse;
 
 const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [parser, setParser] = useState('bytes');
-    const [payload, setPayload] = useState('');
-    const hex_to_ascii = (str1) => {
-        var hex = str1.toString();
-        var str = '';
-        for (var n = 0; n < hex.length; n += 2) {
-            str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
-        }
-        return str;
-    };
+    const [payload, setPayload] = useState(data);
+
     useEffect(() => {
         if (message) {
             switch (parser) {
@@ -46,14 +39,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                     setPayload(JSON.stringify(JSON.parse(data), null, 2));
                     break;
                 case 'protobuf':
-                    var t = '08 96 01';
-                    var x = Buffer(t, 'hex');
-
-                    // message.decode(t);
-                    Schema.parse(x);
-
-                    debugger;
-                    // setPayload(Schema.parse(t));
+                    setPayload(JSON.stringify(decodeMessage(data), null, 2));
                     break;
                 default:
                     setPayload(data);
@@ -136,7 +122,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                                         </div>
                                     </div>
                                 </div>
-                                {parser === 'json' ? <pre>{payload}</pre> : <p>{payload}</p>}
+                                {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
                         )}
                     </div>
