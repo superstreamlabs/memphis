@@ -30,6 +30,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import pathDomains from '../../router';
 import { connect, credsAuthenticator } from "nats.ws";
+import { SOCKET_URL } from '../../config';
 
 const Login = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -89,7 +90,7 @@ const Login = (props) => {
                     AuthService.saveToLocalStorage(data);
                     const conn = await connect(
                         {
-                            servers: ["ws://localhost:8080"],
+                            servers: [SOCKET_URL],
                             token: "memphis",
                         }
                     );

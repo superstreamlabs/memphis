@@ -41,7 +41,7 @@ const (
 
 type memphisWSSubscription struct {
 	refCount   int
-	updateFunc func() any
+	updateFunc func() (any, error)
 }
 
 func (s *Server) initWS() {
@@ -70,10 +70,15 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSSubscription, quitCh chan
 		select {
 		case <-ticker.C:
 			for k, v := range subs {
-				update := v.updateFunc()
+				update, err := v.updateFunc()
+				if err != nil {
+					s.Errorf(err.Error())
+					continue
+				}
 				updateRaw, err := json.Marshal(update)
 				if err != nil {
 					s.Errorf(err.Error())
+					continue
 				}
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
 				s.respondOnGlobalAcc(replySubj, updateRaw)
@@ -115,7 +120,12 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 				subscriptions[filteredSubj] = sub
 				return
 			}
-			subscriptions[filteredSubj] = memphisWSNewSubFromSubject(s, h, filteredSubj)
+			newSub, err := memphisWSNewSubFromSubject(s, h, filteredSubj)
+			if err != nil {
+				s.Errorf("memphis websocket: " + err.Error())
+				return
+			}
+			subscriptions[filteredSubj] = newSub
 
 		case memphisWS_UnsubscribeMsg:
 			sub := subscriptions[filteredSubj]
@@ -131,66 +141,54 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	}
 }
 
-func memphisWSNewSubFromSubject(s *Server, h *Handlers, subj string) memphisWSSubscription {
+func memphisWSNewSubFromSubject(s *Server, h *Handlers, subj string) (memphisWSSubscription, error) {
 	subjectHead := tokenAt(subj, 1)
 	newSub := memphisWSNewSubscription()
 	switch subjectHead {
 	case memphisWS_Subj_MainOverviewData:
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetMainOverviewData(h)
-			return memphisWSExtractErr(s, result, err)
+		newSub.updateFunc = func() (any, error) {
+			return memphisWSGetMainOverviewData(h)
 		}
 	case memphisWS_Subj_StationOverviewData:
 		stationName := tokenAt(subj, 2)
 		if stationName == _EMPTY_ {
-			s.Errorf("memphis websocket: invalid station name")
+			return memphisWSSubscription{}, errors.New("invalid station name")
 		}
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetStationOverviewData(s, h, stationName)
-			return memphisWSExtractErr(s, result, err)
+
+		newSub.updateFunc = func() (any, error) {
+			return memphisWSGetStationOverviewData(s, h, stationName)
 		}
 	case memphisWS_Subj_PoisonMsgJourneyData:
 		poisonMsgId := tokenAt(subj, 2)
-
-		newSub.updateFunc = func() any {
-			result, err := h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
-			return memphisWSExtractErr(s, result, err)
+		if poisonMsgId == _EMPTY_ {
+			return memphisWSSubscription{}, errors.New("invalid poison msg id")
+		}
+		newSub.updateFunc = func() (any, error) {
+			return h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
 		}
 	case memphisWS_Subj_AllStationsData:
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetStationsOverviewData(h)
-			return memphisWSExtractErr(s, result, err)
+		newSub.updateFunc = func() (any, error) {
+			return memphisWSGetStationsOverviewData(h)
 		}
 	case memphisWS_Subj_SysLogsData:
 		logLevel := tokenAt(subj, 2)
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetSystemLogs(h, logLevel)
-			return memphisWSExtractErr(s, result, err)
+		newSub.updateFunc = func() (any, error) {
+			return memphisWSGetSystemLogs(h, logLevel)
 		}
 	case memphisWS_Subj_AllSchemasData:
-		newSub.updateFunc = func() any {
-			result, err := memphisWSGetSchemasOverviewData(h)
-			return memphisWSExtractErr(s, result, err)
+		newSub.updateFunc = func() (any, error) {
+			return memphisWSGetSchemasOverviewData(h)
 		}
-
 	default:
-		s.Errorf("memphis websocket: invalid subject")
-		return memphisWSSubscription{}
+		return memphisWSSubscription{}, errors.New("invalid subject")
 	}
-	return newSub
+	return newSub, nil
 }
 
 func memphisWSNewSubscription() memphisWSSubscription {
 	return memphisWSSubscription{
 		refCount: 1,
 	}
-}
-
-func memphisWSExtractErr(s *Server, result any, err error) any {
-	if err != nil {
-		s.Errorf(err.Error())
-	}
-	return result
 }
 
 func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {

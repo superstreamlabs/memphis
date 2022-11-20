@@ -32,6 +32,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI } from '../../config';
 import { connect, credsAuthenticator } from "nats.ws";
+import { SOCKET_URL } from '../../config';
 
 const SandboxLogin = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -151,7 +152,7 @@ const SandboxLogin = (props) => {
                     AuthService.saveToLocalStorage(data);
                     const conn = await connect(
                         {
-                            servers: ["ws://localhost:8080"],
+                            servers: [SOCKET_URL],
                             token: "memphis",
                         }
                     );

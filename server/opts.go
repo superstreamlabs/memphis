@@ -4068,13 +4068,13 @@ func parseWebsocket(v interface{}, o *Options, errors *[]error, warnings *[]erro
 			o.Websocket.Host = hp.host
 			o.Websocket.Port = hp.port
 		case "port":
-			o.Websocket.Port = configuration.WS_PORT // int(mv.(int64))
+			o.Websocket.Port = int(mv.(int64))
 		case "host", "net":
 			o.Websocket.Host = mv.(string)
 		case "advertise":
 			o.Websocket.Advertise = mv.(string)
 		case "no_tls":
-			o.Websocket.NoTLS = configuration.WS_TLS // mv.(bool)
+			o.Websocket.NoTLS = mv.(bool)
 		case "tls":
 			tc, err := parseTLS(tk, true)
 			if err != nil {
@@ -4680,6 +4680,8 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	fs.BoolVar(&opts.JetStream, "jetstream", false, "Enable JetStream.")
 	fs.StringVar(&opts.StoreDir, "sd", "", "Storage directory.")
 	fs.StringVar(&opts.StoreDir, "store_dir", "", "Storage directory.")
+	fs.IntVar(&opts.Websocket.Port, "websocket_port", configuration.WS_PORT, "Websocket port")
+	fs.BoolVar(&opts.Websocket.NoTLS, "websocket_no_tls", !configuration.WS_TLS, "Websocket no-tls")
 
 	// The flags definition above set "default" values to some of the options.
 	// Calling Parse() here will override the default options with any value

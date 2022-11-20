@@ -87,13 +87,11 @@ const App = withRouter(() => {
                 if (firstTime) {
                     const conn = await connect(
                         {
-                            servers: ["ws://localhost:8080"],
+                            servers: [SOCKET_URL],
                             token: "memphis",
                         }
                     );
-                    console.log(`connected to ${conn.getServer()}`);
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-
                 }
                 return true;
             }

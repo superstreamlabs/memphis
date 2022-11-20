@@ -1,6 +1,6 @@
 {
     "HTTP_PORT": "9000",
-    "WS_PORT": 6667,
+    "WS_PORT": 8080,
     "WS_TLS": false,
     "MONGO_URL": "mongodb://mongo:27017/maindb?retryWrites=true&w=majority",
     "DB_NAME": "maindb",

@@ -36,6 +36,7 @@ import Input from '../../components/Input';
 import Tooltip from '../../components/tooltip/tooltip';
 import pathDomains from '../../router';
 import { connect, credsAuthenticator } from "nats.ws";
+import { SOCKET_URL } from '../../config';
 
 const Signup = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -111,7 +112,7 @@ const Signup = (props) => {
 
                     const conn = await connect(
                         {
-                            servers: ["ws://localhost:8080"],
+                            servers: [SOCKET_URL],
                             token: "memphis",
                         }
                     );
