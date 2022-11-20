@@ -30,7 +30,6 @@ import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueC
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
@@ -40,6 +39,11 @@ import TagsList from '../../../../components/tagList';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
 import { Context } from '../../../../hooks/store';
+import Ajv2019 from 'ajv/dist/2019';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import Ajv2020 from 'ajv/dist/2020';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 
 const formatOption = [
     {
@@ -55,6 +59,7 @@ const formatOption = [
 ];
 
 function SchemaDetails({ schemaName, closeDrawer }) {
+    const ajv = new Ajv2019();
     const [state, dispatch] = useContext(Context);
 
     const [versionSelected, setVersionSelected] = useState();
@@ -168,30 +173,71 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         setIsLoading(false);
     };
 
+    const checkContent = (value) => {
+        const { type } = schemaDetails;
+        if (value === ' ' || value === '') {
+            setValidateSuccess('');
+            setValidateError('Schema content cannot be empty');
+        }
+        if (value && value.length > 0) {
+            try {
+                if (type === 'protobuf') {
+                    let parser = Schema.parse(value).messages;
+                    if (parser.length > 1) {
+                        setEditable(true);
+                        setMessagesStructNameList(getUnique(parser));
+                    } else {
+                        setMessageStructName(parser[0].name);
+                        setEditable(false);
+                    }
+                } else if (type === 'json') {
+                    value = JSON.parse(value);
+                    ajv.addMetaSchema(draft7MetaSchema);
+                    const isValid = ajv.validateSchema(value);
+                    if (isValid) {
+                        setValidateSuccess('');
+                        setValidateError('');
+                    }
+                }
+            } catch (error) {
+                try {
+                    const ajv = new jsonSchemaDraft04();
+                    const isValid = ajv.validateSchema(value);
+                    if (isValid) {
+                        setValidateSuccess('');
+                        setValidateError('');
+                    }
+                } catch (error) {
+                    try {
+                        const ajv = new Ajv2020();
+                        const isValid = ajv.validateSchema(value);
+                        if (isValid) {
+                            setValidateSuccess('');
+                            setValidateError('');
+                        }
+                    } catch (error) {
+                        try {
+                            ajv.addMetaSchema(draft6MetaSchema);
+                            const isValid = ajv.validateSchema(value);
+                            if (isValid) {
+                                setValidateSuccess('');
+                                setValidateError('');
+                            }
+                        } catch (error) {
+                            setValidateSuccess('');
+                            setValidateError(error.message);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
     const handleEditVersion = (value) => {
         setValidateSuccess('');
         setNewVersion(value);
         setUpdated(isThereDiff(versionSelected?.schema_content, value));
-        if (value.length > 0) {
-            try {
-                let parser = Schema.parse(value).messages;
-                if (parser.length > 1) {
-                    setEditable(true);
-                    setMessagesStructNameList(getUnique(parser));
-                } else {
-                    setMessageStructName(parser[0].name);
-                    setEditable(false);
-                }
-                setValidateSuccess('');
-                setValidateError('');
-            } catch (error) {
-                setValidateSuccess('');
-                setValidateError(error.message);
-            }
-        } else {
-            setValidateSuccess('');
-            setValidateError('Schema content cannot be empty');
-        }
+        checkContent(value);
     };
 
     const handleValidateSchema = async () => {
