@@ -9,7 +9,7 @@ import blackBall from '../../assets/images/blackBall.svg';
 import orangeBall from '../../assets/images/orangeBall.svg';
 import pinkBall from '../../assets/images/pinkBall.svg';
 import purpleBall from '../../assets/images/purpleBall.svg';
-import { VIDEO } from '../../config';
+import { CONNECT_APP_VIDEO, CONNECT_CLI_VIDEO } from '../../config';
 
 const GetStartedItem = (props) => {
     const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;
@@ -41,15 +41,15 @@ const GetStartedItem = (props) => {
                                     <img className="black-ball" src={blackBall} alt="black-ball"></img>
                                 </div>
                                 <img className="orange-ball" src={orangeBall} alt="orange-ball"></img>
-                                <VideoPlayer url={VIDEO} />
-                                <p className="video-description">Watch starting Demo video ✨</p>
+                                <VideoPlayer url={CONNECT_APP_VIDEO} />
+                                <p className="video-description">Connect your first app to Memphis ✨</p>
                             </div>
                             <div className="video-section">
                                 <img className="pink-ball" src={pinkBall} alt="pink-ball"></img>
                                 <img className="purple-ball" src={purpleBall} alt="purple-ball"></img>
 
-                                <VideoPlayer url={VIDEO} />
-                                <p className="video-description">Explore the system in 3 min ⭐</p>
+                                <VideoPlayer url={CONNECT_CLI_VIDEO} />
+                                <p className="video-description">How to install and connect Memphis.dev CLI ⭐</p>
                             </div>
                         </div>
                         <div className="get-started-top-header finish">
