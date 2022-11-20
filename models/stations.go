@@ -56,55 +56,61 @@ type MessageDetails struct {
 }
 
 type Station struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Name            string             `json:"name" bson:"name"`
-	RetentionType   string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
-	StorageType     string             `json:"storage_type" bson:"storage_type"`
-	Replicas        int                `json:"replicas" bson:"replicas"`
-	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-	DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
-	Functions       []Function         `json:"functions" bson:"functions"`
-	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
-	Schema          SchemaDetails      `json:"schema" bson:"schema"`
+	ID                primitive.ObjectID `json:"id" bson:"_id"`
+	Name              string             `json:"name" bson:"name"`
+	RetentionType     string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue    int                `json:"retention_value" bson:"retention_value"`
+	StorageType       string             `json:"storage_type" bson:"storage_type"`
+	Replicas          int                `json:"replicas" bson:"replicas"`
+	DedupEnabled      bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
+	DedupWindowInMs   int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
+	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate        time.Time          `json:"last_update" bson:"last_update"`
+	Functions         []Function         `json:"functions" bson:"functions"`
+	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
+	Schema            SchemaDetails      `json:"schema" bson:"schema"`
+	Idempotency       bool               `json:"idempotency" bson:"idempotency"`
+	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 }
 
 type GetStationResponseSchema struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Name            string             `json:"name" bson:"name"`
-	RetentionType   string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
-	StorageType     string             `json:"storage_type" bson:"storage_type"`
-	Replicas        int                `json:"replicas" bson:"replicas"`
-	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-	DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
-	Functions       []Function         `json:"functions" bson:"functions"`
-	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
-	Tags            []CreateTag        `json:"tags"`
+	ID                primitive.ObjectID `json:"id" bson:"_id"`
+	Name              string             `json:"name" bson:"name"`
+	RetentionType     string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue    int                `json:"retention_value" bson:"retention_value"`
+	StorageType       string             `json:"storage_type" bson:"storage_type"`
+	Replicas          int                `json:"replicas" bson:"replicas"`
+	DedupEnabled      bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
+	DedupWindowInMs   int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
+	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate        time.Time          `json:"last_update" bson:"last_update"`
+	Functions         []Function         `json:"functions" bson:"functions"`
+	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
+	Tags              []CreateTag        `json:"tags"`
+	Idempotency       bool               `json:"idempotency" bson:"idempotency"`
+	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 }
 
 type ExtendedStation struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Name            string             `json:"name" bson:"name"`
-	RetentionType   string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue  int                `json:"retention_value" bson:"retention_value"`
-	StorageType     string             `json:"storage_type" bson:"storage_type"`
-	Replicas        int                `json:"replicas" bson:"replicas"`
-	DedupEnabled    bool               `json:"dedup_enabled" bson:"dedup_enabled"`
-	DedupWindowInMs int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"`
-	CreatedByUser   string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate      time.Time          `json:"last_update" bson:"last_update"`
-	Functions       []Function         `json:"functions" bson:"functions"`
-	TotalMessages   int                `json:"total_messages"`
-	PoisonMessages  int                `json:"posion_messages"`
-	Tags            []CreateTag        `json:"tags"`
+	ID                primitive.ObjectID `json:"id" bson:"_id"`
+	Name              string             `json:"name" bson:"name"`
+	RetentionType     string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue    int                `json:"retention_value" bson:"retention_value"`
+	StorageType       string             `json:"storage_type" bson:"storage_type"`
+	Replicas          int                `json:"replicas" bson:"replicas"`
+	DedupEnabled      bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
+	DedupWindowInMs   int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
+	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate        time.Time          `json:"last_update" bson:"last_update"`
+	Functions         []Function         `json:"functions" bson:"functions"`
+	TotalMessages     int                `json:"total_messages"`
+	PoisonMessages    int                `json:"posion_messages"`
+	Tags              []CreateTag        `json:"tags"`
+	Idempotency       bool               `json:"idempotency" bson:"idempotency"`
+	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 }
 
 type ExtendedStationDetails struct {
@@ -119,15 +125,17 @@ type GetStationSchema struct {
 }
 
 type CreateStationSchema struct {
-	Name            string      `json:"name" binding:"required,min=1,max=32"`
-	RetentionType   string      `json:"retention_type"`
-	RetentionValue  int         `json:"retention_value"`
-	Replicas        int         `json:"replicas"`
-	StorageType     string      `json:"storage_type"`
-	DedupEnabled    bool        `json:"dedup_enabled"`
-	DedupWindowInMs int         `json:"dedup_window_in_ms" binding:"min=0"`
-	Tags            []CreateTag `json:"tags"`
-	SchemaName      string      `json:"schema_name"`
+	Name              string      `json:"name" binding:"required,min=1,max=32"`
+	RetentionType     string      `json:"retention_type"`
+	RetentionValue    int         `json:"retention_value"`
+	Replicas          int         `json:"replicas"`
+	StorageType       string      `json:"storage_type"`
+	DedupEnabled      bool        `json:"dedup_enabled"` // TODO deprecated
+	DedupWindowInMs   int         `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
+	Tags              []CreateTag `json:"tags"`
+	SchemaName        string      `json:"schema_name"`
+	Idempotency       bool        `json:"idempotency"`
+	IdempotencyWindow int         `json:"idempotency_window_in_ms"`
 }
 
 type AckPoisonMessagesSchema struct {

@@ -198,18 +198,20 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 	var newStation models.Station
 	stationName := sn.Ext()
 	newStation = models.Station{
-		ID:              primitive.NewObjectID(),
-		Name:            stationName,
-		RetentionType:   "message_age_sec",
-		RetentionValue:  604800,
-		StorageType:     "file",
-		Replicas:        1,
-		DedupEnabled:    false,
-		DedupWindowInMs: 0,
-		CreatedByUser:   username,
-		CreationDate:    time.Now(),
-		LastUpdate:      time.Now(),
-		Functions:       []models.Function{},
+		ID:                primitive.NewObjectID(),
+		Name:              stationName,
+		RetentionType:     "message_age_sec",
+		RetentionValue:    604800,
+		StorageType:       "file",
+		Replicas:          1,
+		DedupEnabled:      false, // TODO deprecated
+		DedupWindowInMs:   0,     // TODO deprecated
+		CreatedByUser:     username,
+		CreationDate:      time.Now(),
+		LastUpdate:        time.Now(),
+		Functions:         []models.Function{},
+		Idempotency:       false,
+		IdempotencyWindow: 0,
 	}
 
 	err := s.CreateStream(sn, newStation)
@@ -220,17 +222,19 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 	filter := bson.M{"name": newStation.Name, "is_deleted": false}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"_id":                newStation.ID,
-			"retention_type":     newStation.RetentionType,
-			"retention_value":    newStation.RetentionValue,
-			"storage_type":       newStation.StorageType,
-			"replicas":           newStation.Replicas,
-			"dedup_enabled":      newStation.DedupEnabled,
-			"dedup_window_in_ms": newStation.DedupWindowInMs,
-			"created_by_user":    newStation.CreatedByUser,
-			"creation_date":      newStation.CreationDate,
-			"last_update":        newStation.LastUpdate,
-			"functions":          newStation.Functions,
+			"_id":                      newStation.ID,
+			"retention_type":           newStation.RetentionType,
+			"retention_value":          newStation.RetentionValue,
+			"storage_type":             newStation.StorageType,
+			"replicas":                 newStation.Replicas,
+			"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          newStation.CreatedByUser,
+			"creation_date":            newStation.CreationDate,
+			"last_update":              newStation.LastUpdate,
+			"functions":                newStation.Functions,
+			"idempotency":              newStation.Idempotency,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		},
 	}
 	opts := options.Update().SetUpsert(true)

@@ -30,8 +30,10 @@ type createStationRequest struct {
 	RetentionValue    int    `json:"retention_value"`
 	StorageType       string `json:"storage_type"`
 	Replicas          int    `json:"replicas"`
-	DedupEnabled      bool   `json:"dedup_enabled"`
-	DedupWindowMillis int    `json:"dedup_window_in_ms"`
+	DedupEnabled      bool   `json:"dedup_enabled"`      // TODO deprecated
+	DedupWindowMillis int    `json:"dedup_window_in_ms"` // TODO deprecated
+	Idempotency       bool   `json:"idempotency"`
+	IdempotencyWindow int    `json:"idempotency_window_in_ms"`
 }
 
 type destroyStationRequest struct {

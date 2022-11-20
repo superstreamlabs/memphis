@@ -204,19 +204,21 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		replicas = 1
 	}
 	newStation := models.Station{
-		ID:              primitive.NewObjectID(),
-		Name:            stationName.Ext(),
-		CreatedByUser:   c.memphisInfo.username,
-		CreationDate:    time.Now(),
-		IsDeleted:       false,
-		RetentionType:   retentionType,
-		RetentionValue:  retentionValue,
-		StorageType:     storageType,
-		Replicas:        replicas,
-		DedupEnabled:    csr.DedupEnabled,
-		DedupWindowInMs: csr.DedupWindowMillis,
-		LastUpdate:      time.Now(),
-		Functions:       []models.Function{},
+		ID:                primitive.NewObjectID(),
+		Name:              stationName.Ext(),
+		CreatedByUser:     c.memphisInfo.username,
+		CreationDate:      time.Now(),
+		IsDeleted:         false,
+		RetentionType:     retentionType,
+		RetentionValue:    retentionValue,
+		StorageType:       storageType,
+		Replicas:          replicas,
+		DedupEnabled:      csr.DedupEnabled,      // TODO deprecated
+		DedupWindowInMs:   csr.DedupWindowMillis, // TODO deprecated
+		LastUpdate:        time.Now(),
+		Functions:         []models.Function{},
+		Idempotency:       csr.Idempotency,
+		IdempotencyWindow: csr.IdempotencyWindow,
 	}
 
 	err = s.CreateStream(stationName, newStation)
@@ -355,7 +357,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
 	if err != nil {
 		return stations, err
@@ -523,20 +525,22 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	newStation := models.Station{
-		ID:              primitive.NewObjectID(),
-		Name:            stationName.Ext(),
-		RetentionType:   retentionType,
-		RetentionValue:  body.RetentionValue,
-		StorageType:     body.StorageType,
-		Replicas:        body.Replicas,
-		DedupEnabled:    body.DedupEnabled,
-		DedupWindowInMs: body.DedupWindowInMs,
-		CreatedByUser:   user.Username,
-		CreationDate:    time.Now(),
-		LastUpdate:      time.Now(),
-		Functions:       []models.Function{},
-		IsDeleted:       false,
-		Schema:          schemaDetails,
+		ID:                primitive.NewObjectID(),
+		Name:              stationName.Ext(),
+		RetentionType:     retentionType,
+		RetentionValue:    body.RetentionValue,
+		StorageType:       body.StorageType,
+		Replicas:          body.Replicas,
+		DedupEnabled:      body.DedupEnabled,    // TODO deprecated
+		DedupWindowInMs:   body.DedupWindowInMs, // TODO deprecated
+		CreatedByUser:     user.Username,
+		CreationDate:      time.Now(),
+		LastUpdate:        time.Now(),
+		Functions:         []models.Function{},
+		IsDeleted:         false,
+		Schema:            schemaDetails,
+		Idempotency:       body.Idempotency,
+		IdempotencyWindow: body.IdempotencyWindow,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -552,35 +556,39 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if schemaName != "" {
 		update = bson.M{
 			"$setOnInsert": bson.M{
-				"_id":                newStation.ID,
-				"retention_type":     newStation.RetentionType,
-				"retention_value":    newStation.RetentionValue,
-				"storage_type":       newStation.StorageType,
-				"replicas":           newStation.Replicas,
-				"dedup_enabled":      newStation.DedupEnabled,
-				"dedup_window_in_ms": newStation.DedupWindowInMs,
-				"created_by_user":    newStation.CreatedByUser,
-				"creation_date":      newStation.CreationDate,
-				"last_update":        newStation.LastUpdate,
-				"functions":          newStation.Functions,
-				"schema":             newStation.Schema,
+				"_id":                      newStation.ID,
+				"retention_type":           newStation.RetentionType,
+				"retention_value":          newStation.RetentionValue,
+				"storage_type":             newStation.StorageType,
+				"replicas":                 newStation.Replicas,
+				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+				"created_by_user":          newStation.CreatedByUser,
+				"creation_date":            newStation.CreationDate,
+				"last_update":              newStation.LastUpdate,
+				"functions":                newStation.Functions,
+				"schema":                   newStation.Schema,
+				"idempotency":              newStation.Idempotency,
+				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			},
 		}
 	} else {
 		update = bson.M{
 			"$setOnInsert": bson.M{
-				"_id":                newStation.ID,
-				"retention_type":     newStation.RetentionType,
-				"retention_value":    newStation.RetentionValue,
-				"storage_type":       newStation.StorageType,
-				"replicas":           newStation.Replicas,
-				"dedup_enabled":      newStation.DedupEnabled,
-				"dedup_window_in_ms": newStation.DedupWindowInMs,
-				"created_by_user":    newStation.CreatedByUser,
-				"creation_date":      newStation.CreationDate,
-				"last_update":        newStation.LastUpdate,
-				"functions":          newStation.Functions,
-				"schema":             emptySchemaDetailsResponse,
+				"_id":                      newStation.ID,
+				"retention_type":           newStation.RetentionType,
+				"retention_value":          newStation.RetentionValue,
+				"storage_type":             newStation.StorageType,
+				"replicas":                 newStation.Replicas,
+				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+				"created_by_user":          newStation.CreatedByUser,
+				"creation_date":            newStation.CreationDate,
+				"last_update":              newStation.LastUpdate,
+				"functions":                newStation.Functions,
+				"schema":                   emptySchemaDetailsResponse,
+				"idempotency":              newStation.Idempotency,
+				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			},
 		}
 	}
@@ -635,37 +643,41 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
-			"id":                 primitive.NewObjectID(),
-			"name":               stationName.Ext(),
-			"retention_type":     retentionType,
-			"retention_value":    body.RetentionValue,
-			"storage_type":       body.StorageType,
-			"replicas":           body.Replicas,
-			"dedup_enabled":      body.DedupEnabled,
-			"dedup_window_in_ms": body.DedupWindowInMs,
-			"created_by_user":    user.Username,
-			"creation_date":      time.Now(),
-			"last_update":        time.Now(),
-			"functions":          []models.Function{},
-			"is_deleted":         false,
-			"schema":             schemaDetailsResponse,
+			"id":                       primitive.NewObjectID(),
+			"name":                     stationName.Ext(),
+			"retention_type":           retentionType,
+			"retention_value":          body.RetentionValue,
+			"storage_type":             body.StorageType,
+			"replicas":                 body.Replicas,
+			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          user.Username,
+			"creation_date":            time.Now(),
+			"last_update":              time.Now(),
+			"functions":                []models.Function{},
+			"is_deleted":               false,
+			"schema":                   schemaDetailsResponse,
+			"idempotency":              newStation.Idempotency,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
-			"id":                 primitive.NewObjectID(),
-			"name":               stationName.Ext(),
-			"retention_type":     retentionType,
-			"retention_value":    body.RetentionValue,
-			"storage_type":       body.StorageType,
-			"replicas":           body.Replicas,
-			"dedup_enabled":      body.DedupEnabled,
-			"dedup_window_in_ms": body.DedupWindowInMs,
-			"created_by_user":    user.Username,
-			"creation_date":      time.Now(),
-			"last_update":        time.Now(),
-			"functions":          []models.Function{},
-			"is_deleted":         false,
-			"schema":             emptySchemaDetailsResponse,
+			"id":                       primitive.NewObjectID(),
+			"name":                     stationName.Ext(),
+			"retention_type":           retentionType,
+			"retention_value":          body.RetentionValue,
+			"storage_type":             body.StorageType,
+			"replicas":                 body.Replicas,
+			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          user.Username,
+			"creation_date":            time.Now(),
+			"last_update":              time.Now(),
+			"functions":                []models.Function{},
+			"is_deleted":               false,
+			"schema":                   emptySchemaDetailsResponse,
+			"idempotency":              newStation.Idempotency,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		})
 	}
 }
