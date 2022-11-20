@@ -109,7 +109,7 @@ const LogsWrapper = () => {
                               sc.encode("UNSUB"));
         } else {
             state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`,
-                                  sc.encode("UNSUB");
+                                  sc.encode("UNSUB"));
         }
 
     };

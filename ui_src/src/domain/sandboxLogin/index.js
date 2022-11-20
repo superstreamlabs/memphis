@@ -30,8 +30,7 @@ import GitHubLogo from '../../assets/images/githubLogo.svg';
 import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
-import io from 'socket.io-client';
-import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, SOCKET_URL } from '../../config';
+import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI } from '../../config';
 import { connect, credsAuthenticator } from "nats.ws";
 
 const SandboxLogin = (props) => {
@@ -150,19 +149,9 @@ const SandboxLogin = (props) => {
                 const data = await httpRequest('POST', ApiEndpoints.LOGIN, { username, password }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
-                    // const socket = await io.connect(SOCKET_URL, {
-                    //     path: '/api/socket.io',
-                    //     query: {
-                    //         authorization: data.jwt
-                    //     },
-                    //     reconnection: false
-                    // });
-                    // dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
-
                     const conn = await connect(
                         {
                             servers: ["ws://localhost:8080"],
-                            // authenticator: credsAuthenticator(new TextEncoder().encode(token))
                             token: "memphis",
                         }
                     );

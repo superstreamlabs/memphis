@@ -28,8 +28,6 @@ import Button from '../../components/button';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
-import { SOCKET_URL } from '../../config';
-import io from 'socket.io-client';
 import pathDomains from '../../router';
 import { connect, credsAuthenticator } from "nats.ws";
 
@@ -89,18 +87,9 @@ const Login = (props) => {
                 const data = await httpRequest('POST', ApiEndpoints.LOGIN, { username, password }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
-                    // const socket = await io.connect(SOCKET_URL, {
-                    //     path: '/api/socket.io',
-                    //     query: {
-                    //         authorization: data.jwt
-                    //     },
-                    //     reconnection: false
-                    // });
-                    // dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
                     const conn = await connect(
                         {
                             servers: ["ws://localhost:8080"],
-                            // authenticator: credsAuthenticator(new TextEncoder().encode(token))
                             token: "memphis",
                         }
                     );
