@@ -1,5 +1,7 @@
 {
     "HTTP_PORT": "9000",
+    "WS_PORT": 6667,
+    "WS_TLS": false,
     "MONGO_URL": "mongodb://mongo:27017/maindb?retryWrites=true&w=majority",
     "MONGO_USER": "memphis",
     "MONGO_PASS": "memph1smong0",

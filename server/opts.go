@@ -4068,13 +4068,13 @@ func parseWebsocket(v interface{}, o *Options, errors *[]error, warnings *[]erro
 			o.Websocket.Host = hp.host
 			o.Websocket.Port = hp.port
 		case "port":
-			o.Websocket.Port = int(mv.(int64))
+			o.Websocket.Port = configuration.WS_PORT // int(mv.(int64))
 		case "host", "net":
 			o.Websocket.Host = mv.(string)
 		case "advertise":
 			o.Websocket.Advertise = mv.(string)
 		case "no_tls":
-			o.Websocket.NoTLS = mv.(bool)
+			o.Websocket.NoTLS = configuration.WS_TLS // mv.(bool)
 		case "tls":
 			tc, err := parseTLS(tk, true)
 			if err != nil {
