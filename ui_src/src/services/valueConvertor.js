@@ -164,3 +164,12 @@ export const getUnique = (obj) => {
     });
     return unique;
 };
+
+export const diffDate = (date) => {
+    var msDiff = new Date(date).getTime() - new Date().getTime(); //Future date - current date
+    var dayDiff = Math.floor(msDiff / (1000 * 60 * 60 * 24)) * -1;
+    if (dayDiff === 1) {
+        return 'Today';
+    }
+    return `${dayDiff} days ago`;
+};

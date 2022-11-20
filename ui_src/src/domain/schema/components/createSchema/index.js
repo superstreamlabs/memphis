@@ -61,10 +61,9 @@ const schemaTypes = [
     },
     {
         id: 3,
-        value: 'json',
-        label: 'Json (Coming soon)',
-        description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>,
-        disabled: true
+        value: 'Json',
+        label: 'Json',
+        description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>
     }
 ];
 
@@ -78,7 +77,7 @@ const SchemaEditorExample = {
             int32  field3 = 3;
         }`
     },
-    avro: {
+    Json: {
         language: 'json',
         value: `{
             "type": "record",
@@ -127,6 +126,9 @@ function CreateSchema() {
             goBack();
         };
     }, []);
+    useEffect(() => {
+        updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
+    }, [formFields?.type]);
 
     const goBack = () => {
         dispatch({ type: 'SET_CREATE_SCHEMA', payload: false });
@@ -195,6 +197,7 @@ function CreateSchema() {
     };
 
     const checkContent = (_, value) => {
+        debugger;
         if (value.length > 0) {
             try {
                 Schema.parse(value);
@@ -328,29 +331,49 @@ function CreateSchema() {
                             <Form.Item
                                 name="schema_content"
                                 className="schema-item"
-                                initialValue={SchemaEditorExample[formFields?.type]?.value}
+                                initialValue={formFields.schema_content}
                                 rules={[
                                     {
                                         validator: checkContent
                                     }
                                 ]}
                             >
-                                <Editor
-                                    options={{
-                                        minimap: { enabled: false },
-                                        scrollbar: { verticalScrollbarSize: 0 },
-                                        scrollBeyondLastLine: false,
-                                        roundedSelection: false,
-                                        formatOnPaste: true,
-                                        formatOnType: true,
-                                        fontSize: '14px'
-                                    }}
-                                    height="calc(100% - 5px)"
-                                    language={SchemaEditorExample[formFields?.type]?.language}
-                                    defaultValue={SchemaEditorExample[formFields?.type]?.value}
-                                    value={formFields.schema_content}
-                                    onChange={(value) => updateFormState('schema_content', value)}
-                                />
+                                {formFields?.type === 'Protobuf' && (
+                                    <Editor
+                                        options={{
+                                            minimap: { enabled: false },
+                                            scrollbar: { verticalScrollbarSize: 0 },
+                                            scrollBeyondLastLine: false,
+                                            roundedSelection: false,
+                                            formatOnPaste: true,
+                                            formatOnType: true,
+                                            fontSize: '14px'
+                                        }}
+                                        height="calc(100% - 5px)"
+                                        defaultLanguage={SchemaEditorExample[formFields?.type]?.language}
+                                        defaultValue={SchemaEditorExample[formFields?.type]?.value}
+                                        value={formFields.schema_content}
+                                        onChange={(value) => updateFormState('schema_content', value)}
+                                    />
+                                )}
+                                {formFields?.type === 'Json' && (
+                                    <Editor
+                                        options={{
+                                            minimap: { enabled: false },
+                                            scrollbar: { verticalScrollbarSize: 0 },
+                                            scrollBeyondLastLine: false,
+                                            roundedSelection: false,
+                                            formatOnPaste: true,
+                                            formatOnType: true,
+                                            fontSize: '14px'
+                                        }}
+                                        height="calc(100% - 5px)"
+                                        defaultLanguage={SchemaEditorExample[formFields?.type]?.language}
+                                        defaultValue={SchemaEditorExample[formFields?.type]?.value}
+                                        value={formFields.schema_content}
+                                        onChange={(value) => updateFormState('schema_content', value)}
+                                    />
+                                )}
                             </Form.Item>
                             <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
                                 {validateError && <ErrorOutlineRounded />}

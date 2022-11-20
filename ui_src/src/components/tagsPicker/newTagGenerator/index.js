@@ -20,7 +20,7 @@ import Input from '../../Input';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import ColorPicker from '../../colorPicker';
-import { ColorPalette } from '../../../const/colorPalette';
+import { ColorPalette } from '../../../const/globalConst';
 
 const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();

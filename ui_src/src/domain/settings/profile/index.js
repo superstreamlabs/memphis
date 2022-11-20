@@ -74,7 +74,7 @@ function Profile() {
 
     return (
         <div className="profile-container">
-            <div className="header">
+            <div className="header-preferences">
                 <p className="main-header">Profile</p>
                 <p className="sub-header">Modify your profile information and preferences</p>
             </div>
@@ -86,9 +86,10 @@ function Profile() {
                             <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
                         </div>
                     )}
-                    {Array.from(Array(8).keys()).map((item) => {
+                    {Array.from(Array(8).keys()).map((item, index) => {
                         return (
                             <div
+                                key={index}
                                 className={
                                     process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic')
                                         ? 'avatar-img avatar-disable'
@@ -141,7 +142,7 @@ function Profile() {
                         onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
                         name="delete-account"
                     />
-                    <p className={userName === 'root' && 'disabled'} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
+                    <p className={userName === 'root' ? 'disabled' : ''} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
                         Confirm that I want to delete my account.
                     </p>
                 </div>
@@ -183,17 +184,3 @@ function Profile() {
 }
 
 export default Profile;
-
-{
-    /* <div
-                                className={process.env.REACT_APP_SANDBOX_ENV ? 'sub-icon-wrapper-sandbox' : avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'}
-                                onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
-                            >
-                                <img
-                                    src={localStorage.getItem('profile_pic') || require(`../../../assets/images/bots/avatar${item + 1}.svg`)} // profile_pic is available only in sandbox env
-                                    width={localStorage.getItem('profile_pic') ? 35 : ''}
-                                    height={localStorage.getItem('profile_pic') ? 35 : ''}
-                                    alt="avater"
-                                />
-                            </div> */
-}

@@ -12,31 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
 
-import '../style.scss';
 import './style.scss';
 
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import Switcher from '../../../components/switcher';
+import IntegrationItem from './components/integrationItem';
+import { INTEGRATION_LIST } from '../../../const/integrationList';
 
 const Integrations = () => {
     const [hubIntegration, setHubIntegration] = useState(false);
     const [slackIntegration, setSlackIntegration] = useState(false);
     return (
         <div className="alerts-integrations-container">
-            <h3 className="title">Some sentence</h3>
-            <div>
-                <div className="hub-connect-integration">
-                    <div className="alert-integration-type">
-                        <label className="integration-label-bold">Memphis hub</label>
-                        <Switcher onChange={() => setHubIntegration(!hubIntegration)} checked={hubIntegration} checkedChildren="on" unCheckedChildren="off" />
-                    </div>
-                    {!hubIntegration && <p>Signin placeholder</p>}
-                </div>
-                <div className="alert-integration-type">
-                    <label className="alert-integration-label">Slack</label>
-                    <Switcher onChange={() => setSlackIntegration(!slackIntegration)} checked={slackIntegration} checkedChildren="on" unCheckedChildren="off" />
-                </div>
+            <div className="header-preferences">
+                <p className="main-header">Intergrations</p>
+                <p className="sub-header">We will keep an eye on your data streams and alert you if anything went wron</p>
+            </div>
+            <div className="integration-list">
+                {INTEGRATION_LIST?.map((integration) => {
+                    return <IntegrationItem key={integration.name} value={integration} />;
+                })}
             </div>
         </div>
     );

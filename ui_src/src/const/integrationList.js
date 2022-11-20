@@ -11,21 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
+import r from '../assets/images/R.svg';
+import figmaIcon from '../assets/images/figmaIcon.svg';
+import insideBanner from '../assets/images/insideBanner.svg';
 
-export const ColorPalette = [
-    '101, 87, 255', // memphis-purple
-    '77, 34, 178', // deep-purple
-    '177, 140, 254', // lilac-purple
-    '29, 4, 93', // baby-purple
-    '0, 165, 255', // light-blue
-    '238, 113, 158', // pink
-    '255, 140, 130', // peach
-    '252, 52, 0', // red
-    '97, 223, 155', // green
-    '32, 201, 172', // mint-green
-    '97, 223, 215', // aquamarin-green
-    '255, 160, 67', // orange
-    '177, 134, 27', // mustard
-    '182, 180, 186', // grey
-    '100, 100, 103' // dark-grey
+export const INTEGRATION_LIST = [
+    {
+        name: 'Slack',
+        by: 'memphis',
+        banner: <img className="banner" src={r} alt="banner" />,
+        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
+        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        description: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC',
+        date: 'Nov 19, 2022'
+    }
 ];
