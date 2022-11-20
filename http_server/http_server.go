@@ -32,8 +32,6 @@ func InitializeHttpServer(s *server.Server) {
 		Schemas:    server.SchemasHandler{S: s},
 	}
 
-	httpServer, socketioServer := routes.InitializeHttpRoutes(&handlers)
-
-	defer socketioServer.Close()
+	httpServer := routes.InitializeHttpRoutes(&handlers)
 	httpServer.Run("0.0.0.0:" + configuration.HTTP_PORT)
 }
