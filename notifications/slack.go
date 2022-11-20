@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+	"errors"
 
 	"memphis-broker/db"
 	"memphis-broker/models"
@@ -26,15 +27,52 @@ func InitializeSlackConnection(c *mongo.Client) error {
 	err := integrationsCollection.FindOne(context.TODO(),
 		filter).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
+		UpdateEmptySlackDetails()
 		return nil
 	} else if err != nil {
 		return err
 	}
-	UpdateSlackDetails(slackIntegration.Keys["auth_token"], slackIntegration.Keys["channel_id"], slackIntegration.Properties["poison_message_alert"], slackIntegration.Properties["schema_validation_fail_alert"])
+	UpdateSlackDetails(slackIntegration.Keys, slackIntegration.Properties)
 	return nil
 }
 
-func UpdateSlackDetails(authToken string, channelID string, poisonMessageAlert bool, schemaValidationFailAlert bool) {
+func UpdateEmptySlackDetails() {
+	AuthToken = ""
+	ChannelID = ""
+	PoisonMessageAlert = false
+	SchemaValidationFailAlert = false
+	SlackClient = nil
+}
+
+func UpdateSlackDetails(keys map[string]string, properties map[string]bool) {
+	var authToken, channelID string
+	var poisonMessageAlert, schemaValidationFailAlert bool
+	if keys == nil {
+		authToken = ""
+		channelID = ""
+		SlackClient = nil
+	}
+	if properties == nil {
+		poisonMessageAlert = false
+		schemaValidationFailAlert = false
+	}
+	authToken, ok := keys["auth_token"]
+	if !ok {
+		authToken = ""
+		SlackClient = nil
+	}
+	channelID, ok = keys["channel_id"]
+	if !ok {
+		channelID = ""
+	}
+	poisonMessageAlert, ok = properties["poison_message_alert"]
+	if !ok {
+		poisonMessageAlert = false
+	}
+	schemaValidationFailAlert, ok = properties["schema_validation_fail_alert"]
+	if !ok {
+		schemaValidationFailAlert = false
+	}
 	if AuthToken != authToken {
 		AuthToken = authToken
 		if authToken != "" {
@@ -47,18 +85,20 @@ func UpdateSlackDetails(authToken string, channelID string, poisonMessageAlert b
 }
 
 func SendMessageToSlackChannel(message string) error {
-	attachment := slack.Attachment{
-		Pretext: "Memphis Notification",
-		Text:    message,
-		Color:   "#6557FF",
+	if ChannelID != "" || SlackClient != nil {
+		attachment := slack.Attachment{
+			Pretext: "Memphis Notification",
+			Text:    message,
+			Color:   "#6557FF",
+		}
+		_, _, err := SlackClient.PostMessage(
+			ChannelID,
+			slack.MsgOptionAttachments(attachment),
+		)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	_, _, err := SlackClient.PostMessage(
-		ChannelID,
-		slack.MsgOptionAttachments(attachment),
-	)
-
-	if err != nil {
-		return err
-	}
-	return nil
+	return errors.New("Invalid slack credentials")
 }

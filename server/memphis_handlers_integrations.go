@@ -15,9 +15,9 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 
 	"memphis-broker/models"
-	"memphis-broker/notifications"
 	"memphis-broker/utils"
 
 	"github.com/gin-gonic/gin"
@@ -57,8 +57,18 @@ func (it IntegrationsHandler) CreateSlackIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	notifications.UpdateSlackDetails(body.AuthToken, body.ChannelID, body.PoisonMessageAlert, body.SchemaValidationFailAlert)
+	msg, err := json.Marshal(slackIntegration)
+	if err != nil {
+		serv.Errorf("CreateSlackIntegration error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		serv.Errorf("CreateSlackIntegration error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	c.IndentedJSON(200, slackIntegration)
 }
@@ -93,8 +103,13 @@ func (it IntegrationsHandler) UpdateSlackIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	notifications.UpdateSlackDetails(body.AuthToken, body.ChannelID, body.PoisonMessageAlert, body.SchemaValidationFailAlert)
+	msg, err := json.Marshal(slackIntegration)
+	if err != nil {
+		serv.Errorf("CreateSlackIntegration error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 
 	c.IndentedJSON(200, slackIntegration)
 }
@@ -134,4 +149,33 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, integrations)
+}
+
+func (it IntegrationsHandler) DeleteIntegration(c *gin.Context) {
+	var body models.DeleteIntegration
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	filter := bson.M{"name": body.Name}
+	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		serv.Errorf("DeleteIntegration error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	integrationUpdate := models.Integration{
+		Name:       body.Name,
+		Keys:       nil,
+		Properties: nil,
+	}
+
+	msg, err := json.Marshal(integrationUpdate)
+	if err != nil {
+		serv.Errorf("CreateSlackIntegration error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	serv.sendInternalAccountMsg(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, msg)
 }

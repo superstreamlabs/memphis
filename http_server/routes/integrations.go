@@ -24,6 +24,7 @@ func InitializeIntegrationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	integrationsRoutes := router.Group("/integrations")
 	integrationsRoutes.POST("/createSlackIntegration", integrationsHandler.CreateSlackIntegration)
 	integrationsRoutes.POST("/updateSlackIntegration", integrationsHandler.UpdateSlackIntegration)
+	integrationsRoutes.DELETE("/deleteIntegration", integrationsHandler.DeleteIntegration)
 	integrationsRoutes.GET("/getIntegrationDetails", integrationsHandler.GetIntegrationDetails)
 	integrationsRoutes.GET("/getAllIntegrations", integrationsHandler.GetAllIntegrations)
 }

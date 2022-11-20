@@ -131,6 +131,12 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
+	err = s.ListenForIntegrationsUpdates()
+	if err != nil {
+		s.Errorf("Failed subscribing for integrations updates: " + err.Error())
+		os.Exit(1)
+	}
+
 	go s.KillZombieResources()
 
 	var env string
