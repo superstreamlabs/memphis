@@ -180,8 +180,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             setValidateError('Schema content cannot be empty');
         }
         if (value && value.length > 0) {
-            try {
-                if (type === 'protobuf') {
+            if (type === 'protobuf') {
+                try {
                     let parser = Schema.parse(value).messages;
                     if (parser.length > 1) {
                         setEditable(true);
@@ -190,42 +190,55 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         setMessageStructName(parser[0].name);
                         setEditable(false);
                     }
-                } else if (type === 'json') {
+                } catch (error) {
+                    setValidateSuccess('');
+                    setValidateError(error.message);
+                }
+            } else if (type === 'json') {
+                try {
                     value = JSON.parse(value);
                     ajv.addMetaSchema(draft7MetaSchema);
                     const isValid = ajv.validateSchema(value);
                     if (isValid) {
                         setValidateSuccess('');
                         setValidateError('');
-                    }
-                }
-            } catch (error) {
-                try {
-                    const ajv = new jsonSchemaDraft04();
-                    const isValid = ajv.validateSchema(value);
-                    if (isValid) {
-                        setValidateSuccess('');
-                        setValidateError('');
+                    } else {
+                        setValidateError('Schema is not valid');
                     }
                 } catch (error) {
                     try {
-                        const ajv = new Ajv2020();
+                        const ajv = new jsonSchemaDraft04();
                         const isValid = ajv.validateSchema(value);
                         if (isValid) {
                             setValidateSuccess('');
                             setValidateError('');
+                        } else {
+                            setValidateError('Schema is not valid');
                         }
                     } catch (error) {
                         try {
-                            ajv.addMetaSchema(draft6MetaSchema);
+                            const ajv = new Ajv2020();
                             const isValid = ajv.validateSchema(value);
                             if (isValid) {
                                 setValidateSuccess('');
                                 setValidateError('');
+                            } else {
+                                setValidateError('Schema is not valid');
                             }
                         } catch (error) {
-                            setValidateSuccess('');
-                            setValidateError(error.message);
+                            try {
+                                ajv.addMetaSchema(draft6MetaSchema);
+                                const isValid = ajv.validateSchema(value);
+                                if (isValid) {
+                                    setValidateSuccess('');
+                                    setValidateError('');
+                                } else {
+                                    setValidateError('Schema is not valid');
+                                }
+                            } catch (error) {
+                                setValidateSuccess('');
+                                setValidateError(error.message);
+                            }
                         }
                     }
                 }
