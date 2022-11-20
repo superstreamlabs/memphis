@@ -50,6 +50,7 @@ func (it IntegrationsHandler) CreateSlackIntegration(c *gin.Context) {
 			Name:       "slack",
 			Keys:       keys,
 			Properties: properties,
+			UIUrl:      body.UIUrl,
 		}
 		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
 	} else if err != nil {
@@ -89,13 +90,14 @@ func (it IntegrationsHandler) UpdateSlackIntegration(c *gin.Context) {
 	var slackIntegration models.Integration
 	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
+		bson.M{"$set": bson.M{"keys": keys, "properties": properties, "ui_url": body.UIUrl}}).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
 		slackIntegration = models.Integration{
 			ID:         primitive.NewObjectID(),
 			Name:       "slack",
 			Keys:       keys,
 			Properties: properties,
+			UIUrl:      body.UIUrl,
 		}
 		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
 	} else if err != nil {

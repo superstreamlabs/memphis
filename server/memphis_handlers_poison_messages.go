@@ -15,7 +15,9 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"memphis-broker/models"
+	"memphis-broker/notifications"
 
 	"context"
 	"time"
@@ -120,15 +122,30 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		"producer.name":     producedByHeader,
 		"message.time_sent": poisonMessageContent.Time,
 	}
+	var newID = primitive.NewObjectID()
 	update := bson.M{
-		"$push": bson.M{"poisoned_cgs": poisonedCg},
-		"$set":  bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
+		"$setOnInsert": bson.M{"_id": newID},
+		"$push":        bson.M{"poisoned_cgs": poisonedCg},
+		"$set":         bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
 	}
-	opts := options.Update().SetUpsert(true)
-	_, err = poisonMessagesCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
+	opts := options.FindOneAndUpdate().SetUpsert(true)
+	res := poisonMessagesCollection.FindOneAndUpdate(context.TODO(), filter, update, opts)
+	var poisonMsg models.PoisonMessage
+	var idForUrl string
+	err = res.Decode(&poisonMsg)
+	if err == mongo.ErrNoDocuments {
+		idForUrl = newID.Hex()
+	} else if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
+	} else {
+		str := fmt.Sprintf("%v", poisonMsg.ID)
+		substring := str[10 : len(str)-2]
+		idForUrl = substring
+	}
+	if notifications.UIUrl != "" && notifications.SlackAuthToken != "" && notifications.SlackChannelID != "" && notifications.SlackPoisonMessageAlert {
+		var msgUrl = notifications.UIUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
+		notifications.SendMessageToSlackChannel("There was a poisoned message, for message journy see: " + msgUrl)
 	}
 }
 

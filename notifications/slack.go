@@ -13,10 +13,11 @@ import (
 	"github.com/slack-go/slack"
 )
 
-var AuthToken string
-var ChannelID string
-var PoisonMessageAlert bool
-var SchemaValidationFailAlert bool
+var SlackAuthToken string
+var SlackChannelID string
+var SlackPoisonMessageAlert bool
+var SlackSchemaValidationFailAlert bool
+var UIUrl string
 var SlackClient *slack.Client
 var integrationsCollection *mongo.Collection
 
@@ -32,21 +33,23 @@ func InitializeSlackConnection(c *mongo.Client) error {
 	} else if err != nil {
 		return err
 	}
-	UpdateSlackDetails(slackIntegration.Keys, slackIntegration.Properties)
+	UpdateSlackDetails(slackIntegration.Keys, slackIntegration.Properties, slackIntegration.UIUrl)
 	return nil
 }
 
 func UpdateEmptySlackDetails() {
-	AuthToken = ""
-	ChannelID = ""
-	PoisonMessageAlert = false
-	SchemaValidationFailAlert = false
+	UIUrl = ""
+	SlackAuthToken = ""
+	SlackChannelID = ""
+	SlackPoisonMessageAlert = false
+	SlackSchemaValidationFailAlert = false
 	SlackClient = nil
 }
 
-func UpdateSlackDetails(keys map[string]string, properties map[string]bool) {
+func UpdateSlackDetails(keys map[string]string, properties map[string]bool, url string) {
 	var authToken, channelID string
 	var poisonMessageAlert, schemaValidationFailAlert bool
+	UIUrl = url
 	if keys == nil {
 		authToken = ""
 		channelID = ""
@@ -73,26 +76,27 @@ func UpdateSlackDetails(keys map[string]string, properties map[string]bool) {
 	if !ok {
 		schemaValidationFailAlert = false
 	}
-	if AuthToken != authToken {
-		AuthToken = authToken
+	if SlackAuthToken != authToken {
+		SlackAuthToken = authToken
 		if authToken != "" {
 			SlackClient = slack.New(authToken)
 		}
 	}
-	ChannelID = channelID
-	PoisonMessageAlert = poisonMessageAlert
-	SchemaValidationFailAlert = schemaValidationFailAlert
+	SlackChannelID = channelID
+	SlackPoisonMessageAlert = poisonMessageAlert
+	SlackSchemaValidationFailAlert = schemaValidationFailAlert
 }
 
 func SendMessageToSlackChannel(message string) error {
-	if ChannelID != "" || SlackClient != nil {
+	if SlackChannelID != "" || SlackClient != nil {
 		attachment := slack.Attachment{
 			Pretext: "Memphis Notification",
 			Text:    message,
 			Color:   "#6557FF",
 		}
+
 		_, _, err := SlackClient.PostMessage(
-			ChannelID,
+			SlackChannelID,
 			slack.MsgOptionAttachments(attachment),
 		)
 		if err != nil {

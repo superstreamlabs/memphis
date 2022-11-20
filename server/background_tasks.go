@@ -60,7 +60,7 @@ func (s *Server) ListenForIntegrationsUpdates() error {
 			}
 			switch integrationUpdate.Name {
 			case "slack":
-				notifications.UpdateSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
+				notifications.UpdateSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.UIUrl)
 			default:
 				return
 			}

@@ -22,6 +22,7 @@ type Integration struct {
 	Name       string             `json:"name" bson:"name"`
 	Keys       map[string]string  `json:"keys" bson:"keys"`
 	Properties map[string]bool    `json:"properties" bson:"properties"`
+	UIUrl      string             `json:"ui_url" bson:"ui_url"`
 }
 
 type SlackIntegrationRequest struct {
@@ -29,6 +30,7 @@ type SlackIntegrationRequest struct {
 	ChannelID                 string `json:"channel_id"`
 	PoisonMessageAlert        bool   `json:"poison_message_alert"`
 	SchemaValidationFailAlert bool   `json:"schema_validation_fail_alert"`
+	UIUrl                     string `json:"ui_url" bson:"ui_url"`
 }
 
 type GetIntegrationDetailsRequest struct {
@@ -37,4 +39,8 @@ type GetIntegrationDetailsRequest struct {
 
 type DeleteIntegration struct {
 	Name string `form:"name" json:"name" binding:"required"`
+}
+
+type UrlForSlackMessage struct {
+	Url string `json:"url"`
 }
