@@ -9,6 +9,7 @@ import (
 )
 
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
+const SCHEMA_VALIDATION_FAIL_SUBJ = "$memphis_schema_validation_fail_updates"
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -63,6 +64,25 @@ func (s *Server) ListenForIntegrationsUpdates() error {
 				notifications.UpdateSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.UIUrl)
 			default:
 				return
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) ListenForSchemaValidationFails() error {
+	err := s.queueSubscribe(SCHEMA_VALIDATION_FAIL_SUBJ, SCHEMA_VALIDATION_FAIL_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			if notifications.SlackAuthToken != "" && notifications.SlackChannelID != "" && notifications.SlackSchemaValidationFailAlert {
+				var validationFailMsg models.SchemaValidationFailMessage
+				err := json.Unmarshal(msg, &validationFailMsg)
+				if err != nil {
+					s.Errorf(err.Error())
+				}
+				notifications.SendMessageToSlackChannel(validationFailMsg.Msg)
 			}
 		}(copyBytes(msg))
 	})

@@ -44,3 +44,7 @@ type DeleteIntegration struct {
 type UrlForSlackMessage struct {
 	Url string `json:"url"`
 }
+
+type SchemaValidationFailMessage struct {
+	Msg string `json:"msg"`
+}

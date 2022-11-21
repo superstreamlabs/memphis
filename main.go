@@ -137,6 +137,12 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
+	err = s.ListenForSchemaValidationFails()
+	if err != nil {
+		s.Errorf("Failed subscribing for schema validation updates: " + err.Error())
+		os.Exit(1)
+	}
+
 	go s.KillZombieResources()
 
 	var env string
