@@ -18,7 +18,6 @@ import React, { useState, useContext, useEffect, useCallback } from 'react';
 
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-import io from 'socket.io-client';
 import { Form } from 'antd';
 
 import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
@@ -35,8 +34,9 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import Tooltip from '../../components/tooltip/tooltip';
-import { SOCKET_URL } from '../../config';
 import pathDomains from '../../router';
+import { connect } from "nats.ws";
+import { SOCKET_URL } from '../../config';
 
 const Signup = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -109,15 +109,15 @@ const Signup = (props) => {
                 const data = await httpRequest('POST', ApiEndpoints.SIGNUP, formFields, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
-                    const socket = await io.connect(SOCKET_URL, {
-                        path: '/api/socket.io',
-                        query: {
-                            authorization: data.jwt
-                        },
-                        reconnection: false
-                    });
+
+                    const conn = await connect(
+                        {
+                            servers: [SOCKET_URL],
+                            token: "memphis",
+                        }
+                    );
                     dispatch({ type: 'SET_USER_DATA', payload: data });
-                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: socket });
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     history.push(referer);
                 }
             } catch (err) {

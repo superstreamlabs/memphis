@@ -13,7 +13,7 @@
 // limitations under the License.package server
 import './style.scss';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
@@ -24,6 +24,11 @@ const { Panel } = Collapse;
 const MultiCollapse = ({ data, header, defaultOpen }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [activeChiledKey, setActiveChiledKey] = useState();
+    const [collapseData, setCollapseData] = useState();
+
+    useEffect(() => {
+        setCollapseData(data);
+    }, [data]);
 
     const onChange = (key) => {
         setActiveKey(key);
@@ -38,11 +43,11 @@ const MultiCollapse = ({ data, header, defaultOpen }) => {
                 <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse multi">
                     <Panel
                         showArrow={false}
-                        collapsible={data?.length === 0 ? 'disabled' : null}
+                        collapsible={collapseData?.length === 0 ? 'disabled' : null}
                         header={
                             <div className="collapse-header">
                                 <p className="title">
-                                    {header} <span className="consumer-number">{data?.length}</span>
+                                    {header} <span className="consumer-number">{collapseData?.length}</span>
                                 </p>
 
                                 <status is="x3d">
@@ -53,8 +58,8 @@ const MultiCollapse = ({ data, header, defaultOpen }) => {
                         key="1"
                     >
                         <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
-                            {data?.length > 0 &&
-                                data?.map((row, index) => {
+                            {collapseData?.length > 0 &&
+                                collapseData?.map((row, index) => {
                                     return (
                                         <Panel
                                             showArrow={false}
@@ -93,8 +98,8 @@ const MultiCollapse = ({ data, header, defaultOpen }) => {
             ) : (
                 <div className="custom-collapse multi">
                     <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
-                        {data?.length > 0 &&
-                            data?.map((row, index) => {
+                        {collapseData?.length > 0 &&
+                            collapseData?.map((row, index) => {
                                 return (
                                     <Panel
                                         showArrow={false}

@@ -26,6 +26,7 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Reducer from './hooks/reducer';
+import { StringCodec, JSONCodec } from "nats.ws"
 
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
@@ -81,16 +82,26 @@ const StationOverview = () => {
     }, []);
 
     useEffect(() => {
-        state.socket?.on(`station_overview_data_${stationName}`, (data) => {
-            sortData(data);
-            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
-        });
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}`)
+        const jc = JSONCodec();
+        const sc = StringCodec();
+        (async () => {
+            for await (const msg of sub) {
+                let data = jc.decode(msg.data);
+                sortData(data);
+                stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            }
+        })();
 
         setTimeout(() => {
-            state.socket?.emit('register_station_overview_data', stationName);
+
+            state.socket?.publish(`$memphis_ws_subs.station_overview_data.${stationName}`,
+                                  sc.encode("SUB"));
         }, 1000);
         return () => {
-            state.socket?.emit('deregister');
+            state.socket?.publish(`$memphis_ws_subs.station_overview_data.${stationName}`,
+                                  sc.encode("UNSUB"));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 
