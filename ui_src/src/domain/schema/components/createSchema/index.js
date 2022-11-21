@@ -217,7 +217,8 @@ function CreateSchema() {
         const jsonObj = JSON.parse(json);
         let key = Object.keys(jsonObj)[0];
         const jsonSchema = GenerateSchema.json(key, jsonObj);
-        updateFormState('schema_content', JSON.stringify(jsonSchema));
+        const beautifyJson = JSON.stringify(jsonSchema, null, "\t")
+        updateFormState('schema_content',beautifyJson);
     };
 
     const handleValidateSchema = async () => {
