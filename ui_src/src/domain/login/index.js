@@ -29,7 +29,7 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import pathDomains from '../../router';
-import { connect, credsAuthenticator } from "nats.ws";
+import { connect } from "nats.ws";
 import { SOCKET_URL } from '../../config';
 
 const Login = (props) => {

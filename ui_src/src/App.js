@@ -17,7 +17,7 @@ import './App.scss';
 import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
-import { connect, credsAuthenticator } from "nats.ws";
+import { connect } from "nats.ws";
 
 import { message } from 'antd';
 

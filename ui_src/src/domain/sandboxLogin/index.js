@@ -31,7 +31,7 @@ import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI } from '../../config';
-import { connect, credsAuthenticator } from "nats.ws";
+import { connect } from "nats.ws";
 import { SOCKET_URL } from '../../config';
 
 const SandboxLogin = (props) => {

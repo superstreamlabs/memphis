@@ -35,7 +35,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import Tooltip from '../../components/tooltip/tooltip';
 import pathDomains from '../../router';
-import { connect, credsAuthenticator } from "nats.ws";
+import { connect } from "nats.ws";
 import { SOCKET_URL } from '../../config';
 
 const Signup = (props) => {
