@@ -28,7 +28,7 @@ import Producer from './components/producer';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { StringCodec, JSONCodec } from "nats.ws"
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
@@ -62,7 +62,7 @@ const MessageJourney = () => {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.message_journey_data.${messageId}`)
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}`);
         const jc = JSONCodec();
         const sc = StringCodec();
         (async () => {
@@ -73,19 +73,17 @@ const MessageJourney = () => {
         })();
 
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.message_journey_data.${messageId}`,
-                                  sc.encode("SUB"));
-
+            state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
         }, 1000);
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.message_journey_data.${messageId}`,
-                                  sc.encode("UNSUB"));
+            state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('UNSUB'));
         };
     }, [state.socket]);
 
     const returnBack = () => {
         history.push(`${pathDomains.stations}/${stationName}`);
     };
+
     const arrangeData = (data) => {
         let poisionedCGs = [];
         let nodesList = [
@@ -101,7 +99,7 @@ const MessageJourney = () => {
             {
                 id: 2,
                 text: 'Node 2',
-                width: 300,
+                width: 350,
                 height: 600,
                 ports: [
                     {
@@ -163,7 +161,7 @@ const MessageJourney = () => {
                 let node = {
                     id: index + 3,
                     text: row.cg_name,
-                    width: 450,
+                    width: 490,
                     height: 260,
                     data: {
                         value: 'consumer',
