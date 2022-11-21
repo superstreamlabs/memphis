@@ -286,7 +286,7 @@ const Filter = ({ filterComponent, height }) => {
     return (
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
             <SearchInput
-                placeholder="Search Stations"
+                placeholder="Search stations"
                 colorType="navy"
                 backgroundColorType="gray-dark"
                 width="288px"

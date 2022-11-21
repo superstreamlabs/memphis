@@ -109,7 +109,7 @@ function Users() {
                         className="modal-btn"
                         width="160px"
                         height="34px"
-                        placeholder={'Add a new user'}
+                        placeholder={'Add new user'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -139,7 +139,7 @@ function Users() {
                 </div>
             </div>
             <Modal
-                header="Add a new user"
+                header="Add new user"
                 height="550px"
                 rBtnText="Add"
                 lBtnText="Cancel"

@@ -3,6 +3,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
+    height: calc(100% - 100px);
     .btn-container {
         display: flex;
         flex-direction: column;
@@ -16,7 +17,6 @@
                 font-size: 12px;
                 color: #a9a9a9;
                 margin-left: 10px;
-                margin-bottom: 20px;
             }
             .switch-button{
                 width: 50px;
