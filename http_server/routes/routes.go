@@ -21,10 +21,9 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
 )
 
-func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Server) {
+func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(cors.New(cors.Config{
@@ -51,7 +50,6 @@ func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Ser
 	InitializeTagsRoutes(mainRouter, handlers)
 	InitializeSchemasRoutes(mainRouter, handlers)
 	InitializeSandboxRoutes(mainRouter)
-	socketioServer := InitializeSocketio(router, handlers)
 	ui.InitializeUIRoutes(router)
 
 	mainRouter.GET("/status", func(c *gin.Context) {
@@ -60,5 +58,5 @@ func InitializeHttpRoutes(handlers *server.Handlers) (*gin.Engine, *socketio.Ser
 		})
 	})
 
-	return router, socketioServer
+	return router
 }

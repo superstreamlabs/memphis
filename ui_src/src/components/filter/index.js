@@ -33,6 +33,7 @@ import { Context } from '../../hooks/store';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import SearchInput from '../searchInput';
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 const initialState = {
     isOpen: false,
@@ -55,26 +56,25 @@ const Filter = ({ filterComponent, height }) => {
         buildFilter();
     }, [state?.domainList]);
 
-    const handleRegisterToStation = useCallback(() => {
-        state.socket?.emit('get_all_stations_data');
-    }, [state.socket]);
-
     useEffect(() => {
-        state.socket?.on(`stations_overview_data`, (data) => {
-            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-        });
-
-        state.socket?.on('error', (error) => {
-            // history.push(pathDomains.overview);
-        });
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
+        const jc = JSONCodec();
+        const sc = StringCodec();
+        (async () => {
+            for await (const msg of sub) {
+                let data = jc.decode(msg.data);
+                data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+            }
+        })();
 
         setTimeout(() => {
-            handleRegisterToStation();
+            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
         }, 1000);
 
         return () => {
-            state.socket?.emit('deregister');
+            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 
