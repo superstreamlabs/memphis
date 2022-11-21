@@ -17,7 +17,7 @@ import './App.scss';
 import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
-import { connect } from "nats.ws";
+import { connect } from 'nats.ws';
 
 import { message } from 'antd';
 
@@ -81,17 +81,16 @@ const App = withRouter(() => {
         if (window.location.pathname === pathDomains.login) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
-
             const handleRefreshStatus = await handleRefreshTokenRequest();
             if (handleRefreshStatus) {
                 if (firstTime) {
-                    const conn = await connect(
-                        {
+                    try {
+                        const conn = await connect({
                             servers: [SOCKET_URL],
-                            token: "memphis",
-                        }
-                    );
-                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                            token: 'memphis'
+                        });
+                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                    } catch (error) {}
                 }
                 return true;
             }

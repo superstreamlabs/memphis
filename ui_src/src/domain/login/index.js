@@ -29,7 +29,7 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import pathDomains from '../../router';
-import { connect } from "nats.ws";
+import { connect } from 'nats.ws';
 import { SOCKET_URL } from '../../config';
 
 const Login = (props) => {
@@ -88,15 +88,14 @@ const Login = (props) => {
                 const data = await httpRequest('POST', ApiEndpoints.LOGIN, { username, password }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
-                    const conn = await connect(
-                        {
+                    try {
+                        const conn = await connect({
                             servers: [SOCKET_URL],
-                            token: "memphis",
-                        }
-                    );
-                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                            token: 'memphis'
+                        });
+                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                    } catch (error) {}
                     dispatch({ type: 'SET_USER_DATA', payload: data });
-
                     history.push(referer);
                 }
             } catch (err) {

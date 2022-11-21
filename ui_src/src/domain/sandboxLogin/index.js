@@ -31,7 +31,7 @@ import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, SOCKET_URL } from '../../config';
-import { connect } from "nats.ws";
+import { connect } from 'nats.ws';
 
 const SandboxLogin = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -149,14 +149,14 @@ const SandboxLogin = (props) => {
                 const data = await httpRequest('POST', ApiEndpoints.LOGIN, { username, password }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
-                    const conn = await connect(
-                        {
+                    try {
+                        const conn = await connect({
                             servers: [SOCKET_URL],
-                            token: "memphis",
-                        }
-                    );
+                            token: 'memphis'
+                        });
+                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                    } catch (error) {}
                     dispatch({ type: 'SET_USER_DATA', payload: data });
-                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     history.push(referer);
                 }
             } catch (err) {
