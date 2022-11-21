@@ -4681,6 +4681,7 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	fs.StringVar(&opts.StoreDir, "sd", "", "Storage directory.")
 	fs.StringVar(&opts.StoreDir, "store_dir", "", "Storage directory.")
 	fs.IntVar(&opts.Websocket.Port, "websocket_port", configuration.WS_PORT, "Websocket port")
+	fs.StringVar(&opts.Websocket.Token, "websocket_token", configuration.WS_TOKEN, "Websocket token")
 	fs.BoolVar(&opts.Websocket.NoTLS, "websocket_no_tls", !configuration.WS_TLS, "Websocket no-tls")
 
 	// The flags definition above set "default" values to some of the options.
