@@ -52,7 +52,7 @@ const storageOptions = [
     {
         id: 1,
         value: 'file',
-        label: 'File'
+        label: 'Disk'
     },
     {
         id: 2,
