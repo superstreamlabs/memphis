@@ -71,7 +71,7 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**[v0.4.0](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.0-beta)**
+**[v0.4.1](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.1-beta)**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
