@@ -156,7 +156,7 @@ node {
   } catch (e) {
       currentBuild.result = "FAILED"
       sh(script: """docker ps | grep memphisos/ | awk '{print \"docker rm -f \"\$1}' | sh""", returnStdout: true)
-      sh "docker prune -f"
+      sh "docker volume prune -f"
       sh "kubectl delete ns memphis-$unique_id &"
       cleanWs()
       notifyFailed()
