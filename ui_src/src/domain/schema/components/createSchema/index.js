@@ -56,7 +56,7 @@ const schemaTypes = [
     {
         id: 2,
         value: 'Json',
-        label: 'Json',
+        label: 'JSON schema',
         description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>
     },
     {
@@ -217,8 +217,8 @@ function CreateSchema() {
         const jsonObj = JSON.parse(json);
         let key = Object.keys(jsonObj)[0];
         const jsonSchema = GenerateSchema.json(key, jsonObj);
-        const beautifyJson = JSON.stringify(jsonSchema, null, "\t")
-        updateFormState('schema_content',beautifyJson);
+        const beautifyJson = JSON.stringify(jsonSchema, null, '\t');
+        updateFormState('schema_content', beautifyJson);
     };
 
     const handleValidateSchema = async () => {
@@ -244,6 +244,42 @@ function CreateSchema() {
         }
     };
 
+    const validateJsonSchemaContent = (value, ajv) => {
+        const isValid = ajv.validateSchema(value);
+        if (isValid) {
+            setValidateSuccess('');
+            setValidateError('');
+        } else {
+            setValidateError('Your schema is invalid');
+        }
+    };
+
+    const validateJsonSchema = (value) => {
+        try {
+            value = JSON.parse(value);
+            ajv.addMetaSchema(draft7MetaSchema);
+            validateJsonSchemaContent(value, ajv);
+        } catch (error) {
+            try {
+                const ajv = new jsonSchemaDraft04();
+                validateJsonSchemaContent(value, ajv);
+            } catch (error) {
+                try {
+                    const ajv = new Ajv2020();
+                    validateJsonSchemaContent(value, ajv);
+                } catch (error) {
+                    try {
+                        ajv.addMetaSchema(draft6MetaSchema);
+                        validateJsonSchemaContent(value, ajv);
+                    } catch (error) {
+                        setValidateSuccess('');
+                        setValidateError(error.message);
+                    }
+                }
+            }
+        }
+    };
+
     const checkContent = (value) => {
         const { type } = formFields;
         if (value === ' ' || value === '') {
@@ -261,53 +297,7 @@ function CreateSchema() {
                     setValidateError(error.message);
                 }
             } else if (type === 'Json') {
-                try {
-                    value = JSON.parse(value);
-                    ajv.addMetaSchema(draft7MetaSchema);
-                    const isValid = ajv.validateSchema(value);
-                    if (isValid) {
-                        setValidateSuccess('');
-                        setValidateError('');
-                    } else {
-                        setValidateError('Schema is not valid');
-                    }
-                } catch (error) {
-                    try {
-                        const ajv = new jsonSchemaDraft04();
-                        const isValid = ajv.validateSchema(value);
-                        if (isValid) {
-                            setValidateSuccess('');
-                            setValidateError('');
-                        } else {
-                            setValidateError('Schema is not valid');
-                        }
-                    } catch (error) {
-                        try {
-                            const ajv = new Ajv2020();
-                            const isValid = ajv.validateSchema(value);
-                            if (isValid) {
-                                setValidateSuccess('');
-                                setValidateError('');
-                            } else {
-                                setValidateError('Schema is not valid');
-                            }
-                        } catch (error) {
-                            try {
-                                ajv.addMetaSchema(draft6MetaSchema);
-                                const isValid = ajv.validateSchema(value);
-                                if (isValid) {
-                                    setValidateSuccess('');
-                                    setValidateError('');
-                                } else {
-                                    setValidateError('Schema is not valid');
-                                }
-                            } catch (error) {
-                                setValidateSuccess('');
-                                setValidateError(error.message);
-                            }
-                        }
-                    }
-                }
+                validateJsonSchema(value);
             }
         }
     };
@@ -432,37 +422,26 @@ function CreateSchema() {
                     <div className="schema-field schema">
                         <div className="title-wrapper">
                             <p className="field-title">Schema structure</p>
-                            {formFields.type === 'Json' ? (
-                                <>
+                            <div className="button-json">
+                                {formFields.type === 'Json' && (
                                     <Button
                                         width="170px"
                                         height="34px"
-                                        placeholder="Convet json to json schema"
+                                        placeholder="Convert to JSON schema"
                                         colorType="white"
                                         radiusType="circle"
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
-                                        marginLeft="300px"
                                         isLoading={validateLoading}
-                                        disabled={formFields?.schema_content === ''}
+                                        disabled={
+                                            formFields?.schema_content === '' ||
+                                            formFields?.schema_content.includes('type') ||
+                                            formFields?.schema_content.includes('properties')
+                                        }
                                         onClick={() => handleConvetJsonToJsonSchema(formFields?.schema_content)}
                                     />
-                                    <Button
-                                        width="115px"
-                                        height="34px"
-                                        placeholder="Validate"
-                                        colorType="white"
-                                        radiusType="circle"
-                                        backgroundColorType="purple"
-                                        fontSize="12px"
-                                        fontFamily="InterSemiBold"
-                                        isLoading={validateLoading}
-                                        disabled={formFields?.schema_content === ''}
-                                        onClick={() => handleValidateSchema()}
-                                    />
-                                </>
-                            ) : (
+                                )}
                                 <Button
                                     width="115px"
                                     height="34px"
@@ -476,7 +455,7 @@ function CreateSchema() {
                                     disabled={formFields?.schema_content === ''}
                                     onClick={() => handleValidateSchema()}
                                 />
-                            )}
+                            </div>
                         </div>
                         <div className="editor">
                             <Form.Item name="schema_content" className="schema-item" initialValue={formFields.schema_content}>

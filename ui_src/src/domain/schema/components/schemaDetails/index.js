@@ -173,6 +173,43 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         setIsLoading(false);
     };
 
+    const validateJsonSchemaContent = (value, ajv) => {
+        const isValid = ajv.validateSchema(value);
+        if (isValid) {
+            setValidateSuccess('');
+            setValidateError('');
+        } else {
+            setValidateError('Your schema is invalid');
+        }
+    };
+
+    const validateJsonSchema = value => {
+        try {
+            value = JSON.parse(value);
+            ajv.addMetaSchema(draft7MetaSchema);
+            validateJsonSchemaContent(value, ajv)
+        } catch (error) {
+            try {
+                const ajv = new jsonSchemaDraft04();
+                validateJsonSchemaContent(value, ajv)
+            } catch (error) {
+                try {
+                    const ajv = new Ajv2020();
+                    validateJsonSchemaContent(value, ajv)
+                } catch (error) {
+                    try {
+                        ajv.addMetaSchema(draft6MetaSchema);
+                        validateJsonSchemaContent(value, ajv)
+                    } catch (error) {
+                        setValidateSuccess('');
+                        setValidateError(error.message);
+                    }
+                }
+            }
+        }
+
+    }
+
     const checkContent = (value) => {
         const { type } = schemaDetails;
         if (value === ' ' || value === '') {
@@ -195,53 +232,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     setValidateError(error.message);
                 }
             } else if (type === 'json') {
-                try {
-                    value = JSON.parse(value);
-                    ajv.addMetaSchema(draft7MetaSchema);
-                    const isValid = ajv.validateSchema(value);
-                    if (isValid) {
-                        setValidateSuccess('');
-                        setValidateError('');
-                    } else {
-                        setValidateError('Schema is not valid');
-                    }
-                } catch (error) {
-                    try {
-                        const ajv = new jsonSchemaDraft04();
-                        const isValid = ajv.validateSchema(value);
-                        if (isValid) {
-                            setValidateSuccess('');
-                            setValidateError('');
-                        } else {
-                            setValidateError('Schema is not valid');
-                        }
-                    } catch (error) {
-                        try {
-                            const ajv = new Ajv2020();
-                            const isValid = ajv.validateSchema(value);
-                            if (isValid) {
-                                setValidateSuccess('');
-                                setValidateError('');
-                            } else {
-                                setValidateError('Schema is not valid');
-                            }
-                        } catch (error) {
-                            try {
-                                ajv.addMetaSchema(draft6MetaSchema);
-                                const isValid = ajv.validateSchema(value);
-                                if (isValid) {
-                                    setValidateSuccess('');
-                                    setValidateError('');
-                                } else {
-                                    setValidateError('Schema is not valid');
-                                }
-                            } catch (error) {
-                                setValidateSuccess('');
-                                setValidateError(error.message);
-                            }
-                        }
-                    }
-                }
+                validateJsonSchema(value)
             }
         }
     };
@@ -300,7 +291,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        <span>{schemaDetails?.type}</span>
+                        <span>{schemaDetails.type === 'json' ? 'JSON schema' : schemaDetails.type}</span>
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />

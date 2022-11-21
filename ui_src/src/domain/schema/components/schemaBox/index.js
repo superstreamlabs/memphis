@@ -53,7 +53,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     <type is="x3d">
                         <div>
                             <p>Type : </p>
-                            <span>{schema.type}</span>
+                            <span>{schema.type === "json" ? "JSON schema" : schema.type}</span>
                         </div>
                         <div>
                             <p>Created by : </p>

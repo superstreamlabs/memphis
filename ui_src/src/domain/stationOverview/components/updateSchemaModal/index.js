@@ -80,7 +80,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        <span>{schemaDetails?.type}</span>
+                        <span>{schemaDetails.type === "json" ? "JSON schema" : schemaDetails.type}</span>
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
