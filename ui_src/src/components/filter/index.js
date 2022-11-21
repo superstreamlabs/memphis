@@ -34,7 +34,7 @@ import { Context } from '../../hooks/store';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import SearchInput from '../searchInput';
-import { StringCodec, JSONCodec } from "nats.ws"
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 const initialState = {
     isOpen: false,
@@ -58,7 +58,7 @@ const Filter = ({ filterComponent, height }) => {
     }, [state?.domainList]);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`)
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
         (async () => {
@@ -70,13 +70,11 @@ const Filter = ({ filterComponent, height }) => {
         })();
 
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`,
-                                  sc.encode("SUB"));
+            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
         }, 1000);
 
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`,
-                                  sc.encode("UNSUB"));
+            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
         };
     }, [state.socket]);
 

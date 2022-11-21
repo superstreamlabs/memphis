@@ -31,7 +31,7 @@ import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { StringCodec, JSONCodec } from "nats.ws"
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 function SchemaList() {
     const history = useHistory();
@@ -73,7 +73,7 @@ function SchemaList() {
     }, [searchInput, state?.domainList]);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`)
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
         (async () => {
@@ -84,13 +84,11 @@ function SchemaList() {
         })();
 
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`,
-                                  sc.encode("SUB"));
+            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
         }, 1000);
 
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`,
-                                  sc.encode("UNSUB"));
+            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
         };
     }, [state.socket]);
 
