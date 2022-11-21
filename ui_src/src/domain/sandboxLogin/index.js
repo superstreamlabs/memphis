@@ -30,9 +30,8 @@ import GitHubLogo from '../../assets/images/githubLogo.svg';
 import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
-import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI } from '../../config';
+import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, SOCKET_URL } from '../../config';
 import { connect } from "nats.ws";
-import { SOCKET_URL } from '../../config';
 
 const SandboxLogin = (props) => {
     const [state, dispatch] = useContext(Context);
