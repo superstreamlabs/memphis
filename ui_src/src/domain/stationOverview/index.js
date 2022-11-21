@@ -101,6 +101,7 @@ const StationOverview = () => {
         return () => {
             state.socket?.publish(`$memphis_ws_subs.station_overview_data.${stationName}`,
                                   sc.encode("UNSUB"));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 

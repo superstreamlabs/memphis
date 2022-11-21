@@ -148,6 +148,7 @@ function OverView() {
         return () => {
             state.socket?.publish(`$memphis_ws_subs.main_overview_data`,
                                   sc.encode("UNSUB"));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 

@@ -89,6 +89,7 @@ function SchemaList() {
 
         return () => {
             state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 

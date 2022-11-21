@@ -75,6 +75,7 @@ const Filter = ({ filterComponent, height }) => {
 
         return () => {
             state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 

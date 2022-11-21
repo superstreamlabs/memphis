@@ -133,6 +133,7 @@ const LogsWrapper = () => {
 
         return () => {
             stopListen();
+            sub.unsubscribe();
         };
     }, [state.socket]);
 
