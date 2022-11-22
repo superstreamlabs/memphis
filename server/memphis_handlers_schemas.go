@@ -98,7 +98,7 @@ func validateSchemaName(schemaName string) error {
 func validateSchemaType(schemaType string) error {
 	invalidTypeErrStr := fmt.Sprintf("unsupported schema type")
 	invalidTypeErr := errors.New(invalidTypeErrStr)
-	invalidSupportTypeErrStr := fmt.Sprintf("Json/Avro types are not supported at this time")
+	invalidSupportTypeErrStr := fmt.Sprintf("Avro is not supported at this time")
 	invalidSupportTypeErr := errors.New(invalidSupportTypeErrStr)
 
 	if schemaType == "protobuf" || schemaType == "json" {
