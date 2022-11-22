@@ -291,7 +291,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        <span>{schemaDetails.type === 'json' ? 'JSON schema' : schemaDetails.type}</span>
+                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
@@ -341,6 +341,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
+                        {schemaDetails.type === "protobuf" &&
+                        <>
                             <p className="field-name">Master message :</p>
                             <SelectComponent
                                 value={messageStructName}
@@ -359,7 +361,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                     setUpdated(true);
                                 }}
                                 disabled={!editable}
-                            />
+                            /></>}
                         </div>
                         <div className="validation">
                             <Button

@@ -14,6 +14,9 @@ schema-details {
             .wrapper{
                 display: flex;
                 align-items: center;
+                .schema-json-name{
+                    color: #000000D9;
+                }
                 img{
                     padding-right:6px;
                 }
