@@ -6,29 +6,46 @@ import { v4 } from 'uuid';
 
 let jsonarray = [];
 
-// function list_to_tree(list) {
-//     var map = {},
-//         node,
-//         roots = [],
-//         i;
+function checkIsBuffer(node) {
+    let n;
+    if (node.value._isBuffer) {
+        n = {
+            index: node.index,
+            type: node.type,
+            children: node.children
+        };
+    } else {
+        n = {
+            index: node.index,
+            type: node.type,
+            value: node.value,
+            children: node.children
+        };
+    }
+    return n;
+}
 
-//     for (i = 0; i < list.length; i += 1) {
-//         map[list[i].id] = i; // initialize the map
-//         list[i].children = []; // initialize the children
-//     }
+function list_to_tree(list) {
+    var map = {},
+        node,
+        roots = [],
+        i;
 
-//     for (i = 0; i < list.length; i += 1) {
-//         node = list[i];
-//         if (node.parentId !== null) {
-//             // if you have dangling branches check that map[node.parentId] exists
-//             list[map[node.parentId]].children.push(node);
-//         } else {
-//             roots.push(node);
-//         }
-//     }
-//     console.log(roots);
-//     return roots;
-// }
+    for (i = 0; i < list.length; i += 1) {
+        map[list[i].uuid] = i; // initialize the map
+        list[i].children = []; // initialize the children
+    }
+
+    for (i = 0; i < list.length; i += 1) {
+        node = list[i];
+        if (node.parentId !== null) {
+            list[map[node.parentId]].children.push(checkIsBuffer(node));
+        } else {
+            roots.push(checkIsBuffer(node));
+        }
+    }
+    return roots;
+}
 
 function decodeProto(buffer, id = null) {
     const reader = new BufferReader(buffer);
@@ -70,9 +87,9 @@ function decodeProto(buffer, id = null) {
                 uuid,
                 parentId,
                 index,
-                type,
-                value,
-                children
+                children,
+                type: typeToString(type),
+                value
             });
         }
     } catch (err) {
@@ -125,7 +142,7 @@ function ProtobufDisplay(value) {
     value.parts.map((part, i) => {
         ProtobufPart(part);
     });
-    const leftOver = value.leftOver.length ? <p>Left over bytes: {bufferToPrettyHex(value.leftOver)}</p> : null;
+    // const leftOver = value.leftOver.length ? <p>Left over bytes: {bufferToPrettyHex(value.leftOver)}</p> : null;
 }
 
 export const decodeMessage = (message) => {
@@ -134,5 +151,5 @@ export const decodeMessage = (message) => {
     const buffer = parseInput(msg);
     let value = decodeProto(buffer);
     ProtobufDisplay(value);
-    return jsonarray;
+    return list_to_tree(jsonarray);
 };

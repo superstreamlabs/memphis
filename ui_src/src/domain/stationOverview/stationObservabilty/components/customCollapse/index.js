@@ -30,7 +30,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
     const [payload, setPayload] = useState(data);
 
     useEffect(() => {
-        if (message) {
+        if (header === 'Payload') {
             switch (parser) {
                 case 'string':
                     setPayload(data.toString());
@@ -41,11 +41,14 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                 case 'protobuf':
                     setPayload(JSON.stringify(decodeMessage(data), null, 2));
                     break;
+                case 'bytes':
+                    setPayload(data);
+                    break;
                 default:
                     setPayload(data);
             }
         }
-    }, [parser]);
+    }, [parser, data]);
 
     const onChange = (key) => {
         setActiveKey(key);

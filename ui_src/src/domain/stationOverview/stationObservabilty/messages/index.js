@@ -219,6 +219,20 @@ const Messages = () => {
         }
     };
 
+    const messageWrapper = (
+        <div className="message-wrapper">
+            <div className="row-data">
+                <Space direction="vertical">
+                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
+                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
+                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
+                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                </Space>
+            </div>
+        </div>
+    );
+
     return (
         <div className="messages-container">
             <div className="header">
@@ -299,17 +313,7 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        <div className="message-wrapper">
-                            <div className="row-data">
-                                <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                                </Space>
-                            </div>
-                        </div>
+                        {messageWrapper}
                     </div>
                 </div>
             )}
@@ -344,33 +348,7 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        <div className="message-wrapper">
-                            <div className="row-data">
-                                <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                                </Space>
-                            </div>
-                            <Button
-                                width="96%"
-                                height="40px"
-                                placeholder={
-                                    <div className="botton-title">
-                                        <img src={Journey} alt="Journey" />
-                                        <p>Message Journey</p>
-                                    </div>
-                                }
-                                colorType="black"
-                                radiusType="semi-round"
-                                backgroundColorType="orange"
-                                fontSize="12px"
-                                fontWeight="600"
-                                onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
-                            />
-                        </div>
+                        {messageWrapper}
                     </div>
                 </div>
             )}
