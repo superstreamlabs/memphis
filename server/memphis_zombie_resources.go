@@ -15,7 +15,9 @@ package server
 
 import (
 	"context"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -114,6 +116,37 @@ func getActiveConnections() ([]models.Connection, error) {
 	}
 
 	return connections, nil
+}
+
+// TODO to be deleted
+func updateActiveProducersAndConsumers() {
+	producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+	if err != nil {
+		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
+		return
+	}
+	
+	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+	if err != nil {
+		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
+		return
+	}
+
+	if producersCount > 0 || consumersCount > 0 {
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			param1 := analytics.EventParam{
+				Name:  "active-producers",
+				Value: strconv.Itoa(int(producersCount)),
+			}
+			param2 := analytics.EventParam{
+				Name:  "active-consumers",
+				Value: strconv.Itoa(int(consumersCount)),
+			}
+			analyticsParams := []analytics.EventParam{param1, param2}
+			analytics.SendEventWithParams("", analyticsParams, "data-sent")
+		}
+	}
 }
 
 func checkAndReportConnFound(s *Server, message, reply string) bool {
@@ -232,5 +265,6 @@ func (s *Server) KillZombieResources() {
 	for range time.Tick(time.Second * 30) {
 		s.Debugf("Killing Zombie resources iteration")
 		killFunc(s)
+		updateActiveProducersAndConsumers() // TODO to be deleted
 	}
 }

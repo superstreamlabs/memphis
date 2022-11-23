@@ -97,7 +97,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 
 		if created {
-			message := "Station " + pStationName.Ext() + " has been created"
+			message := "Station " + pStationName.Ext() + " has been created by user " + c.memphisInfo.username
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
@@ -116,7 +116,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+				param := analytics.EventParam{
+					Name:  "station-name",
+					Value: pStationName.Ext(),
+				}
+				analyticsParams := []analytics.EventParam{param}
+				analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
 			}
 		}
 	}
@@ -161,7 +166,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 
 	if updateResults.MatchedCount == 0 {
-		message := "Producer " + name + " has been created"
+		message := "Producer " + name + " has been created by user " + c.memphisInfo.username
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
@@ -180,7 +185,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.SendEvent(c.memphisInfo.username, "user-create-producer")
+			param := analytics.EventParam{
+				Name:  "producer-name",
+				Value: newProducer.Name,
+			}
+			analyticsParams := []analytics.EventParam{param}
+			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-producer")
 		}
 	}
 
@@ -424,7 +434,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	message := "Producer " + name + " has been deleted"
+	message := "Producer " + name + " has been deleted by user " + c.memphisInfo.username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
@@ -485,7 +495,7 @@ func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error 
 		var auditLogs []interface{}
 		var newAuditLog models.AuditLog
 		for _, producer := range producers {
-			message = "Producer " + producer.Name + " has been disconnected"
+			message = "Producer " + producer.Name + " has been disconnected by user " + producers[0].CreatedByUser
 			newAuditLog = models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   station.Name,

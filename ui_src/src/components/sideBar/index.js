@@ -115,63 +115,55 @@ function SideBar() {
                     </Link>
                 </div>
                 <div className="item-wrapper">
-                    <div id="e2e-tests-station-sidebar">
-                        <Link to={pathDomains.stations}>
-                            <div className="icon">
-                                {state.route === 'stations' ? (
-                                    <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
-                                ) : (
-                                    <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
-                                )}
-                            </div>
-                            <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
-                        </Link>
-                    </div>
+                    <Link to={pathDomains.stations}>
+                        <div className="icon">
+                            {state.route === 'stations' ? (
+                                <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
+                            ) : (
+                                <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
+                            )}
+                        </div>
+                        <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
+                    </Link>
                 </div>
                 <div className="item-wrapper">
-                    <div id="e2e-tests-users-sidebar">
-                        <Link to={pathDomains.schemas}>
-                            <div className="icon">
-                                {state.route === 'schemas' ? (
-                                    <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
-                                ) : (
-                                    <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
-                                )}
-                            </div>
-                            <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemaverse</p>
-                        </Link>
-                    </div>
+                    <Link to={pathDomains.schemas}>
+                        <div className="icon">
+                            {state.route === 'schemas' ? (
+                                <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
+                            ) : (
+                                <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
+                            )}
+                        </div>
+                        <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemaverse</p>
+                    </Link>
                 </div>
                 <div className="item-wrapper">
-                    <div id="e2e-tests-users-sidebar">
-                        <Link to={pathDomains.users}>
-                            <div className="icon">
-                                {state.route === 'users' ? (
-                                    <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
-                                ) : (
-                                    <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
-                                )}
-                            </div>
-                            <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
-                        </Link>
-                    </div>
+                    <Link to={pathDomains.users}>
+                        <div className="icon">
+                            {state.route === 'users' ? (
+                                <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
+                            ) : (
+                                <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
+                            )}
+                        </div>
+                        <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
+                    </Link>
                 </div>
                 <div className="item-wrapper">
-                    <div id="e2e-tests-users-sidebar">
-                        <Link to={pathDomains.sysLogs}>
-                            <div className="icon">
-                                {state.route === 'logs' ? (
-                                    <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
-                                ) : (
-                                    <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
-                                )}
-                            </div>
-                            <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
-                        </Link>
-                    </div>
+                    <Link to={pathDomains.sysLogs}>
+                        <div className="icon">
+                            {state.route === 'logs' ? (
+                                <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                            ) : (
+                                <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
+                            )}
+                        </div>
+                        <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
+                    </Link>
                 </div>
             </div>
-            <div id="e2e-tests-settings-btn" className="bottom-icons">
+            <div className="bottom-icons">
                 <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click">
                     <SubMenu
                         key="subMenu"
@@ -189,6 +181,7 @@ function SideBar() {
                         }
                     >
                         <Menu.ItemGroup
+                            id="setting-menu"
                             title={
                                 <div className="header-menu">
                                     <div className="company-logo">
@@ -203,21 +196,21 @@ function SideBar() {
                             }
                         >
                             <Menu.Item key={1} className="customclass">
-                                <div className="item-wrapp" id="e2e-tests-menu-preferences">
+                                <div className="item-wrapp">
                                     <img src={accountIcon} width="15" height="15" alt="accountIcon" />
                                     <p className="item-title">Preferences</p>
                                 </div>
                             </Menu.Item>
                             <Menu.Item key={2}>
                                 <Link to={{ pathname: DOC_URL }} target="_blank">
-                                    <div className="item-wrapp" id="e2e-tests-menu-support">
+                                    <div className="item-wrapp">
                                         <img src={supportIcon} width="15" height="15" alt="supportIcon" />
                                         <p className="item-title">Support</p>
                                     </div>
                                 </Link>
                             </Menu.Item>
                             <Menu.Item key={3}>
-                                <div className="item-wrapp" id="e2e-tests-menu-logout">
+                                <div className="item-wrapp">
                                     <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
                                     <p className="item-title">Log out</p>
                                 </div>

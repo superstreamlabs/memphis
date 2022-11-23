@@ -36,7 +36,6 @@ import Button from '../../../components/button';
 import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
 import pathDomains from '../../../router';
 import { useHistory } from 'react-router-dom';
-import CreateStationForm from '../../../components/createStationForm';
 
 const steps = [{ stepName: 'Create Station' }, { stepName: 'Create App user' }, { stepName: 'Produce data' }, { stepName: 'Consume data' }, { stepName: 'Finish' }];
 
@@ -154,6 +153,13 @@ const GetStarted = ({ username, dataSentence }) => {
         } catch (error) {}
     };
 
+    const skipGetStarted = async (bodyRequest) => {
+        try {
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, bodyRequest);
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+        } catch (error) {}
+    };
+
     useEffect(() => {
         getOverviewData();
         return () => {
@@ -195,7 +201,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
-                                localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+                                skipGetStarted({ username });
                                 history.push(pathDomains.overview);
                             }}
                         />

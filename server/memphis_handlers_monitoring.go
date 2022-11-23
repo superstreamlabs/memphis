@@ -340,7 +340,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	const amount = 100
-	const timeout = 3 * time.Second
+	const timeout = 500 * time.Millisecond
 
 	var request models.SystemLogsRequest
 	ok := utils.Validate(c, &request, false, nil)
@@ -358,16 +358,15 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	switch request.LogType {
 	case "err":
 		filterSubjectSuffix = syslogsErrSubject
-	case "wrn":
+	case "warn":
 		filterSubjectSuffix = syslogsWarnSubject
-	case "inf":
+	case "info":
 		filterSubjectSuffix = syslogsInfoSubject
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
 		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
 	}
-
 	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
 		serv.Errorf("GetSystemLogs error: " + err.Error())
@@ -380,7 +379,6 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 
 func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 	const timeout = 20 * time.Second
-
 	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
 	if err != nil {
 		serv.Errorf("DownloadSystemLogs error: " + err.Error())
@@ -419,6 +417,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	getAll bool) (models.SystemLogsResponse, error) {
 	uid := s.memphis.nuid.Next()
 	durableName := "$memphis_fetch_logs_consumer_" + uid
+	var msgs []StoredMsg
 
 	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
 	if err != nil {
@@ -429,17 +428,9 @@ func (s *Server) GetSystemLogs(amount uint64,
 	startSeq := lastKnownSeq - amount + 1
 
 	if getAll {
-		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
-		if err != nil {
-			return models.SystemLogsResponse{}, err
-		}
 		startSeq = streamInfo.State.FirstSeq
 		amount = streamInfo.State.Msgs
 	} else if fromLast {
-		streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
-		if err != nil {
-			return models.SystemLogsResponse{}, err
-		}
 		startSeq = streamInfo.State.LastSeq - amount + 1
 
 		//handle uint wrap around
@@ -499,7 +490,6 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
 
-	var msgs []StoredMsg
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
 		select {
@@ -519,6 +509,9 @@ cleanup:
 	}
 
 	var resMsgs []models.Log
+	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
+		return s.GetSystemLogs(amount, timeout, false, startSeq-1, filterSubject, getAll)
+	}
 	for _, msg := range msgs {
 		if err != nil {
 			return models.SystemLogsResponse{}, err
@@ -545,6 +538,5 @@ cleanup:
 			return resMsgs[i].MessageSeq > resMsgs[j].MessageSeq
 		})
 	}
-
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }

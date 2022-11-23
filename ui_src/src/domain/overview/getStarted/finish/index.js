@@ -25,7 +25,7 @@ import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../../const/localStorageConsts';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../../const/localStorageConsts';
 
 const Finish = ({ createStationFormRef }) => {
     const history = useHistory();
@@ -34,6 +34,7 @@ const Finish = ({ createStationFormRef }) => {
 
     useEffect(() => {
         createStationFormRef.current = onNext;
+        httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, localStorage.getItem(LOCAL_STORAGE_USER_NAME));
     }, []);
 
     const onNext = () => {
@@ -74,9 +75,8 @@ const Finish = ({ createStationFormRef }) => {
                 </div>
                 <div id="e2e-getstarted-finish-btn">
                     <Button
-                        width="192px"
                         height="42px"
-                        placeholder="Go to dashboard"
+                        placeholder="Go to station overview"
                         radiusType="circle"
                         backgroundColorType="purple"
                         fontSize="16px"
@@ -84,6 +84,7 @@ const Finish = ({ createStationFormRef }) => {
                         colorType="white"
                         borderRadius="31px"
                         boxShadowStyle="none"
+                        marginTop="20px"
                         onClick={(e) => {
                             onFinish(e);
                         }}
