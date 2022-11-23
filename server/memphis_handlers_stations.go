@@ -15,6 +15,7 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"memphis-broker/analytics"
@@ -968,7 +969,7 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 	msg := models.MessagePayload{
 		TimeSent: poisonMessage.Message.TimeSent,
 		Size:     poisonMessage.Message.Size,
-		Data:     poisonMessage.Message.Data,
+		Data:     hex.EncodeToString([]byte(poisonMessage.Message.Data)),
 		Headers:  headers,
 	}
 	results = models.PoisonMessageResponse{
@@ -1225,7 +1226,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		Message: models.MessagePayload{
 			TimeSent: sm.Time,
 			Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
-			Data:     string(sm.Data),
+			Data:     hex.EncodeToString(sm.Data),
 			Headers:  headersJson,
 		},
 		Producer: models.ProducerDetails{
