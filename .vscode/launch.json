@@ -8,7 +8,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "--js", "--auth", "memphis", "-D"
+                "--js", "--auth", "memphis", "--websocket_no_tls", "-D"
             ],
             "env": {
                 "DEV_ENV": "true",

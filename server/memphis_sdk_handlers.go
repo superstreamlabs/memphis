@@ -115,8 +115,8 @@ func createStationHandler(s *Server) simplifiedMsgHandler {
 }
 
 func destroyStationHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, subject, reply string, msg []byte) {
-		go s.removeStationDirect(reply, copyBytes(msg))
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.removeStationDirect(c, reply, copyBytes(msg))
 	}
 }
 

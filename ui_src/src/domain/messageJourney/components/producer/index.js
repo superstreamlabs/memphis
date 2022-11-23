@@ -14,11 +14,11 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import StatusIndication from '../../../../components/indication';
 
 const Producer = ({ data }) => {
-    return (
+    const prod = data ? (
         <div className="poision-producer">
             <header is="x3d">
                 <p>Producer</p>
@@ -36,6 +36,8 @@ const Producer = ({ data }) => {
                     })}
             </div>
         </div>
-    );
+    ) : null;
+
+    return <>{prod}</>;
 };
 export default Producer;

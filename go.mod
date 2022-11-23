@@ -9,7 +9,6 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/gofrs/uuid v4.2.0+incompatible
-	github.com/googollee/go-socket.io v1.6.2
 	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
 	github.com/jhump/protoreflect v1.13.0
 	github.com/klauspost/compress v1.14.4
@@ -48,11 +47,9 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
-	github.com/gomodule/redigo v1.8.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/imdario/mergo v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

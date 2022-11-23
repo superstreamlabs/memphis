@@ -31,6 +31,7 @@ type User struct {
 	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
 	FullName        string             `json:"full_name" bson:"full_name"`
 	Subscribtion    bool               `json:"subscription" bson:"subscription"`
+	SkipGetStarted  bool               `json:"skip_get_started" bson:"skip_get_started"`
 }
 
 type Image struct {

@@ -56,6 +56,7 @@ var poisonMessagesCollection *mongo.Collection
 var tagsCollection *mongo.Collection
 var schemasCollection *mongo.Collection
 var schemaVersionCollection *mongo.Collection
+var sandboxUsersCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -66,10 +67,17 @@ type srvMemphis struct {
 	dbCtx                  context.Context
 	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
+	fallbackLogQ           *ipQueue
 	mcrReported            bool
 	mcr                    chan struct{} // memphis cluster ready
-	logStreamCreated       bool
 	jsApiMu                sync.Mutex
+	ws                     memphisWS
+}
+
+type memphisWS struct {
+	subscriptions map[string]memphisWSSubscription
+	webSocketMu   sync.Mutex
+	quitCh        chan struct{}
 }
 
 func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
@@ -81,7 +89,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.memphis.serverID = configuration.SERVER_NAME
 	s.memphis.mcrReported = false
 	s.memphis.mcr = make(chan struct{})
-	s.memphis.logStreamCreated = false
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
@@ -95,12 +102,14 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	tagsCollection = db.GetCollection("tags", dbInstance.Client)
 	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
 	schemaVersionCollection = db.GetCollection("schema_versions", dbInstance.Client)
+	sandboxUsersCollection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
 	})
 
 	s.initializeSDKHandlers()
+	s.initWS()
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {

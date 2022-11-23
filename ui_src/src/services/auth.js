@@ -47,6 +47,7 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, userData.send_analytics);
         localStorage.setItem(LOCAL_STORAGE_ENV, userData.env);
         localStorage.setItem(LOCAL_STORAGE_NAMESPACE, userData.namespace);
+        localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, userData.skip_get_started);
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);
         }

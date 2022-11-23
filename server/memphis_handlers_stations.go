@@ -232,7 +232,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created"
+	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
@@ -252,7 +252,12 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+		param := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -620,7 +625,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-create-station")
+		param := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
 	}
 
 	if schemaName != "" {
@@ -723,13 +733,37 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
-	for _, name := range stationNames {
-		serv.Noticef("Station " + name + " has been deleted")
+	for _, name := range body.StationNames {
+		stationName, err := StationNameFromStr(name)
+
+		user, err := getUserDetailsFromMiddleware(c)
+		if err != nil {
+			serv.Errorf("RemoveStation error: " + err.Error())
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		}
+
+		message := "Station " + stationName.Ext() + " has been deleted" + " by user " + user.Username
+		serv.Noticef(message)
+
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("create audit logs error: " + err.Error())
+		}
 	}
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) removeStationDirect(reply string, msg []byte) {
+func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Warnf("failed destroying station: %v", err.Error())
@@ -778,7 +812,22 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 		return
 	}
 
-	serv.Noticef("Station " + stationName.Ext() + " has been deleted")
+	message := "Station " + stationName.Ext() + " has been deleted by user " + c.memphisInfo.username
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Ext(),
+		Message:       message,
+		CreatedByUser: c.memphisInfo.username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
 	respondWithErr(s, reply, nil)
 	return
 }
@@ -1249,6 +1298,30 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UseSchema error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
+	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + user.Username
+	serv.Noticef(message)
+
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Intern(),
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
@@ -1321,7 +1394,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	exist, _, err := IsStationExist(stationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1340,9 +1413,30 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	message := "Schema " + station.Schema.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Intern(),
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-schema-from-station")
 	}
 

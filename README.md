@@ -12,6 +12,7 @@
 
 <div align="center">
 <h1>Real-Time Data Processing Platform</h1>
+<h4>"It took me three minutes to build in Memphis what took me weeks in Kafka"</h4>
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png"><br>
   
@@ -70,7 +71,7 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**[v0.4.0](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.0-beta)**
+**[v0.4.1](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.1-beta)**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
@@ -107,7 +108,8 @@ docker compose -f docker-compose.yml -p memphis up
 ## High-Level Architecture
 
 <p align="center">
-<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/193022748-42ed5f37-3083-4fee-a2d0-dabf2ccafb23.png">
+<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/201409779-f23aa9b7-8175-4165-9720-d0a217b49878.jpeg">
+
 
 </p>
 
@@ -177,4 +179,7 @@ Thanks goes to these wonderful people ❤:<br><br>
  </a>
 
 ## License 📃
+Memphis is open-sourced and operates under the "Memphis Business Source License 1.0" license
+Built out of Apache 2.0, the main difference between the licenses is:
+"You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service. A “Service” is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services."
 Please check out [License](./LICENSE) to read the full text.

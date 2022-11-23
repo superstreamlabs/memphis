@@ -16,9 +16,11 @@ package server
 import (
 	"context"
 	"errors"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -205,6 +207,14 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateNewTag error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	message := "New Tag " + newTag.Name + " has been created " + " by user " + user.Username
+	serv.Noticef(message)
+
 	c.IndentedJSON(200, newTag)
 }
 
@@ -224,6 +234,14 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	}
 	var entity_id primitive.ObjectID
 	var entityDBList string
+	var stationName string
+	var message string
+
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveTag error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
 	switch entity {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
@@ -244,6 +262,8 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		}
 		entity_id = station.ID
 		entityDBList = "stations"
+		stationName = station_name.Ext()
+		message = "Tag " + name + " has been deleted from station " + stationName + " by user " + user.Username
 
 	case "schema":
 		exist, schema, err := IsSchemaExist(body.EntityName)
@@ -258,6 +278,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		}
 		entity_id = schema.ID
 		entityDBList = "schemas"
+		message = "Tag " + name + " has been deleted from schema" + schema.Name + " by user " + user.Username
 
 	// case "user":
 	// 	exist, user, err := IsUserExist(body.EntityName)
@@ -274,6 +295,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	// entityDBList = "schemas"
 
 	default:
+		message = "Tag " + name + " has been deleted by user " + user.Username
 		serv.Warnf("RemoveTag error: unsupported entity type")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
 		return
@@ -285,6 +307,25 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	serv.Noticef(message)
+	if entity == "station" {
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName,
+			Message:       message,
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("create audit logs error: " + err.Error())
+		}
+	}
+
 	c.IndentedJSON(200, []string{})
 }
 
@@ -303,6 +344,8 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
+	var stationName StationName
+	var schemaName string
 	switch entity {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
@@ -323,6 +366,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		}
 		entity_id = station.ID
 		entityDBList = "stations"
+		stationName = station_name
 
 	case "schema":
 		exist, schema, err := IsSchemaExist(body.EntityName)
@@ -337,6 +381,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		}
 		entity_id = schema.ID
 		entityDBList = "schemas"
+		schemaName = schema.Name
 
 	// case "user":
 	// 	exist, user, err := IsUserExist(body.EntityName)
@@ -357,6 +402,13 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
 		return
 	}
+	var message string
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	if len(body.TagsToAdd) > 0 {
 		for _, tagToAdd := range body.TagsToAdd {
 			name := strings.ToLower(tagToAdd.Name)
@@ -382,6 +434,46 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				}
 			}
 
+			analyticsEventName := ""
+			if entity == "station" {
+				message = "Tag " + name + " has been added to station " + stationName.Ext() + " by user " + user.Username
+
+				var auditLogs []interface{}
+				newAuditLog := models.AuditLog{
+					ID:            primitive.NewObjectID(),
+					StationName:   stationName.Intern(),
+					Message:       message,
+					CreatedByUser: user.Username,
+					CreationDate:  time.Now(),
+					UserType:      user.UserType,
+				}
+
+				auditLogs = append(auditLogs, newAuditLog)
+				err = CreateAuditLogs(auditLogs)
+				if err != nil {
+					serv.Warnf("create audit logs error: " + err.Error())
+				}
+
+				analyticsEventName = "user-tag-station"
+			} else if entity == "schema" {
+				message = "Tag " + name + " has been added to schema " + schemaName + " by user " + user.Username
+				analyticsEventName = "user-tag-schema"
+			} else {
+				message = "Tag " + name + " has been added to user " + "by user " + user.Username
+				analyticsEventName = "user-tag-user"
+			}
+
+			shouldSendAnalytics, _ := shouldSendAnalytics()
+			if shouldSendAnalytics {
+				param := analytics.EventParam{
+					Name:  "tag-name",
+					Value: name,
+				}
+				analyticsParams := []analytics.EventParam{param}
+				analytics.SendEventWithParams(user.Username, analyticsParams, analyticsEventName)
+			}
+
+			serv.Noticef(message)
 		}
 	}
 	if len(body.TagsToRemove) > 0 {
@@ -402,6 +494,31 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					return
 				}
 			}
+			if entity == "station" {
+				message = "Tag " + name + " has been deletd from station " + stationName.Ext() + " by user " + user.Username
+
+				var auditLogs []interface{}
+				newAuditLog := models.AuditLog{
+					ID:            primitive.NewObjectID(),
+					StationName:   stationName.Intern(),
+					Message:       message,
+					CreatedByUser: user.Username,
+					CreationDate:  time.Now(),
+					UserType:      user.UserType,
+				}
+
+				auditLogs = append(auditLogs, newAuditLog)
+				err = CreateAuditLogs(auditLogs)
+				if err != nil {
+					serv.Warnf("create audit logs error: " + err.Error())
+				}
+			} else if entity == "schema" {
+				message = "Tag " + name + " has been deleted from schema " + schemaName + " by user " + user.Username
+			} else {
+				message = "Tag " + name + " has been deleted " + "by user " + user.Username
+
+			}
+			serv.Noticef(message)
 		}
 	}
 	var tags []models.CreateTag
