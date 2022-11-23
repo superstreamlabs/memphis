@@ -32,7 +32,7 @@ func clearSlackCache() {
 
 func CacheSlackDetails(keys map[string]string, properties map[string]bool, url string) {
 	var authToken, channelID string
-	var poisonMessageAlert, schemaValidationFailAlert bool
+	var poisonMessageAlert, schemaValidationFailAlert, disconnectionEventsAlert bool
 	var slackIntegration models.SlackIntegration
 
 	slackIntegration, ok := NotificationIntegrationsMap["slack"].(models.SlackIntegration)
@@ -48,6 +48,7 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool, url s
 	if properties == nil {
 		poisonMessageAlert = false
 		schemaValidationFailAlert = false
+		disconnectionEventsAlert = false
 	}
 	authToken, ok = keys["auth_token"]
 	if !ok {
@@ -67,6 +68,10 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool, url s
 	if !ok {
 		schemaValidationFailAlert = false
 	}
+	disconnectionEventsAlert, ok = properties["disconnection_events_alert"]
+	if !ok {
+		disconnectionEventsAlert = false
+	}
 	if slackIntegration.Keys["auth_token"] != authToken {
 		slackIntegration.Keys["auth_token"] = authToken
 		if authToken != "" {
@@ -77,6 +82,7 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool, url s
 	slackIntegration.Keys["channel_id"] = channelID
 	slackIntegration.Properties["poison_message_alert"] = poisonMessageAlert
 	slackIntegration.Properties["schema_validation_fail_alert"] = schemaValidationFailAlert
+	slackIntegration.Properties["disconnection_events_alert"] = disconnectionEventsAlert
 	slackIntegration.Name = "slack"
 	slackIntegration.UIUrl = url
 	NotificationIntegrationsMap["slack"] = slackIntegration

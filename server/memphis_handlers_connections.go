@@ -16,6 +16,7 @@ package server
 import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
+	"memphis-broker/notifications"
 
 	"context"
 	"errors"
@@ -24,6 +25,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ConnectionsHandler struct{}
@@ -160,17 +162,75 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if err != nil {
 		return err
 	}
-	_, err = producersCollection.UpdateMany(ctx,
-		bson.M{"connection_id": mci.connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+	var producers []models.ExtendedProducer
+	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"connection_id", mci.connectionId}, {"is_active", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
+	})
 	if err != nil {
 		return err
 	}
-	_, err = consumersCollection.UpdateMany(ctx,
-		bson.M{"connection_id": mci.connectionId},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+
+	if err = cursor.All(context.TODO(), &producers); err != nil {
+		return err
+	}
+	var producerNames, consumerNames string
+	if len(producers) > 0 {
+		_, err = producersCollection.UpdateMany(ctx,
+			bson.M{"connection_id": mci.connectionId},
+			bson.M{"$set": bson.M{"is_active": false}},
+		)
+		if err != nil {
+			return err
+		}
+
+		for i := 0; i < len(producers); i++ {
+			producerNames = producerNames + "Producer: " + producers[i].Name + " Station: " + producers[i].StationName + "\n"
+		}
+	}
+
+	var consumers []models.ExtendedConsumer
+	cursor, err = consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"connection_id", mci.connectionId}, {"is_active", true}}}},
+		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}}})
+	if err != nil {
+		return err
+	}
+	if err = cursor.All(context.TODO(), &consumers); err != nil {
+		return err
+	}
+	if len(consumers) > 0 {
+		_, err = consumersCollection.UpdateMany(ctx,
+			bson.M{"connection_id": mci.connectionId},
+			bson.M{"$set": bson.M{"is_active": false}},
+		)
+		if err != nil {
+			return err
+		}
+
+		for i := 0; i < len(consumers); i++ {
+			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " Station: " + consumers[i].StationName + "\n"
+		}
+	}
+	slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+	if ok {
+		if slackIntegration.Properties["disconnection_events_alert"] {
+			msg := ""
+			if len(producerNames) > 0 {
+				msg = producerNames
+			}
+			if len(consumerNames) > 0 {
+				msg = msg + consumerNames
+			}
+			notifications.SendMessageToSlackChannel("Disconnection events", msg)
+		}
+	}
 
 	serv.Noticef("Client has been disconnected from Memphis")
 	return err

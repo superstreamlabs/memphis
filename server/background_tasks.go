@@ -11,7 +11,7 @@ import (
 
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
-const SCHEMA_VALIDATION_FAIL_SUBJ = "$memphis_schema_validation_fail_updates"
+const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -75,8 +75,8 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	return nil
 }
 
-func (s *Server) ListenForSchemaValidationFailEvents() error {
-	err := s.queueSubscribe(SCHEMA_VALIDATION_FAIL_SUBJ, SCHEMA_VALIDATION_FAIL_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+func (s *Server) ListenForNotificationEvents() error {
+	err := s.queueSubscribe(NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var schemaFailMsg models.SchemaFailMsg
 			err := json.Unmarshal(msg, &schemaFailMsg)
@@ -109,7 +109,7 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for integrations updates: " + err.Error())
 	}
 
-	err = s.ListenForSchemaValidationFailEvents()
+	err = s.ListenForNotificationEvents()
 	if err != nil {
 		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
 	}
