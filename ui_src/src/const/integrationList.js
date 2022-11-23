@@ -14,6 +14,8 @@
 import r from '../assets/images/R.svg';
 import figmaIcon from '../assets/images/figmaIcon.svg';
 import insideBanner from '../assets/images/insideBanner.svg';
+import { FiberManualRecord } from '@material-ui/icons';
+import { diffDate } from '../services/valueConvertor';
 
 export const INTEGRATION_LIST = [
     {
@@ -23,6 +25,27 @@ export const INTEGRATION_LIST = [
         insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
         icon: <img src={figmaIcon} alt="figmaIcon" />,
         description: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC',
-        date: 'Nov 19, 2022'
+        date: 'Nov 19, 2022',
+        header: (
+            <div className="integrate-header">
+                <img src={figmaIcon} alt="figmaIcon" />
+                <div className="details">
+                    <p>Slack</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability. Read More
+                </span>
+            </div>
+        )
     }
 ];

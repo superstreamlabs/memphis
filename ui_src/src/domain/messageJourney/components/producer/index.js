@@ -19,7 +19,7 @@ import StatusIndication from '../../../../components/indication';
 
 const Producer = ({ data }) => {
     const prod = data ? (
-        <div className="poision-producer">
+        <div className="poison-producer">
             <header is="x3d">
                 <p>Producer</p>
                 <StatusIndication is_active={data?.is_active} is_deleted={data?.is_deleted} />

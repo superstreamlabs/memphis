@@ -30,7 +30,7 @@ import GitHubLogo from '../../assets/images/githubLogo.svg';
 import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
-import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, SOCKET_URL } from '../../config';
+import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, SOCKET_URL, URL } from '../../config';
 import { connect } from 'nats.ws';
 
 const SandboxLogin = (props) => {
@@ -79,11 +79,10 @@ const SandboxLogin = (props) => {
         if (localStorage.getItem(LOCAL_STORAGE_TOKEN) && AuthService.isValidToken()) {
             history.push(referer);
         }
-        const url = window.location.href;
-        const shouldSigninWithGoogle = url.includes('?code=') && url.includes('&scope=email');
-        const shouldSigninWithGithub = url.includes('?code=');
+        const shouldSigninWithGoogle = URL.includes('?code=') && URL.includes('&scope=email');
+        const shouldSigninWithGithub = URL.includes('?code=');
         if (shouldSigninWithGoogle) {
-            splittedUrl = url.split('?code=');
+            splittedUrl = URL.split('?code=');
             window.history.pushState({}, null, splittedUrl[0]);
             if (splittedUrl.length > 1) {
                 const code = splittedUrl[1].split('&scope=email')[0];
@@ -92,7 +91,7 @@ const SandboxLogin = (props) => {
                 setError('Authentication with GitHub failed');
             }
         } else if (shouldSigninWithGithub) {
-            splittedUrl = url.split('?code=');
+            splittedUrl = URL.split('?code=');
             window.history.pushState({}, null, splittedUrl[0]);
             if (splittedUrl.length > 1) {
                 signinWithGithub(`${splittedUrl[1]}`);
@@ -114,7 +113,7 @@ const SandboxLogin = (props) => {
 
     function getGoogleAuthUri() {
         const rootUrl = `https://accounts.google.com/o/oauth2/v2/auth`;
-        let base = window.location.href,
+        let base = URL,
             state = '';
         let i = base.indexOf('#');
         if (i > -1) {

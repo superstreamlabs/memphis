@@ -32,6 +32,7 @@ import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import CheckboxComponent from '../../../../components/checkBox';
+import { URL } from '../../../../config';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -42,8 +43,7 @@ const Messages = () => {
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [loadMessageData, setLoadMessageData] = useState(false);
-    const url = window.location.href;
-    const stationName = url.split('stations/')[1];
+    const stationName = URL.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('All');
     const tabs = ['All', 'Dead-letter'];
@@ -71,7 +71,7 @@ const Messages = () => {
     };
 
     const arrangeData = (data) => {
-        let poisionedCGs = [];
+        let poisonedCGs = [];
         if (data) {
             data.poisoned_cgs.map((row, index) => {
                 let cg = {
@@ -101,7 +101,7 @@ const Messages = () => {
                         }
                     ]
                 };
-                poisionedCGs.push(cg);
+                poisonedCGs.push(cg);
             });
             let messageDetails = {
                 id: data._id ?? null,
@@ -136,7 +136,7 @@ const Messages = () => {
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,
-                poisionedCGs: poisionedCGs
+                poisonedCGs: poisonedCGs
             };
             setMessageDetails(messageDetails);
         }
@@ -180,16 +180,16 @@ const Messages = () => {
     const handleAck = async () => {
         setIgnoreProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.ACK_POISION_MESSAGE}`, { poison_message_ids: isCheck });
-            let poisions = stationState?.stationSocketData?.poison_messages;
+            await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: isCheck });
+            let poisons = stationState?.stationSocketData?.poison_messages;
             isCheck.map((messageId, index) => {
-                poisions = poisions?.filter((item) => {
+                poisons = poisons?.filter((item) => {
                     return item._id !== messageId;
                 });
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisions });
+                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisons });
                 setIsCheck([]);
                 setIsCheckAll(false);
             }, 1500);
@@ -201,7 +201,7 @@ const Messages = () => {
     const handleResend = async () => {
         setResendProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISION_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
             setTimeout(() => {
                 setResendProcced(false);
                 message.success({
@@ -303,7 +303,7 @@ const Messages = () => {
                             <div className="row-data">
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
@@ -349,7 +349,7 @@ const Messages = () => {
                             <div className="row-data">
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
                                     <CustomCollapse status={false} header="Details" data={messageDetails.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />

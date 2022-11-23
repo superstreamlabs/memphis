@@ -1,6 +1,7 @@
 slack-integration{
     display: flex;
     flex-direction: column;
+    height: 100%;
     p{
         margin: 0;
     }
@@ -8,84 +9,103 @@ slack-integration{
         border-top-left-radius: 16px;
         border-top-right-radius: 16px;
     }
-    .header{
-        display: flex;
-        margin: 15px;
-        .details{
-            margin-left: 10px;
-            p{
-                font-family: 'InterSemiBold';
-                font-size: 20px;
-            }
-            span{
+    form{
+        position: relative;
+        height: calc(100% - 390px);
+   
+        .api-details{
+            height: calc(100% - 83px);
+            overflow: scroll;
+            margin: 15px;
+            margin-right: 2px;
+            padding-right: 13px;
+            .title{
                 font-family: 'InterMedium';
+                font-size: 15px;
+            }
+            .api-key{
+                margin-top: 10px;
+                padding: 10px;
+                padding-bottom:1px;
+                border-radius: 8px;
+                background-color: rgba(101, 87, 255, 0.1);
+                p{
+                    font-family: 'InterSemiBold';
+                    font-size: 12px;
+                    color: #2C2C2C;
+                }
+                .desc{
+                    color: rgba(74, 73, 92, 0.8);
+                    font-size: 14px;
+                    margin-bottom:15px;
+                }
+                .input-component-container{
+                    padding-top:10px;
+                    .input-container input{
+                        background-color: rgba(101, 87, 255, 0.2) !important;
+                    }
+                    .ant-input::placeholder{
+                        color: rgba(46, 44, 52, 0.5)
+                    }
+                }
+            }
+            .channel-id{
+                margin: 10px 0px;
                 font-size: 13px;
-                color: rgba(74, 73, 92, 0.8);
-            }
-            svg{
-                font-size: 8px;
-                color: rgba(74, 73, 92, 0.8);
-                margin: 0px 5px;
-            }
-        }
-    }
-    .description{
-        margin: 0 15px;
-        p{
-            font-family: 'InterMedium';
-            font-size: 15px;
-        }
-        span{
-            color: rgba(74, 73, 92, 0.8);
-            font-size: 12px;
-        }
-    }
-    .api-details{
-        margin: 15px;
-        .title{
-            font-family: 'InterMedium';
-            font-size: 15px;
-        }
-        .api-key{
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: rgba(101, 87, 255, 0.1);
-            p{
-                font-family: 'InterSemiBold';
-                font-size: 12px;
-                color: #2C2C2C;
-            }
-            .desc{
-                color: rgba(74, 73, 92, 0.8);
-                font-size: 14px;
-                margin-bottom:15px;
-            }
-            .input-component-container{
-                padding-top:10px;
-                .input-container input{
-                    background-color: rgba(101, 87, 255, 0.2) !important;
+                p{
+                    color: #1D1D1D;
                 }
-                .ant-input::placeholder{
-                    color: rgba(46, 44, 52, 0.5)
+                .desc{
+                    color: #B4B4B4;
+                    font-size: 12px;
+
+                }
+                .input-component-container{
+                    margin-top: 10px;
+                }
+            }
+            .notification-option{
+                p{
+                    font-family: 'InterMedium';
+                    font-size: 15px;
+                }
+                .desc{
+                    color: #B4B4B4;
+                    font-size: 12px;
+                    margin-bottom:15px;
+                }
+                .option-wrapper{
+                    display: flex;
+                    width: 100%;
+                    height: 70px;
+                    border: 1px solid #E1E1E1;
+                    border-radius: 8px;
+                    margin:10px 0px;
+                    padding: 0px 10px;
+                    align-items: center;
+                    justify-content: space-between;
+                    .option-name{
+                        display: flex;
+                        align-items: center;
+                        img{
+                            width: 35px;
+                            margin-right:10px
+                        }
+                        p{
+                            font-family: 'InterMedium';
+                            font-size: 12px;
+                        }
+                    
+                    }
                 }
             }
         }
-        .channel-id{
-            margin: 10px 0px;
-            font-size: 13px;
-            p{
-                color: #1D1D1D;
-            }
-            .desc{
-                color: rgba(74, 73, 92, 0.8);
-            }
-        }
-        .notification-option{
-            font-size: 12px;
-            p{
-                color: #1D1D1D;
-            }
+        .button-wrapper{
+            width: 100%;
+            display: grid;
+            grid-template-columns: 50% 50%;
+            text-align: -moz-center;
+            text-align: -webkit-center;
         }
     }
 }

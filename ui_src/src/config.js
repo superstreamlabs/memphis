@@ -15,10 +15,13 @@
 const environment = process.env.NODE_ENV ? process.env.NODE_ENV : 'development';
 const SERVER_URL_PRODUCTION = `${window.location.href.split('//')[1].split('/')[0]}/api`;
 var WS_SERVER_URL_PRODUCTION = `${window.location.href.split('//')[1].split('/')[0]}`;
-if (WS_SERVER_URL_PRODUCTION.includes(":")) // for urls contain port
-    WS_SERVER_URL_PRODUCTION = WS_SERVER_URL_PRODUCTION.split(":")[0]
+if (WS_SERVER_URL_PRODUCTION.includes(':'))
+    // for urls contain port
+    WS_SERVER_URL_PRODUCTION = WS_SERVER_URL_PRODUCTION.split(':')[0];
 const SSL_PREFIX = window.location.protocol === 'https:' ? 'https://' : 'http://';
+
 export const SERVER_URL = environment === 'production' ? `${SSL_PREFIX}${SERVER_URL_PRODUCTION}` : 'http://localhost:9000/api';
+export const URL = window.location.href;
 
 export const HANDLE_REFRESH_INTERVAL = 600000;
 export const SHOWABLE_ERROR_STATUS_CODE = 666;

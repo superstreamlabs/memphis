@@ -17,7 +17,7 @@ import './style.scss';
 import React, { useContext } from 'react';
 import Lottie from 'lottie-react';
 
-import consumePoision from '../../../assets/lotties/consume_poision.json';
+import consumePoison from '../../../assets/lotties/consume_poison.json';
 import consumeEmpty from '../../../assets/lotties/consume_empty.json';
 import produceEmpty from '../../../assets/lotties/produce_empty.json';
 import produce from '../../../assets/lotties/produce-many.json';
@@ -40,7 +40,7 @@ const StationObservabilty = () => {
             <div className="thunnel-to-pub">
                 {stationState?.stationSocketData?.connected_cgs?.length === 0 && <Lottie animationData={consumeEmpty} loop={true} />}
                 {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                    <Lottie animationData={consumePoision} loop={true} />
+                    <Lottie animationData={consumePoison} loop={true} />
                 )}
                 {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length === 0 && (
                     <Lottie animationData={consumer} loop={true} />

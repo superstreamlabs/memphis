@@ -26,7 +26,7 @@ const Integrations = () => {
     return (
         <div className="alerts-integrations-container">
             <div className="header-preferences">
-                <p className="main-header">Intergrations</p>
+                <p className="main-header">Notifications</p>
                 <p className="sub-header">We will keep an eye on your data streams and alert you if anything went wron</p>
             </div>
             <div className="integration-list">

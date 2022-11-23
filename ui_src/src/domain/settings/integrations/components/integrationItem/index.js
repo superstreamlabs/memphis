@@ -24,7 +24,7 @@ const IntegrationItem = ({ value }) => {
     const modalContent = () => {
         switch (value.name) {
             case 'Slack':
-                return <SlackIntegration />;
+                return <SlackIntegration close={() => modalFlip(false)} />;
             default:
                 break;
         }
@@ -43,7 +43,7 @@ const IntegrationItem = ({ value }) => {
                 </div>
                 <p className="integration-description">{value.description} </p>
             </integ-item>
-            <Modal className="integration-modal" height="920px" width="750px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+            <Modal className="integration-modal" height="95vh" width="650px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 {modalContent()}
             </Modal>
         </>

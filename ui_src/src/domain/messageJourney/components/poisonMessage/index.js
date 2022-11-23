@@ -22,14 +22,14 @@ import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { message as messageAnt } from 'antd';
 
-const PoisionMessage = ({ stationName, messageId, details, message, headers, processing, returnBack }) => {
+const PoisonMessage = ({ stationName, messageId, details, message, headers, processing, returnBack }) => {
     const [resendProcess, setResendProcess] = useState(false);
     const [ignoreProcess, setIgnoreProcess] = useState(false);
 
     const handleIgnore = async () => {
         setIgnoreProcess(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.ACK_POISION_MESSAGE}`, { poison_message_ids: [messageId] });
+            await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: [messageId] });
             setTimeout(() => {
                 setIgnoreProcess(false);
                 returnBack();
@@ -43,7 +43,7 @@ const PoisionMessage = ({ stationName, messageId, details, message, headers, pro
         setResendProcess(true);
         processing(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISION_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId] });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId] });
             setTimeout(() => {
                 setResendProcess(false);
                 processing(false);
@@ -62,7 +62,7 @@ const PoisionMessage = ({ stationName, messageId, details, message, headers, pro
     };
 
     return (
-        <div className="poision-message">
+        <div className="poison-message">
             <header is="x3d">
                 <p>
                     {stationName} / #{messageId.substring(0, 5)}
@@ -104,4 +104,4 @@ const PoisionMessage = ({ stationName, messageId, details, message, headers, pro
         </div>
     );
 };
-export default PoisionMessage;
+export default PoisonMessage;

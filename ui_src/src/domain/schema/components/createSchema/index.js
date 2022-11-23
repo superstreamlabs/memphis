@@ -126,6 +126,7 @@ function CreateSchema() {
             goBack();
         };
     }, []);
+
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
     }, [formFields?.type]);
@@ -197,7 +198,6 @@ function CreateSchema() {
     };
 
     const checkContent = (_, value) => {
-        debugger;
         if (value.length > 0) {
             try {
                 Schema.parse(value);

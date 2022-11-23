@@ -45,7 +45,7 @@ function Users() {
                 return <Profile />;
             case 'clusterConfiguration':
                 return <ClusterConfiguration />;
-            case 'intergrations':
+            case 'notifications':
                 return <Integrations />;
             default:
                 return;
@@ -61,14 +61,14 @@ function Users() {
                         <img src={selectedMenuItem === 'editProfile' ? EditProfileColor : EditProfileGray} alt="editProfile" />
                         Edit Profile
                     </div>
-                    <div className={selectedMenuItem === 'intergrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('intergrations')}>
-                        <img src={selectedMenuItem === 'intergrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
-                        Intergrations
+                    <div className={selectedMenuItem === 'notifications' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('notifications')}>
+                        <img src={selectedMenuItem === 'notifications' ? IntegrationColor : IntegrationGray} alt="notifications" />
+                        Notifications
                     </div>
                     <div
                         className="menu-item disabled"
                         //  className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
-                        //  onClick={() => selectMenuItem('clusterConfiguration')}
+                        // onClick={() => selectMenuItem('clusterConfiguration')}
                     >
                         <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                         Cluster configuration

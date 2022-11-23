@@ -17,7 +17,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../services/valueConvertor';
-import PoisionMessage from './components/poisionMessage';
+import PoisonMessage from './components/poisonMessage';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import BackIcon from '../../assets/images/backIcon.svg';
 import ConsumerGroup from './components/consumerGroup';
@@ -29,12 +29,12 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { StringCodec, JSONCodec } from 'nats.ws';
+import { URL } from '../../config';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
-    const url = window.location.href;
-    const messageId = url.split('stations/')[1].split('/')[1];
-    const stationName = url.split('stations/')[1].split('/')[0];
+    const messageId = URL.split('stations/')[1].split('/')[1];
+    const stationName = URL.split('stations/')[1].split('/')[0];
     const [isLoading, setisLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [messageData, setMessageData] = useState({});
@@ -46,7 +46,7 @@ const MessageJourney = () => {
     const getPosionMessageDetails = async () => {
         setisLoading(true);
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_POISION_MESSAGE_JOURNEY}?message_id=${messageId}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${messageId}`);
             arrangeData(data);
         } catch (error) {
             setisLoading(false);
@@ -86,7 +86,7 @@ const MessageJourney = () => {
     };
 
     const arrangeData = (data) => {
-        let poisionedCGs = [];
+        let poisonedCGs = [];
         let nodesList = [
             {
                 id: 1,
@@ -204,7 +204,7 @@ const MessageJourney = () => {
                 };
                 nodesList.push(node);
                 edgesList.push(edge);
-                poisionedCGs.push(cg);
+                poisonedCGs.push(cg);
             });
 
             let messageDetails = {
@@ -240,7 +240,7 @@ const MessageJourney = () => {
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,
-                poisionedCGs: poisionedCGs
+                poisonedCGs: poisonedCGs
             };
             setMessageData(messageDetails);
             setEdges(edgesList);
@@ -263,7 +263,7 @@ const MessageJourney = () => {
                     <div className="bread-crumbs">
                         <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
-                            {stationName} / Poision message #{messageId.substring(0, 5)}
+                            {stationName} / Poison message #{messageId.substring(0, 5)}
                         </p>
                     </div>
 
@@ -281,7 +281,7 @@ const MessageJourney = () => {
                                         <foreignObject height={event.height} width={event.width} x={0} y={0} className="node-wrapper">
                                             {event.node.data.value === 'producer' && <Producer data={messageData.producer} />}
                                             {event.node.data.value === 'station' && (
-                                                <PoisionMessage
+                                                <PoisonMessage
                                                     stationName={stationName}
                                                     messageId={messageId}
                                                     message={messageData.message}

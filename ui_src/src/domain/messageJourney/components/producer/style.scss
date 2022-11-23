@@ -1,22 +1,22 @@
-.poision-producer{
+.poison-producer {
     position: relative;
     width: 100%;
     height: 100%;
-    background: #FFFFFF;
+    background: #ffffff;
     box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.14);
     border-radius: 8px;
-    p{
+    p {
         margin: 0;
     }
-    header{
+    header {
         position: relative;
         display: flex;
         width: 100%;
         justify-content: space-between;
         height: 55px;
         align-items: center;
-        border-bottom: 1px solid #EFF0F2;
-        p{
+        border-bottom: 1px solid #eff0f2;
+        p {
             font-weight: 600;
             font-size: 14px;
             margin-left: 15px;
@@ -25,7 +25,7 @@
             margin-right: 15px;
         }
     }
-    .content-wrapper{
+    .content-wrapper {
         display: flex;
         flex-direction: column;
         height: calc(100% - 60px);
@@ -37,10 +37,10 @@
             line-height: 30px;
             margin-right: 15px;
             margin-left: 15px;
-            p{
+            p {
                 font-weight: 400;
                 font-size: 12px;
-                color: #84818A;
+                color: #84818a;
             }
             span {
                 font-size: 12px;
