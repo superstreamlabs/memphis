@@ -36,15 +36,15 @@ node {
       sh "helm uninstall my-memphis -n memphis"
       //sh "kubectl delete ns memphis"
    }
-    stage('Create memphis namespace in Kubernetes'){
+    /*stage('Create memphis namespace in Kubernetes'){
       sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
       sh "aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml ."
       sh "kubectl apply -f regcred.yaml -n memphis"
       sh "kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}' -n memphis"
-    }
+    }*/
 	  
       stage('Push to sandbox'){
-				sh "rm -rf memphis-infra"
+        sh "rm -rf memphis-infra"
       	dir ('memphis-infra'){
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch
       	}
