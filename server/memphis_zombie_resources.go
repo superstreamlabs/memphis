@@ -25,8 +25,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const CONN_STATUS_SUBJ = "$memphis_connection_status"
-
 func killRelevantConnections(zombieConnections []primitive.ObjectID) error {
 	_, err := connectionsCollection.UpdateMany(context.TODO(),
 		bson.M{"_id": bson.M{"$in": zombieConnections}},

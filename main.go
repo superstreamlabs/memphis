@@ -21,7 +21,6 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/db"
 	"memphis-broker/http_server"
-	"memphis-broker/notifications"
 	"memphis-broker/server"
 
 	"os"
@@ -108,9 +107,9 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
-	err = notifications.InitializeSlackConnection(dbInstance.Client)
+	err = server.InitializeIntegrations(dbInstance.Client)
 	if err != nil {
-		s.Errorf("Failed initializing slack connection: " + err.Error())
+		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
@@ -125,21 +124,10 @@ func runMemphis(s *server.Server) db.DbInstance {
 
 	go http_server.InitializeHttpServer(s)
 	s.ListenForPoisonMessages()
-	err = s.ListenForZombieConnCheckRequests()
-	if err != nil {
-		s.Errorf("Failed subscribing for zombie conns check requests: " + err.Error())
-		os.Exit(1)
-	}
 
-	err = s.ListenForIntegrationsUpdates()
+	err = s.StartBackgroundTasks()
 	if err != nil {
-		s.Errorf("Failed subscribing for integrations updates: " + err.Error())
-		os.Exit(1)
-	}
-
-	err = s.ListenForSchemaValidationFails()
-	if err != nil {
-		s.Errorf("Failed subscribing for schema validation updates: " + err.Error())
+		s.Errorf("Background task failed: " + err.Error())
 		os.Exit(1)
 	}
 

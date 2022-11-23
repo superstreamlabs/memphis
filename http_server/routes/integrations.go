@@ -22,8 +22,8 @@ import (
 func InitializeIntegrationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	integrationsHandler := h.Integrations
 	integrationsRoutes := router.Group("/integrations")
-	integrationsRoutes.POST("/createSlackIntegration", integrationsHandler.CreateSlackIntegration)
-	integrationsRoutes.POST("/updateSlackIntegration", integrationsHandler.UpdateSlackIntegration)
+	integrationsRoutes.POST("/createIntegration", integrationsHandler.CreateIntegration)
+	integrationsRoutes.POST("/updateIntegration", integrationsHandler.UpdateIntegration)
 	integrationsRoutes.DELETE("/deleteIntegration", integrationsHandler.DeleteIntegration)
 	integrationsRoutes.GET("/getIntegrationDetails", integrationsHandler.GetIntegrationDetails)
 	integrationsRoutes.GET("/getAllIntegrations", integrationsHandler.GetAllIntegrations)

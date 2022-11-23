@@ -2,12 +2,14 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
 	"strings"
 	"time"
 )
 
+const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const SCHEMA_VALIDATION_FAIL_SUBJ = "$memphis_schema_validation_fail_updates"
 
@@ -51,7 +53,7 @@ func checkAndReportConnFound(s *Server, message, reply string) bool {
 	return false
 }
 
-func (s *Server) ListenForIntegrationsUpdates() error {
+func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var integrationUpdate models.Integration
@@ -59,9 +61,9 @@ func (s *Server) ListenForIntegrationsUpdates() error {
 			if err != nil {
 				s.Errorf(err.Error())
 			}
-			switch integrationUpdate.Name {
+			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				notifications.UpdateSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.UIUrl)
+				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.UIUrl)
 			default:
 				return
 			}
@@ -73,21 +75,38 @@ func (s *Server) ListenForIntegrationsUpdates() error {
 	return nil
 }
 
-func (s *Server) ListenForSchemaValidationFails() error {
+func (s *Server) ListenForSchemaValidationFailEvents() error {
 	err := s.queueSubscribe(SCHEMA_VALIDATION_FAIL_SUBJ, SCHEMA_VALIDATION_FAIL_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			if notifications.SlackAuthToken != "" && notifications.SlackChannelID != "" && notifications.SlackSchemaValidationFailAlert {
-				var validationFailMsg models.SchemaValidationFailMessage
-				err := json.Unmarshal(msg, &validationFailMsg)
-				if err != nil {
-					s.Errorf(err.Error())
-				}
-				notifications.SendMessageToSlackChannel(validationFailMsg.Msg)
+			slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+			if !ok {
+				return
+			}
+			if slackIntegration.Properties["schema_validation_fail_alert"] {
+				notifications.SendMessageToSlackChannel(string(msg))
 			}
 		}(copyBytes(msg))
 	})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *Server) StartBackgroundTasks() error {
+	err := s.ListenForZombieConnCheckRequests()
+	if err != nil {
+		return errors.New("Failed subscribing for zombie conns check requests: " + err.Error())
+	}
+
+	err = s.ListenForIntegrationsUpdateEvents()
+	if err != nil {
+		return errors.New("Failed subscribing for integrations updates: " + err.Error())
+	}
+
+	err = s.ListenForSchemaValidationFailEvents()
+	if err != nil {
+		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
 	}
 	return nil
 }

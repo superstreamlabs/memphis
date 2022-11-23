@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"memphis-broker/db"
 	"memphis-broker/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,60 +12,52 @@ import (
 	"github.com/slack-go/slack"
 )
 
-var SlackAuthToken string
-var SlackChannelID string
-var SlackPoisonMessageAlert bool
-var SlackSchemaValidationFailAlert bool
-var UIUrl string
-var SlackClient *slack.Client
-var integrationsCollection *mongo.Collection
-
 func InitializeSlackConnection(c *mongo.Client) error {
-	integrationsCollection = db.GetCollection("integrations", c)
 	filter := bson.M{"name": "slack"}
 	var slackIntegration models.Integration
-	err := integrationsCollection.FindOne(context.TODO(),
+	err := IntegrationsCollection.FindOne(context.TODO(),
 		filter).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
-		UpdateEmptySlackDetails()
 		return nil
 	} else if err != nil {
 		return err
 	}
-	UpdateSlackDetails(slackIntegration.Keys, slackIntegration.Properties, slackIntegration.UIUrl)
+	CacheSlackDetails(slackIntegration.Keys, slackIntegration.Properties, slackIntegration.UIUrl)
 	return nil
 }
 
-func UpdateEmptySlackDetails() {
-	UIUrl = ""
-	SlackAuthToken = ""
-	SlackChannelID = ""
-	SlackPoisonMessageAlert = false
-	SlackSchemaValidationFailAlert = false
-	SlackClient = nil
+func clearSlackCache() {
+	delete(NotificationIntegrationsMap, "slack")
 }
 
-func UpdateSlackDetails(keys map[string]string, properties map[string]bool, url string) {
+func CacheSlackDetails(keys map[string]string, properties map[string]bool, url string) {
 	var authToken, channelID string
 	var poisonMessageAlert, schemaValidationFailAlert bool
-	UIUrl = url
+	var slackIntegration models.SlackIntegration
+
+	slackIntegration, ok := NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+	if !ok {
+		slackIntegration = models.SlackIntegration{}
+		slackIntegration.Keys = make(map[string]string)
+		slackIntegration.Properties = make(map[string]bool)
+	}
 	if keys == nil {
-		authToken = ""
-		channelID = ""
-		SlackClient = nil
+		clearSlackCache()
+		return
 	}
 	if properties == nil {
 		poisonMessageAlert = false
 		schemaValidationFailAlert = false
 	}
-	authToken, ok := keys["auth_token"]
+	authToken, ok = keys["auth_token"]
 	if !ok {
-		authToken = ""
-		SlackClient = nil
+		clearSlackCache()
+		return
 	}
 	channelID, ok = keys["channel_id"]
 	if !ok {
-		channelID = ""
+		clearSlackCache()
+		return
 	}
 	poisonMessageAlert, ok = properties["poison_message_alert"]
 	if !ok {
@@ -76,27 +67,32 @@ func UpdateSlackDetails(keys map[string]string, properties map[string]bool, url 
 	if !ok {
 		schemaValidationFailAlert = false
 	}
-	if SlackAuthToken != authToken {
-		SlackAuthToken = authToken
+	if slackIntegration.Keys["auth_token"] != authToken {
+		slackIntegration.Keys["auth_token"] = authToken
 		if authToken != "" {
-			SlackClient = slack.New(authToken)
+			slackIntegration.Client = slack.New(authToken)
 		}
 	}
-	SlackChannelID = channelID
-	SlackPoisonMessageAlert = poisonMessageAlert
-	SlackSchemaValidationFailAlert = schemaValidationFailAlert
+
+	slackIntegration.Keys["channel_id"] = channelID
+	slackIntegration.Properties["poison_message_alert"] = poisonMessageAlert
+	slackIntegration.Properties["schema_validation_fail_alert"] = schemaValidationFailAlert
+	slackIntegration.Name = "slack"
+	slackIntegration.UIUrl = url
+	NotificationIntegrationsMap["slack"] = slackIntegration
 }
 
 func SendMessageToSlackChannel(message string) error {
-	if SlackChannelID != "" || SlackClient != nil {
+	slackIntegration, ok := NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+	if ok {
 		attachment := slack.Attachment{
 			Pretext: "Memphis Notification",
 			Text:    message,
 			Color:   "#6557FF",
 		}
 
-		_, _, err := SlackClient.PostMessage(
-			SlackChannelID,
+		_, _, err := slackIntegration.Client.PostMessage(
+			slackIntegration.Keys["channel_id"],
 			slack.MsgOptionAttachments(attachment),
 		)
 		if err != nil {

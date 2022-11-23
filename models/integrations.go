@@ -14,6 +14,7 @@
 package models
 
 import (
+	"github.com/slack-go/slack"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -25,26 +26,25 @@ type Integration struct {
 	UIUrl      string             `json:"ui_url" bson:"ui_url"`
 }
 
-type SlackIntegrationRequest struct {
-	AuthToken                 string `json:"auth_token"`
-	ChannelID                 string `json:"channel_id"`
-	PoisonMessageAlert        bool   `json:"poison_message_alert"`
-	SchemaValidationFailAlert bool   `json:"schema_validation_fail_alert"`
-	UIUrl                     string `json:"ui_url" bson:"ui_url"`
+type SlackIntegration struct {
+	Name       string            `json:"name"`
+	Keys       map[string]string `json:"keys"`
+	Properties map[string]bool   `json:"properties"`
+	UIUrl      string            `json:"ui_url"`
+	Client     *slack.Client     `json:"client"`
+}
+
+type CreateIntegrationSchema struct {
+	Name       string            `json:"name"`
+	Keys       map[string]string `json:"keys"`
+	Properties map[string]bool   `json:"properties"`
+	UIUrl      string            `json:"ui_url" binding:"required"`
 }
 
 type GetIntegrationDetailsRequest struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
 
-type DeleteIntegration struct {
+type DeleteIntegrationSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
-}
-
-type UrlForSlackMessage struct {
-	Url string `json:"url"`
-}
-
-type SchemaValidationFailMessage struct {
-	Msg string `json:"msg"`
 }

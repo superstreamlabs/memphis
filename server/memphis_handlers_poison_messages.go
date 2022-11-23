@@ -15,7 +15,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
 
@@ -139,13 +138,14 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
 		return
 	} else {
-		str := fmt.Sprintf("%v", poisonMsg.ID)
-		substring := str[10 : len(str)-2]
-		idForUrl = substring
+		idForUrl = poisonMsg.ID.Hex()
 	}
-	if notifications.UIUrl != "" && notifications.SlackAuthToken != "" && notifications.SlackChannelID != "" && notifications.SlackPoisonMessageAlert {
-		var msgUrl = notifications.UIUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
-		notifications.SendMessageToSlackChannel("There was a poisoned message, for message journy see: " + msgUrl)
+	slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+	if ok {
+		if slackIntegration.Properties["poison_message_alert"] {
+			var msgUrl = slackIntegration.UIUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
+			notifications.SendMessageToSlackChannel("Poison message has been identified, for more details head to: " + msgUrl)
+		}
 	}
 }
 
