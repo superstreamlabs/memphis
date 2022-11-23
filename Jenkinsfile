@@ -48,7 +48,7 @@ node {
       	dir ('memphis-infra'){
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-infra.git', branch: gitBranch
       	}
-      	sh "helm upgrade --atomic --install my-memphis memphis-infra/kubernetes/helm/memphis --set cluster.enabled='true',analytics='false',sandbox='true' --create-namespace --namespace memphis"
+      	sh "helm install my-memphis memphis-infra/kubernetes/helm/memphis --set cluster.enabled='true',analytics='false',sandbox='true' --create-namespace --namespace memphis --wait"
 	sh "rm -rf memphis-infra"
       }
       
