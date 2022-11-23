@@ -82,11 +82,12 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool, url s
 	NotificationIntegrationsMap["slack"] = slackIntegration
 }
 
-func SendMessageToSlackChannel(message string) error {
+func SendMessageToSlackChannel(title string, message string) error {
 	slackIntegration, ok := NotificationIntegrationsMap["slack"].(models.SlackIntegration)
 	if ok {
 		attachment := slack.Attachment{
-			Pretext: "Memphis Notification",
+			Pretext: "Memphis",
+			Title:   title,
 			Text:    message,
 			Color:   "#6557FF",
 		}

@@ -144,7 +144,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	if ok {
 		if slackIntegration.Properties["poison_message_alert"] {
 			var msgUrl = slackIntegration.UIUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
-			notifications.SendMessageToSlackChannel("Poison message has been identified, for more details head to: " + msgUrl)
+			notifications.SendMessageToSlackChannel("Poison message", "Poison message has been identified, for more details head to: "+msgUrl)
 		}
 	}
 }

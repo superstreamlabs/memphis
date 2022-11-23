@@ -48,3 +48,8 @@ type GetIntegrationDetailsRequest struct {
 type DeleteIntegrationSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
+
+type SchemaFailMsg struct {
+	Title string `json:"title" binding:"required"`
+	Msg   string `json:"msg" binding:"required"`
+}

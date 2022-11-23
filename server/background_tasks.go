@@ -78,12 +78,17 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 func (s *Server) ListenForSchemaValidationFailEvents() error {
 	err := s.queueSubscribe(SCHEMA_VALIDATION_FAIL_SUBJ, SCHEMA_VALIDATION_FAIL_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
+			var schemaFailMsg models.SchemaFailMsg
+			err := json.Unmarshal(msg, &schemaFailMsg)
+			if err != nil {
+				return
+			}
 			slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
 			if !ok {
 				return
 			}
 			if slackIntegration.Properties["schema_validation_fail_alert"] {
-				notifications.SendMessageToSlackChannel(string(msg))
+				notifications.SendMessageToSlackChannel(schemaFailMsg.Title, schemaFailMsg.Msg)
 			}
 		}(copyBytes(msg))
 	})
