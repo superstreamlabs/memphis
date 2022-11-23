@@ -55,7 +55,7 @@ node {
 	  
       stage('Configure sandbox URLs'){
 	sh "aws s3 cp s3://memphis-jenkins-backup-bucket/sandbox_files/update_sandbox_record.json ." //sandbox.memphis.dev redirect to new LB record
-	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(aws elbv2 describe-load-balancers --load-balancer-arns | grep "k8s-memphis-memphisu" | grep DNS | awk '{print \"dualstack.\"\$2}' | sed 's/"//g' | sed 's/,//g')\\"/g"  update_sandbox_record.json > record1.json""", returnStdout: true)    
+	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(kubectl get svc -n memphis | grep "memphis-cluster-sandbox" | awk '{print \"dualstack.\"\$4}')\\"/g"  update_sandbox_record.json > record1.json""", returnStdout: true)    
 	sh(script: """aws route53 change-resource-record-sets --hosted-zone-id Z05132833CK9UXS6W3I0E --change-batch file://record1.json > status1.txt""",    returnStdout: true)
 	
 	//broker url section      
