@@ -61,23 +61,6 @@ const SlackIntegration = ({ close }) => {
             {slackConfiguration?.insideBanner}
             {slackConfiguration.header}
             {slackConfiguration.integrateDesc}
-            {/* <div className="header">
-                {slackConfiguration?.icon}
-                <div className="details">
-                    <p>{slackConfiguration?.name}</p>
-                    <>
-                        <span>by {slackConfiguration.by}</span>
-                        <FiberManualRecord />
-                        <span>Last update: {diffDate(slackConfiguration.date)} </span>
-                    </>
-                </div>
-            </div> */}
-            {/* <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">
-                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability. Read More
-                </span>
-            </div> */}
             <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                 <div className="api-details">
                     <p className="title">API details</p>
