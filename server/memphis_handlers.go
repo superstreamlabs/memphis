@@ -210,7 +210,6 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 		CreationDate:      time.Now(),
 		LastUpdate:        time.Now(),
 		Functions:         []models.Function{},
-		Idempotency:       false,
 		IdempotencyWindow: 0,
 	}
 
@@ -233,7 +232,6 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 			"creation_date":            newStation.CreationDate,
 			"last_update":              newStation.LastUpdate,
 			"functions":                newStation.Functions,
-			"idempotency":              newStation.Idempotency,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		},
 	}

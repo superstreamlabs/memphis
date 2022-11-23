@@ -70,7 +70,6 @@ type Station struct {
 	Functions         []Function         `json:"functions" bson:"functions"`
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema            SchemaDetails      `json:"schema" bson:"schema"`
-	Idempotency       bool               `json:"idempotency" bson:"idempotency"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 }
 
@@ -89,7 +88,6 @@ type GetStationResponseSchema struct {
 	Functions         []Function         `json:"functions" bson:"functions"`
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Tags              []CreateTag        `json:"tags"`
-	Idempotency       bool               `json:"idempotency" bson:"idempotency"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 }
 
@@ -109,7 +107,6 @@ type ExtendedStation struct {
 	TotalMessages     int                `json:"total_messages"`
 	PoisonMessages    int                `json:"posion_messages"`
 	Tags              []CreateTag        `json:"tags"`
-	Idempotency       bool               `json:"idempotency" bson:"idempotency"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 }
 
@@ -134,7 +131,6 @@ type CreateStationSchema struct {
 	DedupWindowInMs   int         `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
 	Tags              []CreateTag `json:"tags"`
 	SchemaName        string      `json:"schema_name"`
-	Idempotency       bool        `json:"idempotency"`
 	IdempotencyWindow int         `json:"idempotency_window_in_ms"`
 }
 

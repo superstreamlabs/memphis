@@ -217,7 +217,6 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		DedupWindowInMs:   csr.DedupWindowMillis, // TODO deprecated
 		LastUpdate:        time.Now(),
 		Functions:         []models.Function{},
-		Idempotency:       csr.Idempotency,
 		IdempotencyWindow: csr.IdempotencyWindow,
 	}
 
@@ -357,7 +356,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
 	if err != nil {
 		return stations, err
@@ -539,7 +538,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		Functions:         []models.Function{},
 		IsDeleted:         false,
 		Schema:            schemaDetails,
-		Idempotency:       body.Idempotency,
 		IdempotencyWindow: body.IdempotencyWindow,
 	}
 
@@ -568,7 +566,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"last_update":              newStation.LastUpdate,
 				"functions":                newStation.Functions,
 				"schema":                   newStation.Schema,
-				"idempotency":              newStation.Idempotency,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			},
 		}
@@ -587,7 +584,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"last_update":              newStation.LastUpdate,
 				"functions":                newStation.Functions,
 				"schema":                   emptySchemaDetailsResponse,
-				"idempotency":              newStation.Idempotency,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			},
 		}
@@ -657,7 +653,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"functions":                []models.Function{},
 			"is_deleted":               false,
 			"schema":                   schemaDetailsResponse,
-			"idempotency":              newStation.Idempotency,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		})
 	} else {
@@ -676,7 +671,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"functions":                []models.Function{},
 			"is_deleted":               false,
 			"schema":                   emptySchemaDetailsResponse,
-			"idempotency":              newStation.Idempotency,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		})
 	}

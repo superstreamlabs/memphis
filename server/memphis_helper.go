@@ -147,10 +147,12 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 	}
 
 	var idempotencyWindow time.Duration
-	if station.Idempotency && station.IdempotencyWindow >= 100 {
-		idempotencyWindow = time.Duration(station.IdempotencyWindow) * time.Millisecond
+	if station.IdempotencyWindow <= 0 {
+		idempotencyWindow = 2 * time.Minute // default
+	} else if station.IdempotencyWindow < 100 {
+		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
 	} else {
-		idempotencyWindow = time.Duration(100) * time.Millisecond // can not be 0
+		idempotencyWindow = time.Duration(station.IdempotencyWindow) * time.Millisecond
 	}
 
 	return s.
