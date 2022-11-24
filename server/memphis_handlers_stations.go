@@ -15,6 +15,7 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"memphis-broker/analytics"
@@ -204,19 +205,20 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		replicas = 1
 	}
 	newStation := models.Station{
-		ID:              primitive.NewObjectID(),
-		Name:            stationName.Ext(),
-		CreatedByUser:   c.memphisInfo.username,
-		CreationDate:    time.Now(),
-		IsDeleted:       false,
-		RetentionType:   retentionType,
-		RetentionValue:  retentionValue,
-		StorageType:     storageType,
-		Replicas:        replicas,
-		DedupEnabled:    csr.DedupEnabled,
-		DedupWindowInMs: csr.DedupWindowMillis,
-		LastUpdate:      time.Now(),
-		Functions:       []models.Function{},
+		ID:                primitive.NewObjectID(),
+		Name:              stationName.Ext(),
+		CreatedByUser:     c.memphisInfo.username,
+		CreationDate:      time.Now(),
+		IsDeleted:         false,
+		RetentionType:     retentionType,
+		RetentionValue:    retentionValue,
+		StorageType:       storageType,
+		Replicas:          replicas,
+		DedupEnabled:      csr.DedupEnabled,      // TODO deprecated
+		DedupWindowInMs:   csr.DedupWindowMillis, // TODO deprecated
+		LastUpdate:        time.Now(),
+		Functions:         []models.Function{},
+		IdempotencyWindow: csr.IdempotencyWindow,
 	}
 
 	err = s.CreateStream(stationName, newStation)
@@ -232,7 +234,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created"
+	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
@@ -252,7 +254,12 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-create-station")
+		param := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -350,7 +357,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"dedup_enabled", 1}, {"dedup_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
 	})
 	if err != nil {
 		return stations, err
@@ -518,20 +525,21 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	newStation := models.Station{
-		ID:              primitive.NewObjectID(),
-		Name:            stationName.Ext(),
-		RetentionType:   retentionType,
-		RetentionValue:  body.RetentionValue,
-		StorageType:     body.StorageType,
-		Replicas:        body.Replicas,
-		DedupEnabled:    body.DedupEnabled,
-		DedupWindowInMs: body.DedupWindowInMs,
-		CreatedByUser:   user.Username,
-		CreationDate:    time.Now(),
-		LastUpdate:      time.Now(),
-		Functions:       []models.Function{},
-		IsDeleted:       false,
-		Schema:          schemaDetails,
+		ID:                primitive.NewObjectID(),
+		Name:              stationName.Ext(),
+		RetentionType:     retentionType,
+		RetentionValue:    body.RetentionValue,
+		StorageType:       body.StorageType,
+		Replicas:          body.Replicas,
+		DedupEnabled:      body.DedupEnabled,    // TODO deprecated
+		DedupWindowInMs:   body.DedupWindowInMs, // TODO deprecated
+		CreatedByUser:     user.Username,
+		CreationDate:      time.Now(),
+		LastUpdate:        time.Now(),
+		Functions:         []models.Function{},
+		IsDeleted:         false,
+		Schema:            schemaDetails,
+		IdempotencyWindow: body.IdempotencyWindow,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -547,35 +555,37 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if schemaName != "" {
 		update = bson.M{
 			"$setOnInsert": bson.M{
-				"_id":                newStation.ID,
-				"retention_type":     newStation.RetentionType,
-				"retention_value":    newStation.RetentionValue,
-				"storage_type":       newStation.StorageType,
-				"replicas":           newStation.Replicas,
-				"dedup_enabled":      newStation.DedupEnabled,
-				"dedup_window_in_ms": newStation.DedupWindowInMs,
-				"created_by_user":    newStation.CreatedByUser,
-				"creation_date":      newStation.CreationDate,
-				"last_update":        newStation.LastUpdate,
-				"functions":          newStation.Functions,
-				"schema":             newStation.Schema,
+				"_id":                      newStation.ID,
+				"retention_type":           newStation.RetentionType,
+				"retention_value":          newStation.RetentionValue,
+				"storage_type":             newStation.StorageType,
+				"replicas":                 newStation.Replicas,
+				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+				"created_by_user":          newStation.CreatedByUser,
+				"creation_date":            newStation.CreationDate,
+				"last_update":              newStation.LastUpdate,
+				"functions":                newStation.Functions,
+				"schema":                   newStation.Schema,
+				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			},
 		}
 	} else {
 		update = bson.M{
 			"$setOnInsert": bson.M{
-				"_id":                newStation.ID,
-				"retention_type":     newStation.RetentionType,
-				"retention_value":    newStation.RetentionValue,
-				"storage_type":       newStation.StorageType,
-				"replicas":           newStation.Replicas,
-				"dedup_enabled":      newStation.DedupEnabled,
-				"dedup_window_in_ms": newStation.DedupWindowInMs,
-				"created_by_user":    newStation.CreatedByUser,
-				"creation_date":      newStation.CreationDate,
-				"last_update":        newStation.LastUpdate,
-				"functions":          newStation.Functions,
-				"schema":             emptySchemaDetailsResponse,
+				"_id":                      newStation.ID,
+				"retention_type":           newStation.RetentionType,
+				"retention_value":          newStation.RetentionValue,
+				"storage_type":             newStation.StorageType,
+				"replicas":                 newStation.Replicas,
+				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+				"created_by_user":          newStation.CreatedByUser,
+				"creation_date":            newStation.CreationDate,
+				"last_update":              newStation.LastUpdate,
+				"functions":                newStation.Functions,
+				"schema":                   emptySchemaDetailsResponse,
+				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			},
 		}
 	}
@@ -620,42 +630,49 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-create-station")
+		param := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
 	}
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
-			"id":                 primitive.NewObjectID(),
-			"name":               stationName.Ext(),
-			"retention_type":     retentionType,
-			"retention_value":    body.RetentionValue,
-			"storage_type":       body.StorageType,
-			"replicas":           body.Replicas,
-			"dedup_enabled":      body.DedupEnabled,
-			"dedup_window_in_ms": body.DedupWindowInMs,
-			"created_by_user":    user.Username,
-			"creation_date":      time.Now(),
-			"last_update":        time.Now(),
-			"functions":          []models.Function{},
-			"is_deleted":         false,
-			"schema":             schemaDetailsResponse,
+			"id":                       primitive.NewObjectID(),
+			"name":                     stationName.Ext(),
+			"retention_type":           retentionType,
+			"retention_value":          body.RetentionValue,
+			"storage_type":             body.StorageType,
+			"replicas":                 body.Replicas,
+			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          user.Username,
+			"creation_date":            time.Now(),
+			"last_update":              time.Now(),
+			"functions":                []models.Function{},
+			"is_deleted":               false,
+			"schema":                   schemaDetailsResponse,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
-			"id":                 primitive.NewObjectID(),
-			"name":               stationName.Ext(),
-			"retention_type":     retentionType,
-			"retention_value":    body.RetentionValue,
-			"storage_type":       body.StorageType,
-			"replicas":           body.Replicas,
-			"dedup_enabled":      body.DedupEnabled,
-			"dedup_window_in_ms": body.DedupWindowInMs,
-			"created_by_user":    user.Username,
-			"creation_date":      time.Now(),
-			"last_update":        time.Now(),
-			"functions":          []models.Function{},
-			"is_deleted":         false,
-			"schema":             emptySchemaDetailsResponse,
+			"id":                       primitive.NewObjectID(),
+			"name":                     stationName.Ext(),
+			"retention_type":           retentionType,
+			"retention_value":          body.RetentionValue,
+			"storage_type":             body.StorageType,
+			"replicas":                 body.Replicas,
+			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          user.Username,
+			"creation_date":            time.Now(),
+			"last_update":              time.Now(),
+			"functions":                []models.Function{},
+			"is_deleted":               false,
+			"schema":                   emptySchemaDetailsResponse,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 		})
 	}
 }
@@ -723,13 +740,37 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
-	for _, name := range stationNames {
-		serv.Noticef("Station " + name + " has been deleted")
+	for _, name := range body.StationNames {
+		stationName, err := StationNameFromStr(name)
+
+		user, err := getUserDetailsFromMiddleware(c)
+		if err != nil {
+			serv.Errorf("RemoveStation error: " + err.Error())
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		}
+
+		message := "Station " + stationName.Ext() + " has been deleted" + " by user " + user.Username
+		serv.Noticef(message)
+
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("create audit logs error: " + err.Error())
+		}
 	}
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) removeStationDirect(reply string, msg []byte) {
+func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Warnf("failed destroying station: %v", err.Error())
@@ -778,7 +819,22 @@ func (s *Server) removeStationDirect(reply string, msg []byte) {
 		return
 	}
 
-	serv.Noticef("Station " + stationName.Ext() + " has been deleted")
+	message := "Station " + stationName.Ext() + " has been deleted by user " + c.memphisInfo.username
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Ext(),
+		Message:       message,
+		CreatedByUser: c.memphisInfo.username,
+		CreationDate:  time.Now(),
+		UserType:      "application",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
 	respondWithErr(s, reply, nil)
 	return
 }
@@ -919,7 +975,7 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 	msg := models.MessagePayload{
 		TimeSent: poisonMessage.Message.TimeSent,
 		Size:     poisonMessage.Message.Size,
-		Data:     poisonMessage.Message.Data,
+		Data:     hex.EncodeToString([]byte(poisonMessage.Message.Data)),
 		Headers:  headers,
 	}
 	results = models.PoisonMessageResponse{
@@ -1176,7 +1232,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		Message: models.MessagePayload{
 			TimeSent: sm.Time,
 			Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
-			Data:     string(sm.Data),
+			Data:     hex.EncodeToString(sm.Data),
 			Headers:  headersJson,
 		},
 		Producer: models.ProducerDetails{
@@ -1247,6 +1303,30 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		serv.Errorf("UseSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
+	}
+
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UseSchema error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
+	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + user.Username
+	serv.Noticef(message)
+
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Intern(),
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1321,7 +1401,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	exist, _, err := IsStationExist(stationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1340,9 +1420,30 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation error: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	message := "Schema " + station.Schema.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
+	serv.Noticef(message)
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Intern(),
+		Message:       message,
+		CreatedByUser: user.Username,
+		CreationDate:  time.Now(),
+		UserType:      user.UserType,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-schema-from-station")
 	}
 

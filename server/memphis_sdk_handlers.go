@@ -30,8 +30,9 @@ type createStationRequest struct {
 	RetentionValue    int    `json:"retention_value"`
 	StorageType       string `json:"storage_type"`
 	Replicas          int    `json:"replicas"`
-	DedupEnabled      bool   `json:"dedup_enabled"`
-	DedupWindowMillis int    `json:"dedup_window_in_ms"`
+	DedupEnabled      bool   `json:"dedup_enabled"`      // TODO deprecated
+	DedupWindowMillis int    `json:"dedup_window_in_ms"` // TODO deprecated
+	IdempotencyWindow int    `json:"idempotency_window_in_ms"`
 }
 
 type destroyStationRequest struct {
@@ -115,8 +116,8 @@ func createStationHandler(s *Server) simplifiedMsgHandler {
 }
 
 func destroyStationHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, subject, reply string, msg []byte) {
-		go s.removeStationDirect(reply, copyBytes(msg))
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.removeStationDirect(c, reply, copyBytes(msg))
 	}
 }
 

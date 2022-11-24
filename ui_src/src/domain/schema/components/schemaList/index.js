@@ -31,6 +31,7 @@ import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 function SchemaList() {
     const history = useHistory();
@@ -71,25 +72,24 @@ function SchemaList() {
         }
     }, [searchInput, state?.domainList]);
 
-    const handleRegisterToSchema = useCallback(() => {
-        state.socket?.emit('get_all_schemas_data');
-    }, [state.socket]);
-
     useEffect(() => {
-        state.socket?.on('schemas_overview_data', (data) => {
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-        });
-
-        state.socket?.on('error', (error) => {
-            // history.push(pathDomains.overview);
-        });
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
+        const jc = JSONCodec();
+        const sc = StringCodec();
+        (async () => {
+            for await (const msg of sub) {
+                let data = jc.decode(msg.data);
+                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+            }
+        })();
 
         setTimeout(() => {
-            handleRegisterToSchema();
+            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
         }, 1000);
 
         return () => {
-            state.socket?.emit('deregister');
+            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
+            sub.unsubscribe();
         };
     }, [state.socket]);
 

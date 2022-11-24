@@ -40,6 +40,10 @@
                     display: flex;
                     width: 200px;
                     align-items: center;
+                    .schema-json-name{
+                        color: #2e2c34;
+                        font-size: 14px;
+                    }
                     img{
                         padding-right:6px;
                     }

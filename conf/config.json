@@ -1,5 +1,8 @@
 {
     "HTTP_PORT": "9000",
+    "WS_PORT": 7770,
+    "WS_TLS": false,
+    "WS_TOKEN": "memphis",
     "MONGO_URL": "mongodb://mongo:27017/maindb?retryWrites=true&w=majority",
     "MONGO_USER": "memphis",
     "MONGO_PASS": "memph1smong0",

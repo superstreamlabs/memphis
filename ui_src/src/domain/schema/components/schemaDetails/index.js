@@ -30,7 +30,6 @@ import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueC
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
@@ -40,6 +39,11 @@ import TagsList from '../../../../components/tagList';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
 import { Context } from '../../../../hooks/store';
+import Ajv2019 from 'ajv/dist/2019';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import Ajv2020 from 'ajv/dist/2020';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 
 const formatOption = [
     {
@@ -55,6 +59,7 @@ const formatOption = [
 ];
 
 function SchemaDetails({ schemaName, closeDrawer }) {
+    const ajv = new Ajv2019();
     const [state, dispatch] = useContext(Context);
 
     const [versionSelected, setVersionSelected] = useState();
@@ -168,30 +173,75 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         setIsLoading(false);
     };
 
+    const validateJsonSchemaContent = (value, ajv) => {
+        const isValid = ajv.validateSchema(value);
+        if (isValid) {
+            setValidateSuccess('');
+            setValidateError('');
+        } else {
+            setValidateError('Your schema is invalid');
+        }
+    };
+
+    const validateJsonSchema = value => {
+        try {
+            value = JSON.parse(value);
+            ajv.addMetaSchema(draft7MetaSchema);
+            validateJsonSchemaContent(value, ajv)
+        } catch (error) {
+            try {
+                const ajv = new jsonSchemaDraft04();
+                validateJsonSchemaContent(value, ajv)
+            } catch (error) {
+                try {
+                    const ajv = new Ajv2020();
+                    validateJsonSchemaContent(value, ajv)
+                } catch (error) {
+                    try {
+                        ajv.addMetaSchema(draft6MetaSchema);
+                        validateJsonSchemaContent(value, ajv)
+                    } catch (error) {
+                        setValidateSuccess('');
+                        setValidateError(error.message);
+                    }
+                }
+            }
+        }
+
+    }
+
+    const checkContent = (value) => {
+        const { type } = schemaDetails;
+        if (value === ' ' || value === '') {
+            setValidateSuccess('');
+            setValidateError('Schema content cannot be empty');
+        }
+        if (value && value.length > 0) {
+            if (type === 'protobuf') {
+                try {
+                    let parser = Schema.parse(value).messages;
+                    if (parser.length > 1) {
+                        setEditable(true);
+                        setMessagesStructNameList(getUnique(parser));
+                    } else {
+                        setMessageStructName(parser[0].name);
+                        setEditable(false);
+                    }
+                } catch (error) {
+                    setValidateSuccess('');
+                    setValidateError(error.message);
+                }
+            } else if (type === 'json') {
+                validateJsonSchema(value)
+            }
+        }
+    };
+
     const handleEditVersion = (value) => {
         setValidateSuccess('');
         setNewVersion(value);
         setUpdated(isThereDiff(versionSelected?.schema_content, value));
-        if (value.length > 0) {
-            try {
-                let parser = Schema.parse(value).messages;
-                if (parser.length > 1) {
-                    setEditable(true);
-                    setMessagesStructNameList(getUnique(parser));
-                } else {
-                    setMessageStructName(parser[0].name);
-                    setEditable(false);
-                }
-                setValidateSuccess('');
-                setValidateError('');
-            } catch (error) {
-                setValidateSuccess('');
-                setValidateError(error.message);
-            }
-        } else {
-            setValidateSuccess('');
-            setValidateError('Schema content cannot be empty');
-        }
+        checkContent(value);
     };
 
     const handleValidateSchema = async () => {
@@ -241,7 +291,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        <span>{schemaDetails?.type}</span>
+                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
@@ -291,6 +341,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
+                        {schemaDetails.type === "protobuf" &&
+                        <>
                             <p className="field-name">Master message :</p>
                             <SelectComponent
                                 value={messageStructName}
@@ -309,7 +361,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                     setUpdated(true);
                                 }}
                                 disabled={!editable}
-                            />
+                            /></>}
                         </div>
                         <div className="validation">
                             <Button

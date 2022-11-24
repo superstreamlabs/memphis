@@ -80,7 +80,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        <span>{schemaDetails?.type}</span>
+                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
@@ -102,21 +102,25 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                             </div>
                         </div>
                         <div className="structure-message">
-                            <p className="field-name">Master message :</p>
-                            <SelectComponent
-                                value={activeVersion?.message_struct_name}
-                                colorType="black"
-                                backgroundColorType="white"
-                                borderColorType="gray-light"
-                                radiusType="semi-round"
-                                minWidth="12vw"
-                                width="100px"
-                                height="26px"
-                                options={[]}
-                                iconColor="gray"
-                                popupClassName="message-option"
-                                disabled={true}
-                            />
+                            {schemaDetails.type === 'protobuf' && (
+                                <>
+                                    <p className="field-name">Master message :</p>
+                                    <SelectComponent
+                                        value={activeVersion?.message_struct_name}
+                                        colorType="black"
+                                        backgroundColorType="white"
+                                        borderColorType="gray-light"
+                                        radiusType="semi-round"
+                                        minWidth="12vw"
+                                        width="100px"
+                                        height="26px"
+                                        options={[]}
+                                        iconColor="gray"
+                                        popupClassName="message-option"
+                                        disabled={true}
+                                    />
+                                </>
+                            )}
                         </div>
                         <div className="copy-icon">
                             <Copy data={activeVersion?.schema_content} />

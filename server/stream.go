@@ -266,7 +266,7 @@ const (
 
 // Headers for published messages.
 const (
-	JSMsgId               = "Nats-Msg-Id"
+	JSMsgId               = "msg-id"
 	JSExpectedStream      = "Nats-Expected-Stream"
 	JSExpectedLastSeq     = "Nats-Expected-Last-Sequence"
 	JSExpectedLastSubjSeq = "Nats-Expected-Last-Subject-Sequence"

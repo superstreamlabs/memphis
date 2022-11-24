@@ -334,7 +334,17 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		if configuration.ANALYTICS == "true" {
-			analytics.SendEvent("", "installation")
+			installationType := "stand-alone"
+			if serv.JetStreamIsClustered() {
+				installationType = "cluster"
+			}
+
+			param := analytics.EventParam{
+				Name:  "installation-type",
+				Value: installationType,
+			}
+			analyticsParams := []analytics.EventParam{param}
+			analytics.SendEventWithParams("", analyticsParams, "installation")
 		}
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),
@@ -575,7 +585,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			return
 		}
 
-		serv.Noticef("User " + username + " has been created")
+		serv.Noticef("User " + username + " has been signed up")
 		token, refreshToken, err := CreateTokens(newUser)
 		if err != nil {
 			serv.Errorf("CreateUserSignUp error: " + err.Error())
@@ -818,7 +828,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-user")
 	}
 
-	serv.Noticef("User " + username + " has been deleted")
+	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -1059,6 +1069,11 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	userName := strings.ToLower(user.Username)
 	_, err = usersCollection.UpdateOne(context.TODO(),
+		bson.M{"username": userName},
+		bson.M{"$set": bson.M{"skip_get_started": true}},
+	)
+
+	_, err = sandboxUsersCollection.UpdateOne(context.TODO(),
 		bson.M{"username": userName},
 		bson.M{"$set": bson.M{"skip_get_started": true}},
 	)

@@ -97,13 +97,13 @@ func runMemphis(s *server.Server) db.DbInstance {
 
 	dbInstance, err := db.InitializeDbConnection(s)
 	if err != nil {
-		s.Errorf("Failed initializing db connection:" + " " + err.Error())
+		s.Errorf("Failed initializing db connection: " + err.Error())
 		os.Exit(1)
 	}
 
 	err = analytics.InitializeAnalytics(dbInstance.Client)
 	if err != nil {
-		s.Errorf("Failed initializing analytics: " + " " + err.Error())
+		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
@@ -111,7 +111,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
-		s.Errorf("Failed to create root user: " + " " + err.Error())
+		s.Errorf("Failed to create root user: " + err.Error())
 		db.Close(dbInstance, s)
 		os.Exit(1)
 	}
@@ -120,7 +120,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	s.ListenForPoisonMessages()
 	err = s.ListenForZombieConnCheckRequests()
 	if err != nil {
-		s.Errorf("Failed subscribing for zombie conns check requests:" + " " + err.Error())
+		s.Errorf("Failed subscribing for zombie conns check requests: " + err.Error())
 		os.Exit(1)
 	}
 
