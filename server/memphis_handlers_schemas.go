@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jhump/protoreflect/desc/protoparse"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -45,6 +46,15 @@ func validateProtobufContent(schemaContent string) error {
 	_, err := parser.ParseFiles("")
 	if err != nil {
 		return errors.New("Your Proto file is invalid: " + err.Error())
+	}
+
+	return nil
+}
+
+func validateJsonSchemaContent(schemaContent string) error {
+	_, err := jsonschema.CompileString("test", schemaContent)
+	if err != nil {
+		return errors.New("Your json schema is invalid")
 	}
 
 	return nil
@@ -88,12 +98,12 @@ func validateSchemaName(schemaName string) error {
 func validateSchemaType(schemaType string) error {
 	invalidTypeErrStr := fmt.Sprintf("unsupported schema type")
 	invalidTypeErr := errors.New(invalidTypeErrStr)
-	invalidSupportTypeErrStr := fmt.Sprintf("Json/Avro types are not supported at this time")
+	invalidSupportTypeErrStr := fmt.Sprintf("Avro is not supported at this time")
 	invalidSupportTypeErr := errors.New(invalidSupportTypeErrStr)
 
-	if schemaType == "protobuf" {
+	if schemaType == "protobuf" || schemaType == "json" {
 		return nil
-	} else if schemaType == "avro" || schemaType == "json" {
+	} else if schemaType == "avro" {
 		return invalidSupportTypeErr
 	} else {
 		return invalidTypeErr
@@ -112,6 +122,10 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 			return err
 		}
 	case "json":
+		err := validateJsonSchemaContent(schemaContent)
+		if err != nil {
+			return err
+		}
 		break
 	case "avro":
 		break
@@ -528,11 +542,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 	schemaVersionNumber := 1
-	descriptor, err := generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
-	if err != nil {
-		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
+	descriptor := ""
+	if schemaType == "protobuf" {
+		descriptor, err = generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
+		if err != nil {
+			serv.Warnf(err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
 	}
 
 	newSchema := models.Schema{
@@ -614,7 +631,7 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-schema-page")
 	}
-	
+
 	c.IndentedJSON(200, schemas)
 }
 
@@ -699,7 +716,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
-	
+
 	var body models.RemoveSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -801,11 +818,14 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	versionNumber := countVersions + 1
-	descriptor, err := generateSchemaDescriptor(schemaName, versionNumber, schemaContent, schema.Type)
-	if err != nil {
-		serv.Warnf(err.Error())
-		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
+	descriptor := ""
+	if schema.Type == "protobuf" {
+		descriptor, err = generateSchemaDescriptor(schemaName, versionNumber, schemaContent, schema.Type)
+		if err != nil {
+			serv.Warnf(err.Error())
+			c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
 	}
 	newSchemaVersion := models.SchemaVersion{
 		ID:                primitive.NewObjectID(),
