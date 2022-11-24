@@ -147,11 +147,13 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 		storage = FileStorage
 	}
 
-	var dedupWindow time.Duration
-	if station.DedupEnabled && station.DedupWindowInMs >= 100 {
-		dedupWindow = time.Duration(station.DedupWindowInMs) * time.Millisecond
+	var idempotencyWindow time.Duration
+	if station.IdempotencyWindow <= 0 {
+		idempotencyWindow = 2 * time.Minute // default
+	} else if station.IdempotencyWindow < 100 {
+		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
 	} else {
-		dedupWindow = time.Duration(100) * time.Millisecond // can not be 0
+		idempotencyWindow = time.Duration(station.IdempotencyWindow) * time.Millisecond
 	}
 
 	return s.
@@ -169,7 +171,7 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			Storage:      storage,
 			Replicas:     station.Replicas,
 			NoAck:        false,
-			Duplicates:   dedupWindow,
+			Duplicates:   idempotencyWindow,
 		})
 }
 
