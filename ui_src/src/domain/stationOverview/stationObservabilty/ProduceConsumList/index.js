@@ -168,7 +168,7 @@ const ProduceConsumList = ({ producer }) => {
     return (
         <div className="pubSub-list-container">
             <div className="header">
-                <p className="title">{producer ? 'Producers' : 'Consumer groups'}</p>
+                <p className="title">{producer ? `Producers (${producersList?.length})` : `Consumer groups (${cgsList?.length})`}</p>
                 {/* <p className="add-connector-button">{producer ? 'Add producer' : 'Add consumer'}</p> */}
             </div>
             {producer && producersList?.length > 0 && (

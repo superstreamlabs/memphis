@@ -167,6 +167,7 @@
             flex-direction: column;
             justify-content: space-around;
             height: calc(100% - 5px);
+            min-width: 310px;
             .row-data{
                 overflow-wrap: anywhere;
                 overflow: auto;

@@ -1,12 +1,13 @@
 {
   "files": {
-    "main.css": "/static/css/main.87cbb20b.css",
-    "main.js": "/static/js/main.8bb26fe1.js",
+    "main.css": "/static/css/main.97ad3635.css",
+    "main.js": "/static/js/main.b9f00f99.js",
     "static/js/27.6c7f6379.chunk.js": "/static/js/27.6c7f6379.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
     "static/media/Inter-Medium.ttf": "/static/media/Inter-Medium.e7231ba33760832432b8.ttf",
     "static/media/Inter-Regular.ttf": "/static/media/Inter-Regular.2391725004ae05a27e8e.ttf",
+    "static/media/avatar8 2.svg": "/static/media/avatar8 2.d92b08274080e4344acf.svg",
     "static/media/avatar8.svg": "/static/media/avatar8.d92b08274080e4344acf.svg",
     "static/media/avatar1.svg": "/static/media/avatar1.eb536756efe5829f2adecb07a6af1840.svg",
     "static/media/avatar4.svg": "/static/media/avatar4.5c001efb1cef44f249c9.svg",
@@ -121,7 +122,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.87cbb20b.css",
-    "static/js/main.8bb26fe1.js"
+    "static/css/main.97ad3635.css",
+    "static/js/main.b9f00f99.js"
   ]
 }
