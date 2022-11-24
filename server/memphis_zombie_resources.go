@@ -206,7 +206,7 @@ func killFunc(s *Server) {
 			msg := (conn.ID).Hex()
 			reply := CONN_STATUS_SUBJ + "_reply" + s.memphis.nuid.Next()
 
-			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err  := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(msg []byte) { respCh <- msg }(copyBytes(msg))
 			})
 			if err != nil {

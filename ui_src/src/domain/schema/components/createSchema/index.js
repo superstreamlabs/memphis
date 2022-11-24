@@ -34,6 +34,12 @@ import Modal from '../../../../components/modal';
 import TagsList from '../../../../components/tagList';
 import { Context } from '../../../../hooks/store';
 import { getUnique } from '../../../../services/valueConvertor';
+import Ajv2019 from 'ajv/dist/2019';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import Ajv2020 from 'ajv/dist/2020';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+import GenerateSchema from 'generate-schema';
 
 const schemaTypes = [
     {
@@ -49,6 +55,12 @@ const schemaTypes = [
     },
     {
         id: 2,
+        value: 'Json',
+        label: 'JSON schema',
+        description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>
+    },
+    {
+        id: 3,
         value: 'avro',
         label: 'Avro (Coming soon)',
         description: (
@@ -58,12 +70,6 @@ const schemaTypes = [
             </span>
         ),
         disabled: true
-    },
-    {
-        id: 3,
-        value: 'Json',
-        label: 'Json',
-        description: <span>The simplest. JSON Schema is a vocabulary that allows you to annotate and validate JSON documents.</span>
     }
 ];
 
@@ -77,8 +83,8 @@ const SchemaEditorExample = {
             int32  field3 = 3;
         }`
     },
-    Json: {
-        language: 'json',
+    Avro: {
+        language: 'avro',
         value: `{
             "type": "record",
             "namespace": "com.example",
@@ -90,6 +96,38 @@ const SchemaEditorExample = {
                { "name": "country", "type": "string", "default": "NONE" }
             ]
         }`
+    },
+    Json: {
+        language: 'json',
+        value: `{
+            "$id": "https://example.com/address.schema.json",
+            "description": "An address similar to http://microformats.org/wiki/h-card",
+            "type": "object",
+            "properties": {
+              "post-office-box": {
+                "type": "number"
+              },
+              "extended-address": {
+                "type": "string"
+              },
+              "street-address": {
+                "type": "string"
+              },
+              "locality": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              },
+              "postal-code": {
+                "type": "string"
+              },
+              "country-name": {
+                "type": "string"
+              }
+            },
+            "required": [ "locality" ]
+         }`
     }
 };
 
@@ -109,6 +147,7 @@ function CreateSchema() {
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [state, dispatch] = useContext(Context);
+    const ajv = new Ajv2019();
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -140,8 +179,8 @@ function CreateSchema() {
         if (values?.errorFields) {
             return;
         } else {
-            if (values.type === 'Protobuf') {
-                let parser = Schema.parse(values.schema_content).messages;
+            if (formFields.type === 'Protobuf') {
+                let parser = Schema.parse(formFields.schema_content).messages;
                 if (parser.length === 1) {
                     setMessageStructName(parser[0].name);
                     handleCreateNewSchema(parser[0].name);
@@ -158,9 +197,9 @@ function CreateSchema() {
 
     const handleCreateNewSchema = async (messageName = null) => {
         try {
-            const values = await creationForm.validateFields();
             setLoadingSubmit(true);
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...values, message_struct_name: messageName || messageStructName });
+            checkContent(formFields.schema_content);
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...formFields, message_struct_name: messageName || messageStructName });
             if (data) {
                 goBack();
             }
@@ -172,6 +211,14 @@ function CreateSchema() {
             }
         }
         setLoadingSubmit(false);
+    };
+
+    const handleConvetJsonToJsonSchema = async (json) => {
+        const jsonObj = JSON.parse(json);
+        let key = Object.keys(jsonObj)[0];
+        const jsonSchema = GenerateSchema.json(key, jsonObj);
+        const beautifyJson = JSON.stringify(jsonSchema, null, '\t');
+        updateFormState('schema_content', beautifyJson);
     };
 
     const handleValidateSchema = async () => {
@@ -197,21 +244,61 @@ function CreateSchema() {
         }
     };
 
-    const checkContent = (_, value) => {
-        if (value.length > 0) {
-            try {
-                Schema.parse(value);
-                setValidateSuccess('');
-                setValidateError('');
-            } catch (error) {
-                setValidateSuccess('');
-                setValidateError(error.message);
-            }
-            return Promise.resolve();
+    const validateJsonSchemaContent = (value, ajv) => {
+        const isValid = ajv.validateSchema(value);
+        if (isValid) {
+            setValidateSuccess('');
+            setValidateError('');
         } else {
+            setValidateError('Your schema is invalid');
+        }
+    };
+
+    const validateJsonSchema = (value) => {
+        try {
+            value = JSON.parse(value);
+            ajv.addMetaSchema(draft7MetaSchema);
+            validateJsonSchemaContent(value, ajv);
+        } catch (error) {
+            try {
+                const ajv = new jsonSchemaDraft04();
+                validateJsonSchemaContent(value, ajv);
+            } catch (error) {
+                try {
+                    const ajv = new Ajv2020();
+                    validateJsonSchemaContent(value, ajv);
+                } catch (error) {
+                    try {
+                        ajv.addMetaSchema(draft6MetaSchema);
+                        validateJsonSchemaContent(value, ajv);
+                    } catch (error) {
+                        setValidateSuccess('');
+                        setValidateError(error.message);
+                    }
+                }
+            }
+        }
+    };
+
+    const checkContent = (value) => {
+        const { type } = formFields;
+        if (value === ' ' || value === '') {
             setValidateSuccess('');
             setValidateError('Schema content cannot be empty');
-            return Promise.reject(new Error());
+        }
+        if (value && value.length > 0) {
+            if (type === 'Protobuf') {
+                try {
+                    Schema.parse(value);
+                    setValidateSuccess('');
+                    setValidateError('');
+                } catch (error) {
+                    setValidateSuccess('');
+                    setValidateError(error.message);
+                }
+            } else if (type === 'Json') {
+                validateJsonSchema(value);
+            }
         }
     };
 
@@ -219,6 +306,28 @@ function CreateSchema() {
         let updatedTags = formFields.tags?.filter((tag) => tag.name !== tagName);
         updateFormState('tags', updatedTags);
     };
+
+    const schemaContentEditor = (
+        <Editor
+            options={{
+                minimap: { enabled: false },
+                scrollbar: { verticalScrollbarSize: 0 },
+                scrollBeyondLastLine: false,
+                roundedSelection: false,
+                formatOnPaste: true,
+                formatOnType: true,
+                fontSize: '14px'
+            }}
+            height="calc(100% - 5px)"
+            language={SchemaEditorExample[formFields?.type]?.language}
+            defaultValue={SchemaEditorExample[formFields?.type]?.value}
+            value={formFields.schema_content}
+            onChange={(value) => {
+                updateFormState('schema_content', value);
+                checkContent(value);
+            }}
+        />
+    );
 
     return (
         <div className="create-schema-wrapper">
@@ -313,67 +422,45 @@ function CreateSchema() {
                     <div className="schema-field schema">
                         <div className="title-wrapper">
                             <p className="field-title">Schema structure</p>
-                            <Button
-                                width="115px"
-                                height="34px"
-                                placeholder="Validate"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                isLoading={validateLoading}
-                                disabled={formFields?.schema_content === ''}
-                                onClick={() => handleValidateSchema()}
-                            />
+                            <div className="button-json">
+                                {formFields.type === 'Json' && (
+                                    <Button
+                                        width="170px"
+                                        height="34px"
+                                        placeholder="Convert to JSON schema"
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="12px"
+                                        fontFamily="InterSemiBold"
+                                        isLoading={validateLoading}
+                                        disabled={
+                                            formFields?.schema_content === '' ||
+                                            formFields?.schema_content.includes('type') ||
+                                            formFields?.schema_content.includes('properties')
+                                        }
+                                        onClick={() => handleConvetJsonToJsonSchema(formFields?.schema_content)}
+                                    />
+                                )}
+                                <Button
+                                    width="115px"
+                                    height="34px"
+                                    placeholder="Validate"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    isLoading={validateLoading}
+                                    disabled={formFields?.schema_content === ''}
+                                    onClick={() => handleValidateSchema()}
+                                />
+                            </div>
                         </div>
                         <div className="editor">
-                            <Form.Item
-                                name="schema_content"
-                                className="schema-item"
-                                initialValue={formFields.schema_content}
-                                rules={[
-                                    {
-                                        validator: checkContent
-                                    }
-                                ]}
-                            >
-                                {formFields?.type === 'Protobuf' && (
-                                    <Editor
-                                        options={{
-                                            minimap: { enabled: false },
-                                            scrollbar: { verticalScrollbarSize: 0 },
-                                            scrollBeyondLastLine: false,
-                                            roundedSelection: false,
-                                            formatOnPaste: true,
-                                            formatOnType: true,
-                                            fontSize: '14px'
-                                        }}
-                                        height="calc(100% - 5px)"
-                                        defaultLanguage={SchemaEditorExample[formFields?.type]?.language}
-                                        defaultValue={SchemaEditorExample[formFields?.type]?.value}
-                                        value={formFields.schema_content}
-                                        onChange={(value) => updateFormState('schema_content', value)}
-                                    />
-                                )}
-                                {formFields?.type === 'Json' && (
-                                    <Editor
-                                        options={{
-                                            minimap: { enabled: false },
-                                            scrollbar: { verticalScrollbarSize: 0 },
-                                            scrollBeyondLastLine: false,
-                                            roundedSelection: false,
-                                            formatOnPaste: true,
-                                            formatOnType: true,
-                                            fontSize: '14px'
-                                        }}
-                                        height="calc(100% - 5px)"
-                                        defaultLanguage={SchemaEditorExample[formFields?.type]?.language}
-                                        defaultValue={SchemaEditorExample[formFields?.type]?.value}
-                                        value={formFields.schema_content}
-                                        onChange={(value) => updateFormState('schema_content', value)}
-                                    />
-                                )}
+                            <Form.Item name="schema_content" className="schema-item" initialValue={formFields.schema_content}>
+                                {formFields?.type === 'Protobuf' && schemaContentEditor}
+                                {formFields?.type === 'Json' && schemaContentEditor}
                             </Form.Item>
                             <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
                                 {validateError && <ErrorOutlineRounded />}
