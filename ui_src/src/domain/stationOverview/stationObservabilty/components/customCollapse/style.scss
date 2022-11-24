@@ -10,9 +10,11 @@
         display: flex;
     }
     .payload-header .ant-collapse-header{
-        border-bottom: 1px solid #F0F0F0;
-        height: 75px;
+        border-bottom: 1px solid #F0F0F0 !important;
         min-width: 290px;
+    }
+    .ant-collapse-item-active.payload-header .ant-collapse-header{
+        height: 75px;
     }
     .collapse-header{
         display: flex;

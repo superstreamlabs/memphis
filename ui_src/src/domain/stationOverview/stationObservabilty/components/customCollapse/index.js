@@ -21,6 +21,7 @@ import StatusIndication from '../../../../../components/indication';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
 import { decodeMessage } from '../../../../../services/decoder';
+import { hex_to_ascii } from '../../../../../services/valueConvertor';
 
 const { Panel } = Collapse;
 
@@ -33,10 +34,15 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
         if (header === 'Payload') {
             switch (parser) {
                 case 'string':
-                    setPayload(data.toString());
+                    setPayload(hex_to_ascii(data));
                     break;
                 case 'json':
-                    setPayload(JSON.stringify(JSON.parse(data), null, 2));
+                    let str = hex_to_ascii(data);
+                    if (isJsonString(str)) {
+                        setPayload(JSON.stringify(JSON.parse(str), null, 2));
+                    } else {
+                        setPayload(str);
+                    }
                     break;
                 case 'protobuf':
                     setPayload(JSON.stringify(decodeMessage(data), null, 2));
@@ -70,6 +76,15 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
             );
         }
         return obj;
+    };
+
+    const isJsonString = (str) => {
+        try {
+            JSON.parse(str);
+        } catch (e) {
+            return false;
+        }
+        return true;
     };
 
     return (
