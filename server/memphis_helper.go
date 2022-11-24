@@ -16,6 +16,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -508,7 +509,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			continue
 		}
 
-		data := (string(msg.Data))
+		data := hex.EncodeToString(msg.Data)
 		if len(data) > 100 { // get the first chars for preview needs
 			data = data[0:100]
 		}
