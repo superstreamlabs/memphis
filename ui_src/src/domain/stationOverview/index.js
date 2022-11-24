@@ -27,11 +27,11 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import { URL } from '../../config';
 
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
-    const stationName = URL.split('stations/')[1];
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1];
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);

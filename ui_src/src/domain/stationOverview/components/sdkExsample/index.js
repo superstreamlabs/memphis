@@ -22,7 +22,6 @@ import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/lo
 import CustomTabs from '../../../../components/Tabs';
 import Copy from '../../../../components/copy';
 import Editor from '@monaco-editor/react';
-import { URL } from '../../../../config';
 
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -36,7 +35,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     const tabs = ['Producer', 'Consumer'];
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
 
-    const stationName = URL.split('stations/')[1];
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1];
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};

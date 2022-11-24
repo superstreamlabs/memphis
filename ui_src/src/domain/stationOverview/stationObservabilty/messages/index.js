@@ -32,7 +32,6 @@ import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import CheckboxComponent from '../../../../components/checkBox';
-import { URL } from '../../../../config';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -43,7 +42,8 @@ const Messages = () => {
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [loadMessageData, setLoadMessageData] = useState(false);
-    const stationName = URL.split('stations/')[1];
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('All');
     const tabs = ['All', 'Dead-letter'];

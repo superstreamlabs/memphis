@@ -29,12 +29,12 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import { URL } from '../../config';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
-    const messageId = URL.split('stations/')[1].split('/')[1];
-    const stationName = URL.split('stations/')[1].split('/')[0];
+    const url = window.location.href;
+    const messageId = url.split('stations/')[1].split('/')[1];
+    const stationName = url.split('stations/')[1].split('/')[0];
     const [isLoading, setisLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [messageData, setMessageData] = useState({});

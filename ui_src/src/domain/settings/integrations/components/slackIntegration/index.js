@@ -127,7 +127,7 @@ const SlackIntegration = ({ close }) => {
                             <div className="option-wrapper">
                                 <div className="option-name">
                                     <img src={confImg1} />
-                                    <p>POISION_MESSAGE</p>
+                                    <p>POISION MESSAGE</p>
                                 </div>
                                 <Switcher
                                     onChange={() => updateFormState('poison_message_alert', !formFields.poison_message_alert)}
@@ -137,7 +137,7 @@ const SlackIntegration = ({ close }) => {
                             <div className="option-wrapper">
                                 <div className="option-name">
                                     <img src={confImg1} />
-                                    <p>SCHEMA_VALIDATION_FAIL </p>
+                                    <p>SCHEMA VALIDATION FAIL</p>
                                 </div>
                                 <Switcher
                                     onChange={() => updateFormState('schema_validation_fail_alert', !formFields.schema_validation_fail_alert)}
