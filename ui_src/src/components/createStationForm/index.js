@@ -94,7 +94,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const formFields = await creationForm.validateFields();
         const retentionValue = getRetentionValue(formFields);
         const bodyRequest = {
-            name: formFields.name,
+            name: formFields.name.replace(' ', '_'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,

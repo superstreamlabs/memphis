@@ -25,6 +25,8 @@ import CheckboxComponent from '../../../../components/checkBox';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
 import TagsList from '../../../../components/tagList';
 import SchemaDetails from '../schemaDetails';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     const [open, setOpen] = useState(false);
@@ -41,7 +43,9 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     <header is="x3d">
                         <div className="header-wrapper">
                             <div className="schema-name">
-                                <p>{schema.name}</p>
+                                <OverflowTip text={schema.name} maxWidth={'100px'}>
+                                    <span>{schema.name}</span>
+                                </OverflowTip>
                             </div>
                             <div className="is-used">
                                 <img src={schema.used ? usedIcond : notUsedIcond} alt="usedIcond" />
@@ -51,13 +55,15 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                         </div>
                     </header>
                     <type is="x3d">
-                        <div>
+                        <div className="field-wrapper">
                             <p>Type : </p>
-                            {schema.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schema.type}</span>}
+                            {schema.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schema.type}</span>}
                         </div>
-                        <div>
+                        <div className="field-wrapper">
                             <p>Created by : </p>
-                            <span>{schema.created_by_user}</span>
+                            <OverflowTip text={schema.created_by_user} maxWidth={'100px'}>
+                                <span>{schema.created_by_user}</span>
+                            </OverflowTip>
                         </div>
                     </type>
                     <tags is="x3d">

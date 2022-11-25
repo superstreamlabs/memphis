@@ -19,6 +19,7 @@ import React from 'react';
 
 import { ArrowDropDownRounded, FiberManualRecord } from '@material-ui/icons';
 import VersionBadge from '../versionBadge';
+import { parsingDateWithotTime } from '../../services/valueConvertor';
 
 const { Option } = Select;
 
@@ -41,15 +42,18 @@ const SelectVersion = ({ options, onChange, value }) => {
                 {options?.map((option, index) => {
                     return (
                         <Option key={option?.id} value={option?.version_number}>
-                            <p className="schema-name">Version {option?.version_number}</p>
-                            <div className="scheme-details">
-                                <p className="created-by">Created by {option?.created_by_user}</p>
+                            <div className="schema-name">
+                                <p className="label">Version {option?.version_number}</p>
                                 {option.active && (
                                     <>
-                                        <FiberManualRecord />
                                         <VersionBadge content="Active" active={true} />
                                     </>
                                 )}
+                            </div>
+                            <div className="scheme-details">
+                                <p className="created-by">Created by {option?.created_by_user}</p>
+                                <FiberManualRecord />
+                                <p className="created-at">{parsingDateWithotTime(option?.creation_date)}</p>
                             </div>
                         </Option>
                     );
