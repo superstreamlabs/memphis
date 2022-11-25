@@ -367,8 +367,8 @@ function CreateSchema() {
                                 fontSize="12px"
                                 height="40px"
                                 width="200px"
-                                onBlur={(e) => updateFormState('name', e.target.value)}
-                                onChange={(e) => updateFormState('name', e.target.value)}
+                                onBlur={(e) => updateFormState('name', e.target.value.replace(' ', '_'))}
+                                onChange={(e) => updateFormState('name', e.target.value.replace(' ', '_'))}
                                 value={formFields.name}
                             />
                         </div>

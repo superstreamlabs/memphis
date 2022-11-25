@@ -92,6 +92,10 @@ export const parsingDate = (date) => {
     var options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
     return new Date(date).toLocaleDateString([], options);
 };
+export const parsingDateWithotTime = (date) => {
+    var options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(date).toLocaleDateString([], options);
+};
 
 function isFloat(n) {
     return Number(n) === n && n % 1 !== 0;

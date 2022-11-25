@@ -22,6 +22,7 @@ import { Checkbox, Space } from 'antd';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
+import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
@@ -171,6 +172,7 @@ const Messages = () => {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
         if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+            debugger;
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
@@ -288,7 +290,6 @@ const Messages = () => {
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
                     length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
-                    disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
                 ></CustomTabs>
             </div>
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
@@ -353,10 +354,10 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
-                <div className="waiting-placeholder">
+                <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
-                    <span className="des">Create your 1st producer and start producing data.</span>
+                    <span className="des">Create your 1st producer and start producing data</span>
                     {process.env.REACT_APP_SANDBOX_ENV && stationName !== 'demo-app' && (
                         <a className="explore-button" href={`${pathDomains.stations}/demo-app`} target="_parent">
                             Explore demo
@@ -365,8 +366,9 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                <div className="empty-messages">
-                    <p>Congrats, No messages in your station's dead-letter, yet ;)</p>
+                <div className="waiting-placeholder msg-plc">
+                    <img width={100} src={dlsPlaceholder} alt="waitingMessages" />
+                    <p>Hooray! No messages</p>
                 </div>
             )}
         </div>
