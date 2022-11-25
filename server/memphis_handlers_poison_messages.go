@@ -140,12 +140,15 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	} else {
 		idForUrl = poisonMsg.ID.Hex()
 	}
-	slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
-	if ok {
-		if slackIntegration.Properties["poison_message_alert"] {
-			var msgUrl = slackIntegration.UIUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
-			notifications.SendMessageToSlackChannel("Poison message", "Poison message has been identified, for more details head to: "+msgUrl)
-		}
+	if UI_url == "" {
+		serv.Warnf("Error while sending a poison message notification: UI url not provided")
+		return
+	}
+	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
+	err = notifications.SendNotificationToIntegrations("Poison message", "Poison message has been identified, for more details head to: "+msgUrl, "poison_message_alert")
+	if err != nil {
+		serv.Warnf("Error while sending a poison message notification: " + err.Error())
+		return
 	}
 }
 

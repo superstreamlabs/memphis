@@ -2,7 +2,6 @@ package notifications
 
 import (
 	"context"
-	"errors"
 
 	"memphis-broker/models"
 
@@ -22,7 +21,7 @@ func InitializeSlackConnection(c *mongo.Client) error {
 	} else if err != nil {
 		return err
 	}
-	CacheSlackDetails(slackIntegration.Keys, slackIntegration.Properties, slackIntegration.UIUrl)
+	CacheSlackDetails(slackIntegration.Keys, slackIntegration.Properties)
 	return nil
 }
 
@@ -30,7 +29,7 @@ func clearSlackCache() {
 	delete(NotificationIntegrationsMap, "slack")
 }
 
-func CacheSlackDetails(keys map[string]string, properties map[string]bool, url string) {
+func CacheSlackDetails(keys map[string]string, properties map[string]bool) {
 	var authToken, channelID string
 	var poisonMessageAlert, schemaValidationFailAlert, disconnectionEventsAlert bool
 	var slackIntegration models.SlackIntegration
@@ -84,28 +83,23 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool, url s
 	slackIntegration.Properties["schema_validation_fail_alert"] = schemaValidationFailAlert
 	slackIntegration.Properties["disconnection_events_alert"] = disconnectionEventsAlert
 	slackIntegration.Name = "slack"
-	slackIntegration.UIUrl = url
 	NotificationIntegrationsMap["slack"] = slackIntegration
 }
 
-func SendMessageToSlackChannel(title string, message string) error {
-	slackIntegration, ok := NotificationIntegrationsMap["slack"].(models.SlackIntegration)
-	if ok {
-		attachment := slack.Attachment{
-			Pretext: "Memphis",
-			Title:   title,
-			Text:    message,
-			Color:   "#6557FF",
-		}
-
-		_, _, err := slackIntegration.Client.PostMessage(
-			slackIntegration.Keys["channel_id"],
-			slack.MsgOptionAttachments(attachment),
-		)
-		if err != nil {
-			return err
-		}
-		return nil
+func SendMessageToSlackChannel(integration models.SlackIntegration, title string, message string) error {
+	attachment := slack.Attachment{
+		AuthorName: "Memphis",
+		Title:      title,
+		Text:       message,
+		Color:      "#6557FF",
 	}
-	return errors.New("Invalid slack credentials")
+
+	_, _, err := integration.Client.PostMessage(
+		integration.Keys["channel_id"],
+		slack.MsgOptionAttachments(attachment),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }

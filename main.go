@@ -123,7 +123,6 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	go http_server.InitializeHttpServer(s)
-	s.ListenForPoisonMessages()
 
 	err = s.StartBackgroundTasks()
 	if err != nil {

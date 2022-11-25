@@ -218,18 +218,16 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " Station: " + consumers[i].StationName + "\n"
 		}
 	}
-	slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
-	if ok {
-		if slackIntegration.Properties["disconnection_events_alert"] {
-			msg := ""
-			if len(producerNames) > 0 {
-				msg = producerNames
-			}
-			if len(consumerNames) > 0 {
-				msg = msg + consumerNames
-			}
-			notifications.SendMessageToSlackChannel("Disconnection events", msg)
-		}
+	msg := ""
+	if len(producerNames) > 0 {
+		msg = producerNames
+	}
+	if len(consumerNames) > 0 {
+		msg = msg + consumerNames
+	}
+	err = notifications.SendNotificationToIntegrations("Disconnection events", msg, "disconnection_events_alert")
+	if err != nil {
+		return err
 	}
 
 	serv.Noticef("Client has been disconnected from Memphis")

@@ -23,14 +23,12 @@ type Integration struct {
 	Name       string             `json:"name" bson:"name"`
 	Keys       map[string]string  `json:"keys" bson:"keys"`
 	Properties map[string]bool    `json:"properties" bson:"properties"`
-	UIUrl      string             `json:"ui_url" bson:"ui_url"`
 }
 
 type SlackIntegration struct {
 	Name       string            `json:"name"`
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
-	UIUrl      string            `json:"ui_url"`
 	Client     *slack.Client     `json:"client"`
 }
 
@@ -38,10 +36,10 @@ type CreateIntegrationSchema struct {
 	Name       string            `json:"name"`
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
-	UIUrl      string            `json:"ui_url" binding:"required"`
+	UIUrl      string            `json:"ui_url" bson:"ui_url"`
 }
 
-type GetIntegrationDetailsRequest struct {
+type GetIntegrationDetailsSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
 
@@ -49,7 +47,8 @@ type DeleteIntegrationSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
 
-type SchemaFailMsg struct {
+type MessageToSend struct {
 	Title string `json:"title" binding:"required"`
 	Msg   string `json:"msg" binding:"required"`
+	Code  string `json:"code"`
 }

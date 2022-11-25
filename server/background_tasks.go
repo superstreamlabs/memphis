@@ -1,13 +1,20 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var UI_url string
 
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
@@ -56,14 +63,16 @@ func checkAndReportConnFound(s *Server, message, reply string) bool {
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var integrationUpdate models.Integration
+			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
 				s.Errorf(err.Error())
 			}
+			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
+				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.UIUrl)
+				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
 				return
 			}
@@ -78,17 +87,18 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 func (s *Server) ListenForNotificationEvents() error {
 	err := s.queueSubscribe(NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var schemaFailMsg models.SchemaFailMsg
+			var schemaFailMsg models.MessageToSend
 			err := json.Unmarshal(msg, &schemaFailMsg)
 			if err != nil {
 				return
 			}
-			slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
-			if !ok {
-				return
+			msgToSend := schemaFailMsg.Msg
+			if schemaFailMsg.Code != "" {
+				msgToSend = msgToSend + "\n```" + schemaFailMsg.Code + "```"
 			}
-			if slackIntegration.Properties["schema_validation_fail_alert"] {
-				notifications.SendMessageToSlackChannel(schemaFailMsg.Title, schemaFailMsg.Msg)
+			err = notifications.SendNotificationToIntegrations(schemaFailMsg.Title, msgToSend, "schema_validation_fail_alert")
+			if err != nil {
+				return
 			}
 		}(copyBytes(msg))
 	})
@@ -99,6 +109,7 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func (s *Server) StartBackgroundTasks() error {
+	s.ListenForPoisonMessages()
 	err := s.ListenForZombieConnCheckRequests()
 	if err != nil {
 		return errors.New("Failed subscribing for zombie conns check requests: " + err.Error())
@@ -112,6 +123,26 @@ func (s *Server) StartBackgroundTasks() error {
 	err = s.ListenForNotificationEvents()
 	if err != nil {
 		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
+	}
+	filter := bson.M{"key": "ui_url"}
+	var systemKey models.SystemKey
+	err = systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	if err == mongo.ErrNoDocuments {
+		UI_url = ""
+		uiUrlKey := models.SystemKey{
+			ID:    primitive.NewObjectID(),
+			Key:   "ui_url",
+			Value: "",
+		}
+
+		_, err = systemKeysCollection.InsertOne(context.TODO(), uiUrlKey)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else {
+		UI_url = systemKey.Value
 	}
 	return nil
 }

@@ -57,8 +57,9 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		uiUrl = body.UIUrl
 		if uiUrl == "" {
 			serv.Warnf("CreateIntegration error: Must provide channel ID for slack integration")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
+			c.AbortWithStatusJSON(500, gin.H{"message": "Must provide UI url for slack integration"})
 		}
+
 		pmAlert, ok = body.Properties["poison_message_alert"]
 		if !ok {
 			pmAlert = false
@@ -78,6 +79,9 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		integration = slackIntegration
+	default:
+		serv.Warnf("CreateIntegration error: Unsupported integration type")
+		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
 	}
 	c.IndentedJSON(200, integration)
 }
@@ -129,7 +133,11 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		integration = slackIntegration
+	default:
+		serv.Warnf("CreateIntegration error: Unsupported integration type")
+		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
 	}
+
 	c.IndentedJSON(200, integration)
 }
 
@@ -151,13 +159,18 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 			Name:       "slack",
 			Keys:       keys,
 			Properties: properties,
-			UIUrl:      uiUrl,
 		}
 		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
 	} else if err != nil {
 		return slackIntegration, err
 	}
-	msg, err := json.Marshal(slackIntegration)
+	integrationToUpdate := models.CreateIntegrationSchema{
+		Name:       "slack",
+		Keys:       keys,
+		Properties: properties,
+		UIUrl:      uiUrl,
+	}
+	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
 		return slackIntegration, err
 	}
@@ -181,20 +194,25 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	var slackIntegration models.Integration
 	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties, "ui_url": uiUrl}}).Decode(&slackIntegration)
+		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
 		slackIntegration = models.Integration{
 			ID:         primitive.NewObjectID(),
 			Name:       "slack",
 			Keys:       keys,
 			Properties: properties,
-			UIUrl:      uiUrl,
 		}
 		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
 	} else if err != nil {
 		return slackIntegration, err
 	}
-	msg, err := json.Marshal(slackIntegration)
+	integrationToUpdate := models.CreateIntegrationSchema{
+		Name:       "slack",
+		Keys:       keys,
+		Properties: properties,
+		UIUrl:      uiUrl,
+	}
+	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
 		return slackIntegration, err
 	}
@@ -207,7 +225,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 }
 
 func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
-	var body models.GetIntegrationDetailsRequest
+	var body models.GetIntegrationDetailsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -280,6 +298,8 @@ func (it IntegrationsHandler) DeleteIntegration(c *gin.Context) {
 func InitializeIntegrations(c *mongo.Client) error {
 	notifications.IntegrationsCollection = db.GetCollection("integrations", c)
 	notifications.NotificationIntegrationsMap = make(map[string]interface{})
+	notifications.NotificationFunctionsMap = make(map[string]interface{})
+	notifications.NotificationFunctionsMap["slack"] = notifications.SendMessageToSlackChannel
 	err := notifications.InitializeSlackConnection(c)
 	if err != nil {
 		return err
