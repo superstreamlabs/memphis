@@ -11,7 +11,6 @@
 </div>
 
 <div align="center">
-<h1>Real-Time Data Processing Platform</h1>
 
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
 
