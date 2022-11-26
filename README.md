@@ -77,7 +77,7 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
-- 🔤 Schemaverse - Embedded schema management for produced data
+- 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
 - ⛓  SDKs: Node.JS, Go, Python, Typescript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
