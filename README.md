@@ -53,7 +53,7 @@ Besides that, it constantly crashes and requires adaptation to different rate li
 **It takes time and resources that you probably don't have.**<br>
 
 Message broker acts as the middleman and supports streaming architecture,<br>
-but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
+but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs..<br>
 **Give memphis{dev} a spin before.**
 
 ## 👉 Use-cases
