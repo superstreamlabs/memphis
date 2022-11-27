@@ -23,6 +23,8 @@ import { Checkbox, Space } from 'antd';
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
+import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import followersImg from '../../../../assets/images/followersDetails.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
@@ -30,6 +32,7 @@ import MultiCollapse from '../components/multiCollapse';
 import { httpRequest } from '../../../../services/http';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
+import DetailBox from '../../../../components/detailBox';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import CheckboxComponent from '../../../../components/checkBox';
@@ -47,7 +50,7 @@ const Messages = () => {
     const stationName = url.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('All');
-    const tabs = ['All', 'Dead-letter'];
+    const tabs = ['All', 'Dead-letter', 'Details'];
     const history = useHistory();
 
     useEffect(() => {
@@ -369,6 +372,24 @@ const Messages = () => {
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={dlsPlaceholder} alt="waitingMessages" />
                     <p>Hooray! No messages</p>
+                </div>
+            )}
+            {tabValue === 'Details' && (
+                <div className="details">
+                    <DetailBox
+                        img={leaderImg}
+                        title={'Leader'}
+                        desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                        data={[stationState?.stationSocketData?.leader]}
+                    />
+                    {stationState?.stationSocketData?.followers?.length > 0 && (
+                        <DetailBox
+                            img={followersImg}
+                            title={'Followers'}
+                            desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                            data={stationState?.stationSocketData?.followers}
+                        />
+                    )}
                 </div>
             )}
         </div>
