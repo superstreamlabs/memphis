@@ -41,6 +41,12 @@ node {
       sh "aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml ."
       sh "kubectl apply -f regcred.yaml -n memphis"
       sh "kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}' -n memphis"
+    }
+     
+    stage('Create new secret in staging'){
+      withCredentials([file(credentialsId: 'memphis.pem', variable: 'cert'), file(credentialsId: 'memphis-key.pem', variable: 'key')]) {
+        sh "kubectl create secret generic tls-secret --from-file=$cert --from-file=$key -n memphis"
+      }
     }*/
 	  
       stage('Push to sandbox'){
