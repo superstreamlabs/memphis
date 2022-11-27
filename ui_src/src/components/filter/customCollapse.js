@@ -211,9 +211,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                     key={`${filterGroupIndex}`}
                     showArrow={false}
                 >
-                    <div className={filterGroup.labelType === labelType.BADGE ? 'tag-container tag-container-gray' : 'tag-container'}>
-                        {drawComponent(filterGroup, filterGroupIndex)}
-                    </div>
+                    <div className="tag-container">{drawComponent(filterGroup, filterGroupIndex)}</div>
                 </Panel>
             ))}
 

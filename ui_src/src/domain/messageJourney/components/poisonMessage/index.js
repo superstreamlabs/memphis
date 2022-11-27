@@ -96,7 +96,7 @@ const PoisonMessage = ({ stationName, messageId, details, message, headers, proc
             </header>
             <div className="content-wrapper">
                 <Space direction="vertical">
-                    <CustomCollapse status={false} header="Details" defaultOpen={true} data={details} />
+                    <CustomCollapse status={false} header="Metadata" defaultOpen={true} data={details} />
                     <CustomCollapse status={false} header="Headers" defaultOpen={true} data={headers} message={true} />
                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={message} message={true} />
                 </Space>

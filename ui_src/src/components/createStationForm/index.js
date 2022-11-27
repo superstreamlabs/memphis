@@ -65,7 +65,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const history = useHistory();
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
-    const [actualPods, setActualPods] = useState(null);
+    const [actualPods, setActualPods] = useState([]);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [storageType, setStorageType] = useState(storageOptions[0].value);
     const [schemas, setSchemas] = useState([]);
@@ -94,7 +94,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const formFields = await creationForm.validateFields();
         const retentionValue = getRetentionValue(formFields);
         const bodyRequest = {
-            name: formFields.name,
+            name: formFields.name.replace(' ', '_'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
@@ -110,7 +110,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
             indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
-            data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(data?.system_components[indexOfBrokerComponent]?.actual_pods);
+            data?.system_components[indexOfBrokerComponent]?.actual_pods &&
+                setActualPods(Array.from({ length: data?.system_components[indexOfBrokerComponent]?.actual_pods }, (_, i) => i + 1));
         } catch (error) {}
     };
 
@@ -338,9 +339,15 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     ></TitleComponent>
                     <div>
                         <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}>
-                            <InputNumberComponent
-                                min={1}
-                                max={actualPods && actualPods <= 5 ? actualPods : 5}
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="40px"
+                                width="70px"
+                                options={actualPods}
+                                popupClassName="select-options"
                                 value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}
                                 onChange={(e) => getStarted && updateFormState('replicas', e)}
                                 disabled={!allowEdit}

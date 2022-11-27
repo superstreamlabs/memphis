@@ -4,12 +4,16 @@
     }
     .consumer-number {
         background: #DFDFDF;
-        width: 30px;
+        min-width: 20px;
         display: flex;
         justify-content: center;
         border-radius: 20px;
         font-weight: 600;
         margin-left: 10px;
+        padding: 0 10px;
+    }
+    .collapse-header{
+        flex-direction: row !important;
     }
     .collapse-child{
         .collapse-header{
@@ -22,7 +26,7 @@
             }
         }
         .ant-collapse-content-box{
-            padding: 16px !important;
+            padding: 5px 16px !important;
         }
         .ant-collapse-item.ant-collapse-no-arrow{
             border: none;

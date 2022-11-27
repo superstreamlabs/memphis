@@ -168,7 +168,7 @@ const ProduceConsumList = ({ producer }) => {
     return (
         <div className="pubSub-list-container">
             <div className="header">
-                <p className="title">{producer ? 'Producers' : 'Consumer groups'}</p>
+                <p className="title">{producer ? `Producers (${producersList?.length})` : `Consumer groups (${cgsList?.length})`}</p>
                 {/* <p className="add-connector-button">{producer ? 'Add producer' : 'Add consumer'}</p> */}
             </div>
             {producer && producersList?.length > 0 && (
@@ -186,57 +186,64 @@ const ProduceConsumList = ({ producer }) => {
                     <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
                 </div>
             )}
-
-            <div className="rows-wrapper">
-                <div className="list-container">
-                    {producer &&
-                        producersList?.length > 0 &&
-                        producersList?.map((row, index) => {
-                            return (
-                                <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
-                                    <OverflowTip text={row.name} width={'100px'}>
-                                        {row.name}
-                                    </OverflowTip>
-                                    <OverflowTip text={row.created_by_user} width={'80px'}>
-                                        {row.created_by_user}
-                                    </OverflowTip>
-                                    <span className="status-icon" style={{ width: '38px' }}>
-                                        <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    {!producer &&
-                        cgsList?.length > 0 &&
-                        cgsList?.map((row, index) => {
-                            return (
-                                <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
-                                    <OverflowTip text={row.name} width={'75px'}>
-                                        {row.name}
-                                    </OverflowTip>
-                                    <OverflowTip text={row.poison_messages} width={'60px'} textAlign={'center'} textColor={row.poison_messages > 0 ? '#F7685B' : null}>
-                                        {row.poison_messages}
-                                    </OverflowTip>
-                                    <OverflowTip text={row.unprocessed_messages} width={'75px'} textAlign={'center'}>
-                                        {row.unprocessed_messages}
-                                    </OverflowTip>
-                                    <span className="status-icon" style={{ width: '38px' }}>
-                                        <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                    </span>
-                                </div>
-                            );
-                        })}
-                </div>
-                <div style={{ marginRight: '10px' }}>
-                    {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
-                    {!producer && cgsList?.length > 0 && (
-                        <Space direction="vertical">
-                            <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
-                            <MultiCollapse header="Consumers" data={cgDetails.consumers} />
-                        </Space>
-                    )}
-                </div>
-            </div>
+            {producersList?.length > 0 ||
+                (cgsList?.length > 0 && (
+                    <div className="rows-wrapper">
+                        <div className="list-container">
+                            {producer &&
+                                producersList?.length > 0 &&
+                                producersList?.map((row, index) => {
+                                    return (
+                                        <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
+                                            <OverflowTip text={row.name} width={'100px'}>
+                                                {row.name}
+                                            </OverflowTip>
+                                            <OverflowTip text={row.created_by_user} width={'80px'}>
+                                                {row.created_by_user}
+                                            </OverflowTip>
+                                            <span className="status-icon" style={{ width: '38px' }}>
+                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            {!producer &&
+                                cgsList?.length > 0 &&
+                                cgsList?.map((row, index) => {
+                                    return (
+                                        <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
+                                            <OverflowTip text={row.name} width={'75px'}>
+                                                {row.name}
+                                            </OverflowTip>
+                                            <OverflowTip
+                                                text={row.poison_messages}
+                                                width={'60px'}
+                                                textAlign={'center'}
+                                                textColor={row.poison_messages > 0 ? '#F7685B' : null}
+                                            >
+                                                {row.poison_messages}
+                                            </OverflowTip>
+                                            <OverflowTip text={row.unprocessed_messages} width={'75px'} textAlign={'center'}>
+                                                {row.unprocessed_messages}
+                                            </OverflowTip>
+                                            <span className="status-icon" style={{ width: '38px' }}>
+                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                        <div style={{ marginRight: '10px' }}>
+                            {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
+                            {!producer && cgsList?.length > 0 && (
+                                <Space direction="vertical">
+                                    <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
+                                    <MultiCollapse header="Consumers" data={cgDetails.consumers} />
+                                </Space>
+                            )}
+                        </div>
+                    </div>
+                ))}
             {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
                 <div className="waiting-placeholder">
                     <img width={62} src={producer ? waitingProducer : waitingConsumer} alt="producer" />

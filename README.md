@@ -11,10 +11,9 @@
 </div>
 
 <div align="center">
-<h1>Real-Time Data Processing Platform</h1>
-<h4>"It took me three minutes to build in Memphis what took me weeks in Kafka"</h4>
 
-<img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/182241744-2016dc1a-c758-48ba-8666-40b883242ea9.png"><br>
+<img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
+
   
   <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only">
   
@@ -27,7 +26,7 @@
 </div>
  
  <p align="center">
-  <a href="https://demo.memphis.dev/">Playground</a> - <a href="https://sandbox.memphis.dev/" target="_blank">Sandbox</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
+  <a href="https://demo.memphis.dev/">Demo App</a> - <a href="https://sandbox.memphis.dev/" target="_blank">Sandbox</a> - <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
 </p>
 
 <p align="center">
@@ -77,7 +76,7 @@ but then you encounter Apache Kafka and its documentation and run back to the mo
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
-- 🔤 Schemaverse - Embedded schema management for produced data
+- 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
 - ⛓  SDKs: Node.JS, Go, Python, Typescript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven

@@ -23,9 +23,14 @@
     width: 300px !important;
     padding: 10px 0;
     .schema-name{
-        font-family: 'InterMedium';
-        font-size: 16px;
-        margin: 0;
+        display: flex;
+        align-items:center;
+        .label{
+            font-family: 'InterMedium';
+            font-size: 16px;
+            margin: 0;
+            margin-right: 20px;
+        }
     }
     .created-by{
         font-family: 'InterMedium';
@@ -41,10 +46,11 @@
         p{
             margin: 0;
         }
-        svg {
-            margin: 0px 8px;
-            font-size: 8px;
-        }
+    }
+    svg {
+        color: #8F8F8F;
+        margin: 0px 8px;
+        font-size: 8px;
     }
     .ant-select-item-option{
         margin: 3px 8px;

@@ -48,7 +48,7 @@ const FailedStations = () => {
                 <div className="rows-wrapper">
                     {state?.monitor_data?.stations?.map((station, index) => {
                         return (
-                            <div className="stations-row" key={index}>
+                            <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
                                 <OverflowTip className="station-details" text={station.name} width={'100px'}>
                                     {station.name}
                                 </OverflowTip>
@@ -57,7 +57,7 @@ const FailedStations = () => {
                                 </OverflowTip>
                                 <span className="station-details centered">{numberWithCommas(station.total_messages)}</span>
                                 <span className="station-details centered">{numberWithCommas(station.posion_messages)}</span>
-                                <div className="link-wrapper" onClick={() => goToStation(station.name)}>
+                                <div className="link-wrapper">
                                     <div className="staion-link">
                                         <span>View Station</span>
                                         <KeyboardArrowRightRounded />

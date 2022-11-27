@@ -172,6 +172,7 @@ const StationsList = () => {
                             fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
+                            disabled={state?.filteredList?.length === 0}
                             onClick={() => onCheckedAll()}
                         />
                         <Filter filterComponent="stations" height="34px" />

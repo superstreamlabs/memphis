@@ -5,12 +5,13 @@
     min-height: 250px;
     p {
         margin-bottom: 0px;
+        padding-right: 5px;
     }
     .sys-components-header {
         margin-top: 15px;
         color: #979797;
         display: grid;
-        grid-template-columns: 34% 33% 33%;
+        grid-template-columns: 40% 30% 30%;
         padding-left: 10px;
         padding-bottom: 10px;
         height: 30px;
@@ -20,7 +21,7 @@
         height: calc(100% - 90px);
         .sys-components {
             display: grid;
-            grid-template-columns: 34% 33% 33%;
+            grid-template-columns: 40% 30% 30%;
             padding-top: 7px;
             padding-bottom: 7px;
             padding-left: 10px;

@@ -18,7 +18,6 @@ import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
-
 import { message } from 'antd';
 
 import { LOCAL_STORAGE_TOKEN } from './const/localStorageConsts';
@@ -37,10 +36,10 @@ import Overview from './domain/overview';
 import Settings from './domain/settings';
 import { Context } from './hooks/store';
 import SysLogs from './domain/sysLogs';
+import Signup from './domain/signup';
 import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
-import Signup from './domain/signup';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);

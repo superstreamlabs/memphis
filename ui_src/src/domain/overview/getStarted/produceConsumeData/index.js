@@ -94,7 +94,7 @@ const ProduceConsumeData = (props) => {
     useEffect(() => {
         changeDynamicCode(langSelected);
         if (displayScreen !== currentPhase) {
-            if (displayScreen === produceConsumeScreenEnum['DATA_WAITING']) {
+            if (displayScreen === produceConsumeScreenEnum['DATA_SNIPPET'] || displayScreen === produceConsumeScreenEnum['DATA_WAITING']) {
                 onCopyToClipBoard();
             }
             setCurrentPhase(displayScreen);
