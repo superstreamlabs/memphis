@@ -1,10 +1,11 @@
 .version-badge{
     border-radius: 4px;
-    height: 22px;
+    height: 20px;
     padding: 0px 10px;
     display: flex;
     align-items: center;
     p{
+        margin: 0;
         margin-right: 0px;
         font-family: 'InterMedium';
         font-size: 12px;
@@ -22,6 +23,5 @@
     min-width: 106px;
     p{
         color: rgb(255, 160, 67);
-
     }
 }

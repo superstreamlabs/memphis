@@ -29,6 +29,7 @@ import SchemaItem from './schemaItem';
 import { Context } from '../../../../hooks/store';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
+import { AddRounded } from '@material-ui/icons';
 
 const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close }) => {
     const [state, dispatch] = useContext(Context);
@@ -130,6 +131,10 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                         })}
                     </div>
                     <div className="buttons">
+                        <div className="add-schema" onClick={() => createNew()}>
+                            <AddRounded />
+                            <p>Add new schema</p>
+                        </div>
                         <Button
                             width="100%"
                             height="35px"

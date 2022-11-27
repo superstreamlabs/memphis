@@ -8,12 +8,34 @@
         }
         .schemas-list{
             margin-top: 10px;
-            height: calc(100% - 105px);
+            height: calc(100% - 162px);
             overflow: auto;
         }
         .buttons{
-            padding: 15px;
-            height: 65px;
+            height: 120px;
+            p{
+                margin: 0;
+            }
+            .add-schema{
+                display: flex;
+                padding: 15px;
+                border-bottom: 1px solid #EFEFEF;
+                border-top: 1px solid #efefef;
+                align-items: center;
+                cursor: pointer;
+                p{
+                    font-family:'InterMedium';
+                    font-size: 13px;
+                    line-height: 12px;
+                    color: #2e2c34;
+                }
+                svg{
+                    margin-right:10px
+                }        
+            }
+            .button-container{
+                padding: 15px;
+            }
         }
         .no-schema-to-display {
             position: relative;

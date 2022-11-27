@@ -22,6 +22,7 @@ import { Checkbox, Space } from 'antd';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
+import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
@@ -171,6 +172,7 @@ const Messages = () => {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
         if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+            debugger;
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
@@ -218,6 +220,20 @@ const Messages = () => {
             setResendProcced(false);
         }
     };
+
+    const messageWrapper = (
+        <div className="message-wrapper">
+            <div className="row-data">
+                <Space direction="vertical">
+                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
+                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
+                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
+                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                </Space>
+            </div>
+        </div>
+    );
 
     return (
         <div className="messages-container">
@@ -274,7 +290,6 @@ const Messages = () => {
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
                     length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
-                    disabled={stationState?.stationSocketData?.poison_messages?.length === 0}
                 ></CustomTabs>
             </div>
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
@@ -299,17 +314,7 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        <div className="message-wrapper">
-                            <div className="row-data">
-                                <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                                </Space>
-                            </div>
-                        </div>
+                        {messageWrapper}
                     </div>
                 </div>
             )}
@@ -318,7 +323,6 @@ const Messages = () => {
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-
                             <p>Message</p>
                         </div>
                         <p className="right-coulmn">Details</p>
@@ -345,41 +349,15 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        <div className="message-wrapper">
-                            <div className="row-data">
-                                <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                                    <CustomCollapse status={false} header="Details" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                                </Space>
-                            </div>
-                            <Button
-                                width="96%"
-                                height="40px"
-                                placeholder={
-                                    <div className="botton-title">
-                                        <img src={Journey} alt="Journey" />
-                                        <p>Message Journey</p>
-                                    </div>
-                                }
-                                colorType="black"
-                                radiusType="semi-round"
-                                backgroundColorType="orange"
-                                fontSize="12px"
-                                fontWeight="600"
-                                onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
-                            />
-                        </div>
+                        {messageWrapper}
                     </div>
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
-                <div className="waiting-placeholder">
+                <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
-                    <span className="des">Create your 1st producer and start producing data.</span>
+                    <span className="des">Create your 1st producer and start producing data</span>
                     {process.env.REACT_APP_SANDBOX_ENV && stationName !== 'demo-app' && (
                         <a className="explore-button" href={`${pathDomains.stations}/demo-app`} target="_parent">
                             Explore demo
@@ -388,8 +366,9 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                <div className="empty-messages">
-                    <p>Congrats, No messages in your station's dead-letter, yet ;)</p>
+                <div className="waiting-placeholder msg-plc">
+                    <img width={100} src={dlsPlaceholder} alt="waitingMessages" />
+                    <p>Hooray! No messages</p>
                 </div>
             )}
         </div>

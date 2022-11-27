@@ -66,13 +66,11 @@
         }
     }
     .waiting-placeholder{
-        height: 100%;
+        height: calc(100% - 25px);
         width: 100%;
         align-items: center;
         justify-content: center;
-        position: absolute;
         display: flex;
-        top: 0;
         flex-direction: column;
         p{
             margin-top: 21px;
@@ -107,5 +105,8 @@
         .explore-button:hover{
             opacity: 0.8;
         }
+    }
+    .msg-plc{
+        height: calc(100% - 100px) ;
     }
 }

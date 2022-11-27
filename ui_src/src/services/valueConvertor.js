@@ -92,6 +92,10 @@ export const parsingDate = (date) => {
     var options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
     return new Date(date).toLocaleDateString([], options);
 };
+export const parsingDateWithotTime = (date) => {
+    var options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(date).toLocaleDateString([], options);
+};
 
 function isFloat(n) {
     return Number(n) === n && n % 1 !== 0;
@@ -163,4 +167,13 @@ export const getUnique = (obj) => {
         return false;
     });
     return unique;
+};
+
+export const hex_to_ascii = (str1) => {
+    var hex = str1.toString();
+    var str = '';
+    for (var n = 0; n < hex.length; n += 2) {
+        str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+    }
+    return str;
 };
