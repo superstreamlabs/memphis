@@ -47,7 +47,7 @@ type DeleteIntegrationSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
 
-type MessageToSend struct {
+type Notification struct {
 	Title string `json:"title" binding:"required"`
 	Msg   string `json:"msg" binding:"required"`
 	Type  string `json:"type" binding:"required"`
