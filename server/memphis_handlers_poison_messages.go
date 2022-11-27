@@ -14,6 +14,7 @@
 package server
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
@@ -171,8 +172,9 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 	}
 
 	for i, msg := range poisonMessages {
-		if len(msg.Message.Data) > 100 {
-			poisonMessages[i].Message.Data = msg.Message.Data[0:100]
+		msgData := hex.EncodeToString([]byte(msg.Message.Data))
+		if len(msgData) > 100 {
+			poisonMessages[i].Message.Data = msgData[0:100]
 		}
 
 		msg := models.MessagePayload{

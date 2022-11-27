@@ -21,11 +21,63 @@
         height: calc(100% - 120px);
         position: relative;
         padding-left: 40px;
+        .video-container {
+            display: flex;
+            justify-content: space-evenly;
+            padding-top: 95px;
+            padding-right: 40px;
+            z-index: 1;
+            .video-section {
+                z-index: 0;
+            }
+            .video-section-black-ball {
+                z-index: -1;
+            }
+
+            .react-player__preview {
+                border-radius: 10px !important;
+                border: 1px solid #b4b4b4;
+                background-size: auto !important;
+                z-index: 1 !important;
+            }
+            .pink-ball {
+                top: 354px;
+                right: 40px;
+                position: absolute;
+            }
+            .purple-ball {
+                right: 350px;
+                top: 70px;
+                position: absolute;
+                z-index: -3;
+            }
+            .black-ball {
+                left: 450px;
+                top: 60px;
+                position: absolute;
+                z-index: -2;
+            }
+            .orange-ball {
+                left: 40px;
+                top: 354px;
+                position: absolute;
+                z-index: 0;
+            }
+            .video-description {
+                text-align: center;
+                font-weight: 500;
+                font-size: 14px;
+                color: #4a495c;
+                opacity: 0.8;
+                margin-top: 11px;
+            }
+        }
         .get-started-top-header {
             height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
+            margin-top: 20px;
             .header-image {
                 height: 45px;
                 width: 50px;
@@ -40,11 +92,11 @@
                 font-weight: 400;
                 font-size: 12px;
                 color: #b4b4b4;
+                margin-top: 20px;
             }
         }
         .finish {
-            margin-top: 10%;
-            height: 350px !important;
+            height: 100px !important;
         }
         .get-started-header {
             padding-left: 3px;

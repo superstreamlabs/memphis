@@ -33,9 +33,9 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
                             <label className="tabs-name">
                                 {tab}{' '}
                                 {length && length[index] && (
-                                    <p className="badge">
+                                    <div className="badge">
                                         <span>{length[index]}</span>
-                                    </p>
+                                    </div>
                                 )}
                             </label>
                         )

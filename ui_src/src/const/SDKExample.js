@@ -240,7 +240,7 @@ export const CODE_EXAMPLE = {
         langCode: 'python',
         installation: `pip3 install memphis-py`,
         producer: `import asyncio
-        from memphis import Memphis, Headers
+        from memphis import Memphis, Headers, MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError
         
         
         async def main():
@@ -255,7 +255,7 @@ export const CODE_EXAMPLE = {
                 for i in range(5):
                     await producer.produce(bytearray('Message #'+str(i)+': Hello world', 'utf-8'), headers=headers)
         
-            except Exception as e:
+            except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
                 print(e)
         
             finally:
@@ -265,7 +265,7 @@ export const CODE_EXAMPLE = {
             asyncio.run(main())
         `,
         consumer: `import asyncio
-        from memphis import Memphis
+        from memphis import Memphis, MemphisError, MemphisConnectError, MemphisHeaderError
         
         
         async def main():
@@ -277,7 +277,7 @@ export const CODE_EXAMPLE = {
                         headers = msg.get_headers()
                     if error:
                         print(error)
-                except Exception as e:
+                except (MemphisError, MemphisConnectError, MemphisHeaderError) as e:
                     print(e)
                     return
         
@@ -291,7 +291,7 @@ export const CODE_EXAMPLE = {
                 # Keep your main thread alive so the consumer will keep receiving data
                 await asyncio.sleep(5)
         
-            except Exception as e:
+            except (MemphisError, MemphisConnectError) as e:
                 print(e)
         
             finally:

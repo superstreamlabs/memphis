@@ -584,13 +584,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		user, err := getUserDetailsFromMiddleware(c)
-		if err != nil {
-			serv.Errorf("AddUserSignUp error: " + err.Error())
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		}
 
-		serv.Noticef("User " + username + " has been created by user" + user.Username)
+		serv.Noticef("User " + username + " has been signed up")
 		token, refreshToken, err := CreateTokens(newUser)
 		if err != nil {
 			serv.Errorf("CreateUserSignUp error: " + err.Error())

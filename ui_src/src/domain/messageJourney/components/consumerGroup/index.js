@@ -36,9 +36,9 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                     }
                 ]
             };
-            setConsumers([...consumers, consumer]);
+            setConsumers([consumer]);
         });
-    }, []);
+    }, [cgMembers]);
 
     return (
         <div className="consumer-group">

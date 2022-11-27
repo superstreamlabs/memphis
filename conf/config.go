@@ -23,6 +23,9 @@ import (
 type Configuration struct {
 	DEV_ENV                        string
 	HTTP_PORT                      string
+	WS_PORT                        int
+	WS_TLS                         bool
+	WS_TOKEN                       string
 	MONGO_URL                      string
 	MONGO_USER                     string
 	MONGO_PASS                     string
