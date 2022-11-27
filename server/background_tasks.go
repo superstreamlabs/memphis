@@ -87,16 +87,16 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 func (s *Server) ListenForNotificationEvents() error {
 	err := s.queueSubscribe(NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var msgToSend models.MessageToSend
-			err := json.Unmarshal(msg, &msgToSend)
+			var notification models.Notification
+			err := json.Unmarshal(msg, &notification)
 			if err != nil {
 				return
 			}
-			notificationMsg := msgToSend.Msg
-			if msgToSend.Code != "" {
-				notificationMsg = notificationMsg + "\n```" + msgToSend.Code + "```"
+			notificationMsg := notification.Msg
+			if notification.Code != "" {
+				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = notifications.SendNotification(msgToSend.Title, notificationMsg, msgToSend.Type)
+			err = notifications.SendNotification(notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				return
 			}
