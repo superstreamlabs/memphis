@@ -29,7 +29,10 @@ require (
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 )
 
-require github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
+require (
+	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
+	github.com/slack-go/slack v0.11.4
+)
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -52,6 +55,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/imdario/mergo v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -64,7 +68,6 @@ require (
 	github.com/nats-io/nats-server/v2 v2.8.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/slack-go/slack v0.11.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
