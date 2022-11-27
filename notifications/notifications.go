@@ -11,6 +11,10 @@ var NotificationIntegrationsMap map[string]interface{}
 var NotificationFunctionsMap map[string]interface{}
 var IntegrationsCollection *mongo.Collection
 
+const PoisonMAlert = "poison_message_alert"
+const SchemaVAlert = "schema_validation_fail_alert"
+const DisconEAlert = "disconnection_events_alert"
+
 func SendNotification(title string, message string, msgType string) error {
 	for k, f := range NotificationFunctionsMap {
 		switch k {

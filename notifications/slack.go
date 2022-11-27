@@ -59,15 +59,15 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool) {
 		clearSlackCache()
 		return
 	}
-	poisonMessageAlert, ok = properties["poison_message_alert"]
+	poisonMessageAlert, ok = properties[PoisonMAlert]
 	if !ok {
 		poisonMessageAlert = false
 	}
-	schemaValidationFailAlert, ok = properties["schema_validation_fail_alert"]
+	schemaValidationFailAlert, ok = properties[SchemaVAlert]
 	if !ok {
 		schemaValidationFailAlert = false
 	}
-	disconnectionEventsAlert, ok = properties["disconnection_events_alert"]
+	disconnectionEventsAlert, ok = properties[DisconEAlert]
 	if !ok {
 		disconnectionEventsAlert = false
 	}
@@ -79,9 +79,9 @@ func CacheSlackDetails(keys map[string]string, properties map[string]bool) {
 	}
 
 	slackIntegration.Keys["channel_id"] = channelID
-	slackIntegration.Properties["poison_message_alert"] = poisonMessageAlert
-	slackIntegration.Properties["schema_validation_fail_alert"] = schemaValidationFailAlert
-	slackIntegration.Properties["disconnection_events_alert"] = disconnectionEventsAlert
+	slackIntegration.Properties[PoisonMAlert] = poisonMessageAlert
+	slackIntegration.Properties[SchemaVAlert] = schemaValidationFailAlert
+	slackIntegration.Properties[DisconEAlert] = disconnectionEventsAlert
 	slackIntegration.Name = "slack"
 	NotificationIntegrationsMap["slack"] = slackIntegration
 }

@@ -50,5 +50,6 @@ type DeleteIntegrationSchema struct {
 type MessageToSend struct {
 	Title string `json:"title" binding:"required"`
 	Msg   string `json:"msg" binding:"required"`
+	Type  string `json:"type" binding:"required"`
 	Code  string `json:"code"`
 }

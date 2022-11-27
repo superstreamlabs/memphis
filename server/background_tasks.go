@@ -87,16 +87,16 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 func (s *Server) ListenForNotificationEvents() error {
 	err := s.queueSubscribe(NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var schemaFailMsg models.MessageToSend
-			err := json.Unmarshal(msg, &schemaFailMsg)
+			var msgToSend models.MessageToSend
+			err := json.Unmarshal(msg, &msgToSend)
 			if err != nil {
 				return
 			}
-			msgToSend := schemaFailMsg.Msg
-			if schemaFailMsg.Code != "" {
-				msgToSend = msgToSend + "\n```" + schemaFailMsg.Code + "```"
+			notificationMsg := msgToSend.Msg
+			if msgToSend.Code != "" {
+				notificationMsg = notificationMsg + "\n```" + msgToSend.Code + "```"
 			}
-			err = notifications.SendNotification(schemaFailMsg.Title, msgToSend, "schema_validation_fail_alert")
+			err = notifications.SendNotification(msgToSend.Title, notificationMsg, msgToSend.Type)
 			if err != nil {
 				return
 			}

@@ -28,6 +28,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const PoisonMessageTitle = "Poison message"
+
 type PoisonMessagesHandler struct{ S *Server }
 
 func (s *Server) ListenForPoisonMessages() {
@@ -146,7 +148,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
-	err = notifications.SendNotification("Poison message", "Poison message has been identified, for more details head to: "+msgUrl, "poison_message_alert")
+	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
 	if err != nil {
 		serv.Warnf("Error while sending a poison message notification: " + err.Error())
 		return

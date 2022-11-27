@@ -60,15 +60,15 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Must provide UI url for slack integration"})
 		}
 
-		pmAlert, ok = body.Properties["poison_message_alert"]
+		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
 		if !ok {
 			pmAlert = false
 		}
-		svfAlert, ok = body.Properties["schema_validation_fail_alert"]
+		svfAlert, ok = body.Properties[notifications.SchemaVAlert]
 		if !ok {
 			svfAlert = false
 		}
-		disconnectAlert, ok = body.Properties["disconnection_events_alert"]
+		disconnectAlert, ok = body.Properties[notifications.DisconEAlert]
 		if !ok {
 			disconnectAlert = false
 		}
@@ -114,15 +114,15 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			serv.Warnf("CreateIntegration error: Must provide channel ID for slack integration")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
 		}
-		pmAlert, ok = body.Properties["poison_message_alert"]
+		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
 		if !ok {
 			pmAlert = false
 		}
-		svfAlert, ok = body.Properties["schema_validation_fail_alert"]
+		svfAlert, ok = body.Properties[notifications.SchemaVAlert]
 		if !ok {
 			svfAlert = false
 		}
-		disconnectAlert, ok = body.Properties["disconnection_events_alert"]
+		disconnectAlert, ok = body.Properties[notifications.DisconEAlert]
 		if !ok {
 			disconnectAlert = false
 		}
@@ -146,9 +146,9 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	keys["auth_token"] = authToken
 	keys["channel_id"] = channelID
 	properties := make(map[string]bool)
-	properties["poison_message_alert"] = pmAlert
-	properties["schema_validation_fail_alert"] = svfAlert
-	properties["disconnection_events_alert"] = disconnectAlert
+	properties[notifications.PoisonMAlert] = pmAlert
+	properties[notifications.SchemaVAlert] = svfAlert
+	properties[notifications.DisconEAlert] = disconnectAlert
 	filter := bson.M{"name": "slack"}
 	var slackIntegration models.Integration
 	err := integrationsCollection.FindOne(context.TODO(),
@@ -187,9 +187,9 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	keys["auth_token"] = authToken
 	keys["channel_id"] = channelID
 	properties := make(map[string]bool)
-	properties["poison_message_alert"] = pmAlert
-	properties["schema_validation_fail_alert"] = svfAlert
-	properties["disconnection_events_alert"] = disconnectAlert
+	properties[notifications.PoisonMAlert] = pmAlert
+	properties[notifications.SchemaVAlert] = svfAlert
+	properties[notifications.DisconEAlert] = disconnectAlert
 	filter := bson.M{"name": "slack"}
 	var slackIntegration models.Integration
 	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
