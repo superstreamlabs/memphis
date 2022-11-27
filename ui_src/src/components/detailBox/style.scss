@@ -1,6 +1,4 @@
 .detail-box-wrapper {
-    box-sizing: border-box;
-    position: absolute;
     display: flex;
     border: 1px solid #dadada;
     border-radius: 8px;
@@ -8,7 +6,7 @@
     width: 100%;
     min-height: 120px;
     padding: 16px;
-    overflow: scroll;
+    overflow: auto;
     .detail-img {
         width: 50px;
     }

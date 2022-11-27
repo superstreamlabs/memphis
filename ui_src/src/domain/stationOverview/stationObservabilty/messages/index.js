@@ -24,7 +24,7 @@ import { convertBytes, numberWithCommas, parsingDate } from '../../../../service
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
-import replicasImg from '../../../../assets/images/replicasDetails.svg';
+import followersImg from '../../../../assets/images/followersDetails.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
@@ -53,10 +53,6 @@ const Messages = () => {
     const tabs = ['All', 'Dead-letter', 'Details'];
     const history = useHistory();
 
-    // useEffect(() => {
-    //     debugger;
-    //     console.log(stationState);
-    // }, []);
     useEffect(() => {
         if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 'All') && selectedRowIndex === 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, false);
@@ -386,12 +382,14 @@ const Messages = () => {
                         desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
                         data={[stationState?.stationSocketData?.leader]}
                     />
-                    <DetailBox
-                        img={replicasImg}
-                        title={'Followers'}
-                        desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
-                        data={stationState?.stationSocketData?.followers}
-                    />
+                    {stationState?.stationSocketData?.followers?.length > 0 && (
+                        <DetailBox
+                            img={followersImg}
+                            title={'Followers'}
+                            desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                            data={stationState?.stationSocketData?.followers}
+                        />
+                    )}
                 </div>
             )}
         </div>
