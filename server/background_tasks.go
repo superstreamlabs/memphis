@@ -96,7 +96,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if schemaFailMsg.Code != "" {
 				msgToSend = msgToSend + "\n```" + schemaFailMsg.Code + "```"
 			}
-			err = notifications.SendNotificationToIntegrations(schemaFailMsg.Title, msgToSend, "schema_validation_fail_alert")
+			err = notifications.SendNotification(schemaFailMsg.Title, msgToSend, "schema_validation_fail_alert")
 			if err != nil {
 				return
 			}

@@ -146,7 +146,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
-	err = notifications.SendNotificationToIntegrations("Poison message", "Poison message has been identified, for more details head to: "+msgUrl, "poison_message_alert")
+	err = notifications.SendNotification("Poison message", "Poison message has been identified, for more details head to: "+msgUrl, "poison_message_alert")
 	if err != nil {
 		serv.Warnf("Error while sending a poison message notification: " + err.Error())
 		return

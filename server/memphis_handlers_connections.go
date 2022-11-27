@@ -225,7 +225,7 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if len(consumerNames) > 0 {
 		msg = msg + consumerNames
 	}
-	err = notifications.SendNotificationToIntegrations("Disconnection events", msg, "disconnection_events_alert")
+	err = notifications.SendNotification("Disconnection events", msg, "disconnection_events_alert")
 	if err != nil {
 		return err
 	}

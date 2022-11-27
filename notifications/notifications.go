@@ -11,7 +11,7 @@ var NotificationIntegrationsMap map[string]interface{}
 var NotificationFunctionsMap map[string]interface{}
 var IntegrationsCollection *mongo.Collection
 
-func SendNotificationToIntegrations(title string, message string, msgType string) error {
+func SendNotification(title string, message string, msgType string) error {
 	for k, f := range NotificationFunctionsMap {
 		switch k {
 		case "slack":
