@@ -22,7 +22,12 @@ node {
     ////////////////////////////////////////
     ////////////  Build & Push  ////////////
     ////////////////////////////////////////
-
+    stage('UI build') {
+      dir ('ui_src'){
+	sh "npm install"
+	sh "CI=false npm run build"
+      }
+    }
 
     stage('Build and push image to Docker Hub') {
     	  sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch}:${versionTag} --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
