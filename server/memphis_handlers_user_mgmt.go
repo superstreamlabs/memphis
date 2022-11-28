@@ -1090,3 +1090,102 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	c.IndentedJSON(200, gin.H{})
 }
+
+func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
+	var userList []models.FilteredUser
+	cursorUsers, err := usersCollection.Find(context.TODO(), bson.M{})
+
+	if err != nil {
+		return []string{}, err
+	}
+
+	if err = cursorUsers.All(context.TODO(), &userList); err != nil {
+		return []string{}, err
+	}
+
+	var users []string
+	for _, user := range userList {
+		users = append(users, user.Username)
+	}
+
+	return users, nil
+}
+
+func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
+	var tags []models.Tag
+	tagsRes := []models.CreateTag{}
+	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
+	cursorTags, err := tagsCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return tagsRes, err
+	}
+	if err = cursorTags.All(context.TODO(), &tags); err != nil {
+		return tagsRes, err
+	}
+	for _, tag := range tags {
+		tagRes := models.CreateTag{
+			Name:  tag.Name,
+			Color: tag.Color,
+		}
+		tagsRes = append(tagsRes, tagRes)
+	}
+	return tagsRes, err
+}
+
+func (umh UserMgmtHandler) GetFilterDetails (c *gin.Context){
+
+	var body models.GetFilterDetailsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	switch body.Route {
+    case "stations":
+        users, err := umh.GetActiveUsers()
+		if err != nil {
+			serv.Errorf("GetActiveUsers error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		tags, err := umh.GetActiveTags()
+		if err != nil {
+			serv.Errorf("GetActiveTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		storage := []string {"memory", "disk"}
+
+		c.IndentedJSON(200, gin.H{"tags":tags, "users": users, "storage":storage})
+	case "schemaverse":
+        users, err := umh.GetActiveUsers()
+		if err != nil {
+			serv.Errorf("GetActiveUsers error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		tags, err := umh.GetActiveTags()
+		if err != nil {
+			serv.Errorf("GetActiveTags error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		schemaType := []string {"protobuf", "json"}
+		usage := []string {"used", "not used"}
+
+		c.IndentedJSON(200, gin.H{"tags":tags, "users": users, "type":schemaType, "usage":usage})
+	case "syslogs":
+		logType := []string {"error","warn","info"}
+
+		c.IndentedJSON(200, gin.H{"type":logType})
+
+	default:
+		c.IndentedJSON(200, gin.H{})
+
+	}
+	
+
+}
