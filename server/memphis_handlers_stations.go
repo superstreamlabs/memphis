@@ -204,6 +204,13 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	} else {
 		replicas = 1
 	}
+
+	if csr.IdempotencyWindow <= 0 {
+		csr.IdempotencyWindow = 120000 // default
+	} else if csr.IdempotencyWindow < 100 {
+		csr.IdempotencyWindow = 100 // minimum is 100 millis
+	}
+
 	newStation := models.Station{
 		ID:                primitive.NewObjectID(),
 		Name:              stationName.Ext(),
@@ -522,6 +529,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 	} else {
 		body.Replicas = 1
+	}
+
+	if body.IdempotencyWindow <= 0 {
+		body.IdempotencyWindow = 120000 // default
+	} else if body.IdempotencyWindow < 100 {
+		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
 	newStation := models.Station{
