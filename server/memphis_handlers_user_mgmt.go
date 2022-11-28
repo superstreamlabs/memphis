@@ -1094,7 +1094,6 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
 	var userList []models.FilteredUser
 	cursorUsers, err := usersCollection.Find(context.TODO(), bson.M{})
-
 	if err != nil {
 		return []string{}, err
 	}
@@ -1119,9 +1118,11 @@ func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
 	if err != nil {
 		return tagsRes, err
 	}
+
 	if err = cursorTags.All(context.TODO(), &tags); err != nil {
 		return tagsRes, err
 	}
+
 	for _, tag := range tags {
 		tagRes := models.CreateTag{
 			Name:  tag.Name,
@@ -1133,12 +1134,12 @@ func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
 }
 
 func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
-
 	var body models.GetFilterDetailsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
+
 	switch body.Route {
 	case "stations":
 		users, err := umh.GetActiveUsers()
@@ -1156,7 +1157,6 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		}
 
 		storage := []string{"memory", "disk"}
-
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
 	case "schemaverse":
 		users, err := umh.GetActiveUsers()
@@ -1175,16 +1175,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 
 		schemaType := []string{"protobuf", "json"}
 		usage := []string{"used", "not used"}
-
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "type": schemaType, "usage": usage})
+		return
 	case "syslogs":
 		logType := []string{"error", "warn", "info"}
-
 		c.IndentedJSON(200, gin.H{"type": logType})
-
+		return
 	default:
 		c.IndentedJSON(200, gin.H{})
-
+		return
 	}
-
 }
