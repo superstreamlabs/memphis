@@ -86,7 +86,7 @@ function SideBar() {
     const handleClick = async (e) => {
         switch (e.key) {
             case '1':
-                history.push(pathDomains.settings);
+                history.push(`${pathDomains.preferences}/profile`);
                 break;
             case '3':
                 await AuthService.logout();
@@ -168,7 +168,7 @@ function SideBar() {
                     <SubMenu
                         key="subMenu"
                         icon={
-                            <div className="sub-icon-wrapper">
+                            <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
                                 <img
                                     className="sandboxUserImg"
                                     src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env

@@ -14,17 +14,45 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+
+import integrateIcon from '../../../../../assets/images/integrateIcon.svg';
+import { capitalizeFirst } from '../../../../../services/valueConvertor';
+import { Context } from '../../../../../hooks/store';
 import Modal from '../../../../../components/modal';
 import SlackIntegration from '../slackIntegration';
 
 const IntegrationItem = ({ value }) => {
+    const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
+    const [integrateValue, setIntegrateValue] = useState({});
+
+    const ref = useRef();
+    ref.current = integrateValue;
+
+    useEffect(() => {
+        if (state.integrationsList?.length > 0) {
+            checkIfUsed();
+        }
+    }, [state?.integrationsList]);
+
+    const checkIfUsed = () => {
+        let index = state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === value.name);
+        setIntegrateValue(state.integrationsList[index]);
+    };
 
     const modalContent = () => {
         switch (value.name) {
             case 'Slack':
-                return <SlackIntegration close={() => modalFlip(false)} />;
+                return (
+                    <SlackIntegration
+                        close={(data) => {
+                            modalFlip(false);
+                            setIntegrateValue(data);
+                        }}
+                        value={ref.current}
+                    />
+                );
             default:
                 break;
         }
@@ -34,6 +62,7 @@ const IntegrationItem = ({ value }) => {
         <>
             <integ-item is="3xd" className="integration-item-container" onClick={() => modalFlip(true)}>
                 {value.banner}
+                {JSON.stringify(integrateValue) !== '{}' && <img className="integrate-icon" src={integrateIcon} />}
                 <div className="integration-name">
                     {value.icon}
                     <div className="details">
@@ -43,7 +72,7 @@ const IntegrationItem = ({ value }) => {
                 </div>
                 <p className="integration-description">{value.description} </p>
             </integ-item>
-            <Modal className="integration-modal" height="95vh" width="650px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+            <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 {modalContent()}
             </Modal>
         </>

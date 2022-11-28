@@ -14,15 +14,30 @@
 
 import './style.scss';
 
-import React, { Fragment, useState } from 'react';
+import React, { useEffect, useContext } from 'react';
 
-import Switcher from '../../../components/switcher';
 import IntegrationItem from './components/integrationItem';
 import { INTEGRATION_LIST } from '../../../const/integrationList';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from '../../../services/http';
+import { Context } from '../../../hooks/store';
 
 const Integrations = () => {
-    const [hubIntegration, setHubIntegration] = useState(false);
-    const [slackIntegration, setSlackIntegration] = useState(false);
+    const [state, dispatch] = useContext(Context);
+
+    useEffect(() => {
+        getallIntegration();
+    }, []);
+
+    const getallIntegration = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_INTEGRATION);
+            dispatch({ type: 'SET_INTEGRATIONS', payload: data || [] });
+        } catch (err) {
+            return;
+        }
+    };
+
     return (
         <div className="alerts-integrations-container">
             <div className="header-preferences">

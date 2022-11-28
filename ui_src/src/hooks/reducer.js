@@ -14,7 +14,8 @@
 
 const Reducer = (state, action) => {
     let index;
-    let updateState = state?.domainList;
+    let updateDomainState = state?.domainList;
+    let copyIntegration = state?.integrationsList;
     switch (action.type) {
         case 'SET_USER_DATA':
             return {
@@ -91,19 +92,43 @@ const Reducer = (state, action) => {
 
         case 'SET_SCHEMA_TAGS':
             index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateState[index].tags = action.payload.tags;
+            updateDomainState[index].tags = action.payload.tags;
             return {
                 ...state,
-                domainList: updateState
+                domainList: updateDomainState
             };
         case 'SET_UPDATE_SCHEMA':
             index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateState[index] = action.payload.schemaDetails;
+            updateDomainState[index] = action.payload.schemaDetails;
             return {
                 ...state,
-                domainList: updateState
+                domainList: updateDomainState
             };
-
+        case 'SET_INTEGRATIONS':
+            return {
+                ...state,
+                integrationsList: action.payload
+            };
+        case 'REMOVE_INTEGRATION':
+            index = state?.integrationsList?.findIndex((integration) => integration.name === action.payload);
+            copyIntegration.splice(index, 1);
+            return {
+                ...state,
+                integrationsList: copyIntegration
+            };
+        case 'ADD_INTEGRATION':
+            copyIntegration = [...copyIntegration, action.payload];
+            return {
+                ...state,
+                integrationsList: copyIntegration
+            };
+        case 'UPDATE_INTEGRATION':
+            index = state?.integrationsList?.findIndex((integration) => integration.name === action.payload.name);
+            copyIntegration[index] = action.payload;
+            return {
+                ...state,
+                integrationsList: copyIntegration
+            };
         default:
             return state;
     }

@@ -16,6 +16,7 @@ import figmaIcon from '../assets/images/figmaIcon.svg';
 import insideBanner from '../assets/images/insideBanner.svg';
 import { FiberManualRecord } from '@material-ui/icons';
 import { diffDate } from '../services/valueConvertor';
+import Button from '../components/button';
 
 export const INTEGRATION_LIST = [
     {
@@ -24,10 +25,10 @@ export const INTEGRATION_LIST = [
         banner: <img className="banner" src={r} alt="banner" />,
         insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
         icon: <img src={figmaIcon} alt="figmaIcon" />,
-        description: 'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC',
+        description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         date: 'Nov 19, 2022',
         header: (
-            <div className="integrate-header">
+            <div className="header-left-side">
                 <img src={figmaIcon} alt="figmaIcon" />
                 <div className="details">
                     <p>Slack</p>
@@ -43,7 +44,7 @@ export const INTEGRATION_LIST = [
             <div className="integrate-description">
                 <p>Description</p>
                 <span className="content">
-                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability. Read More
+                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability
                 </span>
             </div>
         )

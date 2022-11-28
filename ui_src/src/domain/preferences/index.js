@@ -30,23 +30,41 @@ import Integrations from './integrations';
 import Profile from './profile';
 import Alerts from './clusterConfiguration';
 import ClusterConfiguration from './clusterConfiguration';
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../router';
 
-function Users() {
-    const [selectedMenuItem, selectMenuItem] = useState('editProfile');
+function Preferences({ step }) {
+    const [selectedMenuItem, selectMenuItem] = useState(step || 'profile');
     const [state, dispatch] = useContext(Context);
+    const history = useHistory();
 
     useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'settings' });
+        dispatch({ type: 'SET_ROUTE', payload: 'preferences' });
     }, []);
 
     const getComponent = () => {
         switch (selectedMenuItem) {
-            case 'editProfile':
-                return <Profile />;
-            case 'clusterConfiguration':
-                return <ClusterConfiguration />;
-            case 'notifications':
-                return <Integrations />;
+            case 'profile':
+                if (window.location.href.split('/profile').length > 1) {
+                    return <Profile />;
+                } else {
+                    history.push(`${pathDomains.preferences}/profile`);
+                    break;
+                }
+            case 'cluster_configuration':
+                if (window.location.href.split('/cluster_configuration').length > 1) {
+                    return <ClusterConfiguration />;
+                } else {
+                    history.push(`${pathDomains.preferences}/cluster_configuration`);
+                    break;
+                }
+            case 'integrations':
+                if (window.location.href.split('/integrations').length > 1) {
+                    return <Integrations />;
+                } else {
+                    history.push(`${pathDomains.preferences}/integrations`);
+                    break;
+                }
             default:
                 return;
         }
@@ -57,20 +75,20 @@ function Users() {
                 <p className="header">My account</p>
                 <p className="sub-header">Update and manage your account</p>
                 <div className="side-menu">
-                    <div className={selectedMenuItem === 'editProfile' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('editProfile')}>
-                        <img src={selectedMenuItem === 'editProfile' ? EditProfileColor : EditProfileGray} alt="editProfile" />
+                    <div className={selectedMenuItem === 'profile' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('profile')}>
+                        <img src={selectedMenuItem === 'profile' ? EditProfileColor : EditProfileGray} alt="editProfile" />
                         Edit Profile
                     </div>
-                    <div className={selectedMenuItem === 'notifications' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('notifications')}>
-                        <img src={selectedMenuItem === 'notifications' ? IntegrationColor : IntegrationGray} alt="notifications" />
+                    <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
+                        <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                         Notifications
                     </div>
                     <div
                         className="menu-item disabled"
                         //  className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
-                        // onClick={() => selectMenuItem('clusterConfiguration')}
+                        // onClick={() => selectMenuItem('cluster_configuration')}
                     >
-                        <img src={selectedMenuItem === 'clusterConfiguration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
+                        <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                         Cluster configuration
                     </div>
                 </div>
@@ -79,4 +97,4 @@ function Users() {
         </div>
     );
 }
-export default Users;
+export default Preferences;

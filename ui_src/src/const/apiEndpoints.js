@@ -72,5 +72,12 @@ export const ApiEndpoints = {
     REMOVE_SCHEMA: '/schemas/removeSchema',
     CREATE_NEW_VERSION: '/schemas/createNewVersion',
     ROLL_BACK_VERSION: '/schemas/rollBackVersion',
-    VALIDATE_SCHEMA: '/schemas/validateSchema'
+    VALIDATE_SCHEMA: '/schemas/validateSchema',
+
+    //Integrations
+    CREATE_INTEGRATION: '/integrations/createIntegration',
+    UPDATE_INTEGRATIONL: '/integrations/updateIntegration',
+    GET_INTEGRATION_DETAILS: '/integrations/getIntegrationDetails',
+    GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
+    DELETE_INTEGRATION: '/integrations/deleteIntegration'
 };

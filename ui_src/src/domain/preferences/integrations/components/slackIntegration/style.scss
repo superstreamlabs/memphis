@@ -2,6 +2,7 @@ slack-integration{
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height:550px;
     p{
         margin: 0;
     }
@@ -11,12 +12,12 @@ slack-integration{
     }
     form{
         position: relative;
-        height: calc(100% - 390px);
+        height: calc(100% - 455px);
    
         .api-details{
             height: calc(100% - 83px);
             overflow: scroll;
-            margin: 15px;
+            margin: 20px;
             margin-right: 2px;
             padding-right: 13px;
             .title{
@@ -77,7 +78,7 @@ slack-integration{
                 .option-wrapper{
                     display: flex;
                     width: 100%;
-                    height: 70px;
+                    height: 80px;
                     border: 1px solid #E1E1E1;
                     border-radius: 8px;
                     margin:10px 0px;
@@ -86,14 +87,21 @@ slack-integration{
                     justify-content: space-between;
                     .option-name{
                         display: flex;
-                        align-items: center;
+                        align-items: flex-start;
                         img{
                             width: 35px;
                             margin-right:10px
                         }
-                        p{
-                            font-family: 'InterMedium';
-                            font-size: 12px;
+                        .name-des{
+                            padding-right:10px;
+                            p{
+                                font-family:'InterSemiBold';
+                                font-size: 14px;
+                            }
+                            span{
+                                color: #B4B4B4;
+                                font-size: 12px;
+                            }
                         }
                     
                     }
@@ -101,11 +109,14 @@ slack-integration{
             }
         }
         .button-wrapper{
-            width: 100%;
             display: grid;
             grid-template-columns: 50% 50%;
             text-align: -moz-center;
             text-align: -webkit-center;
+            height: 90px;
+            align-items: center;
+            margin: 0 20px;
+            border-top: 1px solid #DEDEDE;
         }
     }
 }

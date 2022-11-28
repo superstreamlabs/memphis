@@ -297,7 +297,7 @@ const Messages = () => {
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
-                            <p>Message</p>
+                            <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
                     </div>
@@ -324,7 +324,7 @@ const Messages = () => {
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                            <p>Message</p>
+                            <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
                     </div>
