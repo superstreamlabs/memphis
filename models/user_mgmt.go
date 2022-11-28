@@ -79,10 +79,9 @@ type EditAnalyticsSchema struct {
 }
 
 type GetFilterDetailsSchema struct {
-	Route string  `form:"route" json:"route"`
-	
+	Route string `form:"route" json:"route"`
 }
 
 type FilteredUser struct {
-	Username        string             `json:"username" bson:"username"`
+	Username string `json:"username" bson:"username"`
 }

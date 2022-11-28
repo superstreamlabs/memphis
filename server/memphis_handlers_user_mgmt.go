@@ -1132,7 +1132,7 @@ func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
 	return tagsRes, err
 }
 
-func (umh UserMgmtHandler) GetFilterDetails (c *gin.Context){
+func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 
 	var body models.GetFilterDetailsSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1140,8 +1140,8 @@ func (umh UserMgmtHandler) GetFilterDetails (c *gin.Context){
 		return
 	}
 	switch body.Route {
-    case "stations":
-        users, err := umh.GetActiveUsers()
+	case "stations":
+		users, err := umh.GetActiveUsers()
 		if err != nil {
 			serv.Errorf("GetActiveUsers error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1155,11 +1155,11 @@ func (umh UserMgmtHandler) GetFilterDetails (c *gin.Context){
 			return
 		}
 
-		storage := []string {"memory", "disk"}
+		storage := []string{"memory", "disk"}
 
-		c.IndentedJSON(200, gin.H{"tags":tags, "users": users, "storage":storage})
+		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
 	case "schemaverse":
-        users, err := umh.GetActiveUsers()
+		users, err := umh.GetActiveUsers()
 		if err != nil {
 			serv.Errorf("GetActiveUsers error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1173,19 +1173,18 @@ func (umh UserMgmtHandler) GetFilterDetails (c *gin.Context){
 			return
 		}
 
-		schemaType := []string {"protobuf", "json"}
-		usage := []string {"used", "not used"}
+		schemaType := []string{"protobuf", "json"}
+		usage := []string{"used", "not used"}
 
-		c.IndentedJSON(200, gin.H{"tags":tags, "users": users, "type":schemaType, "usage":usage})
+		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "type": schemaType, "usage": usage})
 	case "syslogs":
-		logType := []string {"error","warn","info"}
+		logType := []string{"error", "warn", "info"}
 
-		c.IndentedJSON(200, gin.H{"type":logType})
+		c.IndentedJSON(200, gin.H{"type": logType})
 
 	default:
 		c.IndentedJSON(200, gin.H{})
 
 	}
-	
 
 }
