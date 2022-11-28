@@ -95,3 +95,8 @@ type LightweightPoisonMessage struct {
 	ID   primitive.ObjectID `json:"_id" bson:"_id"`
 	Data string             `json:"data" bson:"data"`
 }
+
+type PMResendAck struct {
+	ID     string `json:"id" binding:"required"`
+	CgName string `json:"cg_name" binding:"required"`
+}

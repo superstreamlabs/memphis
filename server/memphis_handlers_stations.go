@@ -1083,6 +1083,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			for _, value := range msg.Message.Headers {
 				headersJson[value.HeaderKey] = value.HeaderValue
 			}
+			headersJson["$memphis_pm_id"] = msg.ID.Hex()
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())

@@ -43,7 +43,7 @@ type GetIntegrationDetailsSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
 
-type DeleteIntegrationSchema struct {
+type DisconnectIntegrationSchema struct {
 	Name string `form:"name" json:"name" binding:"required"`
 }
 
