@@ -19,7 +19,7 @@ var UI_url string
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
-const PM_RESEND_ACK_SUBJ = "$memphis_pm_resend_ack"
+const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -109,10 +109,10 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
-func (s *Server) ListenForPoisonMessageResendAck() error {
+func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var msgToAck models.PMResendAck
+			var msgToAck models.PmAckMsg
 			err := json.Unmarshal(msg, &msgToAck)
 			if err != nil {
 				return
@@ -148,9 +148,9 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
 	}
 
-	err = s.ListenForPoisonMessageResendAck()
+	err = s.ListenForPoisonMsgAcks()
 	if err != nil {
-		return errors.New("Failed subscribing for poison message resend ack: " + err.Error())
+		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey

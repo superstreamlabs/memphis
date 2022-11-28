@@ -96,7 +96,7 @@ type LightweightPoisonMessage struct {
 	Data string             `json:"data" bson:"data"`
 }
 
-type PMResendAck struct {
+type PmAckMsg struct {
 	ID     string `json:"id" binding:"required"`
 	CgName string `json:"cg_name" binding:"required"`
 }
