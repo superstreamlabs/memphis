@@ -23,8 +23,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
 
     useEffect(() => {
         const keyDownHandler = (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
+            if (event.key === 'Enter' && confirm === (textToConfirm || 'permanently delete')) {
                 handleDeleteSelected();
             }
         };
@@ -32,7 +31,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
         return () => {
             document.removeEventListener('keydown', keyDownHandler);
         };
-    }, []);
+    }, [confirm]);
 
     return (
         <div className="delete-modal-wrapper">
