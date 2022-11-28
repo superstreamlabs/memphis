@@ -1158,6 +1158,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 
 		storage := []string{"memory", "disk"}
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
+		return
 	case "schemaverse":
 		users, err := umh.GetActiveUsers()
 		if err != nil {
