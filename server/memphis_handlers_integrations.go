@@ -77,7 +77,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 
 		slackIntegration, err := createSlackIntegration(authToken, channelID, pmAlert, svfAlert, disconnectAlert, body.UIUrl)
 		if err != nil {
-			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") {
+			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
 				serv.Warnf("CreateSlackIntegration error: " + err.Error())
 				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 				return
@@ -159,26 +159,15 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 
 func createSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	slackClientTemp := slack.New(authToken)
-	_, err := slackClientTemp.AuthTest()
-	if err != nil {
-		return slackIntegration, errors.New("Invalid auth token")
-	}
-	_, err = slackClientTemp.GetConversationInfo(channelID, true)
-	if err != nil {
-		return slackIntegration, errors.New("Invalid channel ID")
-	}
-	keys := make(map[string]string)
-	keys["auth_token"] = authToken
-	keys["channel_id"] = channelID
-	properties := make(map[string]bool)
-	properties[notifications.PoisonMAlert] = pmAlert
-	properties[notifications.SchemaVAlert] = svfAlert
-	properties[notifications.DisconEAlert] = disconnectAlert
 	filter := bson.M{"name": "slack"}
-	err = integrationsCollection.FindOne(context.TODO(),
+	err := integrationsCollection.FindOne(context.TODO(),
 		filter).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
+		err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was added successfully")
+		if err != nil {
+			return slackIntegration, err
+		}
+		keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
 		slackIntegration = models.Integration{
 			ID:         primitive.NewObjectID(),
 			Name:       "slack",
@@ -189,45 +178,36 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}
+
+		integrationToUpdate := models.CreateIntegrationSchema{
+			Name:       "slack",
+			Keys:       keys,
+			Properties: properties,
+			UIUrl:      uiUrl,
+		}
+		msg, err := json.Marshal(integrationToUpdate)
+		if err != nil {
+			return slackIntegration, err
+		}
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		if err != nil {
+			return slackIntegration, err
+		}
+
+		return slackIntegration, nil
 	} else if err != nil {
 		return slackIntegration, err
 	}
-	integrationToUpdate := models.CreateIntegrationSchema{
-		Name:       "slack",
-		Keys:       keys,
-		Properties: properties,
-		UIUrl:      uiUrl,
-	}
-	msg, err := json.Marshal(integrationToUpdate)
-	if err != nil {
-		return slackIntegration, err
-	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		return slackIntegration, err
-	}
-
-	return slackIntegration, nil
+	return slackIntegration, errors.New("Slack integration already exists")
 }
 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	slackClientTemp := slack.New(authToken)
-	_, err := slackClientTemp.AuthTest()
+	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
 	if err != nil {
-		return slackIntegration, errors.New("Invalid auth token")
+		return slackIntegration, err
 	}
-	_, err = slackClientTemp.GetConversationInfo(channelID, true)
-	if err != nil {
-		return slackIntegration, errors.New("Invalid channel ID")
-	}
-	keys := make(map[string]string)
-	keys["auth_token"] = authToken
-	keys["channel_id"] = channelID
-	properties := make(map[string]bool)
-	properties[notifications.PoisonMAlert] = pmAlert
-	properties[notifications.SchemaVAlert] = svfAlert
-	properties[notifications.DisconEAlert] = disconnectAlert
+	keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
 	filter := bson.M{"name": "slack"}
 	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
@@ -257,8 +237,42 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	if err != nil {
 		return slackIntegration, err
 	}
-
+	slackIntegration.Keys = keys
+	slackIntegration.Properties = properties
 	return slackIntegration, nil
+}
+
+func testSlackIntegration(authToken string, channelID string, message string) error {
+	slackClientTemp := slack.New(authToken)
+	_, err := slackClientTemp.AuthTest()
+	if err != nil {
+		return errors.New("Invalid auth token")
+	}
+	attachment := slack.Attachment{
+		AuthorName: "Memphis",
+		Text:       message,
+		Color:      "#6557FF",
+	}
+
+	_, _, err = slackClientTemp.PostMessage(
+		channelID,
+		slack.MsgOptionAttachments(attachment),
+	)
+	if err != nil {
+		return errors.New("Invalid channel ID")
+	}
+	return nil
+}
+
+func createSlackKeysAndProperties(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (map[string]string, map[string]bool) {
+	keys := make(map[string]string)
+	keys["auth_token"] = authToken
+	keys["channel_id"] = channelID
+	properties := make(map[string]bool)
+	properties[notifications.PoisonMAlert] = pmAlert
+	properties[notifications.SchemaVAlert] = svfAlert
+	properties[notifications.DisconEAlert] = disconnectAlert
+	return keys, properties
 }
 
 func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
@@ -307,7 +321,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	filter := bson.M{"name": strings.ToLower(body.Name)}
 	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
 	if err != nil {
-		serv.Errorf("DeleteIntegration error: " + err.Error())
+		serv.Errorf("DisconnectIntegration error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -320,13 +334,13 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 
 	msg, err := json.Marshal(integrationUpdate)
 	if err != nil {
-		serv.Errorf("DeleteIntegration error: " + err.Error())
+		serv.Errorf("DisconnectIntegration error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		serv.Errorf("DeleteIntegration error: " + err.Error())
+		serv.Errorf("DisconnectIntegration error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
