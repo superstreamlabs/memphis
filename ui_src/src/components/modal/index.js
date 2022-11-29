@@ -46,7 +46,7 @@ const TransitionsModal = ({
 
     useEffect(() => {
         const keyDownHandler = (event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && displayButtons) {
                 event.preventDefault();
                 rBtnClick();
             }

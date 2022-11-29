@@ -1090,3 +1090,24 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	c.IndentedJSON(200, gin.H{})
 }
+
+func (umh UserMgmtHandler) RequestMetric(c *gin.Context) {
+	var body models.RequestIntegrationSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		param := analytics.EventParam{
+			Name:  "request-content",
+			Value: body.RequestContent,
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-request-metric")
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}

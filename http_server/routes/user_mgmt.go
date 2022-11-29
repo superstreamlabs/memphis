@@ -38,4 +38,5 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.GET("/getCompanyLogo", userMgmtHandler.GetCompanyLogo)
 	userMgmtRoutes.PUT("/editAnalytics", userMgmtHandler.EditAnalytics)
 	userMgmtRoutes.POST("/skipGetStarted", userMgmtHandler.SkipGetStarted)
+	userMgmtRoutes.POST("/requestMetric", userMgmtHandler.RequestMetric) // TODO to be deleted
 }

@@ -291,21 +291,22 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
 
 		response = gin.H{
-			"connected_producers":    connectedProducers,
-			"disconnected_producers": disconnectedProducers,
-			"deleted_producers":      deletedProducers,
-			"connected_cgs":          connectedCgs,
-			"disconnected_cgs":       disconnectedCgs,
-			"deleted_cgs":            deletedCgs,
-			"total_messages":         totalMessages,
-			"average_message_size":   avgMsgSize,
-			"audit_logs":             auditLogs,
-			"messages":               messages,
-			"poison_messages":        poisonMessages,
-			"tags":                   tags,
-			"leader":                 leader,
-			"followers":              followers,
-			"schema":                 schemaDetails,
+			"connected_producers":      connectedProducers,
+			"disconnected_producers":   disconnectedProducers,
+			"deleted_producers":        deletedProducers,
+			"connected_cgs":            connectedCgs,
+			"disconnected_cgs":         disconnectedCgs,
+			"deleted_cgs":              deletedCgs,
+			"total_messages":           totalMessages,
+			"average_message_size":     avgMsgSize,
+			"audit_logs":               auditLogs,
+			"messages":                 messages,
+			"poison_messages":          poisonMessages,
+			"tags":                     tags,
+			"leader":                   leader,
+			"followers":                followers,
+			"schema":                   schemaDetails,
+			"idempotency_window_in_ms": station.IdempotencyWindow,
 		}
 
 	} else {
@@ -326,6 +327,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"leader":                 leader,
 			"followers":              followers,
 			"schema":                 emptyResponse,
+			"idempotency_window_in_ms": station.IdempotencyWindow,
 		}
 	}
 

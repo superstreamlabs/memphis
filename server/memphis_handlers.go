@@ -221,7 +221,7 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 		CreationDate:      time.Now(),
 		LastUpdate:        time.Now(),
 		Functions:         []models.Function{},
-		IdempotencyWindow: 0,
+		IdempotencyWindow: 120000,
 	}
 
 	err := s.CreateStream(sn, newStation)

@@ -204,6 +204,13 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	} else {
 		replicas = 1
 	}
+
+	if csr.IdempotencyWindow <= 0 {
+		csr.IdempotencyWindow = 120000 // default
+	} else if csr.IdempotencyWindow < 100 {
+		csr.IdempotencyWindow = 100 // minimum is 100 millis
+	}
+
 	newStation := models.Station{
 		ID:                primitive.NewObjectID(),
 		Name:              stationName.Ext(),
@@ -522,6 +529,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 	} else {
 		body.Replicas = 1
+	}
+
+	if body.IdempotencyWindow <= 0 {
+		body.IdempotencyWindow = 120000 // default
+	} else if body.IdempotencyWindow < 100 {
+		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
 	newStation := models.Station{
@@ -1070,6 +1083,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			for _, value := range msg.Message.Headers {
 				headersJson[value.HeaderKey] = value.HeaderValue
 			}
+			headersJson["$memphis_pm_id"] = msg.ID.Hex()
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
@@ -1500,4 +1514,14 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
+}
+
+func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-pushed-tierd-storage-button")
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }
