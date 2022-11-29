@@ -1514,3 +1514,13 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
 }
+
+func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-pushed-tierd-storage-button")
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
