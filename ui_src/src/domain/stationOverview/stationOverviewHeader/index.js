@@ -92,7 +92,7 @@ const StationOverviewHeader = () => {
                 station_names: [stationState?.stationMetaData?.name]
             });
             modalDeleteFlip(false);
-            history.push('/overview');
+            returnToStaionsList();
         } catch (error) {}
         modalDeleteFlip(false);
     };
@@ -128,7 +128,7 @@ const StationOverviewHeader = () => {
                         placeholder={
                             <div className="delete-station-button">
                                 <img src={trashIcon} alt="trashIcon" />
-                                <span className='delete-station-button-text'>Delete Station</span>
+                                <span className="delete-station-button-text">Delete Station</span>
                             </div>
                         }
                         colorType="white"
