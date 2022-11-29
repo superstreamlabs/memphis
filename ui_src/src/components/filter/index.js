@@ -45,17 +45,33 @@ const initialState = {
 const Filter = ({ filterComponent, height }) => {
     const [state, dispatch] = useContext(Context);
     const [filterState, filterDispatch] = useReducer(Reducer, initialState);
-
-    const [tagList, setTagList] = useState([]);
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
 
     const history = useHistory();
 
+    // useEffect(() => {
+    //     // if (filterState.isOpen) {
+    //     getFilterDetails();
+    //     // }
+    // }, [filterComponent]);
+
     useEffect(() => {
-        buildFilter();
-    }, [state?.domainList]);
+        if (filterState.isOpen && filterState.counter === 0) {
+            getFilterDetails();
+        }
+    }, [filterState.isOpen]);
+
+    const getFilterDetails = async () => {
+        try {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_FILTER_DETAILS}?route=${filterComponent}`);
+            if (res) buildFilter(res);
+        } catch (err) {
+            console.log(err);
+            return;
+        }
+    };
 
     useEffect(() => {
         const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
@@ -83,105 +99,62 @@ const Filter = ({ filterComponent, height }) => {
         setSearchInput(e.target.value);
     };
 
-    const buildFilter = () => {
+    const buildFilter = (rawFilterDetails) => {
         switch (filterComponent) {
             case 'stations':
-                if (state?.route === 'stations') {
-                    getTags();
-                    getFilterData(state?.domainList);
-                }
+                drawStationsFilter(rawFilterDetails);
                 return;
             default:
                 return;
         }
     };
 
-    useEffect(() => {
-        getTagsFilter();
-    }, [tagList.length > 0]);
-
-    useEffect(() => {
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
-    }, [filterFields]);
-
-    useEffect(() => {
-        handleFilter();
-    }, [searchInput, filterTerms, state?.domainList]);
-
-    const getFilterData = (stations) => {
-        filterFields.findIndex((x) => x.name === 'created') === -1 && getCreatedByFilter(stations);
-        filterFields.findIndex((x) => x.name === 'storage') === -1 && getStorageTypeFilter();
-    };
-
-    const getCreatedByFilter = (stations) => {
-        let createdBy = [];
-        stations.forEach((item) => {
-            createdBy.push(item.station.created_by_user);
-        });
-        const created = [...new Set(createdBy)].map((user) => {
-            return {
-                name: user,
-                color: CircleLetterColor[user[0]?.toUpperCase()],
-                checked: false
-            };
-        });
-        const cratedFilter = {
-            name: 'created',
-            value: 'Created By',
-            labelType: labelType.CIRCLEDLETTER,
-            filterType: filterType.CHECKBOX,
-            fields: created
-        };
-        let filteredFields = filterFields;
-        filteredFields.push(cratedFilter);
-        setFilterFields(filteredFields);
-    };
-
-    const getStorageTypeFilter = () => {
-        const storageTypeFilter = {
-            name: 'storage',
-            value: 'Storage Type',
-            filterType: filterType.CHECKBOX,
-            labelType: '',
-            fields: [
-                { name: 'Memory', value: 'memory' },
-                { name: 'File', value: 'file' }
-            ]
-        };
-        let filteredFields = filterFields;
-        filteredFields.push(storageTypeFilter);
-        setFilterFields(filteredFields);
-    };
-
-    const getTags = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_USED_TAGS}`);
-            if (res) setTagList(res);
-        } catch (err) {
-            return;
-        }
-    };
-
-    const getTagsFilter = () => {
-        const fields = tagList.map((tag) => {
-            return {
-                name: tag.name,
-                color: tag.color,
-                checked: false
-            };
-        });
+    const drawStationsFilter = (rawFilterDetails) => {
+        let filteredFields = [];
         const tagFilter = {
             name: 'tags',
             value: 'Tags',
             labelType: labelType.BADGE,
             filterType: filterType.CHECKBOX,
-            fields: fields
+            fields: rawFilterDetails.tags
         };
-        let filteredFields = filterFields;
-        const tagLocation = filterFields.findIndex((x) => x.name === 'tags');
-        tagLocation === -1 ? filteredFields.splice(0, 0, tagFilter) : filteredFields.splice(tagLocation, 1, tagFilter);
+        filteredFields.push(tagFilter);
+
+        const createdFilter = {
+            name: 'created',
+            value: 'Created By',
+            labelType: labelType.CIRCLEDLETTER,
+            filterType: filterType.CHECKBOX,
+            fields: rawFilterDetails?.users?.map((user) => {
+                return {
+                    name: user,
+                    color: CircleLetterColor[user[0]?.toUpperCase()],
+                    checked: false
+                };
+            })
+        };
+        filteredFields.push(createdFilter);
+
+        const storageTypeFilter = {
+            name: 'storage',
+            value: 'Storage Type',
+            filterType: filterType.CHECKBOX,
+            labelType: '',
+            fields: rawFilterDetails?.storage?.map((s) => {
+                return { name: s, value: s };
+            })
+        };
+        filteredFields.push(storageTypeFilter);
         setFilterFields(filteredFields);
     };
+
+    useEffect(() => {
+        filterFields.length > 0 && filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
+    }, [filterFields]);
+
+    useEffect(() => {
+        handleFilter();
+    }, [searchInput, filterTerms, state?.domainList]);
 
     const flipOpen = () => {
         filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
