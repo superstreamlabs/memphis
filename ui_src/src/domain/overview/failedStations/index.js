@@ -14,19 +14,27 @@
 
 import './style.scss';
 
-import React, { useContext } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 
 import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
+import Modal from '../../../components/modal';
+import Button from '../../../components/button';
+import CreateStationForm from '../../../components/createStationForm';
+import stationImg from '../../../assets/images/stationsIconActive.svg';
 import staionLink from '../../../assets/images/staionLink.svg';
+import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 
 const FailedStations = () => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
+    const createStationRef = useRef(null);
+    const [open, modalFlip] = useState(false);
+    const [creatingProsessd, setCreatingProsessd] = useState(false);
 
     const goToStation = (stationName) => {
         history.push(`${pathDomains.stations}/${stationName}`);
@@ -38,13 +46,59 @@ const FailedStations = () => {
                 Stations
             </p>
             <div className="err-stations-list">
-                <div className="coulmns-table">
-                    <span style={{ width: '100px' }}>Name</span>
-                    <span style={{ width: '200px' }}>Creation date</span>
-                    <span style={{ width: '120px' }}>Total messages</span>
-                    <span style={{ width: '120px' }}>Poison messages</span>
-                    <span style={{ width: '120px' }}></span>
-                </div>
+                {state?.monitor_data?.stations?.length > 0 ? (
+                    <div className="coulmns-table">
+                        <span style={{ width: '100px' }}>Name</span>
+                        <span style={{ width: '200px' }}>Creation date</span>
+                        <span style={{ width: '120px' }}>Total messages</span>
+                        <span style={{ width: '120px' }}>Poison messages</span>
+                        <span style={{ width: '120px' }}></span>
+                    </div>
+                ) : (
+                    <div className="empty-stations-container">
+                        <img src={NoStations} alt="no stations" />
+                        <p>No Stations Found</p>
+                        <Button
+                            className="modal-btn"
+                            width="160px"
+                            height="34px"
+                            placeholder={'Create new station'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => modalFlip(true)}
+                        />
+                        <Modal
+                            header={
+                                <div className="modal-header">
+                                    <div className="header-img-container">
+                                        <img className="headerImage" src={stationImg} alt="stationImg" />
+                                    </div>
+                                    <p>Create new station</p>
+                                    <label>A station is a distributed unit that stores the produced data.</label>
+                                </div>
+                            }
+                            height="540px"
+                            width="560px"
+                            rBtnText="Add"
+                            lBtnText="Cancel"
+                            lBtnClick={() => {
+                                modalFlip(false);
+                            }}
+                            rBtnClick={() => {
+                                createStationRef.current();
+                            }}
+                            clickOutside={() => modalFlip(false)}
+                            open={open}
+                            isLoading={creatingProsessd}
+                        >
+                            <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                        </Modal>{' '}
+                    </div>
+                )}
                 <div className="rows-wrapper">
                     {state?.monitor_data?.stations?.map((station, index) => {
                         return (
