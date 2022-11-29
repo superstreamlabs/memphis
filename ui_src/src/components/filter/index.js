@@ -51,11 +51,9 @@ const Filter = ({ filterComponent, height }) => {
 
     const history = useHistory();
 
-    // useEffect(() => {
-    //     // if (filterState.isOpen) {
-    //     getFilterDetails();
-    //     // }
-    // }, [filterComponent]);
+    useEffect(() => {
+        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: '' });
+    }, [filterComponent]);
 
     useEffect(() => {
         if (filterState.isOpen && filterState.counter === 0) {
@@ -63,36 +61,68 @@ const Filter = ({ filterComponent, height }) => {
         }
     }, [filterState.isOpen]);
 
+    useEffect(() => {
+        filterFields.length > 0 && filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
+    }, [filterFields]);
+
+    useEffect(() => {
+        handleFilter();
+    }, [searchInput, filterTerms, state?.domainList]);
+
     const getFilterDetails = async () => {
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_FILTER_DETAILS}?route=${filterComponent}`);
             if (res) buildFilter(res);
         } catch (err) {
-            console.log(err);
             return;
         }
     };
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
-        const jc = JSONCodec();
-        const sc = StringCodec();
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-            }
-        })();
+        let sub;
+        let jc;
+        let sc;
+        switch (filterComponent) {
+            case 'stations':
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
+                jc = JSONCodec();
+                sc = StringCodec();
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                        dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                    }
+                })();
 
-        setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
-        }, 1000);
+                setTimeout(() => {
+                    state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
+                }, 1000);
 
-        return () => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
-            sub.unsubscribe();
-        };
+                return () => {
+                    state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
+                    sub.unsubscribe();
+                };
+            case 'schemaverse':
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
+                jc = JSONCodec();
+                sc = StringCodec();
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                    }
+                })();
+
+                setTimeout(() => {
+                    state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
+                }, 1000);
+
+                return () => {
+                    state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
+                    sub.unsubscribe();
+                };
+        }
     }, [state.socket]);
 
     const handleSearch = (e) => {
@@ -103,6 +133,12 @@ const Filter = ({ filterComponent, height }) => {
         switch (filterComponent) {
             case 'stations':
                 drawStationsFilter(rawFilterDetails);
+                return;
+            case 'syslogs':
+                drawLogsFilter(rawFilterDetails);
+                return;
+            case 'schemaverse':
+                drawSchemaFilter(rawFilterDetails);
                 return;
             default:
                 return;
@@ -148,46 +184,128 @@ const Filter = ({ filterComponent, height }) => {
         setFilterFields(filteredFields);
     };
 
-    useEffect(() => {
-        filterFields.length > 0 && filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
-    }, [filterFields]);
+    const drawSchemaFilter = (rawFilterDetails) => {
+        let filteredFields = [];
+        const tagFilter = {
+            name: 'tags',
+            value: 'Tags',
+            labelType: labelType.BADGE,
+            filterType: filterType.CHECKBOX,
+            fields: rawFilterDetails.tags
+        };
+        filteredFields.push(tagFilter);
 
-    useEffect(() => {
-        handleFilter();
-    }, [searchInput, filterTerms, state?.domainList]);
+        const createdFilter = {
+            name: 'created',
+            value: 'Created By',
+            labelType: labelType.CIRCLEDLETTER,
+            filterType: filterType.CHECKBOX,
+            fields: rawFilterDetails?.users?.map((user) => {
+                return {
+                    name: user,
+                    color: CircleLetterColor[user[0]?.toUpperCase()],
+                    checked: false
+                };
+            })
+        };
+        filteredFields.push(createdFilter);
+
+        const typeFilter = {
+            name: 'type',
+            value: 'Type',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: rawFilterDetails?.type?.map((type) => {
+                return { name: type };
+            })
+        };
+        filteredFields.push(typeFilter);
+
+        const usageFilter = {
+            name: 'usage',
+            value: 'Usage',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: rawFilterDetails?.usage?.map((type) => {
+                return { name: type };
+            })
+        };
+        filteredFields.push(usageFilter);
+        setFilterFields(filteredFields);
+    };
+
+    const drawLogsFilter = (rawFilterDetails) => {
+        let filteredFields = [];
+        const typeFilter = {
+            name: 'type',
+            value: 'Type',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: rawFilterDetails?.type?.map((type) => {
+                return { name: type };
+            })
+        };
+        filteredFields.push(typeFilter);
+        setFilterFields(filteredFields);
+    };
 
     const flipOpen = () => {
         filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
     };
 
     const handleFilter = () => {
+        let objTags = [];
+        let objCreated = [];
+        let objStorage = [];
+        let objType = '';
+        let objUsage = null;
+        let data = state?.domainList;
         switch (filterComponent) {
             case 'stations':
-                let objTags = [];
-                let objCreated = [];
-                let objStorage = [];
-                let data = state?.domainList;
                 if (filterTerms?.find((o) => o.name === 'tags')) {
                     objTags = filterTerms?.find((o) => o.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
+                    data = data?.filter((item) =>
+                        objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag.name)) : !item.tags.some((tag) => objTags?.includes(tag.name))
+                    );
                 }
                 if (filterTerms?.find((o) => o.name === 'created')) {
                     objCreated = filterTerms?.find((o) => o.name === 'created')?.fields?.map((element) => element?.toLowerCase());
+                    data = data.filter((item) =>
+                        objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
+                    );
                 }
                 if (filterTerms?.find((o) => o.name === 'storage')) {
                     objStorage = filterTerms?.find((o) => o.name === 'storage')?.fields?.map((element) => element?.toLowerCase());
+                    data = data.filter((item) =>
+                        objStorage?.length > 0 ? objStorage?.includes(item.station.storage_type) : !objStorage?.includes(item.station.storage_type)
+                    );
                 }
                 if (searchInput !== '' && searchInput?.length >= 2) {
                     data = data.filter((station) => station.station.name.includes(searchInput));
                 }
-                if (objTags?.length > 0 || objCreated?.length > 0 || objStorage?.length > 0) {
-                    data = data
-                        ?.filter((item) =>
-                            objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag.name)) : !item.tags.some((tag) => objTags?.includes(tag.name))
-                        )
-                        .filter((item) =>
-                            objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
-                        )
-                        .filter((item) => (objStorage?.length > 0 ? objStorage?.includes(item.station.storage_type) : !objStorage?.includes(item.station.storage_type)));
+                dispatch({ type: 'SET_FILTERED_LIST', payload: data });
+                return;
+            case 'schemaverse':
+                if (filterTerms?.find((o) => o.name === 'tags')) {
+                    objTags = filterTerms?.find((o) => o.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
+                    data = data?.filter((item) =>
+                        objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag.name)) : !item.tags.some((tag) => objTags?.includes(tag.name))
+                    );
+                }
+                if (filterTerms?.find((o) => o.name === 'created')) {
+                    objCreated = filterTerms?.find((o) => o.name === 'created')?.fields?.map((element) => element?.toLowerCase());
+                    data = data?.filter((item) => (objCreated?.length > 0 ? objCreated?.includes(item.created_by_user) : !objCreated?.includes(item.created_by_user)));
+                }
+                if (filterTerms?.find((o) => o.name === 'type')) {
+                    objType = filterTerms?.find((o) => o.name === 'type')?.fields[0];
+                    data = data?.filter((item) => objType !== '' && item.type === objType);
+                }
+                if (filterTerms?.find((o) => o.name === 'usage')) {
+                    objUsage = filterTerms?.find((o) => o.name === 'usage')?.fields[0] === 'used';
+                    data = data.filter((item) => item.used === objUsage);
+                }
+                if (searchInput !== '' && searchInput?.length >= 2) {
+                    data = data.filter((schema) => schema.name.includes(searchInput));
                 }
                 dispatch({ type: 'SET_FILTERED_LIST', payload: data });
                 return;
@@ -197,38 +315,43 @@ const Filter = ({ filterComponent, height }) => {
     };
 
     const handleApply = () => {
-        let filterTerms = [];
-        filterState?.filterFields.forEach((element) => {
-            let term = {
-                name: element.name,
-                fields: []
-            };
-            if (element.filterType === filterType.CHECKBOX) {
-                element.fields.forEach((field) => {
-                    if (field.checked) {
-                        let t = term.fields;
-                        t.push(field.name);
-                        term.fields = t;
-                    }
-                });
-            } else if (element.filterType === filterType.RADIOBUTTON && element.radioValue !== -1) {
-                let t = [];
-                t.push(element.fields[element.radioValue].name);
-                term.fields = t;
-            } else {
-                element.fields.forEach((field) => {
-                    if (field?.value !== undefined && field?.value !== '') {
-                        let t = term.fields;
-                        let d = {};
-                        d[field.name] = field.value;
-                        t.push(d);
-                        term.fields = t;
-                    }
-                });
-            }
-            if (term.fields.length > 0) filterTerms.push(term);
-        });
-        setFilterTerms(filterTerms);
+        if (filterComponent === 'syslogs') {
+            const selectedField = filterState?.filterFields[0]?.radioValue;
+            dispatch({ type: 'SET_LOG_FILTER', payload: filterState?.filterFields[0]?.fields[selectedField]?.name || '' });
+        } else {
+            let filterTerms = [];
+            filterState?.filterFields.forEach((element) => {
+                let term = {
+                    name: element.name,
+                    fields: []
+                };
+                if (element.filterType === filterType.CHECKBOX) {
+                    element.fields.forEach((field) => {
+                        if (field.checked) {
+                            let t = term.fields;
+                            t.push(field.name);
+                            term.fields = t;
+                        }
+                    });
+                } else if (element.filterType === filterType.RADIOBUTTON && element.radioValue !== -1) {
+                    let t = [];
+                    t.push(element.fields[element.radioValue].name);
+                    term.fields = t;
+                } else {
+                    element.fields.forEach((field) => {
+                        if (field?.value !== undefined && field?.value !== '') {
+                            let t = term.fields;
+                            let d = {};
+                            d[field.name] = field.value;
+                            t.push(d);
+                            term.fields = t;
+                        }
+                    });
+                }
+                if (term.fields.length > 0) filterTerms.push(term);
+            });
+            setFilterTerms(filterTerms);
+        }
         flipOpen();
     };
 
@@ -259,19 +382,21 @@ const Filter = ({ filterComponent, height }) => {
 
     return (
         <FilterStoreContext.Provider value={[filterState, filterDispatch]}>
-            <SearchInput
-                placeholder="Search stations"
-                colorType="navy"
-                backgroundColorType="gray-dark"
-                width="288px"
-                height="34px"
-                borderColorType="none"
-                boxShadowsType="none"
-                borderRadiusType="circle"
-                iconComponent={<img src={searchIcon} alt="searchIcon" />}
-                onChange={handleSearch}
-                value={searchInput}
-            />
+            {filterComponent !== 'syslogs' && (
+                <SearchInput
+                    placeholder="Search"
+                    colorType="navy"
+                    backgroundColorType="gray-dark"
+                    width="288px"
+                    height="34px"
+                    borderColorType="none"
+                    boxShadowsType="none"
+                    borderRadiusType="circle"
+                    iconComponent={<img src={searchIcon} alt="searchIcon" />}
+                    onChange={handleSearch}
+                    value={searchInput}
+                />
+            )}
             <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"

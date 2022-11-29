@@ -103,7 +103,11 @@ const Reducer = (state, action) => {
                 ...state,
                 domainList: updateState
             };
-
+        case 'SET_LOG_FILTER':
+            return {
+                ...state,
+                logsFilter: action.payload
+            };
         default:
             return state;
     }

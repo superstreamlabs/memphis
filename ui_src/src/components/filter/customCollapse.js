@@ -32,6 +32,12 @@ const { Panel } = Collapse;
 const CustomCollapse = ({ cancel, apply, clear }) => {
     const [filterState, filterDispatch] = useContext(FilterStoreContext);
     const [activeKey, setActiveKey] = useState(['0']);
+    useEffect(() => {
+        if (activeKey.length > 3) {
+            const shortActiveKey = activeKey.splice(0, activeKey.length - 3);
+            setActiveKey(shortActiveKey);
+        }
+    }, [activeKey]);
 
     useEffect(() => {
         const keyDownHandler = (event) => {

@@ -26,7 +26,7 @@ import { httpRequest } from '../../../../services/http';
 import { Context } from '../../../../hooks/store';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { StringCodec, JSONCodec } from "nats.ws"
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 const LogsWrapper = () => {
     const [state, dispatch] = useContext(Context);
@@ -36,7 +36,6 @@ const LogsWrapper = () => {
         startIndex: 0,
         endIndex: 0
     });
-    const [logType, setLogType] = useState('');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
@@ -48,7 +47,7 @@ const LogsWrapper = () => {
 
     const getLogs = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${logType || 'all'}&start_index=${stateRef.current[0]}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${state?.logsFilter}&start_index=${stateRef.current[0]}`);
             if (data.logs) {
                 if (stateRef.current[0] === -1) {
                     setLastMgsSeq(data.logs[0].message_seq);
@@ -65,6 +64,13 @@ const LogsWrapper = () => {
             }
         } catch (error) {}
     };
+
+    useEffect(() => {
+        debugger;
+        stopListen();
+        setLogs([]);
+        startListen();
+    }, [state?.logsFilter]);
 
     const loadMore = useCallback(() => {
         return setTimeout(() => {
@@ -91,31 +97,25 @@ const LogsWrapper = () => {
     const startListen = () => {
         const sc = StringCodec();
         setTimeout(() => {
-            if (logType === '') {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data`,
-                                      sc.encode("SUB"));
+            if (state?.logsFilter === '') {
+                state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
             } else {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`,
-                                      sc.encode("SUB"));
+                state.socket?.publish(`$memphis_ws_subs.syslogs_data.${state?.logsFilter}`, sc.encode('SUB'));
             }
         }, 2000);
     };
 
     const stopListen = () => {
         const sc = StringCodec();
-        if (logType === '') {
-
-        state.socket?.publish(`$memphis_ws_subs.syslogs_data`,
-                              sc.encode("UNSUB"));
+        if (state?.logsFilter === '') {
+            state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('UNSUB'));
         } else {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`,
-                                  sc.encode("UNSUB"));
+            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${state?.logsFilte}`, sc.encode('UNSUB'));
         }
-
     };
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`)
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
         setSocketOn(true);
