@@ -175,7 +175,6 @@ const Messages = () => {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
         if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
-            debugger;
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
@@ -185,7 +184,7 @@ const Messages = () => {
     const handleAck = async () => {
         setIgnoreProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.ACK_POISION_MESSAGE}`, { poison_message_ids: isCheck });
+            await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: isCheck });
             let poisions = stationState?.stationSocketData?.poison_messages;
             isCheck.map((messageId, index) => {
                 poisions = poisions?.filter((item) => {

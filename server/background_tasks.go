@@ -19,6 +19,7 @@ var UI_url string
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
+const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -108,6 +109,28 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
+func (s *Server) ListenForPoisonMsgAcks() error {
+	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var msgToAck models.PmAckMsg
+			err := json.Unmarshal(msg, &msgToAck)
+			if err != nil {
+				return
+			}
+			id, err := primitive.ObjectIDFromHex(msgToAck.ID)
+			if err != nil {
+				return
+			}
+			poisonMessagesCollection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$pull": bson.M{"poisoned_cgs": bson.M{"cg_name": msgToAck.CgName}}})
+			poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"poisoned_cgs": bson.M{"$size": 0}})
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Server) StartBackgroundTasks() error {
 	s.ListenForPoisonMessages()
 	err := s.ListenForZombieConnCheckRequests()
@@ -123,6 +146,11 @@ func (s *Server) StartBackgroundTasks() error {
 	err = s.ListenForNotificationEvents()
 	if err != nil {
 		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
+	}
+
+	err = s.ListenForPoisonMsgAcks()
+	if err != nil {
+		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
