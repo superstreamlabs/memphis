@@ -39,9 +39,9 @@ node {
     stage('Remove memphis'){
       sh "aws eks --region eu-central-1 update-kubeconfig --name sandbox-cluster"
       sh "helm uninstall my-memphis -n memphis"
-      //sh "kubectl delete ns memphis"
+      sh "kubectl delete ns memphis"
    }
-    /*stage('Create memphis namespace in Kubernetes'){
+    stage('Create memphis namespace in Kubernetes'){
       sh "kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -"
       sh "aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml ."
       sh "kubectl apply -f regcred.yaml -n memphis"
@@ -52,7 +52,7 @@ node {
       withCredentials([file(credentialsId: 'memphis.pem', variable: 'cert'), file(credentialsId: 'memphis-key.pem', variable: 'key')]) {
         sh "kubectl create secret generic tls-secret --from-file=$cert --from-file=$key -n memphis"
       }
-    }*/
+    }
 	  
       stage('Push to sandbox'){
         sh "rm -rf memphis-infra"
