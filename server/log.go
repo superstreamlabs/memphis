@@ -85,7 +85,7 @@ func (s *Server) ConfigureLogger() {
 		if err != nil || (stat.Mode()&os.ModeCharDevice) == 0 {
 			colors = false
 		}
-		s.memphis.fallbackLogQ = s.newIPQueue("memphis_fallback_logs")
+		s.memphis.fallbackLogQ = s.newIPQueue("memphis_fallback_logs", ipQueue_MaxQueueLen(50))
 		log, s.memphis.activateSysLogsPubFunc = srvlog.NewMemphisLogger(s.createMemphisLoggerFunc(),
 			s.createMemphisLoggerFallbackFunc(),
 			opts.Logtime,
