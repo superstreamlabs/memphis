@@ -12,7 +12,7 @@
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
-                h1{
+                h1 {
                     font-size: 24px;
                     font-weight: 600;
                     line-height: 24px;
@@ -29,6 +29,15 @@
                 color: #979797;
                 font-size: 12px;
                 font-weight: 400;
+            }
+        }
+        .station-buttons {
+            display: flex;
+            gap: 10px;
+            .delete-station-button {
+                .delete-station-button-text {
+                    padding-left: 6px;
+                }
             }
         }
     }
@@ -48,72 +57,72 @@
             border-radius: 8px;
             height: 100%;
             display: flex;
-            justify-content:space-between;
-            .left-side{
+            justify-content: space-between;
+            .left-side {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-evenly;
-                margin:5px 0px;
+                margin: 5px 0px;
                 min-width: 102px;
-                b{
+                b {
                     font-family: 'InterSemiBold';
                 }
             }
-            .schema-details{
-                background: #F0EFFF;
+            .schema-details {
+                background: #f0efff;
                 border-radius: 5px;
                 width: 60%;
                 margin: 5px;
-                padding:10px;
+                padding: 10px;
                 max-width: 200px;
-                 .add-new {
-                    .use-schema-button{
+                .add-new {
+                    .use-schema-button {
                         display: flex;
                         align-items: center;
-                        svg{
+                        svg {
                             width: 17px;
                         }
-                        p{
+                        p {
                             font-family: 'InterSemiBold';
                         }
                     }
-                 }
-                 .title-and-badge{
+                }
+                .title-and-badge {
                     display: flex;
-                    align-items:center;
-                    .title{
+                    align-items: center;
+                    .title {
                         font-size: 12px;
-                        line-height:12px;
+                        line-height: 12px;
                         font-family: 'InterSemiBold';
                         margin-right: 10px;
                     }
-                    .version-badge p{
+                    .version-badge p {
                         font-size: 10px;
                     }
-                 }
-                 .name-and-version{
+                }
+                .name-and-version {
                     font-size: 12px;
                     display: flex;
                     align-items: center;
-                    svg{
+                    svg {
                         width: 6px;
                         margin: 0px 5px;
                     }
-                 }
-                 .buttons{
+                }
+                .buttons {
                     display: flex;
-                    justify-content:space-between;
-                 }
+                    justify-content: space-between;
+                }
             }
-            .sd-flex{
+            .sd-flex {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                .version-badge{
+                .version-badge {
                     height: 18px;
                 }
             }
-            .sd-center{
+            .sd-center {
                 display: flex;
                 align-items: center;
                 justify-content: center;
