@@ -175,7 +175,6 @@ const Messages = () => {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
         if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
-            debugger;
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);

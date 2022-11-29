@@ -81,7 +81,7 @@ function Preferences({ step }) {
                     </div>
                     <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
                         <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
-                        Notifications
+                        Integrations
                     </div>
                     <div
                         className="menu-item disabled"

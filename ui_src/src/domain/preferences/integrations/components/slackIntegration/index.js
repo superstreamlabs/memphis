@@ -32,7 +32,7 @@ import { URL } from '../../../../../config';
 const urlSplit = URL.split('/', 3);
 
 const SlackIntegration = ({ close, value }) => {
-    console.log(value?.properties?.poison_message_alert);
+    const isValue = value && Object.keys(value)?.length !== 0;
     const slackConfiguration = INTEGRATION_LIST[0];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
@@ -70,7 +70,7 @@ const SlackIntegration = ({ close, value }) => {
             return;
         } else {
             setLoadingSubmit(true);
-            if (JSON.stringify(value) !== '{}') {
+            if (isValue) {
                 updateIntegration();
             } else {
                 createIntegration();
@@ -124,8 +124,8 @@ const SlackIntegration = ({ close, value }) => {
             {slackConfiguration?.insideBanner}
             <div className="integrate-header">
                 {slackConfiguration.header}
-                <div className={JSON.stringify(value) === '{}' ? 'action-buttons flex-end' : 'action-buttons'}>
-                    {JSON.stringify(value) !== '{}' && (
+                <div className={!isValue ? 'action-buttons flex-end' : 'action-buttons'}>
+                    {isValue && (
                         <Button
                             width="100px"
                             height="35px"
@@ -286,14 +286,14 @@ const SlackIntegration = ({ close, value }) => {
                         <Button
                             width="80%"
                             height="45px"
-                            placeholder={JSON.stringify(value) !== '{}' ? 'Update' : 'Connect'}
+                            placeholder={isValue ? 'Update' : 'Connect'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
                             fontSize="14px"
                             fontFamily="InterSemiBold"
                             isLoading={loadingSubmit}
-                            disabled={process.env.REACT_APP_SANDBOX_ENV || (JSON.stringify(value) !== '{}' && !creationForm.isFieldsTouched())}
+                            disabled={process.env.REACT_APP_SANDBOX_ENV || (isValue && !creationForm.isFieldsTouched())}
                             onClick={handleSubmit}
                         />
                     </div>

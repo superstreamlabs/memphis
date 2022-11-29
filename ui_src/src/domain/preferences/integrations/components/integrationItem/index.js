@@ -62,7 +62,11 @@ const IntegrationItem = ({ value }) => {
         <>
             <integ-item is="3xd" className="integration-item-container" onClick={() => modalFlip(true)}>
                 {value.banner}
-                {JSON.stringify(integrateValue) !== '{}' && <img className="integrate-icon" src={integrateIcon} />}
+                {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
+                    <div className="integrate-icon">
+                        <img src={integrateIcon} />
+                    </div>
+                )}
                 <div className="integration-name">
                     {value.icon}
                     <div className="details">

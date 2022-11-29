@@ -48,5 +48,123 @@ export const INTEGRATION_LIST = [
                 </span>
             </div>
         )
+    },
+    {
+        name: 'PagerDuty',
+        by: 'memphis',
+        banner: <img className="banner" src={r} alt="banner" />,
+        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
+        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
+        date: 'Nov 19, 2022',
+        header: (
+            <div className="header-left-side">
+                <img src={figmaIcon} alt="figmaIcon" />
+                <div className="details">
+                    <p>PagerDuty</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.
+                </span>
+            </div>
+        )
+    },
+    {
+        name: 'New Relic',
+        by: 'memphis',
+        banner: <img className="banner" src={r} alt="banner" />,
+        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
+        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
+        date: 'Nov 19, 2022',
+        header: (
+            <div className="header-left-side">
+                <img src={figmaIcon} alt="figmaIcon" />
+                <div className="details">
+                    <p>New Relic</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic
+                </span>
+            </div>
+        )
+    },
+    {
+        name: 'Datadog',
+        by: 'memphis',
+        banner: <img className="banner" src={r} alt="banner" />,
+        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
+        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
+        date: 'Nov 19, 2022',
+        header: (
+            <div className="header-left-side">
+                <img src={figmaIcon} alt="figmaIcon" />
+                <div className="details">
+                    <p>Datadog</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog
+                </span>
+            </div>
+        )
+    },
+    {
+        name: 'influxDB',
+        by: 'memphis',
+        banner: <img className="banner" src={r} alt="banner" />,
+        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
+        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
+        date: 'Nov 19, 2022',
+        header: (
+            <div className="header-left-side">
+                <img src={figmaIcon} alt="figmaIcon" />
+                <div className="details">
+                    <p>influxDB</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization</span>
+            </div>
+        )
     }
 ];

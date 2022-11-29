@@ -3,19 +3,30 @@ integ-item{
     flex-direction: column;
     border: 1px solid #BCBCBC;
     border-radius: 8px;
-    width: 300px;
-    height: 345px;
+    width: 270px;
+    height: 300px;
     cursor: pointer;
     p{
         margin: 0;
     }
     .banner{
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
+        border-top-left-radius: 7px;
+        border-top-right-radius: 7px;
     }
     .integrate-icon{
+        display: flex;
+        justify-content: center;
         position:absolute;
         margin: 10px;
+        box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
+        border-radius: 32px;
+        background: var(--purple);
+        width: 40px;
+        height: 25px;
+        img{
+           width: 25px; 
+        }  
+
     }
     .integration-name{
         display: flex;

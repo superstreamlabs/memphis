@@ -1,6 +1,15 @@
-.hub-connect-integration {
-    display: flex;
-    width: 50vw;
-    align-items: center;
-    justify-content: space-between;
+.alerts-integrations-container {
+    .integration-list{
+        height: calc(95vh - 150px);
+        width: 100%;
+        position: relative;
+        display: inline-flex;
+        overflow-y: auto;
+        margin-right: 1vw;
+        margin-top: 20px;
+        gap: 20px;
+        padding: 3px;
+        align-content: flex-start;
+        flex-wrap: wrap;
+    }
 }
