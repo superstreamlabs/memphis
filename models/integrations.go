@@ -53,3 +53,7 @@ type Notification struct {
 	Type  string `json:"type" binding:"required"`
 	Code  string `json:"code"`
 }
+
+type RequestIntegrationSchema struct {
+	RequestContent string `json:"request_content"`
+}

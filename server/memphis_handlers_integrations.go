@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"memphis-broker/analytics"
 	"memphis-broker/db"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
@@ -305,4 +306,25 @@ func InitializeIntegrations(c *mongo.Client) error {
 		return err
 	}
 	return nil
+}
+
+func (it IntegrationsHandler) RequestIntegration(c *gin.Context) {
+	var body models.RequestIntegrationSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		param := analytics.EventParam{
+			Name:  "request-content",
+			Value: body.RequestContent,
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-request-integration")
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }
