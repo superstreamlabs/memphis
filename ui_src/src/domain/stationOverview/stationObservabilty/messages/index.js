@@ -24,6 +24,7 @@ import { convertBytes, numberWithCommas, parsingDate } from '../../../../service
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
@@ -389,6 +390,12 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
+                    <DetailBox
+                        img={idempotencyIcon}
+                        title={'Idempotency'}
+                        desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                        data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
+                    />
                 </div>
             )}
         </div>
