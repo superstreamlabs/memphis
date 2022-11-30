@@ -187,7 +187,7 @@ func (s *Server) CreateSystemLogsStream() {
 	successCh := make(chan bool)
 
 	for !ready { // wait for cluster to be ready if we are in cluster mode
-		timeout := time.NewTimer(2 * time.Minute)
+		timeout := time.NewTimer(30 * time.Second)
 		go tryCreateSystemLogsStream(s, retentionDur, successCh)
 		select {
 		case <-timeout.C:

@@ -146,7 +146,7 @@ func (q *ipQueue) pop() []interface{} {
 		elts = q.elts
 	} else if q.wrapAround {
 		elts = q.elts[q.pos:]
-		elts = append(elts, q.elts[:q.pos])
+		elts = append(elts, q.elts[:q.pos]...)
 	} else {
 		elts = q.elts[q.pos:]
 	}
