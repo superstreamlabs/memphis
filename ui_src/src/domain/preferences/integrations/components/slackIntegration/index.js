@@ -106,7 +106,7 @@ const SlackIntegration = ({ close, value }) => {
     const disconnect = async () => {
         setLoadingDisconnect(true);
         try {
-            await httpRequest('DELETE', `${ApiEndpoints.DELETE_INTEGRATION}?=`, {
+            await httpRequest('DELETE', ApiEndpoints.DISCONNECT_INTEGRATION, {
                 name: formFields.name
             });
             dispatch({ type: 'REMOVE_INTEGRATION', payload: formFields.name });

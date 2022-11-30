@@ -13,22 +13,26 @@
 // limitations under the License.package server
 
 import './style.scss';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import { ErrorRounded } from '@material-ui/icons';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
-import pathDomains from '../../router';
-
 import { Form } from 'antd';
-import TitleComponent from '../titleComponent';
-import RadioButton from '../radioButton';
-import Switcher from '../switcher';
-import Input from '../Input';
+
+import comingSoonImg from '../../assets/images/comingSoonImg.svg';
 import { convertDateToSeconds } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
-
 import InputNumberComponent from '../InputNumber';
-import SelectComponent from '../select';
+import TitleComponent from '../titleComponent';
 import SelectSchema from '../selectSchema';
+import RadioButton from '../radioButton';
+import SelectComponent from '../select';
+import pathDomains from '../../router';
+import Switcher from '../switcher';
+import CustomTabs from '../Tabs';
+import Button from '../button';
+import Input from '../Input';
 
 const retanionOptions = [
     {
@@ -48,18 +52,30 @@ const retanionOptions = [
     }
 ];
 
-const storageOptions = [
+const storageTierOneOptions = [
     {
         id: 1,
         value: 'file',
-        label: 'Disk'
+        label: 'Disk',
+        desc: 'Disk is perfect for higher availability and lower cost'
     },
     {
         id: 2,
         value: 'memory',
-        label: 'Memory'
+        label: 'Memory',
+        desc: 'Memory is used for better performance'
     }
 ];
+const storageTierTwoOptions = [
+    {
+        id: 1,
+        value: 's3',
+        label: 'S3',
+        desc: 'Use object storage as a 2nd tier storage for archiving and post-stream analysis'
+    }
+];
+
+const tabs = ['Storage tier 1 (Hot)', 'Storage tier 2 (Cold)'];
 
 const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
     const history = useHistory();
@@ -67,9 +83,12 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [allowEdit, setAllowEdit] = useState(true);
     const [actualPods, setActualPods] = useState([]);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
-    const [storageType, setStorageType] = useState(storageOptions[0].value);
+    const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
     const [useSchema, setUseSchema] = useState(true);
+    const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
+    const [selectedOption, setSelectedOption] = useState(1);
+    const [selectedTier2Option, setSelectedTier2Option] = useState(1);
 
     useEffect(() => {
         getOverviewData();
@@ -94,7 +113,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const formFields = await creationForm.validateFields();
         const retentionValue = getRetentionValue(formFields);
         const bodyRequest = {
-            name: formFields.name.replace(' ', '_'),
+            name: formFields.name.replace(' ', '-'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
@@ -136,207 +155,312 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
     };
 
+    const connectToS3 = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.TIERD_STORAGE_CLICKED);
+            if (data) {
+                setComingSoon(true);
+            }
+        } catch (error) {}
+    };
+
     return (
-        <Form name="form" form={creationForm} autoComplete="off" className="create-station-form-getstarted">
-            <div id="e2e-getstarted-step1" className="station-name-section">
-                <TitleComponent
-                    headerTitle="Enter station name"
-                    typeTitle="sub-header"
-                    headerDescription="RabbitMQ has queues, Kafka has topics, and Memphis has stations"
-                    required={true}
-                ></TitleComponent>
-                <Form.Item
-                    name="name"
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Please input station name!'
-                        }
-                    ]}
-                    style={{ height: '50px' }}
-                    initialValue={getStartedStateRef?.formFieldsCreateStation?.name}
-                >
-                    <Input
-                        placeholder="Type station name"
-                        type="text"
-                        radiusType="semi-round"
-                        colorType="black"
-                        backgroundColorType="none"
-                        borderColorType="gray"
-                        width="450px"
-                        height="40px"
-                        onBlur={(e) => getStarted && updateFormState('name', e.target.value)}
-                        onChange={(e) => getStarted && updateFormState('name', e.target.value)}
-                        value={getStartedStateRef?.formFieldsCreateStation?.name}
-                        disabled={!allowEdit}
-                    />
-                </Form.Item>
-            </div>
-            <div className="retention-type-section">
-                <TitleComponent
-                    headerTitle="Retention policy"
-                    typeTitle="sub-header"
-                    headerDescription={
-                        <span>
-                            By which criteria will messages be expelled from the station.&nbsp;
-                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
-                                Learn More
-                            </a>
-                        </span>
-                    }
-                ></TitleComponent>
-                <Form.Item name="retention_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : 'message_age_sec'}>
-                    <RadioButton
-                        className="radio-button"
-                        options={retanionOptions}
-                        radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}
-                        optionType="button"
-                        fontFamily="InterSemiBold"
-                        style={{ marginRight: '20px', content: '' }}
-                        onChange={(e) => {
-                            setRetentionType(e.target.value);
-                            if (getStarted) updateFormState('retention_type', e.target.value);
-                        }}
-                        disabled={!allowEdit}
-                    />
-                </Form.Item>
-                {retentionType === 'message_age_sec' && (
-                    <div className="time-value">
-                        <div className="days-section">
-                            <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
-                                <InputNumberComponent
-                                    min={0}
-                                    max={100}
-                                    onChange={(e) => getStarted && updateFormState('days', e)}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.days}
-                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
-                                    disabled={!allowEdit}
-                                />
-                            </Form.Item>
-                            <p>days</p>
-                        </div>
-                        <p className="separator">:</p>
-                        <div className="hours-section">
-                            <Form.Item name="hours" initialValue={getStartedStateRef?.formFieldsCreateStation?.hours || 0}>
-                                <InputNumberComponent
-                                    min={0}
-                                    max={24}
-                                    onChange={(e) => getStarted && updateFormState('hours', e)}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.hours}
-                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.hours || 0}
-                                    disabled={!allowEdit}
-                                />
-                            </Form.Item>
-                            <p>hours</p>
-                        </div>
-                        <p className="separator">:</p>
-                        <div className="minutes-section">
-                            <Form.Item name="minutes" initialValue={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}>
-                                <InputNumberComponent
-                                    min={0}
-                                    max={60}
-                                    onChange={(e) => getStarted && updateFormState('minutes', e)}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.minutes}
-                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}
-                                    disabled={!allowEdit}
-                                />
-                            </Form.Item>
-                            <p>minutes</p>
-                        </div>
-                        <p className="separator">:</p>
-                        <div className="seconds-section">
-                            <Form.Item name="seconds" initialValue={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}>
-                                <InputNumberComponent
-                                    min={0}
-                                    max={60}
-                                    onChange={(e) => getStarted && updateFormState('seconds', e)}
-                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.seconds}
-                                    disabled={!allowEdit}
-                                />
-                            </Form.Item>
-                            <p>seconds</p>
-                        </div>
-                    </div>
-                )}
-                {retentionType === 'bytes' && (
-                    <div className="retention-type">
-                        <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
-                            <Input
-                                placeholder="Type"
-                                type="number"
-                                radiusType="semi-round"
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                width="90px"
-                                height="38px"
-                                onBlur={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
-                                onChange={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
-                                value={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue}
-                                disabled={!allowEdit}
-                            />
-                        </Form.Item>
-                        <p>bytes</p>
-                    </div>
-                )}
-                {retentionType === 'messages' && (
-                    <div className="retention-type">
-                        <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
-                            <Input
-                                placeholder="Type"
-                                type="number"
-                                radiusType="semi-round"
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                width="90px"
-                                height="38px"
-                                onBlur={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
-                                onChange={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
-                                value={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue}
-                                disabled={!allowEdit}
-                            />
-                        </Form.Item>
-                        <p>messages</p>
-                    </div>
-                )}
-            </div>
-            <div className="storage-replicas-container">
-                <div className="storage-container">
+        <Form
+            name="form"
+            form={creationForm}
+            autoComplete="off"
+            className={getStarted ? 'create-station-form-getstarted' : 'create-station-form-getstarted create-statio-flex-modal'}
+        >
+            <div className={getStarted ? null : 'left-side'}>
+                <div className="station-name-section">
                     <TitleComponent
-                        headerTitle="Storage type"
+                        headerTitle="Enter station name"
                         typeTitle="sub-header"
-                        headerDescription={
-                            <span>
-                                By which type of storage will the station be stored.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
-                                    Learn More
-                                </a>
-                            </span>
-                        }
-                    ></TitleComponent>
-                    <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
-                        <RadioButton
-                            options={storageOptions}
-                            fontFamily="InterSemiBold"
-                            radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : storageType}
-                            optionType="button"
-                            onChange={(e) => {
-                                setStorageType(e.target.value);
-                                getStarted && updateFormState('storage_type', e.target.value);
-                            }}
+                        headerDescription="RabbitMQ has queues, Kafka has topics, and Memphis has stations"
+                        required={true}
+                    />
+                    <Form.Item
+                        name="name"
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Please input station name!'
+                            }
+                        ]}
+                        style={{ height: '50px' }}
+                        initialValue={getStartedStateRef?.formFieldsCreateStation?.name}
+                    >
+                        <Input
+                            placeholder="Type station name"
+                            type="text"
+                            radiusType="semi-round"
+                            colorType="black"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            height="40px"
+                            onBlur={(e) => getStarted && updateFormState('name', e.target.value)}
+                            onChange={(e) => getStarted && updateFormState('name', e.target.value)}
+                            value={getStartedStateRef?.formFieldsCreateStation?.name}
                             disabled={!allowEdit}
                         />
+                        {/* <div className="name-and-hint">
+                        <ErrorRounded />
+                        <p>Input character allowed -,.,_</p>
+                        <p>{creationForm.getFieldValue('name')}</p>
+                    </div> */}
                     </Form.Item>
                 </div>
+                <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />
+                <div className="retention-storage-box">
+                    <div className="header">
+                        <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>
+                    </div>
+                    <div className="content">
+                        {tabValue === tabs[0] && (
+                            <p className="description">
+                                By which criteria will messages be expelled from the station.&nbsp;
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
+                                    Learn More
+                                </a>
+                            </p>
+                        )}
+                        {tabValue === tabs[1] && (
+                            <p className="description">
+                                For archiving and higher retention of ingested data. Once a message passes tier 1 policy, it will automatically migrate to tier 2
+                                storage.&nbsp;
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
+                                    Learn More
+                                </a>
+                            </p>
+                        )}
+
+                        {tabValue === tabs[0] && (
+                            <div className="retention-type-section">
+                                <Form.Item
+                                    name="retention_type"
+                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : 'message_age_sec'}
+                                >
+                                    <RadioButton
+                                        className="radio-button"
+                                        options={retanionOptions}
+                                        radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}
+                                        optionType="button"
+                                        fontFamily="InterSemiBold"
+                                        style={{ marginRight: '20px', content: '' }}
+                                        onChange={(e) => {
+                                            setRetentionType(e.target.value);
+                                            if (getStarted) updateFormState('retention_type', e.target.value);
+                                        }}
+                                        disabled={!allowEdit}
+                                    />
+                                </Form.Item>
+                                {retentionType === 'message_age_sec' && (
+                                    <div className="time-value">
+                                        <div className="days-section">
+                                            <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
+                                                <InputNumberComponent
+                                                    min={0}
+                                                    max={100}
+                                                    onChange={(e) => getStarted && updateFormState('days', e)}
+                                                    value={getStartedStateRef?.formFieldsCreateStation?.days}
+                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
+                                                    disabled={!allowEdit}
+                                                />
+                                            </Form.Item>
+                                            <p>days</p>
+                                        </div>
+                                        <p className="separator">:</p>
+                                        <div className="hours-section">
+                                            <Form.Item name="hours" initialValue={getStartedStateRef?.formFieldsCreateStation?.hours || 0}>
+                                                <InputNumberComponent
+                                                    min={0}
+                                                    max={24}
+                                                    onChange={(e) => getStarted && updateFormState('hours', e)}
+                                                    value={getStartedStateRef?.formFieldsCreateStation?.hours}
+                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.hours || 0}
+                                                    disabled={!allowEdit}
+                                                />
+                                            </Form.Item>
+                                            <p>hours</p>
+                                        </div>
+                                        <p className="separator">:</p>
+                                        <div className="minutes-section">
+                                            <Form.Item name="minutes" initialValue={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}>
+                                                <InputNumberComponent
+                                                    min={0}
+                                                    max={60}
+                                                    onChange={(e) => getStarted && updateFormState('minutes', e)}
+                                                    value={getStartedStateRef?.formFieldsCreateStation?.minutes}
+                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}
+                                                    disabled={!allowEdit}
+                                                />
+                                            </Form.Item>
+                                            <p>minutes</p>
+                                        </div>
+                                        <p className="separator">:</p>
+                                        <div className="seconds-section">
+                                            <Form.Item name="seconds" initialValue={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}>
+                                                <InputNumberComponent
+                                                    min={0}
+                                                    max={60}
+                                                    onChange={(e) => getStarted && updateFormState('seconds', e)}
+                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}
+                                                    value={getStartedStateRef?.formFieldsCreateStation?.seconds}
+                                                    disabled={!allowEdit}
+                                                />
+                                            </Form.Item>
+                                            <p>seconds</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {retentionType === 'bytes' && (
+                                    <div className="retention-type">
+                                        <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
+                                            <Input
+                                                placeholder="Type"
+                                                type="number"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                width="90px"
+                                                height="38px"
+                                                onBlur={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
+                                                onChange={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
+                                                value={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue}
+                                                disabled={!allowEdit}
+                                            />
+                                        </Form.Item>
+                                        <p>bytes</p>
+                                    </div>
+                                )}
+                                {retentionType === 'messages' && (
+                                    <div className="retention-type">
+                                        <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
+                                            <Input
+                                                placeholder="Type"
+                                                type="number"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                width="90px"
+                                                height="38px"
+                                                onBlur={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
+                                                onChange={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
+                                                value={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue}
+                                                disabled={!allowEdit}
+                                            />
+                                        </Form.Item>
+                                        <p>messages</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <div className="storage-container">
+                            <TitleComponent
+                                headerTitle="Storage type"
+                                typeTitle="sub-header"
+                                headerDescription={
+                                    tabValue === tabs[0] ? (
+                                        <span>
+                                            Type of storage for short retention.&nbsp;
+                                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                                Learn More
+                                            </a>
+                                        </span>
+                                    ) : (
+                                        <span>
+                                            Type of storage for long retention.&nbsp;
+                                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                                Learn More
+                                            </a>
+                                        </span>
+                                    )
+                                }
+                            />
+                            <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
+                                {tabValue === tabs[0]
+                                    ? storageTierOneOptions.map((value) => {
+                                          return (
+                                              <div
+                                                  key={value.id}
+                                                  className={selectedOption === value.id ? 'option-wrapper selected' : 'option-wrapper'}
+                                                  onClick={() => setSelectedOption(value.id)}
+                                              >
+                                                  {selectedOption === value.id && <CheckCircleIcon className="check-icon" />}
+                                                  {selectedOption !== value.id && <div className="uncheck-icon" />}
+                                                  <div className="option-content">
+                                                      <p>{value.label}</p>
+                                                      <span>{value.desc}</span>
+                                                  </div>
+                                              </div>
+                                          );
+                                      })
+                                    : storageTierTwoOptions.map((value) => {
+                                          return (
+                                              <div
+                                                  key={value.id}
+                                                  className={selectedTier2Option === value.id ? 'option-wrapper selected' : 'option-wrapper'}
+                                                  onClick={() => setSelectedTier2Option(value.id)}
+                                              >
+                                                  {selectedTier2Option === value.id && <CheckCircleIcon className="check-icon" />}
+                                                  {selectedTier2Option !== value.id && <div className="uncheck-icon" />}
+                                                  <div className="option-content">
+                                                      <p>{value.label}</p>
+                                                      <span>{value.desc}</span>
+                                                  </div>
+                                                  <Button
+                                                      width="90px"
+                                                      height="30px"
+                                                      placeholder="Connect"
+                                                      colorType="white"
+                                                      border="none"
+                                                      radiusType="circle"
+                                                      backgroundColorType="purple"
+                                                      fontSize="12px"
+                                                      fontWeight="bold"
+                                                      boxShadowStyle="none"
+                                                      disabled={comingSoon}
+                                                      onClick={() => connectToS3()}
+                                                  />
+                                              </div>
+                                          );
+                                      })}
+                                {comingSoon && (
+                                    <div className="comings-soon-message">
+                                        <img src={comingSoonImg} />
+                                        <div className="content">
+                                            <p className="title">Coming Soon</p>
+                                            <p className="description">
+                                                Until its ready, would be great to get your&nbsp;
+                                                <a className="learn-more" href="https://github.com/memphisdev/memphis-broker/issues/496" target="_blank">
+                                                    upvote
+                                                </a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* <RadioButton
+                                    options={storageOptions}
+                                    fontFamily="InterSemiBold"
+                                    radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : storageType}
+                                    optionType="button"
+                                    onChange={(e) => {
+                                        setStorageType(e.target.value);
+                                        getStarted && updateFormState('storage_type', e.target.value);
+                                    }}
+                                    disabled={!allowEdit}
+                                /> */}
+                            </Form.Item>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className={getStarted ? null : 'right-side'}>
                 <div className="replicas-container">
-                    <TitleComponent
-                        headerTitle="Replicas"
-                        typeTitle="sub-header"
-                        headerDescription="Amount of mirrors per message"
-                        style={{ description: { width: '240px' } }}
-                    ></TitleComponent>
+                    <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
                     <div>
                         <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}>
                             <SelectComponent
@@ -345,7 +469,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 borderColorType="gray"
                                 radiusType="semi-round"
                                 height="40px"
-                                width="70px"
                                 options={actualPods}
                                 popupClassName="select-options"
                                 value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}
@@ -355,25 +478,30 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </Form.Item>
                     </div>
                 </div>
+
+                {!getStarted && (
+                    <div className="schema-type">
+                        <Form.Item name="schemaValue">
+                            <div className="toggle-add-schema">
+                                <TitleComponent
+                                    headerTitle="Attach schema"
+                                    typeTitle="sub-header"
+                                    headerDescription="Enforcing schema will increase produced data quality"
+                                />
+                                <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
+                            </div>
+                            {!getStarted && schemas.length > 0 && useSchema && (
+                                <SelectSchema
+                                    placeholder={creationForm.schemaValue || 'Select schema'}
+                                    value={creationForm.schemaValue}
+                                    options={schemas}
+                                    onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                                />
+                            )}
+                        </Form.Item>
+                    </div>
+                )}
             </div>
-            {!getStarted && (
-                <div className="schema-type">
-                    <Form.Item name="schemaValue">
-                        <div className="toggle-add-schema">
-                            <TitleComponent headerTitle="Attach schema" typeTitle="sub-header"></TitleComponent>
-                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
-                        </div>
-                        {!getStarted && schemas.length > 0 && useSchema && (
-                            <SelectSchema
-                                placeholder={creationForm.schemaValue || 'Select schema'}
-                                value={creationForm.schemaValue}
-                                options={schemas}
-                                onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                            />
-                        )}
-                    </Form.Item>
-                </div>
-            )}
         </Form>
     );
 };

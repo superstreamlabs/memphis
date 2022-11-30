@@ -14,16 +14,25 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 
-import IntegrationItem from './components/integrationItem';
+import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
+import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
 import { INTEGRATION_LIST } from '../../../const/integrationList';
+import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
 import { Context } from '../../../hooks/store';
+import { CloudQueueRounded } from '@material-ui/icons';
+import Button from '../../../components/button';
+import Modal from '../../../components/modal';
+import Input from '../../../components/Input';
+import { message } from 'antd';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
+    const [modalIsOpen, modalFlip] = useState(false);
+    const [integrationRequest, setIntegrationRequest] = useState('');
 
     useEffect(() => {
         getallIntegration();
@@ -37,18 +46,114 @@ const Integrations = () => {
             return;
         }
     };
+    const handleSendRequest = async () => {
+        try {
+            await httpRequest('POST', ApiEndpoints.REQUEST_INTEGRATION, { request_content: integrationRequest });
+            message.success({
+                key: 'memphisSuccessMessage',
+                content: 'Thanks for your feedback',
+                duration: 5,
+                style: { cursor: 'pointer' },
+                onClick: () => message.destroy('memphisSuccessMessage')
+            });
+            modalFlip(false);
+            setIntegrationRequest('');
+        } catch (err) {
+            return;
+        }
+    };
 
     return (
         <div className="alerts-integrations-container">
             <div className="header-preferences">
-                <p className="main-header">Integrations</p>
-                <p className="sub-header">We will keep an eye on your data streams and alert you if anything went wron</p>
+                <div className="left">
+                    <p className="main-header">Integrations</p>
+                    <p className="sub-header">We will keep an eye on your data streams and alert you if anything went wron</p>
+                </div>
+                <Button
+                    width="140px"
+                    height="35px"
+                    placeholder="Request Integration"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="purple"
+                    border="none"
+                    fontSize="12px"
+                    fontFamily="InterSemiBold"
+                    onClick={() => modalFlip(true)}
+                />
             </div>
             <div className="integration-list">
-                {INTEGRATION_LIST?.map((integration) => {
-                    return <IntegrationItem key={integration.name} value={integration} />;
-                })}
+                {INTEGRATION_LIST?.map((integration) =>
+                    integration.comingSoon ? (
+                        <div key={integration.name} className="cloud-wrapper">
+                            <div className="dark-background">
+                                <img src={cloudeBadge} />
+                                <div className="cloud-icon">
+                                    <CloudQueueRounded />
+                                </div>
+                            </div>
+                            <IntegrationItem key={integration.name} value={integration} />
+                        </div>
+                    ) : (
+                        <IntegrationItem key={integration.name} value={integration} />
+                    )
+                )}
             </div>
+            <Modal
+                className="request-integration-modal"
+                header={<img src={integrationRequestIcon} alt="errorModal" />}
+                height="250px"
+                width="450px"
+                displayButtons={false}
+                clickOutside={() => modalFlip(false)}
+                open={modalIsOpen}
+            >
+                <div className="roll-back-modal">
+                    <p className="title">Integrations framework</p>
+                    <p className="desc">Until our integrations framework will be released, we can build it for you. Which integration is missing?</p>
+                    <Input
+                        placeholder="App & reason"
+                        type="text"
+                        fontSize="12px"
+                        radiusType="semi-round"
+                        colorType="black"
+                        backgroundColorType="none"
+                        borderColorType="gray"
+                        height="40px"
+                        onBlur={(e) => setIntegrationRequest(e.target.value)}
+                        onChange={(e) => setIntegrationRequest(e.target.value)}
+                        value={integrationRequest}
+                    />
+
+                    <div className="buttons">
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Close"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => modalFlip(false)}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Send"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            disabled={integrationRequest === ''}
+                            onClick={() => handleSendRequest()}
+                        />
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -44,6 +44,7 @@ export const ApiEndpoints = {
     USE_SCHEMA: '/stations/useSchema',
     GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
     REMOVE_SCHEMA_FROM_STATION: '/stations/removeSchemaFromStation',
+    TIERD_STORAGE_CLICKED: '/stations/tierdStorageClicked',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
@@ -79,5 +80,6 @@ export const ApiEndpoints = {
     UPDATE_INTEGRATIONL: '/integrations/updateIntegration',
     GET_INTEGRATION_DETAILS: '/integrations/getIntegrationDetails',
     GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
-    DELETE_INTEGRATION: '/integrations/deleteIntegration'
+    DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
+    REQUEST_INTEGRATION: '/integrations/requestIntegration'
 };

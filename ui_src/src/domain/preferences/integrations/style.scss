@@ -1,4 +1,9 @@
 .alerts-integrations-container {
+    .header-preferences{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
     .integration-list{
         height: calc(95vh - 150px);
         width: 100%;
@@ -8,8 +13,55 @@
         margin-right: 1vw;
         margin-top: 20px;
         gap: 20px;
-        padding: 3px;
+        padding: 10px;
         align-content: flex-start;
         flex-wrap: wrap;
+        .cloud-wrapper{
+            .dark-background{
+                position:absolute;
+                background: rgba(0,0,0,0.3);
+                width: 270px;
+                height: 300px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                img{
+                    position: absolute;
+                    left: -8px;
+                    top: 8px;
+                }
+                .cloud-icon{
+                    width: 90px;
+                    height: 90px;
+                    background: rgba(255, 255, 255, 0.3);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    svg{
+                        color: white;
+                        width: 45px;
+                        height: 45px;
+                    }
+                }
+            }
+            integ-item{
+                border: unset !important;
+            }
+        }
     }
+}
+.request-integration-modal{
+    .ant-modal-content{
+        border-radius: 16px;
+    }
+    .ant-modal-header{
+        border-bottom:unset !important;
+        border-radius: 16px;
+    }
+    .ant-modal-body{
+        padding-top: 0px;
+    }
+    
 }

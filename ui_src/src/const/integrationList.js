@@ -57,6 +57,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={figmaIcon} alt="figmaIcon" />,
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         date: 'Nov 19, 2022',
+        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={figmaIcon} alt="figmaIcon" />
@@ -87,6 +88,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={figmaIcon} alt="figmaIcon" />,
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         date: 'Nov 19, 2022',
+        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={figmaIcon} alt="figmaIcon" />
@@ -117,6 +119,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={figmaIcon} alt="figmaIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         date: 'Nov 19, 2022',
+        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={figmaIcon} alt="figmaIcon" />
@@ -147,6 +150,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={figmaIcon} alt="figmaIcon" />,
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         date: 'Nov 19, 2022',
+        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={figmaIcon} alt="figmaIcon" />
