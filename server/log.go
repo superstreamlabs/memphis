@@ -267,6 +267,11 @@ func publishLogToSubjectAndAnalytics(s *Server, label string, log []byte) {
 }
 
 func (s *Server) createMemphisLoggerFunc() srvlog.HybridLogPublishFunc {
+	s.memphis.serverID = configuration.SERVER_NAME
+	if s.memphis.serverID == _EMPTY_ {
+		s.memphis.serverID = "broker"
+	}
+
 	return func(label string, log []byte) {
 		publishLogToSubjectAndAnalytics(s, label, log)
 	}
@@ -289,7 +294,8 @@ func (s *Server) sendLogToSubject(label string, log []byte) {
 	if !ok {
 		return
 	}
-	subject := syslogsStreamName + "." + subjectSuffix
+
+	subject := fmt.Sprintf("%s.%s.%s", syslogsStreamName, s.getLogSource(), subjectSuffix)
 	s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
 }
 
@@ -307,9 +313,5 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 }
 
 func (s *Server) getLogSource() string {
-	source := s.memphis.serverID
-	if source == _EMPTY_ {
-		return "broker"
-	}
-	return source
+	return s.memphis.serverID
 }
