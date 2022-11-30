@@ -56,7 +56,7 @@ const FailedStations = () => {
                     </div>
                 ) : (
                     <div className="empty-stations-container">
-                        <img src={NoStations} alt="no stations" />
+                        <img src={NoStations} alt="no stations" onClick={() => modalFlip(true)} />
                         <div>
                             <p>No Stations Found</p>
                             <Button
