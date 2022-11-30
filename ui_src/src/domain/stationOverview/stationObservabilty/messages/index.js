@@ -379,21 +379,27 @@ const Messages = () => {
                     <DetailBox
                         img={leaderImg}
                         title={'Leader'}
-                        desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                        desc={
+                            'Each station stores a stream object with a single leader on the most available broker based on RAFT decision. In case of leader failure, the role will be transferred to one of the followers.'
+                        }
                         data={[stationState?.stationSocketData?.leader]}
                     />
                     {stationState?.stationSocketData?.followers?.length > 0 && (
                         <DetailBox
                             img={followersImg}
                             title={'Followers'}
-                            desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                            desc={
+                                'Followers are standby replicas for the stream leader and will take its role in case of leader failure. The number of followers and leader equals the number of defined stream replicas (Mirrors).'
+                            }
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}
-                        desc={'lorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsumelorem ipsume '}
+                        desc={
+                            'Idempotency mode ensures that messages always get delivered in the right order and without duplicates. Cause some performance degradation.'
+                        }
                         data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
                     />
                 </div>
