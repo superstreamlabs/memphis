@@ -57,20 +57,22 @@ const FailedStations = () => {
                 ) : (
                     <div className="empty-stations-container">
                         <img src={NoStations} alt="no stations" />
-                        <p>No Stations Found</p>
-                        <Button
-                            className="modal-btn"
-                            width="160px"
-                            height="34px"
-                            placeholder={'Create new station'}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => modalFlip(true)}
-                        />
+                        <div>
+                            <p>No Stations Found</p>
+                            <Button
+                                className="modal-btn"
+                                width="160px"
+                                height="34px"
+                                placeholder={'Create new station'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                aria-haspopup="true"
+                                onClick={() => modalFlip(true)}
+                            />
+                        </div>
                         <Modal
                             header={
                                 <div className="modal-header">
