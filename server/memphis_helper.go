@@ -184,18 +184,23 @@ func (s *Server) CreateSystemLogsStream() {
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
 
-	successCh := make(chan bool)
+	successCh := make(chan error)
 
 	for !ready { // wait for cluster to be ready if we are in cluster mode
-		timeout := time.NewTimer(30 * time.Second)
+		timeout := time.NewTimer(1 * time.Minute)
 		go tryCreateSystemLogsStream(s, retentionDur, successCh)
 		select {
 		case <-timeout.C:
-			s.Errorf("Failed to create syslogs stream within cluster readiness timeout")
-			<-successCh
-			continue
-		case ok := <-successCh:
-			if !ok {
+			s.Warnf("logs-stream creation takes more than a minute")
+			err := <-successCh
+			if err != nil {
+				s.Warnf("logs-stream creation failed: " + err.Error())
+				continue
+			}
+			ready = true
+		case err := <-successCh:
+			if err != nil {
+				s.Warnf("logs-stream creation failed: " + err.Error())
 				<-timeout.C
 				continue
 			}
@@ -211,7 +216,7 @@ func (s *Server) CreateSystemLogsStream() {
 	s.popFallbackLogs()
 }
 
-func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh chan bool) {
+func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh chan error) {
 	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
@@ -223,11 +228,10 @@ func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh 
 	})
 
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		s.Errorf("Failed to create syslogs stream: " + err.Error())
-		successCh <- false
+		successCh <- err
 		return
 	}
-	successCh <- true
+	successCh <- nil
 }
 
 func (s *Server) popFallbackLogs() {
