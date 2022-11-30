@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.1c56423a.css",
-    "main.js": "/static/js/main.0f91413f.js",
+    "main.css": "/static/css/main.f22378ad.css",
+    "main.js": "/static/js/main.83f80255.js",
     "static/js/27.6c7f6379.chunk.js": "/static/js/27.6c7f6379.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -76,6 +76,7 @@
     "static/media/clusterConfGray.svg": "/static/media/clusterConfGray.d6689ce49c492c73ab1f86759fbfbdf1.svg",
     "static/media/clusterConfColor.svg": "/static/media/clusterConfColor.a76b9a325a5af536e03d7b1e458a2565.svg",
     "static/media/createdByIcon.svg": "/static/media/createdByIcon.fed5e9f39160ffeb36aa209e79e20933.svg",
+    "static/media/idempotencyIcon.svg": "/static/media/idempotencyIcon.2118e5c7e2a9ff3521e7e283db57de46.svg",
     "static/media/stationActionIcon.svg": "/static/media/stationActionIcon.0ae19394481f1ea637743ca3c9d1f832.svg",
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/userCheck.svg": "/static/media/userCheck.877e388ce6d0f982a147a6bf3b4335b0.svg",
@@ -84,6 +85,7 @@
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
     "static/media/strIcon.svg": "/static/media/strIcon.cb9e929312f19af88af31d0e16a65580.svg",
     "static/media/retentionIcon.svg": "/static/media/retentionIcon.1bad53366a0bc248fa647412a9b3a732.svg",
+    "static/media/trashIcon.svg": "/static/media/trashIcon.c36ac8d9578d45722cb04ebfc86392c6.svg",
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
@@ -124,7 +126,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.1c56423a.css",
-    "static/js/main.0f91413f.js"
+    "static/css/main.f22378ad.css",
+    "static/js/main.83f80255.js"
   ]
 }

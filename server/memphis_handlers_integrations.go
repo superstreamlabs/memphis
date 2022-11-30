@@ -41,7 +41,8 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		return
 	}
 	var integration models.Integration
-	switch strings.ToLower(body.Name) {
+	integrationType := strings.ToLower(body.Name)
+	switch integrationType {
 	case "slack":
 		var authToken, channelID, uiUrl string
 		var pmAlert, svfAlert, disconnectAlert bool
@@ -92,6 +93,12 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	default:
 		serv.Warnf("CreateIntegration error: Unsupported integration type")
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-create-integration-"+integrationType)
 	}
 	c.IndentedJSON(200, integration)
 }
@@ -319,7 +326,9 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	if !ok {
 		return
 	}
-	filter := bson.M{"name": strings.ToLower(body.Name)}
+
+	integrationType := strings.ToLower(body.Name)
+	filter := bson.M{"name": integrationType}
 	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		serv.Errorf("DisconnectIntegration error: " + err.Error())
@@ -345,6 +354,13 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-disconnect-integration-"+integrationType)
+	}
+	c.IndentedJSON(200, gin.H{})
 }
 
 func InitializeIntegrations(c *mongo.Client) error {
