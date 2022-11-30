@@ -945,7 +945,6 @@ func (js *jetStream) monitorCluster() {
 				s.sendInternalMsgLocked(serverStatsPingReqSubj, _EMPTY_, nil, nil)
 			}
 			js.processLeaderChange(isLeader)
-			js.srv.memphisClusterReady()
 			if isLeader && !beenLeader {
 				beenLeader = true
 				if n.NeedSnapshot() {
