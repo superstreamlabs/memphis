@@ -292,7 +292,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	} else if err != nil {
-		serv.Errorf("GetStationById error: " + err.Error())
+		serv.Errorf("GetStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -303,6 +303,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		return
 	}
 	station.Tags = tags
+	if station.StorageType == "file" {
+		station.StorageType = "disk"
+	}
 
 	c.IndentedJSON(200, station)
 }
@@ -350,6 +353,9 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			tags, err := tagsHandler.GetTagsByStation(station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
+			}
+			if station.StorageType == "file" {
+				station.StorageType = "disk"
 			}
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
 		}
@@ -520,6 +526,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.StorageType = "file"
 	}
 
+	storageTypeForResponse := "disk"
+	if body.StorageType == "memory" {
+		storageTypeForResponse = body.StorageType
+	}
+
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
@@ -657,7 +668,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"name":                     stationName.Ext(),
 			"retention_type":           retentionType,
 			"retention_value":          body.RetentionValue,
-			"storage_type":             body.StorageType,
+			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
 			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
@@ -675,7 +686,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"name":                     stationName.Ext(),
 			"retention_type":           retentionType,
 			"retention_value":          body.RetentionValue,
-			"storage_type":             body.StorageType,
+			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
 			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
