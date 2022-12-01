@@ -71,16 +71,26 @@ const SlackIntegration = ({ close, value }) => {
         } else {
             setLoadingSubmit(true);
             if (isValue) {
-                updateIntegration();
+                if (values.auth_token === 'xoxb-****') {
+                    updateIntegration(false);
+                } else {
+                    updateIntegration();
+                }
             } else {
                 createIntegration();
             }
         }
     };
 
-    const updateIntegration = async () => {
+    const updateIntegration = async (withToken = true) => {
+        let newFormFields = { ...formFields };
+        if (!withToken) {
+            let updatedKeys = { ...formFields.keys };
+            updatedKeys['auth_token'] = '';
+            newFormFields = { ...newFormFields, keys: updatedKeys };
+        }
         try {
-            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATIONL, { ...formFields });
+            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATIONL, { ...newFormFields });
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
             setTimeout(() => {
                 setLoadingSubmit(false);

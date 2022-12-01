@@ -88,7 +88,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
 
     const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
-    const [useSchema, setUseSchema] = useState(true);
+    const [useSchema, setUseSchema] = useState(false);
     const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
     const [selectedOption, setSelectedOption] = useState(1);
     const [selectedTier2Option, setSelectedTier2Option] = useState(1);
@@ -261,9 +261,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <p className="description">
                                 For archiving and higher retention of ingested data. <br />
                                 Once a message passes tier 1 policy, it will automatically migrate to tier 2 storage.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
-                                    Learn More
-                                </a>
                             </p>
                         )}
 
@@ -398,14 +395,22 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     tabValue === tabs[0] ? (
                                         <span>
                                             Type of storage for short retention.&nbsp;
-                                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                            <a
+                                                className="learn-more"
+                                                href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
+                                                target="_blank"
+                                            >
                                                 Learn More
                                             </a>
                                         </span>
                                     ) : (
                                         <span>
                                             Type of storage for long retention.&nbsp;
-                                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                            <a
+                                                className="learn-more"
+                                                href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
+                                                target="_blank"
+                                            >
                                                 Learn More
                                             </a>
                                         </span>
@@ -572,24 +577,20 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 </div>
                 {!getStarted && (
                     <div className="schema-type">
-                        <Form.Item name="schemaValue">
-                            <div className="toggle-add-schema">
-                                <TitleComponent
-                                    headerTitle="Attach schema"
-                                    typeTitle="sub-header"
-                                    headerDescription="Enforcing schema will increase produced data quality"
-                                />
-                                <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} disabled={schemas.length === 0} />
-                            </div>
-                            {!getStarted && schemas.length > 0 && useSchema && (
+                        <div className="toggle-add-schema">
+                            <TitleComponent headerTitle="Attach schema" typeTitle="sub-header" headerDescription="Enforcing schema will increase produced data quality" />
+                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
+                        </div>
+                        {!getStarted && useSchema && (
+                            <Form.Item name="schemaValue" initialValue={schemas.length > 0 ? schemas[0].name : null}>
                                 <SelectSchema
                                     placeholder={creationForm.schemaValue || 'Select schema'}
-                                    value={creationForm.schemaValue}
+                                    value={creationForm.schemaValue || schemas[0]}
                                     options={schemas}
                                     onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
                                 />
-                            )}
-                        </Form.Item>
+                            </Form.Item>
+                        )}
                     </div>
                 )}
             </div>
