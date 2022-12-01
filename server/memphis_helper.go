@@ -175,31 +175,8 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 		})
 }
 
-func (s *Server) memphisClusterReady() {
-	if !s.memphis.mcrReported {
-		s.memphis.mcrReported = true
-		close(s.memphis.mcr)
-	}
-}
-
 func (s *Server) CreateSystemLogsStream() {
 	ready := !s.JetStreamIsClustered()
-
-	for !ready { // wait for cluster to be ready if we are in cluster mode
-		timeout := time.NewTimer(2 * time.Minute)
-		select {
-		case <-timeout.C:
-			s.Errorf("Failed to create syslogs stream within cluster readiness timeout")
-		case <-s.memphis.mcr:
-			timeout.Stop()
-			ready = true
-		}
-
-		if ready && !s.JetStreamIsLeader() {
-			return
-		}
-	}
-
 	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 	if err != nil {
 		s.Errorf("Failed to create syslogs stream: " + err.Error())
@@ -207,7 +184,40 @@ func (s *Server) CreateSystemLogsStream() {
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
 
-	err = s.memphisAddStream(&StreamConfig{
+	successCh := make(chan error)
+
+	for !ready { // wait for cluster to be ready if we are in cluster mode
+		timeout := time.NewTimer(1 * time.Minute)
+		go tryCreateSystemLogsStream(s, retentionDur, successCh)
+		select {
+		case <-timeout.C:
+			s.Warnf("logs-stream creation takes more than a minute")
+			err := <-successCh
+			if err != nil {
+				s.Warnf("logs-stream creation failed: " + err.Error())
+				continue
+			}
+			ready = true
+		case err := <-successCh:
+			if err != nil {
+				s.Warnf("logs-stream creation failed: " + err.Error())
+				<-timeout.C
+				continue
+			}
+			timeout.Stop()
+			ready = true
+		}
+	}
+
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: publish activation func is not initialised")
+	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
+}
+
+func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh chan error) {
+	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
@@ -218,15 +228,10 @@ func (s *Server) CreateSystemLogsStream() {
 	})
 
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		s.Fatalf("Failed to create syslogs stream: " + err.Error())
+		successCh <- err
+		return
 	}
-
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: publish activation func is not initialised")
-	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
-	return
+	successCh <- nil
 }
 
 func (s *Server) popFallbackLogs() {

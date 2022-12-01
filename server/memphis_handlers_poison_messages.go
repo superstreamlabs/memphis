@@ -40,7 +40,7 @@ func (s *Server) ListenForPoisonMessages() {
 
 func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, _, _ string, msg []byte) {
-		go s.HandleNewMessage(msg)
+		go s.HandleNewMessage(copyBytes(msg))
 	}
 }
 

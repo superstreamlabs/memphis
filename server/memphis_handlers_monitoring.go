@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -367,7 +368,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
-		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
+		filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
 	}
 	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
@@ -519,14 +520,26 @@ cleanup:
 			return models.SystemLogsResponse{}, err
 		}
 
-		logType := msg.Subject[len(syslogsStreamName)+1:]
+		splittedSubj := strings.Split(msg.Subject, tsep)
+		var (
+			logSource string
+			logType   string
+		)
+
+		if len(splittedSubj) == 2 {
+			// old version's logs
+			logSource = "broker"
+			logType = splittedSubj[1]
+		} else {
+			logSource, logType = splittedSubj[1], splittedSubj[2]
+		}
 
 		data := string(msg.Data)
 		resMsgs = append(resMsgs, models.Log{
 			MessageSeq: int(msg.Sequence),
 			Type:       logType,
 			Data:       data,
-			Source:     s.getLogSource(),
+			Source:     logSource,
 			TimeSent:   msg.Time,
 		})
 	}
