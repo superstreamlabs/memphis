@@ -217,15 +217,23 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	if authToken != "" {
-		err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
+	if authToken == "" {
+		var integrationFromDb models.Integration
+		filter := bson.M{"name": "slack"}
+		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
 		if err != nil {
 			return slackIntegration, err
 		}
+		authToken = integrationFromDb.Keys["auth_token"]
+	}
+
+	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
+	if err != nil {
+		return slackIntegration, err
 	}
 	keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
 	filter := bson.M{"name": "slack"}
-	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
+	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
 		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
@@ -240,11 +248,11 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		return slackIntegration, err
 	}
 
-	var integrationToUpdate models.Integration
-	filter = bson.M{"name": "slack"}
-	err = integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationToUpdate)
-	if err != nil {
-		return slackIntegration, err
+	integrationToUpdate := models.CreateIntegrationSchema{
+		Name:       "slack",
+		Keys:       keys,
+		Properties: properties,
+		UIUrl:      uiUrl,
 	}
 
 	msg, err := json.Marshal(integrationToUpdate)
@@ -285,9 +293,7 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 
 func createSlackKeysAndProperties(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (map[string]string, map[string]bool) {
 	keys := make(map[string]string)
-	if authToken != "" {
-		keys["auth_token"] = authToken
-	}
+	keys["auth_token"] = authToken
 	keys["channel_id"] = channelID
 	properties := make(map[string]bool)
 	properties[notifications.PoisonMAlert] = pmAlert
