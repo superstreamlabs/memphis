@@ -245,7 +245,7 @@ function OverView() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="650px"
+                height="74vh"
                 width="1020px"
                 rBtnText="Add"
                 lBtnText="Cancel"

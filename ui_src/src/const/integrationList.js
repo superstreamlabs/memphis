@@ -11,25 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
-import r from '../assets/images/R.svg';
-import figmaIcon from '../assets/images/figmaIcon.svg';
-import insideBanner from '../assets/images/insideBanner.svg';
+import slackBannerPopup from '../assets/images/slackBannerPopup.svg';
+import pagerdutyBanner from '../assets/images/pagerdutyBanner.svg';
+import influxDBBanner from '../assets/images/influxDBBanner.svg';
+import newrelicBanner from '../assets/images/newrelicBanner.svg';
+import datadogBanner from '../assets/images/datadogBanner.svg';
+import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
+import newrelicIcon from '../assets/images/newrelicIcon.svg';
+import influxDBIcon from '../assets/images/influxDBIcon.svg';
+import slackBanner from '../assets/images/slackBanner.svg';
+import datadogIcon from '../assets/images/datadogIcon.svg';
+import slackIogo from '../assets/images/slackIogo.svg';
+
 import { FiberManualRecord } from '@material-ui/icons';
 import { diffDate } from '../services/valueConvertor';
-import Button from '../components/button';
 
 export const INTEGRATION_LIST = [
     {
         name: 'Slack',
         by: 'memphis',
-        banner: <img className="banner" src={r} alt="banner" />,
-        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
-        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
+        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
+        icon: <img src={slackIogo} alt="slackIogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         date: 'Nov 19, 2022',
         header: (
             <div className="header-left-side">
-                <img src={figmaIcon} alt="figmaIcon" />
+                <img src={slackIogo} alt="slackIogo" />
                 <div className="details">
                     <p>Slack</p>
                     <>
@@ -52,15 +60,15 @@ export const INTEGRATION_LIST = [
     {
         name: 'PagerDuty',
         by: 'memphis',
-        banner: <img className="banner" src={r} alt="banner" />,
-        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
-        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
+        insideBanner: <img className="insideBanner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
+        icon: <img src={pagerDutyIcon} alt="pagerDutyIcon" />,
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         date: 'Nov 19, 2022',
         comingSoon: true,
         header: (
             <div className="header-left-side">
-                <img src={figmaIcon} alt="figmaIcon" />
+                <img src={pagerDutyIcon} alt="pagerDutyIcon" />
                 <div className="details">
                     <p>PagerDuty</p>
                     <>
@@ -83,15 +91,15 @@ export const INTEGRATION_LIST = [
     {
         name: 'New Relic',
         by: 'memphis',
-        banner: <img className="banner" src={r} alt="banner" />,
-        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
-        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        banner: <img className="banner" src={newrelicBanner} alt="newrelicBanner" />,
+        insideBanner: <img className="insideBanner" src={newrelicBanner} alt="newrelicBanner" />,
+        icon: <img src={newrelicIcon} alt="newrelicIcon" />,
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         date: 'Nov 19, 2022',
         comingSoon: true,
         header: (
             <div className="header-left-side">
-                <img src={figmaIcon} alt="figmaIcon" />
+                <img src={newrelicIcon} alt="newrelicIcon" />
                 <div className="details">
                     <p>New Relic</p>
                     <>
@@ -114,15 +122,15 @@ export const INTEGRATION_LIST = [
     {
         name: 'Datadog',
         by: 'memphis',
-        banner: <img className="banner" src={r} alt="banner" />,
-        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
-        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
+        insideBanner: <img className="insideBanner" src={datadogBanner} alt="datadogBanner" />,
+        icon: <img src={datadogIcon} alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         date: 'Nov 19, 2022',
         comingSoon: true,
         header: (
             <div className="header-left-side">
-                <img src={figmaIcon} alt="figmaIcon" />
+                <img src={datadogIcon} alt="datadogIcon" />
                 <div className="details">
                     <p>Datadog</p>
                     <>
@@ -145,15 +153,15 @@ export const INTEGRATION_LIST = [
     {
         name: 'influxDB',
         by: 'memphis',
-        banner: <img className="banner" src={r} alt="banner" />,
-        insideBanner: <img className="insideBanner" src={insideBanner} alt="insideBanner" />,
-        icon: <img src={figmaIcon} alt="figmaIcon" />,
+        banner: <img className="banner" src={influxDBBanner} alt="influxDBBanner" />,
+        insideBanner: <img className="insideBanner" src={influxDBBanner} alt="influxDBBanner" />,
+        icon: <img src={influxDBIcon} alt="influxDBIcon" />,
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         date: 'Nov 19, 2022',
         comingSoon: true,
         header: (
             <div className="header-left-side">
-                <img src={figmaIcon} alt="figmaIcon" />
+                <img src={influxDBIcon} alt="influxDBIcon" />
                 <div className="details">
                     <p>influxDB</p>
                     <>

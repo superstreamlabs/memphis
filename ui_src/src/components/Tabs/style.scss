@@ -3,8 +3,8 @@
         color: var(--purple) !important;
     }
     .ant-tabs-ink-bar{
-        background: var(--purple);
-        border-radius: 10px;
+        background: transparent !important;
+        border: 1px solid  var(--purple);;
         border-radius: 2px 2px 0px 0px;
     }
     .ant-tabs-tab .tabs-name {

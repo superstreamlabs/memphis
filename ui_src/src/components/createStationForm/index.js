@@ -76,6 +76,7 @@ const storageTierTwoOptions = [
 ];
 
 const tabs = ['Storage tier 1 (Hot)', 'Storage tier 2 (Cold)'];
+const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
 const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
     const history = useHistory();
@@ -83,13 +84,15 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [allowEdit, setAllowEdit] = useState(true);
     const [actualPods, setActualPods] = useState([]);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
+    const [idempotencyType, setIdempotencyType] = useState(retanionOptions[2]);
+
     const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
     const [useSchema, setUseSchema] = useState(true);
     const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
     const [selectedOption, setSelectedOption] = useState(1);
     const [selectedTier2Option, setSelectedTier2Option] = useState(1);
-
+    const [parserName, setParserName] = useState('');
     useEffect(() => {
         getOverviewData();
         getAllSchemas();
@@ -109,16 +112,31 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
     };
 
+    const getIdempotencyValue = (formFields) => {
+        switch (formFields.idempotency_type) {
+            case 'Milliseconds':
+                return Number(formFields.idempotency_number);
+            case 'Seconds':
+                return formFields.idempotency_number * 1000;
+            case 'Minutes':
+                return formFields.idempotency_number * 60000;
+            case 'Hours':
+                return formFields.idempotency_number * 3600000;
+        }
+    };
+
     const onFinish = async () => {
         const formFields = await creationForm.validateFields();
         const retentionValue = getRetentionValue(formFields);
+        const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
             name: formFields.name.replace(' ', '-'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
             replicas: formFields.replicas,
-            schema_name: formFields.schemaValue
+            schema_name: formFields.schemaValue,
+            idempotency_window_in_ms: idempotencyValue
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
@@ -164,14 +182,15 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         } catch (error) {}
     };
 
+    const stationNameChange = (e) => {
+        getStarted && updateFormState('name', e.target.value);
+        let name = e.target.value.replace(' ', '-');
+        setParserName(name.toLowerCase());
+    };
+
     return (
-        <Form
-            name="form"
-            form={creationForm}
-            autoComplete="off"
-            className={getStarted ? 'create-station-form-getstarted' : 'create-station-form-getstarted create-statio-flex-modal'}
-        >
-            <div className={getStarted ? null : 'left-side'}>
+        <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
+            <div className={'left-side'}>
                 <div className="station-name-section">
                     <TitleComponent
                         headerTitle="Enter station name"
@@ -198,17 +217,17 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             backgroundColorType="none"
                             borderColorType="gray"
                             height="40px"
-                            onBlur={(e) => getStarted && updateFormState('name', e.target.value)}
-                            onChange={(e) => getStarted && updateFormState('name', e.target.value)}
+                            onBlur={(e) => stationNameChange(e)}
+                            onChange={(e) => stationNameChange(e)}
                             value={getStartedStateRef?.formFieldsCreateStation?.name}
                             disabled={!allowEdit}
                         />
-                        {/* <div className="name-and-hint">
-                        <ErrorRounded />
-                        <p>Input character allowed -,.,_</p>
-                        <p>{creationForm.getFieldValue('name')}</p>
-                    </div> */}
                     </Form.Item>
+                    {/* {parserName !== '' && (
+                        <div className="name-and-hint">
+                            <p>station name: {parserName}</p>
+                        </div>
+                    )} */}
                 </div>
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />
                 <div className="retention-storage-box">
@@ -226,8 +245,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         )}
                         {tabValue === tabs[1] && (
                             <p className="description">
-                                For archiving and higher retention of ingested data. Once a message passes tier 1 policy, it will automatically migrate to tier 2
-                                storage.&nbsp;
+                                For archiving and higher retention of ingested data. <br />
+                                Once a message passes tier 1 policy, it will automatically migrate to tier 2 storage.&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
                                     Learn More
                                 </a>
@@ -386,7 +405,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                               <div
                                                   key={value.id}
                                                   className={selectedOption === value.id ? 'option-wrapper selected' : 'option-wrapper'}
-                                                  onClick={() => setSelectedOption(value.id)}
+                                                  onClick={() => allowEdit && setSelectedOption(value.id)}
                                               >
                                                   {selectedOption === value.id && <CheckCircleIcon className="check-icon" />}
                                                   {selectedOption !== value.id && <div className="uncheck-icon" />}
@@ -427,7 +446,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                               </div>
                                           );
                                       })}
-                                {comingSoon && (
+                                {tabValue === tabs[1] && comingSoon && (
                                     <div className="comings-soon-message">
                                         <img src={comingSoonImg} />
                                         <div className="content">
@@ -458,11 +477,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </div>
                 </div>
             </div>
-            <div className={getStarted ? null : 'right-side'}>
+            <div className={'right-side'}>
                 <div className="replicas-container">
                     <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
                     <div>
-                        <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}>
+                        <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1} style={{ height: '50px' }}>
                             <SelectComponent
                                 colorType="black"
                                 backgroundColorType="none"
@@ -478,7 +497,77 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </Form.Item>
                     </div>
                 </div>
-
+                <div className="idempotency-type">
+                    <Form.Item name="idempotency">
+                        <div className="toggle-add-schema">
+                            <TitleComponent
+                                headerTitle="Idempotency"
+                                typeTitle="sub-header"
+                                headerDescription={
+                                    <span>
+                                        Ensures producers will not produce the same message.&nbsp;
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                            Learn More
+                                        </a>
+                                    </span>
+                                }
+                            />
+                        </div>
+                        <div className="idempotency-value">
+                            <Form.Item
+                                name="idempotency_number"
+                                initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_number || 2}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please add value'
+                                    },
+                                    {
+                                        validator: (_, value) => {
+                                            if (idempotencyType === idempotencyOptions[0] && value < 100) {
+                                                return Promise.reject('Has to be greater than 100ms');
+                                            } else {
+                                                return Promise.resolve();
+                                            }
+                                        }
+                                    }
+                                ]}
+                                style={{ height: '10px' }}
+                            >
+                                <Input
+                                    placeholder="Type"
+                                    type="number"
+                                    radiusType="semi-round"
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    height="40px"
+                                    onBlur={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
+                                    onChange={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.idempotency_number}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                            <Form.Item name="idempotency_type" initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_type || idempotencyOptions[2]}>
+                                <SelectComponent
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    radiusType="semi-round"
+                                    height="40px"
+                                    options={idempotencyOptions}
+                                    popupClassName="select-options"
+                                    value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.idempotency_type : idempotencyOptions[2]}
+                                    onChange={(e) => {
+                                        setIdempotencyType(e);
+                                        if (getStarted) updateFormState('idempotency_type', e);
+                                    }}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                        </div>
+                    </Form.Item>
+                </div>
                 {!getStarted && (
                     <div className="schema-type">
                         <Form.Item name="schemaValue">

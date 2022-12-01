@@ -1,13 +1,29 @@
 .create-station-form-getstarted {
     height: 100%;
-    display: flex;
-    flex-direction: column;
     justify-content: space-between;
-    max-height: 500px;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    .left-side{
+        border-right: 1px solid #E0E0E0;
+        padding-right:15px;
+        overflow: auto;
+        height: 100%;
+    }
+    .right-side{
+        padding-left:15px
+
+    }
     .station-name-section {
         justify-content: space-between;
         display: flex;
         flex-direction: column;
+        position: relative;
+        .name-and-hint{
+            position: absolute;
+            bottom: 0;
+            color: #475467;
+            font-size: 12px;
+        }
     }
     .retention-storage-box{
         border: 1px solid #EAECF0;
@@ -138,6 +154,7 @@
     }
 
     .ant-form-item {
+        margin-bottom: 20px;
         .ant-form-item-control {
             .ant-form-item-control-input {
                 .ant-form-item-control-input-content {
@@ -217,9 +234,6 @@
     .ant-input-number-handler-wrap {
         opacity: 1;
     }
-    .ant-form-item {
-        margin-bottom: 10px;
-    }
 
     .retention-type {
         display: flex;
@@ -233,6 +247,7 @@
     }
     .toggle-add-schema {
         display: flex;
+        justify-content: space-between;
         .switch-button {
             margin-left: 10px;
         }
@@ -240,20 +255,17 @@
             min-width: 35px;
         }
     }
+    .idempotency-type{
+        .idempotency-value{
+            display: grid;
+            grid-template-columns: 47% 47%;
+            justify-content: space-between;
+        }
+    }
     .learn-more {
         color: #6557ff;
     }
-}
-
-.create-statio-flex-modal{
-    display: grid;
-    grid-template-columns: 50% 50%;
-    .left-side{
-        border-right: 1px solid #E0E0E0;
-        padding-right:15px
-    }
-    .right-side{
-        padding-left:15px
-
+    a:hover{
+        text-decoration: underline;
     }
 }

@@ -154,7 +154,7 @@ function Profile() {
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType="red"
-                    border="red"
+                    border="none"
                     boxShadowsType="red"
                     fontSize="14px"
                     fontWeight="600"
