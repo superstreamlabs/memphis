@@ -14,17 +14,13 @@
 
 import './style.scss';
 
-import React, { useContext, useRef, useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { useHistory } from 'react-router-dom';
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 
 import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
-import Modal from '../../../components/modal';
 import Button from '../../../components/button';
-import CreateStationForm from '../../../components/createStationForm';
-import stationImg from '../../../assets/images/stationsIconActive.svg';
-import staionLink from '../../../assets/images/staionLink.svg';
 import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
@@ -32,9 +28,6 @@ import pathDomains from '../../../router';
 const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
-    const createStationRef = useRef(null);
-    const [open, modalFlip] = useState(false);
-    const [creatingProsessd, setCreatingProsessd] = useState(false);
 
     const goToStation = (stationName) => {
         history.push(`${pathDomains.stations}/${stationName}`);
