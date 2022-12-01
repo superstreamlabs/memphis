@@ -147,14 +147,16 @@ const Filter = ({ filterComponent, height }) => {
 
     const drawStationsFilter = (rawFilterDetails) => {
         let filteredFields = [];
-        const tagFilter = {
-            name: 'tags',
-            value: 'Tags',
-            labelType: labelType.BADGE,
-            filterType: filterType.CHECKBOX,
-            fields: rawFilterDetails.tags
-        };
-        filteredFields.push(tagFilter);
+        if (rawFilterDetails?.tags?.length > 0) {
+            const tagFilter = {
+                name: 'tags',
+                value: 'Tags',
+                labelType: labelType.BADGE,
+                filterType: filterType.CHECKBOX,
+                fields: rawFilterDetails.tags
+            };
+            filteredFields.push(tagFilter);
+        }
 
         const createdFilter = {
             name: 'created',
@@ -186,14 +188,16 @@ const Filter = ({ filterComponent, height }) => {
 
     const drawSchemaFilter = (rawFilterDetails) => {
         let filteredFields = [];
-        const tagFilter = {
-            name: 'tags',
-            value: 'Tags',
-            labelType: labelType.BADGE,
-            filterType: filterType.CHECKBOX,
-            fields: rawFilterDetails.tags
-        };
-        filteredFields.push(tagFilter);
+        if (rawFilterDetails?.tags?.length > 0) {
+            const tagFilter = {
+                name: 'tags',
+                value: 'Tags',
+                labelType: labelType.BADGE,
+                filterType: filterType.CHECKBOX,
+                fields: rawFilterDetails.tags
+            };
+            filteredFields.push(tagFilter);
+        }
 
         const createdFilter = {
             name: 'created',
