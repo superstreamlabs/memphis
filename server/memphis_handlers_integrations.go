@@ -90,6 +90,9 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			}
 		}
 		integration = slackIntegration
+		if integration.Keys["auth_token"] != "" {
+			integration.Keys["auth_token"] = "xoxb-****"
+		}
 	default:
 		serv.Warnf("CreateIntegration error: Unsupported integration type")
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
@@ -157,6 +160,9 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			}
 		}
 		integration = slackIntegration
+		if integration.Keys["auth_token"] != "" {
+			integration.Keys["auth_token"] = "xoxb-****"
+		}
 	default:
 		serv.Warnf("CreateIntegration error: Unsupported integration type")
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
@@ -299,11 +305,15 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	if integration.Name == "slack" && integration.Keys["auth_token"] != "" {
+		integration.Keys["auth_token"] = "xoxb-****"
+	}
 	c.IndentedJSON(200, integration)
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	var integrations []models.Integration
+	var integrations []models.GetAllIntegrationsResoinse
 	cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
 	if err == mongo.ErrNoDocuments {
 	} else if err != nil {

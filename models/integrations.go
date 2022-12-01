@@ -25,6 +25,10 @@ type Integration struct {
 	Properties map[string]bool    `json:"properties" bson:"properties"`
 }
 
+type GetAllIntegrationsResoinse struct {
+	Name string `json:"name" bson:"name"`
+}
+
 type SlackIntegration struct {
 	Name       string            `json:"name"`
 	Keys       map[string]string `json:"keys"`
