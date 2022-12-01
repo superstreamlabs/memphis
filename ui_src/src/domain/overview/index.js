@@ -222,7 +222,7 @@ function OverView() {
                     <div className="overview-components">
                         <div className="left-side">
                             <GenericDetails />
-                            <FailedStations />
+                            <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>
                         <div className="right-side">
