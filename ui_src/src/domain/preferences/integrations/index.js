@@ -68,7 +68,7 @@ const Integrations = () => {
             <div className="header-preferences">
                 <div className="left">
                     <p className="main-header">Integrations</p>
-                    <p className="sub-header">We will keep an eye on your data streams and alert you if anything went wron</p>
+                    <p className="sub-header">Integrations for notifications, monitoring, API calls, and more</p>
                 </div>
                 <Button
                     width="140px"
