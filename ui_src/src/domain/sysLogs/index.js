@@ -48,21 +48,19 @@ const SysLogs = () => {
         <div className="logs-container">
             <div className="header-wraper">
                 <h1 className="main-header-h1">System Logs </h1>
-                <div className="filter-section">
-                    <Button
-                        className="modal-btn"
-                        width="160px"
-                        height="36px"
-                        placeholder="Download logs"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="14px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        onClick={downloadLogs}
-                    />
-                </div>
+                <Button
+                    className="modal-btn"
+                    width="160px"
+                    height="36px"
+                    placeholder="Download logs"
+                    colorType="white"
+                    radiusType="circle"
+                    backgroundColorType="purple"
+                    fontSize="14px"
+                    fontWeight="600"
+                    aria-haspopup="true"
+                    onClick={downloadLogs}
+                />
             </div>
 
             <LogsWrapper />
