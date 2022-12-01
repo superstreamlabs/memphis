@@ -29,7 +29,7 @@ import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 
-const FailedStations = () => {
+const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const createStationRef = useRef(null);
@@ -56,7 +56,7 @@ const FailedStations = () => {
                     </div>
                 ) : (
                     <div className="empty-stations-container">
-                        <img src={NoStations} alt="no stations" onClick={() => modalFlip(true)} />
+                        <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
                         <div>
                             <p>No Stations Found</p>
                             <Button
@@ -70,35 +70,9 @@ const FailedStations = () => {
                                 fontSize="12px"
                                 fontWeight="600"
                                 aria-haspopup="true"
-                                onClick={() => modalFlip(true)}
+                                onClick={() => createStationTrigger(true)}
                             />
                         </div>
-                        <Modal
-                            header={
-                                <div className="modal-header">
-                                    <div className="header-img-container">
-                                        <img className="headerImage" src={stationImg} alt="stationImg" />
-                                    </div>
-                                    <p>Create new station</p>
-                                    <label>A station is a distributed unit that stores the produced data.</label>
-                                </div>
-                            }
-                            height="540px"
-                            width="560px"
-                            rBtnText="Add"
-                            lBtnText="Cancel"
-                            lBtnClick={() => {
-                                modalFlip(false);
-                            }}
-                            rBtnClick={() => {
-                                createStationRef.current();
-                            }}
-                            clickOutside={() => modalFlip(false)}
-                            open={open}
-                            isLoading={creatingProsessd}
-                        >
-                            <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
-                        </Modal>{' '}
                     </div>
                 )}
                 <div className="rows-wrapper">
