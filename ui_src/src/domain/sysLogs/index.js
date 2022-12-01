@@ -49,7 +49,6 @@ const SysLogs = () => {
             <div className="header-wraper">
                 <h1 className="main-header-h1">System Logs </h1>
                 <div className="filter-section">
-                    <Filter filterComponent="syslogs" height="34px" />
                     <Button
                         className="modal-btn"
                         width="160px"

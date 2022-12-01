@@ -26,7 +26,8 @@ import { httpRequest } from '../../../../services/http';
 import { Context } from '../../../../hooks/store';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { StringCodec, JSONCodec } from 'nats.ws';
+import { StringCodec, JSONCodec, DebugEvents } from 'nats.ws';
+let sub;
 
 const LogsWrapper = () => {
     const [state, dispatch] = useContext(Context);
@@ -36,18 +37,21 @@ const LogsWrapper = () => {
         startIndex: 0,
         endIndex: 0
     });
+    const [logType, setLogType] = useState('');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
+    const [changeSelected, setChangeSelected] = useState(true);
     const [lastMgsSeq, setLastMgsSeq] = useState(-1);
 
     const stateRef = useRef([]);
-    stateRef.current = [seqNum, visibleRange, socketOn, lastMgsSeq];
+
+    stateRef.current = [seqNum, visibleRange, socketOn, lastMgsSeq, changeSelected];
 
     const getLogs = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${state?.logsFilter}&start_index=${stateRef.current[0]}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${logType || 'all'}&start_index=${stateRef.current[0]}`);
             if (data.logs) {
                 if (stateRef.current[0] === -1) {
                     setLastMgsSeq(data.logs[0].message_seq);
@@ -64,13 +68,6 @@ const LogsWrapper = () => {
             }
         } catch (error) {}
     };
-
-    useEffect(() => {
-        debugger;
-        stopListen();
-        setLogs([]);
-        startListen();
-    }, [state?.logsFilter]);
 
     const loadMore = useCallback(() => {
         return setTimeout(() => {
@@ -95,41 +92,61 @@ const LogsWrapper = () => {
     }, [stateRef.current[1]]);
 
     const startListen = () => {
+        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
+        const jc = JSONCodec();
         const sc = StringCodec();
+        (async () => {
+            for await (const msg of sub) {
+                let data = jc.decode(msg.data);
+                let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
+                const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
+                if (stateRef.current[4]) {
+                    setSelectedRow(data.logs[0].message_seq);
+                }
+                setLastMgsSeq(data.logs[0].message_seq);
+                setLogs((users) => [...uniqueItems, ...users]);
+            }
+        })();
         setTimeout(() => {
-            if (state?.logsFilter === '') {
+            if (logType === '') {
                 state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
             } else {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data.${state?.logsFilter}`, sc.encode('SUB'));
+                state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'));
             }
         }, 2000);
     };
 
     const stopListen = () => {
         const sc = StringCodec();
-        if (state?.logsFilter === '') {
+        if (logType === '') {
             state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('UNSUB'));
         } else {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${state?.logsFilte}`, sc.encode('UNSUB'));
+            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('UNSUB'));
         }
+        sub.unsubscribe();
     };
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
-        const jc = JSONCodec();
-        const sc = StringCodec();
+        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
         setSocketOn(true);
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
-                const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-                setLastMgsSeq(data.logs[0].message_seq);
-                setLogs((users) => [...uniqueItems, ...users]);
-            }
-        })();
 
-        startListen();
+        // const jc = JSONCodec();
+        // const sc = StringCodec();
+        // setSocketOn(true);
+        // (async () => {
+        //     for await (const msg of sub) {
+        //         let data = jc.decode(msg.data);
+        //         let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
+        //         const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
+        //         setLastMgsSeq(data.logs[0].message_seq);
+        //         if (stateRef.current[1].startIndex === 0) {
+        //             setSelectedRow(data.logs[0].message_seq);
+        //         }
+        //         setLogs((users) => [...uniqueItems, ...users]);
+        //     }
+        // })();
+
+        // startListen();
 
         return () => {
             stopListen();
@@ -138,6 +155,9 @@ const LogsWrapper = () => {
     }, [state.socket]);
 
     const selsectLog = (key) => {
+        if (key === lastMgsSeq) {
+            setChangeSelected(true);
+        } else setChangeSelected(false);
         setSelectedRow(key);
         setDisplayedLog(logs.find((log) => log.message_seq === key));
     };
@@ -147,19 +167,6 @@ const LogsWrapper = () => {
             <logs is="3xd">
                 <list-header is="3xd">
                     <p className="header-title">Latest logs</p>
-                    {/* {logs?.length > 0 && (
-                        <SearchInput
-                            placeholder="Search log..."
-                            placeholderColor="red"
-                            width="calc(100% - 30px)"
-                            height="37px"
-                            borderRadiusType="semi-round"
-                            backgroundColorType="gray-dark"
-                            iconComponent={<img src={searchIcon} />}
-                            // onChange={handleSearch}
-                            // value={searchInput}
-                        />
-                    )} */}
                 </list-header>
                 <Virtuoso
                     data={logs}
