@@ -31,7 +31,8 @@ const { Panel } = Collapse;
 
 const CustomCollapse = ({ cancel, apply, clear }) => {
     const [filterState, filterDispatch] = useContext(FilterStoreContext);
-    const [activeKey, setActiveKey] = useState(['0']);
+    const [activeKey, setActiveKey] = useState(['0', '1', '2']);
+
     useEffect(() => {
         if (activeKey.length > 3) {
             const shortActiveKey = activeKey.splice(0, activeKey.length - 3);
@@ -118,6 +119,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         options={filterGroup.fields.map((item, id) => {
                             return { id: id, value: id, label: item.name };
                         })}
+                        radioStyle="radiobtn-capitalize"
                         radioValue={filterGroup.radioValue}
                         onChange={(e) => updateChoice(filterGroupIndex, e.target.value)}
                     />
@@ -191,7 +193,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
     };
 
     return (
-        <Collapse ghost defaultActiveKey={['0']} onChange={onChange} className="custom-collapse-filter">
+        <Collapse ghost defaultActiveKey={['0', '1', '2']} onChange={onChange} className="custom-collapse-filter">
             <div className="collapse-header">
                 <div className="header-name-counter">
                     <label>Filter</label>
