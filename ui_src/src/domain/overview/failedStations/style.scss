@@ -133,10 +133,9 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: space-evenly;
-        margin-bottom: 10px;
+        justify-content: center;
         img {
-            height: 80px;
+            width: 105px;
             cursor: pointer;
         }
         p {

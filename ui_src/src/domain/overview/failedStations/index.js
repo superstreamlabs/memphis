@@ -50,22 +50,20 @@ const FailedStations = ({ createStationTrigger }) => {
                 ) : (
                     <div className="empty-stations-container">
                         <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
-                        <div>
-                            <p>No Stations Found</p>
-                            <Button
-                                className="modal-btn"
-                                width="160px"
-                                height="34px"
-                                placeholder={'Create new station'}
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                aria-haspopup="true"
-                                onClick={() => createStationTrigger(true)}
-                            />
-                        </div>
+                        <p>No Station Exsits</p>
+                        <Button
+                            className="modal-btn"
+                            width="160px"
+                            height="34px"
+                            placeholder={'Create new station'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => createStationTrigger(true)}
+                        />
                     </div>
                 )}
                 <div className="rows-wrapper">
