@@ -217,13 +217,15 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
-	if err != nil {
-		return slackIntegration, err
+	if authToken != "" {
+		err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
+		if err != nil {
+			return slackIntegration, err
+		}
 	}
 	keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
 	filter := bson.M{"name": "slack"}
-	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
+	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
 		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
@@ -237,12 +239,14 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	} else if err != nil {
 		return slackIntegration, err
 	}
-	integrationToUpdate := models.CreateIntegrationSchema{
-		Name:       "slack",
-		Keys:       keys,
-		Properties: properties,
-		UIUrl:      uiUrl,
+
+	var integrationToUpdate models.Integration
+	filter = bson.M{"name": "slack"}
+	err = integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationToUpdate)
+	if err != nil {
+		return slackIntegration, err
 	}
+
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
 		return slackIntegration, err
@@ -251,6 +255,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	if err != nil {
 		return slackIntegration, err
 	}
+
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
 	return slackIntegration, nil
@@ -280,7 +285,9 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 
 func createSlackKeysAndProperties(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (map[string]string, map[string]bool) {
 	keys := make(map[string]string)
-	keys["auth_token"] = authToken
+	if authToken != "" {
+		keys["auth_token"] = authToken
+	}
 	keys["channel_id"] = channelID
 	properties := make(map[string]bool)
 	properties[notifications.PoisonMAlert] = pmAlert
@@ -313,7 +320,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	var integrations []models.GetAllIntegrationsResoinse
+	var integrations []models.Integration
 	cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
 	if err == mongo.ErrNoDocuments {
 	} else if err != nil {
@@ -327,6 +334,11 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 		return
 	}
 
+	for i := 0; i < len(integrations); i++ {
+		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != "" {
+			integrations[i].Keys["auth_token"] = "xoxb-****"
+		}
+	}
 	c.IndentedJSON(200, integrations)
 }
 
