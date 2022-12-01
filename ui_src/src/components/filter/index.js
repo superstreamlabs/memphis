@@ -14,26 +14,20 @@
 
 import './style.scss';
 
-import React, { createContext, useCallback, useContext, useEffect, useReducer, useState } from 'react';
-
-import Reducer from './hooks/reducer';
-
-import './style.scss';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import filterImg from '../../assets/images/filter.svg';
-import searchIcon from '../../assets/images/searchIcon.svg';
-
-import CustomCollapse from './customCollapse';
-import { Popover } from 'antd';
-import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
-
-import Button from '../button';
-import { Context } from '../../hooks/store';
-import { useHistory } from 'react-router-dom';
-import pathDomains from '../../router';
-import SearchInput from '../searchInput';
+import React, { createContext, useContext, useEffect, useReducer, useState } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
+import { Popover } from 'antd';
+
+import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
+import searchIcon from '../../assets/images/searchIcon.svg';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import filterImg from '../../assets/images/filter.svg';
+import { httpRequest } from '../../services/http';
+import CustomCollapse from './customCollapse';
+import { Context } from '../../hooks/store';
+import SearchInput from '../searchInput';
+import Reducer from './hooks/reducer';
+import Button from '../button';
 
 const initialState = {
     isOpen: false,
@@ -47,8 +41,6 @@ const Filter = ({ filterComponent, height }) => {
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
-
-    const history = useHistory();
 
     useEffect(() => {
         if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: '' });
@@ -273,7 +265,7 @@ const Filter = ({ filterComponent, height }) => {
                 }
                 if (filterTerms?.find((o) => o.name === 'created')) {
                     objCreated = filterTerms?.find((o) => o.name === 'created')?.fields?.map((element) => element?.toLowerCase());
-                    data = data.filter((item) =>
+                    data = data?.filter((item) =>
                         objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
                     );
                 }
