@@ -98,7 +98,7 @@ const LogsWrapper = () => {
         (async () => {
             for await (const msg of sub) {
                 let data = jc.decode(msg.data);
-                let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
+                let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
                 const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
                 if (stateRef.current[4]) {
                     setSelectedRow(data.logs[0].message_seq);

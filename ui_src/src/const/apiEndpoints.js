@@ -37,13 +37,14 @@ export const ApiEndpoints = {
     GET_STATION: '/stations/getStation',
     GET_ALL_STATIONS: '/stations/getAllStations',
     GET_STATIONS: '/stations/getStations',
-    GET_POISION_MESSAGE_JOURNEY: '/stations/getPoisonMessageJourney',
+    GET_POISON_MESSAGE_JOURNEY: '/stations/getPoisonMessageJourney',
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
-    ACK_POISION_MESSAGE: '/stations/ackPoisonMessages',
-    RESEND_POISION_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
+    ACK_POISON_MESSAGE: '/stations/ackPoisonMessages',
+    RESEND_POISON_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
     USE_SCHEMA: '/stations/useSchema',
     GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
     REMOVE_SCHEMA_FROM_STATION: '/stations/removeSchemaFromStation',
+    TIERD_STORAGE_CLICKED: '/stations/tierdStorageClicked',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
@@ -72,5 +73,13 @@ export const ApiEndpoints = {
     REMOVE_SCHEMA: '/schemas/removeSchema',
     CREATE_NEW_VERSION: '/schemas/createNewVersion',
     ROLL_BACK_VERSION: '/schemas/rollBackVersion',
-    VALIDATE_SCHEMA: '/schemas/validateSchema'
+    VALIDATE_SCHEMA: '/schemas/validateSchema',
+
+    //Integrations
+    CREATE_INTEGRATION: '/integrations/createIntegration',
+    UPDATE_INTEGRATIONL: '/integrations/updateIntegration',
+    GET_INTEGRATION_DETAILS: '/integrations/getIntegrationDetails',
+    GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
+    DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
+    REQUEST_INTEGRATION: '/integrations/requestIntegration'
 };

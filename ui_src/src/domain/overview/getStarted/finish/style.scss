@@ -22,6 +22,21 @@
                 width: 50px;
             }
         }
+        .buttons-wrapper{
+            display: flex;
+            gap: 15px;
+            .slack-button{
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                p{
+                    font-size: 16px;
+                    font-family: 'interMedium';
+                    margin: 0;
+                }
+            }
+        }
     }
     .ant-btn-primary {
         box-shadow: none;

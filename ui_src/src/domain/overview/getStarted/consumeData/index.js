@@ -41,7 +41,7 @@ const ConsumeData = (props) => {
     }, []);
 
     return (
-        <div className="produce-consume-data" id="e2e-getstarted-step4">
+        <div className="produce-consume-data">
             <ProduceConsumeData
                 waitingImage={consWaiting}
                 waitingTitle={

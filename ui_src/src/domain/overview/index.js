@@ -155,6 +155,7 @@ function OverView() {
     };
 
     const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
+
     return (
         <div className="overview-container">
             {isLoading && (
@@ -244,8 +245,8 @@ function OverView() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="540px"
-                width="560px"
+                height="74vh"
+                width="1020px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {

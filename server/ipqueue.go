@@ -18,23 +18,30 @@ import (
 	"sync/atomic"
 )
 
-const ipQueueDefaultMaxRecycleSize = 4 * 1024
+const (
+	ipQueueDefaultMaxRecycleSize = 4 * 1024
+	ipQueueDefaultLen            = 0
+	ipQueueInitialCapacity       = 32
+)
 
 // This is a generic intra-process queue.
 type ipQueue struct {
 	inprogress int64
 	sync.RWMutex
-	ch   chan struct{}
-	elts []interface{}
-	pos  int
-	pool *sync.Pool
-	mrs  int
-	name string
-	m    *sync.Map
+	ch         chan struct{}
+	elts       []interface{}
+	pos        int
+	pool       *sync.Pool
+	mrs        int
+	mql        int
+	wrapAround bool
+	name       string
+	m          *sync.Map
 }
 
 type ipQueueOpts struct {
 	maxRecycleSize int
+	maxQueueLen    int
 }
 
 type ipQueueOpt func(*ipQueueOpts)
@@ -47,14 +54,27 @@ func ipQueue_MaxRecycleSize(max int) ipQueueOpt {
 	}
 }
 
+// This option allows to set the maximum queue length
+// Queues with this option enabled (>0) do not support the popOne() op
+func ipQueue_MaxQueueLen(max int) ipQueueOpt {
+	return func(o *ipQueueOpts) {
+		o.maxQueueLen = max
+	}
+}
+
 func (s *Server) newIPQueue(name string, opts ...ipQueueOpt) *ipQueue {
-	qo := ipQueueOpts{maxRecycleSize: ipQueueDefaultMaxRecycleSize}
+	qo := ipQueueOpts{
+		maxRecycleSize: ipQueueDefaultMaxRecycleSize,
+		maxQueueLen:    ipQueueDefaultLen,
+	}
+
 	for _, o := range opts {
 		o(&qo)
 	}
 	q := &ipQueue{
 		ch:   make(chan struct{}, 1),
 		mrs:  qo.maxRecycleSize,
+		mql:  qo.maxQueueLen,
 		pool: &sync.Pool{},
 		name: name,
 		m:    &s.ipQueues,
@@ -70,6 +90,11 @@ func (q *ipQueue) push(e interface{}) int {
 	var signal bool
 	q.Lock()
 	l := len(q.elts) - q.pos
+
+	if q.wrapAround {
+		l = q.mql
+	}
+
 	if l == 0 {
 		signal = true
 		eltsi := q.pool.Get()
@@ -79,11 +104,22 @@ func (q *ipQueue) push(e interface{}) int {
 			q.elts = (*(eltsi.(*[]interface{})))[:0]
 		}
 		if cap(q.elts) == 0 {
-			q.elts = make([]interface{}, 0, 32)
+			q.elts = make([]interface{}, 0, ipQueueInitialCapacity)
 		}
 	}
-	q.elts = append(q.elts, e)
-	l++
+
+	if q.mql > 0 && q.mql == l {
+		if !q.wrapAround {
+			//first time we reached max elements
+			q.wrapAround = true
+		}
+		q.elts[q.pos] = e
+		q.pos = (q.pos + 1) % q.mql
+	} else {
+		q.elts = append(q.elts, e)
+		l++
+	}
+
 	q.Unlock()
 	if signal {
 		select {
@@ -108,6 +144,9 @@ func (q *ipQueue) pop() []interface{} {
 	q.Lock()
 	if q.pos == 0 {
 		elts = q.elts
+	} else if q.wrapAround {
+		elts = q.elts[q.pos:]
+		elts = append(elts, q.elts[:q.pos]...)
 	} else {
 		elts = q.elts[q.pos:]
 	}

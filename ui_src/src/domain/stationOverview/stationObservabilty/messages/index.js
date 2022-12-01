@@ -23,6 +23,9 @@ import { Checkbox, Space } from 'antd';
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
+import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
+import followersImg from '../../../../assets/images/followersDetails.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
@@ -30,6 +33,7 @@ import MultiCollapse from '../components/multiCollapse';
 import { httpRequest } from '../../../../services/http';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
+import DetailBox from '../../../../components/detailBox';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import CheckboxComponent from '../../../../components/checkBox';
@@ -47,7 +51,7 @@ const Messages = () => {
     const stationName = url.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('All');
-    const tabs = ['All', 'Dead-letter'];
+    const tabs = ['All', 'Dead-letter', 'Details'];
     const history = useHistory();
 
     useEffect(() => {
@@ -72,7 +76,7 @@ const Messages = () => {
     };
 
     const arrangeData = (data) => {
-        let poisionedCGs = [];
+        let poisonedCGs = [];
         if (data) {
             data.poisoned_cgs.map((row, index) => {
                 let cg = {
@@ -102,7 +106,7 @@ const Messages = () => {
                         }
                     ]
                 };
-                poisionedCGs.push(cg);
+                poisonedCGs.push(cg);
             });
             let messageDetails = {
                 id: data._id ?? null,
@@ -137,7 +141,7 @@ const Messages = () => {
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,
-                poisionedCGs: poisionedCGs
+                poisonedCGs: poisonedCGs
             };
             setMessageDetails(messageDetails);
         }
@@ -172,7 +176,6 @@ const Messages = () => {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
         if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
-            debugger;
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
@@ -182,16 +185,16 @@ const Messages = () => {
     const handleAck = async () => {
         setIgnoreProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.ACK_POISION_MESSAGE}`, { poison_message_ids: isCheck });
-            let poisions = stationState?.stationSocketData?.poison_messages;
+            await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: isCheck });
+            let poisons = stationState?.stationSocketData?.poison_messages;
             isCheck.map((messageId, index) => {
-                poisions = poisions?.filter((item) => {
+                poisons = poisons?.filter((item) => {
                     return item._id !== messageId;
                 });
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisions });
+                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisons });
                 setIsCheck([]);
                 setIsCheckAll(false);
             }, 1500);
@@ -203,7 +206,7 @@ const Messages = () => {
     const handleResend = async () => {
         setResendProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISION_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
             setTimeout(() => {
                 setResendProcced(false);
                 message.success({
@@ -222,16 +225,14 @@ const Messages = () => {
     };
 
     const messageWrapper = (
-        <div className="message-wrapper">
-            <div className="row-data">
-                <Space direction="vertical">
-                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                </Space>
-            </div>
+        <div className="row-data">
+            <Space direction="vertical">
+                <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
+                <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
+                <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
+                <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+            </Space>
         </div>
     );
 
@@ -296,7 +297,7 @@ const Messages = () => {
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
-                            <p>Message</p>
+                            <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
                     </div>
@@ -314,7 +315,7 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        {messageWrapper}
+                        <div className="message-wrapper">{messageWrapper}</div>
                     </div>
                 </div>
             )}
@@ -323,7 +324,7 @@ const Messages = () => {
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                            <p>Message</p>
+                            <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
                     </div>
@@ -349,7 +350,25 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        {messageWrapper}
+                        <div className="message-wrapper">
+                            {messageWrapper}
+                            <Button
+                                width="96%"
+                                height="40px"
+                                placeholder={
+                                    <div className="botton-title">
+                                        <img src={Journey} alt="Journey" />
+                                        <p>Message Journey</p>
+                                    </div>
+                                }
+                                colorType="black"
+                                radiusType="semi-round"
+                                backgroundColorType="orange"
+                                fontSize="12px"
+                                fontWeight="600"
+                                onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
+                            />
+                        </div>
                     </div>
                 </div>
             )}
@@ -369,6 +388,36 @@ const Messages = () => {
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={dlsPlaceholder} alt="waitingMessages" />
                     <p>Hooray! No messages</p>
+                </div>
+            )}
+            {tabValue === 'Details' && (
+                <div className="details">
+                    <DetailBox
+                        img={leaderImg}
+                        title={'Leader'}
+                        desc={
+                            'Each station stores a stream object with a single leader on the most available broker based on RAFT decision. In case of leader failure, the role will be transferred to one of the followers.'
+                        }
+                        data={[stationState?.stationSocketData?.leader]}
+                    />
+                    {stationState?.stationSocketData?.followers?.length > 0 && (
+                        <DetailBox
+                            img={followersImg}
+                            title={'Followers'}
+                            desc={
+                                'Followers are standby replicas for the stream leader and will take its role in case of leader failure. The number of followers and leader equals the number of defined stream replicas (Mirrors).'
+                            }
+                            data={stationState?.stationSocketData?.followers}
+                        />
+                    )}
+                    <DetailBox
+                        img={idempotencyIcon}
+                        title={'Idempotency'}
+                        desc={
+                            'Idempotency mode ensures that messages always get delivered in the right order and without duplicates. Cause some performance degradation.'
+                        }
+                        data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
+                    />
                 </div>
             )}
         </div>

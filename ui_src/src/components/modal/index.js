@@ -36,7 +36,8 @@ const TransitionsModal = ({
     children,
     hr = false,
     className,
-    zIndex = null
+    zIndex = null,
+    onPressEnter = null
 }) => {
     const contentStyle = {
         height: height,
@@ -47,8 +48,10 @@ const TransitionsModal = ({
     useEffect(() => {
         const keyDownHandler = (event) => {
             if (event.key === 'Enter') {
-                event.preventDefault();
-                rBtnClick();
+                if (displayButtons) {
+                    event.preventDefault();
+                    rBtnClick();
+                } else onPressEnter();
             }
         };
         if (open) {

@@ -33,12 +33,10 @@ const SearchInput = (props) => {
         borderColorType,
         boxShadowsType,
         value,
-        onPressEnter,
         className
     } = props;
 
     const handleChange = (e) => onChange(e);
-    const handlePressEnter = (e) => onPressEnter(e);
 
     const color = getFontColor(colorType);
     const backgroundColor = getBackgroundColor(backgroundColorType);
@@ -50,7 +48,7 @@ const SearchInput = (props) => {
     const fieldProps = {
         placeholder,
         onChange: handleChange,
-        onPressEnter: handlePressEnter,
+        onPressEnter: handleChange,
         style: { width, height, color, backgroundColor, padding, borderBottom, borderRadius, borderColor, boxShadow },
         value
     };

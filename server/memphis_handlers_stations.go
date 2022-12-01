@@ -204,6 +204,13 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	} else {
 		replicas = 1
 	}
+
+	if csr.IdempotencyWindow <= 0 {
+		csr.IdempotencyWindow = 120000 // default
+	} else if csr.IdempotencyWindow < 100 {
+		csr.IdempotencyWindow = 100 // minimum is 100 millis
+	}
+
 	newStation := models.Station{
 		ID:                primitive.NewObjectID(),
 		Name:              stationName.Ext(),
@@ -285,7 +292,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	} else if err != nil {
-		serv.Errorf("GetStationById error: " + err.Error())
+		serv.Errorf("GetStation error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -296,6 +303,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		return
 	}
 	station.Tags = tags
+	if station.StorageType == "file" {
+		station.StorageType = "disk"
+	}
 
 	c.IndentedJSON(200, station)
 }
@@ -343,6 +353,9 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			tags, err := tagsHandler.GetTagsByStation(station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
+			}
+			if station.StorageType == "file" {
+				station.StorageType = "disk"
 			}
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
 		}
@@ -513,6 +526,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.StorageType = "file"
 	}
 
+	storageTypeForResponse := "disk"
+	if body.StorageType == "memory" {
+		storageTypeForResponse = body.StorageType
+	}
+
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
@@ -522,6 +540,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 	} else {
 		body.Replicas = 1
+	}
+
+	if body.IdempotencyWindow <= 0 {
+		body.IdempotencyWindow = 120000 // default
+	} else if body.IdempotencyWindow < 100 {
+		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
 	newStation := models.Station{
@@ -644,7 +668,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"name":                     stationName.Ext(),
 			"retention_type":           retentionType,
 			"retention_value":          body.RetentionValue,
-			"storage_type":             body.StorageType,
+			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
 			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
@@ -662,7 +686,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"name":                     stationName.Ext(),
 			"retention_type":           retentionType,
 			"retention_value":          body.RetentionValue,
-			"storage_type":             body.StorageType,
+			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
 			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
@@ -1070,6 +1094,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			for _, value := range msg.Message.Headers {
 				headersJson[value.HeaderKey] = value.HeaderValue
 			}
+			headersJson["$memphis_pm_id"] = msg.ID.Hex()
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages error: " + err.Error())
@@ -1500,4 +1525,14 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
+}
+
+func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-pushed-tierd-storage-button")
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }

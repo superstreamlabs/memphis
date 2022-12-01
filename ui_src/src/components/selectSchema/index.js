@@ -14,17 +14,31 @@
 
 import './style.scss';
 
-import { Select } from 'antd';
-import React from 'react';
-
 import { ArrowDropDownRounded } from '@material-ui/icons';
+import { useHistory } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Select } from 'antd';
+
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
+import placeholderSchema from '../../assets/images/placeholderSchema.svg';
 import { parsingDate } from '../../services/valueConvertor';
+import { Context } from '../../hooks/store';
+import Button from '../button';
+import pathDomains from '../../router';
+
 const { Option } = Select;
 
 const SelectSchema = ({ options, onChange, value, placeholder }) => {
+    const history = useHistory();
+    const [state, dispatch] = useContext(Context);
+
     const handleChange = (e) => {
         onChange(e);
+    };
+
+    const createNew = () => {
+        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
+        history.push(pathDomains.schemas);
     };
 
     return (
@@ -38,6 +52,27 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
                 onChange={handleChange}
                 placement="bottomRight"
                 popupClassName="select-schema-options"
+                notFoundContent={
+                    <div className="no-schema-to-display">
+                        <img src={placeholderSchema} width="50" height="50" alt="placeholderSchema" />
+                        <p className="title">No Schema found</p>
+                        <p className="sub-title">Get started by creating your first schema</p>
+                        <Button
+                            className="modal-btn"
+                            width="120px"
+                            height="34px"
+                            placeholder="Create schema"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            aria-controls="usecse-menu"
+                            aria-haspopup="true"
+                            onClick={() => createNew()}
+                        />
+                    </div>
+                }
             >
                 {options?.map((schema) => {
                     return (

@@ -34,14 +34,15 @@ import (
 )
 
 type Handlers struct {
-	Producers  ProducersHandler
-	Consumers  ConsumersHandler
-	AuditLogs  AuditLogsHandler
-	Stations   StationsHandler
-	Monitoring MonitoringHandler
-	PoisonMsgs PoisonMessagesHandler
-	Tags       TagsHandler
-	Schemas    SchemasHandler
+	Producers    ProducersHandler
+	Consumers    ConsumersHandler
+	AuditLogs    AuditLogsHandler
+	Stations     StationsHandler
+	Monitoring   MonitoringHandler
+	PoisonMsgs   PoisonMessagesHandler
+	Tags         TagsHandler
+	Schemas      SchemasHandler
+	Integrations IntegrationsHandler
 }
 
 var usersCollection *mongo.Collection
@@ -57,6 +58,7 @@ var tagsCollection *mongo.Collection
 var schemasCollection *mongo.Collection
 var schemaVersionCollection *mongo.Collection
 var sandboxUsersCollection *mongo.Collection
+var integrationsCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -68,8 +70,6 @@ type srvMemphis struct {
 	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue
-	mcrReported            bool
-	mcr                    chan struct{} // memphis cluster ready
 	jsApiMu                sync.Mutex
 	ws                     memphisWS
 }
@@ -86,9 +86,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.memphis.dbCtx = dbInstance.Ctx
 	s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
-	s.memphis.serverID = configuration.SERVER_NAME
-	s.memphis.mcrReported = false
-	s.memphis.mcr = make(chan struct{})
+	// s.memphis.serverID is initialized earlier, when logger is configured
 
 	usersCollection = db.GetCollection("users", dbInstance.Client)
 	imagesCollection = db.GetCollection("images", dbInstance.Client)
@@ -103,6 +101,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
 	schemaVersionCollection = db.GetCollection("schema_versions", dbInstance.Client)
 	sandboxUsersCollection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
+	integrationsCollection = db.GetCollection("integrations", dbInstance.Client)
 
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
@@ -218,7 +217,7 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 		CreationDate:      time.Now(),
 		LastUpdate:        time.Now(),
 		Functions:         []models.Function{},
-		IdempotencyWindow: 0,
+		IdempotencyWindow: 120000,
 	}
 
 	err := s.CreateStream(sn, newStation)

@@ -26,8 +26,7 @@ import searchIcon from '../../assets/images/searchIcon.svg';
 
 import CustomCollapse from './customCollapse';
 import { Popover } from 'antd';
-import { filterType, labelType } from '../../const/filterConsts';
-import { CircleLetterColor } from '../../const/circleLetterColor';
+import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
 
 import Button from '../button';
 import { Context } from '../../hooks/store';

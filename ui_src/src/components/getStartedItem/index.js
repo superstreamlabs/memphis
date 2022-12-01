@@ -62,11 +62,27 @@ const GetStartedItem = (props) => {
             )}
             {!getStartedState.isHiddenButton && getStartedState?.currentStep !== 5 && (
                 <div className="get-started-footer">
-                    <div id="e2e-getstarted-next-btn">
+                    <div>
+                        {getStartedState?.currentStep === 5 && (
+                            <Button
+                                width={getStartedState?.currentStep === 5 ? '190px' : '129px'}
+                                height="36px"
+                                placeholder={getStartedState?.currentStep === 5 ? 'Go to station' : 'Next'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType={'purple'}
+                                fontSize="16px"
+                                fontWeight="bold"
+                                htmlType="submit"
+                                disabled={getStartedState?.nextDisable}
+                                onClick={() => onNext()}
+                                isLoading={getStartedState?.isLoading}
+                            />
+                        )}
                         <Button
                             width={getStartedState?.currentStep === 5 ? '190px' : '129px'}
                             height="36px"
-                            placeholder={getStartedState?.currentStep === 5 ? 'Launch Dashboard' : 'Next'}
+                            placeholder={getStartedState?.currentStep === 5 ? 'Go to station' : 'Next'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType={'purple'}

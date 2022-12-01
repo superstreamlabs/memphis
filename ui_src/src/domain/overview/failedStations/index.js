@@ -35,9 +35,7 @@ const FailedStations = ({ createStationTrigger }) => {
 
     return (
         <div className="overview-wrapper failed-stations-container">
-            <p className="overview-components-header" id="e2e-overview-station-list">
-                Stations
-            </p>
+            <p className="overview-components-header">Stations</p>
             <div className="err-stations-list">
                 {state?.monitor_data?.stations?.length > 0 ? (
                     <div className="coulmns-table">

@@ -25,7 +25,7 @@ import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import Button from '../button';
 import DatePicker from '../datePicker';
 import RadioButton from '../radioButton';
-import { filterType, labelType } from '../../const/filterConsts';
+import { filterType, labelType } from '../../const/globalConst';
 
 const { Panel } = Collapse;
 
