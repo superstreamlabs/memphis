@@ -23,6 +23,8 @@ import CustomTabs from '../../../../components/Tabs';
 import Copy from '../../../../components/copy';
 import Editor from '@monaco-editor/react';
 
+const tabs = ['Producer', 'Consumer'];
+
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
     const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
@@ -32,7 +34,6 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         producer: '',
         consumer: ''
     });
-    const tabs = ['Producer', 'Consumer'];
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
 
     const url = window.location.href;

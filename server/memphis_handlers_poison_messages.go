@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"memphis-broker/models"
+	"memphis-broker/notifications"
 
 	"context"
 	"time"
@@ -26,6 +27,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+const PoisonMessageTitle = "Poison message"
 
 type PoisonMessagesHandler struct{ S *Server }
 
@@ -37,7 +40,7 @@ func (s *Server) ListenForPoisonMessages() {
 
 func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, _, _ string, msg []byte) {
-		go s.HandleNewMessage(msg)
+		go s.HandleNewMessage(copyBytes(msg))
 	}
 }
 
@@ -121,14 +124,33 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		"producer.name":     producedByHeader,
 		"message.time_sent": poisonMessageContent.Time,
 	}
+	var newID = primitive.NewObjectID()
 	update := bson.M{
-		"$push": bson.M{"poisoned_cgs": poisonedCg},
-		"$set":  bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
+		"$setOnInsert": bson.M{"_id": newID},
+		"$push":        bson.M{"poisoned_cgs": poisonedCg},
+		"$set":         bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
 	}
-	opts := options.Update().SetUpsert(true)
-	_, err = poisonMessagesCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
+	opts := options.FindOneAndUpdate().SetUpsert(true)
+	res := poisonMessagesCollection.FindOneAndUpdate(context.TODO(), filter, update, opts)
+	var poisonMsg models.PoisonMessage
+	var idForUrl string
+	err = res.Decode(&poisonMsg)
+	if err == mongo.ErrNoDocuments {
+		idForUrl = newID.Hex()
+	} else if err != nil {
 		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
+		return
+	} else {
+		idForUrl = poisonMsg.ID.Hex()
+	}
+	if UI_url == "" {
+		serv.Warnf("Error while sending a poison message notification: UI url not provided")
+		return
+	}
+	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
+	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
+	if err != nil {
+		serv.Warnf("Error while sending a poison message notification: " + err.Error())
 		return
 	}
 }

@@ -36,7 +36,8 @@ const initialState = {
     createSchema: false,
     domainList: [],
     filteredList: [],
-    logsFilter: ''
+    logsFilter: '',
+    integrationsList: []
 };
 
 const Store = ({ children }) => {

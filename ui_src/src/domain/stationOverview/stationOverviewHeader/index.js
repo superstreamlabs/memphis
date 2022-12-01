@@ -17,27 +17,33 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
+import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
+import DeleteItemsModal from '../../../components/deleteItemsModal';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
+import UpdateSchemaModal from '../components/updateSchemaModal';
+import deleteIcon from '../../../assets/images/deleteIcon.svg';
+import VersionBadge from '../../../components/versionBadge';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import BackIcon from '../../../assets/images/backIcon.svg';
+import UseSchemaModal from '../components/useSchemaModal';
+import { httpRequest } from '../../../services/http';
+import SdkExample from '../components/sdkExsample';
+import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import Modal from '../../../components/modal';
+import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import SdkExample from '../components/sdkExsample';
-import Auditing from '../components/auditing';
-import TagsList from '../../../components/tagList';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import VersionBadge from '../../../components/versionBadge';
-import UseSchemaModal from '../components/useSchemaModal';
-import UpdateSchemaModal from '../components/updateSchemaModal';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const history = useHistory();
     const [retentionValue, setRetentionValue] = useState('');
     const [sdkModal, setSdkModal] = useState(false);
@@ -81,11 +87,24 @@ const StationOverviewHeader = () => {
     const setSchema = (schema) => {
         stationDispatch({ type: 'SET_SCHEMA', payload: schema });
     };
+
+    const handleDeleteStation = async () => {
+        try {
+            await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
+                station_names: [stationState?.stationMetaData?.name]
+            });
+            modalDeleteFlip(false);
+            returnToStaionsList();
+        } catch (error) {}
+        modalDeleteFlip(false);
+    };
+
     return (
         <div className="station-overview-header">
             <div className="title-wrapper">
                 <div className="station-details">
                     <div className="station-name">
+                        <img src={BackIcon} onClick={() => returnToStaionsList()} alt="backIcon" />
                         <h1>{stationState?.stationMetaData?.name}</h1>
                         <TagsList
                             tagsToShow={3}
@@ -105,18 +124,13 @@ const StationOverviewHeader = () => {
                         Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
                     </span>
                 </div>
-                <Button
-                    width="80px"
-                    height="32px"
-                    placeholder="Back"
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="navy"
-                    fontSize="13px"
-                    fontWeight="600"
-                    border="navy"
-                    onClick={() => returnToStaionsList()}
-                />
+                <div className="station-buttons">
+                    <div className="station-actions" onClick={() => modalDeleteFlip(true)}>
+                        <div className="action">
+                            <img src={deleteIcon} alt="redirectIcon" />
+                        </div>
+                    </div>
+                </div>
             </div>
             <div className="details">
                 <div className="main-details">
@@ -321,6 +335,21 @@ const StationOverviewHeader = () => {
                             setUpdateSchemaModal(false);
                         }}
                         close={() => setUpdateSchemaModal(false)}
+                    />
+                </Modal>
+                <Modal
+                    header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                    width="520px"
+                    height="240px"
+                    displayButtons={false}
+                    clickOutside={() => modalDeleteFlip(false)}
+                    open={modalDeleteIsOpen}
+                >
+                    <DeleteItemsModal
+                        title="Are you sure you want to delete this station?"
+                        desc="Deleting this station means it will be permanently deleted."
+                        buttontxt="I understand, delete the station"
+                        handleDeleteSelected={handleDeleteStation}
                     />
                 </Modal>
             </div>

@@ -21,8 +21,6 @@ import { Context } from '../../hooks/store';
 import LogsWrapper from './components/logsWrapper';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
-import { filterType, labelType } from '../../const/filterConsts';
-
 import Filter from '../../components/filter';
 
 const SysLogs = () => {

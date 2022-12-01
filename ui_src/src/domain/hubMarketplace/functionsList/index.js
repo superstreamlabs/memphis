@@ -87,7 +87,6 @@ function FunctionsList(props) {
                         height="27px"
                         options={['op1', 'op2']}
                         boxShadowsType="gray"
-                        onChange={(e) => console.log(e)}
                         popupClassName="select-options"
                     />
                     <SearchInput

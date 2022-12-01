@@ -28,24 +28,6 @@ type MainOverviewData struct {
 	Stations         []ExtendedStation `json:"stations"`
 }
 
-type StationOverviewData struct {
-	ConnectedProducers    []ExtendedProducer           `json:"connected_producers"`
-	DisconnectedProducers []ExtendedProducer           `json:"disconnected_producers"`
-	DeletedProducers      []ExtendedProducer           `json:"deleted_producers"`
-	ConnectedCgs          []Cg                         `json:"connected_cgs"`
-	DisconnectedCgs       []Cg                         `json:"disconnected_cgs"`
-	DeletedCgs            []Cg                         `json:"deleted_cgs"`
-	TotalMessages         int                          `json:"total_messages"`
-	AvgMsgSize            int64                        `json:"average_message_size"`
-	AuditLogs             []AuditLog                   `json:"audit_logs"`
-	Messages              []MessageDetails             `json:"messages"`
-	PoisonMessages        []LightPoisonMessage         `json:"poison_messages"`
-	Tags                  []Tag                        `json:"tags"`
-	Leader                string                       `json:"leader"`
-	Followers             []string                     `json:"followers"`
-	Schema                StationOverviewSchemaDetails `json:"schema"`
-}
-
 type GetStationOverviewDataSchema struct {
 	StationName string `form:"station_name" json:"station_name"  binding:"required"`
 }

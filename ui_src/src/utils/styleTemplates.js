@@ -74,7 +74,7 @@ export function getBackgroundColor(backgroundColor) {
         case 'orange':
             return '#FFC633';
         case 'red':
-            return '#FC3400';
+            return '#E54F4F';
         case 'navy':
             return '#1D1D1D';
         case 'turquoise':

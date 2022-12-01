@@ -22,6 +22,7 @@ import (
 	"memphis-broker/db"
 	"memphis-broker/http_server"
 	"memphis-broker/server"
+
 	"os"
 
 	"go.uber.org/automaxprocs/maxprocs"
@@ -106,6 +107,11 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
+	err = server.InitializeIntegrations(dbInstance.Client)
+	if err != nil {
+		s.Errorf("Failed initializing integrations: " + err.Error())
+	}
+
 	s.InitializeMemphisHandlers(dbInstance)
 	go s.CreateSystemLogsStream()
 
@@ -117,10 +123,10 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	go http_server.InitializeHttpServer(s)
-	s.ListenForPoisonMessages()
-	err = s.ListenForZombieConnCheckRequests()
+
+	err = s.StartBackgroundTasks()
 	if err != nil {
-		s.Errorf("Failed subscribing for zombie conns check requests: " + err.Error())
+		s.Errorf("Background task failed: " + err.Error())
 		os.Exit(1)
 	}
 

@@ -29,7 +29,7 @@ const LogPayload = ({ value, onSelected, selectedRow }) => {
             <div className="log-info">
                 <div className="source">
                     <img src={sourceIcon} alt="sourceIcon" />
-                    <p>{capitalizeFirst(value?.source)}</p>
+                    <p>{value?.source}</p>
                 </div>
                 <LogBadge type={value?.type} />
             </div>

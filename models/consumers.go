@@ -44,6 +44,7 @@ type ExtendedConsumer struct {
 	ConsumersGroup   string    `json:"consumers_group" bson:"consumers_group"`
 	MaxAckTimeMs     int64     `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
 	MaxMsgDeliveries int       `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
+	StationName      string    `json:"station_name" bson:"station_name"`
 }
 
 type Cg struct {

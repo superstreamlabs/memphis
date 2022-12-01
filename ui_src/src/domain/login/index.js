@@ -138,7 +138,7 @@ const Login = (props) => {
                                     >
                                         <div className="field name">
                                             <p>Username / Email</p>
-                                            <div id="e2e-login-username">
+                                            <div>
                                                 <Input
                                                     placeholder="Type username / email"
                                                     type="text"
@@ -167,7 +167,7 @@ const Login = (props) => {
                                     >
                                         <div className="field password">
                                             <p>Password</p>
-                                            <div id="e2e-login-password">
+                                            <div>
                                                 <Input
                                                     placeholder="Password"
                                                     type="password"
@@ -186,7 +186,7 @@ const Login = (props) => {
                                         </div>
                                     </Form.Item>
                                     <Form.Item className="button-container">
-                                        <div id="e2e-login-btn">
+                                        <div>
                                             <Button
                                                 width="19vw"
                                                 height="43px"

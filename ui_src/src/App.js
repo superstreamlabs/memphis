@@ -33,13 +33,15 @@ import SchemaManagment from './domain/schema';
 import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
-import Settings from './domain/settings';
 import { Context } from './hooks/store';
 import SysLogs from './domain/sysLogs';
 import Signup from './domain/signup';
 import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
+import Preferences from './domain/preferences';
+import Profile from './domain/preferences/profile';
+import Integrations from './domain/preferences/integrations';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
@@ -133,7 +135,22 @@ const App = withRouter(() => {
                                 ></AppWrapper>
                             }
                         />
-                        <PrivateRoute exact path={pathDomains.settings} component={<AppWrapper content={<Settings />}></AppWrapper>} />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.preferences}/profile`}
+                            component={<AppWrapper content={<Preferences step={'profile'} />}></AppWrapper>}
+                        />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.preferences}/integrations`}
+                            component={<AppWrapper content={<Preferences step={'integrations'} />}></AppWrapper>}
+                        />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.preferences}/cluster_configuration`}
+                            component={<AppWrapper content={<Preferences step={'cluster_configuration'} />}></AppWrapper>}
+                        />
+                        c
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}

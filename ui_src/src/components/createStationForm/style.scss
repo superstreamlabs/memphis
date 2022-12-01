@@ -1,13 +1,49 @@
 .create-station-form-getstarted {
     height: 100%;
-    display: flex;
-    flex-direction: column;
     justify-content: space-between;
-    max-height: 500px;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    .left-side{
+        border-right: 1px solid #E0E0E0;
+        padding-right:15px;
+        overflow: auto;
+        height: 100%;
+    }
+    .right-side{
+        padding-left:15px
+
+    }
     .station-name-section {
         justify-content: space-between;
         display: flex;
         flex-direction: column;
+        position: relative;
+        .name-and-hint{
+            position: absolute;
+            bottom: 0;
+            color: #475467;
+            font-size: 12px;
+        }
+    }
+    .retention-storage-box{
+        border: 1px solid #EAECF0;
+        border-radius: 8px;
+        .header{
+            background: #F7F7F8;
+            border-top-left-radius:8px;
+            border-top-right-radius:8px;
+            .ant-tabs-nav{
+                margin: 0;
+                padding: 0 10px;
+            }
+        }
+        .content{
+            padding: 10px;
+            .description{
+                font-size: 13px;
+                color: #475467;
+            }
+        }
     }
     .retention-type-section {
         justify-content: space-between;
@@ -20,19 +56,80 @@
         font-size: 12px;
         margin: 0;
     }
-    .storage-replicas-container {
+    .storage-container {
         display: flex;
-        width: 100%;
+        flex-direction: column;
+        .option-wrapper{
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 16px;
+            gap: 4px;
+            background: #FFFFFF;
+            border: 1px solid #EAECF0;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            
+            svg {
+                width: 18px;
+                height: 18px;
+            }
+            .uncheck-icon{
+                width: 16px;
+                height: 16px;
+                border: 1px solid #D0D5DD;
+                border-radius: 8px;
+                margin-right:2px
+            }
+            .option-content{
+                display: flex;
+                flex-direction: column;
+                p{
+                    color: #101828;
+                    line-height:14px;
+                    font-family:'InterMedium';
+                    margin-bottom:5px
+                }
+                span{
+                    font-size: 12px;
+                    color: rgba(74, 73, 92, 0.8);
+                }
+            }
+        }
+        .option-wrapper:hover{
+            border-color: var(--purple) !important;
+        }
+        .selected{
+            background: rgba(101, 87, 255, 0.1);
+            border-color: var(--purple);
+            svg{
+                color: var(--purple);
+
+            }
+            .option-content{
+                p{
+                    color: var(--purple);
+                }
+            }
+        }
+        .comings-soon-message{
+            display: flex;
+            .title{
+                font-family: 'InterMedium';
+                font-size: 14px;
+            }
+            .description{
+                color: #A9A9A9;
+            }
+        }
+    }
+    .replicas-container {
         justify-content: space-between;
-        .storage-container {
-            display: flex;
-            flex-direction: column;
-        }
-        .replicas-container {
-            justify-content: space-between;
-            display: flex;
-            flex-direction: column;
-        }
+        display: flex;
+        flex-direction: column;
     }
     .header-getstarted-form {
         width: 168px;
@@ -57,6 +154,7 @@
     }
 
     .ant-form-item {
+        margin-bottom: 20px;
         .ant-form-item-control {
             .ant-form-item-control-input {
                 .ant-form-item-control-input-content {
@@ -136,9 +234,6 @@
     .ant-input-number-handler-wrap {
         opacity: 1;
     }
-    .ant-form-item {
-        margin-bottom: 10px;
-    }
 
     .retention-type {
         display: flex;
@@ -152,6 +247,7 @@
     }
     .toggle-add-schema {
         display: flex;
+        justify-content: space-between;
         .switch-button {
             margin-left: 10px;
         }
@@ -159,7 +255,17 @@
             min-width: 35px;
         }
     }
+    .idempotency-type{
+        .idempotency-value{
+            display: grid;
+            grid-template-columns: 47% 47%;
+            justify-content: space-between;
+        }
+    }
     .learn-more {
         color: #6557ff;
+    }
+    a:hover{
+        text-decoration: underline;
     }
 }

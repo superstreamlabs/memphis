@@ -37,7 +37,7 @@
     }
     .left-section {
         width: 275px;
-        .check-box{
+        .check-box {
             display: flex;
             align-items: center;
             margin-bottom: 10px;
@@ -56,7 +56,7 @@
         display: flex;
         width: 310px;
         .station-created {
-            margin-right: 15px;
+            margin-right: 40px;
         }
         .tags-list {
             margin-bottom: 0px;
@@ -76,36 +76,35 @@
                 margin-right: 3px;
             }
         }
-        .station-actions{
+        .station-actions {
             display: flex;
             width: 35px;
             height: 100%;
             align-items: center;
-            .action{
-                border: 1px solid #ECECEC;
+            .action {
+                border: 1px solid #ececec;
                 border-radius: 8px;
                 width: 30px;
                 height: 30px;
-                justify-content:center;
+                justify-content: center;
                 cursor: pointer;
-                img{
+                img {
                     width: 15px;
                 }
                 display: none;
             }
-            .action:hover{
+            .action:hover {
                 opacity: 0.8;
             }
         }
     }
-
 }
-.station-box-container:hover{
-   .action{
-       display: flex !important;
-   } 
+.station-box-container:hover {
+    .action {
+        display: flex !important;
+    }
 }
-.check-box-station{
+.check-box-station {
     position: absolute;
     padding: 22px;
 }

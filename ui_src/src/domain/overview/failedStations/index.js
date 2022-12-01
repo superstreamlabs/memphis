@@ -15,16 +15,17 @@
 import './style.scss';
 
 import React, { useContext } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
 
 import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
 import OverflowTip from '../../../components/tooltip/overflowtip';
-import staionLink from '../../../assets/images/staionLink.svg';
+import Button from '../../../components/button';
+import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 
-const FailedStations = () => {
+const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
 
@@ -34,17 +35,35 @@ const FailedStations = () => {
 
     return (
         <div className="overview-wrapper failed-stations-container">
-            <p className="overview-components-header" id="e2e-overview-station-list">
-                Stations
-            </p>
+            <p className="overview-components-header">Stations</p>
             <div className="err-stations-list">
-                <div className="coulmns-table">
-                    <span style={{ width: '100px' }}>Name</span>
-                    <span style={{ width: '200px' }}>Creation date</span>
-                    <span style={{ width: '120px' }}>Total messages</span>
-                    <span style={{ width: '120px' }}>Poison messages</span>
-                    <span style={{ width: '120px' }}></span>
-                </div>
+                {state?.monitor_data?.stations?.length > 0 ? (
+                    <div className="coulmns-table">
+                        <span style={{ width: '100px' }}>Name</span>
+                        <span style={{ width: '200px' }}>Creation date</span>
+                        <span style={{ width: '120px' }}>Total messages</span>
+                        <span style={{ width: '120px' }}>Poison messages</span>
+                        <span style={{ width: '120px' }}></span>
+                    </div>
+                ) : (
+                    <div className="empty-stations-container">
+                        <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
+                        <p>No Station Exsits</p>
+                        <Button
+                            className="modal-btn"
+                            width="160px"
+                            height="34px"
+                            placeholder={'Create new station'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            onClick={() => createStationTrigger(true)}
+                        />
+                    </div>
+                )}
                 <div className="rows-wrapper">
                     {state?.monitor_data?.stations?.map((station, index) => {
                         return (

@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -291,41 +292,43 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
 
 		response = gin.H{
-			"connected_producers":    connectedProducers,
-			"disconnected_producers": disconnectedProducers,
-			"deleted_producers":      deletedProducers,
-			"connected_cgs":          connectedCgs,
-			"disconnected_cgs":       disconnectedCgs,
-			"deleted_cgs":            deletedCgs,
-			"total_messages":         totalMessages,
-			"average_message_size":   avgMsgSize,
-			"audit_logs":             auditLogs,
-			"messages":               messages,
-			"poison_messages":        poisonMessages,
-			"tags":                   tags,
-			"leader":                 leader,
-			"followers":              followers,
-			"schema":                 schemaDetails,
+			"connected_producers":      connectedProducers,
+			"disconnected_producers":   disconnectedProducers,
+			"deleted_producers":        deletedProducers,
+			"connected_cgs":            connectedCgs,
+			"disconnected_cgs":         disconnectedCgs,
+			"deleted_cgs":              deletedCgs,
+			"total_messages":           totalMessages,
+			"average_message_size":     avgMsgSize,
+			"audit_logs":               auditLogs,
+			"messages":                 messages,
+			"poison_messages":          poisonMessages,
+			"tags":                     tags,
+			"leader":                   leader,
+			"followers":                followers,
+			"schema":                   schemaDetails,
+			"idempotency_window_in_ms": station.IdempotencyWindow,
 		}
 
 	} else {
 		var emptyResponse struct{}
 		response = gin.H{
-			"connected_producers":    connectedProducers,
-			"disconnected_producers": disconnectedProducers,
-			"deleted_producers":      deletedProducers,
-			"connected_cgs":          connectedCgs,
-			"disconnected_cgs":       disconnectedCgs,
-			"deleted_cgs":            deletedCgs,
-			"total_messages":         totalMessages,
-			"average_message_size":   avgMsgSize,
-			"audit_logs":             auditLogs,
-			"messages":               messages,
-			"poison_messages":        poisonMessages,
-			"tags":                   tags,
-			"leader":                 leader,
-			"followers":              followers,
-			"schema":                 emptyResponse,
+			"connected_producers":      connectedProducers,
+			"disconnected_producers":   disconnectedProducers,
+			"deleted_producers":        deletedProducers,
+			"connected_cgs":            connectedCgs,
+			"disconnected_cgs":         disconnectedCgs,
+			"deleted_cgs":              deletedCgs,
+			"total_messages":           totalMessages,
+			"average_message_size":     avgMsgSize,
+			"audit_logs":               auditLogs,
+			"messages":                 messages,
+			"poison_messages":          poisonMessages,
+			"tags":                     tags,
+			"leader":                   leader,
+			"followers":                followers,
+			"schema":                   emptyResponse,
+			"idempotency_window_in_ms": station.IdempotencyWindow,
 		}
 	}
 
@@ -365,7 +368,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
-		filterSubject = syslogsStreamName + "." + filterSubjectSuffix
+		filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
 	}
 	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
@@ -517,14 +520,26 @@ cleanup:
 			return models.SystemLogsResponse{}, err
 		}
 
-		logType := msg.Subject[len(syslogsStreamName)+1:]
+		splittedSubj := strings.Split(msg.Subject, tsep)
+		var (
+			logSource string
+			logType   string
+		)
+
+		if len(splittedSubj) == 2 {
+			// old version's logs
+			logSource = "broker"
+			logType = splittedSubj[1]
+		} else {
+			logSource, logType = splittedSubj[1], splittedSubj[2]
+		}
 
 		data := string(msg.Data)
 		resMsgs = append(resMsgs, models.Log{
 			MessageSeq: int(msg.Sequence),
 			Type:       logType,
 			Data:       data,
-			Source:     s.getLogSource(),
+			Source:     logSource,
 			TimeSent:   msg.Time,
 		})
 	}

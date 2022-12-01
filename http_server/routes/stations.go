@@ -34,4 +34,5 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.POST("/useSchema", stationsHandler.UseSchema)
 	stationsRoutes.DELETE("/removeSchemaFromStation", stationsHandler.RemoveSchemaFromStation)
 	stationsRoutes.GET("/getUpdatesForSchemaByStation", stationsHandler.GetUpdatesForSchemaByStation)
+	stationsRoutes.GET("/tierdStorageClicked", stationsHandler.TierdStorageClicked) // TODO to be deleted
 }
