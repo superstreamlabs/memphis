@@ -152,6 +152,9 @@
         cursor: pointer;
         margin-bottom: 0;
     }
+    .radiobtn-capitalize {
+        text-transform: capitalize;
+    }
 }
 .ant-checkbox-wrapper {
     margin: 0 !important;

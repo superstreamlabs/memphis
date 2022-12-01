@@ -25,6 +25,7 @@ import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
+import Filter from '../../../../components/filter';
 import { Context } from '../../../../hooks/store';
 import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
@@ -63,35 +64,6 @@ function SchemaList() {
             setisLoading(false);
         }
     };
-
-    useEffect(() => {
-        if (searchInput?.length >= 2) {
-            dispatch({ type: 'SET_FILTERED_LIST', payload: state?.domainList.filter((schema) => schema.name.includes(searchInput)) });
-        } else {
-            dispatch({ type: 'SET_FILTERED_LIST', payload: state?.domainList });
-        }
-    }, [searchInput, state?.domainList]);
-
-    useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
-        const jc = JSONCodec();
-        const sc = StringCodec();
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-            }
-        })();
-
-        setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
-        }, 1000);
-
-        return () => {
-            state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
-            sub.unsubscribe();
-        };
-    }, [state.socket]);
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
@@ -170,19 +142,7 @@ function SchemaList() {
                         disabled={state?.filteredList?.length === 0}
                         onClick={() => onCheckedAll()}
                     />
-                    <SearchInput
-                        placeholder="Search schema"
-                        colorType="navy"
-                        backgroundColorType="gray-dark"
-                        width="288px"
-                        height="34px"
-                        borderRadiusType="circle"
-                        borderColorType="none"
-                        boxShadowsType="none"
-                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
-                        onChange={handleSearch}
-                        value={searchInput}
-                    />
+                    <Filter filterComponent="schemaverse" height="34px" />
                     {/* <Button
                         width="111px"
                         height="34px"

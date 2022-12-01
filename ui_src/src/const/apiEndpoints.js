@@ -30,6 +30,7 @@ export const ApiEndpoints = {
     DONE_NEXT_STEPS: '/usermgmt/doneNextSteps',
     GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
+    GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
 
     //Station
     CREATE_STATION: '/stations/createStation',

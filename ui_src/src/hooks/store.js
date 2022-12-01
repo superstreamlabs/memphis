@@ -36,6 +36,7 @@ const initialState = {
     createSchema: false,
     domainList: [],
     filteredList: [],
+    logsFilter: '',
     integrationsList: []
 };
 

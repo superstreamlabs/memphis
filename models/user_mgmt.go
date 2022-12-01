@@ -77,3 +77,11 @@ type EditAvatarSchema struct {
 type EditAnalyticsSchema struct {
 	SendAnalytics bool `json:"send_analytics"`
 }
+
+type GetFilterDetailsSchema struct {
+	Route string `form:"route" json:"route"`
+}
+
+type FilteredUser struct {
+	Username string `json:"username" bson:"username"`
+}
