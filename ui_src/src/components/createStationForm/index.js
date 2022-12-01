@@ -90,7 +90,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [schemas, setSchemas] = useState([]);
     const [useSchema, setUseSchema] = useState(false);
     const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
-    const [selectedOption, setSelectedOption] = useState(1);
+    const [selectedOption, setSelectedOption] = useState('file');
     const [selectedTier2Option, setSelectedTier2Option] = useState(1);
     const [parserName, setParserName] = useState('');
     useEffect(() => {
@@ -130,7 +130,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
-            name: formFields.name.replace(' ', '-'),
+            name: formFields.station_name.replace(' ', '-'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
@@ -183,7 +183,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const stationNameChange = (e) => {
-        getStarted && updateFormState('name', e.target.value);
+        getStarted && updateFormState('station_name', e.target.value);
         let name = e.target.value.split(' ').join('-');
         if (parserName === '') {
             setTimeout(() => {
@@ -191,6 +191,12 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             }, 300);
         } else {
             setParserName(name.toLowerCase());
+        }
+    };
+    const SelectedStorageOption = (value) => {
+        if (allowEdit) {
+            setSelectedOption(value);
+            creationForm.setFieldValue('storage_type', value);
         }
     };
     return (
@@ -204,7 +210,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         required={true}
                     />
                     <Form.Item
-                        name="name"
+                        name="station_name"
                         rules={[
                             {
                                 validator: (_, value) => {
@@ -423,11 +429,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                           return (
                                               <div
                                                   key={value.id}
-                                                  className={selectedOption === value.id ? 'option-wrapper selected' : 'option-wrapper'}
-                                                  onClick={() => allowEdit && setSelectedOption(value.id)}
+                                                  className={selectedOption === value.value ? 'option-wrapper selected' : 'option-wrapper'}
+                                                  onClick={() => SelectedStorageOption(value.value)}
                                               >
-                                                  {selectedOption === value.id && <CheckCircleIcon className="check-icon" />}
-                                                  {selectedOption !== value.id && <div className="uncheck-icon" />}
+                                                  {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
+                                                  {selectedOption !== value.value && <div className="uncheck-icon" />}
                                                   <div className="option-content">
                                                       <p>{value.label}</p>
                                                       <span>{value.desc}</span>
