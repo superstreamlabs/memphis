@@ -49,7 +49,7 @@ import Resources from './resources';
 import Installation from '../../components/installation';
 import { CloudDownloadRounded } from '@material-ui/icons';
 import { capitalizeFirst } from '../../services/valueConvertor';
-import { StringCodec, JSONCodec } from "nats.ws"
+import { StringCodec, JSONCodec } from 'nats.ws';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -129,7 +129,7 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data`)
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
         (async () => {
@@ -141,13 +141,11 @@ function OverView() {
         })();
 
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.main_overview_data`,
-                                  sc.encode("SUB"));
+            state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
             setisLoading(false);
         }, 1000);
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.main_overview_data`,
-                                  sc.encode("UNSUB"));
+            state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('UNSUB'));
             sub.unsubscribe();
         };
     }, [state.socket]);
@@ -157,6 +155,7 @@ function OverView() {
     };
 
     const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
+
     return (
         <div className="overview-container">
             {isLoading && (
@@ -246,8 +245,8 @@ function OverView() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="540px"
-                width="560px"
+                height="74vh"
+                width="1020px"
                 rBtnText="Add"
                 lBtnText="Cancel"
                 lBtnClick={() => {

@@ -19,7 +19,7 @@ const pathDomains = {
     stations: '/stations',
     users: '/users',
     schemas: '/schemas',
-    settings: '/settings',
+    preferences: '/preferences',
     sysLogs: '/logs'
 };
 

@@ -249,7 +249,7 @@ const ProduceConsumeData = (props) => {
                                 }}
                             />
                             <div className="waiting-for-data-space"></div>
-                            <div id="e2e-getstarted-skip">
+                            <div>
                                 <Button
                                     width="129px"
                                     height="40px"

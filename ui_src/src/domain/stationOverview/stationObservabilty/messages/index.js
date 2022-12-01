@@ -76,7 +76,7 @@ const Messages = () => {
     };
 
     const arrangeData = (data) => {
-        let poisionedCGs = [];
+        let poisonedCGs = [];
         if (data) {
             data.poisoned_cgs.map((row, index) => {
                 let cg = {
@@ -106,7 +106,7 @@ const Messages = () => {
                         }
                     ]
                 };
-                poisionedCGs.push(cg);
+                poisonedCGs.push(cg);
             });
             let messageDetails = {
                 id: data._id ?? null,
@@ -141,7 +141,7 @@ const Messages = () => {
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,
-                poisionedCGs: poisionedCGs
+                poisonedCGs: poisonedCGs
             };
             setMessageDetails(messageDetails);
         }
@@ -186,15 +186,15 @@ const Messages = () => {
         setIgnoreProcced(true);
         try {
             await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: isCheck });
-            let poisions = stationState?.stationSocketData?.poison_messages;
+            let poisons = stationState?.stationSocketData?.poison_messages;
             isCheck.map((messageId, index) => {
-                poisions = poisions?.filter((item) => {
+                poisons = poisons?.filter((item) => {
                     return item._id !== messageId;
                 });
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisions });
+                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisons });
                 setIsCheck([]);
                 setIsCheckAll(false);
             }, 1500);
@@ -206,7 +206,7 @@ const Messages = () => {
     const handleResend = async () => {
         setResendProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISION_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
             setTimeout(() => {
                 setResendProcced(false);
                 message.success({
@@ -225,16 +225,14 @@ const Messages = () => {
     };
 
     const messageWrapper = (
-        <div className="message-wrapper">
-            <div className="row-data">
-                <Space direction="vertical">
-                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
-                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
-                </Space>
-            </div>
+        <div className="row-data">
+            <Space direction="vertical">
+                <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
+                <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
+                <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
+                <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+            </Space>
         </div>
     );
 
@@ -299,7 +297,7 @@ const Messages = () => {
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
-                            <p>Message</p>
+                            <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
                     </div>
@@ -317,7 +315,7 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        {messageWrapper}
+                        <div className="message-wrapper">{messageWrapper}</div>
                     </div>
                 </div>
             )}
@@ -326,7 +324,7 @@ const Messages = () => {
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                            <p>Message</p>
+                            <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
                     </div>
@@ -352,7 +350,25 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        {messageWrapper}
+                        <div className="message-wrapper">
+                            {messageWrapper}
+                            <Button
+                                width="96%"
+                                height="40px"
+                                placeholder={
+                                    <div className="botton-title">
+                                        <img src={Journey} alt="Journey" />
+                                        <p>Message Journey</p>
+                                    </div>
+                                }
+                                colorType="black"
+                                radiusType="semi-round"
+                                backgroundColorType="orange"
+                                fontSize="12px"
+                                fontWeight="600"
+                                onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
+                            />
+                        </div>
                     </div>
                 </div>
             )}

@@ -197,7 +197,7 @@ const StationsList = () => {
                 </div>
             )}
             {!isLoading && <div className="stations-content">{renderStationsOverview()}</div>}
-            <div id="e2e-createstation-modal">
+            <div>
                 <Modal
                     header={
                         <div className="modal-header">
@@ -208,8 +208,8 @@ const StationsList = () => {
                             <label>A station is a distributed unit that stores the produced data.</label>
                         </div>
                     }
-                    height="540px"
-                    width="550px"
+                    height="74vh"
+                    width="1020px"
                     rBtnText="Add"
                     lBtnText="Cancel"
                     lBtnClick={() => {

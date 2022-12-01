@@ -12,11 +12,14 @@
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
+                img{
+                    cursor: pointer;
+                }
                 h1 {
                     font-size: 24px;
                     font-weight: 600;
                     line-height: 24px;
-                    margin: 0;
+                    margin: 0 10px;
                 }
                 .tags-list {
                     justify-content: space-between;
@@ -32,11 +35,26 @@
             }
         }
         .station-buttons {
-            display: flex;
-            gap: 10px;
-            .delete-station-button {
-                .delete-station-button-text {
-                    padding-left: 6px;
+            
+            .station-actions {
+                display: flex;
+                width: 35px;
+                height: 100%;
+                align-items: center;
+                .action {
+                    border: 1px solid #d7d7d7;
+                    border-radius: 8px;
+                    width: 30px;
+                    height: 30px;
+                    justify-content: center;
+                    cursor: pointer;
+                    display: flex;
+                    img {
+                        width: 15px;
+                    }
+                }
+                .action:hover {
+                    border-color: var(--purple);
                 }
             }
         }

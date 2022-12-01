@@ -94,7 +94,7 @@
     font-size: 16px;
 }
 .ant-message-warning .anticon {
-    color: var(--purple);
+    color: var(--purple) ;
 }
 .ant-btn > .anticon {
     line-height: 0;
@@ -156,3 +156,13 @@
 .ant-popover-arrow {
     display: none;
 }
+
+.a-link{
+       color: var(--purple);
+       margin-left: 5px;
+}
+.a-link:hover{
+    text-decoration: underline;
+    color: var(--purple);
+}
+

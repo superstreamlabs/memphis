@@ -73,7 +73,14 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         if (err?.response?.data?.message !== undefined && err?.response?.status === 500) {
             message.error({
                 key: 'memphisErrorMessage',
-                content: 'We have some issues. Please open a GitHub issue on https://github.com/memphisdev/memphis-broker',
+                content: (
+                    <>
+                        We have some issues. Please open a
+                        <a className="a-link" href="https://github.com/memphisdev/memphis-broker" target="_blank">
+                            GitHub issue
+                        </a>
+                    </>
+                ),
                 duration: 5,
                 style: { cursor: 'pointer' },
                 onClick: () => message.destroy('memphisErrorMessage')

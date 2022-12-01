@@ -68,6 +68,19 @@
                 position: absolute;
                 display: flex;
                 place-content: center;
+                z-index: 1;
+            }
+            .menu-preference-selected::before {
+                content: "";
+                position: absolute;
+                z-index: -1;
+                top: 0px;
+                right: 0px;
+                bottom: 0px;
+                left: 0px;
+                border-radius: 50%;
+                background: linear-gradient(94.37deg, #61DFC6 3.3%, #776CFB 77.22%);
+                margin: 3px;
             }
         }
         version {
@@ -85,6 +98,7 @@
             }
         }
     }
+  
 }
 
 .header-menu {

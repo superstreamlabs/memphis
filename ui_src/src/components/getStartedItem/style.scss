@@ -103,12 +103,12 @@
             height: 60px;
         }
         .get-started-body {
-            height: calc(100% - 150px);
+            height: calc(100% - 135px);
             padding-top: 20px;
             padding-left: 3px;
             overflow-y: auto;
             position: relative;
-            width: 75%;
+            width: calc(100% - 260px);
         }
         .get-started-body-finish {
             height: calc(100% - 450px);

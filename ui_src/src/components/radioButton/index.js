@@ -38,6 +38,7 @@ const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, 
             >
                 {options.map((option) => (
                     <div
+                        key={option.value}
                         style={{ height: height }}
                         className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
                         onClick={() => (labelType ? onClick(option.value) : '')}
