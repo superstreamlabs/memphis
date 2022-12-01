@@ -6,7 +6,7 @@ const StationsInstructions = ({ header, button, image, newStation, des }) => {
     const description = des || 'A station is a distributed unit that producers store data at and consumers consume data from.';
 
     return (
-        <div id="e2e-create-station-btn" className={image ? 'stations-placeholder' : 'stations-placeholder add-more'}>
+        <div className={image ? 'stations-placeholder' : 'stations-placeholder add-more'}>
             {image ? <img src={image} className="stations-icon" alt="stationsImage"></img> : null}
             <div className="header-empty-stations">{header}</div>
             <p className="header-empty-description">{description}</p>

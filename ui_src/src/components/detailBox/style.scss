@@ -10,6 +10,14 @@
     .detail-img {
         width: 50px;
     }
+    .separator {
+        opacity: 0.1;
+        background: #979797;
+        width: 2px;
+        display: flex;
+        height: 80%;
+        align-self: center;
+    }
     .detail-data {
         width: 120px;
         display: flex;

@@ -184,10 +184,15 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
 
     const stationNameChange = (e) => {
         getStarted && updateFormState('name', e.target.value);
-        let name = e.target.value.replace(' ', '-');
-        setParserName(name.toLowerCase());
+        let name = e.target.value.split(' ').join('-');
+        if (parserName === '') {
+            setTimeout(() => {
+                setParserName(name.toLowerCase());
+            }, 300);
+        } else {
+            setParserName(name.toLowerCase());
+        }
     };
-
     return (
         <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
             <div className={'left-side'}>
@@ -202,8 +207,17 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         name="name"
                         rules={[
                             {
-                                required: true,
-                                message: 'Please input station name!'
+                                validator: (_, value) => {
+                                    return new Promise((resolve, reject) => {
+                                        if (value === '') {
+                                            setTimeout(() => {
+                                                return reject('Please input station name!');
+                                            }, 100);
+                                        } else {
+                                            return resolve();
+                                        }
+                                    });
+                                }
                             }
                         ]}
                         style={{ height: '50px' }}
@@ -223,11 +237,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             disabled={!allowEdit}
                         />
                     </Form.Item>
-                    {/* {parserName !== '' && (
+                    {parserName !== '' && (
                         <div className="name-and-hint">
                             <p>station name: {parserName}</p>
                         </div>
-                    )} */}
+                    )}
                 </div>
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />
                 <div className="retention-storage-box">
@@ -238,7 +252,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         {tabValue === tabs[0] && (
                             <p className="description">
                                 By which criteria will messages be expelled from the station.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
                                     Learn More
                                 </a>
                             </p>
@@ -247,7 +261,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <p className="description">
                                 For archiving and higher retention of ingested data. <br />
                                 Once a message passes tier 1 policy, it will automatically migrate to tier 2 storage.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station" target="_blank">
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
                                     Learn More
                                 </a>
                             </p>
@@ -460,18 +474,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         </div>
                                     </div>
                                 )}
-
-                                {/* <RadioButton
-                                    options={storageOptions}
-                                    fontFamily="InterSemiBold"
-                                    radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : storageType}
-                                    optionType="button"
-                                    onChange={(e) => {
-                                        setStorageType(e.target.value);
-                                        getStarted && updateFormState('storage_type', e.target.value);
-                                    }}
-                                    disabled={!allowEdit}
-                                /> */}
                             </Form.Item>
                         </div>
                     </div>
@@ -506,7 +508,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 headerDescription={
                                     <span>
                                         Ensures producers will not produce the same message.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy" target="_blank">
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
                                             Learn More
                                         </a>
                                     </span>

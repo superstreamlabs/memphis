@@ -33,5 +33,5 @@ export const SOCKET_URL = environment === 'production' ? `${WS_PREFIX}://${WS_SE
 export const GOOGLE_CLIENT_ID = '916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com';
 export const REDIRECT_URI = environment === 'production' ? 'https://sandbox.memphis.dev/login' : 'http://localhost:9000/login';
 export const GITHUB_CLIENT_ID = environment === 'production' ? '4dc1b3238c4d7563e426' : '51b0330eb3b34bc8f641';
-export const CONNECT_APP_VIDEO = 'https://memphis.dev/videos/how-to-connect-your-1st-app';
-export const CONNECT_CLI_VIDEO = 'https://memphis.dev/videos/cli-installation';
+export const CONNECT_APP_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
+export const CONNECT_CLI_VIDEO = 'https://www.youtube.com/watch?v=awXwaU4rBBQ';

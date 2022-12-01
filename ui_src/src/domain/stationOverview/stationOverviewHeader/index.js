@@ -17,26 +17,28 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
-import trashIcon from '../../../assets/images/trashIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
+import DeleteItemsModal from '../../../components/deleteItemsModal';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
-import DeleteItemsModal from '../../../components/deleteItemsModal';
+import UpdateSchemaModal from '../components/updateSchemaModal';
+import deleteIcon from '../../../assets/images/deleteIcon.svg';
+import VersionBadge from '../../../components/versionBadge';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import BackIcon from '../../../assets/images/backIcon.svg';
+import UseSchemaModal from '../components/useSchemaModal';
+import { httpRequest } from '../../../services/http';
+import SdkExample from '../components/sdkExsample';
+import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import Modal from '../../../components/modal';
+import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import SdkExample from '../components/sdkExsample';
-import Auditing from '../components/auditing';
-import TagsList from '../../../components/tagList';
-import { httpRequest } from '../../../services/http';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import VersionBadge from '../../../components/versionBadge';
-import UseSchemaModal from '../components/useSchemaModal';
-import UpdateSchemaModal from '../components/updateSchemaModal';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -102,6 +104,7 @@ const StationOverviewHeader = () => {
             <div className="title-wrapper">
                 <div className="station-details">
                     <div className="station-name">
+                        <img src={BackIcon} onClick={() => returnToStaionsList()} alt="backIcon" />
                         <h1>{stationState?.stationMetaData?.name}</h1>
                         <TagsList
                             tagsToShow={3}
@@ -122,35 +125,11 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
-                    <Button
-                        width="136px"
-                        height="32px"
-                        placeholder={
-                            <div className="delete-station-button">
-                                <img src={trashIcon} alt="trashIcon" />
-                                <span className="delete-station-button-text">Delete Station</span>
-                            </div>
-                        }
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="red"
-                        fontSize="13px"
-                        fontWeight="600"
-                        border="red"
-                        onClick={() => modalDeleteFlip(true)}
-                    />
-                    <Button
-                        width="80px"
-                        height="32px"
-                        placeholder="Back"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="navy"
-                        fontSize="13px"
-                        fontWeight="600"
-                        border="navy"
-                        onClick={() => returnToStaionsList()}
-                    />
+                    <div className="station-actions" onClick={() => modalDeleteFlip(true)}>
+                        <div className="action">
+                            <img src={deleteIcon} alt="redirectIcon" />
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className="details">

@@ -137,6 +137,7 @@ const SlackIntegration = ({ close, value }) => {
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             isLoading={loadingDisconnect}
+                            disabled={process.env.REACT_APP_SANDBOX_ENV}
                             onClick={() => disconnect()}
                         />
                     )}

@@ -24,6 +24,7 @@ const DetailBox = ({ img, title, desc, data }) => {
                 <div className="detail-title">{title}</div>
                 <div className="detail-description">{desc}</div>
             </div>
+            <div className="separator" />
             <div className="detail-data">
                 {data.map((row) => {
                     return <div className="detail-data-row">{row}</div>;

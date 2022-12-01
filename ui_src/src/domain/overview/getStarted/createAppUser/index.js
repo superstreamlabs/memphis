@@ -87,7 +87,7 @@ const CreateAppUser = (props) => {
     };
 
     return (
-        <div className="create-station-form-create-app-user" id="e2e-getstarted-step2">
+        <div className="create-station-form-create-app-user">
             <div>
                 <TitleComponent headerTitle="Enter user name" typeTitle="sub-header" required={true}></TitleComponent>
                 <Input
