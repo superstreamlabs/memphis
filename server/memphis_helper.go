@@ -180,32 +180,39 @@ func (s *Server) CreateSystemLogsStream() {
 	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 	if err != nil {
 		s.Errorf("Failed to create syslogs stream: " + err.Error())
-
 	}
 	retentionDur := time.Duration(retentionDays) * time.Hour * 24
 
 	successCh := make(chan error)
 
-	for !ready { // wait for cluster to be ready if we are in cluster mode
-		timeout := time.NewTimer(1 * time.Minute)
+	if ready { // stand alone
 		go tryCreateSystemLogsStream(s, retentionDur, successCh)
-		select {
-		case <-timeout.C:
-			s.Warnf("logs-stream creation takes more than a minute")
-			err := <-successCh
-			if err != nil {
-				s.Warnf("logs-stream creation failed: " + err.Error())
-				continue
+		err := <-successCh
+		if err != nil {
+			s.Errorf("logs-stream creation failed: " + err.Error())
+		}
+	} else {
+		for !ready { // wait for cluster to be ready if we are in cluster mode
+			timeout := time.NewTimer(1 * time.Minute)
+			go tryCreateSystemLogsStream(s, retentionDur, successCh)
+			select {
+			case <-timeout.C:
+				s.Warnf("logs-stream creation takes more than a minute")
+				err := <-successCh
+				if err != nil {
+					s.Warnf("logs-stream creation failed: " + err.Error())
+					continue
+				}
+				ready = true
+			case err := <-successCh:
+				if err != nil {
+					s.Warnf("logs-stream creation failed: " + err.Error())
+					<-timeout.C
+					continue
+				}
+				timeout.Stop()
+				ready = true
 			}
-			ready = true
-		case err := <-successCh:
-			if err != nil {
-				s.Warnf("logs-stream creation failed: " + err.Error())
-				<-timeout.C
-				continue
-			}
-			timeout.Stop()
-			ready = true
 		}
 	}
 
