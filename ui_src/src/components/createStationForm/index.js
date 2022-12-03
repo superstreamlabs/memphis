@@ -249,6 +249,116 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
+                <div className="replicas-container">
+                    <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
+                    <div>
+                        <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1} style={{ height: '50px' }}>
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="40px"
+                                options={actualPods}
+                                popupClassName="select-options"
+                                value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}
+                                onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                disabled={!allowEdit}
+                            />
+                        </Form.Item>
+                    </div>
+                </div>
+                <div className="idempotency-type">
+                    <Form.Item name="idempotency">
+                        <div className="toggle-add-schema">
+                            <TitleComponent
+                                headerTitle="Idempotency"
+                                typeTitle="sub-header"
+                                headerDescription={
+                                    <span>
+                                        Ensures producers will not produce the same message.&nbsp;
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
+                                            Learn More
+                                        </a>
+                                    </span>
+                                }
+                            />
+                        </div>
+                        <div className="idempotency-value">
+                            <Form.Item
+                                name="idempotency_number"
+                                initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_number || 2}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Please add value'
+                                    },
+                                    {
+                                        validator: (_, value) => {
+                                            if (idempotencyType === idempotencyOptions[0] && value < 100) {
+                                                return Promise.reject('Has to be greater than 100ms');
+                                            } else {
+                                                return Promise.resolve();
+                                            }
+                                        }
+                                    }
+                                ]}
+                                style={{ height: '10px' }}
+                            >
+                                <Input
+                                    placeholder="Type"
+                                    type="number"
+                                    radiusType="semi-round"
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    height="40px"
+                                    onBlur={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
+                                    onChange={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.idempotency_number}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                            <Form.Item name="idempotency_type" initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_type || idempotencyOptions[2]}>
+                                <SelectComponent
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    radiusType="semi-round"
+                                    height="40px"
+                                    options={idempotencyOptions}
+                                    popupClassName="select-options"
+                                    value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.idempotency_type : idempotencyOptions[2]}
+                                    onChange={(e) => {
+                                        setIdempotencyType(e);
+                                        if (getStarted) updateFormState('idempotency_type', e);
+                                    }}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                        </div>
+                    </Form.Item>
+                </div>
+                {!getStarted && (
+                    <div className="schema-type">
+                        <div className="toggle-add-schema">
+                            <TitleComponent headerTitle="Attach schema" typeTitle="sub-header" headerDescription="Enforcing schema will increase produced data quality" />
+                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
+                        </div>
+                        {!getStarted && useSchema && (
+                            <Form.Item name="schemaValue" initialValue={schemas.length > 0 ? schemas[0].name : null}>
+                                <SelectSchema
+                                    placeholder={creationForm.schemaValue || 'Select schema'}
+                                    value={creationForm.schemaValue || schemas[0]}
+                                    options={schemas}
+                                    onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
+                                />
+                            </Form.Item>
+                        )}
+                    </div>
+                )}
+            </div>
+            <div className={'right-side'}>
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />
                 <div className="retention-storage-box">
                     <div className="header">
@@ -489,116 +599,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     </div>
                 </div>
-            </div>
-            <div className={'right-side'}>
-                <div className="replicas-container">
-                    <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
-                    <div>
-                        <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1} style={{ height: '50px' }}>
-                            <SelectComponent
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                radiusType="semi-round"
-                                height="40px"
-                                options={actualPods}
-                                popupClassName="select-options"
-                                value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}
-                                onChange={(e) => getStarted && updateFormState('replicas', e)}
-                                disabled={!allowEdit}
-                            />
-                        </Form.Item>
-                    </div>
-                </div>
-                <div className="idempotency-type">
-                    <Form.Item name="idempotency">
-                        <div className="toggle-add-schema">
-                            <TitleComponent
-                                headerTitle="Idempotency"
-                                typeTitle="sub-header"
-                                headerDescription={
-                                    <span>
-                                        Ensures producers will not produce the same message.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
-                                            Learn More
-                                        </a>
-                                    </span>
-                                }
-                            />
-                        </div>
-                        <div className="idempotency-value">
-                            <Form.Item
-                                name="idempotency_number"
-                                initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_number || 2}
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Please add value'
-                                    },
-                                    {
-                                        validator: (_, value) => {
-                                            if (idempotencyType === idempotencyOptions[0] && value < 100) {
-                                                return Promise.reject('Has to be greater than 100ms');
-                                            } else {
-                                                return Promise.resolve();
-                                            }
-                                        }
-                                    }
-                                ]}
-                                style={{ height: '10px' }}
-                            >
-                                <Input
-                                    placeholder="Type"
-                                    type="number"
-                                    radiusType="semi-round"
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    height="40px"
-                                    onBlur={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
-                                    onChange={(e) => getStarted && updateFormState('idempotency_number', e.target.value)}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.idempotency_number}
-                                    disabled={!allowEdit}
-                                />
-                            </Form.Item>
-                            <Form.Item name="idempotency_type" initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_type || idempotencyOptions[2]}>
-                                <SelectComponent
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    radiusType="semi-round"
-                                    height="40px"
-                                    options={idempotencyOptions}
-                                    popupClassName="select-options"
-                                    value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.idempotency_type : idempotencyOptions[2]}
-                                    onChange={(e) => {
-                                        setIdempotencyType(e);
-                                        if (getStarted) updateFormState('idempotency_type', e);
-                                    }}
-                                    disabled={!allowEdit}
-                                />
-                            </Form.Item>
-                        </div>
-                    </Form.Item>
-                </div>
-                {!getStarted && (
-                    <div className="schema-type">
-                        <div className="toggle-add-schema">
-                            <TitleComponent headerTitle="Attach schema" typeTitle="sub-header" headerDescription="Enforcing schema will increase produced data quality" />
-                            <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
-                        </div>
-                        {!getStarted && useSchema && (
-                            <Form.Item name="schemaValue" initialValue={schemas.length > 0 ? schemas[0].name : null}>
-                                <SelectSchema
-                                    placeholder={creationForm.schemaValue || 'Select schema'}
-                                    value={creationForm.schemaValue || schemas[0]}
-                                    options={schemas}
-                                    onChange={(e) => creationForm.setFieldsValue({ schemaValue: e })}
-                                />
-                            </Form.Item>
-                        )}
-                    </div>
-                )}
             </div>
         </Form>
     );

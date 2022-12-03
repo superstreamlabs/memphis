@@ -82,7 +82,7 @@
                 width: 50%;
                 padding-left: 15px;
                 p {
-                    padding-left: 15px;
+                    padding-left: 10px;
                 }
             }
             .right-coulmn {
@@ -122,8 +122,8 @@
                     border-radius: 5px;
                     cursor: pointer;
                     .ant-checkbox-wrapper {
-                        margin-right: 12px;
-                        margin-left: 3px;
+                        margin-right: 10px !important;
+                        margin-left: 3px !important;
                     }
                     .preview-message {
                         width: 300px;

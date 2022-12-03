@@ -206,7 +206,7 @@ function SchemaList() {
                 {!isLoading && state.domainList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
-                        <p className="title">No Schema found</p>
+                        <p className="title">No schema found</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
                             className="modal-btn"
@@ -227,7 +227,7 @@ function SchemaList() {
                 {!isLoading && state.domainList?.length > 0 && state.filteredList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
-                        <p className="title">No Schema found</p>
+                        <p className="title">No schema found</p>
                         <p className="sub-title">Please try to search again</p>
                     </div>
                 )}

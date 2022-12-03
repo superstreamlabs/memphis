@@ -76,7 +76,7 @@ const StationsList = () => {
     const renderStationsOverview = () => {
         if (state?.domainList?.length > 0) {
             if (state.filteredList?.length === 0) {
-                return <StationsInstructions header="No Stations found" des="Please try to search again" image={stationsIcon} />;
+                return <StationsInstructions header="No stations found" des="Please try to search again" image={stationsIcon} />;
             }
             if (state?.domainList?.length <= 2) {
                 return (
@@ -208,7 +208,7 @@ const StationsList = () => {
                             <label>A station is a distributed unit that stores the produced data.</label>
                         </div>
                     }
-                    height="74vh"
+                    height="70vh"
                     width="1020px"
                     rBtnText="Add"
                     lBtnText="Cancel"

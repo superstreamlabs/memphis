@@ -154,7 +154,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
             {!isLoading && schemaList?.length === 0 && (
                 <div className="no-schema-to-display">
                     <img src={placeholderSchema} width="50" alt="placeholderSchema" />
-                    <p className="title">No Schema exist</p>
+                    <p className="title">No schema exist</p>
                     <p className="sub-title">Get started by creating your first schema</p>
                     <Button
                         className="modal-btn"
