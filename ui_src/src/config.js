@@ -19,7 +19,6 @@ if (WS_SERVER_URL_PRODUCTION.includes(':'))
     // for urls contain port
     WS_SERVER_URL_PRODUCTION = WS_SERVER_URL_PRODUCTION.split(':')[0];
 const SSL_PREFIX = window.location.protocol === 'https:' ? 'https://' : 'http://';
-
 export const SERVER_URL = environment === 'production' ? `${SSL_PREFIX}${SERVER_URL_PRODUCTION}` : 'http://localhost:9000/api';
 const WS_PREFIX = window.location.href.includes('https') ? 'wss' : 'ws';
 export const URL = window.location.href;

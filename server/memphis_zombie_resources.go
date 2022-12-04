@@ -122,7 +122,6 @@ func updateActiveProducersAndConsumers() {
 		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
 		return
 	}
-
 	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
 	if err != nil {
 		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
