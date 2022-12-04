@@ -135,7 +135,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
-            replicas: formFields.replicas,
+            replicas: Number(formFields.replicas),
             schema_name: formFields.schemaValue,
             idempotency_window_in_ms: idempotencyValue
         };
