@@ -17,7 +17,6 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';

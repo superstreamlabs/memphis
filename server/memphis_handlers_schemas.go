@@ -631,7 +631,6 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-schema-page")
 	}
-
 	c.IndentedJSON(200, schemas)
 }
 
@@ -716,7 +715,6 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
-
 	var body models.RemoveSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
