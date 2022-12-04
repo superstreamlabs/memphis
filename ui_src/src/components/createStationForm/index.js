@@ -183,7 +183,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const stationNameChange = (e) => {
-        getStarted && updateFormState('station_name', e.target.value);
+        getStarted && updateFormState('name', e.target.value);
         let name = e.target.value.split(' ').join('-');
         if (parserName === '') {
             setTimeout(() => {
