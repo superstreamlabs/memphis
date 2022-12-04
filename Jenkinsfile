@@ -75,7 +75,7 @@ node {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
-            sh "helm upgrade --atomic --install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id"
+            sh "helm install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id --wait"
       	}
     }
 
