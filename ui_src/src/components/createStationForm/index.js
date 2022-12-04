@@ -189,7 +189,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         if (parserName === '') {
             setTimeout(() => {
                 setParserName(name.toLowerCase());
-            }, 300);
+            }, 100);
         } else {
             setParserName(name.toLowerCase());
         }
@@ -263,7 +263,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 height="40px"
                                 popupClassName="select-options"
                                 options={actualPods}
-                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || 1}
+                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
                                 onChange={(e) => getStarted && updateFormState('replicas', e)}
                                 disabled={!allowEdit}
                             />
