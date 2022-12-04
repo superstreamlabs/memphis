@@ -215,7 +215,7 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		}
 
 		for i := 0; i < len(consumers); i++ {
-			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " Station: " + consumers[i].StationName + "\n"
+			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
 		}
 	}
 	msg := ""
