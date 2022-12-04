@@ -41,7 +41,8 @@ const Input = (props) => {
         minWidth,
         fontSize,
         onPressEnter,
-        autoFocus = false
+        autoFocus = false,
+        maxLength
     } = props;
 
     const handleBlurChange = (e) => (onBlur ? onBlur(e) : '');
@@ -62,6 +63,7 @@ const Input = (props) => {
         onBlur: handleBlurChange,
         onChange: handleChange,
         id,
+        maxLength: maxLength || null,
         style: {
             width,
             height,
