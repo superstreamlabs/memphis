@@ -94,7 +94,7 @@ func handleConnectMessage(client *client) error {
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if !shouldSendAnalytics {
+	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
 		sdkName := splitted[len(splitted)-1]
 		param := analytics.EventParam{

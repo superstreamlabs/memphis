@@ -131,7 +131,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
-            name: formFields.station_name.replace(' ', '-'),
+            name: formFields.station_name.split(' ').join('-'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
