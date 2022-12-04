@@ -71,6 +71,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			}
 			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
 				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
+			UI_url = integrationUpdate.UIUrl
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
 				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
