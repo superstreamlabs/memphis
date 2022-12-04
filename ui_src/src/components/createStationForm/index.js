@@ -93,6 +93,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [selectedOption, setSelectedOption] = useState('file');
     const [selectedTier2Option, setSelectedTier2Option] = useState(1);
     const [parserName, setParserName] = useState('');
+
     useEffect(() => {
         getOverviewData();
         getAllSchemas();
@@ -147,8 +148,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
             indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
-            data?.system_components[indexOfBrokerComponent]?.actual_pods &&
-                setActualPods(Array.from({ length: data?.system_components[indexOfBrokerComponent]?.actual_pods }, (_, i) => i + 1));
+            data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(Array.from({ length: 4 }, (_, i) => i + 1));
         } catch (error) {}
     };
 
@@ -232,6 +232,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         <Input
                             placeholder="Type station name"
                             type="text"
+                            maxLength="30"
                             radiusType="semi-round"
                             colorType="black"
                             backgroundColorType="none"
@@ -252,16 +253,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 <div className="replicas-container">
                     <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
                     <div>
-                        <Form.Item name="replicas" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1} style={{ height: '50px' }}>
+                        <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
                             <SelectComponent
                                 colorType="black"
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 radiusType="semi-round"
                                 height="40px"
-                                options={actualPods}
                                 popupClassName="select-options"
-                                value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.replicas : 1}
+                                options={actualPods}
+                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
                                 onChange={(e) => getStarted && updateFormState('replicas', e)}
                                 disabled={!allowEdit}
                             />
@@ -326,8 +327,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     borderColorType="gray"
                                     radiusType="semi-round"
                                     height="40px"
-                                    options={idempotencyOptions}
                                     popupClassName="select-options"
+                                    options={idempotencyOptions}
                                     value={getStarted ? getStartedStateRef?.formFieldsCreateStation?.idempotency_type : idempotencyOptions[2]}
                                     onChange={(e) => {
                                         setIdempotencyType(e);
