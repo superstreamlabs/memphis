@@ -402,7 +402,7 @@ const Messages = () => {
                         img={leaderImg}
                         title={'Leader'}
                         desc={
-                            'Each station stores a stream object with a single leader on the most available broker based on RAFT decision. In case of leader failure, the role will be transferred to one of the followers.'
+                            'Each station stores a stream object with a single leader on the most available broker based on RAFT decision. In case of leader failure, the role will be transferred to one of the followers'
                         }
                         data={[stationState?.stationSocketData?.leader]}
                     />
@@ -411,7 +411,7 @@ const Messages = () => {
                             img={followersImg}
                             title={'Followers'}
                             desc={
-                                'Followers are standby replicas for the stream leader and will take its role in case of leader failure. The number of followers and leader equals the number of defined stream replicas (Mirrors).'
+                                'Followers are standby replicas for the stream leader and will take its role in case of leader failure. The number of followers and leader equals the number of defined stream replicas (Mirrors)'
                             }
                             data={stationState?.stationSocketData?.followers}
                         />
@@ -419,9 +419,7 @@ const Messages = () => {
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}
-                        desc={
-                            'Idempotency mode ensures that messages always get delivered in the right order and without duplicates. Cause some performance degradation.'
-                        }
+                        desc={'Idempotency mode ensures that messages always get delivered in the right order and without duplicates. Cause some performance degradation'}
                         data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
                     />
                 </div>

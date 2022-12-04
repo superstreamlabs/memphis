@@ -17,17 +17,16 @@
         display: flex;
         height: 80%;
         align-self: center;
+        margin: 0 5px;
     }
     .detail-data {
-        width: 120px;
+        width: 140px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         .detail-data-row {
-            font-family: 'Inter';
-            font-style: normal;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 14px;
             color: #000000;
             line-height: 18px;
@@ -36,24 +35,15 @@
     .detail-title-wrapper {
         width: calc(100% - 170px);
         .detail-title {
-            font-family: 'Inter';
-            font-style: normal;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 16px;
-            line-height: 17px;
             color: #1d1d1d;
             padding-bottom: 6px;
         }
         .detail-description {
             font-family: 'Inter';
-            font-style: normal;
-            font-weight: 400;
             font-size: 12px;
-            line-height: 180%;
             color: rgba(74, 73, 92, 0.8);
-            flex: none;
-            order: 1;
-            flex-grow: 0;
         }
     }
 }
