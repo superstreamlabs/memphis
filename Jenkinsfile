@@ -123,7 +123,10 @@ node {
           sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
 	  sh(script: """kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done""", returnStdout: true )
           //sh 'helm install --wait my-memphis memphis-k8s/memphis --set analytics="false",cluster.enabled="true" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
-	  sh 'helm install my-memphis memphis --set analytics="false",cluster.enabled="true",websocket.tls.cert="memphis_local.pem",websocket.tls.key="memphis-key_local.pem",websocket.tls.secret.name="tls-secret" --create-namespace --namespace memphis --wait'	
+	  dir ('memphis-k8s'){
+       	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
+	    sh 'helm install my-memphis memphis --set analytics="false",cluster.enabled="true",websocket.tls.cert="memphis_local.pem",websocket.tls.key="memphis-key_local.pem",websocket.tls.secret.name="tls-secret" --create-namespace --namespace memphis --wait'
+	  }
           sh "rm -rf memphis-k8s"
 	}
 	      
