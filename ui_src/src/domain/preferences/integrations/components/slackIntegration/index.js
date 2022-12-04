@@ -45,9 +45,9 @@ const SlackIntegration = ({ close, value }) => {
             channel_id: value?.keys?.channel_id || ''
         },
         properties: {
-            poison_message_alert: value?.properties?.poison_message_alert ? true : false,
-            schema_validation_fail_alert: value?.properties?.schema_validation_fail_alert ? true : false,
-            disconnection_events_alert: value?.properties?.disconnection_events_alert ? true : false
+            poison_message_alert: value?.properties?.poison_message_alert || true,
+            schema_validation_fail_alert: value?.properties?.schema_validation_fail_alert || true,
+            disconnection_events_alert: value?.properties?.disconnection_events_alert || true
         }
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
