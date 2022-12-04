@@ -65,6 +65,7 @@ node {
       
 	  
       stage('Configure sandbox URLs'){
+        //UI url section
 	sh "aws s3 cp s3://memphis-jenkins-backup-bucket/sandbox_files/update_sandbox_record.json ." //sandbox.memphis.dev redirect to new LB record
 	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(kubectl get svc -n memphis | grep "memphis-cluster-sandbox" | awk '{print \"dualstack.\"\$4}')\\"/g"  update_sandbox_record.json > record1.json""", returnStdout: true)    
 	sh(script: """aws route53 change-resource-record-sets --hosted-zone-id Z05132833CK9UXS6W3I0E --change-batch file://record1.json > status1.txt""",    returnStdout: true)
@@ -73,7 +74,11 @@ node {
 	sh "aws s3 cp s3://memphis-jenkins-backup-bucket/sandbox_files/update_broker_record.json ."  //broker.sandbox.memphis.dev redirect to new LB record
 	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(kubectl get svc -n memphis | grep "memphis-cluster-sandbox" | awk '{print \"dualstack.\"\$4}')\\"/g"  update_broker_record.json > record2.json""",  returnStdout: true)
 	sh(script: """aws route53 change-resource-record-sets --hosted-zone-id Z05132833CK9UXS6W3I0E --change-batch file://record2.json > status2.txt""",    returnStdout: true) 
-	sh "rm -rf record1.json record2.json update_sandbox_record.json update_broker_record.json"
+
+	//proxy url section      
+	sh "aws s3 cp s3://memphis-jenkins-backup-bucket/sandbox_files/update_proxy_record.json ."  //proxy.sandbox.memphis.dev redirect to new LB record
+	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(kubectl get svc -n memphis | grep "memphis-http-proxy" | awk '{print \"dualstack.\"\$4}')\\"/g"  update_proxy_record.json > record3.json""",  returnStdout: true)
+	sh "rm -rf record1.json record2.json record3.json update_sandbox_record.json update_broker_record.json update_proxy_record.json"
       }
   
 	  
