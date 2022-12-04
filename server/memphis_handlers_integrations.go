@@ -313,6 +313,8 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	err := integrationsCollection.FindOne(context.TODO(),
 		filter).Decode(&integration)
 	if err == mongo.ErrNoDocuments {
+		c.IndentedJSON(200, nil)
+		return
 	} else if err != nil {
 		serv.Errorf("GetIntegrationDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
