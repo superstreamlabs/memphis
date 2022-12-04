@@ -40,7 +40,8 @@
     "reaflow": "^5.0.6",
     "sass": "^1.49.0",
     "uuid": "^9.0.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "react-hotjar": "^5.0.0"
   },
   "scripts": {
     "start": "PORT=5555 react-scripts start",
