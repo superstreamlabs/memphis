@@ -161,6 +161,14 @@ node {
        	    sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin ${versionTag}"
   	  }
 	}
+	      
+	stage('Create new release') {
+          sh 'sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo'
+          sh 'sudo yum install gh -y'
+          withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
+	    sh(script:"""gh release create \${versionTag} --generate-notes""", returnStdout: true)
+          }
+        }
       }  
 
     notifySuccessful()
