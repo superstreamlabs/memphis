@@ -82,7 +82,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const history = useHistory();
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
-    const [actualPods, setActualPods] = useState([]);
+    const [actualPods, setActualPods] = useState(['1']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [idempotencyType, setIdempotencyType] = useState(retanionOptions[2]);
 
@@ -148,7 +148,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
             indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
-            data?.system_components[indexOfBrokerComponent]?.actual_pods && setActualPods(Array.from({ length: 4 }, (_, i) => i + 1));
+            data?.system_components[indexOfBrokerComponent]?.actual_pods &&
+                setActualPods(Array.from({ length: data?.system_components[indexOfBrokerComponent]?.actual_pods }, (_, i) => i + 1));
         } catch (error) {}
     };
 
@@ -262,7 +263,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 height="40px"
                                 popupClassName="select-options"
                                 options={actualPods}
-                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || 1}
                                 onChange={(e) => getStarted && updateFormState('replicas', e)}
                                 disabled={!allowEdit}
                             />
