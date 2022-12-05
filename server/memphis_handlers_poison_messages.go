@@ -174,10 +174,12 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 
 	for i, msg := range poisonMessages {
 		msgData := hex.EncodeToString([]byte(msg.Message.Data))
-		if len(msgData) > 100 {
-			poisonMessages[i].Message.Data = msgData[0:100]
+		if len(msgData) > 40 {
+			poisonMessages[i].Message.Data = msgData[0:40]
+		} else {
+			poisonMessages[i].Message.Data = msgData
 		}
-
+		
 		msg := models.MessagePayload{
 			TimeSent: poisonMessages[i].Message.TimeSent,
 			Size:     poisonMessages[i].Message.Size,
