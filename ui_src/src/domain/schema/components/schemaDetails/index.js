@@ -44,6 +44,7 @@ import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 
 const formatOption = [
     {
@@ -183,23 +184,23 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
-    const validateJsonSchema = value => {
+    const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
             ajv.addMetaSchema(draft7MetaSchema);
-            validateJsonSchemaContent(value, ajv)
+            validateJsonSchemaContent(value, ajv);
         } catch (error) {
             try {
                 const ajv = new jsonSchemaDraft04();
-                validateJsonSchemaContent(value, ajv)
+                validateJsonSchemaContent(value, ajv);
             } catch (error) {
                 try {
                     const ajv = new Ajv2020();
-                    validateJsonSchemaContent(value, ajv)
+                    validateJsonSchemaContent(value, ajv);
                 } catch (error) {
                     try {
                         ajv.addMetaSchema(draft6MetaSchema);
-                        validateJsonSchemaContent(value, ajv)
+                        validateJsonSchemaContent(value, ajv);
                     } catch (error) {
                         setValidateSuccess('');
                         setValidateError(error.message);
@@ -207,8 +208,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 }
             }
         }
-
-    }
+    };
 
     const checkContent = (value) => {
         const { type } = schemaDetails;
@@ -232,7 +232,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     setValidateError(error.message);
                 }
             } else if (type === 'json') {
-                validateJsonSchema(value)
+                validateJsonSchema(value);
             }
         }
     };
@@ -291,12 +291,14 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
+                        {schemaDetails.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
-                        <span>{currentVersion?.created_by_user}</span>
+                        <OverflowTip text={currentVersion.created_by_user} maxWidth={'150px'}>
+                            <span>{currentVersion.created_by_user}</span>
+                        </OverflowTip>
                     </div>
                     <div className="wrapper">
                         <img src={createdDateIcon} alt="typeIcon" />
@@ -341,27 +343,29 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
-                        {schemaDetails.type === "protobuf" &&
-                        <>
-                            <p className="field-name">Master message :</p>
-                            <SelectComponent
-                                value={messageStructName}
-                                colorType="black"
-                                backgroundColorType="white"
-                                borderColorType="gray-light"
-                                radiusType="semi-round"
-                                minWidth="12vw"
-                                width="250px"
-                                height="30px"
-                                options={messagesStructNameList}
-                                iconColor="gray"
-                                popupClassName="message-option"
-                                onChange={(e) => {
-                                    setMessageStructName(e);
-                                    setUpdated(true);
-                                }}
-                                disabled={!editable}
-                            /></>}
+                            {schemaDetails.type === 'protobuf' && (
+                                <>
+                                    <p className="field-name">Master message :</p>
+                                    <SelectComponent
+                                        value={messageStructName}
+                                        colorType="black"
+                                        backgroundColorType="white"
+                                        borderColorType="gray-light"
+                                        radiusType="semi-round"
+                                        minWidth="12vw"
+                                        width="250px"
+                                        height="30px"
+                                        options={messagesStructNameList}
+                                        iconColor="gray"
+                                        popupClassName="message-option"
+                                        onChange={(e) => {
+                                            setMessageStructName(e);
+                                            setUpdated(true);
+                                        }}
+                                        disabled={!editable}
+                                    />
+                                </>
+                            )}
                         </div>
                         <div className="validation">
                             <Button

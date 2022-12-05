@@ -40,8 +40,6 @@ import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
 import Preferences from './domain/preferences';
-import Profile from './domain/preferences/profile';
-import Integrations from './domain/preferences/integrations';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);

@@ -402,7 +402,12 @@ const Messages = () => {
                         img={leaderImg}
                         title={'Leader'}
                         desc={
-                            'Each station stores a stream object with a single leader on the most available broker based on RAFT decision. In case of leader failure, the role will be transferred to one of the followers'
+                            <span>
+                                The current leader of this station.{' '}
+                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                    Learn More
+                                </a>
+                            </span>
                         }
                         data={[stationState?.stationSocketData?.leader]}
                     />
@@ -411,7 +416,12 @@ const Messages = () => {
                             img={followersImg}
                             title={'Followers'}
                             desc={
-                                'Followers are standby replicas for the stream leader and will take its role in case of leader failure. The number of followers and leader equals the number of defined stream replicas (Mirrors)'
+                                <span>
+                                    The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn More
+                                    </a>
+                                </span>
                             }
                             data={stationState?.stationSocketData?.followers}
                         />
@@ -419,7 +429,14 @@ const Messages = () => {
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}
-                        desc={'Idempotency mode ensures that messages always get delivered in the right order and without duplicates. Cause some performance degradation'}
+                        desc={
+                            <span>
+                                Ensures messages will be produced once.{' '}
+                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
+                                    Learn More
+                                </a>
+                            </span>
+                        }
                         data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
                     />
                 </div>
