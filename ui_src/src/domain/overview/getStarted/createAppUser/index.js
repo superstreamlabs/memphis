@@ -120,7 +120,7 @@ const CreateAppUser = (props) => {
             {isCreatedUser === screenEnum['DATA_WAITING'] && (
                 <div className="creating-the-user-container">
                     <Lottie className="lottie" animationData={userCreator} loop={true} />
-                    <p className="create-the-user-header">We are creating the user</p>
+                    <p className="create-the-user-header">Please hold a second. The user is being created</p>
                 </div>
             )}
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && (
