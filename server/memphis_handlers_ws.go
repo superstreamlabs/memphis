@@ -224,7 +224,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 	if !exist {
-		return map[string]any{}, errors.New("Station does not exist")
+		return map[string]any{}, errors.New("Station " + stationName + " does not exist")
 	}
 
 	connectedProducers, disconnectedProducers, deletedProducers, err := h.Producers.GetProducersByStation(station)

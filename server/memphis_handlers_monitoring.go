@@ -219,7 +219,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Station does not exist")
+		serv.Warnf("Station " + body.StationName + " does not exist")
 		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
 		return
 	}
