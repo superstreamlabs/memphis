@@ -183,23 +183,23 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
-    const validateJsonSchema = value => {
+    const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
             ajv.addMetaSchema(draft7MetaSchema);
-            validateJsonSchemaContent(value, ajv)
+            validateJsonSchemaContent(value, ajv);
         } catch (error) {
             try {
                 const ajv = new jsonSchemaDraft04();
-                validateJsonSchemaContent(value, ajv)
+                validateJsonSchemaContent(value, ajv);
             } catch (error) {
                 try {
                     const ajv = new Ajv2020();
-                    validateJsonSchemaContent(value, ajv)
+                    validateJsonSchemaContent(value, ajv);
                 } catch (error) {
                     try {
                         ajv.addMetaSchema(draft6MetaSchema);
-                        validateJsonSchemaContent(value, ajv)
+                        validateJsonSchemaContent(value, ajv);
                     } catch (error) {
                         setValidateSuccess('');
                         setValidateError(error.message);
@@ -207,8 +207,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 }
             }
         }
-
-    }
+    };
 
     const checkContent = (value) => {
         const { type } = schemaDetails;
@@ -232,7 +231,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     setValidateError(error.message);
                 }
             } else if (type === 'json') {
-                validateJsonSchema(value)
+                validateJsonSchema(value);
             }
         }
     };
@@ -291,7 +290,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
+                        {schemaDetails.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
@@ -341,27 +340,29 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
-                        {schemaDetails.type === "protobuf" &&
-                        <>
-                            <p className="field-name">Master message :</p>
-                            <SelectComponent
-                                value={messageStructName}
-                                colorType="black"
-                                backgroundColorType="white"
-                                borderColorType="gray-light"
-                                radiusType="semi-round"
-                                minWidth="12vw"
-                                width="250px"
-                                height="30px"
-                                options={messagesStructNameList}
-                                iconColor="gray"
-                                popupClassName="message-option"
-                                onChange={(e) => {
-                                    setMessageStructName(e);
-                                    setUpdated(true);
-                                }}
-                                disabled={!editable}
-                            /></>}
+                            {schemaDetails.type === 'protobuf' && (
+                                <>
+                                    <p className="field-name">Master message :</p>
+                                    <SelectComponent
+                                        value={messageStructName}
+                                        colorType="black"
+                                        backgroundColorType="white"
+                                        borderColorType="gray-light"
+                                        radiusType="semi-round"
+                                        minWidth="12vw"
+                                        width="250px"
+                                        height="30px"
+                                        options={messagesStructNameList}
+                                        iconColor="gray"
+                                        popupClassName="message-option"
+                                        onChange={(e) => {
+                                            setMessageStructName(e);
+                                            setUpdated(true);
+                                        }}
+                                        disabled={!editable}
+                                    />
+                                </>
+                            )}
                         </div>
                         <div className="validation">
                             <Button
@@ -570,8 +571,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 open={activateVersionModal}
             >
                 <div className="roll-back-modal">
-                    <p className="title">You have created a new version - do you want to activate it?</p>
-                    <p className="desc">Your current schema will be changed to the new version.</p>
+                    <p className="title">You created a new version of the schema. Do you want to activate it?</p>
+                    <p className="desc">Your schema will be updated to the chosen version.</p>
                     <div className="buttons">
                         <Button
                             width="150px"

@@ -57,7 +57,9 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                 <div className="station-box-container">
                     <div className="left-section">
                         <div className="check-box">
-                            <p className="station-name">{station?.station?.name}</p>
+                            <OverflowTip className="station-name" text={station?.station?.name}>
+                                {station?.station?.name}
+                            </OverflowTip>
                         </div>
                         <label className="data-labels">Created at {parsingDate(station?.station?.creation_date)}</label>
                     </div>
