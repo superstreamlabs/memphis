@@ -21,6 +21,7 @@ import (
 )
 
 type Configuration struct {
+	MEMPHIS_VERSION                string
 	DEV_ENV                        string
 	HTTP_PORT                      string
 	WS_PORT                        int
