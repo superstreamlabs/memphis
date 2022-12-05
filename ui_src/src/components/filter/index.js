@@ -78,13 +78,15 @@ const Filter = ({ filterComponent, height }) => {
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
                 jc = JSONCodec();
                 sc = StringCodec();
-                (async () => {
-                    for await (const msg of sub) {
-                        let data = jc.decode(msg.data);
-                        data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-                        dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-                    }
-                })();
+                if (sub) {
+                    (async () => {
+                        for await (const msg of sub) {
+                            let data = jc.decode(msg.data);
+                            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                        }
+                    })();
+                }
 
                 setTimeout(() => {
                     state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
@@ -92,18 +94,20 @@ const Filter = ({ filterComponent, height }) => {
 
                 return () => {
                     state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
-                    sub.unsubscribe();
+                    sub?.unsubscribe();
                 };
             case 'schemaverse':
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
                 jc = JSONCodec();
                 sc = StringCodec();
-                (async () => {
-                    for await (const msg of sub) {
-                        let data = jc.decode(msg.data);
-                        dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-                    }
-                })();
+                if (sub) {
+                    (async () => {
+                        for await (const msg of sub) {
+                            let data = jc.decode(msg.data);
+                            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                        }
+                    })();
+                }
 
                 setTimeout(() => {
                     state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
@@ -111,7 +115,7 @@ const Filter = ({ filterComponent, height }) => {
 
                 return () => {
                     state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
-                    sub.unsubscribe();
+                    sub?.unsubscribe();
                 };
         }
     }, [state.socket]);
