@@ -27,7 +27,11 @@ const DetailBox = ({ img, title, desc, data }) => {
             <div className="separator" />
             <div className="detail-data">
                 {data.map((row) => {
-                    return <div className="detail-data-row">{row}</div>;
+                    return (
+                        <div key={row} className="detail-data-row">
+                            {row}
+                        </div>
+                    );
                 })}
             </div>
         </div>

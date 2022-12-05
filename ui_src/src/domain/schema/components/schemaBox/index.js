@@ -43,7 +43,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     <header is="x3d">
                         <div className="header-wrapper">
                             <div className="schema-name">
-                                <OverflowTip text={schema.name} maxWidth={'100px'}>
+                                <OverflowTip text={schema.name} maxWidth={'150px'}>
                                     <span>{schema.name}</span>
                                 </OverflowTip>
                             </div>
@@ -57,11 +57,11 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     <type is="x3d">
                         <div className="field-wrapper">
                             <p>Type : </p>
-                            {schema.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schema.type}</span>}
+                            {schema.type === 'json' ? <span>JSON schema</span> : <span> {schema.type}</span>}
                         </div>
                         <div className="field-wrapper">
                             <p>Created by : </p>
-                            <OverflowTip text={schema.created_by_user} maxWidth={'100px'}>
+                            <OverflowTip text={schema.created_by_user} maxWidth={'70px'}>
                                 <span>{schema.created_by_user}</span>
                             </OverflowTip>
                         </div>
