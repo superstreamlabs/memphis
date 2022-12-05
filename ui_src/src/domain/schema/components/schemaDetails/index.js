@@ -296,8 +296,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
-                        <OverflowTip text={currentVersion.created_by_user} maxWidth={'150px'}>
-                            <span>{currentVersion.created_by_user}</span>
+                        <OverflowTip text={currentVersion?.created_by_user} maxWidth={'150px'}>
+                            <span>{currentVersion?.created_by_user}</span>
                         </OverflowTip>
                     </div>
                     <div className="wrapper">
