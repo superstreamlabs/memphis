@@ -291,7 +291,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schemaDetails.type}</span>}
+                        {schemaDetails?.type === 'json' ? <span>JSON schema</span> : <span> {schemaDetails?.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
