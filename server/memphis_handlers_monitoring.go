@@ -23,6 +23,7 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
+	"net/http"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -80,8 +81,22 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
+		_, err := http.Get("http://localhost:4444")
+		if err != nil {
+			components = append(components, models.SystemComponent{
+				Component:   "memphis-http-proxy",
+				DesiredPods: 1,
+				ActualPods:  0,
+			})
+		} else {
+			components = append(components, models.SystemComponent{
+				Component:   "memphis-http-proxy",
+				DesiredPods: 1,
+				ActualPods:  1,
+			})
+		}
 
-		err := serv.memphis.dbClient.Ping(context.TODO(), nil)
+		err = serv.memphis.dbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
@@ -101,6 +116,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			DesiredPods: 1,
 			ActualPods:  1,
 		})
+
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetConfig()
