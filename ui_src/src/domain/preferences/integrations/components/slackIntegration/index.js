@@ -36,7 +36,6 @@ const SlackIntegration = ({ close, value }) => {
     const slackConfiguration = INTEGRATION_LIST[0];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
-
     const [formFields, setFormFields] = useState({
         name: 'slack',
         ui_url: `${urlSplit[0]}//${urlSplit[2]}`,
@@ -45,9 +44,9 @@ const SlackIntegration = ({ close, value }) => {
             channel_id: value?.keys?.channel_id || ''
         },
         properties: {
-            poison_message_alert: value?.properties?.poison_message_alert ? true : false,
-            schema_validation_fail_alert: value?.properties?.schema_validation_fail_alert ? true : false,
-            disconnection_events_alert: value?.properties?.disconnection_events_alert ? true : false
+            poison_message_alert: value?.properties ? (value?.properties?.poison_message_alert ? true : false) : true,
+            schema_validation_fail_alert: value?.properties ? (value?.properties?.schema_validation_fail_alert ? true : false) : true,
+            disconnection_events_alert: value?.properties ? (value?.properties?.disconnection_events_alert ? true : false) : true
         }
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -211,7 +210,7 @@ const SlackIntegration = ({ close, value }) => {
                             initialValue={formFields?.keys?.channel_id}
                         >
                             <Input
-                                placeholder="#C0P4ISJH06K"
+                                placeholder="C0P4ISJH06K"
                                 type="text"
                                 fontSize="12px"
                                 radiusType="semi-round"

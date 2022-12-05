@@ -144,7 +144,6 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		idForUrl = poisonMsg.ID.Hex()
 	}
 	if UI_url == "" {
-		serv.Warnf("Error while sending a poison message notification: UI url not provided")
 		return
 	}
 	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl

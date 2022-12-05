@@ -352,7 +352,7 @@ const Messages = () => {
                             <div className="row-data">
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
                                     <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />

@@ -94,7 +94,7 @@ func handleConnectMessage(client *client) error {
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if !shouldSendAnalytics {
+	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
 		sdkName := splitted[len(splitted)-1]
 		param := analytics.EventParam{
@@ -215,7 +215,7 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		}
 
 		for i := 0; i < len(consumers); i++ {
-			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " Station: " + consumers[i].StationName + "\n"
+			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
 		}
 	}
 	msg := ""

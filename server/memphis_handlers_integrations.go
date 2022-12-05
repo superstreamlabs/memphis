@@ -35,6 +35,10 @@ import (
 type IntegrationsHandler struct{ S *Server }
 
 func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -107,6 +111,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+	
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -313,6 +321,8 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	err := integrationsCollection.FindOne(context.TODO(),
 		filter).Decode(&integration)
 	if err == mongo.ErrNoDocuments {
+		c.IndentedJSON(200, nil)
+		return
 	} else if err != nil {
 		serv.Errorf("GetIntegrationDetails error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

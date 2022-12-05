@@ -70,23 +70,9 @@ const Finish = ({ createStationFormRef }) => {
         } catch (error) {}
     };
 
-    const sendAnalytics = async (analyticsFlag) => {
-        try {
-            await httpRequest('PUT', `${ApiEndpoints.EDIT_ANALYTICS}`, { send_analytics: analyticsFlag });
-            setAllowAnalytics(analyticsFlag);
-            localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, analyticsFlag);
-        } catch (err) {
-            return;
-        }
-    };
-
     return (
         <div className="finish-container">
             <div className="btn-container">
-                <div className="allow-analytics">
-                    <Switcher onChange={() => sendAnalytics(!allowAnalytics)} checked={allowAnalytics} checkedChildren="on" unCheckedChildren="off" />
-                    <p>I allow Memphis team to reach out and ask for feedback.</p>
-                </div>
                 <div className="buttons-wrapper">
                     <Button
                         height="42px"
@@ -126,11 +112,7 @@ const Finish = ({ createStationFormRef }) => {
             </div>
             <div className="container-icons-finish">
                 <p className="link-finish-header">Link to our channels</p>
-                <Link
-                    className="icon-image"
-                    to={{ pathname: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/getting-started/1-installation' }}
-                    target="_blank"
-                >
+                <Link className="icon-image" to={{ pathname: 'https://docs.memphis.dev' }} target="_blank">
                     <img src={docsLogo} width="25px" height="25px" alt="slack-icon"></img>
                 </Link>
                 <Link className="icon-image" to={{ pathname: 'https://github.com/memphisdev' }} target="_blank">

@@ -131,11 +131,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
-            name: formFields.station_name.replace(' ', '-'),
+            name: formFields.station_name.split(' ').join('-'),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
-            replicas: formFields.replicas,
+            replicas: Number(formFields.replicas),
             schema_name: formFields.schemaValue,
             idempotency_window_in_ms: idempotencyValue
         };
@@ -184,12 +184,12 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const stationNameChange = (e) => {
-        getStarted && updateFormState('station_name', e.target.value);
+        getStarted && updateFormState('name', e.target.value);
         let name = e.target.value.split(' ').join('-');
         if (parserName === '') {
             setTimeout(() => {
                 setParserName(name.toLowerCase());
-            }, 300);
+            }, 100);
         } else {
             setParserName(name.toLowerCase());
         }
@@ -263,7 +263,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 height="40px"
                                 popupClassName="select-options"
                                 options={actualPods}
-                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || 1}
+                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
                                 onChange={(e) => getStarted && updateFormState('replicas', e)}
                                 disabled={!allowEdit}
                             />
