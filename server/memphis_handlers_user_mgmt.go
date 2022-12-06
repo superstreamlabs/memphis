@@ -1190,7 +1190,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 			return
 		}
 
-		schemaType := []string{"protobuf", "json"}
+		schemaType := []string{"protobuf", "json", "graphql"}
 		usage := []string{"used", "not used"}
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "type": schemaType, "usage": usage})
 		return

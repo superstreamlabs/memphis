@@ -45,6 +45,7 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
+import { parse } from 'graphql';
 
 const formatOption = [
     {
@@ -184,6 +185,17 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
+    const validateGraphQlSchema = (value) => {
+        try {
+            parse(value);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
     const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
@@ -233,6 +245,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 }
             } else if (type === 'json') {
                 validateJsonSchema(value);
+            } else if (type === 'graphql') {
+                validateGraphQlSchema(value);
             }
         }
     };

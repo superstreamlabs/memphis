@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/graphql-go/graphql/language/parser"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"go.mongodb.org/mongo-driver/bson"
@@ -57,6 +58,15 @@ func validateJsonSchemaContent(schemaContent string) error {
 		return errors.New("Your json schema is invalid")
 	}
 
+	return nil
+}
+
+func validateGraphqlSchemaContent(schemaContent string) error {
+	parseParams := parser.ParseParams{Source: schemaContent}
+	_, err := parser.Parse(parseParams)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -101,7 +111,7 @@ func validateSchemaType(schemaType string) error {
 	invalidSupportTypeErrStr := fmt.Sprintf("Avro is not supported at this time")
 	invalidSupportTypeErr := errors.New(invalidSupportTypeErrStr)
 
-	if schemaType == "protobuf" || schemaType == "json" {
+	if schemaType == "protobuf" || schemaType == "json" || schemaType == "graphql" {
 		return nil
 	} else if schemaType == "avro" {
 		return invalidSupportTypeErr
@@ -127,6 +137,11 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 			return err
 		}
 		break
+	case "graphql":
+		err := validateGraphqlSchemaContent(schemaContent)
+		if err != nil {
+			return err
+		}
 	case "avro":
 		break
 	}
