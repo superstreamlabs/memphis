@@ -15,6 +15,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
@@ -33,7 +34,7 @@ var userMgmtHandler UserMgmtHandler
 
 func (s *Server) initializeConfigurations() {
 	var pmRetention models.ConfigurationsIntValue
-	err := configurationsCollection.FindOne(context.TODO(), bson.M{"key": "pmRetention"}).Decode(&pmRetention)
+	err := configurationsCollection.FindOne(context.TODO(), bson.M{"key": "pm_retention"}).Decode(&pmRetention)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
 			s.Errorf("initializeConfigurations error: " + err.Error())
@@ -43,7 +44,7 @@ func (s *Server) initializeConfigurations() {
 		POISON_MSGS_RETENTION_IN_HOURS = pmRetention.Value
 	}
 	var logsRetention models.ConfigurationsIntValue
-	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "logsRetention"}).Decode(&logsRetention)
+	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "logs_retention"}).Decode(&logsRetention)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
 			s.Errorf("initializeConfigurations error: " + err.Error())
@@ -57,7 +58,7 @@ func (s *Server) initializeConfigurations() {
 }
 
 func (ch ConfigurationsHandler) ChangeRootPassword(c *gin.Context) {
-	var body models.ChangeRootPassword
+	var body models.ChangeRootPasswordSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -75,45 +76,57 @@ func (ch ConfigurationsHandler) ChangeRootPassword(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		c.IndentedJSON(200, []string{})
+		c.IndentedJSON(200, gin.H{})
 	} else {
-		errMsg := "Only root user is allowed to change root user password"
+		errMsg := "Change root password: This operation can be done only by the root user"
 		serv.Warnf(errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 	}
 }
 
 func (ch ConfigurationsHandler) ChangePMRetention(c *gin.Context) {
-	var body models.ChangeIntConfiguration
+	var body models.ChangeIntConfigurationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 	POISON_MSGS_RETENTION_IN_HOURS = body.Value
-	filter := bson.M{"key": "pmRetention"}
+	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: "pm_retention", Update: POISON_MSGS_RETENTION_IN_HOURS})
+	if err != nil {
+		serv.Errorf("ChangePMRetention error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		serv.Errorf("ChangePMRetention error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	filter := bson.M{"key": "pm_retention"}
 	update := bson.M{
 		"$set": bson.M{
 			"value": POISON_MSGS_RETENTION_IN_HOURS,
 		},
 	}
 	opts := options.Update().SetUpsert(true)
-	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("ChangePMRetention error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	c.IndentedJSON(200, []string{})
+	c.IndentedJSON(200, gin.H{})
 }
 
 func (ch ConfigurationsHandler) ChangeLogsRetention(c *gin.Context) {
-	var body models.ChangeIntConfiguration
+	var body models.ChangeIntConfigurationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 	LOGS_RETENTION_IN_DAYS = body.Value
-	filter := bson.M{"key": "logsRetention"}
+	filter := bson.M{"key": "logs_retention"}
 	update := bson.M{
 		"$set": bson.M{
 			"value": LOGS_RETENTION_IN_DAYS,
@@ -141,5 +154,5 @@ func (ch ConfigurationsHandler) ChangeLogsRetention(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	c.IndentedJSON(200, []string{})
+	c.IndentedJSON(200, gin.H{})
 }

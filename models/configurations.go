@@ -15,12 +15,17 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
-type ChangeRootPassword struct {
+type ChangeRootPasswordSchema struct {
 	Password string `json:"password"`
 }
 
-type ChangeIntConfiguration struct {
+type ChangeIntConfigurationSchema struct {
 	Value int `json:"value"`
+}
+
+type ConfigurationsUpdate struct {
+	Type   string `json:"type"`
+	Update any    `json:"update"`
 }
 
 type ConfigurationsIntValue struct {
