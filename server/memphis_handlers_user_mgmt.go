@@ -359,6 +359,22 @@ func CreateRootUserOnFirstSystemLoad() error {
 	return nil
 }
 
+func (umh UserMgmtHandler) ChangeUserPassword(username string, password string) error {
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	hashedPwdString := string(hashedPwd)
+	_, err = usersCollection.UpdateOne(context.TODO(),
+		bson.M{"username": strings.ToLower(username)},
+		bson.M{"$set": bson.M{"password": hashedPwdString}},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (umh UserMgmtHandler) Login(c *gin.Context) {
 	var body models.LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
