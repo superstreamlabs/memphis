@@ -540,8 +540,8 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		}
 
 		data := hex.EncodeToString(msg.Data)
-		if len(data) > 100 { // get the first chars for preview needs
-			data = data[0:100]
+		if len(data) > 40 { // get the first chars for preview needs
+			data = data[0:40]
 		}
 
 		messages = append(messages, models.MessageDetails{
