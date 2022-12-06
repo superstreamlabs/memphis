@@ -1405,7 +1405,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	var asr attachSchemaRequest
 	if err := json.Unmarshal(msg, &asr); err != nil {
-		s.Warnf("failed creating station: %v", err.Error())
+		s.Warnf("failed attaching schema: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -1528,6 +1528,29 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 
 	s.updateStationProducersOfSchemaChange(sn, update)
 	return nil
+}
+
+func (s *Server) removeSchemaDirect(c *client, reply string, msg []byte) {
+	var asr detachSchemaRequest
+	if err := json.Unmarshal(msg, &asr); err != nil {
+		s.Warnf("failed removing schema: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+	stationName, err := StationNameFromStr(asr.StationName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	err = removeSchemaFromStation(serv, stationName, true)
+	if err != nil {
+		serv.Errorf("removeSchema error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+	respondWithErr(s, reply, nil)
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {

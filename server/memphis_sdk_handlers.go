@@ -80,6 +80,10 @@ type attachSchemaRequest struct {
 	StationName string `json:"station_name"`
 }
 
+type detachSchemaRequest struct {
+	StationName string `json:"station_name"`
+}
+
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
@@ -118,6 +122,9 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
+	s.queueSubscribe("$memphis_schema_detachments",
+		"memphis_schema_detachments_listeners_group",
+		detachSchemaHandler(s))
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -159,6 +166,12 @@ func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 func attachSchemaHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.useSchemaDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func detachSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.removeSchemaDirect(c, reply, copyBytes(msg))
 	}
 }
 
