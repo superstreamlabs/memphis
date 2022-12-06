@@ -28,7 +28,10 @@ import TitleComponent from '../../../../components/titleComponent';
 import { CODE_EXAMPLE } from '../../../../const/SDKExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
 import Copy from '../../../../components/copy';
+import * as monaco from 'monaco-editor';
 import Editor from '@monaco-editor/react';
+import { loader } from '@monaco-editor/react';
+loader.config({ monaco });
 
 export const produceConsumeScreenEnum = {
     DATA_SNIPPET: 0,

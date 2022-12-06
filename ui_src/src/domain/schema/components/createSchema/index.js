@@ -17,9 +17,7 @@ import './style.scss';
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
-import Editor from '@monaco-editor/react';
 import { Form } from 'antd';
-
 import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
 import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
@@ -40,6 +38,10 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import GenerateSchema from 'generate-schema';
+import * as monaco from 'monaco-editor';
+import Editor from '@monaco-editor/react';
+import { loader } from '@monaco-editor/react';
+loader.config({ monaco });
 
 const schemaTypes = [
     {

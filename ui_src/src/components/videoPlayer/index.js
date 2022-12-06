@@ -20,6 +20,7 @@ const VideoPlayer = ({ url }) => {
             height="250px"
             width="445px"
             url={url}
+            // onError={() => console.log('error')}
         ></ReactPlayer>
     );
 };
