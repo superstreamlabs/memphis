@@ -44,6 +44,7 @@ const (
 	syslogsInfoSubject = "info"
 	syslogsWarnSubject = "warn"
 	syslogsErrSubject  = "err"
+	syslogsSysSubject  = "sys"
 )
 
 // JetStream API request kinds
