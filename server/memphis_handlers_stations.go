@@ -1402,6 +1402,101 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	sh.S.updateStationProducersOfSchemaChange(stationName, update)
 }
 
+func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
+	var asr attachSchemaRequest
+	if err := json.Unmarshal(msg, &asr); err != nil {
+		s.Warnf("failed creating station: %v", err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+	stationName, err := StationNameFromStr(asr.StationName)
+	if err != nil {
+		serv.Warnf(err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	exist, _, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("useSchema error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	if !exist {
+		serv.Warnf("Station with that name does not exist")
+		respondWithErr(s, reply, errors.New("memphis: station with that name does not exist"))
+		return
+	}
+
+	schemaName := asr.Name
+	var schemaDetails models.SchemaDetails
+	schemaName = strings.ToLower(asr.Name)
+	exist, schema, err := IsSchemaExist(schemaName)
+	if err != nil {
+		serv.Errorf("useSchema error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+	if !exist {
+		serv.Errorf("Schema does not exist")
+		respondWithErr(s, reply, errors.New("Schema does not exist"))
+		return
+	}
+
+	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+	schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+
+	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+	if err != nil {
+		serv.Errorf("CreateStation error: " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext()
+	serv.Noticef(message)
+
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		ID:            primitive.NewObjectID(),
+		StationName:   stationName.Intern(),
+		Message:       message,
+		CreatedByUser: "sdk",
+		CreationDate:  time.Now(),
+		UserType:      "sdk",
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Warnf("create audit logs error: " + err.Error())
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent("sdk", "user-attach-schema-to-station")
+	}
+
+	updateContent, err := generateSchemaUpdateInit(schema)
+	if err != nil {
+		serv.Errorf("UseSchema error: %v", err)
+		return
+	}
+
+	update := models.ProducerSchemaUpdate{
+		UpdateType: models.SchemaUpdateTypeInit,
+		Init:       *updateContent,
+	}
+
+	serv.updateStationProducersOfSchemaChange(stationName, update)
+	respondWithErr(s, reply, nil)
+}
+
 func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 	exist, _, err := IsStationExist(sn)
 	if err != nil {

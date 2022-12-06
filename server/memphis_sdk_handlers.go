@@ -75,6 +75,11 @@ type createConsumerRequest struct {
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
 }
 
+type attachSchemaRequest struct {
+	Name        string `json:"name"`
+	StationName string `json:"station_name"`
+}
+
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
@@ -108,6 +113,11 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
+
+	// schema attachements
+	s.queueSubscribe("$memphis_schema_attachments",
+		"memphis_schema_attachments_listeners_group",
+		attachSchemaHandler(s))
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -143,6 +153,12 @@ func createConsumerHandler(s *Server) simplifiedMsgHandler {
 func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.destroyConsumerDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func attachSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.useSchemaDirect(c, reply, copyBytes(msg))
 	}
 }
 
