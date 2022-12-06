@@ -943,7 +943,10 @@ func (c *client) parse(buf []byte) error {
 				authSet = c.awaitingAuth()
 				c.mu.Unlock()
 
-				if c.kind == CLIENT && !strings.Contains(c.opts.Name, "NATS CLI") && c.ws == nil {
+				if c.kind == CLIENT &&
+					!strings.Contains(c.opts.Name, "NATS CLI") &&
+					c.ws == nil &&
+					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") {
 					if err := handleConnectMessage(c); err != nil {
 						// user is getting notified from within the function
 						goto authErr
