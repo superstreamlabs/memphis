@@ -26,6 +26,7 @@ type memphisResponse interface {
 
 type createStationRequest struct {
 	StationName       string `json:"name"`
+	SchemaName        string `json:"schema_name"`
 	RetentionType     string `json:"retention_type"`
 	RetentionValue    int    `json:"retention_value"`
 	StorageType       string `json:"storage_type"`

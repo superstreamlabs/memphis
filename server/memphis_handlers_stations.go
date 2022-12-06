@@ -164,6 +164,31 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+	schemaName := csr.SchemaName
+	var schemaDetails models.SchemaDetails
+	if schemaName != "" {
+		schemaName = strings.ToLower(csr.SchemaName)
+		exist, schema, err := IsSchemaExist(schemaName)
+		if err != nil {
+			serv.Errorf("CreateStation error: " + err.Error())
+			respondWithErr(s, reply, err)
+			return
+		}
+		if !exist {
+			serv.Errorf("Schema does not exist")
+			respondWithErr(s, reply, errors.New("Schema does not exist"))
+			return
+		}
+
+		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
+		if err != nil {
+			serv.Errorf("CreateStation error: " + err.Error())
+			respondWithErr(s, reply, err)
+			return
+		}
+		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+	}
+
 	var retentionType string
 	var retentionValue int
 	if csr.RetentionType != "" {
@@ -224,6 +249,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		DedupEnabled:      csr.DedupEnabled,      // TODO deprecated
 		DedupWindowInMs:   csr.DedupWindowMillis, // TODO deprecated
 		LastUpdate:        time.Now(),
+		Schema:            schemaDetails,
 		Functions:         []models.Function{},
 		IdempotencyWindow: csr.IdempotencyWindow,
 	}
