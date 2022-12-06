@@ -4022,7 +4022,12 @@ func (js *jetStream) processConsumerLeaderChange(o *consumer, isLeader bool) err
 	}
 
 	if isLeader {
-		s.Systemf("JetStream cluster new consumer leader for '%s > %s > %s'", ca.Client.serviceAccount(), streamName, consumerName)
+		logFunc := s.Noticef
+		if strings.Contains(streamName, "$memphis") ||
+			strings.Contains(consumerName, "$memphis") {
+			logFunc = s.Systemf
+		}
+		logFunc("JetStream cluster new consumer leader for '%s > %s > %s'", ca.Client.serviceAccount(), streamName, consumerName)
 		s.sendConsumerLeaderElectAdvisory(o)
 		// Check for peer removal and process here if needed.
 		js.checkPeers(ca.Group)
