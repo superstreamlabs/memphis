@@ -9,7 +9,7 @@
     justify-content: space-between;
     align-items: center;
     min-width:785px;
-    .left-side {
+    .name {
         display: flex;
         align-items: center;
         width: 30%;
@@ -42,7 +42,7 @@
 
         }
     }
-    .right-side {
+    .slider {
         display: flex;
         align-items: center;
         .min-max-box{

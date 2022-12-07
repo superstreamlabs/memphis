@@ -19,6 +19,15 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Context } from '../../../../../hooks/store';
 import { Slider } from 'antd';
 
+const trackStyle = { background: 'var(--purple)', height: '4px' };
+const handleStyle = {
+    border: '8px solid #FFFFFF',
+    background: 'var(--purple)',
+    boxShadow: '0px 8px 16px rgba(0, 82, 204, 0.16)',
+    width: '24px',
+    height: '24px',
+    marginTop: '-10px'
+};
 function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
     const [inputValue, setInputValue] = useState(value);
     const [state, dispatch] = useContext(Context);
@@ -33,7 +42,7 @@ function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
 
     return (
         <div className="configuration-list-container">
-            <div className="left-side">
+            <div className="name">
                 <img src={img} alt="ConfImg2" />
                 <div>
                     <p className="conf-name">{title}</p>
@@ -45,28 +54,13 @@ function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
                     {inputValue} {unit}
                 </p>
             </div>
-            <div className="right-side">
+            <div className="slider">
                 <div className="min-max-box">
                     <span>
                         {min} {unit}
                     </span>
                 </div>
-                <Slider
-                    style={{ width: '20vw' }}
-                    min={min}
-                    max={max}
-                    onChange={onChange}
-                    value={inputValue}
-                    trackStyle={{ background: 'var(--purple)', height: '4px' }}
-                    handleStyle={{
-                        border: '8px solid #FFFFFF',
-                        background: 'var(--purple)',
-                        boxShadow: '0px 8px 16px rgba(0, 82, 204, 0.16)',
-                        width: '24px',
-                        height: '24px',
-                        marginTop: '-10px'
-                    }}
-                />
+                <Slider style={{ width: '20vw' }} min={min} max={max} onChange={onChange} value={inputValue} trackStyle={trackStyle} handleStyle={handleStyle} />
                 <div className="min-max-box">
                     <span>
                         {max} {unit}
