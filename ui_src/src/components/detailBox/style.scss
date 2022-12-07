@@ -46,4 +46,11 @@
             color: rgba(74, 73, 92, 0.8);
         }
     }
+    a{
+        color: var(--purple);
+    }
+    a:hover{
+        text-decoration: underline;
+    }
+
 }

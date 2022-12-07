@@ -42,7 +42,6 @@ const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, 
                         style={{ height: height }}
                         className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
                         onClick={() => (labelType ? onClick(option.value) : '')}
-                        key={option.value}
                     >
                         <span
                             className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}

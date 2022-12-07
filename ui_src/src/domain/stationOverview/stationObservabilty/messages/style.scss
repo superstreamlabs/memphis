@@ -79,14 +79,14 @@
             }
             .left-coulmn {
                 display: flex;
-                width: 50%;
+                width: 40%;
                 padding-left: 15px;
                 p {
                     padding-left: 10px;
                 }
             }
             .right-coulmn {
-                width: 50%;
+                width: 60%;
                 display: flex;
                 justify-content: center;
             }
@@ -103,7 +103,7 @@
             .rows-wrapper {
                 position: relative;
                 height: calc(100%);
-                width: 50%;
+                width: 40%;
                 overflow: auto;
                 border-right: 1px solid #e9e9e9;
                 .message-row {
@@ -162,7 +162,7 @@
             }
         }
         .message-wrapper {
-            width: 50%;
+            width: 60%;
             display: flex;
             flex-direction: column;
             justify-content: space-around;

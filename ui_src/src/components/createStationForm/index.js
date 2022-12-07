@@ -184,8 +184,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const stationNameChange = (e) => {
-        getStarted && updateFormState('name', e.target.value);
         let name = e.target.value.split(' ').join('-');
+        getStarted && updateFormState('name', name.toLowerCase());
         if (parserName === '') {
             setTimeout(() => {
                 setParserName(name.toLowerCase());

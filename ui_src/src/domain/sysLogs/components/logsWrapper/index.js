@@ -95,18 +95,20 @@ const LogsWrapper = () => {
         sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
-                const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-                if (stateRef.current[4]) {
-                    setSelectedRow(data.logs[0].message_seq);
+        if (sub) {
+            (async () => {
+                for await (const msg of sub) {
+                    let data = jc.decode(msg.data);
+                    let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
+                    const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
+                    if (stateRef.current[4]) {
+                        setSelectedRow(data.logs[0].message_seq);
+                    }
+                    setLastMgsSeq(data.logs[0].message_seq);
+                    setLogs((users) => [...uniqueItems, ...users]);
                 }
-                setLastMgsSeq(data.logs[0].message_seq);
-                setLogs((users) => [...uniqueItems, ...users]);
-            }
-        })();
+            })();
+        }
         setTimeout(() => {
             if (logType === '') {
                 state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
@@ -123,34 +125,15 @@ const LogsWrapper = () => {
         } else {
             state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('UNSUB'));
         }
-        sub.unsubscribe();
+        sub?.unsubscribe();
     };
 
     useEffect(() => {
         sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
         setSocketOn(true);
-
-        // const jc = JSONCodec();
-        // const sc = StringCodec();
-        // setSocketOn(true);
-        // (async () => {
-        //     for await (const msg of sub) {
-        //         let data = jc.decode(msg.data);
-        //         let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
-        //         const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-        //         setLastMgsSeq(data.logs[0].message_seq);
-        //         if (stateRef.current[1].startIndex === 0) {
-        //             setSelectedRow(data.logs[0].message_seq);
-        //         }
-        //         setLogs((users) => [...uniqueItems, ...users]);
-        //     }
-        // })();
-
-        // startListen();
-
         return () => {
             stopListen();
-            sub.unsubscribe();
+            sub?.unsubscribe();
         };
     }, [state.socket]);
 

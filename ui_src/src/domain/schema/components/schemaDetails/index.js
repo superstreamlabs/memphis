@@ -44,6 +44,7 @@ import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 
 const formatOption = [
     {
@@ -289,13 +290,15 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="type-created">
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
-                        <p>Type:</p>
-                        {schemaDetails.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schemaDetails.type}</span>}
+                        <p>Type:</p
+                        {schemaDetails?.type === 'json' ? <span>JSON schema</span> : <span> {schemaDetails?.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
-                        <span>{currentVersion?.created_by_user}</span>
+                        <OverflowTip text={currentVersion?.created_by_user} maxWidth={'150px'}>
+                            <span>{currentVersion?.created_by_user}</span>
+                        </OverflowTip>
                     </div>
                     <div className="wrapper">
                         <img src={createdDateIcon} alt="typeIcon" />

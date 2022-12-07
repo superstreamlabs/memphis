@@ -121,9 +121,13 @@ func SendEvent(userId, eventName string) {
 		distinctId = deploymentId + "-" + userId
 	}
 
+	p := posthog.NewProperties()
+	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
+
 	go AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
 		Event:      eventName,
+		Properties: p,
 	})
 }
 
@@ -141,6 +145,7 @@ func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	for _, param := range params {
 		p.Set(param.Name, param.Value)
 	}
+	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
 
 	go AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
@@ -160,6 +165,7 @@ func SendErrEvent(origin, errMsg string) {
 	p := posthog.NewProperties()
 	p.Set("err_log", errMsg)
 	p.Set("err_source", origin)
+	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
 	AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
 		Event:      "error",

@@ -14,9 +14,9 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React from 'react';
 
-import { capitalizeFirst, cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
+import { cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
 import sourceIcon from '../../../../assets/images/sourceIcon.svg';
 import LogBadge from '../../../../components/logBadge';
 

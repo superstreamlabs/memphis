@@ -635,7 +635,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 	}
 
-	message := "Station " + stationName.Ext() + " has been created"
+	message := "Station " + stationName.Ext() + " has been created by " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
@@ -729,7 +729,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 		if !exist {
-			serv.Warnf("Station does not exist")
+			serv.Warnf("Station " + station.Name + " does not exist")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 			return
 		}
@@ -815,7 +815,7 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Warnf("Station " + station.Name + " does not exist")
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -940,7 +940,7 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		return results, err
 	}
 	if !exist {
-		return results, errors.New("Station does not exist")
+		return results, errors.New("Station " + station.Name + " does not exist")
 	}
 
 	filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
@@ -1287,14 +1287,14 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := IsStationExist(stationName)
+	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("UseSchema error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Warnf("Station " + station.Name + " does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -1433,7 +1433,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Warnf("Station " + station.Name + " does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -1496,7 +1496,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Warnf("Station " + station.Name + " does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
