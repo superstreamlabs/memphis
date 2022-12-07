@@ -359,8 +359,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 	return nil
 }
 
-func (umh UserMgmtHandler) EditPassword(c *gin.Context) {
-	var body models.EditPasswordSchema
+func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
+	var body models.ChangePasswordSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return

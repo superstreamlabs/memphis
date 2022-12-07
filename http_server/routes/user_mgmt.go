@@ -39,5 +39,5 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.PUT("/editAnalytics", userMgmtHandler.EditAnalytics)
 	userMgmtRoutes.POST("/skipGetStarted", userMgmtHandler.SkipGetStarted)
 	userMgmtRoutes.GET("/getFilterDetails", userMgmtHandler.GetFilterDetails)
-	userMgmtRoutes.POST("/editPassword", userMgmtHandler.EditPassword)
+	userMgmtRoutes.POST("/changePassword", userMgmtHandler.ChangePassword)
 }

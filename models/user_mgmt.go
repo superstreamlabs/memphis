@@ -86,7 +86,7 @@ type FilteredUser struct {
 	Username string `json:"username" bson:"username"`
 }
 
-type EditPasswordSchema struct {
+type ChangePasswordSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }

@@ -59,7 +59,7 @@ func (s *Server) initializeConfigurations() {
 }
 
 func (ch ConfigurationsHandler) EditConfigurations(c *gin.Context) {
-	var body models.ConfigurationsSchema
+	var body models.EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -138,5 +138,5 @@ func changeLogsRetention(logsRetention int) error {
 }
 
 func (ch ConfigurationsHandler) GetConfigurations(c *gin.Context) {
-	c.IndentedJSON(200, &models.ConfigurationsSchema{PMRetention: POISON_MSGS_RETENTION_IN_HOURS, LogsRetention: LOGS_RETENTION_IN_DAYS})
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
 }
