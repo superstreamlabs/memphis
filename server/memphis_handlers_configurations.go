@@ -19,7 +19,6 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -54,54 +53,46 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations error: " + err.Error())
 			LOGS_RETENTION_IN_DAYS = 30 //default
 		}
+	} else {
+		LOGS_RETENTION_IN_DAYS = logsRetention.Value
 	}
 }
 
-func (ch ConfigurationsHandler) ChangeRootPassword(c *gin.Context) {
-	var body models.ChangeRootPasswordSchema
+func (ch ConfigurationsHandler) EditConfigurations(c *gin.Context) {
+	var body models.ConfigurationsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("ChangeRootPassword error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if strings.ToLower(user.UserType) == "root" {
-		err = userMgmtHandler.ChangeUserPassword("root", body.Password)
+	if POISON_MSGS_RETENTION_IN_HOURS != body.PMRetention {
+		err := changePMRetention(body.PMRetention)
 		if err != nil {
-			serv.Errorf("ChangeRootPassword error: " + err.Error())
+			serv.Errorf("EditConfigurations error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		c.IndentedJSON(200, gin.H{})
-	} else {
-		errMsg := "Change root password: This operation can be done only by the root user"
-		serv.Warnf(errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 	}
+	if LOGS_RETENTION_IN_DAYS != body.LogsRetention {
+		err := changeLogsRetention(body.LogsRetention)
+		if err != nil {
+			serv.Errorf("EditConfigurations error: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
 }
 
-func (ch ConfigurationsHandler) ChangePMRetention(c *gin.Context) {
-	var body models.ChangeIntConfigurationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	POISON_MSGS_RETENTION_IN_HOURS = body.Value
+func changePMRetention(pmRetention int) error {
+	POISON_MSGS_RETENTION_IN_HOURS = pmRetention
 	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: "pm_retention", Update: POISON_MSGS_RETENTION_IN_HOURS})
 	if err != nil {
-		serv.Errorf("ChangePMRetention error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return err
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		serv.Errorf("ChangePMRetention error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return err
 	}
 	filter := bson.M{"key": "pm_retention"}
 	update := bson.M{
@@ -112,20 +103,13 @@ func (ch ConfigurationsHandler) ChangePMRetention(c *gin.Context) {
 	opts := options.Update().SetUpsert(true)
 	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		serv.Errorf("ChangePMRetention error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return err
 	}
-	c.IndentedJSON(200, gin.H{})
+	return nil
 }
 
-func (ch ConfigurationsHandler) ChangeLogsRetention(c *gin.Context) {
-	var body models.ChangeIntConfigurationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	LOGS_RETENTION_IN_DAYS = body.Value
+func changeLogsRetention(logsRetention int) error {
+	LOGS_RETENTION_IN_DAYS = logsRetention
 	filter := bson.M{"key": "logs_retention"}
 	update := bson.M{
 		"$set": bson.M{
@@ -135,9 +119,7 @@ func (ch ConfigurationsHandler) ChangeLogsRetention(c *gin.Context) {
 	opts := options.Update().SetUpsert(true)
 	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		serv.Errorf("ChangeLogsRetention error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return err
 	}
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 	err = serv.memphisUpdateStream(&StreamConfig{
@@ -150,9 +132,11 @@ func (ch ConfigurationsHandler) ChangeLogsRetention(c *gin.Context) {
 		Storage:      FileStorage,
 	})
 	if err != nil {
-		serv.Errorf("ChangeLogsRetention error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return err
 	}
-	c.IndentedJSON(200, gin.H{})
+	return nil
+}
+
+func (ch ConfigurationsHandler) GetConfigurations(c *gin.Context) {
+	c.IndentedJSON(200, &models.ConfigurationsSchema{PMRetention: POISON_MSGS_RETENTION_IN_HOURS, LogsRetention: LOGS_RETENTION_IN_DAYS})
 }

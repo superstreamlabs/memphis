@@ -22,7 +22,6 @@ import (
 func InitializeConfigurationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	configurationsHandler := h.Configurations
 	configurationsRoutes := router.Group("/configurations")
-	configurationsRoutes.POST("/changeRootPassowrd", configurationsHandler.ChangeRootPassword)
-	configurationsRoutes.POST("/changePMRetention", configurationsHandler.ChangePMRetention)
-	configurationsRoutes.POST("/changeLogsRetention", configurationsHandler.ChangeLogsRetention)
+	configurationsRoutes.POST("/editConfigurations", configurationsHandler.EditConfigurations)
+	configurationsRoutes.GET("/getConfigurations", configurationsHandler.GetConfigurations)
 }
