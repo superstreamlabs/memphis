@@ -140,27 +140,28 @@ func removeStationResources(s *Server, station models.Station) error {
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var csr createStationRequest
 	if err := json.Unmarshal(msg, &csr); err != nil {
-		s.Warnf("failed creating station: %v", err.Error())
+		s.Warnf("createStationDirect error: failed creating station: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
-		serv.Warnf(err.Error())
-		respondWithErr(s, reply, err)
+		serv.Warnf("createStationDirect error: " + err.Error())
+		respondWithErr(s, reply, errors.New(err.Error()))
 		return
 	}
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
-		serv.Errorf("CreateStation error: " + err.Error())
+		serv.Errorf("createStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	if exist {
-		serv.Warnf("Station with that name already exists")
-		respondWithErr(s, reply, errors.New("memphis: station with that name already exists"))
+		errMsg := "Station " + stationName.Ext() + " already exists"
+		serv.Warnf("createStationDirect error: " + errMsg)
+		respondWithErr(s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -170,19 +171,20 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		schemaName = strings.ToLower(csr.SchemaName)
 		exist, schema, err := IsSchemaExist(schemaName)
 		if err != nil {
-			serv.Errorf("CreateStation error: " + err.Error())
+			serv.Errorf("createStationDirect error: " + err.Error())
 			respondWithErr(s, reply, err)
 			return
 		}
 		if !exist {
-			serv.Errorf("Schema does not exist")
-			respondWithErr(s, reply, errors.New("Schema does not exist"))
+			errMsg := "Schema " + csr.SchemaName + " does not exist"
+			serv.Warnf("createStationDirect error: " + errMsg)
+			respondWithErr(s, reply, errors.New(errMsg))
 			return
 		}
 
 		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 		if err != nil {
-			serv.Errorf("CreateStation error: " + err.Error())
+			serv.Errorf("createStationDirect error: " + err.Error())
 			respondWithErr(s, reply, err)
 			return
 		}
@@ -195,8 +197,8 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		retentionType = strings.ToLower(csr.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Warnf(err.Error())
-			respondWithErr(s, reply, err)
+			serv.Warnf("createStationDirect error: " + err.Error())
+			respondWithErr(s, reply, errors.New(err.Error()))
 			return
 		}
 		retentionValue = csr.RetentionValue
@@ -210,8 +212,8 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		storageType = strings.ToLower(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
-			serv.Warnf(err.Error())
-			respondWithErr(s, reply, err)
+			serv.Warnf("createStationDirect error: " + err.Error())
+			respondWithErr(s, reply, errors.New(err.Error()))
 			return
 		}
 	} else {
@@ -222,8 +224,8 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	if replicas > 0 {
 		err = validateReplicas(replicas)
 		if err != nil {
-			serv.Warnf(err.Error())
-			respondWithErr(s, reply, err)
+			serv.Warnf("createStationDirect error: " + err.Error())
+			respondWithErr(s, reply, errors.New(err.Error()))
 			return
 		}
 	} else {
@@ -256,15 +258,15 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 
 	err = s.CreateStream(stationName, newStation)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("createStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
 	if err != nil {
-		serv.Errorf("CreateStation error: " + err.Error())
-		respondWithErr(s, reply, err)
+		serv.Warnf("createStationDirect error: " + err.Error())
+		respondWithErr(s, reply, errors.New(err.Error()))
 		return
 	}
 	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
@@ -282,7 +284,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("create audit logs error: " + err.Error())
+		serv.Warnf("createStationDirect error: create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -315,7 +317,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		},
 	}).Decode(&station)
 	if err == mongo.ErrNoDocuments {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		errMsg := "Station " + body.StationName + " does not exist"
+		serv.Warnf("GetStation error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	} else if err != nil {
 		serv.Errorf("GetStation error: " + err.Error())
@@ -475,7 +479,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.Name)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("CreateStation error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -487,8 +491,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if exist {
-		serv.Warnf("Station with the same name is already exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
+		errMsg := "Station " + stationName.external + " already exists"
+		serv.Warnf("CreateStation error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -510,8 +515,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 		if !exist {
-			serv.Warnf("Schema does not exist")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
+			errMsg := "Schema " + schemaName + " does not exist"
+			serv.Warnf("CreateStation error: " + errMsg)
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
 
@@ -531,7 +537,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -544,7 +550,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.StorageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(body.StorageType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -560,7 +566,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("CreateStation error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -647,15 +653,16 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 	if updateResults.MatchedCount > 0 {
-		serv.Warnf("Station with the same name is already exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station with the same name is already exist"})
+		errMsg := "Station " + newStation.Name + " already exists"
+		serv.Warnf("CreateStation error" + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
 	if len(body.Tags) > 0 {
 		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
 		if err != nil {
-			serv.Errorf("Failed creating tag: %v", err.Error())
+			serv.Errorf("CreateStation error: Failed creating tag: %v", err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -741,7 +748,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	for _, stationName := range body.StationNames {
 		stationName, err := StationNameFromStr(stationName)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("RemoveStation error: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -755,8 +762,9 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 		if !exist {
-			serv.Warnf("Station " + station.Name + " does not exist")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+			errMsg := "Station " + station.Name + " does not exist"
+			serv.Warnf("RemoveStation error: " + errMsg)
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
 
@@ -814,7 +822,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Warnf("create audit logs error: " + err.Error())
+			serv.Warnf("RemoveStation error: create audit logs error: " + err.Error())
 		}
 	}
 	c.IndentedJSON(200, gin.H{})
@@ -823,26 +831,27 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
 	if err := json.Unmarshal(msg, &dsr); err != nil {
-		s.Warnf("failed destroying station: %v", err.Error())
+		s.Warnf("removeStationDirect error: failed destroying station: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
-		serv.Warnf("RemoveStation error: " + err.Error())
+		serv.Warnf("removeStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
-		serv.Errorf("RemoveStation error: " + err.Error())
+		serv.Errorf("removeStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + station.Name + " does not exist")
-		respondWithErr(s, reply, err)
+		errMsg := "Station " + station.Name + " does not exist"
+		serv.Warnf("removeStationDirect error: " + errMsg)
+		respondWithErr(s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -883,7 +892,7 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("create audit logs error: " + err.Error())
+		serv.Warnf("removeStationDirect error: create audit logs error: " + err.Error())
 	}
 	respondWithErr(s, reply, nil)
 	return
@@ -1050,8 +1059,9 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 	if err == mongo.ErrNoDocuments {
-		serv.Warnf("GetPoisonMessageJourney error: " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
+		errMsg := "Poison message with ID: " + body.MessageId + " does not exist"
+		serv.Warnf("GetPoisonMessageJourney error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	if err != nil {
@@ -1155,8 +1165,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if body.IsPoisonMessage {
 		poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
 		if err == mongo.ErrNoDocuments {
-			serv.Warnf("GetMessageDetails error: " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Poison message does not exist"})
+			errMsg := "Poison message with ID: " + body.MessageId + " does not exist"
+			serv.Warnf("GetMessageDetails error: " + errMsg)
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
 		if err != nil {
@@ -1178,7 +1189,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	exist, station, err := IsStationExist(stationName)
 	if !exist {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		errMsg := "Station " + stationName.external + " does not exist"
+		serv.Warnf("GetMessageDetails error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	if err != nil {
@@ -1308,7 +1321,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("UseSchema error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -1320,8 +1333,9 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + station.Name + " does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		errMsg := "Station " + station.Name + " does not exist"
+		serv.Warnf("UseSchema error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1333,8 +1347,9 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Schema does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Schema does not exist"})
+		errMsg := "Schema " + schemaName + " does not exist"
+		serv.Warnf("CreateStation error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1377,7 +1392,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("create audit logs error: " + err.Error())
+		serv.Warnf("UseSchema error: create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1405,48 +1420,50 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	var asr attachSchemaRequest
 	if err := json.Unmarshal(msg, &asr); err != nil {
-		s.Warnf("failed attaching schema: %v", err.Error())
-		respondWithErr(s, reply, err)
+		errMsg := "failed attaching schema: " + err.Error()
+		s.Errorf("useSchemaDirect error: " + errMsg)
+		respondWithErr(s, reply, errors.New(errMsg))
 		return
 	}
 	stationName, err := StationNameFromStr(asr.StationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("useSchemaDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
-		serv.Errorf("useSchema error: " + err.Error())
+		serv.Errorf("useSchemaDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	if !exist {
-		serv.Warnf("Station with that name does not exist")
-		respondWithErr(s, reply, errors.New("memphis: station with that name does not exist"))
+		errMsg := "Station " + stationName.external + " does not exist"
+		serv.Warnf("useSchemaDirect error: " + errMsg)
+		respondWithErr(s, reply, errors.New("memphis: "+errMsg))
 		return
 	}
 
-	schemaName := asr.Name
 	var schemaDetails models.SchemaDetails
-	schemaName = strings.ToLower(asr.Name)
+	schemaName := strings.ToLower(asr.Name)
 	exist, schema, err := IsSchemaExist(schemaName)
 	if err != nil {
-		serv.Errorf("useSchema error: " + err.Error())
+		serv.Errorf("useSchemaDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 	if !exist {
-		serv.Errorf("Schema does not exist")
-		respondWithErr(s, reply, errors.New("Schema does not exist"))
+		errMsg := "Schema " + schemaName + " does not exist" + err.Error()
+		serv.Warnf("useSchemaDirect error: " + errMsg)
+		respondWithErr(s, reply, errors.New(errMsg))
 		return
 	}
 
 	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 	if err != nil {
-		serv.Errorf("CreateStation error: " + err.Error())
+		serv.Errorf("useSchemaDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -1454,12 +1471,13 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
 	if err != nil {
-		serv.Errorf("CreateStation error: " + err.Error())
+		serv.Errorf("useSchemaDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
-	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext()
+	username := c.getClientInfo(true).Name
+	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + username
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
@@ -1467,14 +1485,14 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Intern(),
 		Message:       message,
-		CreatedByUser: "sdk",
+		CreatedByUser: username,
 		CreationDate:  time.Now(),
 		UserType:      "sdk",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("create audit logs error: " + err.Error())
+		serv.Warnf("useSchemaDirect error: create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1484,7 +1502,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	updateContent, err := generateSchemaUpdateInit(schema)
 	if err != nil {
-		serv.Errorf("UseSchema error: %v", err)
+		serv.Errorf("useSchemaDirect error: %v", err)
 		return
 	}
 
@@ -1503,7 +1521,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 		return err
 	}
 	if !exist {
-		return errors.New("Station does not exit")
+		return errors.New("Station " + sn.external + " does not exist")
 	}
 
 	if updateDB {
@@ -1530,23 +1548,23 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 	return nil
 }
 
-func (s *Server) removeSchemaDirect(c *client, reply string, msg []byte) {
+func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []byte) {
 	var asr detachSchemaRequest
 	if err := json.Unmarshal(msg, &asr); err != nil {
-		s.Warnf("failed removing schema: %v", err.Error())
+		s.Errorf("removeSchemaFromStationDirect error: failed removing schema: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 	stationName, err := StationNameFromStr(asr.StationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("removeSchemaFromStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	err = removeSchemaFromStation(serv, stationName, true)
 	if err != nil {
-		serv.Errorf("removeSchema error: " + err.Error())
+		serv.Errorf("removeSchemaFromStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -1566,7 +1584,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("RemoveSchemaFromStation error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -1577,8 +1595,9 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + station.Name + " does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		errMsg := "Station " + stationName.external + " does not exist"
+		serv.Warnf("RemoveSchemaFromStation error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1608,7 +1627,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("create audit logs error: " + err.Error())
+		serv.Warnf("RemoveSchemaFromStation error: create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1628,7 +1647,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("GetUpdatesForSchemaByStation error: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -1640,8 +1659,9 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + station.Name + " does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		errMsg := "Station " + stationName.external + " does not exist"
+		serv.Warnf("GetUpdatesForSchemaByStation error: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 

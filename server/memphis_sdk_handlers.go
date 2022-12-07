@@ -171,7 +171,7 @@ func attachSchemaHandler(s *Server) simplifiedMsgHandler {
 
 func detachSchemaHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.removeSchemaDirect(c, reply, copyBytes(msg))
+		go s.removeSchemaFromStationDirect(c, reply, copyBytes(msg))
 	}
 }
 
