@@ -147,7 +147,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect error: " + err.Error())
-		respondWithErr(s, reply, errors.New(err.Error()))
+		respondWithErr(s, reply, err)
 		return
 	}
 
@@ -198,7 +198,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("createStationDirect error: " + err.Error())
-			respondWithErr(s, reply, errors.New(err.Error()))
+			respondWithErr(s, reply, err)
 			return
 		}
 		retentionValue = csr.RetentionValue
@@ -213,7 +213,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf("createStationDirect error: " + err.Error())
-			respondWithErr(s, reply, errors.New(err.Error()))
+			respondWithErr(s, reply, err)
 			return
 		}
 	} else {
@@ -225,7 +225,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		err = validateReplicas(replicas)
 		if err != nil {
 			serv.Warnf("createStationDirect error: " + err.Error())
-			respondWithErr(s, reply, errors.New(err.Error()))
+			respondWithErr(s, reply, err)
 			return
 		}
 	} else {
@@ -258,15 +258,15 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 
 	err = s.CreateStream(stationName, newStation)
 	if err != nil {
-		serv.Warnf("createStationDirect error: " + err.Error())
+		serv.Errorf("createStationDirect error: " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
 	if err != nil {
-		serv.Warnf("createStationDirect error: " + err.Error())
-		respondWithErr(s, reply, errors.New(err.Error()))
+		serv.Errorf("createStationDirect error: " + err.Error())
+		respondWithErr(s, reply, err)
 		return
 	}
 	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
@@ -284,7 +284,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("createStationDirect error: create audit logs error: " + err.Error())
+		serv.Errorf("createStationDirect error: create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
