@@ -405,11 +405,6 @@ func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		serv.Errorf("DownloadSystemLogs error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	b := new(bytes.Buffer)
 	datawriter := bufio.NewWriter(b)
 
