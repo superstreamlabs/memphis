@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -84,9 +83,8 @@ function Preferences({ step }) {
                         Integrations
                     </div>
                     <div
-                        className="menu-item disabled"
-                        //  className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
-                        // onClick={() => selectMenuItem('cluster_configuration')}
+                        className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
+                        onClick={() => selectMenuItem('cluster_configuration')}
                     >
                         <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                         Cluster configuration

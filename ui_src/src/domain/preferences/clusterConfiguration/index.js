@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -14,137 +13,115 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME } from '../../../const/localStorageConsts';
-import { LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
-import Button from '../../../components/button';
-import { Context } from '../../../hooks/store';
-import RadioButton from '../../../components/radioButton';
-import { Checkbox } from 'antd';
+import { compareObjects } from '../../../services/valueConvertor';
 import ConfImg1 from '../../../assets/images/confImg1.svg';
 import ConfImg2 from '../../../assets/images/confImg2.svg';
-
-import pathDomains from '../../../router';
-import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import Modal from '../../../components/modal';
-import { Divider } from 'antd';
+import { httpRequest } from '../../../services/http';
+import Button from '../../../components/button';
+import SliderRow from './components/sliderRow';
 
 function ClusterConfiguration() {
-    const [userName, setUserName] = useState('');
-    const [state, dispatch] = useContext(Context);
-    const [avatar, setAvatar] = useState(1);
-    const [open, modalFlip] = useState(false);
-    const [allowAnalytics, setAllowAnalytics] = useState();
-    const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
+    const [formFields, setFormFields] = useState({});
+    const [oldValues, setOldValues] = useState({});
+    const [isChanged, setIsChanged] = useState(false);
 
     useEffect(() => {
-        setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
-        setAvatar(localStorage.getItem('profile_pic') || state?.userData?.avatar_id || Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID))); // profile_pic is available only in sandbox env
-        setAllowAnalytics(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) === 'false' ? false : true);
+        getConfigurationValue();
     }, []);
 
-    const removeMyUser = async () => {
+    const getConfigurationValue = async () => {
         try {
-            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
-            modalFlip(false);
-            localStorage.clear();
-            window.location.assign(pathDomains.login);
+            const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_CONFIGURATION);
+            setOldValues(data);
+            setFormFields(data);
         } catch (err) {
             return;
         }
     };
 
-    const sendAnalytics = async (analyticsFlag) => {
+    const updateConfiguration = async () => {
         try {
-            await httpRequest('PUT', `${ApiEndpoints.EDIT_ANALYTICS}`, { send_analytics: analyticsFlag });
-            setAllowAnalytics(analyticsFlag);
-            localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, analyticsFlag);
+            await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
+            setIsChanged(false);
+            setOldValues(...formFields);
         } catch (err) {
             return;
         }
+    };
+
+    const handleChange = (field, value) => {
+        let updatedValue = { ...formFields };
+        updatedValue[field] = value;
+        setIsChanged(!compareObjects(updatedValue, oldValues));
+        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+    };
+    const discardChanges = () => {
+        setIsChanged(false);
+        setFormFields((formFields) => ({ ...formFields, ...oldValues }));
     };
 
     return (
         <div className="configuration-container">
             <div className="header">
                 <p className="main-header">Cluster configuration</p>
-                <p className="sub-header">We will keep an eye on your data streams and alert you if anything went wrong according to the following triggers:</p>
+                <p className="sub-header">In this section, you can tune 'Memphis' internal configuration to suit your requirements</p>
             </div>
             <div className="configuration-body">
-                <div className="configuration-list-container">
-                    <div className="left-side">
-                        <img src={ConfImg1} alt="ConfImg1" />
-                        <div>
-                            <p className="conf-name">ROOT_PASSWORD</p>
-                            <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
-                        </div>
-                    </div>
-                    <div className="right-side"></div>
-                </div>
-                <div className="configuration-list-container">
-                    <div className="left-side">
-                        <img src={ConfImg2} alt="ConfImg2" />
-                        <div>
-                            <p className="conf-name">POISON_MSGS_RETENTION_IN_HOURS</p>
-                            <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
-                        </div>
-                    </div>
-                    <div className="right-side"></div>
-                </div>
-                <div className="configuration-list-container">
-                    <div className="left-side">
-                        <img src={ConfImg1} alt="ConfImg1" />
-                        <div>
-                            <p className="conf-name">CONNECTION_TOKEN</p>
-                            <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
-                        </div>
-                    </div>
-                    <div className="right-side"></div>
-                </div>
-                <div className="configuration-list-container">
-                    <div className="left-side">
-                        <img src={ConfImg2} alt="ConfImg2" />
-                        <div>
-                            <p className="conf-name">POISON_MSGS_RETENTION_IN_HOURS</p>
-                            <label className="conf-description">lorem ipsumelorem ipsumelorem ipsumelorem ipsume</label>
-                        </div>
-                    </div>
-                    <div className="right-side"></div>
-                </div>
+                <SliderRow
+                    title="POISON MSGS RETENTION IN HOURS"
+                    desc="Amount of hours to retain poison messages in a DLS"
+                    value={formFields?.pm_retention}
+                    img={ConfImg2}
+                    min={1}
+                    max={30}
+                    unit={'h'}
+                    onChanges={(e) => handleChange('pm_retention', e)}
+                />
+                <SliderRow
+                    title="LOGS RETENTION IN DAYS"
+                    desc="Amount of days to retain log messages"
+                    img={ConfImg1}
+                    value={formFields?.logs_retention}
+                    min={1}
+                    max={100}
+                    unit={'d'}
+                    onChanges={(e) => handleChange('logs_retention', e)}
+                />
             </div>
             <div className="configuration-footer">
                 <div className="btn-container">
                     <Button
                         className="modal-btn"
-                        width="120px"
-                        height="36px"
+                        width="100px"
+                        height="34px"
                         placeholder="Discard"
-                        colorType="black"
+                        colorType="gray-dark"
                         radiusType="circle"
                         backgroundColorType="none"
                         border="gray"
                         boxShadowsType="gray"
-                        fontSize="14px"
+                        fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        // onClick={() => modalFlip(true)}
+                        disabled={!isChanged}
+                        onClick={() => discardChanges()}
                     />
                     <Button
                         className="modal-btn"
-                        width="180px"
-                        height="36px"
-                        placeholder="Save changes"
+                        width="100px"
+                        height="34px"
+                        placeholder="Apply"
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
-                        border="red"
-                        boxShadowsType="red"
-                        fontSize="14px"
+                        fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        // onClick={() => modalFlip(true)}
+                        disabled={!isChanged}
+                        onClick={() => updateConfiguration()}
                     />
                 </div>
             </div>
