@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	graphqlParser "github.com/graphql-go/graphql/language/parser"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"go.mongodb.org/mongo-driver/bson"
@@ -62,8 +62,7 @@ func validateJsonSchemaContent(schemaContent string) error {
 }
 
 func validateGraphqlSchemaContent(schemaContent string) error {
-	parseParams := graphqlParser.ParseParams{Source: schemaContent}
-	_, err := graphqlParser.Parse(parseParams)
+	_, err := graphql.ParseSchema(schemaContent, nil)
 	if err != nil {
 		return err
 	}

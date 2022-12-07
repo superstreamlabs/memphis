@@ -40,7 +40,7 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import GenerateSchema from 'generate-schema';
-import { parse } from 'graphql';
+import { validate, parse, buildASTSchema } from 'graphql';
 
 const schemaTypes = [
     {
@@ -278,7 +278,9 @@ function CreateSchema() {
 
     const validateGraphQlSchema = (value) => {
         try {
-            parse(value);
+            var documentNode = parse(value);
+            var graphqlSchema = buildASTSchema(documentNode);
+            validate(graphqlSchema, documentNode);
             setValidateSuccess('');
             setValidateError('');
         } catch (error) {
