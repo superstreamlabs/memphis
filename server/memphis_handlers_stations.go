@@ -126,12 +126,12 @@ func removeStationResources(s *Server, station models.Station) error {
 
 	err = RemovePoisonMsgsByStation(station.Name)
 	if err != nil {
-		serv.Warnf("removeStationResources: " + err.Error())
+		serv.Errorf("removeStationResources error: " + err.Error())
 	}
 
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
-		serv.Warnf("removeStationResources: " + err.Error())
+		serv.Errorf("removeStationResources error: " + err.Error())
 	}
 
 	return nil
@@ -140,7 +140,7 @@ func removeStationResources(s *Server, station models.Station) error {
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var csr createStationRequest
 	if err := json.Unmarshal(msg, &csr); err != nil {
-		s.Warnf("createStationDirect: failed creating station: %v", err.Error())
+		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -682,7 +682,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("CreateStation: " + err.Error())
+		serv.Errorf("CreateStation error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -831,7 +831,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
 	if err := json.Unmarshal(msg, &dsr); err != nil {
-		s.Warnf("removeStationDirect: failed destroying station: %v", err.Error())
+		s.Errorf("removeStationDirect error: failed destroying station: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -1392,7 +1392,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("UseSchema: create audit logs: " + err.Error())
+		serv.Errorf("UseSchema error: create audit logs: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1492,7 +1492,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("useSchemaDirect: create audit logs: " + err.Error())
+		serv.Errorf("useSchemaDirect error: create audit logs: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1627,7 +1627,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("RemoveSchemaFromStation: create audit logs error: " + err.Error())
+		serv.Errorf("RemoveSchemaFromStation error: create audit logs error: " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
