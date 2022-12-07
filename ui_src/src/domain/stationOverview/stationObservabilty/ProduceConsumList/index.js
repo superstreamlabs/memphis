@@ -49,8 +49,8 @@ const ProduceConsumList = ({ producer }) => {
     }, [stationState?.stationSocketData]);
 
     useEffect(() => {
-        arrangeData('producer', 0);
-        arrangeData('cgs', 0);
+        arrangeData('producer', selectedRowIndex);
+        arrangeData('cgs', selectedRowIndex);
     }, [producersList, cgsList]);
 
     const concatFunction = (type, data) => {
