@@ -52,7 +52,7 @@ function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
                     </span>
                 </div>
                 <Slider
-                    style={{ width: '300px' }}
+                    style={{ width: '20vw' }}
                     min={min}
                     max={max}
                     onChange={onChange}
