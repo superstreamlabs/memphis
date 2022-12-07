@@ -15,12 +15,9 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
-type ChangeRootPasswordSchema struct {
-	Password string `json:"password"`
-}
-
-type ChangeIntConfigurationSchema struct {
-	Value int `json:"value"`
+type EditClusterConfigSchema struct {
+	PMRetention   int `json:"pm_retention" binding:"required"`
+	LogsRetention int `json:"logs_retention" binding:"required"`
 }
 
 type ConfigurationsUpdate struct {

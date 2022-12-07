@@ -359,20 +359,47 @@ func CreateRootUserOnFirstSystemLoad() error {
 	return nil
 }
 
-func (umh UserMgmtHandler) ChangeUserPassword(username string, password string) error {
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
+	var body models.ChangePasswordSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	username := strings.ToLower(body.Username)
+	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		return err
+		serv.Errorf("EditPassword error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if username == "root" && user.UserType != "root" {
+		errMsg := "Change root password: This operation can be done only by the root user"
+		serv.Warnf("EditPassword: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	} else if username != strings.ToLower(user.Username) && strings.ToLower(user.Username) != "root" {
+		errMsg := "Change user password: This operation can be done only by the user or the root user"
+		serv.Warnf("EditPassword: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
+	if err != nil {
+		serv.Errorf("EditPassword: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 	hashedPwdString := string(hashedPwd)
 	_, err = usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": strings.ToLower(username)},
+		bson.M{"username": username},
 		bson.M{"$set": bson.M{"password": hashedPwdString}},
 	)
 	if err != nil {
-		return err
+		serv.Errorf("EditPassword: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
-	return nil
+	c.IndentedJSON(200, gin.H{})
 }
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
