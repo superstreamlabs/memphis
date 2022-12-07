@@ -14,12 +14,11 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
-
-import { Context } from '../../../../../hooks/store';
+import React, { useEffect, useState } from 'react';
 import { Slider } from 'antd';
 
 const trackStyle = { background: 'var(--purple)', height: '4px' };
+
 const handleStyle = {
     border: '8px solid #FFFFFF',
     background: 'var(--purple)',
@@ -28,9 +27,9 @@ const handleStyle = {
     height: '24px',
     marginTop: '-10px'
 };
+
 function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
     const [inputValue, setInputValue] = useState(value);
-    const [state, dispatch] = useContext(Context);
 
     const onChange = (newValue) => {
         setInputValue(newValue);

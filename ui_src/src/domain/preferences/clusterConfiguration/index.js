@@ -14,33 +14,19 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME } from '../../../const/localStorageConsts';
-import { LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
-import Button from '../../../components/button';
-import { Context } from '../../../hooks/store';
-import RadioButton from '../../../components/radioButton';
-import { Checkbox } from 'antd';
+import { compareObjects } from '../../../services/valueConvertor';
 import ConfImg1 from '../../../assets/images/confImg1.svg';
 import ConfImg2 from '../../../assets/images/confImg2.svg';
-
-import pathDomains from '../../../router';
-import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import Modal from '../../../components/modal';
-import { Divider } from 'antd';
+import { httpRequest } from '../../../services/http';
+import Button from '../../../components/button';
 import SliderRow from './components/sliderRow';
-import { compareObjects } from '../../../services/valueConvertor';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});
     const [oldValues, setOldValues] = useState({});
-    const [state, dispatch] = useContext(Context);
-    const [avatar, setAvatar] = useState(1);
-    const [open, modalFlip] = useState(false);
-    const [allowAnalytics, setAllowAnalytics] = useState();
-    const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
     const [isChanged, setIsChanged] = useState(false);
 
     useEffect(() => {
