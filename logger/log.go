@@ -25,16 +25,17 @@ import (
 // Logger is the server logger
 type Logger struct {
 	sync.Mutex
-	logger     *log.Logger
-	debug      bool
-	trace      bool
-	infoLabel  string
-	warnLabel  string
-	errorLabel string
-	fatalLabel string
-	debugLabel string
-	traceLabel string
-	fl         *fileLogger
+	logger      *log.Logger
+	debug       bool
+	trace       bool
+	infoLabel   string
+	warnLabel   string
+	errorLabel  string
+	fatalLabel  string
+	debugLabel  string
+	traceLabel  string
+	systemLabel string
+	fl          *fileLogger
 }
 
 // NewStdLogger creates a logger with output directed to Stderr
@@ -350,6 +351,7 @@ func setPlainLabelFormats(l *Logger) {
 	l.errorLabel = "[ERR] "
 	l.fatalLabel = "[FTL] "
 	l.traceLabel = "[TRC] "
+	l.systemLabel = "[SYS] "
 }
 
 func setColoredLabelFormats(l *Logger) {
@@ -357,6 +359,7 @@ func setColoredLabelFormats(l *Logger) {
 	l.infoLabel = fmt.Sprintf(colorFormat, "32", "INF")
 	l.debugLabel = fmt.Sprintf(colorFormat, "36", "DBG")
 	l.warnLabel = fmt.Sprintf(colorFormat, "0;93", "WRN")
+	l.systemLabel = fmt.Sprintf(colorFormat, "32", "SYS")
 	l.errorLabel = fmt.Sprintf(colorFormat, "31", "ERR")
 	l.fatalLabel = fmt.Sprintf(colorFormat, "31", "FTL")
 	l.traceLabel = fmt.Sprintf(colorFormat, "33", "TRC")
@@ -374,6 +377,11 @@ func (l *Logger) Warnf(format string, v ...interface{}) {
 
 // Errorf logs an error statement
 func (l *Logger) Errorf(format string, v ...interface{}) {
+	l.logger.Printf(l.errorLabel+format, v...)
+}
+
+// Systemf logs an system statement
+func (l *Logger) Systemf(format string, v ...interface{}) {
 	l.logger.Printf(l.errorLabel+format, v...)
 }
 

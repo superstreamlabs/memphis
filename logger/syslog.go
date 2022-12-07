@@ -132,3 +132,8 @@ func (l *SysLogger) Tracef(format string, v ...interface{}) {
 		l.writer.Notice(fmt.Sprintf(format, v...))
 	}
 }
+
+// Systemf logs a trace statement
+func (l *SysLogger) Systemf(format string, v ...interface{}) {
+	l.writer.Notice(fmt.Sprintf(format, v...))
+}
