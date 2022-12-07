@@ -84,9 +84,8 @@ function Preferences({ step }) {
                         Integrations
                     </div>
                     <div
-                        className="menu-item disabled"
-                        //  className={selectedMenuItem === 'clusterConfiguration' ? 'menu-item selected' : 'menu-item'}
-                        // onClick={() => selectMenuItem('cluster_configuration')}
+                        className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
+                        onClick={() => selectMenuItem('cluster_configuration')}
                     >
                         <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                         Cluster configuration

@@ -56,8 +56,10 @@ export function getFontColor(colorType) {
             return '#1D1D1D';
         case 'gray':
             return '#A9A9A9';
+        case 'gray-dark':
+            return 'rgba(74, 73, 92, 0.8)';
         case 'white':
-            return 'white';
+            return '#ffffff';
         case 'red':
             return '#FF4838';
         default:

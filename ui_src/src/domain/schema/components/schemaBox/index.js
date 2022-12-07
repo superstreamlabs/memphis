@@ -49,8 +49,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                             </div>
                             <div className="is-used">
                                 <img src={schema.used ? usedIcond : notUsedIcond} alt="usedIcond" />
-                                {schema.used && <p className="used">Used</p>}
-                                {!schema.used && <p className="not-used"> Not used</p>}
+                                {schema.used ? <p className="used">Used</p> : <p className="not-used"> Not used</p>}
                             </div>
                         </div>
                     </header>
