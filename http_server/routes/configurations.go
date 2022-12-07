@@ -22,6 +22,6 @@ import (
 func InitializeConfigurationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	configurationsHandler := h.Configurations
 	configurationsRoutes := router.Group("/configurations")
-	configurationsRoutes.PUT("/editClusterConfig", configurationsHandler.EditConfigurations)
-	configurationsRoutes.GET("/getClusterConfig", configurationsHandler.GetConfigurations)
+	configurationsRoutes.PUT("/editClusterConfig", configurationsHandler.EditClusterConfig)
+	configurationsRoutes.GET("/getClusterConfig", configurationsHandler.GetClusterConfig)
 }

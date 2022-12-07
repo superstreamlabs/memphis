@@ -381,6 +381,8 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsWarnSubject
 	case "info":
 		filterSubjectSuffix = syslogsInfoSubject
+	case "system":
+		filterSubjectSuffix = syslogsSysSubject
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
@@ -405,11 +407,6 @@ func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		serv.Errorf("DownloadSystemLogs error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	b := new(bytes.Buffer)
 	datawriter := bufio.NewWriter(b)
 

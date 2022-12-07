@@ -58,7 +58,7 @@ func (s *Server) initializeConfigurations() {
 	}
 }
 
-func (ch ConfigurationsHandler) EditConfigurations(c *gin.Context) {
+func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	var body models.EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -137,6 +137,6 @@ func changeLogsRetention(logsRetention int) error {
 	return nil
 }
 
-func (ch ConfigurationsHandler) GetConfigurations(c *gin.Context) {
+func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
 }
