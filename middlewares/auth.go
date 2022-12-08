@@ -43,10 +43,6 @@ var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
 var configuration = conf.GetConfig()
 
 func isAuthNeeded(path string) bool {
-	if strings.HasPrefix(path, "/api/usermgmt/nats/authenticate") {
-		return false
-	}
-
 	for _, route := range noNeedAuthRoutes {
 		if route == path {
 			return false
@@ -106,11 +102,7 @@ func Authenticate(c *gin.Context) {
 	if needToAuthenticate {
 		var tokenString string
 		var err error
-		if strings.Contains(path, "socket.io") {
-			tokenString = c.Request.URL.Query().Get("authorization")
-		} else {
-			tokenString, err = extractToken(c.GetHeader("authorization"))
-		}
+		tokenString, err = extractToken(c.GetHeader("authorization"))
 
 		if err != nil || tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})

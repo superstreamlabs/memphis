@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -20,7 +19,7 @@ import { InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { Checkbox, Space } from 'antd';
 
-import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
+import { convertBytes, msToUnits, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
@@ -437,7 +436,7 @@ const Messages = () => {
                                 </a>
                             </span>
                         }
-                        data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
+                        data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
                 </div>
             )}

@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -58,7 +57,7 @@ const Login = (props) => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
-            if (data.exist && !state.skipSignup) {
+            if (data.show_signup && !state.skipSignup) {
                 history.push(pathDomains.signup);
             }
             setIsSignup();

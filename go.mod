@@ -30,6 +30,7 @@ require (
 )
 
 require (
+	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
 )

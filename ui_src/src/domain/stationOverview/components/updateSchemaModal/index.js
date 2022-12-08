@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -80,7 +79,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
+                        {schemaDetails.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />

@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -185,4 +184,60 @@ export const hex_to_ascii = (str1) => {
         str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
     }
     return str;
+};
+
+export const compareObjects = (object1, object2) => {
+    const keys1 = Object.keys(object1);
+    const keys2 = Object.keys(object2);
+    if (keys1.length !== keys2.length) {
+        return false;
+    }
+    for (let key of keys1) {
+        if (object1[key] !== object2[key]) {
+            return false;
+        }
+    }
+    return true;
+};
+
+export const msToUnits = (value) => {
+    const second = 1000;
+    const minute = second * 60;
+    const hour = minute * 60;
+    const day = hour * 24;
+    let parsing = 0;
+    switch (true) {
+        case value < second && value >= 100:
+            return `${numberWithCommas(value)} ms`;
+        case value >= second && value < minute:
+            parsing = isFloat(value / second) ? Math.round((value / second + Number.EPSILON) * 100) / 100 : value / second;
+            if (parsing === 1) {
+                return `${parsing} second`;
+            } else {
+                return `${numberWithCommas(parsing)} seconds`;
+            }
+        case value >= minute && value < hour:
+            parsing = isFloat(value / minute) ? Math.round((value / minute + Number.EPSILON) * 100) / 100 : value / minute;
+            if (parsing === 1) {
+                return `${parsing} minute`;
+            } else {
+                return `${numberWithCommas(parsing)} minutes`;
+            }
+        case value >= hour && value < day:
+            parsing = isFloat(value / hour) ? Math.round((value / hour + Number.EPSILON) * 100) / 100 : value / hour;
+            if (parsing === 1) {
+                return `${parsing} hour`;
+            } else {
+                return `${numberWithCommas(parsing)} hours`;
+            }
+        case value >= day:
+            parsing = isFloat(value / day) ? Math.round((value / day + Number.EPSILON) * 100) / 100 : value / day;
+            if (parsing === 1) {
+                return `${parsing} day`;
+            } else {
+                return `${numberWithCommas(parsing)} days`;
+            }
+        default:
+            break;
+    }
 };

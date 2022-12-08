@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -238,7 +237,7 @@ export const CODE_EXAMPLE = {
 
     Python: {
         langCode: 'python',
-        installation: `pip3 install memphis-py`,
+        installation: `pip3 install --upgrade memphis-py`,
         producer: `import asyncio
 from memphis import Memphis, Headers, MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError
         
@@ -285,7 +284,7 @@ async def main():
         consumer = await memphis.consumer(station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="")
         consumer.consume(msg_handler)
         # Keep your main thread alive so the consumer will keep receiving data
-        await asyncio.sleep(5)
+        await asyncio.Event().wait()
         
     except (MemphisError, MemphisConnectError) as e:
         print(e)

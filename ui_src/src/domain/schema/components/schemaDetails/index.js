@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -45,19 +44,7 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-
-const formatOption = [
-    {
-        id: 1,
-        value: 0,
-        label: 'Code'
-    },
-    {
-        id: 2,
-        value: 1,
-        label: 'Table'
-    }
-];
+import { validate, parse, buildASTSchema } from 'graphql';
 
 function SchemaDetails({ schemaName, closeDrawer }) {
     const ajv = new Ajv2019();
@@ -106,6 +93,21 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setEditable(true);
                 setMessageStructName(schema.versions[index].message_struct_name);
                 setMessagesStructNameList(parser);
+            }
+        }
+        if (schema.type === 'graphql') {
+            let parser = parse(schema.versions[index].schema_content).definitions;
+            setMessageStructName(schema.versions[index].message_struct_name);
+            if (parser.length === 1) {
+                setEditable(false);
+            } else {
+                setEditable(true);
+                setMessageStructName(schema.versions[index].message_struct_name);
+                let list = [];
+                parser.map((def) => {
+                    list.push(def.name.value);
+                });
+                setMessagesStructNameList(list);
             }
         }
     };
@@ -184,6 +186,46 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
+    const validateProtobufSchema = (value) => {
+        try {
+            let parser = Schema.parse(value).messages;
+            if (parser.length > 1) {
+                setEditable(true);
+                setMessagesStructNameList(getUnique(parser));
+            } else {
+                setMessageStructName(parser[0].name);
+                setEditable(false);
+            }
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
+    const validateGraphQlSchema = (value) => {
+        try {
+            var documentNode = parse(value);
+            var graphqlSchema = buildASTSchema(documentNode);
+            validate(graphqlSchema, documentNode);
+            if (documentNode.definitions.length > 1) {
+                setEditable(true);
+                let list = [];
+                documentNode.definitions.map((def) => {
+                    list.push(def.name.value);
+                });
+                setMessagesStructNameList(list);
+            } else {
+                setMessageStructName(documentNode.definitions[0].name.value);
+                setEditable(false);
+            }
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
     const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
@@ -218,21 +260,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
         if (value && value.length > 0) {
             if (type === 'protobuf') {
-                try {
-                    let parser = Schema.parse(value).messages;
-                    if (parser.length > 1) {
-                        setEditable(true);
-                        setMessagesStructNameList(getUnique(parser));
-                    } else {
-                        setMessageStructName(parser[0].name);
-                        setEditable(false);
-                    }
-                } catch (error) {
-                    setValidateSuccess('');
-                    setValidateError(error.message);
-                }
+                validateProtobufSchema(value);
             } else if (type === 'json') {
                 validateJsonSchema(value);
+            } else if (type === 'graphql') {
+                validateGraphQlSchema(value);
             }
         }
     };
@@ -343,9 +375,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
-                            {schemaDetails.type === 'protobuf' && (
+                            {(schemaDetails.type === 'protobuf' || schemaDetails.type === 'graphql') && (
                                 <>
-                                    <p className="field-name">Master message :</p>
+                                    {schemaDetails.type === 'protobuf' && <p className="field-name">Master message :</p>}
+                                    {schemaDetails.type === 'graphql' && <p className="field-name">Master type :</p>}
                                     <SelectComponent
                                         value={messageStructName}
                                         colorType="black"
@@ -402,7 +435,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 formatOnType: true,
                                 fontSize: '14px'
                             }}
-                            language="proto"
+                            language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                             height="calc(100% - 104px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
@@ -425,7 +458,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         readOnly: true,
                                         fontSize: '14px'
                                     }}
-                                    language="proto"
+                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                                     height="calc(100% - 100px)"
                                     value={versionSelected?.schema_content}
                                 />
@@ -433,7 +466,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             {isDiff && (
                                 <DiffEditor
                                     height="calc(100% - 100px)"
-                                    language="proto"
+                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                                     original={currentVersion?.schema_content}
                                     modified={versionSelected?.schema_content}
                                     options={{

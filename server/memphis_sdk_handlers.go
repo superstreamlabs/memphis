@@ -26,6 +26,7 @@ type memphisResponse interface {
 
 type createStationRequest struct {
 	StationName       string `json:"name"`
+	SchemaName        string `json:"schema_name"`
 	RetentionType     string `json:"retention_type"`
 	RetentionValue    int    `json:"retention_value"`
 	StorageType       string `json:"storage_type"`
@@ -74,6 +75,15 @@ type createConsumerRequest struct {
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
 }
 
+type attachSchemaRequest struct {
+	Name        string `json:"name"`
+	StationName string `json:"station_name"`
+}
+
+type detachSchemaRequest struct {
+	StationName string `json:"station_name"`
+}
+
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
@@ -107,6 +117,14 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
+
+	// schema attachements
+	s.queueSubscribe("$memphis_schema_attachments",
+		"memphis_schema_attachments_listeners_group",
+		attachSchemaHandler(s))
+	s.queueSubscribe("$memphis_schema_detachments",
+		"memphis_schema_detachments_listeners_group",
+		detachSchemaHandler(s))
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -142,6 +160,18 @@ func createConsumerHandler(s *Server) simplifiedMsgHandler {
 func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.destroyConsumerDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func attachSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.useSchemaDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func detachSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.removeSchemaFromStationDirect(c, reply, copyBytes(msg))
 	}
 }
 

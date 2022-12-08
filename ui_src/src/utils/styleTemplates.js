@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -56,8 +55,10 @@ export function getFontColor(colorType) {
             return '#1D1D1D';
         case 'gray':
             return '#A9A9A9';
+        case 'gray-dark':
+            return 'rgba(74, 73, 92, 0.8)';
         case 'white':
-            return 'white';
+            return '#ffffff';
         case 'red':
             return '#FF4838';
         default:

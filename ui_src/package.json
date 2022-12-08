@@ -18,6 +18,7 @@
     "buffer": "^6.0.3",
     "gapi-script": "^1.2.0",
     "generate-schema": "^2.6.0",
+    "graphql": "^16.6.0",
     "jest-environment-jsdom": "^28.1.0",
     "jsbi": "^4.3.0",
     "lottie-react": "^2.3.1",

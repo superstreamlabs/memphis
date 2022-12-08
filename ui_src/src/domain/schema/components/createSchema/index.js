@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -40,6 +39,7 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import GenerateSchema from 'generate-schema';
+import { validate, parse, buildASTSchema } from 'graphql';
 
 const schemaTypes = [
     {
@@ -61,6 +61,12 @@ const schemaTypes = [
     },
     {
         id: 3,
+        value: 'GraphQL',
+        label: 'GraphQL schema',
+        description: <span>The predictable. GraphQL provides a complete and understandable description of the data.</span>
+    },
+    {
+        id: 4,
         value: 'avro',
         label: 'Avro (Coming soon)',
         description: (
@@ -128,6 +134,21 @@ const SchemaEditorExample = {
             },
             "required": [ "locality" ]
          }`
+    },
+    GraphQL: {
+        language: 'graphql',
+        value: `type Query {
+            greeting:String
+            students:[Student]
+         }
+         
+         type Student {
+            id:ID!
+            firstName:String
+            lastName:String
+            password:String
+            collegeId:String
+         }`
     }
 };
 
@@ -187,6 +208,20 @@ function CreateSchema() {
                 } else {
                     setMessageStructName(parser[0].name);
                     setMessagesStructNameList(getUnique(parser));
+                    setModalOpen(true);
+                }
+            } else if (formFields.type === 'GraphQL') {
+                let parser = parse(formFields.schema_content).definitions;
+                if (parser.length === 1) {
+                    setMessageStructName(parser[0].name.value);
+                    handleCreateNewSchema(parser[0].name.value);
+                } else {
+                    setMessageStructName(parser[0].name.value);
+                    let list = [];
+                    parser.map((def) => {
+                        list.push(def.name.value);
+                    });
+                    setMessagesStructNameList(list);
                     setModalOpen(true);
                 }
             } else {
@@ -254,6 +289,19 @@ function CreateSchema() {
         }
     };
 
+    const validateGraphQlSchema = (value) => {
+        try {
+            var documentNode = parse(value);
+            var graphqlSchema = buildASTSchema(documentNode);
+            validate(graphqlSchema, documentNode);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
     const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
@@ -298,6 +346,8 @@ function CreateSchema() {
                 }
             } else if (type === 'Json') {
                 validateJsonSchema(value);
+            } else if (type === 'GraphQL') {
+                validateGraphQlSchema(value);
             }
         }
     };
@@ -461,6 +511,7 @@ function CreateSchema() {
                             <Form.Item name="schema_content" className="schema-item" initialValue={formFields.schema_content}>
                                 {formFields?.type === 'Protobuf' && schemaContentEditor}
                                 {formFields?.type === 'Json' && schemaContentEditor}
+                                {formFields?.type === 'GraphQL' && schemaContentEditor}
                             </Form.Item>
                             <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
                                 {validateError && <ErrorOutlineRounded />}
@@ -507,8 +558,18 @@ function CreateSchema() {
                 open={modalOpen}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Too many message types specified in schema structure</p>
-                    <p className="desc">Please choose your master message as a schema structure</p>
+                    {formFields.type === 'Protobuf' && (
+                        <>
+                            <p className="title">Too many message types specified in schema structure</p>
+                            <p className="desc">Please choose your master message as a schema structure</p>
+                        </>
+                    )}
+                    {formFields.type === 'GraphQL' && (
+                        <>
+                            <p className="title">Too many types specified in schema structure</p>
+                            <p className="desc">Please choose your master type as a schema structure</p>
+                        </>
+                    )}
                     <SelectComponent
                         value={messageStructName}
                         colorType="black"
