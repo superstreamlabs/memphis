@@ -119,12 +119,6 @@ const LogsWrapper = () => {
     };
 
     const stopListen = () => {
-        const sc = StringCodec();
-        if (logType === '') {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('UNSUB'));
-        } else {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('UNSUB'));
-        }
         sub?.unsubscribe();
     };
 

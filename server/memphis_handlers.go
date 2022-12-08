@@ -109,7 +109,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
 	})
-	
+
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
 	s.initWS()

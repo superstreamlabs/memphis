@@ -93,7 +93,6 @@ const Filter = ({ filterComponent, height }) => {
                 }, 1000);
 
                 return () => {
-                    state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('UNSUB'));
                     sub?.unsubscribe();
                 };
             case 'schemaverse':
@@ -114,7 +113,6 @@ const Filter = ({ filterComponent, height }) => {
                 }, 1000);
 
                 return () => {
-                    state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('UNSUB'));
                     sub?.unsubscribe();
                 };
         }
