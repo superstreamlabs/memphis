@@ -84,6 +84,7 @@ const LogsWrapper = () => {
             if (stateRef.current[1].startIndex !== 0) {
                 stopListen();
             } else {
+                stopListen();
                 startListen();
             }
         }

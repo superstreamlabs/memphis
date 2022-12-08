@@ -382,7 +382,7 @@ func (l *Logger) Errorf(format string, v ...interface{}) {
 
 // Systemf logs an system statement
 func (l *Logger) Systemf(format string, v ...interface{}) {
-	l.logger.Printf(l.errorLabel+format, v...)
+	l.logger.Printf(l.systemLabel+format, v...)
 }
 
 // Fatalf logs a fatal error

@@ -69,6 +69,7 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan st
 			for k, updateFiller := range subs {
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
+					s.Debugf("removing memphis ws subscription %s", replySubj)
 					delete(subs, k)
 					continue
 				}
