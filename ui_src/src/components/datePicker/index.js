@@ -17,7 +17,6 @@ import './style.scss';
 import React from 'react';
 import { DatePicker } from 'antd';
 import CalendarIcon from '../../assets/images/Calendar.svg';
-
 const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder }) => {
     return (
         <div className="date-picker-container">

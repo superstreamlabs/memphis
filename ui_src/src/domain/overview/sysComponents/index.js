@@ -21,10 +21,20 @@ import HealthyBadge from '../../../components/healthyBadge';
 import { Context } from '../../../hooks/store';
 import { Link } from 'react-router-dom';
 import pathDomains from '../../../router';
+import { ResponsiveContainer, PieChart, Pie, Legend, Cell } from 'recharts';
+// import { PieChart, Pie, Sector, Cell, ResponsiveContainer } from 'recharts';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
 
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+    const getData = (comp) => {
+        console.log(comp);
+        return [
+            { name: 'actual', value: comp.actual_pods, color: 'red' },
+            { name: 'desired', value: comp.desired_pods, color: 'yellow' }
+        ];
+    };
     return (
         <div className="overview-wrapper sys-components-container">
             <span className="overview-components-header">System components</span>
@@ -42,9 +52,28 @@ const SysComponents = () => {
                                 <Divider />
                                 <div className="sys-components">
                                     <p>{comp.component}</p>
-                                    <p>
-                                        {comp.actual_pods}/{comp.desired_pods}
-                                    </p>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <PieChart height={35} width={35}>
+                                            <Pie
+                                                dataKey="value"
+                                                data={getData(comp)}
+                                                //     [
+                                                //     { name: 'Group A', value: 400 },
+                                                //     { name: 'Group B', value: 300 },
+                                                //     { name: 'Group C', value: 300 },
+                                                //     { name: 'Group D', value: 200 }
+                                                // ]}
+                                            >
+                                                {/* {' '}
+                                                {data.map((entry, index) => (
+                                                    // <Cell fill={COLORS[index % COLORS.length]} />
+                                                ))} */}
+                                            </Pie>
+                                        </PieChart>
+                                        <p>
+                                            {comp.actual_pods}/{comp.desired_pods}
+                                        </p>
+                                    </div>
                                     <HealthyBadge status={comp.actual_pods / comp.desired_pods} />
                                 </div>
                             </div>

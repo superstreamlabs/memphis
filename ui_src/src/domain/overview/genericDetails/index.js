@@ -15,11 +15,11 @@
 import './style.scss';
 
 import React, { useContext } from 'react';
-
-import liveMessagesIcon from '../../../assets/images/liveMessagesIcon.svg';
-import stationActionIcon from '../../../assets/images/stationActionIcon.svg';
 import { Context } from '../../../hooks/store';
 import { numberWithCommas } from '../../../services/valueConvertor';
+import TotalMsg from '../../../assets/images/total_msg.svg';
+import TotalPoison from '../../../assets/images/total_poison.svg';
+import TotalStations from '../../../assets/images/total_stations.svg';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
@@ -27,20 +27,23 @@ const GenericDetails = () => {
     return (
         <div className="generic-container">
             <div className="overview-wrapper data-box">
-                <div className="icon-wrapper sta-act">
-                    <img src={stationActionIcon} width={35} height={27} alt="stationActionIcon" />
-                </div>
+                <img src={TotalStations} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                 <div className="data-wrapper">
                     <span>Total stations</span>
                     <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
                 </div>
             </div>
             <div className="overview-wrapper data-box">
-                <div className="icon-wrapper lve-msg">
-                    <img src={liveMessagesIcon} width={35} height={26} alt="liveMessagesIcon" />
-                </div>
+                <img src={TotalMsg} width={50} height={50} alt="Total Messages" className="icon-wrapper" />
                 <div className="data-wrapper">
-                    <span>Total messages</span>
+                    <span>Total Messages</span>
+                    <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
+                </div>
+            </div>
+            <div className="overview-wrapper data-box">
+                <img src={TotalPoison} width={50} height={50} alt="Total Poison messages" className="icon-wrapper" />
+                <div className="data-wrapper">
+                    <span>Total Poison messages</span>
                     <p> {numberWithCommas(state?.monitor_data?.total_messages)}</p>
                 </div>
             </div>

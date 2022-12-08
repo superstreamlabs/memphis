@@ -223,8 +223,8 @@ function OverView() {
                     <div className="overview-components">
                         <div className="left-side">
                             <GenericDetails />
-                            <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
+                            <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                         </div>
                         <div className="right-side">
                             <Resources />
