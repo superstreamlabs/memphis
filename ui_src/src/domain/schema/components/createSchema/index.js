@@ -39,6 +39,7 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import GenerateSchema from 'generate-schema';
+import { validate, parse, buildASTSchema } from 'graphql';
 
 const schemaTypes = [
     {
@@ -60,6 +61,12 @@ const schemaTypes = [
     },
     {
         id: 3,
+        value: 'GraphQL',
+        label: 'GraphQL schema',
+        description: <span>The predictable. GraphQL provides a complete and understandable description of the data.</span>
+    },
+    {
+        id: 4,
         value: 'avro',
         label: 'Avro (Coming soon)',
         description: (
@@ -126,6 +133,21 @@ const SchemaEditorExample = {
               }
             },
             "required": [ "locality" ]
+         }`
+    },
+    GraphQL: {
+        language: 'graphql',
+        value: `type Query {
+            greeting:String
+            students:[Student]
+         }
+         
+         type Student {
+            id:ID!
+            firstName:String
+            lastName:String
+            password:String
+            collegeId:String
          }`
     }
 };
@@ -253,6 +275,19 @@ function CreateSchema() {
         }
     };
 
+    const validateGraphQlSchema = (value) => {
+        try {
+            var documentNode = parse(value);
+            var graphqlSchema = buildASTSchema(documentNode);
+            validate(graphqlSchema, documentNode);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
     const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
@@ -297,6 +332,8 @@ function CreateSchema() {
                 }
             } else if (type === 'Json') {
                 validateJsonSchema(value);
+            } else if (type === 'GraphQL') {
+                validateGraphQlSchema(value);
             }
         }
     };
@@ -460,6 +497,7 @@ function CreateSchema() {
                             <Form.Item name="schema_content" className="schema-item" initialValue={formFields.schema_content}>
                                 {formFields?.type === 'Protobuf' && schemaContentEditor}
                                 {formFields?.type === 'Json' && schemaContentEditor}
+                                {formFields?.type === 'GraphQL' && schemaContentEditor}
                             </Form.Item>
                             <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
                                 {validateError && <ErrorOutlineRounded />}
