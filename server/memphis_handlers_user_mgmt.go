@@ -326,9 +326,11 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		if configuration.ANALYTICS == "true" {
-			installationType := "stand-alone"
+			installationType := "stand-alone-k8s"
 			if serv.JetStreamIsClustered() {
 				installationType = "cluster"
+			} else if configuration.DOCKER_ENV == "true" {
+				installationType = "stand-alone-docker"
 			}
 
 			param := analytics.EventParam{

@@ -237,7 +237,7 @@ export const CODE_EXAMPLE = {
 
     Python: {
         langCode: 'python',
-        installation: `pip3 install memphis-py`,
+        installation: `pip3 install --upgrade memphis-py`,
         producer: `import asyncio
 from memphis import Memphis, Headers, MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError
         
