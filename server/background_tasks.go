@@ -68,7 +68,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
-				s.Errorf(err.Error())
+				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
 			}
 			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
 				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
@@ -93,7 +93,7 @@ func (s *Server) ListenForConfogurationsUpdateEvents() error {
 			var configurationsUpdate models.ConfigurationsUpdate
 			err := json.Unmarshal(msg, &configurationsUpdate)
 			if err != nil {
-				s.Errorf(err.Error())
+				s.Errorf("ListenForConfogurationsUpdateEvents: " + err.Error())
 			}
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":

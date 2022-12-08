@@ -71,7 +71,7 @@ func isOnlyRootUserExist() (bool, error) {
 	}
 	var users []models.User
 	if err = cursor.All(context.TODO(), &users); err != nil {
-		serv.Errorf("isOnlyRootUserExist error: " + err.Error())
+		serv.Errorf("isOnlyRootUserExist: " + err.Error())
 		return false, err
 	}
 	if len(users) == 1 && users[0].UserType == "root" {
@@ -368,7 +368,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditPassword error: " + err.Error())
+		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -385,7 +385,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 	}
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 	if err != nil {
-		serv.Errorf("EditPassword: " + err.Error())
+		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -395,7 +395,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 		bson.M{"$set": bson.M{"password": hashedPwdString}},
 	)
 	if err != nil {
-		serv.Errorf("EditPassword: " + err.Error())
+		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -411,7 +411,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	authenticated, user, err := authenticateUser(username, body.Password)
 	if err != nil {
-		serv.Errorf("Login error: " + err.Error())
+		serv.Errorf("Login : User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -422,7 +422,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		serv.Errorf("Login error: " + err.Error())
+		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -468,14 +468,14 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
-	username := user.Username
 	if err != nil {
-		serv.Errorf("refreshToken error: " + err.Error())
+		serv.Errorf("refreshToken: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
+	username := user.Username
 	exist, user, err := IsUserExist(username)
 	if err != nil {
-		serv.Errorf("RefreshToken error: " + err.Error())
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -485,14 +485,14 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 			var systemKey models.SystemKey
 			err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
 			if err != nil {
-				serv.Errorf("RefreshToken error: " + err.Error())
+				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
 			token, refreshToken, err := CreateTokens(sandboxUser)
 			if err != nil {
-				serv.Errorf("RefreshToken error: " + err.Error())
+				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -520,7 +520,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	var systemKey models.SystemKey
 	err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
 	if err != nil {
-		serv.Errorf("RefreshToken error: " + err.Error())
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -528,7 +528,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		serv.Errorf("RefreshToken error: " + err.Error())
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -563,7 +563,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	exist, err := isOnlyRootUserExist()
 	if err != nil {
-		serv.Errorf("GetSignUpFlag error: " + err.Error())
+		serv.Errorf("GetSignUpFlag: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -582,7 +582,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 	exist, err := isOnlyRootUserExist()
 	if err != nil {
-		serv.Errorf("CreateUserSignUp error: " + err.Error())
+		serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -601,7 +601,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
-			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -623,7 +623,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 		_, err = usersCollection.InsertOne(context.TODO(), newUser)
 		if err != nil {
-			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -631,7 +631,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		serv.Noticef("User " + username + " has been signed up")
 		token, refreshToken, err := CreateTokens(newUser)
 		if err != nil {
-			serv.Errorf("CreateUserSignUp error: " + err.Error())
+			serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -678,13 +678,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
-		serv.Errorf("CreateUser error: " + err.Error())
+		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		serv.Warnf("A user with this username is already exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "A user with this username is already exist"})
+		errMsg := "A user with the name " + body.Username + " already exists"
+		serv.Warnf("CreateUser: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -714,7 +715,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
-			serv.Errorf("CreateUser error: " + err.Error())
+			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -728,7 +729,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	err = validateHubCreds(body.HubUsername, body.HubPassword)
 	if err != nil {
-		serv.Errorf("CreateUser error: " + err.Error())
+		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
@@ -737,7 +738,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if userType == "application" {
 		brokerConnectionCreds, err = AddUser(username)
 		if err != nil || len(username) == 0 {
-			serv.Errorf("CreateUser error: " + err.Error())
+			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 			return
 		}
@@ -757,7 +758,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	_, err = usersCollection.InsertOne(context.TODO(), newUser)
 	if err != nil || len(username) == 0 {
-		serv.Errorf("CreateUser error: " + err.Error())
+		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -795,13 +796,13 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 
 	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
 	if err != nil {
-		serv.Errorf("GetAllUsers error: " + err.Error())
+		serv.Errorf("GetAllUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	if err = cursor.All(context.TODO(), &users); err != nil {
-		serv.Errorf("GetAllUsers error: " + err.Error())
+		serv.Errorf("GetAllUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -826,7 +827,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveUser error: " + err.Error())
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	if user.Username == username {
@@ -837,7 +838,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	exist, userToRemove, err := IsUserExist(username)
 	if err != nil {
-		serv.Errorf("RemoveUser error: " + err.Error())
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -854,14 +855,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	err = updateUserResources(userToRemove)
 	if err != nil {
-		serv.Errorf("RemoveUser error: " + err.Error())
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
 	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
 	if err != nil {
-		serv.Errorf("RemoveUser error: " + err.Error())
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -878,7 +879,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveUser error: " + err.Error())
+		serv.Errorf("RemoveMyUser: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
@@ -889,14 +890,14 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	err = updateUserResources(user)
 	if err != nil {
-		serv.Errorf("RemoveMyUser error: " + err.Error())
+		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
 	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
 	if err != nil {
-		serv.Errorf("RemoveMyUser error: " + err.Error())
+		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -922,14 +923,14 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 
 	err := validateHubCreds(body.HubUsername, body.HubPassword)
 	if err != nil {
-		serv.Errorf("EditHubCreds error: " + err.Error())
+		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditHubCreds error: " + err.Error())
+		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
@@ -938,7 +939,7 @@ func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
 		bson.M{"$set": bson.M{"hub_username": body.HubUsername, "hub_password": body.HubPassword}},
 	)
 	if err != nil {
-		serv.Errorf("EditHubCreds error: " + err.Error())
+		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -969,7 +970,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditAvatar error: " + err.Error())
+		serv.Errorf("EditAvatar: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
@@ -978,7 +979,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		bson.M{"$set": bson.M{"avatar_id": avatarId}},
 	)
 	if err != nil {
-		serv.Errorf("EditAvatar error: " + err.Error())
+		serv.Errorf("EditAvatar: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1004,14 +1005,14 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	fileName := "company_logo" + filepath.Ext(file.Filename)
 	if err := c.SaveUploadedFile(&file, fileName); err != nil {
-		serv.Errorf("EditCompanyLogo error: " + err.Error())
+		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	base64Encoding, err := imageToBase64(fileName)
 	if err != nil {
-		serv.Errorf("EditCompanyLogo error: " + err.Error())
+		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1026,7 +1027,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_, err = imagesCollection.InsertOne(context.TODO(), newImage)
 	if err != nil {
-		serv.Errorf("EditCompanyLogo error: " + err.Error())
+		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1037,7 +1038,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 	_, err := imagesCollection.DeleteOne(context.TODO(), bson.M{"name": "company_logo"})
 	if err != nil {
-		serv.Errorf("RemoveCompanyLogo error: " + err.Error())
+		serv.Errorf("RemoveCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1052,7 +1053,7 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"image": ""})
 		return
 	} else if err != nil {
-		serv.Errorf("GetCompanyLogo error: " + err.Error())
+		serv.Errorf("GetCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1080,7 +1081,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		bson.M{"$set": bson.M{"value": flag}},
 	)
 	if err != nil {
-		serv.Errorf("EditAnalytics error: " + err.Error())
+		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1106,7 +1107,7 @@ func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("SkipGetStarted error: " + err.Error())
+		serv.Errorf("SkipGetStarted: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
@@ -1121,7 +1122,7 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 		bson.M{"$set": bson.M{"skip_get_started": true}},
 	)
 	if err != nil {
-		serv.Errorf("SkipGetStarted error: " + err.Error())
+		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1187,14 +1188,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	case "stations":
 		users, err := umh.GetActiveUsers()
 		if err != nil {
-			serv.Errorf("GetActiveUsers error: " + err.Error())
+			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		tags, err := umh.GetActiveTags()
 		if err != nil {
-			serv.Errorf("GetActiveTags error: " + err.Error())
+			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1205,14 +1206,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	case "schemaverse":
 		users, err := umh.GetActiveUsers()
 		if err != nil {
-			serv.Errorf("GetActiveUsers error: " + err.Error())
+			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		tags, err := umh.GetActiveTags()
 		if err != nil {
-			serv.Errorf("GetActiveTags error: " + err.Error())
+			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}

@@ -154,10 +154,10 @@ func TestMemStoreAgeLimit(t *testing.T) {
 		checkFor(t, time.Second, maxAge, func() error {
 			state = ms.State()
 			if state.Msgs != 0 {
-				return fmt.Errorf("Expected no msgs, got %d", state.Msgs)
+				return fmt.Errorf("TestMemStoreAgeLimit: Expected no msgs, got %d", state.Msgs)
 			}
 			if state.Bytes != 0 {
-				return fmt.Errorf("Expected no bytes, got %d", state.Bytes)
+				return fmt.Errorf("TestMemStoreAgeLimit: Expected no bytes, got %d", state.Bytes)
 			}
 			return nil
 		})

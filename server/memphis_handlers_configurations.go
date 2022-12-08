@@ -23,6 +23,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -39,6 +40,15 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations error: " + err.Error())
 		}
 		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
+		pmRetention = models.ConfigurationsIntValue{
+			ID:    primitive.NewObjectID(),
+			Key:   "pm_retention",
+			Value: POISON_MSGS_RETENTION_IN_HOURS,
+		}
+		_, err = configurationsCollection.InsertOne(context.TODO(), pmRetention)
+		if err != nil {
+			s.Errorf("initializeConfigurations error: " + err.Error())
+		}
 	} else {
 		POISON_MSGS_RETENTION_IN_HOURS = pmRetention.Value
 	}
@@ -52,6 +62,15 @@ func (s *Server) initializeConfigurations() {
 		if err != nil {
 			s.Errorf("initializeConfigurations error: " + err.Error())
 			LOGS_RETENTION_IN_DAYS = 30 //default
+		}
+		logsRetention = models.ConfigurationsIntValue{
+			ID:    primitive.NewObjectID(),
+			Key:   "logs_retention",
+			Value: LOGS_RETENTION_IN_DAYS,
+		}
+		_, err = configurationsCollection.InsertOne(context.TODO(), logsRetention)
+		if err != nil {
+			s.Errorf("initializeConfigurations error: " + err.Error())
 		}
 	} else {
 		LOGS_RETENTION_IN_DAYS = logsRetention.Value

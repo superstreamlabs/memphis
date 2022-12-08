@@ -48,7 +48,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
-		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -61,14 +61,14 @@ func (s *Server) HandleNewMessage(msg []byte) {
 
 	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
 	if err != nil {
-		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
 	headersJson, err := DecodeHeader(poisonMessageContent.Header)
 
 	if err != nil {
-		serv.Errorf(err.Error())
+		serv.Errorf("HandleNewMessage: " + err.Error())
 		return
 	}
 	connectionIdHeader := headersJson["$memphis_connectionId"]
@@ -91,7 +91,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	_, conn, err := IsConnectionExist(connId)
 	if err != nil {
-		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -138,7 +138,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	if err == mongo.ErrNoDocuments {
 		idForUrl = newID.Hex()
 	} else if err != nil {
-		serv.Errorf("Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	} else {
 		idForUrl = poisonMsg.ID.Hex()
@@ -179,7 +179,7 @@ func (pmh PoisonMessagesHandler) GetPoisonMsgsByStation(station models.Station) 
 		} else {
 			poisonMessages[i].Message.Data = msgData
 		}
-		
+
 		msg := models.MessagePayload{
 			TimeSent: poisonMessages[i].Message.TimeSent,
 			Size:     poisonMessages[i].Message.Size,

@@ -36,10 +36,10 @@ type memStore struct {
 
 func newMemStore(cfg *StreamConfig) (*memStore, error) {
 	if cfg == nil {
-		return nil, fmt.Errorf("config required")
+		return nil, fmt.Errorf("newMemStore: config required")
 	}
 	if cfg.Storage != MemoryStorage {
-		return nil, fmt.Errorf("memStore requires memory storage type in config")
+		return nil, fmt.Errorf("newMemStore: memStore requires memory storage type in config")
 	}
 	ms := &memStore{
 		msgs: make(map[uint64]*StoreMsg),
@@ -53,10 +53,10 @@ func newMemStore(cfg *StreamConfig) (*memStore, error) {
 
 func (ms *memStore) UpdateConfig(cfg *StreamConfig) error {
 	if cfg == nil {
-		return fmt.Errorf("config required")
+		return fmt.Errorf("UpdateConfig: config required")
 	}
 	if cfg.Storage != MemoryStorage {
-		return fmt.Errorf("memStore requires memory storage type in config")
+		return fmt.Errorf("UpdateConfig: memStore requires memory storage type in config")
 	}
 
 	ms.mu.Lock()
@@ -916,13 +916,13 @@ type consumerMemStore struct {
 
 func (ms *memStore) ConsumerStore(name string, cfg *ConsumerConfig) (ConsumerStore, error) {
 	if ms == nil {
-		return nil, fmt.Errorf("memstore is nil")
+		return nil, fmt.Errorf("ConsumerStore: memstore is nil")
 	}
 	if ms.isClosed() {
 		return nil, ErrStoreClosed
 	}
 	if cfg == nil || name == _EMPTY_ {
-		return nil, fmt.Errorf("bad consumer config")
+		return nil, fmt.Errorf("ConsumerStore: bad consumer config")
 	}
 	o := &consumerMemStore{ms: ms, cfg: *cfg}
 	ms.AddConsumer(o)
@@ -946,16 +946,16 @@ func (ms *memStore) RemoveConsumer(o ConsumerStore) error {
 }
 
 func (ms *memStore) Snapshot(_ time.Duration, _, _ bool) (*SnapshotResult, error) {
-	return nil, fmt.Errorf("no impl")
+	return nil, fmt.Errorf("Snapshot: no impl")
 }
 
 func (o *consumerMemStore) Update(state *ConsumerState) error {
 	// Sanity checks.
 	if state.AckFloor.Consumer > state.Delivered.Consumer {
-		return fmt.Errorf("bad ack floor for consumer")
+		return fmt.Errorf("Update: bad ack floor for consumer")
 	}
 	if state.AckFloor.Stream > state.Delivered.Stream {
-		return fmt.Errorf("bad ack floor for stream")
+		return fmt.Errorf("Update: bad ack floor for stream")
 	}
 
 	// Copy to our state.
@@ -968,7 +968,7 @@ func (o *consumerMemStore) Update(state *ConsumerState) error {
 		}
 		for seq := range pending {
 			if seq <= state.AckFloor.Stream || seq > state.Delivered.Stream {
-				return fmt.Errorf("bad pending entry, sequence [%d] out of range", seq)
+				return fmt.Errorf("Update: bad pending entry, sequence [%d] out of range", seq)
 			}
 		}
 	}
@@ -985,7 +985,7 @@ func (o *consumerMemStore) Update(state *ConsumerState) error {
 	// Check to see if this is an outdated update.
 	if state.Delivered.Consumer < o.state.Delivered.Consumer {
 		o.mu.Unlock()
-		return fmt.Errorf("old update ignored")
+		return fmt.Errorf("Update: old update ignored")
 	}
 
 	o.state.Delivered = state.Delivered

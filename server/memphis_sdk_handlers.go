@@ -186,7 +186,7 @@ func respondWithErr(s *Server, replySubject string, err error) {
 func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
-		serv.Errorf("response marshal error: " + err.Error())
+		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
 		return
 	}
 	s.respondOnGlobalAcc(replySubject, rawResp)
