@@ -359,10 +359,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             <>
                                 <span>Diff : </span>
                                 <div className="switcher">
-                                    <div className={isDiff ? 'yes-no-wrapper yes' : 'yes-no-wrapper border'} onClick={() => setIsDiff(true)}>
+                                    <div className={isDiff ? 'yes-no-wrapper yes selected' : 'yes-no-wrapper yes'} onClick={() => setIsDiff(true)}>
                                         <p>Yes</p>
                                     </div>
-                                    <div className={isDiff ? 'yes-no-wrapper' : 'yes-no-wrapper no'} onClick={() => setIsDiff(false)}>
+                                    <div className={isDiff ? 'yes-no-wrapper no' : 'yes-no-wrapper no selected'} onClick={() => setIsDiff(false)}>
                                         <p>No</p>
                                     </div>
                                 </div>
