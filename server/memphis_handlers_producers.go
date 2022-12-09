@@ -53,35 +53,35 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return err
 	}
 
 	producerType := strings.ToLower(pType)
 	err = validateProducerType(producerType)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return err
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(pConnectionId)
 	if err != nil {
-		serv.Warnf("createProducerDirectCommon: Connection ID " + pConnectionId + " is not valid")
+		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": Connection ID " + pConnectionId + " is not valid")
 		return err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
-		serv.Errorf("createProducerDirectCommon: " + err.Error())
+		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return err
 	}
 	if !exist {
 		errMsg := "Connection ID " + pConnectionId + " was not found"
-		serv.Warnf("createProducerDirectCommon: " + errMsg)
+		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
 		return errors.New("memphis: " + errMsg)
 	}
 	if !connection.IsActive {
 		errMsg := "Connection with ID " + pConnectionId + " is not active"
-		serv.Warnf("createProducerDirectCommon: " + errMsg)
+		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
 		return errors.New("memphis: " + errMsg)
 	}
 
@@ -364,7 +364,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + body.StationName + " does not exist")
+		serv.Warnf("GetAllProducersByStation: Station " + body.StationName + " does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}

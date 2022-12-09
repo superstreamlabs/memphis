@@ -358,7 +358,9 @@ func getGithubAccessToken(code string) (string, error) {
 	respbody, _ := ioutil.ReadAll(resp.Body)
 
 	var ghresp githubAccessTokenResponse
-	json.Unmarshal(respbody, &ghresp)
+	if err := json.Unmarshal(respbody, &ghresp); err != nil {
+		return "", err
+	}
 
 	return ghresp.AccessToken, nil
 }

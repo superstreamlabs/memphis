@@ -515,7 +515,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	schemaName := strings.ToLower(body.Name)
 	err := validateSchemaName(schemaName)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("CreateNewSchema: " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -557,7 +557,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schemaType)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -566,7 +566,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	if schemaType == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(schemaName, schemaVersionNumber, schemaContent, schemaType)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -829,7 +829,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schema.Type)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -846,7 +846,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	if schema.Type == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(schemaName, versionNumber, schemaContent, schema.Type)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -887,7 +887,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created by " + user.Username
 		serv.Noticef(message)
 	} else {
-		serv.Warnf("Version already exists")
+		serv.Warnf("CreateNewVersion: Schema " + body.SchemaName + ": Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " already exists")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Version already exists"})
 		return
 	}
@@ -986,7 +986,7 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 	schemaType := strings.ToLower(body.SchemaType)
 	err := validateSchemaType(schemaType)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("ValidateSchema: Schema type " + schemaType + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -994,7 +994,7 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 	schemaContent := body.SchemaContent
 	err = validateSchemaContent(schemaContent, schemaType)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("ValidateSchema: Schema type " + schemaType + ": " + err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}

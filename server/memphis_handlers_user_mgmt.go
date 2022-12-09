@@ -211,7 +211,7 @@ func createMemberMailChimp(subscription bool, username string) {
 			}
 			var mailChimpErr MailChimpErr
 			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-				serv.Debugf("Error: " + err.Error())
+				serv.Debugf("createMemberMailChimp: " + err.Error())
 			}
 			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
 				Query: username,
@@ -593,7 +593,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		username := strings.ToLower(body.Username)
 		usernameError := validateEmail(username)
 		if usernameError != nil {
-			serv.Warnf(usernameError.Error())
+			serv.Warnf("CreateUserSignUp: " + usernameError.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 			return
 		}
@@ -692,14 +692,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		serv.Warnf(userTypeError.Error())
+		serv.Warnf("CreateUser: " + userTypeError.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		serv.Warnf(usernameError.Error())
+		serv.Warnf("CreateUser: " + usernameError.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
@@ -708,7 +708,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			serv.Warnf("Password was not provided")
+			serv.Warnf("CreateUser: Password was not provided for user " + username)
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
@@ -831,8 +831,8 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	if user.Username == username {
-		serv.Warnf("You can't remove your own user")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can't remove your own user"})
+		serv.Warnf("RemoveUser: You can not remove your own user")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
 
@@ -843,12 +843,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("User does not exist")
+		serv.Warnf("RemoveUser: User does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
-		serv.Warnf("You can not remove the root user")
+		serv.Warnf("RemoveUser: You can not remove the root user")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}

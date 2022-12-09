@@ -69,6 +69,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
 				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
+				return
 			}
 			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
 				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
@@ -94,6 +95,7 @@ func (s *Server) ListenForConfogurationsUpdateEvents() error {
 			err := json.Unmarshal(msg, &configurationsUpdate)
 			if err != nil {
 				s.Errorf("ListenForConfogurationsUpdateEvents: " + err.Error())
+				return
 			}
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":
@@ -115,6 +117,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			var notification models.Notification
 			err := json.Unmarshal(msg, &notification)
 			if err != nil {
+				s.Errorf("ListenForNotificationEvents: " + err.Error())
 				return
 			}
 			notificationMsg := notification.Msg
@@ -139,6 +142,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 			var msgToAck models.PmAckMsg
 			err := json.Unmarshal(msg, &msgToAck)
 			if err != nil {
+				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
 			id, err := primitive.ObjectIDFromHex(msgToAck.ID)

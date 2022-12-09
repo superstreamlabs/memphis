@@ -90,7 +90,7 @@ func (srv *Server) removeRedundantStations() {
 			stationName, _ := StationNameFromStr(s.Name)
 			_, err = srv.memphisStreamInfo(stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				srv.Warnf("Found zombie station to delete: " + s.Name)
+				srv.Warnf("removeRedundantStations: Found zombie station to delete: " + s.Name)
 				_, err := stationsCollection.UpdateMany(nil,
 					bson.M{"name": s.Name, "is_deleted": false},
 					bson.M{"$set": bson.M{"is_deleted": true}})
@@ -119,13 +119,13 @@ func getActiveConnections() ([]models.Connection, error) {
 func updateActiveProducersAndConsumers() {
 	producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
 	if err != nil {
-		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
+		serv.Warnf("updateActiveProducersAndConsumers: " + err.Error())
 		return
 	}
 
 	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
 	if err != nil {
-		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
+		serv.Warnf("updateActiveProducersAndConsumers: " + err.Error())
 		return
 	}
 

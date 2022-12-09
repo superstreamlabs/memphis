@@ -197,16 +197,16 @@ func (s *Server) CreateSystemLogsStream() {
 			go tryCreateSystemLogsStream(s, retentionDur, successCh)
 			select {
 			case <-timeout.C:
-				s.Warnf("logs-stream creation takes more than a minute")
+				s.Warnf("CreateSystemLogsStream: logs-stream creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("logs-stream creation failed: " + err.Error())
+					s.Warnf("CreateSystemLogsStream: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("logs-stream creation failed: " + err.Error())
+					s.Warnf("CreateSystemLogsStream: " + err.Error())
 					<-timeout.C
 					continue
 				}

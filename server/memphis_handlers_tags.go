@@ -166,7 +166,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	}
 	if exist {
 		errMsg := "Tag with the name " + body.Name + " already exists"
-		serv.Warnf("CreateNewTag error: " + errMsg)
+		serv.Warnf("CreateNewTag: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
@@ -229,7 +229,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	entity := strings.ToLower(body.EntityType)
 	err := validateEntityType(entity)
 	if err != nil {
-		serv.Warnf("RemoveTag error: " + err.Error())
+		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -247,7 +247,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
-			serv.Warnf("RemoveTag error: " + err.Error())
+			serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -296,7 +296,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	// entityDBList = "schemas"
 
 	default:
-		serv.Warnf("RemoveTag: Tag " + body.Name + ": unsupported entity type")
+		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": unsupported entity type")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tag " + body.Name + ", unsupported entity type"})
 		return
 	}
@@ -322,7 +322,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Warnf("RemoveTag: Tag " + body.Name + " - create audit logs error: " + err.Error())
+			serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + " - create audit logs error: " + err.Error())
 		}
 	}
 
@@ -340,7 +340,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	err := validateEntityType(entity)
 	var entity_id primitive.ObjectID
 	if err != nil {
-		serv.Warnf("UpdateTagsForEntity error: " + err.Error())
+		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -350,7 +350,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
-			serv.Warnf("UpdateTagsForEntity error: " + err.Error())
+			serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -398,7 +398,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	// entityDBList = "schemas"
 
 	default:
-		serv.Warnf("UpdateTagsForEntity error: unsupported entity type")
+		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": unsupported entity type")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
 		return
 	}
@@ -451,7 +451,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				auditLogs = append(auditLogs, newAuditLog)
 				err = CreateAuditLogs(auditLogs)
 				if err != nil {
-					serv.Warnf("create audit logs error: " + err.Error())
+					serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + " - create audit logs error: " + err.Error())
 				}
 
 				analyticsEventName = "user-tag-station"
@@ -510,7 +510,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				auditLogs = append(auditLogs, newAuditLog)
 				err = CreateAuditLogs(auditLogs)
 				if err != nil {
-					serv.Warnf("create audit logs error: " + err.Error())
+					serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + " - create audit logs error: " + err.Error())
 				}
 			} else if entity == "schema" {
 				message = "Tag " + name + " has been deleted from schema " + schemaName + " by user " + user.Username

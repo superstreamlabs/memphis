@@ -537,7 +537,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
-			serv.Warnf("CreateStation: " + err.Error())
+			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -550,7 +550,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.StorageType = strings.ToLower(body.StorageType)
 		err = validateStorageType(body.StorageType)
 		if err != nil {
-			serv.Warnf("CreateStation: " + err.Error())
+			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -566,7 +566,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if body.Replicas > 0 {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
-			serv.Warnf("CreateStation: " + err.Error())
+			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -745,10 +745,10 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	}
 
 	var stationNames []string
-	for _, stationName := range body.StationNames {
-		stationName, err := StationNameFromStr(stationName)
+	for _, name := range body.StationNames {
+		stationName, err := StationNameFromStr(name)
 		if err != nil {
-			serv.Warnf("RemoveStation: " + err.Error())
+			serv.Warnf("RemoveStation: Station " + name + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -762,7 +762,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 		if !exist {
-			errMsg := "Station " + stationName.external + " does not exist"
+			errMsg := "Station " + name + " does not exist"
 			serv.Warnf("RemoveStation: " + errMsg)
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
@@ -896,7 +896,7 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Warnf("removeStationDirect: create audit logs error: " + err.Error())
+		serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
 	}
 	respondWithErr(s, reply, nil)
 	return
@@ -1213,7 +1213,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	headersJson, err := DecodeHeader(sm.Header)
 	if err != nil {
-		serv.Errorf("GetMessageDetails error: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1226,7 +1226,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		connectionIdHeader = headersJson["connectionId"]
 		producedByHeader = strings.ToLower(headersJson["producedBy"])
 		if connectionIdHeader == "" || producedByHeader == "" {
-			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
 			return
 		}
@@ -1424,8 +1424,8 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	var asr attachSchemaRequest
 	if err := json.Unmarshal(msg, &asr); err != nil {
-		errMsg := "failed attaching schema: " + err.Error()
-		s.Errorf("useSchemaDirect: " + errMsg)
+		errMsg := "failed attaching schema " + asr.Name + ": " + err.Error()
+		s.Errorf("useSchemaDirect: At station " + asr.StationName + " " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
 		return
 	}
@@ -1555,7 +1555,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []byte) {
 	var dsr detachSchemaRequest
 	if err := json.Unmarshal(msg, &dsr); err != nil {
-		s.Errorf("removeSchemaFromStationDirect: failed removing schema: %v", err.Error())
+		s.Errorf("removeSchemaFromStationDirect: failed removing schema at station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}

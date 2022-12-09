@@ -105,7 +105,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	name := strings.ToLower(ccr.Name)
 	err := validateConsumerName(name)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("createConsumerDirect: Failed creating consumer " + ccr.Name + " at station " + ccr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -114,7 +114,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	if consumerGroup != "" {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
-			serv.Warnf(err.Error())
+			serv.Warnf("createConsumerDirect: Failed creating consumer " + ccr.Name + " at station " + ccr.StationName + ": " + err.Error())
 			respondWithErr(s, reply, err)
 			return
 		}
@@ -125,14 +125,14 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	consumerType := strings.ToLower(ccr.ConsumerType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		serv.Warnf(err.Error())
+		serv.Warnf("createConsumerDirect: Failed creating consumer " + ccr.Name + " at station " + ccr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(ccr.ConnectionId)
 	if err != nil {
-		serv.Warnf("createConsumerDirect: Connection id is not valid")
+		serv.Warnf("createConsumerDirect: Failed creating consumer " + ccr.Name + " at station " + ccr.StationName + ": Connection ID is not valid")
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -144,13 +144,13 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if !exist {
-		errMsg := "Consumer " + ccr.Name + " at station " + ccr.StationName + ": Connection id " + ccr.ConnectionId + " was not found"
+		errMsg := "Consumer " + ccr.Name + " at station " + ccr.StationName + ": Connection ID " + ccr.ConnectionId + " was not found"
 		serv.Warnf("createConsumerDirect: " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
 		return
 	}
 	if !connection.IsActive {
-		serv.Warnf("Connection is not active")
+		serv.Warnf("createConsumerDirect: Failed creating consumer " + ccr.Name + " at station " + ccr.StationName + ": Connection is not active")
 		respondWithErr(s, reply, errors.New("connection is not active"))
 		return
 	}
@@ -486,11 +486,12 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 
 	exist, station, err := IsStationExist(sn)
 	if err != nil {
+		serv.Errorf("GetAllConsumersByStation: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + body.StationName + " does not exist")
+		serv.Warnf("GetAllConsumersByStation: Station " + body.StationName + " does not exist")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -529,7 +530,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	var dcr destroyConsumerRequest
 	if err := json.Unmarshal(msg, &dcr); err != nil {
-		s.Warnf("failed destoying consumer: %v", err.Error())
+		s.Errorf("destroyConsumerDirect: %v", err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}

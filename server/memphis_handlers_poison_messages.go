@@ -79,7 +79,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		connectionIdHeader = headersJson["connectionId"]
 		producedByHeader = headersJson["producedBy"]
 		if connectionIdHeader == "" || producedByHeader == "" {
-			serv.Warnf("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+			serv.Warnf("HandleNewMessage: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			return
 		}
 	}
@@ -149,7 +149,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
 	if err != nil {
-		serv.Warnf("Error while sending a poison message notification: " + err.Error())
+		serv.Warnf("HandleNewMessage: Error while sending a poison message notification: " + err.Error())
 		return
 	}
 }
