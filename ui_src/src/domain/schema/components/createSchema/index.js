@@ -210,6 +210,20 @@ function CreateSchema() {
                     setMessagesStructNameList(getUnique(parser));
                     setModalOpen(true);
                 }
+            } else if (formFields.type === 'GraphQL') {
+                let parser = parse(formFields.schema_content).definitions;
+                if (parser.length === 1) {
+                    setMessageStructName(parser[0].name.value);
+                    handleCreateNewSchema(parser[0].name.value);
+                } else {
+                    setMessageStructName(parser[0].name.value);
+                    let list = [];
+                    parser.map((def) => {
+                        list.push(def.name.value);
+                    });
+                    setMessagesStructNameList(list);
+                    setModalOpen(true);
+                }
             } else {
                 handleCreateNewSchema();
             }
@@ -544,8 +558,18 @@ function CreateSchema() {
                 open={modalOpen}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Too many message types specified in schema structure</p>
-                    <p className="desc">Please choose your master message as a schema structure</p>
+                    {formFields.type === 'Protobuf' && (
+                        <>
+                            <p className="title">Too many message types specified in schema structure</p>
+                            <p className="desc">Please choose your master message as a schema structure</p>
+                        </>
+                    )}
+                    {formFields.type === 'GraphQL' && (
+                        <>
+                            <p className="title">Too many types specified in schema structure</p>
+                            <p className="desc">Please choose your master type as a schema structure</p>
+                        </>
+                    )}
                     <SelectComponent
                         value={messageStructName}
                         colorType="black"
