@@ -1,14 +1,3 @@
-import './style.scss';
-
-import { withStyles } from '@material-ui/core/styles';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import DatePickerComponent from '../../../components/datePicker';
-import { getBackgroundColor, getFontColor } from '../../../utils/styleTemplates';
-import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
-import { keys } from '@material-ui/core/styles/createBreakpoints';
 // Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
@@ -22,6 +11,17 @@ import { keys } from '@material-ui/core/styles/createBreakpoints';
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
+
+import './style.scss';
+
+import { Segmented } from 'antd';
+import React, { useState } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import DatePickerComponent from '../../../components/datePicker';
+import ThroughputInterval from './throughputInterval';
+import { getBackgroundColor, getFontColor } from '../../../utils/styleTemplates';
+import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
+import { keys } from '@material-ui/core/styles/createBreakpoints';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -150,16 +150,11 @@ const Throughput = () => {
             <div className="throughput-header">
                 <div className="throughput-header-side">
                     <p className="overview-components-header">Throughput</p>
-                    <div className="producer-consumer">
-                        <label className={throughputType === 'producers' && 'active'} onClick={() => setThroughputType('producers')}>
-                            Producers
-                        </label>
-                        <label className={throughputType === 'consumers' && 'active'} onClick={() => setThroughputType('consumers')}>
-                            Consumers
-                        </label>
-                    </div>
+                    <Segmented options={['Producers', 'Consumers']} onChange={(e) => setThroughputType(e)} />
                 </div>
-                <DatePickerComponent />
+                <ThroughputInterval />
+
+                {/* <DatePickerComponent /> */}
             </div>
 
             <div className="throughput-chart">

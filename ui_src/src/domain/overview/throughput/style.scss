@@ -34,29 +34,23 @@
         display: flex;
         align-items: center;
     }
-    .producer-consumer {
-        background: #ebecf2;
-        border-radius: 4px;
-        display: flex;
-        height: 30px;
-        padding: 2px;
+
+    .ant-segmented {
         margin-left: 20px;
-        label {
-            color: #696c80;
-            padding-left: 5px;
-            padding-right: 5px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-        label:hover {
-            font-weight: 600;
-        }
-        .active {
-            color: #12131a;
-            font-weight: 600;
-            background: #ffffff;
-        }
+        border-radius: 4px;
+    }
+}
+
+.throughput-interval-containter {
+    height: 350px;
+    display: flex;
+    .custom {
+        padding: 20px;
+        width: 300px;
+        background: #f7f7f7;
+    }
+    .fixed {
+        padding: 20px;
+        width: 300px;
     }
 }

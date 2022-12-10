@@ -17,65 +17,62 @@ import './style.scss';
 import React, { useState } from 'react';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
 import { RadialBarChart, RadialBar, Legend, ResponsiveContainer, PolarAngleAxis } from 'recharts';
+import { PieChart, Pie, Sector, Cell, Label } from 'recharts';
+import { Divider } from '@material-ui/core';
 
-const data = [
-    {
-        name: '30-34',
-        uv: 31.47,
-        pv: 2400,
-        fill: '#ffffff'
-    },
+const getData = (resource) => {
+    return [
+        { name: `${resource.resource}total`, value: resource.total - resource.usage, fill: '#F5F5F5' },
+        { name: `${resource.resource}used`, value: resource.usage, fill: getColor(resource) }
+    ];
+};
 
-    {
-        name: '30-34',
-        uv: 15.69,
-        pv: 1398,
-        fill: '#8dd1e1'
-    }
-];
+const getPercentage = (resource) => {
+    return resource.total !== 0 ? (resource.usage / resource.total) * 100 : 0;
+};
 
-const style = {
-    top: '50%',
-    right: 0,
-    transform: 'translate(0, -50%)',
-    lineHeight: '24px'
+const getColor = (resource) => {
+    const percentage = getPercentage(resource);
+    if (percentage <= 35) return '#61DFC6';
+    else if (percentage < 70) return '#6557FF';
+    else return '#FF716E';
 };
 
 const Resources = () => {
     const [resourcesTotal, setResources] = useState([
         { resource: 'CPU', usage: 50, total: 100, units: 'Mb' },
-        { resource: 'Mem', usage: 75, total: 100, units: 'Mb' },
+        { resource: 'Memory', usage: 75, total: 100, units: 'Mb' },
         { resource: 'Storage', usage: 25, total: 100, units: 'Mb' }
     ]);
 
     return (
         <div className="overview-wrapper resources-container">
-            {/* <div className="coming-soon-wrapper">
-                <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
-                <p>Coming soon</p>
-            </div> */}
             <p className="overview-components-header">Resources</p>
             <div className="charts-wrapper">
-                {
-                    <ResponsiveContainer width="100%" height="100%">
-                        <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="80%" barSize={10} data={data}>
-                            <RadialBar cornerRadius={50} minAngle={15} background dataKey="uv" />
-                            {/* <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={style} /> */}
-                        </RadialBarChart>
-                    </ResponsiveContainer>
-                }
-                {/* {resourcesTotal &&
-                    resourcesTotal.map((res) => {
+                {resourcesTotal?.length > 0 &&
+                    resourcesTotal.map((resource, index) => {
                         return (
-                            <PieChart width={730} height={250}>
-                                <Pie data={data01} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50} fill="#8884d8" />
-                                <Pie data={data02} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#82ca9d" label />
-                            </PieChart>
-                            // <div className="resource" key={res.resource}>
-                            //     <p className="chart-data">{`${res.usage}${res.units}/${res.total}${res.units}`}</p>
-                            // </div>
+                            <>
+                                <div className="resource">
+                                    <ResponsiveContainer height={'100%'} width={'40%'}>
+                                        <PieChart>
+                                            <Pie dataKey="value" data={getData(resource)} startAngle={-270} innerRadius={'55%'}>
+                                                <Label value={`${getPercentage(resource)}%`} position="center" />
+                                            </Pie>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="resource-data">
+                                        <p className="resource-name">{`${resource.resource} Usage`}</p>
+                                        <p className="resource-value">
+                                            <label className="value">{`${resource.usage}${resource.units} / `}</label>
+                                            <label>{`${resource.total}${resource.units}`}</label>
+                                        </p>
+                                    </div>
+                                </div>
+                                {index < resourcesTotal.length - 1 && <Divider />}
+                            </>
                         );
-                    })} */}
+                    })}
             </div>
         </div>
     );

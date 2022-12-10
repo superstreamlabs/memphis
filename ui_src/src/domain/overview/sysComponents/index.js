@@ -14,26 +14,24 @@
 
 import './style.scss';
 
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { Divider } from '@material-ui/core';
 
 import HealthyBadge from '../../../components/healthyBadge';
 import { Context } from '../../../hooks/store';
-import { Link } from 'react-router-dom';
-import pathDomains from '../../../router';
-import { ResponsiveContainer, PieChart, Pie, Legend, Cell } from 'recharts';
-// import { PieChart, Pie, Sector, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie } from 'recharts';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
-
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
     const getData = (comp) => {
-        console.log(comp);
-        return [
-            { name: 'actual', value: comp.actual_pods, color: 'red' },
-            { name: 'desired', value: comp.desired_pods, color: 'yellow' }
-        ];
+        let data = [];
+        if (comp?.actual_pods > 0) {
+            for (let i = 0; i < comp?.actual_pods; i++) data.push({ name: `actual${i}`, value: 1, fill: '#6557FF' });
+        }
+        if (comp?.desired_pods > comp?.actual_pods) {
+            for (let i = 0; i < comp?.desired_pods - comp?.actual_pods; i++) data.push({ name: `desired${i}`, value: 1, fill: '#EBEAED' });
+        }
+        return data;
     };
     return (
         <div className="overview-wrapper sys-components-container">
@@ -54,21 +52,7 @@ const SysComponents = () => {
                                     <p>{comp.component}</p>
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <PieChart height={35} width={35}>
-                                            <Pie
-                                                dataKey="value"
-                                                data={getData(comp)}
-                                                //     [
-                                                //     { name: 'Group A', value: 400 },
-                                                //     { name: 'Group B', value: 300 },
-                                                //     { name: 'Group C', value: 300 },
-                                                //     { name: 'Group D', value: 200 }
-                                                // ]}
-                                            >
-                                                {/* {' '}
-                                                {data.map((entry, index) => (
-                                                    // <Cell fill={COLORS[index % COLORS.length]} />
-                                                ))} */}
-                                            </Pie>
+                                            <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>
                                         </PieChart>
                                         <p>
                                             {comp.actual_pods}/{comp.desired_pods}
