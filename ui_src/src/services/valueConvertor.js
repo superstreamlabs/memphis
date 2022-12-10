@@ -241,3 +241,7 @@ export const msToUnits = (value) => {
             break;
     }
 };
+
+export const generateName = (value) => {
+    return value.replaceAll(' ', '-').toLowerCase();
+};

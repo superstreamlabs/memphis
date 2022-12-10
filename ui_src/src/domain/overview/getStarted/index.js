@@ -156,6 +156,7 @@ const GetStarted = ({ username, dataSentence }) => {
         try {
             await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, bodyRequest);
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+            history.push(pathDomains.overview);
         } catch (error) {}
     };
 
@@ -201,7 +202,6 @@ const GetStarted = ({ username, dataSentence }) => {
                             boxShadow="gray"
                             onClick={() => {
                                 skipGetStarted({ username });
-                                history.push(pathDomains.overview);
                             }}
                         />
                     </div>

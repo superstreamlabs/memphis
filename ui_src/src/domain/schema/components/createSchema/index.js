@@ -32,7 +32,7 @@ import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import TagsList from '../../../../components/tagList';
 import { Context } from '../../../../hooks/store';
-import { getUnique } from '../../../../services/valueConvertor';
+import { generateName, getUnique } from '../../../../services/valueConvertor';
 import Ajv2019 from 'ajv/dist/2019';
 import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
@@ -417,8 +417,8 @@ function CreateSchema() {
                                 fontSize="12px"
                                 height="40px"
                                 width="200px"
-                                onBlur={(e) => updateFormState('name', e.target.value.replace(' ', '-'))}
-                                onChange={(e) => updateFormState('name', e.target.value.replace(' ', '-'))}
+                                onBlur={(e) => updateFormState('name', generateName(e.target.value))}
+                                onChange={(e) => updateFormState('name', generateName(e.target.value))}
                                 value={formFields.name}
                             />
                         </div>
