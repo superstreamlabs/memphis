@@ -17,11 +17,8 @@ import './style.scss';
 import { Segmented } from 'antd';
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import DatePickerComponent from '../../../components/datePicker';
 import ThroughputInterval from './throughputInterval';
-import { getBackgroundColor, getFontColor } from '../../../utils/styleTemplates';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
-import { keys } from '@material-ui/core/styles/createBreakpoints';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -44,7 +41,7 @@ const axisStyle = {
     margin: '0px'
 };
 
-const data = [
+let data = [
     {
         name: '00:00',
         throughput: 4000
@@ -100,7 +97,10 @@ const data = [
     {
         name: '13:00',
         throughput: 4000
-    },
+    }
+];
+
+const data2 = [
     {
         name: '14:00',
         throughput: 3000
@@ -143,18 +143,24 @@ const data = [
     }
 ];
 
+// let interval = setInterval(() => {
+//     data = [...data, ...data2];
+// }, 4000);
+
 const Throughput = () => {
     const [throughputType, setThroughputType] = useState('consumers');
     return (
         <div className="overview-wrapper throughput-overview-container">
+            <div className="coming-soon-wrapper">
+                <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
+                <p>Coming soon</p>
+            </div>
             <div className="throughput-header">
                 <div className="throughput-header-side">
                     <p className="overview-components-header">Throughput</p>
                     <Segmented options={['Producers', 'Consumers']} onChange={(e) => setThroughputType(e)} />
                 </div>
-                <ThroughputInterval />
-
-                {/* <DatePickerComponent /> */}
+                {/* <ThroughputInterval /> */}
             </div>
 
             <div className="throughput-chart">

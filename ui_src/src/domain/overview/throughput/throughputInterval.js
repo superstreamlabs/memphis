@@ -15,34 +15,35 @@
 import './style.scss';
 
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { KeyboardArrowRightRounded } from '@material-ui/icons';
-
-import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
-import OverflowTip from '../../../components/tooltip/overflowtip';
+import { SearchOutlined } from '@ant-design/icons';
 import Button from '../../../components/button';
-import Filter from '../../../components/filter';
-import NoStations from '../../../assets/images/noStations.svg';
-import { Context } from '../../../hooks/store';
-import pathDomains from '../../../router';
 import { Popover } from 'antd';
 import DatePickerComponent from '../../../components/datePicker';
+import SearchInput from '../../../components/searchInput';
 
 const ThroughputInterval = ({ createStationTrigger }) => {
-    const [s, ss] = useState(Context);
+    const [selectInterval, setSelectInterval] = useState(0);
 
     const content = (
         <div className="throughput-interval-containter">
-            <div className="custom">
-                <p>Custom</p>
-                <p>Choose custom time interval.</p>
-                <label>From</label>
-                <DatePickerComponent />
-                <label>To</label>
-                <DatePickerComponent />
+            <div className="custom" style={{ display: selectInterval !== 7 && 'none' }}>
+                <div>
+                    <p className="custom-header">Custom</p>
+                    <p className="custom-description">Choose custom time interval.</p>
+                </div>
+                <div>
+                    <div className="date-container">
+                        <label>From</label>
+                        <DatePickerComponent width="250px" />
+                    </div>
+                    <div className="date-container">
+                        <label>To</label>
+                        <DatePickerComponent width="250px" />
+                    </div>
+                </div>
                 <Button
                     className="modal-btn"
-                    width="190px"
+                    width="250px"
                     height="32px"
                     placeholder="Apply Time Range"
                     colorType="white"
@@ -54,7 +55,47 @@ const ThroughputInterval = ({ createStationTrigger }) => {
                     // onClick={() => setOpenFunctionForm(true)}
                 />
             </div>
-            <div className="fixed"></div>
+            <div className="fixed">
+                <SearchInput
+                    placeholder="Search quick ranges"
+                    colorType="navy"
+                    backgroundColorType="gray-dark"
+                    width="250px"
+                    height="34px"
+                    borderColorType="none"
+                    boxShadowsType="none"
+                    borderRadiusType="semi-round"
+                    iconComponent={<SearchOutlined />}
+                    // onChange={handleSearch}
+                    // value={searchInput}
+                />
+                <div className="intervals-list">
+                    <p className={selectInterval === 0 && 'selected'} onClick={() => setSelectInterval(0)}>
+                        Last 5 minutes
+                    </p>
+                    <p className={selectInterval === 1 && 'selected'} onClick={() => setSelectInterval(1)}>
+                        Last 10 minutes
+                    </p>
+                    <p className={selectInterval === 2 && 'selected'} onClick={() => setSelectInterval(2)}>
+                        Last 15 minutes
+                    </p>
+                    <p className={selectInterval === 3 && 'selected'} onClick={() => setSelectInterval(3)}>
+                        Last 1 hrs
+                    </p>
+                    <p className={selectInterval === 4 && 'selected'} onClick={() => setSelectInterval(4)}>
+                        Last 3 hrs
+                    </p>
+                    <p className={selectInterval === 5 && 'selected'} onClick={() => setSelectInterval(5)}>
+                        Last 6 hrs
+                    </p>
+                    <p className={selectInterval === 6 && 'selected'} onClick={() => setSelectInterval(6)}>
+                        Last 2 days
+                    </p>
+                    <p className={selectInterval === 7 && 'selected'} onClick={() => setSelectInterval(7)}>
+                        Custom
+                    </p>
+                </div>
+            </div>
         </div>
     );
 

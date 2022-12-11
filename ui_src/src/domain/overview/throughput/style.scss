@@ -45,12 +45,50 @@
     height: 350px;
     display: flex;
     .custom {
-        padding: 20px;
+        padding: 25px;
         width: 300px;
         background: #f7f7f7;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .custom-header {
+            font-size: 20px;
+            color: #1d1d1d;
+            font-family: 'InterMedium';
+            margin-bottom: 5px;
+        }
+        .custom-description {
+            color: #b4b4b4;
+            font-size: 12px;
+            margin-bottom: 0;
+        }
+        .date-container {
+            margin-bottom: 15px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
     }
     .fixed {
-        padding: 20px;
+        padding: 25px;
         width: 300px;
+        .intervals-list {
+            margin-top: 5px;
+            p {
+                margin-bottom: 0;
+                color: #1d1d1d;
+                font-family: 'InterMedium';
+                padding: 5px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            p:hover {
+                background-color: #f9f9fa;
+            }
+            p.selected {
+                background-color: #f1f0ff;
+            }
+        }
     }
 }

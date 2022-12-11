@@ -16,8 +16,7 @@ import './style.scss';
 
 import React, { useState } from 'react';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
-import { RadialBarChart, RadialBar, Legend, ResponsiveContainer, PolarAngleAxis } from 'recharts';
-import { PieChart, Pie, Sector, Cell, Label } from 'recharts';
+import { PieChart, Pie, Label, ResponsiveContainer } from 'recharts';
 import { Divider } from '@material-ui/core';
 
 const getData = (resource) => {
@@ -47,6 +46,10 @@ const Resources = () => {
 
     return (
         <div className="overview-wrapper resources-container">
+            <div className="coming-soon-wrapper">
+                <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
+                <p>Coming soon</p>
+            </div>
             <p className="overview-components-header">Resources</p>
             <div className="charts-wrapper">
                 {resourcesTotal?.length > 0 &&
@@ -56,7 +59,7 @@ const Resources = () => {
                                 <div className="resource">
                                     <ResponsiveContainer height={'100%'} width={'40%'}>
                                         <PieChart>
-                                            <Pie dataKey="value" data={getData(resource)} startAngle={-270} innerRadius={'55%'}>
+                                            <Pie dataKey="value" data={getData(resource)} startAngle={-270} innerRadius={'60%'}>
                                                 <Label value={`${getPercentage(resource)}%`} position="center" />
                                             </Pie>
                                         </PieChart>
