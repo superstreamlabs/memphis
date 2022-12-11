@@ -84,6 +84,7 @@ const LogsWrapper = () => {
             if (stateRef.current[1].startIndex !== 0) {
                 stopListen();
             } else {
+                stopListen();
                 startListen();
             }
         }
@@ -118,12 +119,6 @@ const LogsWrapper = () => {
     };
 
     const stopListen = () => {
-        const sc = StringCodec();
-        if (logType === '') {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('UNSUB'));
-        } else {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('UNSUB'));
-        }
         sub?.unsubscribe();
     };
 

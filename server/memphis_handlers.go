@@ -77,7 +77,7 @@ type srvMemphis struct {
 }
 
 type memphisWS struct {
-	subscriptions map[string]memphisWSSubscription
+	subscriptions map[string]memphisWSReqFiller
 	webSocketMu   sync.Mutex
 	quitCh        chan struct{}
 }
@@ -109,7 +109,7 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
 	})
-	
+
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
 	s.initWS()

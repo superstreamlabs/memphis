@@ -518,7 +518,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	sub.close()
+	s.unsubscribeOnGlobalAcc(sub)
 	err = s.memphisRemoveConsumer(syslogsStreamName, durableName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
