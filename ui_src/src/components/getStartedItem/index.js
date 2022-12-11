@@ -1,9 +1,10 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import './style.scss';
 import Button from '../button';
 import { GetStartedStoreContext } from '../../domain/overview/getStarted';
 import bgGetStarted from '../../assets/images/bgGetStarted.svg';
 import bgGetStartedBottom from '../../assets/images/bgGetStartedBottom.svg';
+import Img404 from '../../assets/images/404.svg';
 import VideoPlayer from '../videoPlayer';
 import blackBall from '../../assets/images/blackBall.svg';
 import orangeBall from '../../assets/images/orangeBall.svg';
@@ -14,7 +15,7 @@ import { CONNECT_APP_VIDEO, CONNECT_CLI_VIDEO } from '../../config';
 const GetStartedItem = (props) => {
     const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
-
+    const [isOffline, setIsOffline] = useState(false);
     return (
         <div className="get-started-wrapper">
             {getStartedState?.currentStep !== 5 && (
@@ -41,14 +42,22 @@ const GetStartedItem = (props) => {
                                     <img className="black-ball" src={blackBall} alt="black-ball"></img>
                                 </div>
                                 <img className="orange-ball" src={orangeBall} alt="orange-ball"></img>
-                                <VideoPlayer url={CONNECT_APP_VIDEO} />
+                                {isOffline ? (
+                                    <img className="not-connected" src={Img404} alt="not connected" />
+                                ) : (
+                                    <VideoPlayer url={CONNECT_APP_VIDEO} err={(e) => setIsOffline(e)} />
+                                )}
                                 <p className="video-description">Connect your first app to Memphis ✨</p>
                             </div>
                             <div className="video-section">
                                 <img className="pink-ball" src={pinkBall} alt="pink-ball"></img>
                                 <img className="purple-ball" src={purpleBall} alt="purple-ball"></img>
 
-                                <VideoPlayer url={CONNECT_CLI_VIDEO} />
+                                {isOffline ? (
+                                    <img className="not-connected" src={Img404} alt="not connected" />
+                                ) : (
+                                    <VideoPlayer url={CONNECT_CLI_VIDEO} err={(e) => setIsOffline(e)} />
+                                )}
                                 <p className="video-description">How to install and connect Memphis.dev CLI ⭐</p>
                             </div>
                         </div>

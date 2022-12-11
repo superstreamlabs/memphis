@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import playVideoIcon from '../../assets/images/playVideoIcon.svg';
 import ReactPlayer from 'react-player';
 
-const VideoPlayer = ({ url }) => {
+const VideoPlayer = ({ url, err }) => {
     const [playState, setPlayState] = useState(false);
 
     return (
@@ -20,7 +20,7 @@ const VideoPlayer = ({ url }) => {
             height="250px"
             width="445px"
             url={url}
-            // onError={() => console.log('error')}
+            onError={() => err(true)}
         ></ReactPlayer>
     );
 };
