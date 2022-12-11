@@ -15,22 +15,22 @@
 import './style.scss';
 
 import React, { useState, useEffect, useContext } from 'react';
-import Lottie from 'lottie-react';
-
-import SelectComponent from '../../../../components/select';
-import Button from '../../../../components/button';
-import successProd from '../../../../assets/images/dataProduced.svg';
-import successCons from '../../../../assets/images/stationsIconActive.svg';
-import { GetStartedStoreContext } from '..';
-import { httpRequest } from '../../../../services/http';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import TitleComponent from '../../../../components/titleComponent';
-import { CODE_EXAMPLE } from '../../../../const/SDKExample';
-import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
-import Copy from '../../../../components/copy';
-import * as monaco from 'monaco-editor';
-import Editor from '@monaco-editor/react';
 import { loader } from '@monaco-editor/react';
+import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+
+import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
+import successCons from '../../../../assets/images/stationsIconActive.svg';
+import successProd from '../../../../assets/images/dataProduced.svg';
+import TitleComponent from '../../../../components/titleComponent';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import SelectComponent from '../../../../components/select';
+import { CODE_EXAMPLE } from '../../../../const/SDKExample';
+import { httpRequest } from '../../../../services/http';
+import Button from '../../../../components/button';
+import Copy from '../../../../components/copy';
+import { GetStartedStoreContext } from '..';
+
 loader.config({ monaco });
 
 export const produceConsumeScreenEnum = {

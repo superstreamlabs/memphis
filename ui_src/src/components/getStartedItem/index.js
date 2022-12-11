@@ -1,16 +1,31 @@
-import React, { useContext, useState } from 'react';
+// Copyright 2021-2022 The Memphis Authors
+// Licensed under the Apache License, Version 2.0 (the “License”);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an “AS IS” BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.package server
+
 import './style.scss';
-import Button from '../button';
+
+import React, { useContext, useState } from 'react';
+
 import { GetStartedStoreContext } from '../../domain/overview/getStarted';
-import bgGetStarted from '../../assets/images/bgGetStarted.svg';
 import bgGetStartedBottom from '../../assets/images/bgGetStartedBottom.svg';
+import { CONNECT_APP_VIDEO, CONNECT_CLI_VIDEO } from '../../config';
+import bgGetStarted from '../../assets/images/bgGetStarted.svg';
+import orangeBall from '../../assets/images/orangeBall.svg';
+import purpleBall from '../../assets/images/purpleBall.svg';
+import blackBall from '../../assets/images/blackBall.svg';
+import pinkBall from '../../assets/images/pinkBall.svg';
 import Img404 from '../../assets/images/404.svg';
 import VideoPlayer from '../videoPlayer';
-import blackBall from '../../assets/images/blackBall.svg';
-import orangeBall from '../../assets/images/orangeBall.svg';
-import pinkBall from '../../assets/images/pinkBall.svg';
-import purpleBall from '../../assets/images/purpleBall.svg';
-import { CONNECT_APP_VIDEO, CONNECT_CLI_VIDEO } from '../../config';
+import Button from '../button';
 
 const GetStartedItem = (props) => {
     const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;

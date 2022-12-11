@@ -15,32 +15,33 @@
 import './style.scss';
 
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
+import GenerateSchema from 'generate-schema';
+import { loader } from '@monaco-editor/react';
+import jsonSchemaDraft04 from 'ajv-draft-04';
+import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+import Ajv2019 from 'ajv/dist/2019';
+import Ajv2020 from 'ajv/dist/2020';
 import { Form } from 'antd';
+
 import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
 import errorModal from '../../../../assets/images/errorModal.svg';
+import { getUnique } from '../../../../services/valueConvertor';
 import BackIcon from '../../../../assets/images/backIcon.svg';
 import tagsIcon from '../../../../assets/images/tagsIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
+import TagsList from '../../../../components/tagList';
 import Button from '../../../../components/button';
+import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
-import TagsList from '../../../../components/tagList';
-import { Context } from '../../../../hooks/store';
-import { getUnique } from '../../../../services/valueConvertor';
-import Ajv2019 from 'ajv/dist/2019';
-import jsonSchemaDraft04 from 'ajv-draft-04';
-import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
-import Ajv2020 from 'ajv/dist/2020';
-import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
-import GenerateSchema from 'generate-schema';
-import * as monaco from 'monaco-editor';
-import Editor from '@monaco-editor/react';
-import { loader } from '@monaco-editor/react';
 loader.config({ monaco });
 
 const schemaTypes = [
