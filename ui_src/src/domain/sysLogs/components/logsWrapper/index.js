@@ -103,6 +103,7 @@ const LogsWrapper = () => {
                     const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
                     if (stateRef.current[4]) {
                         setSelectedRow(data.logs[0].message_seq);
+                        setDisplayedLog(data.logs[0]);
                     }
                     setLastMgsSeq(data.logs[0].message_seq);
                     setLogs((users) => [...uniqueItems, ...users]);
@@ -123,11 +124,11 @@ const LogsWrapper = () => {
     };
 
     useEffect(() => {
-        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
-        setSocketOn(true);
+        if (state.socket) {
+            setSocketOn(true);
+        }
         return () => {
             stopListen();
-            sub?.unsubscribe();
         };
     }, [state.socket]);
 
@@ -143,7 +144,7 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest logs</p>
+                    <p className="header-title">Latest logs ({logs?.length})</p>
                 </list-header>
                 <Virtuoso
                     data={logs}

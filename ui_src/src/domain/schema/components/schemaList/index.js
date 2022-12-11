@@ -13,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useCallback } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
@@ -27,11 +27,9 @@ import Button from '../../../../components/button';
 import Filter from '../../../../components/filter';
 import { Context } from '../../../../hooks/store';
 import Modal from '../../../../components/modal';
-import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { StringCodec, JSONCodec } from 'nats.ws';
 
 function SchemaList() {
     const history = useHistory();
@@ -92,6 +90,7 @@ function SchemaList() {
             if (data) {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
                 setIsCheck([]);
+                setIsCheckAll(false);
                 setisLoading(false);
             }
         } catch (error) {

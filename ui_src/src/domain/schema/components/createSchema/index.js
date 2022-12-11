@@ -210,20 +210,6 @@ function CreateSchema() {
                     setMessagesStructNameList(getUnique(parser));
                     setModalOpen(true);
                 }
-            } else if (formFields.type === 'GraphQL') {
-                let parser = parse(formFields.schema_content).definitions;
-                if (parser.length === 1) {
-                    setMessageStructName(parser[0].name.value);
-                    handleCreateNewSchema(parser[0].name.value);
-                } else {
-                    setMessageStructName(parser[0].name.value);
-                    let list = [];
-                    parser.map((def) => {
-                        list.push(def.name.value);
-                    });
-                    setMessagesStructNameList(list);
-                    setModalOpen(true);
-                }
             } else {
                 handleCreateNewSchema();
             }
@@ -276,6 +262,17 @@ function CreateSchema() {
                 setValidateError(error.data.message);
             }
             setValidateLoading(false);
+        }
+    };
+
+    const validateProtobufSchema = (value) => {
+        try {
+            Schema.parse(value);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
         }
     };
 
@@ -336,14 +333,7 @@ function CreateSchema() {
         }
         if (value && value.length > 0) {
             if (type === 'Protobuf') {
-                try {
-                    Schema.parse(value);
-                    setValidateSuccess('');
-                    setValidateError('');
-                } catch (error) {
-                    setValidateSuccess('');
-                    setValidateError(error.message);
-                }
+                validateProtobufSchema(value);
             } else if (type === 'Json') {
                 validateJsonSchema(value);
             } else if (type === 'GraphQL') {
@@ -558,18 +548,9 @@ function CreateSchema() {
                 open={modalOpen}
             >
                 <div className="roll-back-modal">
-                    {formFields.type === 'Protobuf' && (
-                        <>
-                            <p className="title">Too many message types specified in schema structure</p>
-                            <p className="desc">Please choose your master message as a schema structure</p>
-                        </>
-                    )}
-                    {formFields.type === 'GraphQL' && (
-                        <>
-                            <p className="title">Too many types specified in schema structure</p>
-                            <p className="desc">Please choose your master type as a schema structure</p>
-                        </>
-                    )}
+                    <p className="title">Too many message types specified in schema structure</p>
+                    <p className="desc">Please choose your master message as a schema structure</p>
+
                     <SelectComponent
                         value={messageStructName}
                         colorType="black"

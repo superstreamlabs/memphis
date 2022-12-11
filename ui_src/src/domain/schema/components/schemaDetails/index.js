@@ -95,21 +95,6 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setMessagesStructNameList(parser);
             }
         }
-        if (schema.type === 'graphql') {
-            let parser = parse(schema.versions[index].schema_content).definitions;
-            setMessageStructName(schema.versions[index].message_struct_name);
-            if (parser.length === 1) {
-                setEditable(false);
-            } else {
-                setEditable(true);
-                setMessageStructName(schema.versions[index].message_struct_name);
-                let list = [];
-                parser.map((def) => {
-                    list.push(def.name.value);
-                });
-                setMessagesStructNameList(list);
-            }
-        }
     };
 
     const getScemaDetails = async () => {
@@ -155,7 +140,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const rollBackVersion = async (latest = false) => {
         try {
-            setIsLoading(true);
+            setIsRollLoading(true);
             const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, {
                 schema_name: schemaName,
                 version_number: latest ? latestVersion?.versions[0]?.version_number : versionSelected?.version_number
@@ -173,7 +158,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setActivateVersionModal(false);
             }
         } catch (err) {}
-        setIsLoading(false);
+        setIsRollLoading(false);
     };
 
     const validateJsonSchemaContent = (value, ajv) => {
@@ -375,10 +360,9 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
-                            {(schemaDetails.type === 'protobuf' || schemaDetails.type === 'graphql') && (
+                            {schemaDetails.type === 'protobuf' && (
                                 <>
-                                    {schemaDetails.type === 'protobuf' && <p className="field-name">Master message :</p>}
-                                    {schemaDetails.type === 'graphql' && <p className="field-name">Master type :</p>}
+                                    <p className="field-name">Master message :</p>
                                     <SelectComponent
                                         value={messageStructName}
                                         colorType="black"
