@@ -17,11 +17,15 @@ import React, { useState } from 'react';
 import ReactPlayer from 'react-player';
 
 import playVideoIcon from '../../assets/images/playVideoIcon.svg';
+import Img404 from '../../assets/images/404.svg';
 
-const VideoPlayer = ({ url, err }) => {
+const VideoPlayer = ({ url }) => {
     const [playState, setPlayState] = useState(false);
+    const [isOffline, setIsOffline] = useState(false);
 
-    return (
+    return isOffline ? (
+        <img className="not-connected" src={Img404} alt="not connected" />
+    ) : (
         <ReactPlayer
             className="video-player"
             controls={true}
@@ -35,7 +39,7 @@ const VideoPlayer = ({ url, err }) => {
             height="250px"
             width="445px"
             url={url}
-            onError={() => err(true)}
+            onError={() => setIsOffline(true)}
         ></ReactPlayer>
     );
 };

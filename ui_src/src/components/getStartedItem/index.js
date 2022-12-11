@@ -57,22 +57,13 @@ const GetStartedItem = (props) => {
                                     <img className="black-ball" src={blackBall} alt="black-ball"></img>
                                 </div>
                                 <img className="orange-ball" src={orangeBall} alt="orange-ball"></img>
-                                {isOffline ? (
-                                    <img className="not-connected" src={Img404} alt="not connected" />
-                                ) : (
-                                    <VideoPlayer url={CONNECT_APP_VIDEO} err={(e) => setIsOffline(e)} />
-                                )}
+                                <VideoPlayer url={CONNECT_APP_VIDEO} />
                                 <p className="video-description">Connect your first app to Memphis ✨</p>
                             </div>
                             <div className="video-section">
                                 <img className="pink-ball" src={pinkBall} alt="pink-ball"></img>
                                 <img className="purple-ball" src={purpleBall} alt="purple-ball"></img>
-
-                                {isOffline ? (
-                                    <img className="not-connected" src={Img404} alt="not connected" />
-                                ) : (
-                                    <VideoPlayer url={CONNECT_CLI_VIDEO} err={(e) => setIsOffline(e)} />
-                                )}
+                                <VideoPlayer url={CONNECT_CLI_VIDEO} />
                                 <p className="video-description">How to install and connect Memphis.dev CLI ⭐</p>
                             </div>
                         </div>
