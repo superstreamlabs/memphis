@@ -146,7 +146,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 		return unwrapHandlersFunc(memphisWSGetMainOverviewData, h), nil
 
 	case memphisWS_Subj_StationOverviewData:
-		stationName := tokenAt(subj, 2)
+		stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
 		if stationName == _EMPTY_ {
 			return nil, errors.New("invalid station name")
 		}

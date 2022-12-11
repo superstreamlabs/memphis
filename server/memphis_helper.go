@@ -99,6 +99,7 @@ func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) e
 	select {
 	case rawResp = <-respCh:
 		s.unsubscribeOnGlobalAcc(sub)
+		break
 	case <-timeout:
 		s.unsubscribeOnGlobalAcc(sub)
 		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
