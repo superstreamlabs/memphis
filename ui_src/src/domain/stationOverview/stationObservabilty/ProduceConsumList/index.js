@@ -14,7 +14,7 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { Space } from 'antd';
+import { Segmented, Space } from 'antd';
 
 import { numberWithCommas } from '../../../../services/valueConvertor';
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
@@ -27,6 +27,7 @@ import MultiCollapse from '../components/multiCollapse';
 import { StationStoreContext } from '../..';
 import Button from '../../../../components/button';
 import SdkExample from '../../components/sdkExsample';
+import ProtocolExample from '../../components/protocolExsample';
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -37,6 +38,7 @@ const ProduceConsumList = ({ producer }) => {
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
+    const [segment, setSegment] = useState('Sdk');
 
     useEffect(() => {
         if (producer) {
@@ -266,8 +268,24 @@ const ProduceConsumList = ({ producer }) => {
             <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
                 <SdkExample showTabs={false} consumer={true} />
             </Modal>
-            <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateProducer(false)} open={openCreateProducer} displayButtons={false}>
-                <SdkExample showTabs={false} />
+            <Modal
+                header={
+                    <div className="sdk-header">
+                        <p className="title">Code example</p>
+                        <Segmented size="small" className="segment" options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
+                    </div>
+                }
+                width="710px"
+                height="600px"
+                clickOutside={() => {
+                    setOpenCreateProducer(false);
+                    setSegment('Sdk');
+                }}
+                open={openCreateProducer}
+                displayButtons={false}
+            >
+                {segment === 'Sdk' && <SdkExample showTabs={false} />}
+                {segment === 'Protocol' && <ProtocolExample />}
             </Modal>
         </div>
     );

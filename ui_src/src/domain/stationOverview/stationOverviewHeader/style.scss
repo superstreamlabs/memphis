@@ -198,7 +198,7 @@
                         color: #1d1d1d;
                         font-size: 16px;
                         line-height: 19px;
-                        font-weight: 700;
+                        font-family: 'InterBold';
                     }
                     .title {
                         font-size: 12px;
@@ -262,10 +262,26 @@
     }
 }
 .modal-wrapper {
+    .sdk-header{
+        display: flex;
+        .title {
+            font-family: 'InterBold';
+            font-size: 18px;
+            margin: 0;
+        }
+        .segment {
+            background: #EBECF2;
+            border-radius: 4px;
+            margin-left: 10px;
+            .ant-segmented-item-selected .ant-segmented-item-label{
+                font-family: 'InterMedium';
+            }
+        }
+    }
     .audit-header {
         display: flex;
         .title {
-            font-weight: 700;
+            font-family: 'InterBold';
             font-size: 18px;
             margin: 0;
         }

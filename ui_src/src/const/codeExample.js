@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
 
-export const CODE_EXAMPLE = {
+export const SDK_CODE_EXAMPLE = {
     'Node.js': {
         langCode: 'javascript',
         installation: `npm i memphis-dev --save`,
@@ -295,5 +295,18 @@ async def main():
 if __name__ == '__main__':
     asyncio.run(main())
         `
+    }
+};
+
+export const PROTOCOL_CODE_EXAMPLE = {
+    Rest: {
+        langCode: 'apex',
+        producer: `curl --location --request POST 'localhost:4444/stations/s1/produce/single' \n--header 'Authorization: Bearer ' \n--header 'Content-Type: application/json' \n--data-raw '{"message": "New Message"}'`,
+        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' \n--header 'Content-Type: application/json' \n--data-raw '{
+            "username": "root",
+            "connection_token": "memphis",
+            "token_expiry_in_minutes": 123,
+            "refresh_token_expiry_in_minutes": 10000092
+        }'`
     }
 };

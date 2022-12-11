@@ -76,6 +76,7 @@ const MessageJourney = () => {
         setTimeout(() => {
             state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
         }, 1000);
+
         return () => {
             sub?.unsubscribe();
         };
