@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -238,67 +237,63 @@ export const CODE_EXAMPLE = {
 
     Python: {
         langCode: 'python',
-        installation: `pip3 install memphis-py`,
+        installation: `pip3 install --upgrade memphis-py`,
         producer: `import asyncio
-        from memphis import Memphis, Headers, MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError
+from memphis import Memphis, Headers, MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError
         
+async def main():
+    try:
+        memphis = Memphis()
+        await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
         
-        async def main():
-            try:
-                memphis = Memphis()
-                await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
+        producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>")
+        headers = Headers()
+        headers.add("key", "value") 
+        for i in range(5):
+            await producer.produce(bytearray('Message #'+str(i)+': Hello world', 'utf-8'), headers=headers)
         
-                producer = await memphis.producer(
-                    station_name="<station-name>", producer_name="<producer-name>")
-                headers = Headers()
-                headers.add("key", "value") 
-                for i in range(5):
-                    await producer.produce(bytearray('Message #'+str(i)+': Hello world', 'utf-8'), headers=headers)
+    except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
+        print(e)
         
-            except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
-                print(e)
+    finally:
+        await memphis.close()
         
-            finally:
-                await memphis.close()
-        
-        if __name__ == '__main__':
-            asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
         `,
         consumer: `import asyncio
-        from memphis import Memphis, MemphisError, MemphisConnectError, MemphisHeaderError
+from memphis import Memphis, MemphisError, MemphisConnectError, MemphisHeaderError
         
+async def main():
+    async def msg_handler(msgs, error):
+        try:
+            for msg in msgs:
+                print("message: ", msg.get_data())
+                await msg.ack()
+                headers = msg.get_headers()
+                if error:
+                    print(error)
+        except (MemphisError, MemphisConnectError, MemphisHeaderError) as e:
+            print(e)
+            return
         
-        async def main():
-            async def msg_handler(msgs, error):
-                try:
-                    for msg in msgs:
-                        print("message: ", msg.get_data())
-                        await msg.ack()
-                        headers = msg.get_headers()
-                    if error:
-                        print(error)
-                except (MemphisError, MemphisConnectError, MemphisHeaderError) as e:
-                    print(e)
-                    return
+    try:
+        memphis = Memphis()
+        await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
         
-            try:
-                memphis = Memphis()
-                await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
+        consumer = await memphis.consumer(station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="")
+        consumer.consume(msg_handler)
+        # Keep your main thread alive so the consumer will keep receiving data
+        await asyncio.Event().wait()
         
-                consumer = await memphis.consumer(
-                    station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="")
-                consumer.consume(msg_handler)
-                # Keep your main thread alive so the consumer will keep receiving data
-                await asyncio.sleep(5)
+    except (MemphisError, MemphisConnectError) as e:
+        print(e)
         
-            except (MemphisError, MemphisConnectError) as e:
-                print(e)
+    finally:
+        await memphis.close()
         
-            finally:
-                await memphis.close()
-        
-        if __name__ == '__main__':
-            asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
         `
     }
 };

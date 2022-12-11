@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -120,7 +119,7 @@ const CreateAppUser = (props) => {
             {isCreatedUser === screenEnum['DATA_WAITING'] && (
                 <div className="creating-the-user-container">
                     <Lottie className="lottie" animationData={userCreator} loop={true} />
-                    <p className="create-the-user-header">We are creating the user</p>
+                    <p className="create-the-user-header">Please hold a second. The user is being created</p>
                 </div>
             )}
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && (

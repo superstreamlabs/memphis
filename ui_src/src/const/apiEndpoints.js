@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -82,5 +81,9 @@ export const ApiEndpoints = {
     GET_INTEGRATION_DETAILS: '/integrations/getIntegrationDetails',
     GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
     DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
-    REQUEST_INTEGRATION: '/integrations/requestIntegration'
+    REQUEST_INTEGRATION: '/integrations/requestIntegration',
+
+    //Configuration
+    GET_CLUSTER_CONFIGURATION: '/configurations/getClusterConfig',
+    EDIT_CLUSTER_CONFIGURATION: '/configurations/editClusterConfig'
 };

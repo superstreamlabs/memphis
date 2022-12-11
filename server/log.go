@@ -44,6 +44,9 @@ type Logger interface {
 
 	// Log a trace statement
 	Tracef(format string, v ...interface{})
+
+	// Log a system statement
+	Systemf(format string, v ...interface{})
 }
 
 // ConfigureLogger configures and sets the logger for the server.
@@ -179,6 +182,12 @@ func (s *Server) Noticef(format string, v ...interface{}) {
 	}, format, v...)
 }
 
+func (s *Server) Systemf(format string, v ...interface{}) {
+	s.executeLogCall(func(logger Logger, format string, v ...interface{}) {
+		logger.Systemf(format, v...)
+	}, format, v...)
+}
+
 // Errorf logs an error
 func (s *Server) Errorf(format string, v ...interface{}) {
 	s.executeLogCall(func(logger Logger, format string, v ...interface{}) {
@@ -289,7 +298,11 @@ func (s *Server) createMemphisLoggerFallbackFunc() srvlog.HybridLogPublishFunc {
 }
 
 func (s *Server) sendLogToSubject(label string, log []byte) {
-	logLabelToSubjectMap := map[string]string{"INF": syslogsInfoSubject, "WRN": syslogsWarnSubject, "ERR": syslogsErrSubject}
+	logLabelToSubjectMap := map[string]string{"INF": syslogsInfoSubject,
+		"WRN": syslogsWarnSubject,
+		"ERR": syslogsErrSubject,
+		"SYS": syslogsSysSubject,
+	}
 	subjectSuffix, ok := logLabelToSubjectMap[label]
 	if !ok {
 		return

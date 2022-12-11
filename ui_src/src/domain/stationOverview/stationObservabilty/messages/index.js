@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -20,7 +19,7 @@ import { InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { Checkbox, Space } from 'antd';
 
-import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
+import { convertBytes, msToUnits, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
@@ -352,7 +351,7 @@ const Messages = () => {
                             <div className="row-data">
                                 <Space direction="vertical">
                                     <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisionedCGs} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
                                     <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
@@ -402,7 +401,12 @@ const Messages = () => {
                         img={leaderImg}
                         title={'Leader'}
                         desc={
-                            'Each station stores a stream object with a single leader on the most available broker based on RAFT decision. In case of leader failure, the role will be transferred to one of the followers'
+                            <span>
+                                The current leader of this station.{' '}
+                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                    Learn More
+                                </a>
+                            </span>
                         }
                         data={[stationState?.stationSocketData?.leader]}
                     />
@@ -411,7 +415,12 @@ const Messages = () => {
                             img={followersImg}
                             title={'Followers'}
                             desc={
-                                'Followers are standby replicas for the stream leader and will take its role in case of leader failure. The number of followers and leader equals the number of defined stream replicas (Mirrors)'
+                                <span>
+                                    The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn More
+                                    </a>
+                                </span>
                             }
                             data={stationState?.stationSocketData?.followers}
                         />
@@ -419,8 +428,15 @@ const Messages = () => {
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}
-                        desc={'Idempotency mode ensures that messages always get delivered in the right order and without duplicates. Cause some performance degradation'}
-                        data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
+                        desc={
+                            <span>
+                                Ensures messages will be produced once.{' '}
+                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
+                                    Learn More
+                                </a>
+                            </span>
+                        }
+                        data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
                 </div>
             )}

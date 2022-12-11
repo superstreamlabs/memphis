@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -27,7 +26,11 @@ const DetailBox = ({ img, title, desc, data }) => {
             <div className="separator" />
             <div className="detail-data">
                 {data.map((row) => {
-                    return <div className="detail-data-row">{row}</div>;
+                    return (
+                        <div key={row} className="detail-data-row">
+                            {row}
+                        </div>
+                    );
                 })}
             </div>
         </div>

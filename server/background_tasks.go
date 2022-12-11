@@ -18,6 +18,7 @@ var UI_url string
 
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
+const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 
@@ -75,6 +76,28 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
 				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
+			default:
+				return
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) ListenForConfogurationsUpdateEvents() error {
+	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var configurationsUpdate models.ConfigurationsUpdate
+			err := json.Unmarshal(msg, &configurationsUpdate)
+			if err != nil {
+				s.Errorf(err.Error())
+			}
+			switch strings.ToLower(configurationsUpdate.Type) {
+			case "pm_retention":
+				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
 			default:
 				return
 			}
@@ -153,6 +176,12 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
+
+	err = s.ListenForConfogurationsUpdateEvents()
+	if err != nil {
+		return errors.New("Failed subscribing for confogurations update: " + err.Error())
+	}
+
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
 	err = systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)

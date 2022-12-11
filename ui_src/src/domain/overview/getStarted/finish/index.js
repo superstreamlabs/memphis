@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -112,11 +111,7 @@ const Finish = ({ createStationFormRef }) => {
             </div>
             <div className="container-icons-finish">
                 <p className="link-finish-header">Link to our channels</p>
-                <Link
-                    className="icon-image"
-                    to={{ pathname: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/getting-started/1-installation' }}
-                    target="_blank"
-                >
+                <Link className="icon-image" to={{ pathname: 'https://docs.memphis.dev' }} target="_blank">
                     <img src={docsLogo} width="25px" height="25px" alt="slack-icon"></img>
                 </Link>
                 <Link className="icon-image" to={{ pathname: 'https://github.com/memphisdev' }} target="_blank">

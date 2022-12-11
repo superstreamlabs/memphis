@@ -65,7 +65,7 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 }
 
 func removeOldPoisonMsgs() error {
-	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(configuration.POISON_MSGS_RETENTION_IN_HOURS))))}}
+	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(POISON_MSGS_RETENTION_IN_HOURS))))}}
 	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func killFunc(s *Server) {
 			msg := (conn.ID).Hex()
 			reply := CONN_STATUS_SUBJ + "_reply" + s.memphis.nuid.Next()
 
-			sub, err  := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(msg []byte) { respCh <- msg }(copyBytes(msg))
 			})
 			if err != nil {
@@ -183,7 +183,7 @@ func killFunc(s *Server) {
 				zombieConnections = append(zombieConnections, conn.ID)
 				lock.Unlock()
 			}
-			sub.close()
+			s.unsubscribeOnGlobalAcc(sub)
 			wg.Done()
 		}(s, conn, &wg, &lock)
 	}

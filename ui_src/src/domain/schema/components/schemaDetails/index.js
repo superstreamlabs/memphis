@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -44,19 +43,8 @@ import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
-
-const formatOption = [
-    {
-        id: 1,
-        value: 0,
-        label: 'Code'
-    },
-    {
-        id: 2,
-        value: 1,
-        label: 'Table'
-    }
-];
+import OverflowTip from '../../../../components/tooltip/overflowtip';
+import { validate, parse, buildASTSchema } from 'graphql';
 
 function SchemaDetails({ schemaName, closeDrawer }) {
     const ajv = new Ajv2019();
@@ -152,7 +140,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const rollBackVersion = async (latest = false) => {
         try {
-            setIsLoading(true);
+            setIsRollLoading(true);
             const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, {
                 schema_name: schemaName,
                 version_number: latest ? latestVersion?.versions[0]?.version_number : versionSelected?.version_number
@@ -170,7 +158,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setActivateVersionModal(false);
             }
         } catch (err) {}
-        setIsLoading(false);
+        setIsRollLoading(false);
     };
 
     const validateJsonSchemaContent = (value, ajv) => {
@@ -183,23 +171,63 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
-    const validateJsonSchema = value => {
+    const validateProtobufSchema = (value) => {
+        try {
+            let parser = Schema.parse(value).messages;
+            if (parser.length > 1) {
+                setEditable(true);
+                setMessagesStructNameList(getUnique(parser));
+            } else {
+                setMessageStructName(parser[0].name);
+                setEditable(false);
+            }
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
+    const validateGraphQlSchema = (value) => {
+        try {
+            var documentNode = parse(value);
+            var graphqlSchema = buildASTSchema(documentNode);
+            validate(graphqlSchema, documentNode);
+            if (documentNode.definitions.length > 1) {
+                setEditable(true);
+                let list = [];
+                documentNode.definitions.map((def) => {
+                    list.push(def.name.value);
+                });
+                setMessagesStructNameList(list);
+            } else {
+                setMessageStructName(documentNode.definitions[0].name.value);
+                setEditable(false);
+            }
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
+    const validateJsonSchema = (value) => {
         try {
             value = JSON.parse(value);
             ajv.addMetaSchema(draft7MetaSchema);
-            validateJsonSchemaContent(value, ajv)
+            validateJsonSchemaContent(value, ajv);
         } catch (error) {
             try {
                 const ajv = new jsonSchemaDraft04();
-                validateJsonSchemaContent(value, ajv)
+                validateJsonSchemaContent(value, ajv);
             } catch (error) {
                 try {
                     const ajv = new Ajv2020();
-                    validateJsonSchemaContent(value, ajv)
+                    validateJsonSchemaContent(value, ajv);
                 } catch (error) {
                     try {
                         ajv.addMetaSchema(draft6MetaSchema);
-                        validateJsonSchemaContent(value, ajv)
+                        validateJsonSchemaContent(value, ajv);
                     } catch (error) {
                         setValidateSuccess('');
                         setValidateError(error.message);
@@ -207,8 +235,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 }
             }
         }
-
-    }
+    };
 
     const checkContent = (value) => {
         const { type } = schemaDetails;
@@ -218,21 +245,11 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
         if (value && value.length > 0) {
             if (type === 'protobuf') {
-                try {
-                    let parser = Schema.parse(value).messages;
-                    if (parser.length > 1) {
-                        setEditable(true);
-                        setMessagesStructNameList(getUnique(parser));
-                    } else {
-                        setMessageStructName(parser[0].name);
-                        setEditable(false);
-                    }
-                } catch (error) {
-                    setValidateSuccess('');
-                    setValidateError(error.message);
-                }
+                validateProtobufSchema(value);
             } else if (type === 'json') {
-                validateJsonSchema(value)
+                validateJsonSchema(value);
+            } else if (type === 'graphql') {
+                validateGraphQlSchema(value);
             }
         }
     };
@@ -291,12 +308,14 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails.type === 'json' ? <p className='schema-json-name'>JSON schema</p> : <span> {schemaDetails.type}</span>}
+                        {schemaDetails?.type === 'json' ? <span>JSON schema</span> : <span> {schemaDetails?.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
-                        <span>{currentVersion?.created_by_user}</span>
+                        <OverflowTip text={currentVersion?.created_by_user} maxWidth={'150px'}>
+                            <span>{currentVersion?.created_by_user}</span>
+                        </OverflowTip>
                     </div>
                     <div className="wrapper">
                         <img src={createdDateIcon} alt="typeIcon" />
@@ -325,10 +344,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             <>
                                 <span>Diff : </span>
                                 <div className="switcher">
-                                    <div className={isDiff ? 'yes-no-wrapper yes' : 'yes-no-wrapper border'} onClick={() => setIsDiff(true)}>
+                                    <div className={isDiff ? 'yes-no-wrapper yes selected' : 'yes-no-wrapper yes'} onClick={() => setIsDiff(true)}>
                                         <p>Yes</p>
                                     </div>
-                                    <div className={isDiff ? 'yes-no-wrapper' : 'yes-no-wrapper no'} onClick={() => setIsDiff(false)}>
+                                    <div className={isDiff ? 'yes-no-wrapper no' : 'yes-no-wrapper no selected'} onClick={() => setIsDiff(false)}>
                                         <p>No</p>
                                     </div>
                                 </div>
@@ -341,27 +360,29 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
-                        {schemaDetails.type === "protobuf" &&
-                        <>
-                            <p className="field-name">Master message :</p>
-                            <SelectComponent
-                                value={messageStructName}
-                                colorType="black"
-                                backgroundColorType="white"
-                                borderColorType="gray-light"
-                                radiusType="semi-round"
-                                minWidth="12vw"
-                                width="250px"
-                                height="30px"
-                                options={messagesStructNameList}
-                                iconColor="gray"
-                                popupClassName="message-option"
-                                onChange={(e) => {
-                                    setMessageStructName(e);
-                                    setUpdated(true);
-                                }}
-                                disabled={!editable}
-                            /></>}
+                            {schemaDetails.type === 'protobuf' && (
+                                <>
+                                    <p className="field-name">Master message :</p>
+                                    <SelectComponent
+                                        value={messageStructName}
+                                        colorType="black"
+                                        backgroundColorType="white"
+                                        borderColorType="gray-light"
+                                        radiusType="semi-round"
+                                        minWidth="12vw"
+                                        width="250px"
+                                        height="30px"
+                                        options={messagesStructNameList}
+                                        iconColor="gray"
+                                        popupClassName="message-option"
+                                        onChange={(e) => {
+                                            setMessageStructName(e);
+                                            setUpdated(true);
+                                        }}
+                                        disabled={!editable}
+                                    />
+                                </>
+                            )}
                         </div>
                         <div className="validation">
                             <Button
@@ -398,7 +419,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 formatOnType: true,
                                 fontSize: '14px'
                             }}
-                            language="proto"
+                            language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                             height="calc(100% - 104px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
@@ -421,7 +442,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         readOnly: true,
                                         fontSize: '14px'
                                     }}
-                                    language="proto"
+                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                                     height="calc(100% - 100px)"
                                     value={versionSelected?.schema_content}
                                 />
@@ -429,7 +450,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             {isDiff && (
                                 <DiffEditor
                                     height="calc(100% - 100px)"
-                                    language="proto"
+                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                                     original={currentVersion?.schema_content}
                                     modified={versionSelected?.schema_content}
                                     options={{
@@ -570,8 +591,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 open={activateVersionModal}
             >
                 <div className="roll-back-modal">
-                    <p className="title">You have created a new version - do you want to activate it?</p>
-                    <p className="desc">Your current schema will be changed to the new version.</p>
+                    <p className="title">You created a new version of the schema. Do you want to activate it?</p>
+                    <p className="desc">Your schema will be updated to the chosen version.</p>
                     <div className="buttons">
                         <Button
                             width="150px"

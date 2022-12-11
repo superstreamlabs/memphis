@@ -1,4 +1,5 @@
 {
+    "MEMPHIS_VERSION": "0.4.3",
     "HTTP_PORT": "9000",
     "WS_PORT": 7770,
     "WS_TLS": false,

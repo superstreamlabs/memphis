@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -65,19 +64,20 @@ const MessageJourney = () => {
         const sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}`);
         const jc = JSONCodec();
         const sc = StringCodec();
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                arrangeData(data);
-            }
-        })();
+        if (sub) {
+            (async () => {
+                for await (const msg of sub) {
+                    let data = jc.decode(msg.data);
+                    arrangeData(data);
+                }
+            })();
+        }
 
         setTimeout(() => {
             state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
         }, 1000);
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('UNSUB'));
-            sub.unsubscribe();
+            sub?.unsubscribe();
         };
     }, [state.socket]);
 

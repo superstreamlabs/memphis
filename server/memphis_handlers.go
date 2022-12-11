@@ -34,15 +34,16 @@ import (
 )
 
 type Handlers struct {
-	Producers    ProducersHandler
-	Consumers    ConsumersHandler
-	AuditLogs    AuditLogsHandler
-	Stations     StationsHandler
-	Monitoring   MonitoringHandler
-	PoisonMsgs   PoisonMessagesHandler
-	Tags         TagsHandler
-	Schemas      SchemasHandler
-	Integrations IntegrationsHandler
+	Producers      ProducersHandler
+	Consumers      ConsumersHandler
+	AuditLogs      AuditLogsHandler
+	Stations       StationsHandler
+	Monitoring     MonitoringHandler
+	PoisonMsgs     PoisonMessagesHandler
+	Tags           TagsHandler
+	Schemas        SchemasHandler
+	Integrations   IntegrationsHandler
+	Configurations ConfigurationsHandler
 }
 
 var usersCollection *mongo.Collection
@@ -59,6 +60,7 @@ var schemasCollection *mongo.Collection
 var schemaVersionCollection *mongo.Collection
 var sandboxUsersCollection *mongo.Collection
 var integrationsCollection *mongo.Collection
+var configurationsCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -75,7 +77,7 @@ type srvMemphis struct {
 }
 
 type memphisWS struct {
-	subscriptions map[string]memphisWSSubscription
+	subscriptions map[string]memphisWSReqFiller
 	webSocketMu   sync.Mutex
 	quitCh        chan struct{}
 }
@@ -102,12 +104,14 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	schemaVersionCollection = db.GetCollection("schema_versions", dbInstance.Client)
 	sandboxUsersCollection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 	integrationsCollection = db.GetCollection("integrations", dbInstance.Client)
+	configurationsCollection = db.GetCollection("configurations", dbInstance.Client)
 
 	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys: bson.M{"creation_date": -1}, Options: nil,
 	})
 
 	s.initializeSDKHandlers()
+	s.initializeConfigurations()
 	s.initWS()
 }
 

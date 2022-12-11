@@ -111,6 +111,10 @@
         margin: 0;
         font-size: 12px;
         color: #000000;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
     }
     .company-logo {
         width: 30px;

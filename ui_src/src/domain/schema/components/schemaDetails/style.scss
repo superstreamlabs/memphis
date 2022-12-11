@@ -24,12 +24,12 @@ schema-details {
                 p{
                     color: #84818A;
                     font-family: 'InterMedium';
-                    font-size: 12px;
+                    font-size: 13px;
                     line-height: 12px;
                     margin-right: 5px;
                 }
                 span {
-                    font-size: 14px;
+                    font-size: 12px;
                     line-height: 14px;
                     font-family: 'InterMedium';
                     text-transform:capitalize;
@@ -88,17 +88,16 @@ schema-details {
                         align-items: center;
                         cursor: pointer;
                     }
-                    .yes {
-                        background: #F6F6F6;
+                    .selected {
+                        color: var(--purple);
+                        background-color: rgba(101, 87, 255, 0.1);
+                    }
+                    .yes{
                         border-right: 1px solid #E8E8E8;
                         border-top-left-radius: 7px;
                         border-bottom-left-radius: 7px;
                     }
-                    .border{
-                        border-right: 1px solid #E8E8E8;
-                    }
                     .no {
-                        background: #F6F6F6;
                         border-top-right-radius: 7px;
                         border-bottom-right-radius: 7px;
                     }

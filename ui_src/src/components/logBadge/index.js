@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -20,18 +19,23 @@ const LogBadge = ({ type }) => {
     return (
         <div className="log-badge-container">
             {type && type === 'info' && (
-                <div className="info">
+                <div className="badge info">
                     <p>Info</p>
                 </div>
             )}
             {type && type === 'warn' && (
-                <div className="warn">
+                <div className="badge warn">
                     <p>Warn</p>
                 </div>
             )}
             {type && type === 'err' && (
-                <div className="error">
+                <div className="badge error">
                     <p>Error</p>
+                </div>
+            )}
+            {type && type === 'sys' && (
+                <div className="badge sys">
+                    <p>Sys</p>
                 </div>
             )}
         </div>

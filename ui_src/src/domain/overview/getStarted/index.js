@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -157,6 +156,7 @@ const GetStarted = ({ username, dataSentence }) => {
         try {
             await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, bodyRequest);
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+            history.push(pathDomains.overview);
         } catch (error) {}
     };
 
@@ -202,7 +202,6 @@ const GetStarted = ({ username, dataSentence }) => {
                             boxShadow="gray"
                             onClick={() => {
                                 skipGetStarted({ username });
-                                history.push(pathDomains.overview);
                             }}
                         />
                     </div>

@@ -44,6 +44,7 @@ const (
 	syslogsInfoSubject = "info"
 	syslogsWarnSubject = "warn"
 	syslogsErrSubject  = "err"
+	syslogsSysSubject  = "sys"
 )
 
 // JetStream API request kinds
@@ -53,6 +54,7 @@ const (
 	kindDeleteConsumer = "$memphis_delete_consumer"
 	kindConsumerInfo   = "$memphis_consumer_info"
 	kindCreateStream   = "$memphis_create_stream"
+	kindUpdateStream   = "$memphis_update_stream"
 	kindDeleteStream   = "$memphis_delete_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
@@ -60,7 +62,9 @@ const (
 
 // errors
 var (
-	ErrBadHeader = errors.New("could not decode header")
+	ErrBadHeader                   = errors.New("could not decode header")
+	LOGS_RETENTION_IN_DAYS         int
+	POISON_MSGS_RETENTION_IN_HOURS int
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -94,9 +98,10 @@ func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) e
 	var rawResp []byte
 	select {
 	case rawResp = <-respCh:
-		sub.close()
+		s.unsubscribeOnGlobalAcc(sub)
+		break
 	case <-timeout:
-		sub.close()
+		s.unsubscribeOnGlobalAcc(sub)
 		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
 	}
 
@@ -177,11 +182,7 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 
 func (s *Server) CreateSystemLogsStream() {
 	ready := !s.JetStreamIsClustered()
-	retentionDays, err := strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
-	if err != nil {
-		s.Errorf("Failed to create syslogs stream: " + err.Error())
-	}
-	retentionDur := time.Duration(retentionDays) * time.Hour * 24
+	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
 	successCh := make(chan error)
 
@@ -267,6 +268,23 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 
 	var resp JSApiStreamCreateResponse
 	err = jsApiRequest(s, requestSubject, kindCreateStream, request, &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) memphisUpdateStream(sc *StreamConfig) error {
+	requestSubject := fmt.Sprintf(JSApiStreamUpdateT, sc.Name)
+
+	request, err := json.Marshal(sc)
+	if err != nil {
+		return err
+	}
+
+	var resp JSApiStreamUpdateResponse
+	err = jsApiRequest(s, requestSubject, kindUpdateStream, request, &resp)
 	if err != nil {
 		return err
 	}
@@ -524,8 +542,8 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		}
 
 		data := hex.EncodeToString(msg.Data)
-		if len(data) > 100 { // get the first chars for preview needs
-			data = data[0:100]
+		if len(data) > 40 { // get the first chars for preview needs
+			data = data[0:40]
 		}
 
 		messages = append(messages, models.MessageDetails{
@@ -634,7 +652,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 
 cleanup:
 	timer.Stop()
-	sub.close()
+	s.unsubscribeOnGlobalAcc(sub)
 	err = s.memphisRemoveConsumer(streamName, durableName)
 	if err != nil {
 		return nil, err
@@ -716,6 +734,12 @@ func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler)
 	}
 
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
+}
+
+func (s *Server) unsubscribeOnGlobalAcc(sub *subscription) error {
+	acc := s.GlobalAccount()
+	c := acc.ic
+	return c.processUnsub(sub.sid)
 }
 
 func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {

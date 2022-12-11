@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -14,14 +13,13 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext } from 'react';
 
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import LogsWrapper from './components/logsWrapper';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
-import Filter from '../../components/filter';
 
 const SysLogs = () => {
     const [state, dispatch] = useContext(Context);
@@ -45,7 +43,7 @@ const SysLogs = () => {
     return (
         <div className="logs-container">
             <div className="header-wraper">
-                <h1 className="main-header-h1">System Logs </h1>
+                <h1 className="main-header-h1">System Logs</h1>
                 <Button
                     className="modal-btn"
                     width="160px"

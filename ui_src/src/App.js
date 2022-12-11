@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -40,8 +39,6 @@ import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
 import Preferences from './domain/preferences';
-import Profile from './domain/preferences/profile';
-import Integrations from './domain/preferences/integrations';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);

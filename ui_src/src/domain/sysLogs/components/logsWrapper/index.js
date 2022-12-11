@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -85,6 +84,7 @@ const LogsWrapper = () => {
             if (stateRef.current[1].startIndex !== 0) {
                 stopListen();
             } else {
+                stopListen();
                 startListen();
             }
         }
@@ -95,18 +95,21 @@ const LogsWrapper = () => {
         sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
-                const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-                if (stateRef.current[4]) {
-                    setSelectedRow(data.logs[0].message_seq);
+        if (sub) {
+            (async () => {
+                for await (const msg of sub) {
+                    let data = jc.decode(msg.data);
+                    let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
+                    const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
+                    if (stateRef.current[4]) {
+                        setSelectedRow(data.logs[0].message_seq);
+                        setDisplayedLog(data.logs[0]);
+                    }
+                    setLastMgsSeq(data.logs[0].message_seq);
+                    setLogs((users) => [...uniqueItems, ...users]);
                 }
-                setLastMgsSeq(data.logs[0].message_seq);
-                setLogs((users) => [...uniqueItems, ...users]);
-            }
-        })();
+            })();
+        }
         setTimeout(() => {
             if (logType === '') {
                 state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
@@ -117,40 +120,15 @@ const LogsWrapper = () => {
     };
 
     const stopListen = () => {
-        const sc = StringCodec();
-        if (logType === '') {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('UNSUB'));
-        } else {
-            state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('UNSUB'));
-        }
-        sub.unsubscribe();
+        sub?.unsubscribe();
     };
 
     useEffect(() => {
-        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
-        setSocketOn(true);
-
-        // const jc = JSONCodec();
-        // const sc = StringCodec();
-        // setSocketOn(true);
-        // (async () => {
-        //     for await (const msg of sub) {
-        //         let data = jc.decode(msg.data);
-        //         let lastMgsSeqIndex = data.logs.findIndex((log) => log.message_seq === stateRef.current[3]);
-        //         const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-        //         setLastMgsSeq(data.logs[0].message_seq);
-        //         if (stateRef.current[1].startIndex === 0) {
-        //             setSelectedRow(data.logs[0].message_seq);
-        //         }
-        //         setLogs((users) => [...uniqueItems, ...users]);
-        //     }
-        // })();
-
-        // startListen();
-
+        if (state.socket) {
+            setSocketOn(true);
+        }
         return () => {
             stopListen();
-            sub.unsubscribe();
         };
     }, [state.socket]);
 
@@ -166,7 +144,7 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest logs</p>
+                    <p className="header-title">Latest logs ({logs?.length})</p>
                 </list-header>
                 <Virtuoso
                     data={logs}

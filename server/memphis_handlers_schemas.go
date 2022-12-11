@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"go.mongodb.org/mongo-driver/bson"
@@ -57,6 +58,14 @@ func validateJsonSchemaContent(schemaContent string) error {
 		return errors.New("Your json schema is invalid")
 	}
 
+	return nil
+}
+
+func validateGraphqlSchemaContent(schemaContent string) error {
+	_, err := graphql.ParseSchema(schemaContent, nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -101,7 +110,7 @@ func validateSchemaType(schemaType string) error {
 	invalidSupportTypeErrStr := fmt.Sprintf("Avro is not supported at this time")
 	invalidSupportTypeErr := errors.New(invalidSupportTypeErrStr)
 
-	if schemaType == "protobuf" || schemaType == "json" {
+	if schemaType == "protobuf" || schemaType == "json" || schemaType == "graphql" {
 		return nil
 	} else if schemaType == "avro" {
 		return invalidSupportTypeErr
@@ -127,6 +136,11 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 			return err
 		}
 		break
+	case "graphql":
+		err := validateGraphqlSchemaContent(schemaContent)
+		if err != nil {
+			return err
+		}
 	case "avro":
 		break
 	}
@@ -228,7 +242,7 @@ func getSchemaByStationName(sn StationName) (models.Schema, error) {
 		return schema, err
 	}
 	if !exist {
-		serv.Warnf("Station does not exist")
+		serv.Warnf("Station " + station.Name + " does not exist")
 		return schema, err
 	}
 	if station.Schema.SchemaName == "" {
@@ -525,6 +539,9 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 	messageStructName := body.MessageStructName
+	if schemaType == "graphql" {
+		messageStructName = "Query"
+	}
 	if schemaType == "protobuf" {
 		err := validateMessageStructName(messageStructName)
 		if err != nil {
@@ -592,7 +609,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		message := "Schema " + schemaName + " has been created"
+		message := "Schema " + schemaName + " has been created by " + user.Username
 		serv.Noticef(message)
 	} else {
 		serv.Warnf("Schema with that name already exists")
@@ -686,13 +703,13 @@ func deleteSchemaFromStation(s *Server, schemaName string) error {
 		if err != nil {
 			return err
 		}
-		exist, _, err := IsStationExist(sn)
+		exist, station, err := IsStationExist(sn)
 		if err != nil {
 			s.Errorf("deleteSchemaFromStation error: " + err.Error())
 			return err
 		}
 		if !exist {
-			serv.Warnf("Station does not exist")
+			serv.Warnf("Station " + station.Name + " does not exist")
 			continue
 		}
 
@@ -794,6 +811,9 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	messageStructName := body.MessageStructName
+	if schema.Type == "graphql" {
+		messageStructName = "Query"
+	}
 	if schema.Type == "protobuf" {
 		err := validateMessageStructName(messageStructName)
 		if err != nil {
@@ -860,7 +880,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 	if updateResults.MatchedCount == 0 {
-		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created"
+		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created by " + user.Username
 		serv.Noticef(message)
 	} else {
 		serv.Warnf("Version already exists")

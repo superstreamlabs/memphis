@@ -23,6 +23,7 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
+	"net/http"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -80,8 +81,22 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
+		_, err := http.Get("http://localhost:4444")
+		if err != nil {
+			components = append(components, models.SystemComponent{
+				Component:   "memphis-http-proxy",
+				DesiredPods: 1,
+				ActualPods:  0,
+			})
+		} else {
+			components = append(components, models.SystemComponent{
+				Component:   "memphis-http-proxy",
+				DesiredPods: 1,
+				ActualPods:  1,
+			})
+		}
 
-		err := serv.memphis.dbClient.Ping(context.TODO(), nil)
+		err = serv.memphis.dbClient.Ping(context.TODO(), nil)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
@@ -101,6 +116,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			DesiredPods: 1,
 			ActualPods:  1,
 		})
+
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetConfig()
@@ -203,7 +219,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Station does not exist")
+		serv.Warnf("Station " + body.StationName + " does not exist")
 		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
 		return
 	}
@@ -365,6 +381,8 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsWarnSubject
 	case "info":
 		filterSubjectSuffix = syslogsInfoSubject
+	case "system":
+		filterSubjectSuffix = syslogsSysSubject
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
@@ -389,11 +407,6 @@ func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		serv.Errorf("DownloadSystemLogs error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	b := new(bytes.Buffer)
 	datawriter := bufio.NewWriter(b)
 
@@ -505,7 +518,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	sub.close()
+	s.unsubscribeOnGlobalAcc(sub)
 	err = s.memphisRemoveConsumer(syslogsStreamName, durableName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err

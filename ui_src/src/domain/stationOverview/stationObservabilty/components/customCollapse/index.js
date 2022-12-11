@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -148,9 +147,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                     <>
                         {!status &&
                             data?.length > 0 &&
-                            data?.map((row, index) => {
+                            data?.map((row) => {
                                 return (
-                                    <content is="x3d" key={index}>
+                                    <content is="x3d" key={row.name}>
                                         <p>{row.name}</p>
                                         <span>{row.value}</span>
                                     </content>
@@ -158,9 +157,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                             })}
                         {status &&
                             data?.details?.length > 0 &&
-                            data?.details?.map((row, index) => {
+                            data?.details?.map((row) => {
                                 return (
-                                    <content is="x3d" key={index}>
+                                    <content is="x3d" key={row.name}>
                                         <p>{row.name}</p>
                                         <span>{row.value}</span>
                                     </content>

@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -14,9 +13,9 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React from 'react';
 
-import { capitalizeFirst, cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
+import { cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
 import sourceIcon from '../../../../assets/images/sourceIcon.svg';
 import LogBadge from '../../../../components/logBadge';
 

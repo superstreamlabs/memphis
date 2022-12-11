@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -132,21 +131,21 @@ function OverView() {
         const sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
-        (async () => {
-            for await (const msg of sub) {
-                let data = jc.decode(msg.data);
-                data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-                dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-            }
-        })();
-
+        if (sub) {
+            (async () => {
+                for await (const msg of sub) {
+                    let data = jc.decode(msg.data);
+                    data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+                    dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+                }
+            })();
+        }
         setTimeout(() => {
             state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
             setisLoading(false);
         }, 1000);
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('UNSUB'));
-            sub.unsubscribe();
+            sub?.unsubscribe();
         };
     }, [state.socket]);
 

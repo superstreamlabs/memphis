@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -42,7 +41,6 @@ const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, 
                         style={{ height: height }}
                         className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
                         onClick={() => (labelType ? onClick(option.value) : '')}
-                        key={option.value}
                     >
                         <span
                             className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}
