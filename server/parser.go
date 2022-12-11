@@ -945,7 +945,7 @@ func (c *client) parse(buf []byte) error {
 
 				if c.kind == CLIENT &&
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
-					c.ws == nil &&
+					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") {
 					if err := handleConnectMessage(c); err != nil {
 						// user is getting notified from within the function
