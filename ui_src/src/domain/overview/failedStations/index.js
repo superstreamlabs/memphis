@@ -25,7 +25,7 @@ import Filter from '../../../components/filter';
 import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
-// state?.domainList
+
 const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
@@ -37,7 +37,6 @@ const FailedStations = ({ createStationTrigger }) => {
     return (
         <div className="overview-wrapper failed-stations-container">
             <p className="overview-components-header">Stations</p>
-            {/* <Filter filterComponent="stations" height="34px" /> */}
             <div className="err-stations-list">
                 {state?.monitor_data?.stations?.length > 0 ? (
                     <div className="coulmns-table">

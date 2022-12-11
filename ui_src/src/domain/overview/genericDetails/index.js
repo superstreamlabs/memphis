@@ -20,6 +20,7 @@ import { numberWithCommas } from '../../../services/valueConvertor';
 import TotalMsg from '../../../assets/images/total_msg.svg';
 import TotalPoison from '../../../assets/images/total_poison.svg';
 import TotalStations from '../../../assets/images/total_stations.svg';
+import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
@@ -37,14 +38,17 @@ const GenericDetails = () => {
                 <img src={TotalMsg} width={50} height={50} alt="Total Messages" className="icon-wrapper" />
                 <div className="data-wrapper">
                     <span>Total Messages</span>
-                    <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
+                    <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
                 </div>
             </div>
             <div className="overview-wrapper data-box">
+                <div className="coming-soon-wrapper">
+                    <img src={comingSoonBox} width={40} height={60} alt="comingSoonBox" />
+                </div>
                 <img src={TotalPoison} width={50} height={50} alt="Total Poison messages" className="icon-wrapper" />
                 <div className="data-wrapper">
                     <span>Total Poison messages</span>
-                    <p> {numberWithCommas(state?.monitor_data?.total_messages)}</p>
+                    <p></p>
                 </div>
             </div>
         </div>

@@ -143,10 +143,6 @@ const data2 = [
     }
 ];
 
-// let interval = setInterval(() => {
-//     data = [...data, ...data2];
-// }, 4000);
-
 const Throughput = () => {
     const [throughputType, setThroughputType] = useState('consumers');
     return (
