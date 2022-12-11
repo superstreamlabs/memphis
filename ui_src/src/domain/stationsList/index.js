@@ -140,6 +140,7 @@ const StationsList = () => {
             if (data) {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: stationFilterArray(state?.filteredList, isCheck) });
                 setIsCheck([]);
+                setIsCheckAll(false);
                 setisLoading(false);
             }
         } catch (error) {
