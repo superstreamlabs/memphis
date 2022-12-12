@@ -78,6 +78,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                 placement="right"
                 size={'large'}
                 onClose={() => handleDrawer(false)}
+                destroyOnClose={true}
                 open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<CloseRounded style={{ color: '#D1D1D1' }} />}

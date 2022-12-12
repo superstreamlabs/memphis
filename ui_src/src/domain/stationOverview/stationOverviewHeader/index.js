@@ -16,6 +16,7 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import { Segmented } from 'antd';
 
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
@@ -38,6 +39,7 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
+import ProtocolExample from '../components/protocolExsample';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -49,7 +51,7 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
-
+    const [segment, setSegment] = useState('Sdk');
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
             case 'message_age_sec':
@@ -261,7 +263,7 @@ const StationOverviewHeader = () => {
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
-                        <p>SDK</p>
+                        <p>Code example</p>
                         <span
                             onClick={() => {
                                 setSdkModal(true);
@@ -275,8 +277,23 @@ const StationOverviewHeader = () => {
                         <span onClick={() => setAuditModal(true)}>View details {'>'}</span>
                     </div>
                 </div>
-                <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
-                    <SdkExample />
+                <Modal
+                    header={
+                        <div className="sdk-header">
+                            <p className="title">Code example</p>
+                            <Segmented size="small" className="segment" options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
+                        </div>
+                    }
+                    width="710px"
+                    clickOutside={() => {
+                        setSdkModal(false);
+                        setSegment('Sdk');
+                    }}
+                    open={sdkModal}
+                    displayButtons={false}
+                >
+                    {segment === 'Sdk' && <SdkExample />}
+                    {segment === 'Protocol' && <ProtocolExample />}
                 </Modal>
                 <Modal
                     header={

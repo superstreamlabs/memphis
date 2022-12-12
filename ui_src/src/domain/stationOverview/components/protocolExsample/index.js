@@ -16,41 +16,35 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 
 import SelectComponent from '../../../../components/select';
-import { SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
+import { PROTOCOL_CODE_EXAMPLE } from '../../../../const/codeExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
 import CustomTabs from '../../../../components/Tabs';
 import Copy from '../../../../components/copy';
 import Editor from '@monaco-editor/react';
 
-const tabs = ['Producer', 'Consumer'];
+const tabs = ['Producer'];
 
-const SdkExample = ({ consumer, showTabs = true }) => {
-    const [langSelected, setLangSelected] = useState('Go');
-    const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
+const ProtocolExample = ({ consumer, showTabs = true }) => {
+    const [langSelected, setLangSelected] = useState('Rest');
+    const selectLngOption = ['Rest'];
     const [codeExample, setCodeExample] = useState({
-        import: '',
-        connect: '',
         producer: '',
-        consumer: ''
+        tokenGenerate: '',
+        langCode: ''
     });
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
 
-    const url = window.location.href;
-    const stationName = url.split('stations/')[1];
-
     const changeDynamicCode = (lang) => {
         let codeEx = {};
-        codeEx.producer = SDK_CODE_EXAMPLE[lang].producer;
-        codeEx.consumer = SDK_CODE_EXAMPLE[lang].consumer;
-        let host = process.env.REACT_APP_SANDBOX_ENV
-            ? 'broker.sandbox.memphis.dev'
-            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-            ? 'localhost'
-            : 'memphis-cluster.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
-        codeEx.producer = codeEx.producer.replaceAll('<memphis-host>', host);
-        codeEx.consumer = codeEx.consumer.replaceAll('<memphis-host>', host);
-        codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
-        codeEx.consumer = codeEx.consumer.replaceAll('<station-name>', stationName);
+        codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
+        codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
+        let host =
+            localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+                ? 'localhost'
+                : 'memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
+        codeEx.producer = codeEx.producer.replaceAll('localhost', host);
+        codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
+
         setCodeExample(codeEx);
     };
 
@@ -64,9 +58,9 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     };
 
     return (
-        <div className="code-example-details-container sdk-example">
+        <div className="code-example-details-container protocol-example">
             <div className="select-lan">
-                <p>Language</p>
+                <p>Protocol</p>
                 <SelectComponent
                     value={langSelected}
                     colorType="navy"
@@ -81,10 +75,27 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 />
             </div>
             <div className="installation">
-                <p>Package installation</p>
-                <div className="install-copy">
-                    <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
-                    <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
+                <p>Token Generate</p>
+                <div className="code-example">
+                    <div className="code-content">
+                        <Editor
+                            options={{
+                                minimap: { enabled: false },
+                                scrollbar: { verticalScrollbarSize: 0 },
+                                scrollBeyondLastLine: false,
+                                roundedSelection: false,
+                                formatOnPaste: true,
+                                formatOnType: true,
+                                readOnly: true,
+                                fontSize: '14px'
+                            }}
+                            language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
+                            height="calc(100% - 10px)"
+                            width="calc(100% - 25px)"
+                            value={codeExample.tokenGenerate}
+                        />
+                        <Copy data={codeExample.tokenGenerate} />
+                    </div>
                 </div>
             </div>
             <div className="tabs">
@@ -103,7 +114,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                                     readOnly: true,
                                     fontSize: '14px'
                                 }}
-                                language={SDK_CODE_EXAMPLE[langSelected].langCode}
+                                language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
                                 height="calc(100% - 10px)"
                                 width="calc(100% - 25px)"
                                 value={codeExample.producer}
@@ -112,33 +123,9 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                         </div>
                     </div>
                 )}
-
-                {tabValue === 'Consumer' && (
-                    <div className="code-example">
-                        <div className="code-content">
-                            <Editor
-                                options={{
-                                    minimap: { enabled: false },
-                                    scrollbar: { verticalScrollbarSize: 0 },
-                                    scrollBeyondLastLine: false,
-                                    roundedSelection: false,
-                                    formatOnPaste: true,
-                                    formatOnType: true,
-                                    readOnly: true,
-                                    fontSize: '14px'
-                                }}
-                                language={SDK_CODE_EXAMPLE[langSelected].langCode}
-                                height="calc(100% - 10px)"
-                                width="calc(100% - 25px)"
-                                value={codeExample.consumer}
-                            />
-                            <Copy data={codeExample.consumer} />
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
 };
 
-export default SdkExample;
+export default ProtocolExample;

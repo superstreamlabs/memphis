@@ -106,6 +106,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     useEffect(() => {
         getScemaDetails();
+        return () => {
+            setValidateSuccess('');
+            setValidateError('');
+        };
     }, []);
 
     const handleSelectVersion = (e) => {
@@ -173,6 +177,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const validateProtobufSchema = (value) => {
         try {
+            debugger;
             let parser = Schema.parse(value).messages;
             if (parser.length > 1) {
                 setEditable(true);
@@ -181,6 +186,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setMessageStructName(parser[0].name);
                 setEditable(false);
             }
+            setValidateSuccess('');
+            setValidateError('');
         } catch (error) {
             setValidateSuccess('');
             setValidateError(error.message);
@@ -537,7 +544,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             fontSize="12px"
                             fontWeight="600"
                             loading={loading}
-                            disabled={!updated || (updated && newVersion === '')}
+                            disabled={!updated || (updated && newVersion === '') || validateError !== ''}
                             onClick={() => createNewVersion()}
                         />
                     )}
