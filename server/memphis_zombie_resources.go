@@ -31,7 +31,7 @@ func killRelevantConnections(zombieConnections []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		serv.Errorf("killRelevantConnections error: " + err.Error())
+		serv.Errorf("killRelevantConnections: " + err.Error())
 		return err
 	}
 
@@ -44,7 +44,7 @@ func killProducersByConnections(connectionIds []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		serv.Errorf("killProducersByConnections error: " + err.Error())
+		serv.Errorf("killProducersByConnections: " + err.Error())
 		return err
 	}
 
@@ -57,7 +57,7 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_active": false}},
 	)
 	if err != nil {
-		serv.Errorf("killConsumersByConnections error: " + err.Error())
+		serv.Errorf("killConsumersByConnections: " + err.Error())
 		return err
 	}
 
@@ -78,11 +78,11 @@ func (srv *Server) removeRedundantStations() {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(nil, bson.M{"is_deleted": false})
 	if err != nil {
-		srv.Errorf("removeRedundantStations error: " + err.Error())
+		srv.Errorf("removeRedundantStations: " + err.Error())
 	}
 
 	if err = cursor.All(nil, &stations); err != nil {
-		srv.Errorf("removeRedundantStations error: " + err.Error())
+		srv.Errorf("removeRedundantStations: " + err.Error())
 	}
 
 	for _, s := range stations {
@@ -90,12 +90,12 @@ func (srv *Server) removeRedundantStations() {
 			stationName, _ := StationNameFromStr(s.Name)
 			_, err = srv.memphisStreamInfo(stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				srv.Warnf("Found zombie station to delete: " + s.Name)
+				srv.Warnf("removeRedundantStations: Found zombie station to delete: " + s.Name)
 				_, err := stationsCollection.UpdateMany(nil,
 					bson.M{"name": s.Name, "is_deleted": false},
 					bson.M{"$set": bson.M{"is_deleted": true}})
 				if err != nil {
-					srv.Errorf("removeRedundantStations error: " + err.Error())
+					srv.Errorf("removeRedundantStations: " + err.Error())
 				}
 			}
 		}(srv, s)
@@ -119,13 +119,13 @@ func getActiveConnections() ([]models.Connection, error) {
 func updateActiveProducersAndConsumers() {
 	producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
 	if err != nil {
-		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
+		serv.Warnf("updateActiveProducersAndConsumers: " + err.Error())
 		return
 	}
 
 	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
 	if err != nil {
-		serv.Warnf("updateActiveProducersAndConsumers error: " + err.Error())
+		serv.Warnf("updateActiveProducersAndConsumers: " + err.Error())
 		return
 	}
 
@@ -149,7 +149,7 @@ func updateActiveProducersAndConsumers() {
 func killFunc(s *Server) {
 	connections, err := getActiveConnections()
 	if err != nil {
-		serv.Errorf("killFunc error: " + err.Error())
+		serv.Errorf("killFunc: getActiveConnections: " + err.Error())
 		return
 	}
 
@@ -167,7 +167,7 @@ func killFunc(s *Server) {
 				go func(msg []byte) { respCh <- msg }(copyBytes(msg))
 			})
 			if err != nil {
-				s.Errorf("killFunc error: " + err.Error())
+				s.Errorf("killFunc: subscribeOnGlobalAcc: " + err.Error())
 				wg.Done()
 				return
 			}
@@ -193,23 +193,23 @@ func killFunc(s *Server) {
 		serv.Warnf("Zombie connections found, killing")
 		err := killRelevantConnections(zombieConnections)
 		if err != nil {
-			serv.Errorf("killFunc error: " + err.Error())
+			serv.Errorf("killFunc: killRelevantConnections: " + err.Error())
 		} else {
 			err = killProducersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc error: " + err.Error())
+				serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
 			}
 
 			err = killConsumersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc error: " + err.Error())
+				serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
 			}
 		}
 	}
 
 	err = removeOldPoisonMsgs()
 	if err != nil {
-		serv.Errorf("killFunc error: " + err.Error())
+		serv.Errorf("killFunc: removeOldPoisonMsgs: " + err.Error())
 	}
 
 	s.removeRedundantStations()

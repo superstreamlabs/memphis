@@ -52,19 +52,19 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		var pmAlert, svfAlert, disconnectAlert bool
 		authToken, ok := body.Keys["auth_token"]
 		if !ok {
-			serv.Warnf("CreateIntegration error: Must provide auth token for slack integration")
+			serv.Warnf("CreateIntegration: Must provide auth token for slack integration")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide auth token for slack integration"})
 		}
 		channelID, ok = body.Keys["channel_id"]
 		if !ok {
 			if !ok {
-				serv.Warnf("CreateIntegration error: Must provide channel ID for slack integration")
+				serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
 				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
 			}
 		}
 		uiUrl = body.UIUrl
 		if uiUrl == "" {
-			serv.Warnf("CreateIntegration error: Must provide channel ID for slack integration")
+			serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
 			c.AbortWithStatusJSON(500, gin.H{"message": "Must provide UI url for slack integration"})
 		}
 
@@ -84,11 +84,11 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		slackIntegration, err := createSlackIntegration(authToken, channelID, pmAlert, svfAlert, disconnectAlert, body.UIUrl)
 		if err != nil {
 			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
-				serv.Warnf("CreateSlackIntegration error: " + err.Error())
+				serv.Warnf("CreateSlackIntegration: " + err.Error())
 				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 				return
 			} else {
-				serv.Errorf("CreateSlackIntegration error: " + err.Error())
+				serv.Errorf("CreateSlackIntegration: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -98,7 +98,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			integration.Keys["auth_token"] = "xoxb-****"
 		}
 	default:
-		serv.Warnf("CreateIntegration error: Unsupported integration type")
+		serv.Warnf("CreateIntegration: Unsupported integration type")
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
 	}
 
@@ -114,7 +114,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
-	
+
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -127,19 +127,19 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		var pmAlert, svfAlert, disconnectAlert bool
 		authToken, ok := body.Keys["auth_token"]
 		if !ok {
-			serv.Warnf("CreateIntegration error: Must provide auth token for slack integration")
+			serv.Warnf("CreateIntegration: Must provide auth token for slack integration")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide auth token for slack integration"})
 		}
 		channelID, ok = body.Keys["channel_id"]
 		if !ok {
 			if !ok {
-				serv.Warnf("CreateIntegration error: Must provide channel ID for slack integration")
+				serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
 				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
 			}
 		}
 		uiUrl = body.UIUrl
 		if uiUrl == "" {
-			serv.Warnf("CreateIntegration error: Must provide channel ID for slack integration")
+			serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
 		}
 		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
@@ -158,11 +158,11 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		slackIntegration, err := updateSlackIntegration(authToken, channelID, pmAlert, svfAlert, disconnectAlert, body.UIUrl)
 		if err != nil {
 			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") {
-				serv.Warnf("UpdateSlackIntegration error: " + err.Error())
+				serv.Warnf("UpdateSlackIntegration: " + err.Error())
 				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 				return
 			} else {
-				serv.Errorf("UpdateSlackIntegration error: " + err.Error())
+				serv.Errorf("UpdateSlackIntegration: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -172,8 +172,8 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			integration.Keys["auth_token"] = "xoxb-****"
 		}
 	default:
-		serv.Warnf("CreateIntegration error: Unsupported integration type")
-		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
+		serv.Warnf("CreateIntegration: Unsupported integration type - " + body.Name)
+		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration: Unsupported integration type - " + body.Name})
 	}
 
 	c.IndentedJSON(200, integration)
@@ -324,7 +324,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		c.IndentedJSON(200, nil)
 		return
 	} else if err != nil {
-		serv.Errorf("GetIntegrationDetails error: " + err.Error())
+		serv.Errorf("GetIntegrationDetails: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -340,12 +340,12 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 	cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
 	if err == mongo.ErrNoDocuments {
 	} else if err != nil {
-		serv.Errorf("GetAllIntegrations error: " + err.Error())
+		serv.Errorf("GetAllIntegrations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if err = cursor.All(context.TODO(), &integrations); err != nil {
-		serv.Errorf("GetAllIntegrations error: " + err.Error())
+		serv.Errorf("GetAllIntegrations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -369,7 +369,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	filter := bson.M{"name": integrationType}
 	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
 	if err != nil {
-		serv.Errorf("DisconnectIntegration error: " + err.Error())
+		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -382,13 +382,13 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 
 	msg, err := json.Marshal(integrationUpdate)
 	if err != nil {
-		serv.Errorf("DisconnectIntegration error: " + err.Error())
+		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		serv.Errorf("DisconnectIntegration error: " + err.Error())
+		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
