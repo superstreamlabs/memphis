@@ -13,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 
 import { GetStartedStoreContext } from '../../domain/overview/getStarted';
 import bgGetStartedBottom from '../../assets/images/bgGetStartedBottom.svg';
@@ -23,14 +23,13 @@ import orangeBall from '../../assets/images/orangeBall.svg';
 import purpleBall from '../../assets/images/purpleBall.svg';
 import blackBall from '../../assets/images/blackBall.svg';
 import pinkBall from '../../assets/images/pinkBall.svg';
-import Img404 from '../../assets/images/404.svg';
 import VideoPlayer from '../videoPlayer';
 import Button from '../button';
 
 const GetStartedItem = (props) => {
     const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
-    const [isOffline, setIsOffline] = useState(false);
+
     return (
         <div className="get-started-wrapper">
             {getStartedState?.currentStep !== 5 && (
