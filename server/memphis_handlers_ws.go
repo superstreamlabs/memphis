@@ -39,14 +39,11 @@ const (
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 )
 
-type memphisWSSubscription struct {
-	refCount   int
-	updateFunc func() (any, error)
-}
+type memphisWSReqFiller func() (any, error)
 
 func (s *Server) initWS() {
 	ws := &s.memphis.ws
-	ws.subscriptions = make(map[string]memphisWSSubscription)
+	ws.subscriptions = make(map[string]memphisWSReqFiller)
 	handlers := Handlers{
 		Producers:  ProducersHandler{S: s},
 		Consumers:  ConsumersHandler{S: s},
@@ -64,13 +61,19 @@ func (s *Server) initWS() {
 	go memphisWSLoop(s, ws.subscriptions, ws.quitCh)
 }
 
-func memphisWSLoop(s *Server, subs map[string]memphisWSSubscription, quitCh chan struct{}) {
+func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan struct{}) {
 	ticker := time.NewTicker(5 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			for k, v := range subs {
-				update, err := v.updateFunc()
+			for k, updateFiller := range subs {
+				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
+				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
+					s.Debugf("removing memphis ws subscription %s", replySubj)
+					delete(subs, k)
+					continue
+				}
+				update, err := updateFiller()
 				if err != nil {
 					s.Errorf(err.Error())
 					continue
@@ -80,7 +83,7 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSSubscription, quitCh chan
 					s.Errorf(err.Error())
 					continue
 				}
-				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
+
 				s.respondOnGlobalAcc(replySubj, updateRaw)
 			}
 		case <-quitCh:
@@ -109,85 +112,70 @@ func tokensFromToEnd(subject string, index uint8) string {
 
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
-		s.Debugf("memphisWS registration - %s,%s,%s", subj, reply, string(msg))
+		s.Debugf("memphisWS registration - %s,%s", subj, string(msg))
 		subscriptions := s.memphis.ws.subscriptions
 		filteredSubj := tokensFromToEnd(subj, 2)
 		trimmedMsg := strings.TrimSuffix(string(msg), "\r\n")
 		switch trimmedMsg {
 		case memphisWS_SubscribeMsg:
-			if sub, ok := subscriptions[filteredSubj]; ok {
-				sub.refCount += 1
-				subscriptions[filteredSubj] = sub
-				return
+			if _, ok := subscriptions[filteredSubj]; !ok {
+				reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj)
+				if err != nil {
+					s.Errorf("memphis websocket: " + err.Error())
+					return
+				}
+				subscriptions[filteredSubj] = reqFiller
 			}
-			newSub, err := memphisWSNewSubFromSubject(s, h, filteredSubj)
-			if err != nil {
-				s.Errorf("memphis websocket: " + err.Error())
-				return
-			}
-			subscriptions[filteredSubj] = newSub
 
-		case memphisWS_UnsubscribeMsg:
-			sub := subscriptions[filteredSubj]
-			sub.refCount -= 1
-			if sub.refCount <= 0 {
-				delete(subscriptions, filteredSubj)
-				return
-			}
-			subscriptions[filteredSubj] = sub
 		default:
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
 	}
 }
 
-func memphisWSNewSubFromSubject(s *Server, h *Handlers, subj string) (memphisWSSubscription, error) {
+func unwrapHandlersFunc[T interface{}](f func(*Handlers) (T, error), h *Handlers) func() (any, error) {
+	return func() (any, error) {
+		return f(h)
+	}
+}
+
+func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphisWSReqFiller, error) {
 	subjectHead := tokenAt(subj, 1)
-	newSub := memphisWSNewSubscription()
 	switch subjectHead {
 	case memphisWS_Subj_MainOverviewData:
-		newSub.updateFunc = func() (any, error) {
-			return memphisWSGetMainOverviewData(h)
-		}
-	case memphisWS_Subj_StationOverviewData:
-		stationName := tokenAt(subj, 2)
-		if stationName == _EMPTY_ {
-			return memphisWSSubscription{}, errors.New("invalid station name")
-		}
+		return unwrapHandlersFunc(memphisWSGetMainOverviewData, h), nil
 
-		newSub.updateFunc = func() (any, error) {
-			return memphisWSGetStationOverviewData(s, h, stationName)
+	case memphisWS_Subj_StationOverviewData:
+		stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
+		if stationName == _EMPTY_ {
+			return nil, errors.New("invalid station name")
 		}
+		return func() (any, error) {
+			return memphisWSGetStationOverviewData(s, h, stationName)
+		}, nil
+
 	case memphisWS_Subj_PoisonMsgJourneyData:
 		poisonMsgId := tokenAt(subj, 2)
 		if poisonMsgId == _EMPTY_ {
-			return memphisWSSubscription{}, errors.New("invalid poison msg id")
+			return nil, errors.New("invalid poison msg id")
 		}
-		newSub.updateFunc = func() (any, error) {
+		return func() (any, error) {
 			return h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
-		}
+		}, nil
+
 	case memphisWS_Subj_AllStationsData:
-		newSub.updateFunc = func() (any, error) {
-			return memphisWSGetStationsOverviewData(h)
-		}
+		return unwrapHandlersFunc(memphisWSGetStationsOverviewData, h), nil
+
 	case memphisWS_Subj_SysLogsData:
 		logLevel := tokenAt(subj, 2)
-		newSub.updateFunc = func() (any, error) {
+		return func() (any, error) {
 			return memphisWSGetSystemLogs(h, logLevel)
-		}
-	case memphisWS_Subj_AllSchemasData:
-		newSub.updateFunc = func() (any, error) {
-			return memphisWSGetSchemasOverviewData(h)
-		}
-	default:
-		return memphisWSSubscription{}, errors.New("invalid subject")
-	}
-	return newSub, nil
-}
+		}, nil
 
-func memphisWSNewSubscription() memphisWSSubscription {
-	return memphisWSSubscription{
-		refCount: 1,
+	case memphisWS_Subj_AllSchemasData:
+		return unwrapHandlersFunc(memphisWSGetSchemasOverviewData, h), nil
+	default:
+		return nil, errors.New("invalid subject")
 	}
 }
 

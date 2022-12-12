@@ -183,7 +183,7 @@ func killFunc(s *Server) {
 				zombieConnections = append(zombieConnections, conn.ID)
 				lock.Unlock()
 			}
-			sub.close()
+			s.unsubscribeOnGlobalAcc(sub)
 			wg.Done()
 		}(s, conn, &wg, &lock)
 	}

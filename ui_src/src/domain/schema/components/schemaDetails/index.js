@@ -95,21 +95,6 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setMessagesStructNameList(parser);
             }
         }
-        if (schema.type === 'graphql') {
-            let parser = parse(schema.versions[index].schema_content).definitions;
-            setMessageStructName(schema.versions[index].message_struct_name);
-            if (parser.length === 1) {
-                setEditable(false);
-            } else {
-                setEditable(true);
-                setMessageStructName(schema.versions[index].message_struct_name);
-                let list = [];
-                parser.map((def) => {
-                    list.push(def.name.value);
-                });
-                setMessagesStructNameList(list);
-            }
-        }
     };
 
     const getScemaDetails = async () => {
@@ -121,6 +106,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     useEffect(() => {
         getScemaDetails();
+        return () => {
+            setValidateSuccess('');
+            setValidateError('');
+        };
     }, []);
 
     const handleSelectVersion = (e) => {
@@ -155,7 +144,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const rollBackVersion = async (latest = false) => {
         try {
-            setIsLoading(true);
+            setIsRollLoading(true);
             const data = await httpRequest('PUT', ApiEndpoints.ROLL_BACK_VERSION, {
                 schema_name: schemaName,
                 version_number: latest ? latestVersion?.versions[0]?.version_number : versionSelected?.version_number
@@ -173,7 +162,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setActivateVersionModal(false);
             }
         } catch (err) {}
-        setIsLoading(false);
+        setIsRollLoading(false);
     };
 
     const validateJsonSchemaContent = (value, ajv) => {
@@ -188,6 +177,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const validateProtobufSchema = (value) => {
         try {
+            debugger;
             let parser = Schema.parse(value).messages;
             if (parser.length > 1) {
                 setEditable(true);
@@ -196,6 +186,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setMessageStructName(parser[0].name);
                 setEditable(false);
             }
+            setValidateSuccess('');
+            setValidateError('');
         } catch (error) {
             setValidateSuccess('');
             setValidateError(error.message);
@@ -359,10 +351,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             <>
                                 <span>Diff : </span>
                                 <div className="switcher">
-                                    <div className={isDiff ? 'yes-no-wrapper yes' : 'yes-no-wrapper border'} onClick={() => setIsDiff(true)}>
+                                    <div className={isDiff ? 'yes-no-wrapper yes selected' : 'yes-no-wrapper yes'} onClick={() => setIsDiff(true)}>
                                         <p>Yes</p>
                                     </div>
-                                    <div className={isDiff ? 'yes-no-wrapper' : 'yes-no-wrapper no'} onClick={() => setIsDiff(false)}>
+                                    <div className={isDiff ? 'yes-no-wrapper no' : 'yes-no-wrapper no selected'} onClick={() => setIsDiff(false)}>
                                         <p>No</p>
                                     </div>
                                 </div>
@@ -375,10 +367,9 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 <div className="schema-content">
                     <div className="header">
                         <div className="structure-message">
-                            {(schemaDetails.type === 'protobuf' || schemaDetails.type === 'graphql') && (
+                            {schemaDetails.type === 'protobuf' && (
                                 <>
-                                    {schemaDetails.type === 'protobuf' && <p className="field-name">Master message :</p>}
-                                    {schemaDetails.type === 'graphql' && <p className="field-name">Master type :</p>}
+                                    <p className="field-name">Master message :</p>
                                     <SelectComponent
                                         value={messageStructName}
                                         colorType="black"
@@ -553,7 +544,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             fontSize="12px"
                             fontWeight="600"
                             loading={loading}
-                            disabled={!updated || (updated && newVersion === '')}
+                            disabled={!updated || (updated && newVersion === '') || validateError !== ''}
                             onClick={() => createNewVersion()}
                         />
                     )}

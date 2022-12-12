@@ -545,6 +545,9 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 	messageStructName := body.MessageStructName
+	if schemaType == "graphql" {
+		messageStructName = "Query"
+	}
 	if schemaType == "protobuf" {
 		err := validateMessageStructName(messageStructName)
 		if err != nil {
@@ -818,6 +821,9 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	messageStructName := body.MessageStructName
+	if schema.Type == "graphql" {
+		messageStructName = "Query"
+	}
 	if schema.Type == "protobuf" {
 		err := validateMessageStructName(messageStructName)
 		if err != nil {

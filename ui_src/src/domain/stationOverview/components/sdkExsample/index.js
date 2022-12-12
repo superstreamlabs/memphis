@@ -16,7 +16,7 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 
 import SelectComponent from '../../../../components/select';
-import { CODE_EXAMPLE } from '../../../../const/SDKExample';
+import { SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
 import CustomTabs from '../../../../components/Tabs';
 import Copy from '../../../../components/copy';
@@ -40,8 +40,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
-        codeEx.producer = CODE_EXAMPLE[lang].producer;
-        codeEx.consumer = CODE_EXAMPLE[lang].consumer;
+        codeEx.producer = SDK_CODE_EXAMPLE[lang].producer;
+        codeEx.consumer = SDK_CODE_EXAMPLE[lang].consumer;
         let host = process.env.REACT_APP_SANDBOX_ENV
             ? 'broker.sandbox.memphis.dev'
             : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
@@ -64,7 +64,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     };
 
     return (
-        <div className="sdk-details-container">
+        <div className="code-example-details-container sdk-example">
             <div className="select-lan">
                 <p>Language</p>
                 <SelectComponent
@@ -83,8 +83,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
             <div className="installation">
                 <p>Package installation</p>
                 <div className="install-copy">
-                    <p>{CODE_EXAMPLE[langSelected].installation}</p>
-                    <Copy data={CODE_EXAMPLE[langSelected].installation} />
+                    <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
+                    <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
                 </div>
             </div>
             <div className="tabs">
@@ -103,7 +103,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                                     readOnly: true,
                                     fontSize: '14px'
                                 }}
-                                language={CODE_EXAMPLE[langSelected].langCode}
+                                language={SDK_CODE_EXAMPLE[langSelected].langCode}
                                 height="calc(100% - 10px)"
                                 width="calc(100% - 25px)"
                                 value={codeExample.producer}
@@ -127,7 +127,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                                     readOnly: true,
                                     fontSize: '14px'
                                 }}
-                                language={CODE_EXAMPLE[langSelected].langCode}
+                                language={SDK_CODE_EXAMPLE[langSelected].langCode}
                                 height="calc(100% - 10px)"
                                 width="calc(100% - 25px)"
                                 value={codeExample.consumer}

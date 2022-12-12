@@ -1,7 +1,5 @@
 .log-badge-container {
-    .info,
-    .error,
-    .warn {
+    .badge{
         display: flex;
         align-items: center;
         border-radius: 4px;
@@ -22,5 +20,9 @@
     .warn {
         background-color: rgba(255, 160, 67, 0.1);
         color: #FFA043;
+    }
+    .sys{
+        background-color: rgba(100, 100, 103, 0.1);
+        color: #646467;
     }
 }

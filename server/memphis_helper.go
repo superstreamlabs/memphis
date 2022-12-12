@@ -98,9 +98,10 @@ func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) e
 	var rawResp []byte
 	select {
 	case rawResp = <-respCh:
-		sub.close()
+		s.unsubscribeOnGlobalAcc(sub)
+		break
 	case <-timeout:
-		sub.close()
+		s.unsubscribeOnGlobalAcc(sub)
 		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
 	}
 
@@ -651,7 +652,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 
 cleanup:
 	timer.Stop()
-	sub.close()
+	s.unsubscribeOnGlobalAcc(sub)
 	err = s.memphisRemoveConsumer(streamName, durableName)
 	if err != nil {
 		return nil, err
@@ -733,6 +734,12 @@ func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler)
 	}
 
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
+}
+
+func (s *Server) unsubscribeOnGlobalAcc(sub *subscription) error {
+	acc := s.GlobalAccount()
+	c := acc.ic
+	return c.processUnsub(sub.sid)
 }
 
 func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {

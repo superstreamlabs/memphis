@@ -14,7 +14,8 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { Space } from 'antd';
+import { Segmented, Space } from 'antd';
+import { Virtuoso } from 'react-virtuoso';
 
 import { numberWithCommas } from '../../../../services/valueConvertor';
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
@@ -27,6 +28,7 @@ import MultiCollapse from '../components/multiCollapse';
 import { StationStoreContext } from '../..';
 import Button from '../../../../components/button';
 import SdkExample from '../../components/sdkExsample';
+import ProtocolExample from '../../components/protocolExsample';
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -37,6 +39,7 @@ const ProduceConsumList = ({ producer }) => {
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
+    const [segment, setSegment] = useState('Sdk');
 
     useEffect(() => {
         if (producer) {
@@ -188,10 +191,11 @@ const ProduceConsumList = ({ producer }) => {
             {(producersList?.length > 0 || cgsList?.length > 0) && (
                 <div className="rows-wrapper">
                     <div className="list-container">
-                        {producer &&
-                            producersList?.length > 0 &&
-                            producersList?.map((row, index) => {
-                                return (
+                        {producer && producersList?.length > 0 && (
+                            <Virtuoso
+                                data={producersList}
+                                overscan={100}
+                                itemContent={(index, row) => (
                                     <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
                                         <OverflowTip text={row.name} width={'100px'}>
                                             {row.name}
@@ -203,12 +207,14 @@ const ProduceConsumList = ({ producer }) => {
                                             <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
                                         </span>
                                     </div>
-                                );
-                            })}
-                        {!producer &&
-                            cgsList?.length > 0 &&
-                            cgsList?.map((row, index) => {
-                                return (
+                                )}
+                            />
+                        )}
+                        {!producer && cgsList?.length > 0 && (
+                            <Virtuoso
+                                data={cgsList}
+                                overscan={100}
+                                itemContent={(index, row) => (
                                     <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
                                         <OverflowTip text={row.name} width={'75px'}>
                                             {row.name}
@@ -228,8 +234,9 @@ const ProduceConsumList = ({ producer }) => {
                                             <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
                                         </span>
                                     </div>
-                                );
-                            })}
+                                )}
+                            />
+                        )}
                     </div>
                     <div style={{ marginRight: '10px' }}>
                         {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
@@ -266,8 +273,24 @@ const ProduceConsumList = ({ producer }) => {
             <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
                 <SdkExample showTabs={false} consumer={true} />
             </Modal>
-            <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateProducer(false)} open={openCreateProducer} displayButtons={false}>
-                <SdkExample showTabs={false} />
+            <Modal
+                header={
+                    <div className="sdk-header">
+                        <p className="title">Code example</p>
+                        <Segmented size="small" className="segment" options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
+                    </div>
+                }
+                width="710px"
+                height="600px"
+                clickOutside={() => {
+                    setOpenCreateProducer(false);
+                    setSegment('Sdk');
+                }}
+                open={openCreateProducer}
+                displayButtons={false}
+            >
+                {segment === 'Sdk' && <SdkExample showTabs={false} />}
+                {segment === 'Protocol' && <ProtocolExample />}
             </Modal>
         </div>
     );
