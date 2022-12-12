@@ -1175,14 +1175,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	case "stations":
 		users, err := umh.GetActiveUsers()
 		if err != nil {
-			serv.Errorf("GetActiveUsers error: " + err.Error())
+			serv.Errorf("GetFilterDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		tags, err := umh.GetActiveTags()
 		if err != nil {
-			serv.Errorf("GetActiveTags error: " + err.Error())
+			serv.Errorf("GetFilterDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1193,14 +1193,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	case "schemaverse":
 		users, err := umh.GetActiveUsers()
 		if err != nil {
-			serv.Errorf("GetActiveUsers error: " + err.Error())
+			serv.Errorf("GetFilterDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		tags, err := umh.GetActiveTags()
 		if err != nil {
-			serv.Errorf("GetActiveTags error: " + err.Error())
+			serv.Errorf("GetFilterDetails error: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
