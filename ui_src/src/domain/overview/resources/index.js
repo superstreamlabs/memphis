@@ -21,7 +21,7 @@ import { Divider } from '@material-ui/core';
 
 const getData = (resource) => {
     return [
-        { name: `${resource.resource}total`, value: resource.total - resource.usage, fill: '#F5F5F5' },
+        { name: `${resource.resource}total`, value: resource.total - resource.usage, fill: 'transparent' },
         { name: `${resource.resource}used`, value: resource.usage, fill: getColor(resource) }
     ];
 };
@@ -53,29 +53,34 @@ const Resources = () => {
             <p className="overview-components-header">Resources</p>
             <div className="charts-wrapper">
                 {resourcesTotal?.length > 0 &&
-                    resourcesTotal.map((resource, index) => {
-                        return (
-                            <>
-                                <div className="resource">
-                                    <ResponsiveContainer height={'100%'} width={'40%'}>
-                                        <PieChart>
-                                            <Pie dataKey="value" data={getData(resource)} startAngle={-270} innerRadius={'60%'}>
-                                                <Label value={`${getPercentage(resource)}%`} position="center" />
-                                            </Pie>
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                    <div className="resource-data">
-                                        <p className="resource-name">{`${resource.resource} Usage`}</p>
-                                        <p className="resource-value">
-                                            <label className="value">{`${resource.usage}${resource.units} / `}</label>
-                                            <label>{`${resource.total}${resource.units}`}</label>
-                                        </p>
-                                    </div>
+                    resourcesTotal.map((resource, index) => (
+                        <>
+                            <div className="resource">
+                                <ResponsiveContainer height={'100%'} width={'40%'}>
+                                    <PieChart>
+                                        <Pie
+                                            dataKey="value"
+                                            startAngle={-270}
+                                            data={[{ name: `total`, value: resource.total, fill: '#F5F5F5' }]}
+                                            stroke=""
+                                            innerRadius={'60%'}
+                                        ></Pie>
+                                        <Pie cornerRadius={40} dataKey="value" stroke="" data={getData(resource)} startAngle={-270} innerRadius={'60%'}>
+                                            <Label value={`${getPercentage(resource)}%`} position="center" />
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="resource-data">
+                                    <p className="resource-name">{`${resource.resource} Usage`}</p>
+                                    <p className="resource-value">
+                                        <label className="value">{`${resource.usage}${resource.units} / `}</label>
+                                        <label>{`${resource.total}${resource.units}`}</label>
+                                    </p>
                                 </div>
-                                {index < resourcesTotal.length - 1 && <Divider />}
-                            </>
-                        );
-                    })}
+                            </div>
+                            {index < resourcesTotal.length - 1 && <Divider />}
+                        </>
+                    ))}
             </div>
         </div>
     );
