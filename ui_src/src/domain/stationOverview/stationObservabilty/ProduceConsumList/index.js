@@ -15,6 +15,7 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { Segmented, Space } from 'antd';
+import { Virtuoso } from 'react-virtuoso';
 
 import { numberWithCommas } from '../../../../services/valueConvertor';
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
@@ -190,10 +191,11 @@ const ProduceConsumList = ({ producer }) => {
             {(producersList?.length > 0 || cgsList?.length > 0) && (
                 <div className="rows-wrapper">
                     <div className="list-container">
-                        {producer &&
-                            producersList?.length > 0 &&
-                            producersList?.map((row, index) => {
-                                return (
+                        {producer && producersList?.length > 0 && (
+                            <Virtuoso
+                                data={producersList}
+                                overscan={100}
+                                itemContent={(index, row) => (
                                     <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
                                         <OverflowTip text={row.name} width={'100px'}>
                                             {row.name}
@@ -205,12 +207,14 @@ const ProduceConsumList = ({ producer }) => {
                                             <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
                                         </span>
                                     </div>
-                                );
-                            })}
-                        {!producer &&
-                            cgsList?.length > 0 &&
-                            cgsList?.map((row, index) => {
-                                return (
+                                )}
+                            />
+                        )}
+                        {!producer && cgsList?.length > 0 && (
+                            <Virtuoso
+                                data={cgsList}
+                                overscan={100}
+                                itemContent={(index, row) => (
                                     <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
                                         <OverflowTip text={row.name} width={'75px'}>
                                             {row.name}
@@ -230,8 +234,9 @@ const ProduceConsumList = ({ producer }) => {
                                             <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
                                         </span>
                                     </div>
-                                );
-                            })}
+                                )}
+                            />
+                        )}
                     </div>
                     <div style={{ marginRight: '10px' }}>
                         {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
