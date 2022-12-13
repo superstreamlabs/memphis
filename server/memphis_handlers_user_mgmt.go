@@ -1124,8 +1124,15 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
+
 	var userList []models.FilteredUser
-	cursorUsers, err := usersCollection.Find(context.TODO(), bson.M{})
+
+	cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
+		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
+		bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
+		bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
+	})
 	if err != nil {
 		return []string{}, err
 	}
@@ -1136,7 +1143,9 @@ func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
 
 	var users []string
 	for _, user := range userList {
-		users = append(users, user.Username)
+		if user.Username != "" {
+			users = append(users, user.Username)
+		}
 	}
 
 	return users, nil
@@ -1211,7 +1220,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "type": schemaType, "usage": usage})
 		return
 	case "syslogs":
-		logType := []string{"err", "warn", "info"}
+		logType := []string{"err", "warn", "info", "sys"}
 		c.IndentedJSON(200, gin.H{"type": logType})
 		return
 	default:
