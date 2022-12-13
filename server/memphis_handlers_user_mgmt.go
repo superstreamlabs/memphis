@@ -39,6 +39,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	DEFAULT_USERNAME_NATS_SDK = "nats_sdk"
+)
+
 type UserMgmtHandler struct{}
 type MailChimpErr struct {
 	Title    string `json:"title"`
@@ -49,6 +53,18 @@ type MailChimpErr struct {
 
 func isRootUserExist() (bool, error) {
 	filter := bson.M{"user_type": "root"}
+	var user models.User
+	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func doesUserExist(username string) (bool, error) {
+	filter := bson.M{"user_name": username}
 	var user models.User
 	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err == mongo.ErrNoDocuments {
@@ -346,6 +362,38 @@ func CreateRootUserOnFirstSystemLoad() error {
 			bson.M{"$set": bson.M{"password": hashedPwdString}},
 		)
 		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CreateDefaultUsers() error {
+	exist, err := doesUserExist(DEFAULT_USERNAME_NATS_SDK)
+	if err != nil {
+		return err
+	}
+
+	if !exist {
+		userId := primitive.NewObjectID()
+		newUser := models.User{
+			ID:              userId,
+			Username:        DEFAULT_USERNAME_NATS_SDK,
+			Password:        "",
+			HubUsername:     "",
+			HubPassword:     "",
+			UserType:        "hidden",
+			CreationDate:    time.Now(),
+			AlreadyLoggedIn: false,
+			AvatarId:        1,
+		}
+
+		_, err = usersCollection.InsertOne(context.TODO(), newUser)
+		if err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				return nil
+			}
 			return err
 		}
 	}

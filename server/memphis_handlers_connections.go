@@ -14,12 +14,13 @@
 package server
 
 import (
+	"encoding/hex"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
 
 	"context"
-	"crypto/sha1"
+	"crypto/md5"
 	"errors"
 	"strings"
 	"time"
@@ -45,14 +46,14 @@ func handleConnectMessage(client *client) error {
 	case 1:
 		// NATS SDK, means we have no username
 		clientAddr := client.RemoteAddress().String()
-		ipHashBytes := sha1.Sum([]byte(clientAddr))
-		ipHashStr := string(ipHashBytes[:]) + "0000" // padding the hash to match ObjectID's requirements
+		ipHashBytes := md5.Sum([]byte(clientAddr))
+		ipHashStr := hex.EncodeToString(ipHashBytes[:])[:24] // trimming the hash to match ObjectID's requirements
 		objID, err := primitive.ObjectIDFromHex(ipHashStr)
 		if err != nil {
-			client.Warnf("handleConnectMessage: failed creating connectionId")
+			client.Warnf("handleConnectMessage: failed creating connectionId" + err.Error())
 			return errors.New("failed creating connectionId")
 		}
-		username := "NATS SDK"
+		username := DEFAULT_USERNAME_NATS_SDK
 		return checkConnAndReliveIfShould(client, objID, username, false)
 	default:
 		client.Warnf("handleConnectMessage: missing username or connectionId")
