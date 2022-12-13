@@ -1323,80 +1323,91 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-
-	exist, station, err := IsStationExist(stationName)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + station.Name + " does not exist"
-		serv.Warnf("UseSchema: Schema " + body.SchemaName + ": " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
 	schemaName := strings.ToLower(body.SchemaName)
 	exist, schema, err := IsSchemaExist(schemaName)
 	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
+		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
 		return
 	}
 	if !exist {
 		errMsg := "Schema " + schemaName + " does not exist"
-		serv.Warnf("CreateStation: " + errMsg)
+		serv.Warnf("UseSchema: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
 	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
-
 	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
+		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 	schemaDetailsResponse := models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: false}
 	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
-
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
+		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + user.Username
-	serv.Noticef(message)
+	for _, stationName := range body.StationNames {
+		stationName, err := StationNameFromStr(stationName)
+		if err != nil {
+			serv.Warnf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
 
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Intern(),
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + " - create audit logs: " + err.Error())
+		exist, station, err := IsStationExist(stationName)
+		if err != nil {
+			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !exist {
+			errMsg := "Station " + station.Name + " does not exist"
+			serv.Warnf("UseSchema: Schema " + body.SchemaName + ": " + errMsg)
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			return
+		}
+
+		_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+		if err != nil {
+			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			return
+		}
+
+		message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + user.Username
+		serv.Noticef(message)
+
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Intern(),
+			Message:       message,
+			CreatedByUser: user.Username,
+			CreationDate:  time.Now(),
+			UserType:      user.UserType,
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + " - create audit logs: " + err.Error())
+		}
+
+		updateContent, err := generateSchemaUpdateInit(schema)
+		if err != nil {
+			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+			return
+		}
+		update := models.ProducerSchemaUpdate{
+			UpdateType: models.SchemaUpdateTypeInit,
+			Init:       *updateContent,
+		}
+		sh.S.updateStationProducersOfSchemaChange(stationName, update)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1406,19 +1417,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, schemaDetailsResponse)
-
-	updateContent, err := generateSchemaUpdateInit(schema)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + body.StationName + ": " + err.Error())
-		return
-	}
-
-	update := models.ProducerSchemaUpdate{
-		UpdateType: models.SchemaUpdateTypeInit,
-		Init:       *updateContent,
-	}
-
-	sh.S.updateStationProducersOfSchemaChange(stationName, update)
 }
 
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
