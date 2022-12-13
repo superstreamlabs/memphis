@@ -17,7 +17,7 @@ import React, { useEffect, useState } from 'react';
 import Button from '../button';
 import Input from '../Input';
 
-const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textToConfirm }) => {
+const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textToConfirm, loader = false }) => {
     const [confirm, setConfirm] = useState('');
 
     useEffect(() => {
@@ -64,7 +64,8 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
                     backgroundColorType="purple"
                     fontSize="12px"
                     fontFamily="InterSemiBold"
-                    disabled={confirm !== (textToConfirm || 'permanently delete')}
+                    disabled={confirm !== (textToConfirm || 'permanently delete') || loader}
+                    isLoading={loader}
                     onClick={() => handleDeleteSelected()}
                 />
             </div>

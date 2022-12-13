@@ -101,7 +101,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                                     formatOnPaste: true,
                                     formatOnType: true,
                                     readOnly: true,
-                                    fontSize: '14px'
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter'
                                 }}
                                 language={SDK_CODE_EXAMPLE[langSelected].langCode}
                                 height="calc(100% - 10px)"
@@ -125,7 +126,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                                     formatOnPaste: true,
                                     formatOnType: true,
                                     readOnly: true,
-                                    fontSize: '14px'
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter'
                                 }}
                                 language={SDK_CODE_EXAMPLE[langSelected].langCode}
                                 height="calc(100% - 10px)"

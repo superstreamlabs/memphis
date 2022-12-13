@@ -32,7 +32,7 @@ import { AddRounded } from '@material-ui/icons';
 
 const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close }) => {
     const [state, dispatch] = useContext(Context);
-
+    const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -70,7 +70,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
     const useSchema = async () => {
         try {
             setUseschemaLoading(true);
-            const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_name: stationName, schema_name: selected });
+            const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: [stationName], schema_name: selected });
             if (data) {
                 handleSetSchema(data);
                 setUseschemaLoading(false);
@@ -80,16 +80,20 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
     };
 
     const handleStopUseSchema = async () => {
+        setDetachLoader(true);
         try {
             setUseschemaLoading(true);
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA_FROM_STATION, { station_name: stationName });
             if (data) {
                 handleSetSchema(data);
                 setUseschemaLoading(false);
+                setDetachLoader(true);
                 setDeleteModal(false);
             }
-        } catch (error) {}
-        setUseschemaLoading(false);
+        } catch (error) {
+            setDetachLoader(true);
+            setUseschemaLoading(false);
+        }
     };
 
     const handleSearch = (e) => {
@@ -185,6 +189,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                     buttontxt="I understand, detach schema"
                     textToConfirm="detach"
                     handleDeleteSelected={handleStopUseSchema}
+                    loader={detachLoader}
                 />
             </Modal>
         </div>
