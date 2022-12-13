@@ -19,6 +19,7 @@ import (
 	"memphis-broker/notifications"
 
 	"context"
+	"crypto/sha1"
 	"errors"
 	"strings"
 	"time"
@@ -36,10 +37,28 @@ var consumersHandler ConsumersHandler
 
 func handleConnectMessage(client *client) error {
 	splittedMemphisInfo := strings.Split(client.opts.Name, "::")
-	if len(splittedMemphisInfo) != 2 {
+
+	switch len(splittedMemphisInfo) {
+	case 2:
+		// normal Memphis SDK carry on to the rest of the function
+		break
+	case 1:
+		// NATS SDK, means we have no username
+		clientAddr := client.RemoteAddress().String()
+		ipHashBytes := sha1.Sum([]byte(clientAddr))
+		ipHashStr := string(ipHashBytes[:]) + "0000" // padding the hash to match ObjectID's requirements
+		objID, err := primitive.ObjectIDFromHex(ipHashStr)
+		if err != nil {
+			client.Warnf("handleConnectMessage: failed creating connectionId")
+			return errors.New("failed creating connectionId")
+		}
+		username := "NATS SDK"
+		return checkConnAndReliveIfShould(client, objID, username, false)
+	default:
 		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
+
 	objIdString := splittedMemphisInfo[0]
 	username := strings.ToLower(splittedMemphisInfo[1])
 
@@ -66,55 +85,58 @@ func handleConnectMessage(client *client) error {
 		return err
 	}
 
-	exist, _, err = IsConnectionExist(objID)
+	return checkConnAndReliveIfShould(client, objID, username, true)
+}
+
+func checkConnAndReliveIfShould(c *client, objID primitive.ObjectID, username string, isMemphisNative bool) error {
+	exist, _, err := IsConnectionExist(objID)
 	if err != nil {
 		errMsg := "User " + username + ": " + err.Error()
-		client.Errorf("handleConnectMessage: " + errMsg)
+		c.Errorf("handleConnectMessage: " + errMsg)
 		return err
 	}
-
-	clientAddress := client.RemoteAddress().String()
 
 	if exist {
 		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
+			c.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 		err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
+			c.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 		err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
 		if err != nil {
+
 			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
+			c.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 	} else {
-		err := connectionsHandler.CreateConnection(username, clientAddress, objID)
+		err := connectionsHandler.CreateConnection(username, c.RemoteAddress().String(), objID)
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
+			c.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
-		splitted := strings.Split(client.opts.Lang, ".")
+		splitted := strings.Split(c.opts.Lang, ".")
 		sdkName := splitted[len(splitted)-1]
 		param := analytics.EventParam{
 			Name:  "sdk",
 			Value: sdkName,
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.Username, analyticsParams, "user-connect-sdk")
+		analytics.SendEventWithParams(username, analyticsParams, "user-connect-sdk")
 	}
 
-	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID}
+	c.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isMemphisNative}
 	return nil
 }
 
