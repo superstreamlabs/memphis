@@ -20,8 +20,14 @@ import { Divider } from '@material-ui/core';
 import HealthyBadge from '../../../components/healthyBadge';
 import { Context } from '../../../hooks/store';
 import { PieChart, Pie } from 'recharts';
+import OverflowTip from '../../../components/tooltip/overflowtip';
+import { Add } from '@material-ui/icons';
+import { Popover } from 'antd';
+
+const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
 
 const SysComponents = () => {
+    const ports = ['90000', '5555', '1234', '232323'];
     const [state, dispatch] = useContext(Context);
     const getData = (comp) => {
         let data = [];
@@ -39,6 +45,7 @@ const SysComponents = () => {
             <div className="sys-components sys-components-header">
                 <p>Component</p>
                 <p>Pods</p>
+                <p>Ports</p>
                 <p>Status</p>
             </div>
             {!state?.monitor_data?.system_components && <Divider />}
@@ -46,17 +53,38 @@ const SysComponents = () => {
                 {state?.monitor_data?.system_components &&
                     state?.monitor_data?.system_components?.map((comp, i) => {
                         return (
-                            <div style={{ lineHeight: '30px' }} key={`${comp.podName}${i}`}>
+                            <div key={`${comp.podName}${i}`}>
                                 <Divider />
+
                                 <div className="sys-components">
-                                    <p>{comp.component}</p>
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <OverflowTip text={comp.component}>
+                                        <p>{comp.component}</p>
+                                    </OverflowTip>
+                                    <div className="pods-container">
                                         <PieChart height={35} width={35}>
                                             <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>
                                         </PieChart>
                                         <p>
                                             {comp.actual_pods}/{comp.desired_pods}
                                         </p>
+                                    </div>
+
+                                    <div className="pods-container">
+                                        <p>{ports[0]}</p>
+                                        {ports.length > 1 && (
+                                            <Popover
+                                                overlayInnerStyle={remainingPorstPopInnerStyle}
+                                                placement="bottomLeft"
+                                                content={ports?.slice(1)?.map((port) => {
+                                                    return <p className="port-popover">{port}</p>;
+                                                })}
+                                            >
+                                                <div className="plus-ports">
+                                                    <Add className="add" />
+                                                    <p>{ports.length - 1}</p>
+                                                </div>
+                                            </Popover>
+                                        )}
                                     </div>
                                     <HealthyBadge status={comp.actual_pods / comp.desired_pods} />
                                 </div>
