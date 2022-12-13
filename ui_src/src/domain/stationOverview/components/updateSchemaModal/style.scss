@@ -83,49 +83,13 @@
                         border-right: 1px solid #E4E4E4;
                         padding: 0px 10px;
                         height: 26px;
-                        min-width: 132px;
+                        min-width: 140px;
                         span{
                             font-size: 12px;
                             font-family:'InterMedium';
+                            margin-right: 10px;
                         }
-                        .switcher {
-                            background: #FFFFFF;
-                            border: 1px solid #E8E8E8;
-                            box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
-                            border-radius: 8px;
-                            height: 25px;
-                            width: 75px;
-                            display: grid;
-                            align-items: center;
-                            grid-template-columns: 50% 50%;
-                            margin-left: 7px;
-                            p{
-                                font-size: 12px;
-                                font-family:'InterMedium';
-                            }
-                            .yes-no-wrapper{
-                                height: 100%;
-                                justify-content: center;
-                                display: flex;
-                                align-items: center;
-                                cursor: pointer;
-                            }
-                            .yes {
-                                background: #F6F6F6;
-                                border-right: 1px solid #E8E8E8;
-                                border-top-left-radius: 7px;
-                                border-bottom-left-radius: 7px;
-                            }
-                            .border{
-                                border-right: 1px solid #E8E8E8;
-                            }
-                            .no {
-                                background: #F6F6F6;
-                                border-top-right-radius: 7px;
-                                border-bottom-right-radius: 7px;
-                            }
-        
-                        }
+
                     .radio-button span.ant-radio + * {
                             font-weight: 600;
                             font-size: 14px;

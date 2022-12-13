@@ -96,6 +96,13 @@ const Reducer = (state, action) => {
                 ...state,
                 domainList: updateDomainState
             };
+        case 'SET_IS_USED':
+            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateDomainState[index].used = true;
+            return {
+                ...state,
+                domainList: updateDomainState
+            };
         case 'SET_UPDATE_SCHEMA':
             index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
             updateDomainState[index] = action.payload.schemaDetails;

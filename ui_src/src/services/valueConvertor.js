@@ -123,7 +123,7 @@ export const numberWithCommas = (x) => {
 };
 
 export const capitalizeFirst = (str) => {
-    return str?.charAt(0)?.toUpperCase() + str.slice(1);
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 export const cutInfoLog = (str) => {

@@ -40,6 +40,7 @@ import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import ProtocolExample from '../components/protocolExsample';
+import SegmentButton from '../../../components/segmentButton';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -52,6 +53,8 @@ const StationOverviewHeader = () => {
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
     const [segment, setSegment] = useState('Sdk');
+    const [deleteLoader, setDeleteLoader] = useState(false);
+
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
             case 'message_age_sec':
@@ -90,14 +93,18 @@ const StationOverviewHeader = () => {
     };
 
     const handleDeleteStation = async () => {
+        setDeleteLoader(true);
         try {
             await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
                 station_names: [stationState?.stationMetaData?.name]
             });
+            setDeleteLoader(false);
             modalDeleteFlip(false);
             returnToStaionsList();
-        } catch (error) {}
-        modalDeleteFlip(false);
+        } catch (error) {
+            setDeleteLoader(false);
+            modalDeleteFlip(false);
+        }
     };
 
     return (
@@ -219,17 +226,17 @@ const StationOverviewHeader = () => {
                             <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
-                    <TooltipComponent text="Gross size. Payload + headers + Memphis metadata" width={'220px'} cursor="pointer">
-                        <div className="details-wrapper average">
-                            <div className="icon">
-                                <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
-                            </div>
-                            <div className="more-details">
-                                <p className="title">Av. message size</p>
-                                <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
-                            </div>
+                    <div className="details-wrapper average">
+                        <div className="icon">
+                            <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
                         </div>
-                    </TooltipComponent>
+                        <div className="more-details">
+                            <p className="title">Av. message size</p>
+                            <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
+                                <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
+                            </TooltipComponent>
+                        </div>
+                    </div>
                     {/* <div className="details-wrapper">
                         <div className="icon">
                             <img src={memoryIcon} width={24} height={24} alt="memoryIcon" />
@@ -281,7 +288,7 @@ const StationOverviewHeader = () => {
                     header={
                         <div className="sdk-header">
                             <p className="title">Code example</p>
-                            <Segmented size="small" className="segment" options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
+                            <SegmentButton options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
                         </div>
                     }
                     width="710px"
@@ -337,8 +344,8 @@ const StationOverviewHeader = () => {
                 <Modal
                     header="Update schema"
                     displayButtons={false}
-                    height="550px"
-                    width="450px"
+                    height="650px"
+                    width="550px"
                     clickOutside={() => setUpdateSchemaModal(false)}
                     open={updateSchemaModal}
                     className="update-schema-modal"
@@ -366,6 +373,7 @@ const StationOverviewHeader = () => {
                         desc="Deleting this station means it will be permanently deleted."
                         buttontxt="I understand, delete the station"
                         handleDeleteSelected={handleDeleteStation}
+                        loader={deleteLoader}
                     />
                 </Modal>
             </div>

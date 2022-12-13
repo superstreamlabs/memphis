@@ -21,6 +21,7 @@ import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
 import { decodeMessage } from '../../../../../services/decoder';
 import { hex_to_ascii } from '../../../../../services/valueConvertor';
+import SegmentButton from '../../../../../components/segmentButton';
 
 const { Panel } = Collapse;
 
@@ -115,7 +116,8 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                             <>
                                 <Copy data={data} />
                                 <div className="second-row">
-                                    <div className="switcher">
+                                    <SegmentButton options={['bytes', 'string', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
+                                    {/* <div className="switcher">
                                         <div className={parser === 'bytes' ? 'selected-parser left selected' : 'selected-parser left'} onClick={() => setParser('bytes')}>
                                             <p>bytes</p>
                                         </div>
@@ -137,7 +139,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                                         >
                                             <p>protobuf</p>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
