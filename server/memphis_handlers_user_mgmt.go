@@ -1127,7 +1127,7 @@ func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
 	var userList []models.FilteredUser
 
 	cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"is_deleted", false}}}},
+		bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
 		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
 		bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
 		bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
