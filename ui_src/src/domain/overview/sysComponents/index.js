@@ -43,7 +43,7 @@ const SysComponents = () => {
             <span className="overview-components-header">System components</span>
             <div className="sys-components sys-components-header">
                 <p>Component</p>
-                <p>Pods</p>
+                <p>Containers</p>
                 <p>Ports</p>
                 <p>Status</p>
             </div>
