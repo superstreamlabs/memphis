@@ -24,6 +24,7 @@ import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
+import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
@@ -36,6 +37,7 @@ import DetailBox from '../../../../components/detailBox';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import CheckboxComponent from '../../../../components/checkBox';
+import DlsConfig from '../../../../components/dlsConfig';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -52,7 +54,9 @@ const Messages = () => {
     const stationName = url.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('All');
+    const [subTabValue, setSubTabValue] = useState('Poison');
     const tabs = ['All', 'Dead-letter', 'Details'];
+    const subTabs = ['Poison', 'Schemaverse'];
     const history = useHistory();
 
     useEffect(() => {
@@ -188,6 +192,10 @@ const Messages = () => {
         setSelectedRowIndex(0);
     };
 
+    const handleChangeSubMenuItem = (newValue) => {
+        setSubTabValue(newValue);
+    };
+
     const handleAck = async () => {
         setIgnoreProcced(true);
         try {
@@ -284,11 +292,21 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
+                    length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]} //sum schemaverse
                 ></CustomTabs>
             </div>
+            {tabValue === 'Dead-letter' && (
+                <div className="tabs">
+                    <CustomTabs
+                        value={subTabValue}
+                        onChange={handleChangeSubMenuItem}
+                        tabs={subTabs}
+                        length={stationState?.stationSocketData?.poison_messages?.length > 0 && [stationState?.stationSocketData?.poison_messages?.length, null]}
+                    ></CustomTabs>
+                </div>
+            )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
-                <div className="list-wrapper">
+                <div className="list-wrapper msg-list">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
                             <p>Messages</p>
@@ -324,7 +342,8 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                <div className="list-wrapper">
+                //
+                <div className="list-wrapper dls-list">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
@@ -432,6 +451,14 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
+                    <DetailBox
+                        img={dlsEnableIcon}
+                        title={'DLS enable'}
+                        desc="lorem ipsumelorem ipsumelorem ipsumelorem ipsume."
+                        // data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
+                    >
+                        <DlsConfig></DlsConfig>
+                    </DetailBox>
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}
