@@ -398,7 +398,7 @@ function CreateSchema() {
                                 message: 'Please name this schema.'
                             }
                         ]}
-                        style={{ height: '114px' }}
+                        style={{ height: '100px' }}
                     >
                         <div className="schema-field name">
                             <p className="field-title">Schema name</p>
