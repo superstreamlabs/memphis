@@ -127,7 +127,7 @@ type CreateStationSchema struct {
 	RetentionValue    int         `json:"retention_value"`
 	Replicas          int         `json:"replicas"`
 	StorageType       string      `json:"storage_type"`
-	DedupEnabled      bool        `json:"dedup_enabled"` // TODO deprecated
+	DedupEnabled      bool        `json:"dedup_enabled"`                      // TODO deprecated
 	DedupWindowInMs   int         `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
 	Tags              []CreateTag `json:"tags"`
 	SchemaName        string      `json:"schema_name"`
@@ -158,8 +158,8 @@ type GetMessageDetailsSchema struct {
 }
 
 type UseSchema struct {
-	StationName string `json:"station_name" binding:"required"`
-	SchemaName  string `json:"schema_name" binding:"required"`
+	StationNames []string `json:"station_names" binding:"required"`
+	SchemaName   string   `json:"schema_name" binding:"required"`
 }
 
 type RemoveSchemaFromStation struct {

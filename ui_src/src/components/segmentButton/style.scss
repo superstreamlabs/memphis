@@ -1,0 +1,20 @@
+.segment-button-wrapper {
+    background: #ffffff;
+    border: 1px solid #E8E8E8;
+    border-radius: 5px;
+    font-family: 'InterMedium';
+    .ant-segmented-item-selected .ant-segmented-item-label{
+        color: var(--purple);
+        background: rgba(101,87,255,0.1);
+        border-radius: 3px;
+    }
+    .ant-segmented-thumb-motion{
+        background: rgba(101,87,255,0.1);
+    }
+    .ant-segmented-item:hover {
+        background: rgba(204, 200, 245, 0.1) !important;
+    }
+}
+.segment-button-wrapper:hover {
+    background: unset !important
+}

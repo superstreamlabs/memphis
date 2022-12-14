@@ -34,6 +34,20 @@
         display: flex;
         flex-direction: column;
         place-items: center;
+        .integration-icon-wrapper{
+            display: flex;
+            justify-content: center;
+            width: 60px;
+            height: 30px;
+            cursor: pointer;
+            img{
+                width: 18px;
+            }
+        }
+        .integration-icon-wrapper:hover {
+            background-color: rgba(132, 129, 138, 0.1);
+            border-radius: 10px;
+        }
         .sub-icon-wrapper {
             width: 35px;
             height: 35px;

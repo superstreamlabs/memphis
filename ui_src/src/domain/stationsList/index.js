@@ -44,6 +44,7 @@ const StationsList = () => {
     const [modalIsOpen, modalFlip] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const [isLoading, setisLoading] = useState(true);
+    const [deleteLoader, setDeleteLoader] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
@@ -132,7 +133,7 @@ const StationsList = () => {
     };
 
     const handleDeleteSelected = async () => {
-        setisLoading(true);
+        setDeleteLoader(true);
         try {
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
                 station_names: isCheck
@@ -141,12 +142,12 @@ const StationsList = () => {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: stationFilterArray(state?.filteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
-                setisLoading(false);
+                setDeleteLoader(false);
+                modalDeleteFlip(false);
             }
         } catch (error) {
-            setisLoading(false);
+            setDeleteLoader(false);
         }
-        modalDeleteFlip(false);
     };
 
     return (
@@ -246,6 +247,7 @@ const StationsList = () => {
                     desc="Deleting these stations means they will be permanently deleted."
                     buttontxt="I understand, delete the selected stations"
                     handleDeleteSelected={handleDeleteSelected}
+                    loader={deleteLoader}
                 />
             </Modal>
         </div>

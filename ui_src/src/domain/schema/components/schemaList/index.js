@@ -39,6 +39,7 @@ function SchemaList() {
     const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
+    const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
         getAllSchemas();
@@ -82,7 +83,7 @@ function SchemaList() {
     };
 
     const handleDeleteSelected = async () => {
-        setisLoading(true);
+        setDeleteLoader(true);
         try {
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA, {
                 schema_names: isCheck
@@ -91,12 +92,12 @@ function SchemaList() {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
-                setisLoading(false);
+                setDeleteLoader(false);
             }
         } catch (error) {
-            setisLoading(false);
+            setDeleteLoader(false);
+            setDeleteModal(false);
         }
-        setDeleteModal(false);
     };
 
     const handleSearch = (e) => {
@@ -243,6 +244,7 @@ function SchemaList() {
                     desc="Deleting these schemas means they will be permanently deleted."
                     buttontxt="I understand, delete the selected schemas"
                     handleDeleteSelected={handleDeleteSelected}
+                    loader={deleteLoader}
                 />
             </Modal>
         </div>

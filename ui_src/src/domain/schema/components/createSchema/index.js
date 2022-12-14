@@ -360,7 +360,8 @@ function CreateSchema() {
                 roundedSelection: false,
                 formatOnPaste: true,
                 formatOnType: true,
-                fontSize: '14px'
+                fontSize: '14px',
+                fontFamily: 'Inter'
             }}
             height="calc(100% - 5px)"
             language={SchemaEditorExample[formFields?.type]?.language}

@@ -190,7 +190,7 @@ func (s *Server) CreateSystemLogsStream() {
 		go tryCreateSystemLogsStream(s, retentionDur, successCh)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("logs-stream creation failed: " + err.Error())
+			s.Errorf("CreateSystemLogsStream: logs-stream creation failed: " + err.Error())
 		}
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
@@ -198,16 +198,16 @@ func (s *Server) CreateSystemLogsStream() {
 			go tryCreateSystemLogsStream(s, retentionDur, successCh)
 			select {
 			case <-timeout.C:
-				s.Warnf("logs-stream creation takes more than a minute")
+				s.Warnf("CreateSystemLogsStream: logs-stream creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("logs-stream creation failed: " + err.Error())
+					s.Warnf("CreateSystemLogsStream: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("logs-stream creation failed: " + err.Error())
+					s.Warnf("CreateSystemLogsStream: " + err.Error())
 					<-timeout.C
 					continue
 				}
@@ -615,12 +615,12 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				s.Errorf(err.Error())
+				s.Errorf("memphisGetMsgs: " + err.Error())
 			}
 
 			dataFirstIdx := getHdrLastIdxFromRaw(msg) + 1
 			if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
-				s.Errorf("memphis error parsing in station get messages")
+				s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
 			}
 
 			dataLen := len(msg) - dataFirstIdx

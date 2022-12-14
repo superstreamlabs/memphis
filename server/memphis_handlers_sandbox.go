@@ -75,13 +75,13 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	if loginType == "google" {
 		gOuth, err := getGoogleAuthToken(token)
 		if err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) with Google: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		claims, err := GetGoogleUser(*gOuth)
 		if err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) with Google: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -92,13 +92,13 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	} else if loginType == "github" {
 		gitAccessToken, err := getGithubAccessToken(token)
 		if err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) with GitHub: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		claims, err := getGithubData(gitAccessToken)
 		if err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox) with GitHub: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -114,7 +114,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		lastName = fullName[1]
 		profilePic = claims["avatar_url"].(string)
 	} else {
-		serv.Errorf("Wrong login type")
+		serv.Errorf("Login(Sandbox): Wrong login type")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -126,7 +126,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	}
 	exist, user, err := IsSandboxUserExist(username)
 	if err != nil {
-		serv.Errorf("Login(Sandbox) error: " + err.Error())
+		serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -154,7 +154,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 
 		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
 		if err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
 		}
 
 		mailchimpReq := &gochimp3.MemberRequest{
@@ -168,13 +168,13 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 				mailchimpReq.EmailAddress = mailchimpReq.EmailAddress + "@github.memphis" // in order to get users without emails signed in mailchimp
 				mailchimpList.CreateMember(mailchimpReq)
 			} else {
-				serv.Errorf("Login(Sandbox) error: " + err.Error())
+				serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
 			}
 		}
 		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
-			serv.Errorf("Login(Sandbox) error: " + err.Error())
+			serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -184,7 +184,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		serv.Errorf("Login(Sandbox) error: " + err.Error())
+		serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -358,7 +358,9 @@ func getGithubAccessToken(code string) (string, error) {
 	respbody, _ := ioutil.ReadAll(resp.Body)
 
 	var ghresp githubAccessTokenResponse
-	json.Unmarshal(respbody, &ghresp)
+	if err := json.Unmarshal(respbody, &ghresp); err != nil {
+		return "", err
+	}
 
 	return ghresp.AccessToken, nil
 }
@@ -396,7 +398,7 @@ func getGithubData(accessToken string) (map[string]any, error) {
 func DenyForSandboxEnv(c *gin.Context) error {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("Sandbox error: " + err.Error())
+		serv.Errorf("DenyForSandboxEnv: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return err
 	}

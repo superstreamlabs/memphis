@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { Menu } from 'antd';
 
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
 import schemaIconActive from '../../assets/images/schemaIconActive.svg';
@@ -40,6 +41,7 @@ import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
+import TooltipComponent from '../tooltip/tooltip';
 
 const { SubMenu } = Menu;
 
@@ -163,6 +165,13 @@ function SideBar() {
                 </div>
             </div>
             <div className="bottom-icons">
+                <Link to={`${pathDomains.preferences}/integrations`}>
+                    <TooltipComponent text="Integration" placement="right">
+                        <div className="integration-icon-wrapper">
+                            <img src={integrationNavIcon} />
+                        </div>
+                    </TooltipComponent>
+                </Link>
                 <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click">
                     <SubMenu
                         key="subMenu"

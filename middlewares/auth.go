@@ -69,7 +69,7 @@ func extractToken(authHeader string) (string, error) {
 func verifyToken(tokenString string, secret string) (models.User, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("verifyToken: unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secret), nil
 	})

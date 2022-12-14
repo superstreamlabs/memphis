@@ -22,9 +22,9 @@ import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/lo
 import successCons from '../../../../assets/images/stationsIconActive.svg';
 import successProd from '../../../../assets/images/dataProduced.svg';
 import TitleComponent from '../../../../components/titleComponent';
+import { SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SelectComponent from '../../../../components/select';
-import { CODE_EXAMPLE } from '../../../../const/SDKExample';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Copy from '../../../../components/copy';
@@ -58,8 +58,8 @@ const ProduceConsumeData = (props) => {
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
-        codeEx.producer = CODE_EXAMPLE[lang].producer;
-        codeEx.consumer = CODE_EXAMPLE[lang].consumer;
+        codeEx.producer = SDK_CODE_EXAMPLE[lang].producer;
+        codeEx.consumer = SDK_CODE_EXAMPLE[lang].consumer;
         let host = process.env.REACT_APP_SANDBOX_ENV
             ? 'broker.sandbox.memphis.dev'
             : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
@@ -166,8 +166,8 @@ const ProduceConsumeData = (props) => {
                     <div className="installation">
                         <p className="title">Installation</p>
                         <div className="install-copy">
-                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
-                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
+                            <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="code-example">
@@ -192,9 +192,10 @@ const ProduceConsumeData = (props) => {
                                     formatOnPaste: true,
                                     formatOnType: true,
                                     readOnly: true,
-                                    fontSize: '14px'
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter'
                                 }}
-                                language={CODE_EXAMPLE[langSelected].langCode}
+                                language={SDK_CODE_EXAMPLE[langSelected].langCode}
                                 height="calc(100% - 10px)"
                                 width="calc(100% - 25px)"
                                 value={props.produce ? codeExample.producer : codeExample.consumer}
@@ -226,8 +227,8 @@ const ProduceConsumeData = (props) => {
                     <div className="installation">
                         <p className="title">Installation</p>
                         <div className="install-copy">
-                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
-                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
+                            <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="data-waiting-container">
@@ -296,8 +297,8 @@ const ProduceConsumeData = (props) => {
                     <div className="installation">
                         <p className="title">Installation</p>
                         <div className="install-copy">
-                            <p>{CODE_EXAMPLE[langSelected].installation}</p>
-                            <Copy data={CODE_EXAMPLE[langSelected].installation} />
+                            <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
+                            <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
                         </div>
                     </div>
                     <div className="successfully-container">

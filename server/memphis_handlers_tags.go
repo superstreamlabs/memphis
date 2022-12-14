@@ -130,7 +130,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 func DeleteTagsFromStation(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"stations": id}})
 	if err != nil {
-		serv.Errorf("DeleteTagsFromStation error: " + err.Error())
+		serv.Errorf("DeleteTagsFromStation: Station ID " + id.Hex() + ": " + err.Error())
 		return
 	}
 }
@@ -138,7 +138,7 @@ func DeleteTagsFromStation(id primitive.ObjectID) {
 func DeleteTagsFromSchema(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"schemas": id}})
 	if err != nil {
-		serv.Errorf("DeleteTagsFromSchema error: " + err.Error())
+		serv.Errorf("DeleteTagsFromSchema: Schema ID " + id.Hex() + ": " + err.Error())
 		return
 	}
 }
@@ -146,7 +146,7 @@ func DeleteTagsFromSchema(id primitive.ObjectID) {
 func DeleteTagsFromUser(id primitive.ObjectID) {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{"users": id}})
 	if err != nil {
-		serv.Errorf("DeleteTagsFromUser error: " + err.Error())
+		serv.Errorf("DeleteTagsFromUser: User ID " + id.Hex() + ": " + err.Error())
 		return
 	}
 }
@@ -160,13 +160,14 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	name := strings.ToLower(body.Name)
 	exist, _, err := IsTagExist(name)
 	if err != nil {
-		serv.Errorf("CreateNewTag error: " + err.Error())
+		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		serv.Warnf("CreateNewTag error: Tag with the same name already exists")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tag with the same name already exists"})
+		errMsg := "Tag with the name " + body.Name + " already exists"
+		serv.Warnf("CreateNewTag: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	var color string
@@ -202,14 +203,14 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	opts := options.Update().SetUpsert(true)
 	_, err = tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		serv.Errorf("CreateNewTag error: " + err.Error())
+		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("CreateNewTag error: " + err.Error())
+		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	message := "New Tag " + newTag.Name + " has been created " + " by user " + user.Username
@@ -228,7 +229,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	entity := strings.ToLower(body.EntityType)
 	err := validateEntityType(entity)
 	if err != nil {
-		serv.Warnf("RemoveTag error: " + err.Error())
+		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -239,20 +240,20 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveTag error: " + err.Error())
+		serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	switch entity {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
-			serv.Warnf("RemoveTag error: " + err.Error())
+			serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 		exist, station, err := IsStationExist(station_name)
 		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
+			serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -268,7 +269,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	case "schema":
 		exist, schema, err := IsSchemaExist(body.EntityName)
 		if err != nil {
-			serv.Errorf("RemoveTag error: " + err.Error())
+			serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -283,7 +284,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	// case "user":
 	// 	exist, user, err := IsUserExist(body.EntityName)
 	// 	if err != nil {
-	// 		serv.Errorf("RemoveTag error: " + err.Error())
+	// 		serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 	// 		return
 	// 	}
@@ -295,15 +296,14 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	// entityDBList = "schemas"
 
 	default:
-		message = "Tag " + name + " has been deleted by user " + user.Username
-		serv.Warnf("RemoveTag error: unsupported entity type")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
+		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": unsupported entity type")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tag " + body.Name + ", unsupported entity type"})
 		return
 	}
 	_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"name": name},
 		bson.M{"$pull": bson.M{entityDBList: entity_id}})
 	if err != nil {
-		serv.Errorf("RemoveTag error: " + err.Error())
+		serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -322,7 +322,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Warnf("create audit logs error: " + err.Error())
+			serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + " - create audit logs error: " + err.Error())
 		}
 	}
 
@@ -340,7 +340,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	err := validateEntityType(entity)
 	var entity_id primitive.ObjectID
 	if err != nil {
-		serv.Warnf("UpdateTagsForEntity error: " + err.Error())
+		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -350,13 +350,13 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
-			serv.Warnf("UpdateTagsForEntity error: " + err.Error())
+			serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 		exist, station, err := IsStationExist(station_name)
 		if err != nil {
-			serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+			serv.Errorf("UpdateTagsForEntity: Station " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -371,7 +371,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	case "schema":
 		exist, schema, err := IsSchemaExist(body.EntityName)
 		if err != nil {
-			serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+			serv.Errorf("UpdateTagsForEntity: Schema " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -386,7 +386,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	// case "user":
 	// 	exist, user, err := IsUserExist(body.EntityName)
 	// 	if err != nil {
-	// 		serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+	// 		serv.Errorf("UpdateTagsForEntity: User " + body.EntityName + ": " + err.Error())
 	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 	// 		return
 	// 	}
@@ -398,14 +398,14 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	// entityDBList = "schemas"
 
 	default:
-		serv.Warnf("UpdateTagsForEntity error: unsupported entity type")
+		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": unsupported entity type")
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
 		return
 	}
 	var message string
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+		serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
@@ -414,21 +414,21 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			name := strings.ToLower(tagToAdd.Name)
 			exist, tag, err := IsTagExist(name)
 			if err != nil {
-				serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+				serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 			if !exist {
 				err = CreateTag(name, body.EntityType, entity_id, tagToAdd.Color)
 				if err != nil {
-					serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+					serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 					return
 				}
 			} else {
 				_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID}, bson.M{"$addToSet": bson.M{entityDBList: entity_id}})
 				if err != nil {
-					serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+					serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 					return
 				}
@@ -451,7 +451,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				auditLogs = append(auditLogs, newAuditLog)
 				err = CreateAuditLogs(auditLogs)
 				if err != nil {
-					serv.Warnf("create audit logs error: " + err.Error())
+					serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + " - create audit logs error: " + err.Error())
 				}
 
 				analyticsEventName = "user-tag-station"
@@ -481,7 +481,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			name := strings.ToLower(tagToRemove)
 			exist, tag, err := IsTagExist(name)
 			if err != nil {
-				serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+				serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -489,7 +489,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				_, err = tagsCollection.UpdateOne(context.TODO(), bson.M{"_id": tag.ID},
 					bson.M{"$pull": bson.M{entityDBList: entity_id}})
 				if err != nil {
-					serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+					serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 					return
 				}
@@ -510,7 +510,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				auditLogs = append(auditLogs, newAuditLog)
 				err = CreateAuditLogs(auditLogs)
 				if err != nil {
-					serv.Warnf("create audit logs error: " + err.Error())
+					serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + " - create audit logs error: " + err.Error())
 				}
 			} else if entity == "schema" {
 				message = "Tag " + name + " has been deleted from schema " + schemaName + " by user " + user.Username
@@ -526,21 +526,21 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	case "station":
 		tags, err = th.GetTagsByStation(entity_id)
 		if err != nil {
-			serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+			serv.Errorf("UpdateTagsForEntity: Station " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	case "schema":
 		tags, err = th.GetTagsBySchema(entity_id)
 		if err != nil {
-			serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+			serv.Errorf("UpdateTagsForEntity: Schema " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	case "user":
 		tags, err = th.GetTagsByUser(entity_id)
 		if err != nil {
-			serv.Errorf("UpdateTagsForEntity error: " + err.Error())
+			serv.Errorf("UpdateTagsForEntity: User " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -627,7 +627,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	if entity != "" {
 		err := validateEntityType(entity)
 		if err != nil {
-			serv.Warnf("GetTags error: " + err.Error())
+			serv.Warnf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
@@ -638,51 +638,51 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	case "station":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"stations": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	case "user":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"users": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	case "schema":
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{"schemas": bson.M{"$not": bson.M{"$size": 0}}})
 		if err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + body.EntityType + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	default:
 		cursor, err := tagsCollection.Find(context.TODO(), bson.M{})
 		if err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: All tags" + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		if err = cursor.All(context.TODO(), &tags); err != nil {
-			serv.Errorf("GetTags error: " + err.Error())
+			serv.Errorf("GetTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -706,12 +706,12 @@ func (th TagsHandler) GetUsedTags(c *gin.Context) {
 	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
 	cursor, err := tagsCollection.Find(context.TODO(), filter)
 	if err != nil {
-		serv.Errorf("GetUsedTags error: " + err.Error())
+		serv.Errorf("GetUsedTags: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if err = cursor.All(context.TODO(), &tags); err != nil {
-		serv.Errorf("GetUsedTags error: " + err.Error())
+		serv.Errorf("GetUsedTags: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

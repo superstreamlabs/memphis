@@ -13,19 +13,20 @@
 
 import './style.scss';
 
-import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
+import { AddRounded, CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
 import { message } from 'antd';
 
+import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
+import stationsIcon from '../../../../assets/images/stationsIconActive.svg';
 import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
 import redirectIcon from '../../../../assets/images/redirectIcon.svg';
 import createdByIcon from '../../../../assets/images/createdByIcon.svg';
 import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
 import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
-import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
 import SelectVersion from '../../../../components/selectVersion';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -45,6 +46,8 @@ import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { validate, parse, buildASTSchema } from 'graphql';
+import SegmentButton from '../../../../components/segmentButton';
+import AttachStationModal from '../attachStationModal';
 
 function SchemaDetails({ schemaName, closeDrawer }) {
     const ajv = new Ajv2019();
@@ -54,24 +57,28 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
     const [loading, setIsLoading] = useState(false);
+    const [attachLoader, setAttachLoader] = useState(false);
     const [rollLoading, setIsRollLoading] = useState(false);
     const [newVersion, setNewVersion] = useState('');
     const [schemaDetails, setSchemaDetails] = useState({
         schema_name: '',
         type: '',
         version: [],
-        tags: []
+        tags: [],
+        used_stations: []
     });
     const [rollBackModal, setRollBackModal] = useState(false);
     const [activateVersionModal, setActivateVersionModal] = useState(false);
-    const [isDiff, setIsDiff] = useState(true);
+    const [isDiff, setIsDiff] = useState('Yes');
     const [validateLoading, setValidateLoading] = useState(false);
     const [validateError, setValidateError] = useState('');
     const [validateSuccess, setValidateSuccess] = useState(false);
     const [messageStructName, setMessageStructName] = useState('');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [editable, setEditable] = useState(false);
+    const [attachStaionModal, setAttachStaionModal] = useState(false);
     const [latestVersion, setLatest] = useState({});
+
     const history = useHistory();
 
     const goToStation = (stationName) => {
@@ -106,6 +113,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     useEffect(() => {
         getScemaDetails();
+        return () => {
+            setValidateSuccess('');
+            setValidateError('');
+        };
     }, []);
 
     const handleSelectVersion = (e) => {
@@ -181,6 +192,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 setMessageStructName(parser[0].name);
                 setEditable(false);
             }
+            setValidateSuccess('');
+            setValidateError('');
         } catch (error) {
             setValidateSuccess('');
             setValidateError(error.message);
@@ -301,6 +314,13 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         dispatch({ type: 'SET_SCHEMA_TAGS', payload: { schemaName: schemaName, tags: newTags } });
     };
 
+    const updateStations = (stationsList) => {
+        let updatedValue = { ...schemaDetails };
+        updatedValue['used_stations'] = stationsList;
+        setSchemaDetails((schemaDetails) => ({ ...schemaDetails, ...updatedValue }));
+        dispatch({ type: 'SET_IS_USED', payload: { schemaName: schemaName } });
+    };
+
     return (
         <schema-details is="3xd">
             <div className="scrollable-wrapper">
@@ -343,14 +363,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         {!versionSelected?.active && (
                             <>
                                 <span>Diff : </span>
-                                <div className="switcher">
-                                    <div className={isDiff ? 'yes-no-wrapper yes selected' : 'yes-no-wrapper yes'} onClick={() => setIsDiff(true)}>
-                                        <p>Yes</p>
-                                    </div>
-                                    <div className={isDiff ? 'yes-no-wrapper no' : 'yes-no-wrapper no selected'} onClick={() => setIsDiff(false)}>
-                                        <p>No</p>
-                                    </div>
-                                </div>
+                                <SegmentButton options={['Yes', 'No']} onChange={(e) => setIsDiff(e)} />
                             </>
                         )}
                         {/* <RadioButton options={formatOption} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} /> */}
@@ -417,7 +430,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 roundedSelection: false,
                                 formatOnPaste: true,
                                 formatOnType: true,
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                fontFamily: 'Inter'
                             }}
                             language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                             height="calc(100% - 104px)"
@@ -430,7 +444,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     )}
                     {!versionSelected?.active && (
                         <>
-                            {!isDiff && (
+                            {isDiff === 'No' && (
                                 <Editor
                                     options={{
                                         minimap: { enabled: false },
@@ -440,14 +454,15 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         formatOnPaste: true,
                                         formatOnType: true,
                                         readOnly: true,
-                                        fontSize: '14px'
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter'
                                     }}
                                     language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
                                     height="calc(100% - 100px)"
                                     value={versionSelected?.schema_content}
                                 />
                             )}
-                            {isDiff && (
+                            {isDiff === 'Yes' && (
                                 <DiffEditor
                                     height="calc(100% - 100px)"
                                     language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
@@ -459,7 +474,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         scrollbar: { verticalScrollbarSize: 3, horizontalScrollbarSize: 0 },
                                         renderOverviewRuler: false,
                                         colorDecorators: true,
-                                        fontSize: '14px'
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter'
                                     }}
                                 />
                             )}
@@ -474,24 +490,36 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     )}
                 </div>
                 <div className="used-stations">
-                    {schemaDetails?.used_stations?.length > 0 ? (
-                        <>
-                            <p className="title">Used by stations</p>
-                            <div className="stations-list">
-                                {schemaDetails.used_stations?.map((station, index) => {
-                                    return (
-                                        <div className="station-wrapper" key={index} onClick={() => goToStation(station)}>
-                                            <p>{station}</p>
-                                            <div className="redirect-img">
-                                                <img src={redirectIcon} />
-                                            </div>
+                    <div className="header">
+                        <p>{schemaDetails?.used_stations?.length > 0 ? 'Used by stations' : 'Not in use'}</p>
+                        <Button
+                            width="165px"
+                            height="30px"
+                            placeholder={
+                                <div className="attach-button">
+                                    <AddRounded className="add" />
+                                    <span>Attach to Station</span>
+                                </div>
+                            }
+                            radiusType="semi-round"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            onClick={() => setAttachStaionModal(true)}
+                        />
+                    </div>
+                    {schemaDetails?.used_stations?.length > 0 && (
+                        <div className="stations-list">
+                            {schemaDetails.used_stations?.map((station, index) => {
+                                return (
+                                    <div className="station-wrapper" key={index} onClick={() => goToStation(station)}>
+                                        <p>{station}</p>
+                                        <div className="redirect-img">
+                                            <img src={redirectIcon} />
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </>
-                    ) : (
-                        <p className="title">Not in use</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
             </div>
@@ -537,7 +565,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             fontSize="12px"
                             fontWeight="600"
                             loading={loading}
-                            disabled={!updated || (updated && newVersion === '')}
+                            disabled={!updated || (updated && newVersion === '') || validateError !== ''}
                             onClick={() => createNewVersion()}
                         />
                     )}
@@ -620,6 +648,27 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                         />
                     </div>
                 </div>
+            </Modal>
+            <Modal
+                className="attach-station-modal"
+                header={
+                    <div className="img-wrapper">
+                        <img src={stationsIcon} alt="stationsIcon" />
+                    </div>
+                }
+                width="400px"
+                height="560px"
+                hr={false}
+                displayButtons={false}
+                clickOutside={() => setAttachStaionModal(false)}
+                open={attachStaionModal}
+            >
+                <AttachStationModal
+                    close={() => setAttachStaionModal(false)}
+                    schemaName={schemaDetails.schema_name}
+                    handleAttachedStations={updateStations}
+                    attachedStations={schemaDetails?.used_stations}
+                />
             </Modal>
         </schema-details>
     );

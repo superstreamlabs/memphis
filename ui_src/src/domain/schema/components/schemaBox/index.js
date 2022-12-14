@@ -19,7 +19,7 @@ import React, { useState } from 'react';
 
 import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
-import { parsingDate } from '../../../../services/valueConvertor';
+import { capitalizeFirst, parsingDate } from '../../../../services/valueConvertor';
 import CheckboxComponent from '../../../../components/checkBox';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
 import TagsList from '../../../../components/tagList';
@@ -55,12 +55,12 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     <type is="x3d">
                         <div className="field-wrapper">
                             <p>Type : </p>
-                            {schema.type === 'json' ? <span>JSON schema</span> : <span> {schema.type}</span>}
+                            {schema.type === 'json' ? <span>JSON schema</span> : <span> {capitalizeFirst(schema.type)}</span>}
                         </div>
                         <div className="field-wrapper">
                             <p>Created by : </p>
                             <OverflowTip text={schema.created_by_user} maxWidth={'70px'}>
-                                <span>{schema.created_by_user}</span>
+                                <span>{capitalizeFirst(schema.created_by_user)}</span>
                             </OverflowTip>
                         </div>
                     </type>
@@ -78,6 +78,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                 placement="right"
                 size={'large'}
                 onClose={() => handleDrawer(false)}
+                destroyOnClose={true}
                 open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<CloseRounded style={{ color: '#D1D1D1' }} />}

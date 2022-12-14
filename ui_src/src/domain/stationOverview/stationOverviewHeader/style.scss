@@ -198,7 +198,7 @@
                         color: #1d1d1d;
                         font-size: 16px;
                         line-height: 19px;
-                        font-weight: 700;
+                        font-family: 'InterBold';
                     }
                     .title {
                         font-size: 12px;
@@ -262,10 +262,19 @@
     }
 }
 .modal-wrapper {
+    .sdk-header{
+        display: flex;
+        .title {
+            font-family: 'InterBold';
+            font-size: 18px;
+            margin: 0;
+            margin-right: 10px;
+        }
+    }
     .audit-header {
         display: flex;
         .title {
-            font-weight: 700;
+            font-family: 'InterBold';
             font-size: 18px;
             margin: 0;
         }
