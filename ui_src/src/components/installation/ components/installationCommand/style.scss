@@ -32,7 +32,7 @@
                 justify-content: space-between;
                 width: 95%;
                 span{
-                    font-weight: 400;
+                    font-family: 'Inter';
                     font-size: 12px;
                     white-space:pre-wrap;
                 }
@@ -84,7 +84,7 @@
         p{
             font-size: 18px;
             color: var(--purple);
-            font-weight: bold;
+            font-family: 'InterBold';
             margin-top: 20px;
         }
     }

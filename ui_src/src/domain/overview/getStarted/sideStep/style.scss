@@ -12,7 +12,7 @@
             display: flex;
             align-items: center;
             .step-name {
-                font-family: 'InterBold';
+                font-family: 'InterSemiBold';
                 font-size: 15px;
                 margin-bottom: 0px;
                 padding-left: 10px;
@@ -29,7 +29,7 @@
         margin-top: 10px;
         .step-description {
             padding-left: 20px;
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 14px;
             color: #667085;
             a {

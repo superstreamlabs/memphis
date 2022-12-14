@@ -7,7 +7,7 @@
     align-items: center;
     .tags-picker-title {
         display: flex;
-        font-weight: 600;
+        font-family: 'InterSemiBold';
         font-size: 16px;
         line-height: 40px;
         color: #2e2c34;
@@ -33,7 +33,7 @@
         margin-left: 33px;
         width: 119px;
         height: 18px;
-        font-weight: 600;
+        font-family: 'InterSemiBold';
         font-size: 12px;
         line-height: 18px;
         color: #4a495c;
@@ -139,7 +139,7 @@
         .no-tags-message {
             display: flex;
             font-size: 16px;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             line-height: 20px;
             color: #2e2c34;
         }
@@ -148,7 +148,7 @@
             text-align: center;
             padding: 0 20px;
             font-size: 12px;
-            font-weight: 400;
+            font-family: 'Inter';
             line-height: 15px;
             margin-top: 10px;
             color: #a7a7a7;
