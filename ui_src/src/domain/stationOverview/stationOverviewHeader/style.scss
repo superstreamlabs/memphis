@@ -17,7 +17,7 @@
                 }
                 h1 {
                     font-size: 24px;
-                    font-weight: 600;
+                    font-family: 'InterSemiBold';
                     line-height: 24px;
                     margin: 0 10px;
                 }
@@ -31,7 +31,7 @@
             .created-by {
                 color: #979797;
                 font-size: 12px;
-                font-weight: 400;
+                font-family: 'Inter';
             }
         }
         .station-buttons {
@@ -191,7 +191,7 @@
                         margin: 0;
                         color: #b5b5b5;
                         font-style: normal;
-                        font-weight: 400;
+                        font-family: 'Inter';
                         font-size: 12px;
                     }
                     .number {
@@ -230,13 +230,13 @@
             border-radius: 8px;
             p {
                 font-style: normal;
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 font-size: 14px;
                 line-height: 17px;
             }
             span {
                 font-style: normal;
-                font-weight: 500;
+                font-family: 'InterMedium';
                 font-size: 12px;
                 line-height: 24px;
                 color: var(--purple);
@@ -298,7 +298,7 @@
             p {
                 margin: 0;
                 font-size: 10px;
-                font-weight: 500;
+                font-family: 'InterMedium';
             }
         }
     }

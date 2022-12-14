@@ -2,7 +2,7 @@
     .field {
         p {
             font-size: 12px;
-            font-weight: 400;
+            font-family: 'Inter';
         }
     }
     .password {
@@ -13,7 +13,7 @@
         .generate-password-button{
             color: var(--purple);
             cursor: pointer;
-            font-weight:600;
+            font-family: 'InterSemiBold';
             font-size: 12px;
         }
     }

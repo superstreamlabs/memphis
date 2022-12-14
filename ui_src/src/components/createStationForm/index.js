@@ -324,6 +324,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 <SelectComponent
                                     colorType="black"
                                     backgroundColorType="none"
+                                    fontFamily="Inter"
                                     borderColorType="gray"
                                     radiusType="semi-round"
                                     height="40px"

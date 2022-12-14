@@ -91,12 +91,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				Component:   "memphis-http-proxy",
 				DesiredPods: 1,
 				ActualPods:  0,
+				Ports:       []int{4444},
 			})
 		} else {
 			components = append(components, models.SystemComponent{
 				Component:   "memphis-http-proxy",
 				DesiredPods: 1,
 				ActualPods:  1,
+				Ports:       []int{4444},
 			})
 		}
 
@@ -106,12 +108,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				Component:   "mongodb",
 				DesiredPods: 1,
 				ActualPods:  0,
+				Ports:       []int{27017},
 			})
 		} else {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
 				DesiredPods: 1,
 				ActualPods:  1,
+				Ports:       []int{27017},
 			})
 		}
 
@@ -119,8 +123,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			Component:   "memphis-broker",
 			DesiredPods: 1,
 			ActualPods:  1,
+			Ports:       []int{9000, 6666, 7770},
 		})
-
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetConfig()
@@ -136,10 +140,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		for _, d := range deploymentsList.Items {
+			var ports []int
+			for _, container := range d.Spec.Template.Spec.Containers {
+				for _, port := range container.Ports {
+					ports = append(ports, int(port.ContainerPort))
+				}
+			}
+
 			components = append(components, models.SystemComponent{
 				Component:   d.GetName(),
 				DesiredPods: int(*d.Spec.Replicas),
 				ActualPods:  int(d.Status.ReadyReplicas),
+				Ports:       ports,
 			})
 		}
 
@@ -149,10 +161,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			return components, err
 		}
 		for _, s := range statefulsetsList.Items {
+			var ports []int
+			for _, container := range s.Spec.Template.Spec.Containers {
+				for _, port := range container.Ports {
+					ports = append(ports, int(port.ContainerPort))
+				}
+			}
+
 			components = append(components, models.SystemComponent{
 				Component:   s.GetName(),
 				DesiredPods: int(*s.Spec.Replicas),
 				ActualPods:  int(s.Status.ReadyReplicas),
+				Ports:       ports,
 			})
 		}
 	}
