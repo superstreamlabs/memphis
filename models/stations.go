@@ -71,6 +71,7 @@ type Station struct {
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema            SchemaDetails      `json:"schema" bson:"schema"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 
 type GetStationResponseSchema struct {
@@ -89,6 +90,7 @@ type GetStationResponseSchema struct {
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Tags              []CreateTag        `json:"tags"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 
 type ExtendedStation struct {
@@ -108,6 +110,7 @@ type ExtendedStation struct {
 	PoisonMessages    int                `json:"posion_messages"`
 	Tags              []CreateTag        `json:"tags"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 
 type ExtendedStationDetails struct {
@@ -122,16 +125,28 @@ type GetStationSchema struct {
 }
 
 type CreateStationSchema struct {
-	Name              string      `json:"name" binding:"required,min=1,max=32"`
-	RetentionType     string      `json:"retention_type"`
-	RetentionValue    int         `json:"retention_value"`
-	Replicas          int         `json:"replicas"`
-	StorageType       string      `json:"storage_type"`
-	DedupEnabled      bool        `json:"dedup_enabled"`                      // TODO deprecated
-	DedupWindowInMs   int         `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
-	Tags              []CreateTag `json:"tags"`
-	SchemaName        string      `json:"schema_name"`
-	IdempotencyWindow int         `json:"idempotency_window_in_ms"`
+	Name              string           `json:"name" binding:"required,min=1,max=32"`
+	RetentionType     string           `json:"retention_type"`
+	RetentionValue    int              `json:"retention_value"`
+	Replicas          int              `json:"replicas"`
+	StorageType       string           `json:"storage_type"`
+	DedupEnabled      bool             `json:"dedup_enabled"`                      // TODO deprecated
+	DedupWindowInMs   int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
+	Tags              []CreateTag      `json:"tags"`
+	SchemaName        string           `json:"schema_name"`
+	IdempotencyWindow int              `json:"idempotency_window_in_ms"`
+	DlsConfiguration  DlsConfiguration `json:"dls_configuration"`
+}
+
+type DlsConfiguration struct {
+	Poison      bool `json:"poison" bson:"poison"`
+	Schemaverse bool `json:"schemaverse" bson:"schemaverse"`
+}
+
+type UpdateDlsConfigSchema struct {
+	StationName string `json:"station_name" binding:"required"`
+	Poison      bool   `json:"poison" binding:"required"`
+	Schemaverse bool   `json:"schemaverse" binding:"required"`
 }
 
 type AckPoisonMessagesSchema struct {
