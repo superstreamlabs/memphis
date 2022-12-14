@@ -81,7 +81,11 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		_, err := http.Get("http://localhost:4444")
+		httpProxy := "http://memphis-http-proxy:4444"
+		if configuration.DEV_ENV == "true" {
+			httpProxy = "http://localhost:4444"
+		}
+		_, err := http.Get(httpProxy)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "memphis-http-proxy",
@@ -330,6 +334,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   schemaDetails,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 
 	} else {
@@ -351,6 +356,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   emptyResponse,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 	}
 
