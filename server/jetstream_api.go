@@ -705,12 +705,13 @@ type jsAPIRoutedReq struct {
 
 func (js *jetStream) apiDispatch(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	// No lock needed, those are immutable.
-	s, rr := js.srv, js.apiSubs.Match(subject)
+	wrappedSubject := memphisFindJSAPIWrapperSubject(c, subject)
+	s, rr := js.srv, js.apiSubs.Match(wrappedSubject)
 
 	hdr, _ := c.msgParts(rmsg)
 	if len(getHeader(ClientInfoHdr, hdr)) == 0 {
 		// Check if this is the system account. We will let these through for the account info only.
-		if s.SystemAccount() != acc || subject != JSApiAccountInfo {
+		if s.SystemAccount() != acc || wrappedSubject != JSApiAccountInfo {
 			return
 		}
 	}
@@ -723,7 +724,7 @@ func (js *jetStream) apiDispatch(sub *subscription, c *client, acc *Account, sub
 	// We should only have psubs and only 1 per result.
 	// FIXME(dlc) - Should we respond here with NoResponders or error?
 	if len(rr.psubs) != 1 {
-		s.Warnf("Malformed JetStream API Request: [%s] %q", subject, rmsg)
+		s.Warnf("Malformed JetStream API Request: [%s] %q", wrappedSubject, rmsg)
 		return
 	}
 	jsub := rr.psubs[0]
@@ -799,11 +800,13 @@ func (s *Server) setJetStreamExportSubs() error {
 		{JSApiTemplateInfo, s.jsTemplateInfoRequest},
 		{JSApiTemplateDelete, s.jsTemplateDeleteRequest},
 		{JSApiStreamCreate, s.jsStreamCreateRequest},
+		{memphisJSApiStreamCreate, s.memphisJSApiWrapStreamCreate},
 		{JSApiStreamUpdate, s.jsStreamUpdateRequest},
 		{JSApiStreams, s.jsStreamNamesRequest},
 		{JSApiStreamList, s.jsStreamListRequest},
 		{JSApiStreamInfo, s.jsStreamInfoRequest},
 		{JSApiStreamDelete, s.jsStreamDeleteRequest},
+		{memphisJSApiStreamDelete, s.memphisJSApiWrapStreamDelete},
 		{JSApiStreamPurge, s.jsStreamPurgeRequest},
 		{JSApiStreamSnapshot, s.jsStreamSnapshotRequest},
 		{JSApiStreamRestore, s.jsStreamRestoreRequest},
