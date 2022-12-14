@@ -18,7 +18,7 @@
             height: 20px;
             p {
                 position: absolute;
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 font-size: 14px;
             }
             .user-name-title {
@@ -46,10 +46,10 @@
 .user-details-modal {
     font-size: 14px;
     p {
-        font-weight: 600;
+        font-family: 'InterSemiBold';
     }
     span {
-        font-weight: 400;
+        font-family: 'Inter';
     }
     .userName {
         color: var(--purple);

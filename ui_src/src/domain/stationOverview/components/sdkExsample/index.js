@@ -14,13 +14,17 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
+import { loader } from '@monaco-editor/react';
+import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 
-import SelectComponent from '../../../../components/select';
-import { SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
+import { SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
+import SelectComponent from '../../../../components/select';
 import CustomTabs from '../../../../components/Tabs';
 import Copy from '../../../../components/copy';
-import Editor from '@monaco-editor/react';
+
+loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
 

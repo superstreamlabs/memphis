@@ -15,7 +15,7 @@
         .left-side {
             display: flex;
             .title {
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 font-size: 14px;
                 margin: 0;
             }
@@ -31,7 +31,7 @@
                 p {
                     margin: 0;
                     font-size: 10px;
-                    font-weight: 500;
+                    font-family: 'InterMedium';
                 }
             }
         }
@@ -45,7 +45,7 @@
         .add-functions-button {
             cursor: pointer;
             color: var(--purple);
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 12px;
         }
     }
@@ -53,7 +53,7 @@
         .ant-tabs-tab {
             color: rgba(28, 46, 69, 0.6);
             font-size: 12px;
-            font-weight: 500;
+            font-family: 'InterMedium';
         }
         .ant-tabs-nav-wrap {
             padding-left: 15px !important;
@@ -72,7 +72,7 @@
             display: flex;
             color: #737373;
             font-size: 12px;
-            font-weight: 500;
+            font-family: 'InterMedium';
             line-height: 40px;
             p {
                 margin: 0;
@@ -112,7 +112,7 @@
                     display: flex;
                     color: #1d1d1d;
                     align-items: center;
-                    font-weight: 400;
+                    font-family: 'Inter';
                     font-size: 12px;
                     padding-left: 8px;
                     display: flex;
@@ -148,7 +148,7 @@
                     p {
                         margin: 0;
                         color: var(--gray);
-                        font-weight: 600;
+                        font-family: 'InterSemiBold';
                         font-size: 16px;
                     }
                 }
@@ -208,7 +208,7 @@
         p {
             margin: 0;
             color: var(--gray);
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 16px;
         }
     }
