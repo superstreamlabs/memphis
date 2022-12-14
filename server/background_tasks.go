@@ -18,6 +18,7 @@ var UI_url string
 
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
+const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 
@@ -67,7 +68,8 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
-				s.Errorf(err.Error())
+				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
+				return
 			}
 			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
 				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
@@ -86,12 +88,36 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	return nil
 }
 
+func (s *Server) ListenForConfogurationsUpdateEvents() error {
+	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var configurationsUpdate models.ConfigurationsUpdate
+			err := json.Unmarshal(msg, &configurationsUpdate)
+			if err != nil {
+				s.Errorf("ListenForConfogurationsUpdateEvents: " + err.Error())
+				return
+			}
+			switch strings.ToLower(configurationsUpdate.Type) {
+			case "pm_retention":
+				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
+			default:
+				return
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Server) ListenForNotificationEvents() error {
 	err := s.queueSubscribe(NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var notification models.Notification
 			err := json.Unmarshal(msg, &notification)
 			if err != nil {
+				s.Errorf("ListenForNotificationEvents: " + err.Error())
 				return
 			}
 			notificationMsg := notification.Msg
@@ -116,6 +142,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 			var msgToAck models.PmAckMsg
 			err := json.Unmarshal(msg, &msgToAck)
 			if err != nil {
+				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
 			id, err := primitive.ObjectIDFromHex(msgToAck.ID)
@@ -153,6 +180,12 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
+
+	err = s.ListenForConfogurationsUpdateEvents()
+	if err != nil {
+		return errors.New("Failed subscribing for confogurations update: " + err.Error())
+	}
+
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
 	err = systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)

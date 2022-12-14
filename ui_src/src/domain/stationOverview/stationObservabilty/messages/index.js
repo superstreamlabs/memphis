@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -20,9 +19,9 @@ import { InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { Checkbox, Space } from 'antd';
 
-import { convertBytes, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
+import { convertBytes, msToUnits, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
-import dlsPlaceholder from '../../../../assets/images/dlsPlaceholder.svg';
+import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
@@ -47,6 +46,8 @@ const Messages = () => {
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [loadMessageData, setLoadMessageData] = useState(false);
+    const [indeterminate, setIndeterminate] = useState(false);
+
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
@@ -155,6 +156,7 @@ const Messages = () => {
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
         setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id));
+        setIndeterminate(false);
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -162,13 +164,17 @@ const Messages = () => {
 
     const handleCheckedClick = (e) => {
         const { id, checked } = e.target;
-        setIsCheck([...isCheck, id]);
+        let checkedList = [];
         if (!checked) {
             setIsCheck(isCheck.filter((item) => item !== id));
+            checkedList = isCheck.filter((item) => item !== id);
         }
-        if (isCheck.length === 1 && !checked) {
-            setIsCheckAll(false);
+        if (checked) {
+            checkedList = [...isCheck, id];
+            setIsCheck(checkedList);
         }
+        setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
+        setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
     };
 
     const handleChangeMenuItem = (newValue) => {
@@ -321,7 +327,7 @@ const Messages = () => {
                 <div className="list-wrapper">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
-                            <CheckboxComponent checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
+                            <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
                             <p>Messages</p>
                         </div>
                         <p className="right-coulmn">Details</p>
@@ -392,7 +398,7 @@ const Messages = () => {
             )}
             {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
                 <div className="waiting-placeholder msg-plc">
-                    <img width={100} src={dlsPlaceholder} alt="waitingMessages" />
+                    <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                     <p>Hooray! No messages</p>
                 </div>
             )}
@@ -437,7 +443,7 @@ const Messages = () => {
                                 </a>
                             </span>
                         }
-                        data={[stationState?.stationSocketData?.idempotency_window_in_ms + ' ms']}
+                        data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
                 </div>
             )}

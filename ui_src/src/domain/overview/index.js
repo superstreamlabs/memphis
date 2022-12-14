@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -146,7 +145,6 @@ function OverView() {
             setisLoading(false);
         }, 1000);
         return () => {
-            state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('UNSUB'));
             sub?.unsubscribe();
         };
     }, [state.socket]);

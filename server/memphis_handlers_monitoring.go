@@ -64,14 +64,14 @@ func clientSetConfig() error {
 		// in cluster config
 		config, err = rest.InClusterConfig()
 		if err != nil {
-			serv.Errorf("InClusterConfig error: " + err.Error())
+			serv.Errorf("clientSetConfig: InClusterConfig: " + err.Error())
 			return err
 		}
 	}
 
 	clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		serv.Errorf("NewForConfig error: " + err.Error())
+		serv.Errorf("clientSetConfig: NewForConfig: " + err.Error())
 		return err
 	}
 
@@ -81,7 +81,11 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		_, err := http.Get("http://localhost:4444")
+		httpProxy := "http://memphis-http-proxy:4444"
+		if configuration.DEV_ENV == "true" {
+			httpProxy = "http://localhost:4444"
+		}
+		_, err := http.Get(httpProxy)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "memphis-http-proxy",
@@ -159,7 +163,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	fileContent, err := ioutil.ReadFile("version.conf")
 	if err != nil {
-		serv.Errorf("GetClusterInfo error: " + err.Error())
+		serv.Errorf("GetClusterInfo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -170,19 +174,19 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
 	stations, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
-		serv.Errorf("GetMainOverviewData error: " + err.Error())
+		serv.Errorf("GetMainOverviewData: GetAllStationsDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
 	if err != nil {
-		serv.Errorf("GetMainOverviewData error: " + err.Error())
+		serv.Errorf("GetMainOverviewData: GetTotalMessagesAcrossAllStations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	systemComponents, err := mh.GetSystemComponents()
 	if err != nil {
-		serv.Errorf("GetMainOverviewData error: " + err.Error())
+		serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -212,47 +216,53 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("Station " + body.StationName + " does not exist")
-		c.AbortWithStatusJSON(404, gin.H{"message": "Station does not exist"})
+		errMsg := "Station " + body.StationName + " does not exist"
+		serv.Warnf("GetStationOverviewData: " + errMsg)
+		c.AbortWithStatusJSON(404, gin.H{"message": errMsg})
 		return
 	}
 
 	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(stationName, station)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -260,27 +270,27 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	messagesToFetch := 1000
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	tags, err := tagsHandler.GetTagsByStation(station.ID)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData error: " + err.Error())
+		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -293,14 +303,14 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		var schema models.Schema
 		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
 		schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData error: " + err.Error())
+			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -324,6 +334,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   schemaDetails,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 
 	} else {
@@ -345,6 +356,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   emptyResponse,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 	}
 
@@ -381,6 +393,8 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsWarnSubject
 	case "info":
 		filterSubjectSuffix = syslogsInfoSubject
+	case "system":
+		filterSubjectSuffix = syslogsSysSubject
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
@@ -388,7 +402,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
-		serv.Errorf("GetSystemLogs error: " + err.Error())
+		serv.Errorf("GetSystemLogs: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -400,16 +414,11 @@ func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
 	const timeout = 20 * time.Second
 	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
 	if err != nil {
-		serv.Errorf("DownloadSystemLogs error: " + err.Error())
+		serv.Errorf("DownloadSystemLogs: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if err != nil {
-		serv.Errorf("DownloadSystemLogs error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	b := new(bytes.Buffer)
 	datawriter := bufio.NewWriter(b)
 
@@ -492,7 +501,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				s.Errorf(err.Error())
+				s.Errorf("GetSystemLogs: " + err.Error())
 			}
 
 			respCh <- StoredMsg{
@@ -521,7 +530,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	sub.close()
+	s.unsubscribeOnGlobalAcc(sub)
 	err = s.memphisRemoveConsumer(syslogsStreamName, durableName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err

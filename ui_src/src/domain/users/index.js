@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -15,6 +14,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
 import searchIcon from '../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -132,10 +132,14 @@ function Users() {
                             <Loader />
                         </div>
                     )}
-                    {!isLoading &&
-                        userList.map((user) => {
-                            return <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />;
-                        })}
+                    {!isLoading && (
+                        <Virtuoso
+                            data={userList}
+                            overscan={100}
+                            className="testt"
+                            itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
+                        />
+                    )}
                 </div>
             </div>
             <Modal

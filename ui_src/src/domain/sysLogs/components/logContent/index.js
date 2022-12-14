@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -17,7 +16,7 @@ import './style.scss';
 import React from 'react';
 
 import LogBadge from '../../../../components/logBadge';
-import { capitalizeFirst, cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
+import { cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
 import Copy from '../../../../components/copy';
 
 const LogContent = ({ displayedLog }) => {
@@ -30,7 +29,7 @@ const LogContent = ({ displayedLog }) => {
                 <div className="log-details">
                     <div className="source">
                         <p className="title">Source</p>
-                        <span className="des">{displayedLog?.source && capitalizeFirst(displayedLog?.source)}</span>
+                        <span className="des">{displayedLog?.source}</span>
                     </div>
                     <div className="type">
                         <p className="title">Type</p>

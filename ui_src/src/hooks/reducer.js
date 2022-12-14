@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -93,6 +92,13 @@ const Reducer = (state, action) => {
         case 'SET_SCHEMA_TAGS':
             index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
             updateDomainState[index].tags = action.payload.tags;
+            return {
+                ...state,
+                domainList: updateDomainState
+            };
+        case 'SET_IS_USED':
+            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateDomainState[index].used = true;
             return {
                 ...state,
                 domainList: updateDomainState

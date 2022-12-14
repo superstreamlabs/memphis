@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -25,6 +24,7 @@ import Filter from '../../../components/filter';
 import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
+import { Virtuoso } from 'react-virtuoso';
 
 const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -33,10 +33,12 @@ const FailedStations = ({ createStationTrigger }) => {
     const goToStation = (stationName) => {
         history.push(`${pathDomains.stations}/${stationName}`);
     };
-
+    const Item = React.forwardRef((props, ref) => {
+        return <div className="item-wrapper" {...props} ref={ref} />;
+    });
     return (
         <div className="overview-wrapper failed-stations-container">
-            <p className="overview-components-header">Stations</p>
+            <p className="overview-components-header">Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
             <div className="err-stations-list">
                 {state?.monitor_data?.stations?.length > 0 ? (
                     <div className="coulmns-table">
@@ -66,8 +68,12 @@ const FailedStations = ({ createStationTrigger }) => {
                     </div>
                 )}
                 <div className="rows-wrapper">
-                    {state?.monitor_data?.stations?.map((station, index) => {
-                        return (
+                    <Virtuoso
+                        data={state?.monitor_data?.stations}
+                        overscan={100}
+                        className="testt"
+                        components={{ Item }}
+                        itemContent={(index, station) => (
                             <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
                                 <OverflowTip className="station-details" text={station.name} width={'100px'}>
                                     {station.name}
@@ -84,8 +90,8 @@ const FailedStations = ({ createStationTrigger }) => {
                                     </div>
                                 </div>
                             </div>
-                        );
-                    })}
+                        )}
+                    />
                 </div>
             </div>
         </div>

@@ -25,14 +25,16 @@ type memphisResponse interface {
 }
 
 type createStationRequest struct {
-	StationName       string `json:"name"`
-	RetentionType     string `json:"retention_type"`
-	RetentionValue    int    `json:"retention_value"`
-	StorageType       string `json:"storage_type"`
-	Replicas          int    `json:"replicas"`
-	DedupEnabled      bool   `json:"dedup_enabled"`      // TODO deprecated
-	DedupWindowMillis int    `json:"dedup_window_in_ms"` // TODO deprecated
-	IdempotencyWindow int    `json:"idempotency_window_in_ms"`
+	StationName       string                  `json:"name"`
+	SchemaName        string                  `json:"schema_name"`
+	RetentionType     string                  `json:"retention_type"`
+	RetentionValue    int                     `json:"retention_value"`
+	StorageType       string                  `json:"storage_type"`
+	Replicas          int                     `json:"replicas"`
+	DedupEnabled      bool                    `json:"dedup_enabled"`      // TODO deprecated
+	DedupWindowMillis int                     `json:"dedup_window_in_ms"` // TODO deprecated
+	IdempotencyWindow int                     `json:"idempotency_window_in_ms"`
+	DlsConfiguration  models.DlsConfiguration `json:"dls_configuration"`
 }
 
 type destroyStationRequest struct {
@@ -74,6 +76,15 @@ type createConsumerRequest struct {
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
 }
 
+type attachSchemaRequest struct {
+	Name        string `json:"name"`
+	StationName string `json:"station_name"`
+}
+
+type detachSchemaRequest struct {
+	StationName string `json:"station_name"`
+}
+
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
@@ -107,6 +118,14 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
+
+	// schema attachements
+	s.queueSubscribe("$memphis_schema_attachments",
+		"memphis_schema_attachments_listeners_group",
+		attachSchemaHandler(s))
+	s.queueSubscribe("$memphis_schema_detachments",
+		"memphis_schema_detachments_listeners_group",
+		detachSchemaHandler(s))
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -145,6 +164,18 @@ func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 	}
 }
 
+func attachSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.useSchemaDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func detachSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.removeSchemaFromStationDirect(c, reply, copyBytes(msg))
+	}
+}
+
 func respondWithErr(s *Server, replySubject string, err error) {
 	resp := []byte("")
 	if err != nil {
@@ -156,7 +187,7 @@ func respondWithErr(s *Server, replySubject string, err error) {
 func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
-		serv.Errorf("response marshal error: " + err.Error())
+		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
 		return
 	}
 	s.respondOnGlobalAcc(replySubject, rawResp)

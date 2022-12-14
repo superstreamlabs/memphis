@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -33,13 +32,14 @@ import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import TagsList from '../../../../components/tagList';
 import { Context } from '../../../../hooks/store';
-import { getUnique } from '../../../../services/valueConvertor';
+import { generateName, getUnique } from '../../../../services/valueConvertor';
 import Ajv2019 from 'ajv/dist/2019';
 import jsonSchemaDraft04 from 'ajv-draft-04';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import Ajv2020 from 'ajv/dist/2020';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import GenerateSchema from 'generate-schema';
+import { validate, parse, buildASTSchema } from 'graphql';
 
 const schemaTypes = [
     {
@@ -61,6 +61,12 @@ const schemaTypes = [
     },
     {
         id: 3,
+        value: 'GraphQL',
+        label: 'GraphQL schema',
+        description: <span>The predictable. GraphQL provides a complete and understandable description of the data.</span>
+    },
+    {
+        id: 4,
         value: 'avro',
         label: 'Avro (Coming soon)',
         description: (
@@ -127,6 +133,21 @@ const SchemaEditorExample = {
               }
             },
             "required": [ "locality" ]
+         }`
+    },
+    GraphQL: {
+        language: 'graphql',
+        value: `type Query {
+            greeting:String
+            students:[Student]
+         }
+         
+         type Student {
+            id:ID!
+            firstName:String
+            lastName:String
+            password:String
+            collegeId:String
          }`
     }
 };
@@ -244,6 +265,17 @@ function CreateSchema() {
         }
     };
 
+    const validateProtobufSchema = (value) => {
+        try {
+            Schema.parse(value);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
+        }
+    };
+
     const validateJsonSchemaContent = (value, ajv) => {
         const isValid = ajv.validateSchema(value);
         if (isValid) {
@@ -251,6 +283,19 @@ function CreateSchema() {
             setValidateError('');
         } else {
             setValidateError('Your schema is invalid');
+        }
+    };
+
+    const validateGraphQlSchema = (value) => {
+        try {
+            var documentNode = parse(value);
+            var graphqlSchema = buildASTSchema(documentNode);
+            validate(graphqlSchema, documentNode);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError(error.message);
         }
     };
 
@@ -288,16 +333,11 @@ function CreateSchema() {
         }
         if (value && value.length > 0) {
             if (type === 'Protobuf') {
-                try {
-                    Schema.parse(value);
-                    setValidateSuccess('');
-                    setValidateError('');
-                } catch (error) {
-                    setValidateSuccess('');
-                    setValidateError(error.message);
-                }
+                validateProtobufSchema(value);
             } else if (type === 'Json') {
                 validateJsonSchema(value);
+            } else if (type === 'GraphQL') {
+                validateGraphQlSchema(value);
             }
         }
     };
@@ -316,7 +356,8 @@ function CreateSchema() {
                 roundedSelection: false,
                 formatOnPaste: true,
                 formatOnType: true,
-                fontSize: '14px'
+                fontSize: '14px',
+                fontFamily: 'Inter'
             }}
             height="calc(100% - 5px)"
             language={SchemaEditorExample[formFields?.type]?.language}
@@ -367,8 +408,8 @@ function CreateSchema() {
                                 fontSize="12px"
                                 height="40px"
                                 width="200px"
-                                onBlur={(e) => updateFormState('name', e.target.value.replace(' ', '-'))}
-                                onChange={(e) => updateFormState('name', e.target.value.replace(' ', '-'))}
+                                onBlur={(e) => updateFormState('name', generateName(e.target.value))}
+                                onChange={(e) => updateFormState('name', generateName(e.target.value))}
                                 value={formFields.name}
                             />
                         </div>
@@ -461,6 +502,7 @@ function CreateSchema() {
                             <Form.Item name="schema_content" className="schema-item" initialValue={formFields.schema_content}>
                                 {formFields?.type === 'Protobuf' && schemaContentEditor}
                                 {formFields?.type === 'Json' && schemaContentEditor}
+                                {formFields?.type === 'GraphQL' && schemaContentEditor}
                             </Form.Item>
                             <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
                                 {validateError && <ErrorOutlineRounded />}
@@ -509,6 +551,7 @@ function CreateSchema() {
                 <div className="roll-back-modal">
                     <p className="title">Too many message types specified in schema structure</p>
                     <p className="desc">Please choose your master message as a schema structure</p>
+
                     <SelectComponent
                         value={messageStructName}
                         colorType="black"

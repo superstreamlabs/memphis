@@ -45,12 +45,14 @@ func handleConnectMessage(client *client) error {
 
 	exist, user, err := IsUserExist(username)
 	if err != nil {
-		client.Errorf("handleConnectMessage: " + err.Error())
+		errMsg := "User " + username + ": " + err.Error()
+		client.Errorf("handleConnectMessage: " + errMsg)
 		return err
 	}
 	if !exist {
-		client.Warnf("handleConnectMessage: User is not exist")
-		return errors.New("User is not exist")
+		errMsg := "User " + username + " does not exist"
+		client.Warnf("handleConnectMessage: " + errMsg)
+		return errors.New(errMsg)
 	}
 	if user.UserType != "root" && user.UserType != "application" {
 		client.Warnf("handleConnectMessage: Please use a user of type Root/Application and not Management")
@@ -59,12 +61,15 @@ func handleConnectMessage(client *client) error {
 
 	objID, err := primitive.ObjectIDFromHex(objIdString)
 	if err != nil {
+		errMsg := "User " + username + ": " + err.Error()
+		client.Errorf("handleConnectMessage: " + errMsg)
 		return err
 	}
 
 	exist, _, err = IsConnectionExist(objID)
 	if err != nil {
-		client.Errorf("handleConnectMessage: " + err.Error())
+		errMsg := "User " + username + ": " + err.Error()
+		client.Errorf("handleConnectMessage: " + errMsg)
 		return err
 	}
 
@@ -73,23 +78,27 @@ func handleConnectMessage(client *client) error {
 	if exist {
 		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
 		if err != nil {
-			client.Errorf("handleConnectMessage: " + err.Error())
+			errMsg := "User " + username + ": " + err.Error()
+			client.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 		err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
 		if err != nil {
-			client.Errorf("handleConnectMessage: " + err.Error())
+			errMsg := "User " + username + ": " + err.Error()
+			client.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 		err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
 		if err != nil {
-			client.Errorf("handleConnectMessage: " + err.Error())
+			errMsg := "User " + username + ": " + err.Error()
+			client.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 	} else {
 		err := connectionsHandler.CreateConnection(username, clientAddress, objID)
 		if err != nil {
-			client.Errorf("handleConnectMessage: " + err.Error())
+			errMsg := "User " + username + ": " + err.Error()
+			client.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
 	}
@@ -113,11 +122,13 @@ func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, co
 	username = strings.ToLower(username)
 	exist, _, err := IsUserExist(username)
 	if err != nil {
-		serv.Errorf("CreateConnection error: " + err.Error())
+		errMsg := "User " + username + ": " + err.Error()
+		serv.Errorf("CreateConnection error: " + errMsg)
 		return err
 	}
 	if !exist {
-		return errors.New("User was not found")
+		errMsg := "User " + username + " does not exist"
+		return errors.New(errMsg)
 	}
 
 	newConnection := models.Connection{
@@ -130,7 +141,8 @@ func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, co
 
 	_, err = connectionsCollection.InsertOne(context.TODO(), newConnection)
 	if err != nil {
-		serv.Errorf("CreateConnection error: " + err.Error())
+		errMsg := "User " + username + ": " + err.Error()
+		serv.Errorf("CreateConnection error: " + errMsg)
 		return err
 	}
 	return nil

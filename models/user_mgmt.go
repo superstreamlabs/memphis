@@ -83,5 +83,10 @@ type GetFilterDetailsSchema struct {
 }
 
 type FilteredUser struct {
-	Username string `json:"username" bson:"username"`
+	Username string `json:"_id" bson:"_id"` //_id holds username, returning value from query.
+}
+
+type ChangePasswordSchema struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }

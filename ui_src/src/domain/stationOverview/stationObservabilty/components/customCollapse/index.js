@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -22,6 +21,7 @@ import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
 import { decodeMessage } from '../../../../../services/decoder';
 import { hex_to_ascii } from '../../../../../services/valueConvertor';
+import SegmentButton from '../../../../../components/segmentButton';
 
 const { Panel } = Collapse;
 
@@ -116,7 +116,8 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                             <>
                                 <Copy data={data} />
                                 <div className="second-row">
-                                    <div className="switcher">
+                                    <SegmentButton options={['bytes', 'string', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
+                                    {/* <div className="switcher">
                                         <div className={parser === 'bytes' ? 'selected-parser left selected' : 'selected-parser left'} onClick={() => setParser('bytes')}>
                                             <p>bytes</p>
                                         </div>
@@ -138,7 +139,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                                         >
                                             <p>protobuf</p>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
@@ -148,9 +149,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                     <>
                         {!status &&
                             data?.length > 0 &&
-                            data?.map((row, index) => {
+                            data?.map((row) => {
                                 return (
-                                    <content is="x3d" key={index}>
+                                    <content is="x3d" key={row.name}>
                                         <p>{row.name}</p>
                                         <span>{row.value}</span>
                                     </content>
@@ -158,9 +159,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                             })}
                         {status &&
                             data?.details?.length > 0 &&
-                            data?.details?.map((row, index) => {
+                            data?.details?.map((row) => {
                                 return (
-                                    <content is="x3d" key={index}>
+                                    <content is="x3d" key={row.name}>
                                         <p>{row.name}</p>
                                         <span>{row.value}</span>
                                     </content>

@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -20,7 +19,7 @@ import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
 import comingSoonImg from '../../assets/images/comingSoonImg.svg';
-import { convertDateToSeconds } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -131,7 +130,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
-            name: formFields.station_name.split(' ').join('-'),
+            name: generateName(formFields.station_name),
             retention_type: formFields.retention_type,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
@@ -184,14 +183,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const stationNameChange = (e) => {
-        let name = e.target.value.split(' ').join('-');
-        getStarted && updateFormState('name', name.toLowerCase());
+        let generatedName = generateName(e.target.value);
+        getStarted && updateFormState('name', generatedName);
         if (parserName === '') {
             setTimeout(() => {
-                setParserName(name.toLowerCase());
+                setParserName(generatedName);
             }, 100);
         } else {
-            setParserName(name.toLowerCase());
+            setParserName(generatedName);
         }
     };
     const SelectedStorageOption = (value) => {

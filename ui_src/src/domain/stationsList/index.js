@@ -21,6 +21,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
 import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
 import StationsInstructions from '../../components/stationsInstructions';
@@ -43,6 +44,7 @@ const StationsList = () => {
     const [modalIsOpen, modalFlip] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const [isLoading, setisLoading] = useState(true);
+    const [deleteLoader, setDeleteLoader] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
@@ -93,14 +95,20 @@ const StationsList = () => {
                     </div>
                 );
             }
-            return state?.filteredList?.map((station) => (
-                <StationBoxOverview
-                    key={station?.station?.id}
-                    isCheck={isCheck.includes(station?.station?.name)}
-                    handleCheckedClick={handleCheckedClick}
-                    station={station}
+            return (
+                <Virtuoso
+                    data={state?.filteredList}
+                    overscan={100}
+                    itemContent={(index, station) => (
+                        <StationBoxOverview
+                            key={station?.station?.id}
+                            isCheck={isCheck.includes(station?.station?.name)}
+                            handleCheckedClick={handleCheckedClick}
+                            station={station}
+                        />
+                    )}
                 />
-            ));
+            );
         }
         return <StationsInstructions header="You don’t have any station yet?" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
     };
@@ -125,7 +133,7 @@ const StationsList = () => {
     };
 
     const handleDeleteSelected = async () => {
-        setisLoading(true);
+        setDeleteLoader(true);
         try {
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
                 station_names: isCheck
@@ -133,12 +141,13 @@ const StationsList = () => {
             if (data) {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: stationFilterArray(state?.filteredList, isCheck) });
                 setIsCheck([]);
-                setisLoading(false);
+                setIsCheckAll(false);
+                setDeleteLoader(false);
+                modalDeleteFlip(false);
             }
         } catch (error) {
-            setisLoading(false);
+            setDeleteLoader(false);
         }
-        modalDeleteFlip(false);
     };
 
     return (
@@ -238,6 +247,7 @@ const StationsList = () => {
                     desc="Deleting these stations means they will be permanently deleted."
                     buttontxt="I understand, delete the selected stations"
                     handleDeleteSelected={handleDeleteSelected}
+                    loader={deleteLoader}
                 />
             </Modal>
         </div>

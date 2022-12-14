@@ -130,7 +130,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	go s.KillZombieResources()
+	// go s.KillZombieResources() // TODO
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

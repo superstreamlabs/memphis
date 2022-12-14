@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -14,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useCallback } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
@@ -28,11 +27,9 @@ import Button from '../../../../components/button';
 import Filter from '../../../../components/filter';
 import { Context } from '../../../../hooks/store';
 import Modal from '../../../../components/modal';
-import pathDomains from '../../../../router';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { StringCodec, JSONCodec } from 'nats.ws';
 
 function SchemaList() {
     const history = useHistory();
@@ -42,6 +39,7 @@ function SchemaList() {
     const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
+    const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
         getAllSchemas();
@@ -85,7 +83,7 @@ function SchemaList() {
     };
 
     const handleDeleteSelected = async () => {
-        setisLoading(true);
+        setDeleteLoader(true);
         try {
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA, {
                 schema_names: isCheck
@@ -93,12 +91,13 @@ function SchemaList() {
             if (data) {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
                 setIsCheck([]);
-                setisLoading(false);
+                setIsCheckAll(false);
+                setDeleteLoader(false);
             }
         } catch (error) {
-            setisLoading(false);
+            setDeleteLoader(false);
+            setDeleteModal(false);
         }
-        setDeleteModal(false);
     };
 
     const handleSearch = (e) => {
@@ -245,6 +244,7 @@ function SchemaList() {
                     desc="Deleting these schemas means they will be permanently deleted."
                     buttontxt="I understand, delete the selected schemas"
                     handleDeleteSelected={handleDeleteSelected}
+                    loader={deleteLoader}
                 />
             </Modal>
         </div>

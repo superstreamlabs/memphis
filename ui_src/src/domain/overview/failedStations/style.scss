@@ -113,6 +113,10 @@
                     width: 100px;
                 }
             }
+            .item-wrapper:nth-child(even) .stations-row {
+                background-color: #f8f8f8;
+                border-radius: 4px;
+            }
             .stations-row:hover {
                 .staion-link {
                     span {
@@ -122,9 +126,7 @@
                 }
             }
 
-            .stations-row:nth-child(even) {
-                background-color: #f8f8f8;
-            }
+            
         }
     }
     .empty-stations-container {

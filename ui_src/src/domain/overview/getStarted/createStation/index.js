@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -15,6 +14,7 @@
 import React, { useContext, useEffect } from 'react';
 import { GetStartedStoreContext } from '..';
 import CreateStationForm from '../../../../components/createStationForm';
+import { generateName } from '../../../../services/valueConvertor';
 
 import './style.scss';
 
@@ -39,7 +39,7 @@ const CreateStation = ({ createStationFormRef }) => {
 
     const updateFormState = (field, value) => {
         if (field === 'name') {
-            value.replace(' ', '-');
+            value = generateName(value);
             getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: value.length === 0 || false });
         }
         getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });

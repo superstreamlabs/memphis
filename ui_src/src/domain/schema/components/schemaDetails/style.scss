@@ -64,44 +64,7 @@ schema-details {
                     font-size: 14px;
                     font-family:'InterMedium';
                     padding-left: 15px;
-
-                }
-                .switcher {
-                    background: #FFFFFF;
-                    border: 1px solid #E8E8E8;
-                    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
-                    border-radius: 8px;
-                    height: 28px;
-                    width: 75px;
-                    display: grid;
-                    align-items: center;
-                    grid-template-columns: 50% 50%;
-                    margin-left: 7px;
-                    p{
-                        font-size: 13px;
-                        font-family:'InterMedium';
-                    }
-                    .yes-no-wrapper{
-                        height: 100%;
-                        justify-content: center;
-                        display: flex;
-                        align-items: center;
-                        cursor: pointer;
-                    }
-                    .yes {
-                        background: #F6F6F6;
-                        border-right: 1px solid #E8E8E8;
-                        border-top-left-radius: 7px;
-                        border-bottom-left-radius: 7px;
-                    }
-                    .border{
-                        border-right: 1px solid #E8E8E8;
-                    }
-                    .no {
-                        background: #F6F6F6;
-                        border-top-right-radius: 7px;
-                        border-bottom-right-radius: 7px;
-                    }
+                    margin-right: 10px;
 
                 }
             .radio-button span.ant-radio + * {
@@ -185,11 +148,22 @@ schema-details {
         }
         .used-stations{
             padding: 16px 30px;
-            min-height: 115px;
-            .title{
-                font-weight: 600;
-                font-size: 18px;
-                margin-right: 15px;
+            min-height: 145px;
+            .header{
+                display: flex;
+                justify-content:space-between;
+                p{
+                    font-weight: 600;
+                    font-size: 18px;
+                    margin-right: 15px;
+                }.attach-button{
+                    color: var(--purple);
+                    font-size: 14px;
+                    font-family: 'InterSemiBold' !important; 
+                    display: flex;
+                    gap: 5px;
+                    align-items: center;
+                }
             }
             .stations-list{
                 position: relative;
@@ -199,6 +173,7 @@ schema-details {
                 align-content: flex-start;
                 flex-wrap: wrap;
                 height: calc(100% - 30px);
+                overflow:auto;
                 .station-wrapper{
                     border-radius: 30px;
                     background: rgba(0, 16, 61, 0.06);
@@ -298,4 +273,21 @@ schema-details {
         margin: 3px 8px;
     }
 
+}
+.attach-station-modal{
+    .ant-modal-header{
+        border-bottom: unset !important;
+        .img-wrapper{
+            width: 48px;
+            height: 48px;
+            display: flex;
+            background: rgba(101, 87, 255, 0.1);
+            justify-content: center;
+            border-radius: 50%;
+            img{
+                width: 23px;
+            }
+        }
+    }
+    
 }

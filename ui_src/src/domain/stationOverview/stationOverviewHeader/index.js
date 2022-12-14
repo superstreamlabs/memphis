@@ -1,4 +1,3 @@
-// Credit for The NATS.IO Authors
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -17,6 +16,7 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import { Segmented } from 'antd';
 
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
@@ -39,6 +39,8 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
+import ProtocolExample from '../components/protocolExsample';
+import SegmentButton from '../../../components/segmentButton';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -50,6 +52,8 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
+    const [segment, setSegment] = useState('Sdk');
+    const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -89,14 +93,18 @@ const StationOverviewHeader = () => {
     };
 
     const handleDeleteStation = async () => {
+        setDeleteLoader(true);
         try {
             await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
                 station_names: [stationState?.stationMetaData?.name]
             });
+            setDeleteLoader(false);
             modalDeleteFlip(false);
             returnToStaionsList();
-        } catch (error) {}
-        modalDeleteFlip(false);
+        } catch (error) {
+            setDeleteLoader(false);
+            modalDeleteFlip(false);
+        }
     };
 
     return (
@@ -218,17 +226,17 @@ const StationOverviewHeader = () => {
                             <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
-                    <TooltipComponent text="Gross size. Payload + headers + Memphis metadata" width={'220px'} cursor="pointer">
-                        <div className="details-wrapper average">
-                            <div className="icon">
-                                <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
-                            </div>
-                            <div className="more-details">
-                                <p className="title">Av. message size</p>
-                                <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
-                            </div>
+                    <div className="details-wrapper average">
+                        <div className="icon">
+                            <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
                         </div>
-                    </TooltipComponent>
+                        <div className="more-details">
+                            <p className="title">Av. message size</p>
+                            <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
+                                <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
+                            </TooltipComponent>
+                        </div>
+                    </div>
                     {/* <div className="details-wrapper">
                         <div className="icon">
                             <img src={memoryIcon} width={24} height={24} alt="memoryIcon" />
@@ -262,7 +270,7 @@ const StationOverviewHeader = () => {
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
-                        <p>SDK</p>
+                        <p>Code example</p>
                         <span
                             onClick={() => {
                                 setSdkModal(true);
@@ -276,8 +284,23 @@ const StationOverviewHeader = () => {
                         <span onClick={() => setAuditModal(true)}>View details {'>'}</span>
                     </div>
                 </div>
-                <Modal header="SDK" width="710px" clickOutside={() => setSdkModal(false)} open={sdkModal} displayButtons={false}>
-                    <SdkExample />
+                <Modal
+                    header={
+                        <div className="sdk-header">
+                            <p className="title">Code example</p>
+                            <SegmentButton options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
+                        </div>
+                    }
+                    width="710px"
+                    clickOutside={() => {
+                        setSdkModal(false);
+                        setSegment('Sdk');
+                    }}
+                    open={sdkModal}
+                    displayButtons={false}
+                >
+                    {segment === 'Sdk' && <SdkExample />}
+                    {segment === 'Protocol' && <ProtocolExample />}
                 </Modal>
                 <Modal
                     header={
@@ -321,8 +344,8 @@ const StationOverviewHeader = () => {
                 <Modal
                     header="Update schema"
                     displayButtons={false}
-                    height="550px"
-                    width="450px"
+                    height="650px"
+                    width="550px"
                     clickOutside={() => setUpdateSchemaModal(false)}
                     open={updateSchemaModal}
                     className="update-schema-modal"
@@ -350,6 +373,7 @@ const StationOverviewHeader = () => {
                         desc="Deleting this station means it will be permanently deleted."
                         buttontxt="I understand, delete the station"
                         handleDeleteSelected={handleDeleteStation}
+                        loader={deleteLoader}
                     />
                 </Modal>
             </div>
