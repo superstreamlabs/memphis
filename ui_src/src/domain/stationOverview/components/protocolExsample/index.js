@@ -75,7 +75,7 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
                 />
             </div>
             <div className="installation">
-                <p>Token Generate</p>
+                <p>First, generate a token</p>
                 <div className="code-example">
                     <div className="code-content">
                         <Editor
