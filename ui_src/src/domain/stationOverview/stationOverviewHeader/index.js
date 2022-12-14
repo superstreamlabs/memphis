@@ -290,10 +290,6 @@ const StationOverviewHeader = () => {
                         <div className="tabs-headers">
                             <CustomTabs value={segment} onChange={(e) => setSegment(e)} tabs={[`Sdk's`, 'Protocols']}></CustomTabs>
                         </div>
-                        // <div className="sdk-header">
-                        //     <p className="title">Code example</p>
-                        //     <SegmentButton options={}  />
-                        // </div>
                     }
                     width="710px"
                     height={'640px'}
