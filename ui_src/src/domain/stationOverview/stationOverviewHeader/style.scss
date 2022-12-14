@@ -262,6 +262,9 @@
     }
 }
 .modal-wrapper {
+    .ant-modal-body{
+        padding-top: 0px;
+    }
     .tabs-headers {
         .ant-tabs-tab {
             color: rgba(28, 46, 69, 0.6);
