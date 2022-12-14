@@ -1709,8 +1709,8 @@ func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (sh StationsHandler) DlsConfiguration(c *gin.Context) {
-	var body models.DlsConfigurationSchema
+func (sh StationsHandler) UpdateDlsCofnig(c *gin.Context) {
+	var body models.UpdateDlsConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return

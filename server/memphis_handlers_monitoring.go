@@ -330,6 +330,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   schemaDetails,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 
 	} else {
@@ -351,6 +352,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   emptyResponse,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 	}
 

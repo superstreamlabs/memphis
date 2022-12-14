@@ -143,7 +143,7 @@ type DlsConfiguration struct {
 	Schemaverse bool `json:"schemaverse" bson:"schemaverse"`
 }
 
-type DlsConfigurationSchema struct {
+type UpdateDlsConfigSchema struct {
 	StationName string `json:"station_name" binding:"required"`
 	Poison      bool   `json:"poison" binding:"required"`
 	Schemaverse bool   `json:"schemaverse" binding:"required"`
