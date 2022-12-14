@@ -37,7 +37,7 @@ func (s *Server) initializeConfigurations() {
 	err := configurationsCollection.FindOne(context.TODO(), bson.M{"key": "pm_retention"}).Decode(&pmRetention)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
-			s.Errorf("initializeConfigurations error: " + err.Error())
+			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
 		pmRetention = models.ConfigurationsIntValue{
@@ -47,7 +47,7 @@ func (s *Server) initializeConfigurations() {
 		}
 		_, err = configurationsCollection.InsertOne(context.TODO(), pmRetention)
 		if err != nil {
-			s.Errorf("initializeConfigurations error: " + err.Error())
+			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		POISON_MSGS_RETENTION_IN_HOURS = pmRetention.Value
@@ -56,11 +56,11 @@ func (s *Server) initializeConfigurations() {
 	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "logs_retention"}).Decode(&logsRetention)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
-			s.Errorf("initializeConfigurations error: " + err.Error())
+			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		LOGS_RETENTION_IN_DAYS, err = strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
 		if err != nil {
-			s.Errorf("initializeConfigurations error: " + err.Error())
+			s.Errorf("initializeConfigurations: " + err.Error())
 			LOGS_RETENTION_IN_DAYS = 30 //default
 		}
 		logsRetention = models.ConfigurationsIntValue{
@@ -70,7 +70,7 @@ func (s *Server) initializeConfigurations() {
 		}
 		_, err = configurationsCollection.InsertOne(context.TODO(), logsRetention)
 		if err != nil {
-			s.Errorf("initializeConfigurations error: " + err.Error())
+			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		LOGS_RETENTION_IN_DAYS = logsRetention.Value
@@ -86,7 +86,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if POISON_MSGS_RETENTION_IN_HOURS != body.PMRetention {
 		err := changePMRetention(body.PMRetention)
 		if err != nil {
-			serv.Errorf("EditConfigurations error: " + err.Error())
+			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -94,7 +94,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if LOGS_RETENTION_IN_DAYS != body.LogsRetention {
 		err := changeLogsRetention(body.LogsRetention)
 		if err != nil {
-			serv.Errorf("EditConfigurations error: " + err.Error())
+			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}

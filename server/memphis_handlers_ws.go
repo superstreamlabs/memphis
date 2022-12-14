@@ -282,6 +282,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 			"followers":                followers,
 			"schema":                   struct{}{},
 			"idempotency_window_in_ms": station.IdempotencyWindow,
+			"dls_configuration":        station.DlsConfiguration,
 		}
 		return response, nil
 	}
@@ -310,6 +311,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"followers":                followers,
 		"schema":                   schemaDetails,
 		"idempotency_window_in_ms": station.IdempotencyWindow,
+		"dls_configuration":        station.DlsConfiguration,
 	}
 
 	return response, nil
