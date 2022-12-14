@@ -137,7 +137,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             storage_type: formFields.storage_type,
             replicas: Number(formFields.replicas),
             schema_name: formFields.schemaValue,
-            idempotency_window_in_ms: idempotencyValue
+            idempotency_window_in_ms: idempotencyValue,
+            dls_configuration: {
+                poison: dlsConfiguration,
+                schemaverse: dlsConfiguration
+            }
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();

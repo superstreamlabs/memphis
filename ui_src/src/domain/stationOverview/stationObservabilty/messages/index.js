@@ -452,7 +452,7 @@ const Messages = () => {
                         />
                     )}
                     <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="lorem ipsumelorem ipsumelorem ipsumelorem ipsume.">
-                        <DlsConfig></DlsConfig>
+                        <DlsConfig />
                     </DetailBox>
                     <DetailBox
                         img={idempotencyIcon}
