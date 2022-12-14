@@ -88,6 +88,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
     const [useSchema, setUseSchema] = useState(false);
+    const [dlsConfiguration, setDlsConfiguration] = useState(true);
     const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
     const [selectedOption, setSelectedOption] = useState('file');
     const [selectedTier2Option, setSelectedTier2Option] = useState(1);
@@ -271,7 +272,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 </div>
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
-                        <div className="toggle-add-schema">
+                        <div>
                             <TitleComponent
                                 headerTitle="Idempotency"
                                 typeTitle="sub-header"
@@ -358,6 +359,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         )}
                     </div>
                 )}
+                <div className="toggle-add-schema">
+                    <TitleComponent
+                        headerTitle="Dead-letter station configuration"
+                        typeTitle="sub-header"
+                        headerDescription="By which criteria messages will be expel from the station"
+                    />
+                    <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
+                </div>
             </div>
             <div className={'right-side'}>
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />

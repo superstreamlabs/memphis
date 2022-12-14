@@ -451,12 +451,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox
-                        img={dlsEnableIcon}
-                        title={'DLS enable'}
-                        desc="lorem ipsumelorem ipsumelorem ipsumelorem ipsume."
-                        // data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
-                    >
+                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="lorem ipsumelorem ipsumelorem ipsumelorem ipsume.">
                         <DlsConfig></DlsConfig>
                     </DetailBox>
                     <DetailBox
