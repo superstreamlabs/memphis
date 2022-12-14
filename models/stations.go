@@ -145,8 +145,8 @@ type DlsConfiguration struct {
 
 type UpdateDlsConfigSchema struct {
 	StationName string `json:"station_name" binding:"required"`
-	Poison      bool   `json:"poison" binding:"required"`
-	Schemaverse bool   `json:"schemaverse" binding:"required"`
+	Poison      bool   `json:"poison"`
+	Schemaverse bool   `json:"schemaverse"`
 }
 
 type AckPoisonMessagesSchema struct {
