@@ -124,6 +124,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                         {schemaList?.map((schema) => {
                             return (
                                 <SchemaItem
+                                    key={schema.name}
                                     schema={schema}
                                     schemaSelected={schemaSelected}
                                     selected={selected}

@@ -41,6 +41,7 @@ import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import ProtocolExample from '../components/protocolExsample';
 import SegmentButton from '../../../components/segmentButton';
+import CustomTabs from '../../../components/Tabs';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -52,7 +53,7 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
-    const [segment, setSegment] = useState('Sdk');
+    const [segment, setSegment] = useState(`Sdk's`);
     const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
@@ -286,21 +287,21 @@ const StationOverviewHeader = () => {
                 </div>
                 <Modal
                     header={
-                        <div className="sdk-header">
-                            <p className="title">Code example</p>
-                            <SegmentButton options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
+                        <div className="tabs-headers">
+                            <CustomTabs value={segment} onChange={(e) => setSegment(e)} tabs={[`Sdk's`, 'Protocols']}></CustomTabs>
                         </div>
                     }
                     width="710px"
+                    height={'640px'}
                     clickOutside={() => {
                         setSdkModal(false);
-                        setSegment('Sdk');
+                        setSegment(`Sdk's`);
                     }}
                     open={sdkModal}
                     displayButtons={false}
                 >
-                    {segment === 'Sdk' && <SdkExample />}
-                    {segment === 'Protocol' && <ProtocolExample />}
+                    {segment === `Sdk's` && <SdkExample />}
+                    {segment === 'Protocols' && <ProtocolExample />}
                 </Modal>
                 <Modal
                     header={

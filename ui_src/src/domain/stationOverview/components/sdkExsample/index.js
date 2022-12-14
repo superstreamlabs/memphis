@@ -69,8 +69,12 @@ const SdkExample = ({ consumer, showTabs = true }) => {
 
     return (
         <div className="code-example-details-container sdk-example">
+            <div className="header-wrapper">
+                <p>SDK’s - Code example</p>
+                <span>It is a long established fact that a reader will be distracted by the readable content of a page</span>
+            </div>
             <div className="select-lan">
-                <p>Language</p>
+                <p className="field-title">Language</p>
                 <SelectComponent
                     value={langSelected}
                     colorType="navy"
@@ -85,7 +89,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 />
             </div>
             <div className="installation">
-                <p>Package installation</p>
+                <p className="field-title">Package installation</p>
                 <div className="install-copy">
                     <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
                     <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />

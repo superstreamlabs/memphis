@@ -262,13 +262,20 @@
     }
 }
 .modal-wrapper {
-    .sdk-header{
-        display: flex;
-        .title {
-            font-family: 'InterBold';
-            font-size: 18px;
+    .ant-modal-body{
+        padding-top: 0px;
+    }
+    .tabs-headers {
+        .ant-tabs-tab {
+            color: rgba(28, 46, 69, 0.6);
+            font-size: 14px;
+            font-family: 'interMedium';
+        }
+        .ant-tabs-nav-wrap {
+            padding-left: 15px !important;
+        }
+        .ant-tabs-top > .ant-tabs-nav {
             margin: 0;
-            margin-right: 10px;
         }
     }
     .audit-header {

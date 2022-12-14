@@ -36,7 +36,7 @@
         }
     }
     .left-section {
-        width: 275px;
+        max-width:300px;
         .check-box {
             display: flex;
             align-items: center;
@@ -48,6 +48,13 @@
                 margin-left: 25px;
                 color: #2e2c34;
             }
+        }
+        .date{
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            max-width: 300px;
         }
     }
     .middle-section {
