@@ -400,7 +400,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}}}},
 	})
 	if err != nil {
 		return stations, err
@@ -596,6 +596,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		IsDeleted:         false,
 		Schema:            schemaDetails,
 		IdempotencyWindow: body.IdempotencyWindow,
+		DlsConfiguration:  body.DlsConfiguration,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -624,6 +625,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"functions":                newStation.Functions,
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
+				"dls_configuration":        newStation.DlsConfiguration,
 			},
 		}
 	} else {
@@ -642,6 +644,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"functions":                newStation.Functions,
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
+				"dls_configuration":        newStation.DlsConfiguration,
 			},
 		}
 	}
@@ -712,6 +715,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"is_deleted":               false,
 			"schema":                   schemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"dls_configuration":        newStation.DlsConfiguration,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
@@ -730,6 +734,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"is_deleted":               false,
 			"schema":                   emptySchemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"dls_configuration":        newStation.DlsConfiguration,
 		})
 	}
 }
@@ -1701,4 +1706,60 @@ func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) DlsConfiguration(c *gin.Context) {
+	var body models.DlsConfigurationSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Warnf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	exist, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		errMsg := "Station " + body.StationName + " does not exist"
+		serv.Warnf("DlsConfiguration: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
+	if station.DlsConfiguration.Poison != body.Poison || station.DlsConfiguration.Schemaverse != body.Schemaverse {
+		dlsConfigurationNew := models.DlsConfiguration{
+			Poison:      body.Poison,
+			Schemaverse: body.Schemaverse,
+		}
+		filter := bson.M{
+			"name": body.StationName,
+			"$or": []interface{}{
+				bson.M{"is_deleted": false},
+				bson.M{"is_deleted": bson.M{"$exists": false}},
+			}}
+
+		update := bson.M{
+			"$set": bson.M{
+				"dls_configuration": dlsConfigurationNew,
+			},
+		}
+		opts := options.Update().SetUpsert(true)
+
+		_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+		if err != nil {
+			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
 }
