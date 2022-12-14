@@ -81,7 +81,11 @@ func clientSetConfig() error {
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
 	var components []models.SystemComponent
 	if configuration.DOCKER_ENV != "" { // docker env
-		_, err := http.Get("http://localhost:4444")
+		httpProxy := "http://memphis-http-proxy:4444"
+		if configuration.DEV_ENV == "true" {
+			httpProxy = "http://localhost:4444"
+		}
+		_, err := http.Get(httpProxy)
 		if err != nil {
 			components = append(components, models.SystemComponent{
 				Component:   "memphis-http-proxy",
