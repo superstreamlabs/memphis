@@ -254,6 +254,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		Schema:            schemaDetails,
 		Functions:         []models.Function{},
 		IdempotencyWindow: csr.IdempotencyWindow,
+		DlsConfiguration:  csr.DlsConfiguration,
 	}
 
 	err = s.CreateStream(stationName, newStation)
