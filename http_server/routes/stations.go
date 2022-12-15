@@ -35,5 +35,5 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.DELETE("/removeSchemaFromStation", stationsHandler.RemoveSchemaFromStation)
 	stationsRoutes.GET("/getUpdatesForSchemaByStation", stationsHandler.GetUpdatesForSchemaByStation)
 	stationsRoutes.GET("/tierdStorageClicked", stationsHandler.TierdStorageClicked) // TODO to be deleted
-	stationsRoutes.PUT("/updateDlsConfig", stationsHandler.UpdateDlsCofnig)
+	stationsRoutes.PUT("/updateDlsConfig", stationsHandler.UpdateDlsConfig)
 }

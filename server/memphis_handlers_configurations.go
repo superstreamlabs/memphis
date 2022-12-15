@@ -140,29 +140,27 @@ func changePMRetention(pmRetention int) error {
 		return err
 	}
 	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
-	if len(stations) > 0 {
-		for _, station := range stations {
-			sn, err := StationNameFromStr(station.Name)
-			if err != nil {
-				return err
-			}
-			streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-			var storage StorageType
-			if station.StorageType == "memory" {
-				storage = MemoryStorage
-			} else {
-				storage = FileStorage
-			}
-			err = serv.memphisUpdateStream(&StreamConfig{
-				Name:      streamName,
-				Subjects:  []string{streamName + ".>"},
-				Retention: LimitsPolicy,
-				MaxAge:    maxAge,
-				Storage:   storage,
-			})
-			if err != nil {
-				return err
-			}
+	for _, station := range stations {
+		sn, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+		var storage StorageType
+		if station.StorageType == "memory" {
+			storage = MemoryStorage
+		} else {
+			storage = FileStorage
+		}
+		err = serv.memphisUpdateStream(&StreamConfig{
+			Name:      streamName,
+			Subjects:  []string{streamName + ".>"},
+			Retention: LimitsPolicy,
+			MaxAge:    maxAge,
+			Storage:   storage,
+		})
+		if err != nil {
+			return err
 		}
 	}
 

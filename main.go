@@ -140,6 +140,11 @@ func runMemphis(s *server.Server) db.DbInstance {
 		env = "K8S"
 	}
 
+	err = s.LaunchDlsForOldStations()
+	if err != nil {
+		s.Errorf("LaunchDlsForOldStations: " + err.Error())
+	}
+
 	s.Noticef("Memphis broker is ready, ENV: " + env)
 	return dbInstance
 }
@@ -186,10 +191,6 @@ func main() {
 	}
 
 	dbConnection := runMemphis(s)
-	err = s.RelaunchDlsForOldStations()
-	if err != nil {
-		server.PrintAndDie(err.Error())
-	}
 	defer db.Close(dbConnection, s)
 	defer analytics.Close()
 
