@@ -19,7 +19,7 @@ import ReactPlayer from 'react-player';
 import playVideoIcon from '../../assets/images/playVideoIcon.svg';
 import Img404 from '../../assets/images/404.svg';
 
-const VideoPlayer = ({ url }) => {
+const VideoPlayer = ({ url, bgImg }) => {
     const [playState, setPlayState] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
 
@@ -40,6 +40,7 @@ const VideoPlayer = ({ url }) => {
             width="445px"
             url={url}
             onError={() => setIsOffline(true)}
+            style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundSize: 'cover' }}
         ></ReactPlayer>
     );
 };
