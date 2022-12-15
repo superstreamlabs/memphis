@@ -503,8 +503,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	msgs, err := s.memphisGetMsgs(stationName.Intern()+".final",
-		stationName.Intern(),
+	msgs, err := s.memphisGetMsgs(stationName.Intern(),
 		startSequence,
 		messagesToFetch,
 		5*time.Second)
@@ -513,48 +512,54 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		return []models.MessageDetails{}, err
 	}
 
+	stationIsNative := station.IsNative
+
 	for _, msg := range msgs {
-		headersJson, err := DecodeHeader(msg.Header)
-		if err != nil {
-			return nil, err
-		}
-
-		connectionIdHeader := headersJson["$memphis_connectionId"]
-		producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
-
-		//This check for backward compatability
-		if connectionIdHeader == "" || producedByHeader == "" {
-			connectionIdHeader = headersJson["connectionId"]
-			producedByHeader = strings.ToLower(headersJson["producedBy"])
-			if connectionIdHeader == "" || producedByHeader == "" {
-				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			}
-		}
-
-		for header := range headersJson {
-			if strings.HasPrefix(header, "$memphis") {
-				delete(headersJson, header)
-			}
-		}
-
-		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
-			continue
+		messageDetails := models.MessageDetails{
+			MessageSeq: int(msg.Sequence),
+			TimeSent:   msg.Time,
+			Size:       len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		}
 
 		data := hex.EncodeToString(msg.Data)
 		if len(data) > 40 { // get the first chars for preview needs
 			data = data[0:40]
 		}
+		messageDetails.Data = data
 
-		messages = append(messages, models.MessageDetails{
-			MessageSeq:   int(msg.Sequence),
-			Data:         data,
-			ProducedBy:   producedByHeader,
-			ConnectionId: connectionIdHeader,
-			TimeSent:     msg.Time,
-			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
-			Headers:      headersJson,
-		})
+		if stationIsNative {
+			headersJson, err := DecodeHeader(msg.Header)
+			if err != nil {
+				return nil, err
+			}
+
+			connectionIdHeader := headersJson["$memphis_connectionId"]
+			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
+
+			//This check for backward compatability
+			if connectionIdHeader == "" || producedByHeader == "" {
+				connectionIdHeader = headersJson["connectionId"]
+				producedByHeader = strings.ToLower(headersJson["producedBy"])
+				if connectionIdHeader == "" || producedByHeader == "" {
+					return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+				}
+			}
+
+			for header := range headersJson {
+				if strings.HasPrefix(header, "$memphis") {
+					delete(headersJson, header)
+				}
+			}
+
+			if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
+				continue
+			}
+			messageDetails.ProducedBy = producedByHeader
+			messageDetails.ConnectionId = connectionIdHeader
+			messageDetails.Headers = headersJson
+		}
+
+		messages = append(messages, messageDetails)
 	}
 
 	sort.Slice(messages, func(i, j int) bool {
@@ -584,7 +589,7 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 

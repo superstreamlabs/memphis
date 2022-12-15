@@ -13,6 +13,8 @@
 // limitations under the License.package server
 package server
 
+import "encoding/json"
+
 const (
 	// wrapper subject for JSApiTemplateCreate
 	memphisJSApiStreamCreate = "$MEMPHIS.JS.API.STREAM.CREATE"
@@ -41,11 +43,62 @@ func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
 }
 
 func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-	s.Errorf("Yay we wrapped it!")
-	s.jsStreamCreateRequest(sub, c, acc, subject, reply, rmsg)
+	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
+
+	var cfg StreamConfig
+	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
+	if err != nil {
+		s.Warnf(badAPIRequestT, msg)
+		return
+	}
+
+	if err := json.Unmarshal(msg, &cfg); err != nil {
+		resp.Error = NewJSInvalidJSONError()
+		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		return
+	}
+
+	if cfg.Retention != LimitsPolicy {
+		resp.Error = NewJSInvalidJSONError()
+		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		return
+	}
+
+	streamCreated := s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
+	if !streamCreated {
+		return
+	}
+
+	var storageType string
+	if cfg.Storage == MemoryStorage {
+		storageType = "memory"
+	} else if cfg.Storage == FileStorage {
+		storageType = "file"
+	}
+
+	csr := createStationRequest{
+		StationName:       cfg.Name,
+		SchemaName:        "",
+		RetentionType:     "",
+		RetentionValue:    0,
+		StorageType:       storageType,
+		Replicas:          cfg.Replicas,
+		DedupEnabled:      true,
+		DedupWindowMillis: 0,
+		IdempotencyWindow: int(cfg.Duplicates.Milliseconds()),
+	}
+
+	s.createStationDirectIntern(c, reply, &csr, false)
 }
 
 func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-	s.Errorf("Yay we wrapped it!")
-	s.jsStreamDeleteRequest(sub, c, acc, subject, reply, rmsg)
+
+	streamDeleted := s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
+
+	if !streamDeleted {
+		return
+	}
+
+	dsr := destroyStationRequest{StationName: streamNameFromSubject(subject)}
+	s.removeStationDirectIntern(c, reply, &dsr)
 }

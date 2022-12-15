@@ -144,6 +144,11 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
+	s.createStationDirectIntern(c, reply, &csr, true)
+}
+
+func (s *Server) createStationDirectIntern(c *client, reply string, csr *createStationRequest, isNative bool) {
+	createStream := isNative
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -254,13 +259,16 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		Schema:            schemaDetails,
 		Functions:         []models.Function{},
 		IdempotencyWindow: csr.IdempotencyWindow,
+		IsNative:          isNative,
 	}
 
-	err = s.CreateStream(stationName, newStation)
-	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
+	if createStream {
+		err = s.CreateStream(stationName, newStation)
+		if err != nil {
+			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+			respondWithErr(s, reply, err)
+			return
+		}
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
@@ -839,6 +847,10 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
+	s.removeStationDirectIntern(c, reply, &dsr)
+}
+
+func (s *Server) removeStationDirectIntern(c *client, reply string, dsr *destroyStationRequest) {
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
 		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
@@ -1211,6 +1223,28 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	if !station.IsNative {
+		msg := models.MessageResponse{
+			MessageSeq: body.MessageSeq,
+			Message: models.MessagePayload{
+				TimeSent: sm.Time,
+				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
+				Data:     hex.EncodeToString(sm.Data),
+				Headers:  map[string]string{},
+			},
+			Producer: models.ProducerDetails{
+				Name:          "",
+				ConnectionId:  primitive.ObjectID{},
+				ClientAddress: "",
+				CreatedByUser: "",
+				IsActive:      false,
+				IsDeleted:     false,
+			},
+			PoisonedCgs: []models.PoisonedCg{},
+		}
+		c.IndentedJSON(200, msg)
+		return
+	}
 	headersJson, err := DecodeHeader(sm.Header)
 	if err != nil {
 		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())

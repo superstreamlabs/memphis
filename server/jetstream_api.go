@@ -1232,14 +1232,19 @@ func (jsa *jsAccount) tieredReservation(tier string, cfg *StreamConfig) int64 {
 }
 
 // Request to create a stream.
-func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
+	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
+}
+
+func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) bool {
+	var cfg StreamConfig
 	if c == nil || !s.JetStreamEnabled() {
-		return
+		return false
 	}
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
 	if err != nil {
 		s.Warnf(badAPIRequestT, msg)
-		return
+		return false
 	}
 
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
@@ -1248,16 +1253,16 @@ func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, _ *Account,
 	if s.JetStreamIsClustered() {
 		js, cc := s.getJetStreamCluster()
 		if js == nil || cc == nil {
-			return
+			return false
 		}
 		if js.isLeaderless() {
 			resp.Error = NewJSClusterNotAvailError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-			return
+			return false
 		}
 		// Make sure we are meta leader.
 		if !s.JetStreamIsLeader() {
-			return
+			return false
 		}
 	}
 
@@ -1266,54 +1271,53 @@ func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, _ *Account,
 			resp.Error = NewJSNotEnabledForAccountError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		}
-		return
+		return false
 	}
 
-	var cfg StreamConfig
 	if err := json.Unmarshal(msg, &cfg); err != nil {
 		resp.Error = NewJSInvalidJSONError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	streamName := streamNameFromSubject(subject)
 	if streamName != cfg.Name {
 		resp.Error = NewJSStreamMismatchError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	// Check for path like separators in the name.
 	if strings.ContainsAny(streamName, `\/`) {
 		resp.Error = NewJSStreamNameContainsPathSeparatorsError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	// Can't create a stream with a sealed state.
 	if cfg.Sealed {
 		resp.Error = NewJSStreamInvalidConfigError(fmt.Errorf("stream configuration for create can not be sealed"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	// If we are told to do mirror direct but are not mirroring, error.
 	if cfg.MirrorDirect && cfg.Mirror == nil {
 		resp.Error = NewJSStreamInvalidConfigError(fmt.Errorf("stream has no mirror but does have mirror direct"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	// Hand off to cluster for processing.
 	if s.JetStreamIsClustered() {
 		s.jsClusteredStreamRequest(ci, acc, subject, reply, rmsg, &cfg)
-		return
+		return false
 	}
 
 	if err := acc.jsNonClusteredStreamLimitsCheck(&cfg); err != nil {
 		resp.Error = err
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	mset, err := acc.addStream(&cfg)
@@ -1324,7 +1328,7 @@ func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, _ *Account,
 		}
 		resp.Error = NewJSStreamCreateError(err, Unless(err))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 	resp.StreamInfo = &StreamInfo{
 		Created: mset.createdTime(),
@@ -1333,6 +1337,7 @@ func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, _ *Account,
 	}
 	resp.DidCreate = true
 	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+	return true
 }
 
 // Request to update a stream.
@@ -2549,14 +2554,18 @@ func isEmptyRequest(req []byte) bool {
 }
 
 // Request to delete a stream.
-func (s *Server) jsStreamDeleteRequest(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+func (s *Server) jsStreamDeleteRequest(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
+	s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
+}
+
+func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) bool {
 	if c == nil || !s.JetStreamEnabled() {
-		return
+		return false
 	}
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
 	if err != nil {
 		s.Warnf(badAPIRequestT, msg)
-		return
+		return false
 	}
 
 	var resp = JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
@@ -2565,16 +2574,16 @@ func (s *Server) jsStreamDeleteRequest(sub *subscription, c *client, _ *Account,
 	if s.JetStreamIsClustered() {
 		js, cc := s.getJetStreamCluster()
 		if js == nil || cc == nil {
-			return
+			return false
 		}
 		if js.isLeaderless() {
 			resp.Error = NewJSClusterNotAvailError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-			return
+			return false
 		}
 		// Make sure we are meta leader.
 		if !s.JetStreamIsLeader() {
-			return
+			return false
 		}
 	}
 
@@ -2583,36 +2592,37 @@ func (s *Server) jsStreamDeleteRequest(sub *subscription, c *client, _ *Account,
 			resp.Error = NewJSNotEnabledForAccountError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		}
-		return
+		return false
 	}
 
 	if !isEmptyRequest(msg) {
 		resp.Error = NewJSNotEmptyRequestError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 	stream := streamNameFromSubject(subject)
 
 	// Clustered.
 	if s.JetStreamIsClustered() {
 		s.jsClusteredStreamDeleteRequest(ci, acc, stream, subject, reply, msg)
-		return
+		return false
 	}
 
 	mset, err := acc.lookupStream(stream)
 	if err != nil {
 		resp.Error = NewJSStreamNotFoundError(Unless(err))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 
 	if err := mset.delete(); err != nil {
 		resp.Error = NewJSStreamDeleteError(err, Unless(err))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
+		return false
 	}
 	resp.Success = true
 	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
+	return true
 }
 
 // Request to delete a message.

@@ -71,6 +71,7 @@ type Station struct {
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema            SchemaDetails      `json:"schema" bson:"schema"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative          bool               `json:"is_native" bson:"is_native"`
 }
 
 type GetStationResponseSchema struct {
