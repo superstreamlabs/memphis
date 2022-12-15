@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
@@ -106,6 +107,11 @@ func removeStationResources(s *Server, station models.Station) error {
 		return err
 	}
 
+	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
+	if err != nil {
+		return err
+	}
+
 	DeleteTagsFromStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
@@ -122,11 +128,6 @@ func removeStationResources(s *Server, station models.Station) error {
 	)
 	if err != nil {
 		return err
-	}
-
-	err = RemovePoisonMsgsByStation(station.Name)
-	if err != nil {
-		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
 	}
 
 	err = RemoveAllAuditLogsByStation(station.Name)
@@ -260,6 +261,13 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	err = s.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	err = s.CreateDlsStream(stationName, newStation)
+	if err != nil {
+		serv.Errorf("createStationDirect: DLS at station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -603,6 +611,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = sh.S.CreateDlsStream(stationName, newStation)
+	if err != nil {
+		serv.Errorf("CreateStation: DLS at station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1763,4 +1778,67 @@ func (sh StationsHandler) UpdateDlsCofnig(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
+}
+
+func (s *Server) RelaunchDlsForOldStations() error {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return err
+	}
+	if len(stations) > 0 {
+		for _, station := range stations {
+			sn, err := StationNameFromStr(station.Name)
+			if err != nil {
+				return err
+			}
+			streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+
+			_, err = s.memphisStreamInfo(streamName)
+			if err != nil {
+				errMsg := err.Error()
+				if strings.Contains(errMsg, "stream not found") {
+					dlsConfigurationNew := models.DlsConfiguration{
+						Poison:      true,
+						Schemaverse: true,
+					}
+					filter := bson.M{
+						"name": station.Name,
+						"$or": []interface{}{
+							bson.M{"is_deleted": false},
+							bson.M{"is_deleted": bson.M{"$exists": false}},
+						}}
+
+					update := bson.M{
+						"$set": bson.M{
+							"dls_configuration": dlsConfigurationNew,
+						},
+					}
+					opts := options.Update().SetUpsert(true)
+
+					_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+					if err != nil {
+						return err
+					}
+					err = s.CreateDlsStream(sn, station)
+					if err != nil {
+						serv.Errorf("RelaunchDlsForOldStations: CreateDlsStream: At station " + station.Name + ": " + err.Error())
+						return err
+					}
+				} else {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }

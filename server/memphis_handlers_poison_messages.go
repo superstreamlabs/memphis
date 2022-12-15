@@ -216,13 +216,6 @@ func GetPoisonMsgById(messageId primitive.ObjectID) (models.PoisonMessage, error
 	return poisonMessage, nil
 }
 
-func RemovePoisonMsgsByStation(stationName string) error {
-	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"station_name": stationName})
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func RemovePoisonedCg(stationName StationName, cgName string) error {
 	_, err := poisonMessagesCollection.UpdateMany(context.TODO(),

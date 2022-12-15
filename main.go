@@ -186,6 +186,10 @@ func main() {
 	}
 
 	dbConnection := runMemphis(s)
+	err = s.RelaunchDlsForOldStations()
+	if err != nil {
+		server.PrintAndDie(err.Error())
+	}
 	defer db.Close(dbConnection, s)
 	defer analytics.Close()
 
