@@ -140,6 +140,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		env = "K8S"
 	}
 
+	// For backward compatibility
 	err = s.LaunchDlsForOldStations()
 	if err != nil {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
