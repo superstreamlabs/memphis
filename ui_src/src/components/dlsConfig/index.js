@@ -26,10 +26,14 @@ const DlsConfig = () => {
         schemaverse: stationState?.stationSocketData?.dls_configuration?.schemaverse
     });
 
+    const [dlsLoading, setDlsLoading] = useState({
+        poison: false,
+        schemaverse: false
+    });
+
     useEffect(() => {
-        console.log(stationState?.stationMetaData?.name);
-        // setDlsTypes({ poison: stationState?.stationSocketData?.dls_configuration?.poison, schemaverse: stationState?.stationSocketData?.dls_configuration?.schemaverse });
-    }, []);
+        updateDlsConfigurations();
+    }, [dlsTypes]);
 
     useEffect(() => {
         setDlsTypes({
@@ -38,39 +42,50 @@ const DlsConfig = () => {
         });
     }, [stationState?.stationSocketData?.dls_configuration]);
 
-    const updateDlsConfigurations = async (conf) => {
-        console.log(conf);
+    const updateDlsConfigurations = async () => {
+        const conf = {
+            station_name: stationState?.stationMetaData?.name,
+            poison: dlsTypes.poison,
+            schemaverse: dlsTypes.schemaverse
+        };
         try {
             await httpRequest('PUT', ApiEndpoints.UPDATE_DLS_CONFIGURATION, conf);
-        } catch (error) {}
+            setDlsLoading({
+                poison: false,
+                schemaverse: false
+            });
+        } catch (error) {
+            setDlsLoading({
+                poison: false,
+                schemaverse: false
+            });
+        }
     };
 
     const handlePoisonChange = () => {
-        const poisonMsgDLQ = !stationState?.stationSocketData?.dls_configuration?.poison;
-        updateDlsConfigurations({
-            station_name: stationState?.stationMetaData?.name,
-            poison: poisonMsgDLQ,
-            schemaverse: stationState?.stationSocketData?.dls_configuration?.schemaverse
+        setDlsLoading({
+            poison: true,
+            schemaverse: false
         });
+        setDlsTypes({ ...dlsTypes, poison: !dlsTypes.poison });
     };
     const handleSchemaChange = () => {
-        const schemaChangeDLQ = !stationState?.stationSocketData?.dls_configuration?.schemaverse;
-        updateDlsConfigurations({
-            station_name: stationState?.stationMetaData?.name,
-            poison: stationState?.stationSocketData?.dls_configuration?.poison,
-            schemaverse: schemaChangeDLQ
+        setDlsLoading({
+            poison: false,
+            schemaverse: true
         });
+        setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes.schemaverse });
     };
 
     return (
         <div className="dls-config-container">
             <div className="toggle-dls-config">
                 <TitleComponent headerTitle="Poison" typeTitle="sub-header" headerDescription="Contrary to popular belief, Lorem Ipsum is not " />
-                <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} />
+                <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading.poison} />
             </div>
             <div className="toggle-dls-config">
                 <TitleComponent headerTitle="Schemaverse" typeTitle="sub-header" headerDescription="Contrary to popular belief, Lorem Ipsum is not " />
-                <Switcher onChange={handleSchemaChange} checked={dlsTypes?.schemaverse} />
+                <Switcher onChange={handleSchemaChange} checked={dlsTypes?.schemaverse} loading={dlsLoading.schemaverse} />
             </div>
         </div>
     );

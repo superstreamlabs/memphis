@@ -30,6 +30,7 @@ const Switcher = (props) => {
                 checked={checked}
                 checkedChildren={checkedChildren}
                 unCheckedChildren={unCheckedChildren}
+                loading={props.loading}
             />
         </div>
     );

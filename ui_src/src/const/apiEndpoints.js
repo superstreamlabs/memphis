@@ -45,7 +45,7 @@ export const ApiEndpoints = {
     GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
     REMOVE_SCHEMA_FROM_STATION: '/stations/removeSchemaFromStation',
     TIERD_STORAGE_CLICKED: '/stations/tierdStorageClicked',
-    UPDATE_DLS_CONFIGURATION: '/stations/updateDlsCofnig',
+    UPDATE_DLS_CONFIGURATION: '/stations/updateDlsConfig',
 
     //Producers
     GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
