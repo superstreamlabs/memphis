@@ -40,11 +40,11 @@ func (s *Server) ListenForPoisonMessages() {
 
 func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, _, _ string, msg []byte) {
-		go s.HandleNewMessage(copyBytes(msg))
+		go s.handleNewPoisonMessage(copyBytes(msg))
 	}
 }
 
-func (s *Server) HandleNewMessage(msg []byte) {
+func (s *Server) handleNewPoisonMessage(msg []byte) {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
@@ -65,53 +65,10 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		return
 	}
 
-	headersJson, err := DecodeHeader(poisonMessageContent.Header)
-
-	if err != nil {
-		serv.Errorf("HandleNewMessage: " + err.Error())
-		return
-	}
-	connectionIdHeader := headersJson["$memphis_connectionId"]
-	producedByHeader := headersJson["$memphis_producedBy"]
-
-	//This check for backward compatability
-	if connectionIdHeader == "" || producedByHeader == "" {
-		connectionIdHeader = headersJson["connectionId"]
-		producedByHeader = headersJson["producedBy"]
-		if connectionIdHeader == "" || producedByHeader == "" {
-			serv.Warnf("HandleNewMessage: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			return
-		}
-	}
-
-	if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
-		return
-	}
-
-	connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-	_, conn, err := IsConnectionExist(connId)
-	if err != nil {
-		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
-		return
-	}
-
-	producer := models.ProducerDetails{
-		Name:          producedByHeader,
-		ClientAddress: conn.ClientAddress,
-		ConnectionId:  connId,
-	}
-
-	var headers []models.MsgHeader
-	for key, value := range headersJson {
-		header := models.MsgHeader{HeaderKey: key, HeaderValue: value}
-		headers = append(headers, header)
-	}
-
 	messagePayload := models.MessagePayloadDb{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
-		Headers:  headers,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
@@ -121,15 +78,78 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	filter := bson.M{
 		"station_name":      stationName.Ext(),
 		"message_seq":       int(messageSeq),
-		"producer.name":     producedByHeader,
 		"message.time_sent": poisonMessageContent.Time,
 	}
 	var newID = primitive.NewObjectID()
 	update := bson.M{
 		"$setOnInsert": bson.M{"_id": newID},
 		"$push":        bson.M{"poisoned_cgs": poisonedCg},
-		"$set":         bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
+		"$set":         bson.M{"message": messagePayload, "creation_date": time.Now()},
 	}
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("HandleNewMessage: " + err.Error())
+		return
+	}
+
+	if station.IsNative {
+		headersJson, err := DecodeHeader(poisonMessageContent.Header)
+
+		if err != nil {
+			serv.Errorf("HandleNewMessage: " + err.Error())
+			return
+		}
+		connectionIdHeader := headersJson["$memphis_connectionId"]
+		producedByHeader := headersJson["$memphis_producedBy"]
+
+		//This check for backward compatability
+		if connectionIdHeader == "" || producedByHeader == "" {
+			connectionIdHeader = headersJson["connectionId"]
+			producedByHeader = headersJson["producedBy"]
+			if connectionIdHeader == "" || producedByHeader == "" {
+				serv.Warnf("HandleNewMessage: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+				return
+			}
+		}
+
+		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
+			return
+		}
+
+		connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
+		_, conn, err := IsConnectionExist(connId)
+		if err != nil {
+			serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
+			return
+		}
+
+		producer := models.ProducerDetails{
+			Name:          producedByHeader,
+			ClientAddress: conn.ClientAddress,
+			ConnectionId:  connId,
+		}
+
+		var headers []models.MsgHeader
+		for key, value := range headersJson {
+			header := models.MsgHeader{HeaderKey: key, HeaderValue: value}
+			headers = append(headers, header)
+		}
+
+		messagePayload.Headers = headers
+		filter = bson.M{
+			"station_name":      stationName.Ext(),
+			"message_seq":       int(messageSeq),
+			"producer.name":     producedByHeader,
+			"message.time_sent": poisonMessageContent.Time,
+		}
+
+		update = bson.M{
+			"$setOnInsert": bson.M{"_id": newID},
+			"$push":        bson.M{"poisoned_cgs": poisonedCg},
+			"$set":         bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
+		}
+	}
+
 	opts := options.FindOneAndUpdate().SetUpsert(true)
 	res := poisonMessagesCollection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	var poisonMsg models.PoisonMessage

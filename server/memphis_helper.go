@@ -506,7 +506,9 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	msgs, err := s.memphisGetMsgs(stationName.Intern(),
 		startSequence,
 		messagesToFetch,
-		5*time.Second)
+		5*time.Second,
+		station.IsNative, // in non-native stations we don't look for headers in messages
+	)
 	var messages []models.MessageDetails
 	if err != nil {
 		return []models.MessageDetails{}, err
@@ -589,7 +591,7 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 
@@ -611,7 +613,7 @@ func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, 
 	req := []byte(strconv.Itoa(amount))
 
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
 			// ack
 			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 
@@ -623,12 +625,16 @@ func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, 
 				s.Errorf("memphisGetMsgs: " + err.Error())
 			}
 
-			dataFirstIdx := getHdrLastIdxFromRaw(msg) + 1
-			if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
-				s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
-			}
+			dataFirstIdx := 0
+			dataLen := len(msg)
+			if findHeader {
+				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
+				if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
+					s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
+				}
 
-			dataLen := len(msg) - dataFirstIdx
+				dataLen = len(msg) - dataFirstIdx
+			}
 
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
@@ -636,7 +642,7 @@ func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, 
 				Data:     msg[dataFirstIdx : dataFirstIdx+dataLen],
 				Time:     time.Unix(0, int64(intTs)),
 			}
-		}(responseChan, reply, copyBytes(msg))
+		}(responseChan, reply, copyBytes(msg), findHeader)
 	})
 	if err != nil {
 		return nil, err

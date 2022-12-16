@@ -994,49 +994,51 @@ func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (mo
 		return results, errors.New("Station " + station.Name + " does not exist")
 	}
 
-	filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
-	var producer models.Producer
-	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return results, errors.New("Producer does not exist")
-	} else if err != nil {
-		return results, err
-	}
-
-	poisonMessage.Producer.CreatedByUser = producer.CreatedByUser
-	poisonMessage.Producer.IsActive = producer.IsActive
-	poisonMessage.Producer.IsDeleted = producer.IsDeleted
-
-	for i, _ := range poisonMessage.PoisonedCgs {
-		cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
-		if err != nil {
+	if station.IsNative {
+		filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
+		var producer models.Producer
+		err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+		if err == mongo.ErrNoDocuments {
+			return results, errors.New("Producer does not exist")
+		} else if err != nil {
 			return results, err
 		}
 
-		isActive, isDeleted := getCgStatus(cgMembers)
+		poisonMessage.Producer.CreatedByUser = producer.CreatedByUser
+		poisonMessage.Producer.IsActive = producer.IsActive
+		poisonMessage.Producer.IsDeleted = producer.IsDeleted
 
-		stationName, err := StationNameFromStr(poisonMessage.StationName)
-		if err != nil {
-			return results, err
-		}
-		cgInfo, err := sh.S.GetCgInfo(stationName, poisonMessage.PoisonedCgs[i].CgName)
-		if err != nil {
-			return results, err
-		}
+		for i, _ := range poisonMessage.PoisonedCgs {
+			cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
+			if err != nil {
+				return results, err
+			}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
-		if err != nil {
-			return results, err
-		}
+			isActive, isDeleted := getCgStatus(cgMembers)
 
-		poisonMessage.PoisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		poisonMessage.PoisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		poisonMessage.PoisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-		poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-		poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
-		poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
-		poisonMessage.PoisonedCgs[i].IsActive = isActive
-		poisonMessage.PoisonedCgs[i].IsDeleted = isDeleted
+			stationName, err := StationNameFromStr(poisonMessage.StationName)
+			if err != nil {
+				return results, err
+			}
+			cgInfo, err := sh.S.GetCgInfo(stationName, poisonMessage.PoisonedCgs[i].CgName)
+			if err != nil {
+				return results, err
+			}
+
+			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
+			if err != nil {
+				return results, err
+			}
+
+			poisonMessage.PoisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+			poisonMessage.PoisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+			poisonMessage.PoisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+			poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+			poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+			poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
+			poisonMessage.PoisonedCgs[i].IsActive = isActive
+			poisonMessage.PoisonedCgs[i].IsDeleted = isDeleted
+		}
 	}
 
 	headers := map[string]string{}
