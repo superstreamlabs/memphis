@@ -56,11 +56,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-width: 1020px;
+    min-width: 1050px;
     height: 60px;
 }
 .main-header-h1 {
-    font-weight: 600;
+    font-family: 'InterSemiBold';
     font-size: 24px;
     color: var(--blue);
     position: relative;
@@ -68,7 +68,7 @@
     line-height: 30px;
     .length-list {
         color: #b4b4b4;
-        font-weight: 400;
+        font-family: 'Inter';
     }
 }
 
@@ -90,7 +90,7 @@
     background: #f7f7f7 !important;
     border-radius: 15px;
     color: var(--blue);
-    font-weight: bold !important;
+    font-family: 'InterBold' !important;
     font-size: 16px;
 }
 .ant-message-warning .anticon {
@@ -128,7 +128,7 @@
 }
 .menu-item-label {
     font-size: 12px;
-    font-weight: 400;
+    font-family: 'Inter';
     color: black;
     margin-left: 10px;
 

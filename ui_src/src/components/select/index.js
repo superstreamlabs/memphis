@@ -63,7 +63,7 @@ const SelectComponent = ({
             borderColor,
             borderRadius,
             height: height || '40px',
-            fontFamily: fontFamily || 'InterMedium',
+            fontFamily: fontFamily || 'Inter',
             fontSize: fontSize || '14px'
         }
     };

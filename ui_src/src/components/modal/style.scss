@@ -25,20 +25,13 @@
             font-family: 'InterBold';
         }
         label {
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 12px;
             color: #475467;
         }
     }
     .ant-modal-body {
         padding-top: 10px;
-    }
-    .ant-modal-header {
-        border: none;
-        border-radius: 12px 12px 0px 0px;
-    }
-    .ant-modal-content {
-        border-radius: 12px;
     }
     .ant-modal-title {
         font-family: InterSemiBold;
@@ -56,7 +49,7 @@
             background-color: transparent;
             border: none;
             color: var(--purple);
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 12px;
         }
     }
@@ -123,4 +116,14 @@
     overflow-x: hidden;
     overflow-y: auto;
     position: relative;
+}
+
+.ant-modal-header {
+    border: none;
+    border-radius: 8px 8px 0px 0px;
+}
+.ant-modal-content {
+    border-radius: 8px;
+    border: 1px solid #E4E4E4 !important;
+    box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.15) !important;
 }

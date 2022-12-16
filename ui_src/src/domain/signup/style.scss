@@ -33,7 +33,7 @@
         }
         .signup-sub-title {
             font-size: 20px;
-            font-weight: 500;
+            font-family: 'InterMedium';
             margin-bottom: 20px;
         }
         p {
@@ -41,7 +41,7 @@
         }
         .future-updates {
             font-size: 14px;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             margin-bottom: 10px;
         }
 
@@ -88,7 +88,7 @@
     .signin-with-root {
         cursor: pointer;
         display: flex;
-        font-weight: 600;
+        font-family: 'InterSemiBold';
         font-size: 12px;
         margin-bottom: 20px;
         label {
@@ -102,7 +102,7 @@
     .version {
         display: flex;
         p {
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 12px;
             margin-bottom: 0;
             margin-right: 10px;

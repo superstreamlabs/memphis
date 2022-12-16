@@ -2,7 +2,7 @@
     height: 100%;
     .field-title {
         display: flex;
-        font-weight: 400;
+        font-family: 'Inter';
         font-size: 12px;
         margin: 0;
     }
@@ -14,7 +14,7 @@
         display: flex;
         flex-direction: column;
         .create-the-user-header {
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 14px;
             color: #979797;
         }
@@ -40,7 +40,7 @@
             background: #f6f6fc;
 
             .user-connection-details {
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 font-size: 15px;
                 margin-left: 10px;
                 margin-bottom: 0;
@@ -83,7 +83,7 @@
             width: 13.33px;
         }
         .information {
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 14px;
             color: #b4b4b4;
             margin: 0;

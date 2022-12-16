@@ -25,6 +25,7 @@ import Button from '../../../../components/button';
 import Copy from '../../../../components/copy';
 import SelectComponent from '../../../../components/select';
 import Editor, { DiffEditor } from '@monaco-editor/react';
+import SegmentButton from '../../../../components/segmentButton';
 
 const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => {
     const [schemaDetails, setSchemaDetails] = useState([]);
@@ -32,7 +33,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
     const [useschemaLoading, setUseschemaLoading] = useState(false);
     const [activeVersion, setActiveVersion] = useState();
     const [currentVersion, setCurrentversion] = useState();
-    const [isDiff, setIsDiff] = useState(false);
+    const [isDiff, setIsDiff] = useState('Yes');
 
     const getUpdateSchema = async () => {
         try {
@@ -56,7 +57,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
     const useSchema = async () => {
         try {
             setUseschemaLoading(true);
-            const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_name: stationName, schema_name: schemaSelected });
+            const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: [stationName], schema_name: schemaSelected });
             if (data) {
                 dispatch(data);
                 setUseschemaLoading(false);
@@ -91,14 +92,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                     <div className="header">
                         <div className="diff-wrapper">
                             <span>Diff : </span>
-                            <div className="switcher">
-                                <div className={isDiff ? 'yes-no-wrapper yes' : 'yes-no-wrapper border'} onClick={() => setIsDiff(true)}>
-                                    <p>Yes</p>
-                                </div>
-                                <div className={isDiff ? 'yes-no-wrapper' : 'yes-no-wrapper no'} onClick={() => setIsDiff(false)}>
-                                    <p>No</p>
-                                </div>
-                            </div>
+                            <SegmentButton options={['Yes', 'No']} onChange={(e) => setIsDiff(e)} />
                         </div>
                         <div className="structure-message">
                             {schemaDetails.type === 'protobuf' && (
@@ -126,7 +120,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                         </div>
                     </div>
 
-                    {!isDiff && (
+                    {isDiff === 'No' && (
                         <Editor
                             options={{
                                 minimap: { enabled: false },
@@ -136,14 +130,15 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                                 formatOnPaste: true,
                                 formatOnType: true,
                                 readOnly: true,
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                fontFamily: 'Inter'
                             }}
                             language="proto"
                             height="calc(100% - 55px)"
                             value={activeVersion?.schema_content}
                         />
                     )}
-                    {isDiff && (
+                    {isDiff === 'Yes' && (
                         <DiffEditor
                             height="calc(100% - 55px)"
                             language="proto"
@@ -155,7 +150,8 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                                 scrollbar: { verticalScrollbarSize: 2, horizontalScrollbarSize: 0 },
                                 renderOverviewRuler: false,
                                 colorDecorators: true,
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                fontFamily: 'Inter'
                             }}
                         />
                     )}

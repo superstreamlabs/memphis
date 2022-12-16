@@ -59,8 +59,12 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
 
     return (
         <div className="code-example-details-container protocol-example">
+            <div className="header-wrapper">
+                <p>Protocols - Code example</p>
+                <span>It is a long established fact that a reader will be distracted by the readable content of a page</span>
+            </div>
             <div className="select-lan">
-                <p>Protocol</p>
+                <p className="field-title">Protocol</p>
                 <SelectComponent
                     value={langSelected}
                     colorType="navy"
@@ -75,7 +79,7 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
                 />
             </div>
             <div className="installation">
-                <p>Token Generate</p>
+                <p className="field-title">First, generate a token</p>
                 <div className="code-example">
                     <div className="code-content">
                         <Editor
@@ -87,7 +91,8 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
                                 formatOnPaste: true,
                                 formatOnType: true,
                                 readOnly: true,
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                fontFamily: 'Inter'
                             }}
                             language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
                             height="calc(100% - 10px)"
@@ -99,30 +104,33 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
                 </div>
             </div>
             <div className="tabs">
-                {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>}
-                {tabValue === 'Producer' && (
-                    <div className="code-example">
-                        <div className="code-content">
-                            <Editor
-                                options={{
-                                    minimap: { enabled: false },
-                                    scrollbar: { verticalScrollbarSize: 0 },
-                                    scrollBeyondLastLine: false,
-                                    roundedSelection: false,
-                                    formatOnPaste: true,
-                                    formatOnType: true,
-                                    readOnly: true,
-                                    fontSize: '14px'
-                                }}
-                                language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
-                                height="calc(100% - 10px)"
-                                width="calc(100% - 25px)"
-                                value={codeExample.producer}
-                            />
-                            <Copy data={codeExample.producer} />
-                        </div>
+                {/* {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>} */}
+                {/* {tabValue === 'Producer' && ( */}
+                <p className="field-title">Producer</p>
+
+                <div className="code-example">
+                    <div className="code-content produce">
+                        <Editor
+                            options={{
+                                minimap: { enabled: false },
+                                scrollbar: { verticalScrollbarSize: 0 },
+                                scrollBeyondLastLine: false,
+                                roundedSelection: false,
+                                formatOnPaste: true,
+                                formatOnType: true,
+                                readOnly: true,
+                                fontSize: '14px',
+                                fontFamily: 'Inter'
+                            }}
+                            language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
+                            height="calc(100% - 10px)"
+                            width="calc(100% - 25px)"
+                            value={codeExample.producer}
+                        />
+                        <Copy data={codeExample.producer} />
                     </div>
-                )}
+                </div>
+                {/* )} */}
             </div>
         </div>
     );

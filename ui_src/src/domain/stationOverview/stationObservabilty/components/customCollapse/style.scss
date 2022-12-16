@@ -33,7 +33,7 @@
             display: flex;
             justify-content: center;
             border-radius: 20px;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             margin-left: 10px;
             padding: 0 10px;
         }
@@ -42,7 +42,7 @@
         display: flex;
         justify-content: space-between;
         p {
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 12px;
             color: #84818a;
             min-width: 80px;
@@ -57,7 +57,7 @@
     .message {
         font-size: 11px;
         color: #84818a;
-        font-weight: 400;
+        font-family: 'Inter';
         max-height: 195px;
         overflow: scroll;
         padding-right: 10px;
@@ -71,46 +71,9 @@
         .second-row {
             position: absolute;
             top: 40px;
-            left: 12px;
+            // left: 12px;
             p {
                 margin: 0;
-            }
-            .switcher {
-                border-radius: 8px;
-                height: 25px;
-                display: flex;
-                align-items: center;
-                p {
-                    font-size: 12px;
-                    font-family: 'InterMedium';
-                }
-                .selected-parser {
-                    height: 100%;
-                    justify-content: center;
-                    display: flex;
-                    align-items: center;
-                    cursor: pointer;
-                    padding: 0px 10px;
-                    box-shadow: 0px 0.672566px 0.672566px rgba(0, 0, 0, 0.06);
-                    border: 0.672566px solid #e8e8e8;
-                    height: 25px;
-                }
-                .left {
-                    border-right: 1px solid #e8e8e8;
-                    border-top-left-radius: 7px;
-                    border-bottom-left-radius: 7px;
-                }
-                .selected {
-                    color: var(--purple);
-                    background-color: rgba(101, 87, 255, 0.1);
-                }
-                .right {
-                    border-top-right-radius: 7px;
-                    border-bottom-right-radius: 7px;
-                }
-                .middle {
-                    border-right: 1px solid #e8e8e8;
-                }
             }
         }
     }

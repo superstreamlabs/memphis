@@ -16,8 +16,18 @@ import './style.scss';
 import { Checkbox } from 'antd';
 import React from 'react';
 
-const CheckboxComponent = ({ checkName, id, checked, onChange, className }) => {
-    return <Checkbox className={className || 'check-box-wrapper'} checked={checked} id={id} onChange={onChange} name={checkName} />;
+const CheckboxComponent = ({ indeterminate = false, disabled = false, checkName, id, checked, onChange, className }) => {
+    return (
+        <Checkbox
+            indeterminate={indeterminate}
+            className={className || 'check-box-wrapper'}
+            checked={checked}
+            id={id}
+            onChange={onChange}
+            name={checkName}
+            disabled={disabled}
+        />
+    );
 };
 
 export default CheckboxComponent;

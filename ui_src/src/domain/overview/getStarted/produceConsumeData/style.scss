@@ -24,11 +24,11 @@
         margin: 0;
     }
     .title {
-        font-weight: 600;
+        font-family: 'InterSemiBold';
         font-size: 16px;
     }
     .description {
-        font-weight: 400;
+        font-family: 'Inter';
         font-size: 12px;
         color: #b4b4b4;
     }
@@ -53,6 +53,7 @@
                 height: calc(100% - 50px);
                 display: flex;
                 align-items: flex-start;
+                padding-top: 10px;
                 p {
                     margin: 0;
                     white-space: pre-line;
@@ -83,7 +84,7 @@
         margin-bottom: 18px;
     }
     .header-create-produce-data {
-        font-weight: 600;
+        font-family: 'InterSemiBold';
         font-size: 24px;
         line-height: 29px;
         color: #1d1d1d;
@@ -91,7 +92,7 @@
     }
 
     .header-language {
-        font-weight: 600;
+        font-family: 'InterSemiBold';
         font-size: 16px;
         line-height: 20px;
         color: #2e2c34;
@@ -125,7 +126,7 @@
         }
 
         .successfully-consume-produce {
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 18px;
             color: #1d1d1d;
             margin-top: 15px;

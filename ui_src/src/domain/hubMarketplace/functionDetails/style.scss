@@ -10,7 +10,7 @@
         height: 8vh;
         p {
             font-size: 16px;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             margin-bottom: 0;
         }
     }
@@ -31,7 +31,7 @@
                 margin-bottom: 30px;
             }
             .function-name {
-                font-weight: 800;
+                font-family: 'InterBold';
                 size: 14px;
                 margin-bottom: 2px;
             }
@@ -45,7 +45,7 @@
             }
             .visit-hub {
                 color: #5a4fe5;
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 cursor: pointer;
             }
         }
