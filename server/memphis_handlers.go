@@ -229,6 +229,11 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 		return newStation, false, err
 	}
 
+	err = s.CreateDlsStream(sn, newStation)
+	if err != nil {
+		return newStation, false, err
+	}
+
 	filter := bson.M{"name": newStation.Name, "is_deleted": false}
 	update := bson.M{
 		"$setOnInsert": bson.M{

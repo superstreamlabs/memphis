@@ -45,6 +45,7 @@ const (
 	syslogsWarnSubject = "warn"
 	syslogsErrSubject  = "err"
 	syslogsSysSubject  = "sys"
+	dlsStreamName      = "$memphis-%s-dls"
 )
 
 // JetStream API request kinds
@@ -169,6 +170,39 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			MaxConsumers: -1,
 			MaxMsgs:      int64(maxMsgs),
 			MaxBytes:     int64(maxBytes),
+			Discard:      DiscardOld,
+			MaxAge:       maxAge,
+			MaxMsgsPer:   -1,
+			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:      storage,
+			Replicas:     station.Replicas,
+			NoAck:        false,
+			Duplicates:   idempotencyWindow,
+		})
+}
+
+func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
+	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+
+	var storage StorageType
+	if station.StorageType == "memory" {
+		storage = MemoryStorage
+	} else {
+		storage = FileStorage
+	}
+
+	idempotencyWindow := time.Duration(100) * time.Millisecond // minimum is 100 millis
+
+	name := fmt.Sprintf(dlsStreamName, sn.Intern())
+
+	return s.
+		memphisAddStream(&StreamConfig{
+			Name:         (name),
+			Subjects:     []string{name + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(-1),
+			MaxBytes:     int64(-1),
 			Discard:      DiscardOld,
 			MaxAge:       maxAge,
 			MaxMsgsPer:   -1,
