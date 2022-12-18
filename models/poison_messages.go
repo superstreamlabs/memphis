@@ -81,6 +81,26 @@ type PoisonMessageResponse struct {
 	CreationDate time.Time          `json:"creation_date"`
 }
 
+type DlqMessage struct {
+	ID           string           `json:"id"`
+	StationName  string           `json:"station_name"`
+	MessageSeq   int              `json:"message_seq"`
+	Producer     ProducerDetails  `json:"producer"`
+	PoisonedCg   PoisonedCg       `json:"poisoned_cg"`
+	Message      MessagePayloadDb `json:"message"`
+	CreationDate time.Time        `json:"creation_date"`
+}
+
+type DlqMessageResponse struct {
+	ID           string           `json:"id"`
+	StationName  string           `json:"station_name"`
+	MessageSeq   int              `json:"message_seq"`
+	Producer     ProducerDetails  `json:"producer"`
+	PoisonedCg   PoisonedCg       `json:"poisoned_cg"`
+	Message      MessagePayloadDb `json:"message"`
+	CreationDate time.Time        `json:"creation_date"`
+}
+
 type LightPoisonMessage struct {
 	ID      primitive.ObjectID `json:"_id" bson:"_id"`
 	Message MessagePayloadDb   `json:"message" bson:"message"`

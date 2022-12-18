@@ -16,8 +16,10 @@ package server
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
+	"strconv"
 
 	"context"
 	"time"
@@ -91,7 +93,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	_, conn, err := IsConnectionExist(connId)
 	if err != nil {
-		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: While getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -118,35 +120,34 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		PoisoningTime:   time.Now(),
 		DeliveriesCount: int(deliveriesCount),
 	}
-	filter := bson.M{
-		"station_name":      stationName.Ext(),
-		"message_seq":       int(messageSeq),
-		"producer.name":     producedByHeader,
-		"message.time_sent": poisonMessageContent.Time,
+
+	id := GetPoisonMsgId(int(messageSeq), producedByHeader, poisonMessageContent.Time)
+	pmMessage := models.DlqMessage{
+		ID:           id,
+		StationName:  stationName.Ext(),
+		MessageSeq:   int(messageSeq),
+		Producer:     producer,
+		PoisonedCg:   poisonedCg,
+		Message:      messagePayload,
+		CreationDate: time.Now(),
 	}
-	var newID = primitive.NewObjectID()
-	update := bson.M{
-		"$setOnInsert": bson.M{"_id": newID},
-		"$push":        bson.M{"poisoned_cgs": poisonedCg},
-		"$set":         bson.M{"message": messagePayload, "producer": producer, "creation_date": time.Now()},
-	}
-	opts := options.FindOneAndUpdate().SetUpsert(true)
-	res := poisonMessagesCollection.FindOneAndUpdate(context.TODO(), filter, update, opts)
-	var poisonMsg models.PoisonMessage
-	var idForUrl string
-	err = res.Decode(&poisonMsg)
-	if err == mongo.ErrNoDocuments {
-		idForUrl = newID.Hex()
-	} else if err != nil {
-		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
-		return
-	} else {
-		idForUrl = poisonMsg.ID.Hex()
-	}
-	if UI_url == "" {
+	poisonSubjectName := GetDlqSubject("poison", stationName.Intern(), id)
+	hdrs, err := json.Marshal(headers)
+	if err != nil {
+		serv.Errorf("HandleNewMessage: While getting notified about a poison message: " + err.Error())
 		return
 	}
-	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
+	var hdrsMap map[string]string
+	json.Unmarshal(hdrs, &hdrsMap)
+	msgToSend, err := json.Marshal(pmMessage)
+	if err != nil {
+		serv.Errorf("HandleNewMessage: While getting notified about a poison message: " + err.Error())
+		return
+	}
+	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), poisonSubjectName, hdrsMap, msgToSend)
+
+	idForUrl := pmMessage.ID
+	var msgUrl = idForUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
 	if err != nil {
 		serv.Warnf("HandleNewMessage: Error while sending a poison message notification: " + err.Error())
@@ -216,7 +217,6 @@ func GetPoisonMsgById(messageId primitive.ObjectID) (models.PoisonMessage, error
 	return poisonMessage, nil
 }
 
-
 func RemovePoisonedCg(stationName StationName, cgName string) error {
 	_, err := poisonMessagesCollection.UpdateMany(context.TODO(),
 		bson.M{"station_name": stationName.Ext()},
@@ -256,4 +256,12 @@ func GetPoisonedCgsByMessage(stationNameExt string, message models.MessageDetail
 	}
 
 	return poisonMessage.PoisonedCgs, nil
+}
+
+func GetDlqSubject(subjType string, stationName string, id string) string {
+	return fmt.Sprintf(dlsStreamName, stationName) + "." + subjType + "." + id
+}
+
+func GetPoisonMsgId(messageSeq int, producerName string, timeSent time.Time) string {
+	return producerName + "-" + timeSent.String() + "-" + strconv.Itoa(messageSeq)
 }
