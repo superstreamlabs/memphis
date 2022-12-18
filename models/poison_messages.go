@@ -47,6 +47,13 @@ type MessagePayload struct {
 	Headers  map[string]string `json:"headers"`
 }
 
+type MessagePayloadDlq struct {
+	TimeSent time.Time   `json:"time_sent"`
+	Size     int         `json:"size"`
+	Data     string      `json:"data"`
+	Headers  []MsgHeader `json:"headers"`
+}
+
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name" bson:"cg_name"`
 	PoisoningTime       time.Time  `json:"poisoning_time" bson:"poisoning_time"`
@@ -82,13 +89,13 @@ type PoisonMessageResponse struct {
 }
 
 type DlqMessage struct {
-	ID           string          `json:"id"`
-	StationName  string          `json:"station_name"`
-	MessageSeq   int             `json:"message_seq"`
-	Producer     ProducerDetails `json:"producer"`
-	PoisonedCg   PoisonedCg      `json:"poisoned_cg"`
-	Message      MessagePayload  `json:"message"`
-	CreationDate time.Time       `json:"creation_date"`
+	ID           string            `json:"id"`
+	StationName  string            `json:"station_name"`
+	MessageSeq   int               `json:"message_seq"`
+	Producer     ProducerDetails   `json:"producer"`
+	PoisonedCg   PoisonedCg        `json:"poisoned_cg"`
+	Message      MessagePayloadDlq `json:"message"`
+	CreationDate time.Time         `json:"creation_date"`
 }
 
 type DlqMessageResponse struct {

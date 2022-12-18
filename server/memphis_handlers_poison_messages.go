@@ -103,11 +103,17 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		ConnectionId:  connId,
 	}
 
-	messagePayload := models.MessagePayload{
+	var headers []models.MsgHeader
+	for key, value := range headersJson {
+		header := models.MsgHeader{HeaderKey: key, HeaderValue: value}
+		headers = append(headers, header)
+	}
+
+	messagePayload := models.MessagePayloadDlq{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
-		Headers:  headersJson,
+		Headers:  headers,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
