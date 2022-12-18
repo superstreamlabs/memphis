@@ -137,7 +137,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), poisonSubjectName, nil, msgToSend)
+	s.sendInternalAccountMsg(s.GlobalAccount(), poisonSubjectName, msgToSend)
 
 	idForUrl := pmMessage.ID
 	var msgUrl = idForUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
