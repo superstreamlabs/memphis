@@ -82,23 +82,23 @@ type PoisonMessageResponse struct {
 }
 
 type DlqMessage struct {
-	ID           string           `json:"id"`
-	StationName  string           `json:"station_name"`
-	MessageSeq   int              `json:"message_seq"`
-	Producer     ProducerDetails  `json:"producer"`
-	PoisonedCg   PoisonedCg       `json:"poisoned_cg"`
-	Message      MessagePayloadDb `json:"message"`
-	CreationDate time.Time        `json:"creation_date"`
+	ID           string          `json:"id"`
+	StationName  string          `json:"station_name"`
+	MessageSeq   int             `json:"message_seq"`
+	Producer     ProducerDetails `json:"producer"`
+	PoisonedCg   PoisonedCg      `json:"poisoned_cg"`
+	Message      MessagePayload  `json:"message"`
+	CreationDate time.Time       `json:"creation_date"`
 }
 
 type DlqMessageResponse struct {
-	ID           string           `json:"id"`
-	StationName  string           `json:"station_name"`
-	MessageSeq   int              `json:"message_seq"`
-	Producer     ProducerDetails  `json:"producer"`
-	PoisonedCg   PoisonedCg       `json:"poisoned_cg"`
-	Message      MessagePayloadDb `json:"message"`
-	CreationDate time.Time        `json:"creation_date"`
+	ID           string          `json:"id"`
+	StationName  string          `json:"station_name"`
+	MessageSeq   int             `json:"message_seq"`
+	Producer     ProducerDetails `json:"producer"`
+	PoisonedCg   PoisonedCg      `json:"poisoned_cg"`
+	Message      MessagePayload  `json:"message"`
+	CreationDate time.Time       `json:"creation_date"`
 }
 
 type LightPoisonMessage struct {

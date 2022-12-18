@@ -93,7 +93,7 @@ func (s *Server) HandleNewMessage(msg []byte) {
 	connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	_, conn, err := IsConnectionExist(connId)
 	if err != nil {
-		serv.Errorf("HandleNewMessage: While getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 
@@ -103,17 +103,11 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		ConnectionId:  connId,
 	}
 
-	var headers []models.MsgHeader
-	for key, value := range headersJson {
-		header := models.MsgHeader{HeaderKey: key, HeaderValue: value}
-		headers = append(headers, header)
-	}
-
-	messagePayload := models.MessagePayloadDb{
+	messagePayload := models.MessagePayload{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     string(poisonMessageContent.Data),
-		Headers:  headers,
+		Headers:  headersJson,
 	}
 	poisonedCg := models.PoisonedCg{
 		CgName:          cgName,
@@ -132,19 +126,12 @@ func (s *Server) HandleNewMessage(msg []byte) {
 		CreationDate: time.Now(),
 	}
 	poisonSubjectName := GetDlqSubject("poison", stationName.Intern(), id)
-	hdrs, err := json.Marshal(headers)
-	if err != nil {
-		serv.Errorf("HandleNewMessage: While getting notified about a poison message: " + err.Error())
-		return
-	}
-	var hdrsMap map[string]string
-	json.Unmarshal(hdrs, &hdrsMap)
 	msgToSend, err := json.Marshal(pmMessage)
 	if err != nil {
-		serv.Errorf("HandleNewMessage: While getting notified about a poison message: " + err.Error())
+		serv.Errorf("HandleNewMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), poisonSubjectName, hdrsMap, msgToSend)
+	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), poisonSubjectName, nil, msgToSend)
 
 	idForUrl := pmMessage.ID
 	var msgUrl = idForUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
