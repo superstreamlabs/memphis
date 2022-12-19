@@ -82,8 +82,6 @@ function OverView() {
     const [showWelcome, setShowWelcome] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
-    const [brokerName, setBrokerName] = useState('');
-    let sub
 
     const getRandomInt = (max) => {
         return Math.floor(Math.random() * max);
@@ -130,11 +128,19 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        if (brokerName !== ""){
-            // setSub(state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`))
-            sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`);
-            const jc = JSONCodec();
-            // const sc = StringCodec();
+        const sc = StringCodec();
+        const jc = JSONCodec();
+        let sub;
+
+        setTimeout(async () => {
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`);
+            } catch (err) {
+                console.log(`problem with request: ${err}`);
+            }
+            setisLoading(false);
             if (sub) {
                 (async () => {
                     for await (const msg of sub) {
@@ -144,29 +150,10 @@ function OverView() {
                     }
                 })();
             }
-        }
-    }, [brokerName]);
-
-    useEffect(() => {
-        // getServerName();
-        const sc = StringCodec();
-    
-        setTimeout(() => {
-            state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'))
-            .then((brokerName) => {
-                const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
-                setBrokerName(serverName);
-            })
-            .catch((err) => {
-                console.log(`problem with request: ${err}`);
-            });
-            setisLoading(false);
-        }, 1000);
-        return () => {
-            if (brokerName !== "" && sub){
+            return () => {
                 sub?.unsubscribe();
-            }
-        };
+            };
+        }, 1000);
     }, [state.socket]);
 
     const setBotImage = (botId) => {
