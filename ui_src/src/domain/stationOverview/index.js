@@ -34,6 +34,7 @@ const StationOverview = () => {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
+    const [brokerName, setBrokerName] = useState('');
 
     const getStaionMetaData = async () => {
         try {
@@ -77,11 +78,11 @@ const StationOverview = () => {
         setisLoading(true);
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getStaionMetaData();
-        getStationDetails();
+        getStationDetails(); 
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}`);
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}_${brokerName}`);
         const jc = JSONCodec();
         const sc = StringCodec();
         if (sub) {
@@ -95,7 +96,14 @@ const StationOverview = () => {
         }
 
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
+            state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'))
+            .then((brokerName) => {
+                const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                setBrokerName(serverName);
+            })
+            .catch((err) => {
+                console.log(`problem with request: ${err}`);
+            });
         }, 1000);
         return () => {
             sub?.unsubscribe();

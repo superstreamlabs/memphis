@@ -82,6 +82,8 @@ function OverView() {
     const [showWelcome, setShowWelcome] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
+    const [brokerName, setBrokerName] = useState('');
+    let sub
 
     const getRandomInt = (max) => {
         return Math.floor(Math.random() * max);
@@ -128,24 +130,42 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data`);
-        const jc = JSONCodec();
-        const sc = StringCodec();
-        if (sub) {
-            (async () => {
-                for await (const msg of sub) {
-                    let data = jc.decode(msg.data);
-                    data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-                    dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-                }
-            })();
+        if (brokerName !== ""){
+            // setSub(state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`))
+            sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`);
+            const jc = JSONCodec();
+            // const sc = StringCodec();
+            if (sub) {
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+                        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+                    }
+                })();
+            }
         }
+    }, [brokerName]);
+
+    useEffect(() => {
+        // getServerName();
+        const sc = StringCodec();
+    
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+            state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'))
+            .then((brokerName) => {
+                const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                setBrokerName(serverName);
+            })
+            .catch((err) => {
+                console.log(`problem with request: ${err}`);
+            });
             setisLoading(false);
         }, 1000);
         return () => {
-            sub?.unsubscribe();
+            if (brokerName !== "" && sub){
+                sub?.unsubscribe();
+            }
         };
     }, [state.socket]);
 

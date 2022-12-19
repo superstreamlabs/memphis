@@ -67,7 +67,7 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan st
 		select {
 		case <-ticker.C:
 			for k, updateFiller := range subs {
-				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
+				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"_"+configuration.SERVER_NAME)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
 					delete(subs, k)
@@ -130,6 +130,23 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		default:
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
+		if configuration.SERVER_NAME == "" {
+			configuration.SERVER_NAME = "BROKER"
+		}
+
+		type brokerName struct {
+			Name string `json:"name"`
+		}
+
+		broName := brokerName{configuration.SERVER_NAME}
+		serverName, err := json.Marshal(broName)
+
+		if err != nil {
+			s.Errorf("memphis websocket: " + err.Error())
+			return
+		}
+
+		s.sendInternalAccountMsg(s.GlobalAccount(), reply, serverName)
 	}
 }
 

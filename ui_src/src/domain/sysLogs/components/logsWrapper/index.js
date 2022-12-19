@@ -25,7 +25,7 @@ import { httpRequest } from '../../../../services/http';
 import { Context } from '../../../../hooks/store';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { StringCodec, JSONCodec, DebugEvents } from 'nats.ws';
+import { StringCodec, JSONCodec } from 'nats.ws';
 let sub;
 
 const LogsWrapper = () => {
@@ -43,6 +43,7 @@ const LogsWrapper = () => {
     const [socketOn, setSocketOn] = useState(false);
     const [changeSelected, setChangeSelected] = useState(true);
     const [lastMgsSeq, setLastMgsSeq] = useState(-1);
+    const [brokerName, setBrokerName] = useState('');
 
     const stateRef = useRef([]);
 
@@ -92,7 +93,8 @@ const LogsWrapper = () => {
     }, [stateRef.current[1]]);
 
     const startListen = () => {
-        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
+        console.log("servername logs", brokerName)
+        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data_${brokerName}`);
         const jc = JSONCodec();
         const sc = StringCodec();
         if (sub) {
@@ -112,9 +114,23 @@ const LogsWrapper = () => {
         }
         setTimeout(() => {
             if (logType === '') {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
+                state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'))
+                .then((brokerName) => {
+                    const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                    setBrokerName(serverName);
+                })
+                .catch((err) => {
+                    console.log(`problem with request: ${err}`);
+                });
             } else {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'));
+                state.socket?.request(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'))
+                .then((brokerName) => {
+                    const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                    setBrokerName(serverName);
+                })
+                .catch((err) => {
+                    console.log(`problem with request: ${err}`);
+                });
             }
         }, 2000);
     };

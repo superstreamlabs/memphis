@@ -39,6 +39,7 @@ const MessageJourney = () => {
     const [messageData, setMessageData] = useState({});
     const [nodes, setNodes] = useState();
     const [edges, setEdges] = useState();
+    const [brokerName, setBrokerName] = useState('');
 
     const history = useHistory();
 
@@ -61,7 +62,8 @@ const MessageJourney = () => {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}`);
+        // getServerName();
+        const sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}_${brokerName}`);
         const jc = JSONCodec();
         const sc = StringCodec();
         if (sub) {
@@ -74,7 +76,14 @@ const MessageJourney = () => {
         }
 
         setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
+            state.socket?.request(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'))
+            .then((brokerName) => {
+                const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                setBrokerName(serverName);
+            })
+            .catch((err) => {
+                console.log(`problem with request: ${err}`);
+            });
         }, 1000);
 
         return () => {

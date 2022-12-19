@@ -40,6 +40,8 @@ const Filter = ({ filterComponent, height }) => {
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
+    const [brokerName, setBrokerName] = useState('');
+    let sub;
 
     useEffect(() => {
         if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: '' });
@@ -69,33 +71,63 @@ const Filter = ({ filterComponent, height }) => {
     };
 
     useEffect(() => {
+        if (brokerName !== '') {
+            // setSub(state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`))
+            sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`);
+            const jc = JSONCodec();
+            if (sub) {
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+                        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+                    }
+                })();
+            }
+        }
+    }, [brokerName]);
+    //
+
+    useEffect(() => {
         let sub;
         let jc;
         let sc;
+        // getServerName();
         switch (filterComponent) {
             case 'stations':
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
-                jc = JSONCodec();
+                // getServerName();
+                // console.log('shoham>>>', brokerName);
+                // sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data_${brokerName}`);
+                // jc = JSONCodec();
                 sc = StringCodec();
-                if (sub) {
-                    (async () => {
-                        for await (const msg of sub) {
-                            let data = jc.decode(msg.data);
-                            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-                            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-                        }
-                    })();
-                }
-
+                // if (sub) {
+                //     (async () => {
+                //         console.log("sub")
+                //         for await (const msg of sub) {
+                //             let data = jc.decode(msg.data);
+                //             data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                //             // console.log({data})
+                //             dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                //         }
+                //     })();
+                // }
                 setTimeout(() => {
-                    state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
+                    state.socket
+                        ?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'))
+                        .then((brokerName) => {
+                            const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                            setBrokerName(serverName);
+                        })
+                        .catch((err) => {
+                            console.log(`problem with request: ${err}`);
+                        });
                 }, 1000);
 
                 return () => {
                     sub?.unsubscribe();
                 };
             case 'schemaverse':
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data_${brokerName}`);
                 jc = JSONCodec();
                 sc = StringCodec();
                 if (sub) {
@@ -106,13 +138,22 @@ const Filter = ({ filterComponent, height }) => {
                         }
                     })();
                 }
-
                 setTimeout(() => {
-                    state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
+                    state.socket
+                        ?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'))
+                        .then((brokerName) => {
+                            const serverName = JSON.parse(sc.decode(brokerName.data))['name'];
+                            setBrokerName(serverName);
+                        })
+                        .catch((err) => {
+                            console.log(`problem with request: ${err}`);
+                        });
                 }, 1000);
 
                 return () => {
-                    sub?.unsubscribe();
+                    if (brokerName !== '' && sub) {
+                        sub?.unsubscribe();
+                    }
                 };
         }
     }, [state.socket]);
