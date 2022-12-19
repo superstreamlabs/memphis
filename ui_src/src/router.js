@@ -17,7 +17,7 @@ const pathDomains = {
     overview: '/overview',
     stations: '/stations',
     users: '/users',
-    schemas: '/schemas',
+    schemaverse: '/schemaverse',
     preferences: '/preferences',
     sysLogs: '/logs'
 };

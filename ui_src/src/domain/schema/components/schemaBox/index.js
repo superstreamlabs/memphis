@@ -15,7 +15,8 @@ import './style.scss';
 
 import { CloseRounded } from '@material-ui/icons';
 import { Drawer, Button, Space } from 'antd';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 
 import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
@@ -26,12 +27,21 @@ import TagsList from '../../../../components/tagList';
 import SchemaDetails from '../schemaDetails';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
+import pathDomains from '../../../../router';
 
 function SchemaBox({ schema, handleCheckedClick, isCheck }) {
+    const history = useHistory();
     const [open, setOpen] = useState(false);
 
+    useEffect(() => {
+        const url = window.location.href;
+        const schemaName = url.split('schemaverse/')[1];
+        if (schemaName === schema?.name) setOpen(true);
+    }, []);
     const handleDrawer = (flag) => {
         setOpen(flag);
+        if (flag) history.push(`${pathDomains.schemaverse}/${schema?.name}`);
+        else history.push(pathDomains.schemaverse);
     };
 
     return (

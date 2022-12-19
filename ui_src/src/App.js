@@ -147,7 +147,6 @@ const App = withRouter(() => {
                             path={`${pathDomains.preferences}/cluster_configuration`}
                             component={<AppWrapper content={<Preferences step={'cluster_configuration'} />}></AppWrapper>}
                         />
-                        c
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}
@@ -189,7 +188,20 @@ const App = withRouter(() => {
                         />
                         <PrivateRoute
                             exact
-                            path={pathDomains.schemas}
+                            path={pathDomains.schemaverse}
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <SchemaManagment />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.schemaverse}/:name`}
                             component={
                                 <AppWrapper
                                     content={

@@ -14,8 +14,6 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { useHistory } from 'react-router-dom';
-
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
 import searchIcon from '../../../../assets/images/searchIcon.svg';
@@ -30,8 +28,10 @@ import Modal from '../../../../components/modal';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import { Link, useHistory } from 'react-router-dom';
+import pathDomains from '../../../../router';
 
-function SchemaList() {
+function SchemaList({ createNew }) {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
@@ -104,8 +104,9 @@ function SchemaList() {
         setSearchInput(e.target.value);
     };
 
-    const createNew = () => {
-        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
+    const createNewSchema = () => {
+        history.push(`${pathDomains.schemaverse}/$new`);
+        createNew(true);
     };
 
     return (
@@ -176,7 +177,7 @@ function SchemaList() {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        onClick={() => createNew()}
+                        onClick={createNewSchema}
                     />
                     {/* <Button
                         width="145px"

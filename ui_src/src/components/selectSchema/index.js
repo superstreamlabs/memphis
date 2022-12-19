@@ -36,8 +36,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
     };
 
     const createNew = () => {
-        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
-        history.push(pathDomains.schemas);
+        history.push(pathDomains.schemaverse);
     };
 
     return (

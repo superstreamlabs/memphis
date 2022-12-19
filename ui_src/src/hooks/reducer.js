@@ -83,12 +83,6 @@ const Reducer = (state, action) => {
                 ...state,
                 FilterOption: action.payload
             };
-        case 'SET_CREATE_SCHEMA':
-            return {
-                ...state,
-                createSchema: action.payload
-            };
-
         case 'SET_SCHEMA_TAGS':
             index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
             updateDomainState[index].tags = action.payload.tags;
