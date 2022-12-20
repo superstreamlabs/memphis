@@ -138,7 +138,7 @@ function OverView() {
                 const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
             } catch (err) {
-                console.log(`problem with request: ${err}`);
+                return;
             }
             setisLoading(false);
             if (sub) {

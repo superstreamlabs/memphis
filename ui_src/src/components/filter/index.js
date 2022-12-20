@@ -84,13 +84,13 @@ const Filter = ({ filterComponent, height }) => {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
                     } catch (err) {
-                        console.log(`problem with request: ${err}`);
+                        return;
                     }
                     if (sub) {
                         (async () => {
                             for await (const msg of sub) {
                                 let data = jc.decode(msg.data);
-                                data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                                data?.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
                                 dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
                             }
                         })();
@@ -109,7 +109,7 @@ const Filter = ({ filterComponent, height }) => {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
                     } catch (err) {
-                        console.log(`problem with request: ${err}`);
+                        return;
                     }
                     if (sub) {
                         (async () => {

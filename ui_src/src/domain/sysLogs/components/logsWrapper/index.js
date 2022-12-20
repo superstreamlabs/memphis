@@ -103,7 +103,7 @@ const LogsWrapper = () => {
                     const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
                 } catch (err) {
-                    console.log(`problem with request: ${err}`);
+                    return;
                 }
             } else {
                 try {
@@ -111,7 +111,7 @@ const LogsWrapper = () => {
                     const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
                 } catch (err) {
-                    console.log(`problem with request: ${err}`);
+                    return;
                 }
             }
 

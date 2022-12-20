@@ -71,7 +71,7 @@ const MessageJourney = () => {
                 const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}.${brokerName}`);
             } catch (err) {
-                console.log(`problem with request: ${err}`);
+                return;
             }
             if (sub) {
                 (async () => {

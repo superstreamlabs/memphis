@@ -90,7 +90,7 @@ const StationOverview = () => {
                 const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
             } catch (err) {
-                console.log(`problem with request: ${err}`);
+                return;
             }
 
             if (sub) {
