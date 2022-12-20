@@ -32,6 +32,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
     const [protocolSelected, setProtocolSelected] = useState('SDK(TCP)');
     const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
+    const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
     const selectProtocolOption = ['SDK(TCP)', 'Rest'];
     const [codeExample, setCodeExample] = useState({
         import: '',
@@ -70,21 +71,52 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 : 'memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
         codeEx.producer = codeEx.producer.replaceAll('localhost', host);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
-
         setCodeExample(codeEx);
     };
 
     useEffect(() => {
-        changeDynamicCode(langSelected);
+        protocolSelected === 'SDK(TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode('cURL');
     }, []);
 
-    const handleSelectLang = (e) => {
+    const handleSelectLang = (e, isSdk = true) => {
         setLangSelected(e);
-        changeDynamicCode(e);
+        isSdk ? changeDynamicCode(e) : changeProtocolDynamicCode(e);
     };
+
     const handleSelectProtocol = (e) => {
         setProtocolSelected(e);
-        changeProtocolDynamicCode(e);
+        if (e === 'Rest') {
+            changeProtocolDynamicCode('cURL');
+            setLangSelected('cURL');
+        } else {
+            setLangSelected('Go');
+            changeDynamicCode('Go');
+        }
+    };
+
+    const generateEditor = (langCode, value) => {
+        return (
+            <>
+                <Editor
+                    options={{
+                        minimap: { enabled: false },
+                        scrollbar: { verticalScrollbarSize: 0 },
+                        scrollBeyondLastLine: false,
+                        roundedSelection: false,
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        readOnly: true,
+                        fontSize: '12px',
+                        fontFamily: 'Inter'
+                    }}
+                    language={langCode}
+                    height="calc(100% - 10px)"
+                    width="calc(100% - 25px)"
+                    value={value}
+                />
+                <Copy data={value} />
+            </>
+        );
     };
 
     return (
@@ -119,8 +151,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                         radiusType="semi-round"
                         width="220px"
                         height="50px"
-                        options={selectLngOption}
-                        onChange={(e) => handleSelectLang(e)}
+                        options={protocolSelected === 'SDK(TCP)' ? selectLngOption : selectProtocolLngOptions}
+                        onChange={(e) => (protocolSelected === 'SDK(TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
                         popupClassName="select-options"
                     />
                 </div>
@@ -138,81 +170,24 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                         {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>}
                         {tabValue === 'Producer' && (
                             <div className="code-example">
-                                <div className="code-content">
-                                    <Editor
-                                        options={{
-                                            minimap: { enabled: false },
-                                            scrollbar: { verticalScrollbarSize: 0 },
-                                            scrollBeyondLastLine: false,
-                                            roundedSelection: false,
-                                            formatOnPaste: true,
-                                            formatOnType: true,
-                                            readOnly: true,
-                                            fontSize: '14px',
-                                            fontFamily: 'Inter'
-                                        }}
-                                        language={SDK_CODE_EXAMPLE[langSelected].langCode}
-                                        height="calc(100% - 10px)"
-                                        width="calc(100% - 25px)"
-                                        value={codeExample.producer}
-                                    />
-                                    <Copy data={codeExample.producer} />
-                                </div>
+                                <div className="code-content">{generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
                             </div>
                         )}
 
                         {tabValue === 'Consumer' && (
                             <div className="code-example">
-                                <div className="code-content">
-                                    <Editor
-                                        options={{
-                                            minimap: { enabled: false },
-                                            scrollbar: { verticalScrollbarSize: 0 },
-                                            scrollBeyondLastLine: false,
-                                            roundedSelection: false,
-                                            formatOnPaste: true,
-                                            formatOnType: true,
-                                            readOnly: true,
-                                            fontSize: '14px',
-                                            fontFamily: 'Inter'
-                                        }}
-                                        language={SDK_CODE_EXAMPLE[langSelected].langCode}
-                                        height="calc(100% - 10px)"
-                                        width="calc(100% - 25px)"
-                                        value={codeExample.consumer}
-                                    />
-                                    <Copy data={codeExample.consumer} />
-                                </div>
+                                <div className="code-content">{generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, codeExample.consumer)}</div>
                             </div>
                         )}
                     </div>
                 </>
             )}
-            {protocolSelected === 'SDK(TCP)' && (
+            {protocolSelected === 'Rest' && (
                 <>
                     <div className="installation">
                         <p className="field-title">First, generate a token</p>
-                        <div className="code-example">
-                            <div className="code-content">
-                                <Editor
-                                    options={{
-                                        minimap: { enabled: false },
-                                        scrollbar: { verticalScrollbarSize: 0 },
-                                        scrollBeyondLastLine: false,
-                                        roundedSelection: false,
-                                        formatOnPaste: true,
-                                        formatOnType: true,
-                                        readOnly: true,
-                                        fontSize: '14px',
-                                        fontFamily: 'Inter'
-                                    }}
-                                    language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
-                                    height="calc(100% - 10px)"
-                                    width="calc(100% - 25px)"
-                                    value={codeExample.tokenGenerate}
-                                />
-                                <Copy data={codeExample.tokenGenerate} />
-                            </div>
+                        <div className="code-example ce-protoco">
+                            <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                         </div>
                     </div>
                     <div className="tabs">
@@ -220,27 +195,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                         {/* {tabValue === 'Producer' && ( */}
                         <p className="field-title">Producer</p>
 
-                        <div className="code-example">
-                            <div className="code-content produce">
-                                <Editor
-                                    options={{
-                                        minimap: { enabled: false },
-                                        scrollbar: { verticalScrollbarSize: 0 },
-                                        scrollBeyondLastLine: false,
-                                        roundedSelection: false,
-                                        formatOnPaste: true,
-                                        formatOnType: true,
-                                        readOnly: true,
-                                        fontSize: '14px',
-                                        fontFamily: 'Inter'
-                                    }}
-                                    language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
-                                    height="calc(100% - 10px)"
-                                    width="calc(100% - 25px)"
-                                    value={codeExample.producer}
-                                />
-                                <Copy data={codeExample.producer} />
-                            </div>
+                        <div className="code-example ce-protoco">
+                            <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
                         </div>
                         {/* )} */}
                     </div>

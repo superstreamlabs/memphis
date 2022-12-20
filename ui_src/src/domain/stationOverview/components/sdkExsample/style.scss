@@ -3,8 +3,8 @@
     display: flex;
     flex-direction: column;
     height: calc(100% - 50px);
-    font-size: 12px;
     font-family: 'Inter';
+    margin-top: 15px;
     .header-wrapper{
         p{
             font-family: 'InterSemiBold';
@@ -27,13 +27,14 @@
     .ant-tabs-tab {
         font-size: 12px;
     }
+    .field-title{
+        font-family: 'InterMedium';
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
     .select-lan{
         display: flex;
-        .field-title{
-            font-family: 'InterMedium';
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
+        gap: 40px;
     }
     .installation {
         .install-copy {
@@ -41,12 +42,13 @@
             box-sizing: border-box;
             border-radius: 4px;
             height: 50px;
-            width: 450px;
+            width: 480px;
             display: flex;
             align-items: center;
             padding: 0px 10px;
             justify-content: space-between;
             p {
+                font-size: 14px;
                 margin: 0;
             }
         }
@@ -69,6 +71,15 @@
             img {
                 padding-top: 5px;
             }
+        }
+    }
+    .ce-protoco {
+
+        .code-content {
+            height: 225px !important;
+        }
+        .produce{
+            height: 225px !important;
         }
     }
 }

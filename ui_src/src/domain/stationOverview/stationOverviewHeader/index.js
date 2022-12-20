@@ -46,7 +46,6 @@ import CustomTabs from '../../../components/Tabs';
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
-    console.log(stationState);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const history = useHistory();
     const [retentionValue, setRetentionValue] = useState('');
@@ -54,7 +53,6 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
-    const [segment, setSegment] = useState(`Sdk's`);
     const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
@@ -157,7 +155,7 @@ const StationOverviewHeader = () => {
                     </div>
                     {stationState?.stationSocketData?.schema === undefined || Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                         <div className="schema-details sd-center">
-                            <TooltipComponent text={stationState?.stationMetaData.is_deleted && 'Gross size. Payload + headers + Memphis metadata'}>
+                            <TooltipComponent text={stationState?.stationMetaData?.is_deleted && 'Gross size. Payload + headers + Memphis metadata'}>
                                 <div className="add-new">
                                     <Button
                                         width="120px"
@@ -173,7 +171,7 @@ const StationOverviewHeader = () => {
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
-                                        disabled={stationState?.stationMetaData.is_deleted}
+                                        disabled={stationState?.stationMetaData?.is_deleted}
                                         onClick={() => setUseSchemaModal(true)}
                                     />
                                 </div>
@@ -290,22 +288,15 @@ const StationOverviewHeader = () => {
                     </div>
                 </div>
                 <Modal
-                    header={
-                        <div className="tabs-headers">
-                            <CustomTabs value={segment} onChange={(e) => setSegment(e)} tabs={[`Sdk's`, 'Protocols']}></CustomTabs>
-                        </div>
-                    }
                     width="710px"
-                    height={'640px'}
+                    height={'700px'}
                     clickOutside={() => {
                         setSdkModal(false);
-                        setSegment(`Sdk's`);
                     }}
                     open={sdkModal}
                     displayButtons={false}
                 >
-                    {segment === `Sdk's` && <SdkExample />}
-                    {/* {segment === 'Protocols' && <ProtocolExample />} */}
+                    <SdkExample />
                 </Modal>
                 <Modal
                     header={

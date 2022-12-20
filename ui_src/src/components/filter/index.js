@@ -81,7 +81,7 @@ const Filter = ({ filterComponent, height }) => {
                     (async () => {
                         for await (const msg of sub) {
                             let data = jc.decode(msg.data);
-                            data.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                            data?.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
                             dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
                         }
                     })();
