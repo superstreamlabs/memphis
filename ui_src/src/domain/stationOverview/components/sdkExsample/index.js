@@ -185,20 +185,16 @@ const SdkExample = ({ consumer, showTabs = true }) => {
             {protocolSelected === 'Rest' && (
                 <>
                     <div className="installation">
-                        <p className="field-title">First, generate a token</p>
+                        <p className="field-title">Step 1: Generate a token</p>
                         <div className="code-example ce-protoco">
                             <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                         </div>
                     </div>
                     <div className="tabs">
-                        {/* {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>} */}
-                        {/* {tabValue === 'Producer' && ( */}
-                        <p className="field-title">Producer</p>
-
+                        <p className="field-title">Step 2: Produce data</p>
                         <div className="code-example ce-protoco">
                             <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
                         </div>
-                        {/* )} */}
                     </div>
                 </>
             )}

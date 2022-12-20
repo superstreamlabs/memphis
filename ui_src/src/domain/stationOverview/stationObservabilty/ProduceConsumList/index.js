@@ -28,7 +28,6 @@ import MultiCollapse from '../components/multiCollapse';
 import { StationStoreContext } from '../..';
 import Button from '../../../../components/button';
 import SdkExample from '../../components/sdkExsample';
-import ProtocolExample from '../../components/protocolExsample';
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -39,7 +38,6 @@ const ProduceConsumList = ({ producer }) => {
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
-    const [segment, setSegment] = useState('Sdk');
 
     useEffect(() => {
         if (producer) {
@@ -274,23 +272,15 @@ const ProduceConsumList = ({ producer }) => {
                 <SdkExample showTabs={false} consumer={true} />
             </Modal>
             <Modal
-                header={
-                    <div className="sdk-header">
-                        <p className="title">Code example</p>
-                        <Segmented size="small" className="segment" options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
-                    </div>
-                }
                 width="710px"
-                height="600px"
+                height="700px"
                 clickOutside={() => {
                     setOpenCreateProducer(false);
-                    setSegment('Sdk');
                 }}
                 open={openCreateProducer}
                 displayButtons={false}
             >
-                {segment === 'Sdk' && <SdkExample showTabs={false} />}
-                {segment === 'Protocol' && <ProtocolExample />}
+                <SdkExample showTabs={false} />
             </Modal>
         </div>
     );

@@ -39,9 +39,6 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import ProtocolExample from '../components/protocolExsample';
-import SegmentButton from '../../../components/segmentButton';
-import CustomTabs from '../../../components/Tabs';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
