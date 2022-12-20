@@ -244,6 +244,7 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 			"last_update":              newStation.LastUpdate,
 			"functions":                newStation.Functions,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"is_native":                true,
 		},
 	}
 	opts := options.Update().SetUpsert(true)

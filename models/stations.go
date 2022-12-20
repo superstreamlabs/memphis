@@ -111,6 +111,7 @@ type ExtendedStation struct {
 	PoisonMessages    int                `json:"posion_messages"`
 	Tags              []CreateTag        `json:"tags"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 

@@ -638,6 +638,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		Schema:            schemaDetails,
 		IdempotencyWindow: body.IdempotencyWindow,
 		DlsConfiguration:  body.DlsConfiguration,
+		IsNative:          true,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
