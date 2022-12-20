@@ -160,7 +160,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
+			return h.Stations.GetDlqMessageJourneyDetails(poisonMsgId)
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
@@ -242,7 +242,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, err := h.PoisonMsgs.GetPoisonMsgsByStation(station)
+	poisonMessages, schemaFailMessages, err := h.PoisonMsgs.GetDlqMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -277,6 +277,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_fail_messages":     schemaFailMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
@@ -306,6 +307,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"audit_logs":               auditLogs,
 		"messages":                 messages,
 		"poison_messages":          poisonMessages,
+		"schema_fail_messages":     schemaFailMessages,
 		"tags":                     tags,
 		"leader":                   leader,
 		"followers":                followers,

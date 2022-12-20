@@ -150,11 +150,15 @@ type UpdateDlsConfigSchema struct {
 }
 
 type AckPoisonMessagesSchema struct {
-	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
+	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
 }
 
 type ResendPoisonMessagesSchema struct {
 	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
+}
+
+type ResendPoisonMessagesSchemaV2 struct {
+	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
 }
 
 type RemoveStationSchema struct {

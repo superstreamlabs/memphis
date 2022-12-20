@@ -59,6 +59,7 @@ const (
 	kindDeleteStream   = "$memphis_delete_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
+	kindDeleteMsg      = "$memphis_delete_msg"
 )
 
 // errors
@@ -483,6 +484,32 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 	}
 
 	return resp.StreamInfo, nil
+}
+
+func (s *Server) memphisDeleteMsgFromStream(streamName string, seq uint64) (ApiResponse, error) {
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, streamName)
+
+	msg := JSApiMsgDeleteRequest{
+		Seq: seq,
+	}
+
+	req, err := json.Marshal(msg)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	var resp JSApiMsgDeleteResponse
+	err = jsApiRequest(s, requestSubject, kindDeleteMsg, req, &resp)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	err = resp.ToError()
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	return resp.ApiResponse, nil
 }
 
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {

@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,6 +138,16 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
+func ackPoisonMsgV0(msgId string, cgName string) error {
+	id, err := primitive.ObjectIDFromHex(msgId)
+	if err != nil {
+		return err
+	}
+	poisonMessagesCollection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$pull": bson.M{"poisoned_cgs": bson.M{"cg_name": cgName}}})
+	poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"poisoned_cgs": bson.M{"$size": 0}})
+	return nil
+}
+
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -145,12 +157,33 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			id, err := primitive.ObjectIDFromHex(msgToAck.ID)
-			if err != nil {
-				return
+			if msgToAck.CgName != "" {
+				err = ackPoisonMsgV0(msgToAck.ID, msgToAck.CgName)
+				if err != nil {
+					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+					return
+				}
+			} else {
+				splitId := strings.Split(msgToAck.ID, "-")
+				stationName := splitId[0]
+				sn, err := StationNameFromStr(stationName)
+				if err != nil {
+					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+					return
+				}
+				streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+				seq, err := strconv.ParseInt(msgToAck.Sequence, 10, 64)
+				if err != nil {
+					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+					return
+				}
+				_, err = s.memphisDeleteMsgFromStream(streamName, uint64(seq))
+				if err != nil {
+					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+					return
+				}
 			}
-			poisonMessagesCollection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$pull": bson.M{"poisoned_cgs": bson.M{"cg_name": msgToAck.CgName}}})
-			poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"poisoned_cgs": bson.M{"$size": 0}})
+
 		}(copyBytes(msg))
 	})
 	if err != nil {
