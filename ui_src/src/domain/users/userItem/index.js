@@ -47,7 +47,7 @@ function UserItem({ content, handleRemoveUser }) {
                 <div className="user-avatar">
                     <img src={avatarUrl} width={25} height={25} alt="avatar" />
                 </div>
-                {content?.username}
+                <p>{content?.username}</p>
             </div>
             <div className="user-type">
                 <UserType userType={content?.user_type} />
