@@ -46,6 +46,7 @@ import CustomTabs from '../../../components/Tabs';
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    console.log(stationState);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const history = useHistory();
     const [retentionValue, setRetentionValue] = useState('');
@@ -156,24 +157,27 @@ const StationOverviewHeader = () => {
                     </div>
                     {stationState?.stationSocketData?.schema === undefined || Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                         <div className="schema-details sd-center">
-                            <div className="add-new">
-                                <Button
-                                    width="120px"
-                                    height="25px"
-                                    placeholder={
-                                        <div className="use-schema-button">
-                                            <Add />
-                                            <p>Attach schema</p>
-                                        </div>
-                                    }
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => setUseSchemaModal(true)}
-                                />
-                            </div>
+                            <TooltipComponent text={stationState?.stationMetaData.is_deleted && 'Gross size. Payload + headers + Memphis metadata'}>
+                                <div className="add-new">
+                                    <Button
+                                        width="120px"
+                                        height="25px"
+                                        placeholder={
+                                            <div className="use-schema-button">
+                                                <Add />
+                                                <p>Attach schema</p>
+                                            </div>
+                                        }
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="12px"
+                                        fontFamily="InterSemiBold"
+                                        disabled={stationState?.stationMetaData.is_deleted}
+                                        onClick={() => setUseSchemaModal(true)}
+                                    />
+                                </div>
+                            </TooltipComponent>
                         </div>
                     ) : (
                         <div className="schema-details sd-flex">
@@ -301,7 +305,7 @@ const StationOverviewHeader = () => {
                     displayButtons={false}
                 >
                     {segment === `Sdk's` && <SdkExample />}
-                    {segment === 'Protocols' && <ProtocolExample />}
+                    {/* {segment === 'Protocols' && <ProtocolExample />} */}
                 </Modal>
                 <Modal
                     header={

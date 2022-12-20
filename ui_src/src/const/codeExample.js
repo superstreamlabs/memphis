@@ -299,8 +299,107 @@ if __name__ == '__main__':
 };
 
 export const PROTOCOL_CODE_EXAMPLE = {
-    Rest: {
+    cURL: {
         langCode: 'apex',
+        producer: `curl --location --request POST 'localhost:4444/stations/s1/produce/single' \n--header 'Authorization: Bearer ' \n--header 'Content-Type: application/json' \n--data-raw '{"message": "New Message"}'`,
+        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' \n--header 'Content-Type: application/json' \n--data-raw '{
+            "username": "root",
+            "connection_token": "memphis",
+            "token_expiry_in_minutes": 123,
+            "refresh_token_expiry_in_minutes": 10000092
+        }'`
+    },
+    Go: {
+        langCode: 'go',
+        producer: `package main
+
+        import (
+          "fmt"
+          "strings"
+          "net/http"
+          "io/ioutil"
+        )
+        
+        func main() {
+        
+          url := "localhost:4444/stations/s1/produce/single"
+          method := "POST"
+        
+          payload := strings.NewReader('{"message": "New Message"}')
+        
+          client := &http.Client {
+          }
+          req, err := http.NewRequest(method, url, payload)
+        
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          req.Header.Add("Authorization", "Bearer ")
+          req.Header.Add("Content-Type", "application/json")
+        
+          res, err := client.Do(req)
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          defer res.Body.Close()
+        
+          body, err := ioutil.ReadAll(res.Body)
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          fmt.Println(string(body))
+        }`,
+        tokenGenerate: `package main
+
+        import (
+          "fmt"
+          "strings"
+          "net/http"
+          "io/ioutil"
+        )
+        
+        func main() {
+        
+          url := "localhost:4444/auth/authenticate"
+          method := "POST"
+        
+          payload := strings.NewReader({
+            "username": "root",
+            "connection_token": "memphis",
+            "token_expiry_in_minutes": 123,
+            "refresh_token_expiry_in_minutes": 10000092
+        })
+        
+          client := &http.Client {
+          }
+          req, err := http.NewRequest(method, url, payload)
+        
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          req.Header.Add("Content-Type", "application/json")
+        
+          res, err := client.Do(req)
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          defer res.Body.Close()
+        
+          body, err := ioutil.ReadAll(res.Body)
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+          fmt.Println(string(body))
+        }`
+    },
+    'Node.js': {
+        langCode: 'javascript',
         producer: `curl --location --request POST 'localhost:4444/stations/s1/produce/single' \n--header 'Authorization: Bearer ' \n--header 'Content-Type: application/json' \n--data-raw '{"message": "New Message"}'`,
         tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' \n--header 'Content-Type: application/json' \n--data-raw '{
             "username": "root",

@@ -27,6 +27,11 @@ import pathDomains from '../../router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
 
+const initialState = {
+    stationMetaData: {},
+    stationSocketData: {}
+};
+
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
     const url = window.location.href;
@@ -124,5 +129,6 @@ const StationOverview = () => {
         </StationStoreContext.Provider>
     );
 };
-export const StationStoreContext = createContext({});
+
+export const StationStoreContext = createContext({ initialState });
 export default StationOverview;

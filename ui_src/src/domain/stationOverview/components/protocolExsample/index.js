@@ -34,27 +34,13 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
     });
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
 
-    const changeDynamicCode = (lang) => {
-        let codeEx = {};
-        codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
-        codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
-        let host =
-            localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                ? 'localhost'
-                : 'memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
-        codeEx.producer = codeEx.producer.replaceAll('localhost', host);
-        codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
-
-        setCodeExample(codeEx);
-    };
-
     useEffect(() => {
-        changeDynamicCode(langSelected);
+        // changeDynamicCode(langSelected);
     }, []);
 
     const handleSelectLang = (e) => {
         setLangSelected(e);
-        changeDynamicCode(e);
+        // changeDynamicCode(e);
     };
 
     return (
@@ -77,60 +63,6 @@ const ProtocolExample = ({ consumer, showTabs = true }) => {
                     onChange={(e) => handleSelectLang(e)}
                     popupClassName="select-options"
                 />
-            </div>
-            <div className="installation">
-                <p className="field-title">First, generate a token</p>
-                <div className="code-example">
-                    <div className="code-content">
-                        <Editor
-                            options={{
-                                minimap: { enabled: false },
-                                scrollbar: { verticalScrollbarSize: 0 },
-                                scrollBeyondLastLine: false,
-                                roundedSelection: false,
-                                formatOnPaste: true,
-                                formatOnType: true,
-                                readOnly: true,
-                                fontSize: '14px',
-                                fontFamily: 'Inter'
-                            }}
-                            language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
-                            height="calc(100% - 10px)"
-                            width="calc(100% - 25px)"
-                            value={codeExample.tokenGenerate}
-                        />
-                        <Copy data={codeExample.tokenGenerate} />
-                    </div>
-                </div>
-            </div>
-            <div className="tabs">
-                {/* {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>} */}
-                {/* {tabValue === 'Producer' && ( */}
-                <p className="field-title">Producer</p>
-
-                <div className="code-example">
-                    <div className="code-content produce">
-                        <Editor
-                            options={{
-                                minimap: { enabled: false },
-                                scrollbar: { verticalScrollbarSize: 0 },
-                                scrollBeyondLastLine: false,
-                                roundedSelection: false,
-                                formatOnPaste: true,
-                                formatOnType: true,
-                                readOnly: true,
-                                fontSize: '14px',
-                                fontFamily: 'Inter'
-                            }}
-                            language={PROTOCOL_CODE_EXAMPLE[langSelected].langCode}
-                            height="calc(100% - 10px)"
-                            width="calc(100% - 25px)"
-                            value={codeExample.producer}
-                        />
-                        <Copy data={codeExample.producer} />
-                    </div>
-                </div>
-                {/* )} */}
             </div>
         </div>
     );
