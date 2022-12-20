@@ -503,7 +503,13 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	msgs, err := s.memphisGetMsgs(stationName.Intern(),
+	filterSubj := stationName.Intern() + ".final"
+	if !station.IsNative {
+		filterSubj = ""
+	}
+
+	msgs, err := s.memphisGetMsgs(filterSubj,
+		stationName.Intern(),
 		startSequence,
 		messagesToFetch,
 		5*time.Second,
@@ -591,11 +597,12 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func (s *Server) memphisGetMsgs(streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 
 	cc := ConsumerConfig{
+		FilterSubject: filterSubj,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
 		Durable:       durableName,

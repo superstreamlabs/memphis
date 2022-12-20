@@ -13,7 +13,10 @@
 // limitations under the License.package server
 package server
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
 
 const (
 	// wrapper subject for JSApiTemplateCreate
@@ -24,7 +27,7 @@ const (
 
 var wrapperMap = map[string]string{
 	memphisJSApiStreamCreate: JSApiStreamCreate,
-	memphisJSApiStreamDelete: JSApiTemplateDelete,
+	memphisJSApiStreamDelete: JSApiStreamDelete,
 }
 
 func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
@@ -59,14 +62,16 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 	}
 
 	if cfg.Retention != LimitsPolicy {
-		resp.Error = NewJSInvalidJSONError()
+		resp.Error = NewJSStreamCreateError(errors.New("The only supported retention type is limits"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
 
-	streamCreated := s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
-	if !streamCreated {
-		return
+	createStreamFunc := func() error {
+		if !s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg) {
+			return errors.New("Stream creation failed")
+		}
+		return nil
 	}
 
 	var storageType string
@@ -88,17 +93,17 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		IdempotencyWindow: int(cfg.Duplicates.Milliseconds()),
 	}
 
-	s.createStationDirectIntern(c, reply, &csr, false)
+	s.createStationDirectIntern(c, reply, &csr, createStreamFunc)
 }
 
 func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-
-	streamDeleted := s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
-
-	if !streamDeleted {
-		return
+	removeStreamFunc := func() error {
+		if !s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg) {
+			return errors.New("Stream removal failed")
+		}
+		return nil
 	}
 
 	dsr := destroyStationRequest{StationName: streamNameFromSubject(subject)}
-	s.removeStationDirectIntern(c, reply, &dsr)
+	s.removeStationDirectIntern(c, reply, &dsr, removeStreamFunc)
 }

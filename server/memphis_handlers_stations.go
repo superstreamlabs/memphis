@@ -96,12 +96,24 @@ func validateReplicas(replicas int) error {
 }
 
 // TODO remove the station resources - functions, connectors
-func removeStationResources(s *Server, station models.Station) error {
+func removeStationResources(s *Server, station models.Station, nonNativeRemoveStreamFunc func() error) error {
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
-	err = s.RemoveStream(stationName.Intern())
+
+	removeFunc := nonNativeRemoveStreamFunc
+	if removeFunc == nil {
+		if !station.IsNative {
+			s.Fatalf("non native station uses native remove stream function")
+		}
+
+		removeFunc = func() error {
+			return s.RemoveStream(stationName.Intern())
+		}
+	}
+
+	err = removeFunc()
 	if err != nil {
 		return err
 	}
@@ -144,29 +156,37 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	s.createStationDirectIntern(c, reply, &csr, true)
+	s.createStationDirectIntern(c, reply, &csr, nil)
 }
 
-func (s *Server) createStationDirectIntern(c *client, reply string, csr *createStationRequest, isNative bool) {
-	createStream := isNative
+func (s *Server) createStationDirectIntern(c *client,
+	reply string,
+	csr *createStationRequest,
+	nonNativeCreateStreamFunc func() error) {
+	isNative := nonNativeCreateStreamFunc == nil
+	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
+
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
 	if exist {
 		errMsg := "Station " + stationName.Ext() + " already exists"
 		serv.Warnf("createStationDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
+		jsApiResp.Error = NewJSStreamNameExistError()
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -177,20 +197,23 @@ func (s *Server) createStationDirectIntern(c *client, reply string, csr *createS
 		exist, schema, err := IsSchemaExist(schemaName)
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		if !exist {
 			errMsg := "Schema " + csr.SchemaName + " does not exist"
 			serv.Warnf("createStationDirect: " + errMsg)
-			respondWithErr(s, reply, errors.New(errMsg))
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 
 		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
@@ -203,7 +226,8 @@ func (s *Server) createStationDirectIntern(c *client, reply string, csr *createS
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		retentionValue = csr.RetentionValue
@@ -218,7 +242,8 @@ func (s *Server) createStationDirectIntern(c *client, reply string, csr *createS
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 	} else {
@@ -230,7 +255,8 @@ func (s *Server) createStationDirectIntern(c *client, reply string, csr *createS
 		err = validateReplicas(replicas)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 	} else {
@@ -263,13 +289,19 @@ func (s *Server) createStationDirectIntern(c *client, reply string, csr *createS
 		DlsConfiguration:  csr.DlsConfiguration,
 	}
 
-	if createStream {
-		err = s.CreateStream(stationName, newStation)
-		if err != nil {
-			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(s, reply, err)
-			return
+	createStreamFunc := nonNativeCreateStreamFunc
+
+	if createStreamFunc == nil {
+		createStreamFunc = func() error {
+			return s.CreateStream(stationName, newStation)
 		}
+	}
+
+	err = createStreamFunc()
+	if err != nil {
+		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		respondWithErr(s, reply, err)
+		return
 	}
 
 	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
@@ -782,7 +814,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 
-		err = removeStationResources(sh.S, station)
+		err = removeStationResources(sh.S, station, nil)
 		if err != nil {
 			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -853,31 +885,41 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	s.removeStationDirectIntern(c, reply, &dsr)
+	s.removeStationDirectIntern(c, reply, &dsr, nil)
 }
 
-func (s *Server) removeStationDirectIntern(c *client, reply string, dsr *destroyStationRequest) {
+func (s *Server) removeStationDirectIntern(c *client,
+	reply string,
+	dsr *destroyStationRequest,
+	nonNativeRemoveStreamFunc func() error) {
+	isNative := nonNativeRemoveStreamFunc == nil
+	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
+
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
 		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 	if !exist {
 		errMsg := "Station " + station.Name + " does not exist"
 		serv.Warnf("removeStationDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
+		err := errors.New(errMsg)
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
-	err = removeStationResources(s, station)
+	err = removeStationResources(s, station, nonNativeRemoveStreamFunc)
 	if err != nil {
 		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
