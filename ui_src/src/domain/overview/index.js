@@ -136,7 +136,7 @@ function OverView() {
             try {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
                 const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data_${brokerName}`);
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
             } catch (err) {
                 console.log(`problem with request: ${err}`);
             }
