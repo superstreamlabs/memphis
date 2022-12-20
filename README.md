@@ -126,18 +126,20 @@ To access Memphis using UI/CLI/SDK from localhost, run the below commands:
 For interacting with the broker via HTTP:
 
   - kubectl port-forward service/memphis-http-proxy 4444:4444 --namespace memphis > /dev/null &
-```
+
 Dashboard/CLI: http://localhost:9000
 Broker: localhost:6666 (Client Connections)
 HTTP proxy: localhost:4444 (Data + Mgmt)
+```
 
 **For Production Environments**
 Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer / nodeport
 
 ### Via Docker
-Dashboard/CLI: http://localhost:9000<br>
-Broker: localhost:6666<br>
-
+```shell
+Dashboard/CLI: http://localhost:9000
+Broker: localhost:6666
+```
 ## Beta
 Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing, schema registry and inline processing as well as making more SDKs and supporting materials.
 
