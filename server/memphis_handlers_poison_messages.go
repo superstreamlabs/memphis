@@ -97,7 +97,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			connectionIdHeader = headersJson["connectionId"]
 			producedByHeader = headersJson["producedBy"]
 			if connectionIdHeader == "" || producedByHeader == "" {
-				serv.Warnf("HandleNewPoisonMessage: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+				serv.Warnf("handleNewPoisonMessage: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 				return
 			}
 		}
@@ -109,7 +109,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 		_, conn, err := IsConnectionExist(connId)
 		if err != nil {
-			serv.Errorf("HandleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return
 		}
 
@@ -117,7 +117,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		var producer models.Producer
 		err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
 		if err != nil {
-			serv.Errorf("HandleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return
 		}
 
@@ -152,7 +152,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	poisonSubjectName := GetDlqSubject("poison", stationName.Intern(), id)
 	msgToSend, err := json.Marshal(pmMessage)
 	if err != nil {
-		serv.Errorf("HandleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
 	s.sendInternalAccountMsg(s.GlobalAccount(), poisonSubjectName, msgToSend)
@@ -161,7 +161,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	var msgUrl = idForUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
 	if err != nil {
-		serv.Warnf("HandleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
+		serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
 		return
 	}
 }
@@ -1027,4 +1027,12 @@ func GetDlqSubject(subjType string, stationName string, id string) string {
 
 func GetDlqMsgId(stationName string, messageSeq int, producerName string, timeSent time.Time) string {
 	return strings.ReplaceAll(stationName+"-"+producerName+"-"+strconv.Itoa(messageSeq)+"-"+timeSent.String(), " ", "")
+}
+
+func GetDlqSubject(subjType string, stationName string, id string) string {
+	return fmt.Sprintf(dlsStreamName, stationName) + "." + subjType + "." + id
+}
+
+func GetPoisonMsgId(messageSeq int, producerName string, timeSent time.Time) string {
+	return producerName + "-" + timeSent.String() + "-" + strconv.Itoa(messageSeq)
 }
