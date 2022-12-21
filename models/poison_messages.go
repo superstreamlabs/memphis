@@ -47,6 +47,13 @@ type MessagePayload struct {
 	Headers  map[string]string `json:"headers"`
 }
 
+type MessagePayloadDlq struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name" bson:"cg_name"`
 	PoisoningTime       time.Time  `json:"poisoning_time" bson:"poisoning_time"`
@@ -81,6 +88,26 @@ type PoisonMessageResponse struct {
 	CreationDate time.Time          `json:"creation_date"`
 }
 
+type DlqMessage struct {
+	ID           string            `json:"_id"`
+	StationName  string            `json:"station_name"`
+	MessageSeq   int               `json:"message_seq"`
+	Producer     ProducerDetails   `json:"producer"`
+	PoisonedCg   PoisonedCg        `json:"poisoned_cg"`
+	Message      MessagePayloadDlq `json:"message"`
+	CreationDate time.Time         `json:"creation_date"`
+}
+
+type DlqMessageResponse struct {
+	ID           string            `json:"_id"`
+	StationName  string            `json:"station_name"`
+	MessageSeq   int               `json:"message_seq"`
+	Producer     ProducerDetails   `json:"producer"`
+	PoisonedCgs  []PoisonedCg      `json:"poisoned_cgs"`
+	Message      MessagePayloadDlq `json:"message"`
+	CreationDate time.Time         `json:"creation_date"`
+}
+
 type LightPoisonMessage struct {
 	ID      primitive.ObjectID `json:"_id" bson:"_id"`
 	Message MessagePayloadDb   `json:"message" bson:"message"`
@@ -97,6 +124,19 @@ type LightweightPoisonMessage struct {
 }
 
 type PmAckMsg struct {
-	ID     string `json:"id" binding:"required"`
-	CgName string `json:"cg_name" binding:"required"`
+	ID       string `json:"id" binding:"required"`
+	CgName   string `json:"cg_name"`
+	Sequence string `json:"sequence"`
+}
+
+type LightDlqMessage struct {
+	MessageSeq int               `json:"message_seq"`
+	ID         string            `json:"_id"`
+	Message    MessagePayloadDlq `json:"message" bson:"message"`
+}
+
+type LightDlqMessageResponse struct {
+	MessageSeq int               `json:"message_seq"`
+	ID         string            `json:"_id"`
+	Message    MessagePayloadDlq `json:"message"`
 }

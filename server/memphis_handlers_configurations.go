@@ -16,6 +16,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
@@ -124,6 +125,45 @@ func changePMRetention(pmRetention int) error {
 	if err != nil {
 		return err
 	}
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return err
+	}
+	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+	for _, station := range stations {
+		sn, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+		var storage StorageType
+		if station.StorageType == "memory" {
+			storage = MemoryStorage
+		} else {
+			storage = FileStorage
+		}
+		err = serv.memphisUpdateStream(&StreamConfig{
+			Name:      streamName,
+			Subjects:  []string{streamName + ".>"},
+			Retention: LimitsPolicy,
+			MaxAge:    maxAge,
+			Storage:   storage,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

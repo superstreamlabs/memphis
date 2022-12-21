@@ -45,6 +45,7 @@ const (
 	syslogsWarnSubject = "warn"
 	syslogsErrSubject  = "err"
 	syslogsSysSubject  = "sys"
+	dlsStreamName      = "$memphis-%s-dls"
 )
 
 // JetStream API request kinds
@@ -58,6 +59,7 @@ const (
 	kindDeleteStream   = "$memphis_delete_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
+	kindDeleteMsg      = "$memphis_delete_msg"
 )
 
 // errors
@@ -169,6 +171,39 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			MaxConsumers: -1,
 			MaxMsgs:      int64(maxMsgs),
 			MaxBytes:     int64(maxBytes),
+			Discard:      DiscardOld,
+			MaxAge:       maxAge,
+			MaxMsgsPer:   -1,
+			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:      storage,
+			Replicas:     station.Replicas,
+			NoAck:        false,
+			Duplicates:   idempotencyWindow,
+		})
+}
+
+func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
+	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+
+	var storage StorageType
+	if station.StorageType == "memory" {
+		storage = MemoryStorage
+	} else {
+		storage = FileStorage
+	}
+
+	idempotencyWindow := time.Duration(100) * time.Millisecond // minimum is 100 millis
+
+	name := fmt.Sprintf(dlsStreamName, sn.Intern())
+
+	return s.
+		memphisAddStream(&StreamConfig{
+			Name:         (name),
+			Subjects:     []string{name + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(-1),
+			MaxBytes:     int64(-1),
 			Discard:      DiscardOld,
 			MaxAge:       maxAge,
 			MaxMsgsPer:   -1,
@@ -449,6 +484,32 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 	}
 
 	return resp.StreamInfo, nil
+}
+
+func (s *Server) memphisDeleteMsgFromStream(streamName string, seq uint64) (ApiResponse, error) {
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, streamName)
+
+	msg := JSApiMsgDeleteRequest{
+		Seq: seq,
+	}
+
+	req, err := json.Marshal(msg)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	var resp JSApiMsgDeleteResponse
+	err = jsApiRequest(s, requestSubject, kindDeleteMsg, req, &resp)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	err = resp.ToError()
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	return resp.ApiResponse, nil
 }
 
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
