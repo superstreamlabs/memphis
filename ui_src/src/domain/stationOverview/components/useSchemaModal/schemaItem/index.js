@@ -13,19 +13,12 @@
 
 import './style.scss';
 
-import { BrokenImageRounded, CancelRounded, CloseRounded, FiberManualRecord, LinkOffRounded } from '@material-ui/icons';
-import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import pathDomains from '../../../../../router';
-
+import { CloseRounded, FiberManualRecord } from '@material-ui/icons';
+import React from 'react';
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
-import deleteIcon from '../../../../../assets/images/deleteIcon.svg';
-
 import { parsingDate } from '../../../../../services/valueConvertor';
 
 const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, handleStopUseSchema }) => {
-    const history = useHistory();
-
     return (
         <div
             key={schema?.id}
@@ -35,9 +28,7 @@ const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, hand
             <div className="content">
                 <div className="name-wrapper">
                     <img src={schemaItemIcon} />
-                    <p className="name" onClick={() => history.push(`${pathDomains.schemaverse}/${schema?.name}`)}>
-                        {schema?.name}
-                    </p>
+                    <p className="name">{schema?.name}</p>
                 </div>
                 <div className="details">
                     <p className="type">{schema?.type}</p>

@@ -1,10 +1,11 @@
 .station-overview-header {
-    width: calc(100);
+    width: 100%;
     align-items: center;
     justify-content: space-between;
     .title-wrapper {
         display: flex;
         justify-content: space-between;
+        align-items: flex-start;
         height: 35px;
         .station-details {
             .station-name {
@@ -12,7 +13,7 @@
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
-                img{
+                img {
                     cursor: pointer;
                 }
                 h1 {
@@ -35,7 +36,6 @@
             }
         }
         .station-buttons {
-            
             .station-actions {
                 display: flex;
                 width: 35px;
@@ -65,13 +65,13 @@
         justify-content: space-between;
         height: 85px;
         align-items: center;
+
         .main-details {
             font-size: 12px;
-            width: 20vw;
-            min-width: 370px;
             padding-left: 15px;
             background: #ffffff;
-            box-shadow: 0px 23px 44px rgb(176 183 195 / 14%);
+            width: 18vw;
+            min-width: 140px;
             border-radius: 8px;
             height: 100%;
             display: flex;
@@ -86,65 +86,7 @@
                     font-family: 'InterSemiBold';
                 }
             }
-            .schema-details {
-                background: #f0efff;
-                border-radius: 5px;
-                width: 60%;
-                margin: 5px;
-                padding: 10px;
-                max-width: 200px;
-                .add-new {
-                    .use-schema-button {
-                        display: flex;
-                        align-items: center;
-                        svg {
-                            width: 17px;
-                        }
-                        p {
-                            font-family: 'InterSemiBold';
-                        }
-                    }
-                }
-                .title-and-badge {
-                    display: flex;
-                    align-items: center;
-                    .title {
-                        font-size: 12px;
-                        line-height: 12px;
-                        font-family: 'InterSemiBold';
-                        margin-right: 10px;
-                    }
-                    .version-badge p {
-                        font-size: 10px;
-                    }
-                }
-                .name-and-version {
-                    font-size: 12px;
-                    display: flex;
-                    align-items: center;
-                    svg {
-                        width: 6px;
-                        margin: 0px 5px;
-                    }
-                }
-                .buttons {
-                    display: flex;
-                    justify-content: space-between;
-                }
-            }
-            .sd-flex {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                .version-badge {
-                    height: 18px;
-                }
-            }
-            .sd-center {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
+
             p {
                 margin-bottom: 0;
                 overflow: hidden;
@@ -159,21 +101,20 @@
             height: 100%;
             position: relative;
             background: #ffffff;
-            box-shadow: 0px 23px 44px rgb(176 183 195 / 14%);
             border-radius: 8px;
-            width: 37.5vw;
-            min-width: 400px;
+            width: 50vw;
+            min-width: 500px;
             .details-wrapper {
+                padding: 10px 10px 10px 30px;
                 display: flex;
-                width: 50%;
+                width: 33%;
                 height: 100%;
-                justify-content: center;
+                justify-content: space-between;
                 align-items: center;
                 .icon {
                     width: 50px;
                     height: 50px;
                     background: rgba(101, 87, 255, 0.1);
-                    box-shadow: 0px 0px 4px 3px rgba(204, 204, 204, 0.19);
                     border-radius: 50px;
                     display: flex;
                     align-items: center;
@@ -182,12 +123,16 @@
                 .more-details {
                     margin-left: 10px;
                     color: #1d1d1d;
-                    width: 8vw;
+                    padding-left: 10px;
+                    width: calc(100% - 50px);
+                    // width: 8vw;
                     min-width: 110px;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-evenly;
-                    p {
+                    .title {
+                        font-size: 12px;
+                        line-height: 24px;
                         margin: 0;
                         color: #b5b5b5;
                         font-style: normal;
@@ -199,11 +144,9 @@
                         font-size: 16px;
                         line-height: 19px;
                         font-family: 'InterBold';
+                        margin-bottom: 0;
                     }
-                    .title {
-                        font-size: 12px;
-                        line-height: 24px;
-                    }
+
                     .ant-progress-inner {
                         background-color: #e9e9e9;
                     }
@@ -213,20 +156,70 @@
                     .ant-progress-status-exception .ant-progress-bg {
                         background-color: var(--red);
                     }
+                    .add-new {
+                        margin-top: 3px;
+                        .use-schema-button {
+                            display: flex;
+                            align-items: center;
+                            svg {
+                                width: 17px;
+                            }
+                            p {
+                                font-family: 'InterSemiBold';
+                                color: #ffffff;
+                                margin-bottom: 0;
+                            }
+                        }
+                    }
+                    .buttons {
+                        display: flex;
+                        justify-content: space-between;
+                        width: 165px;
+                    }
+                }
+                .schema-header {
+                    display: flex;
+                    justify-content: space-between;
+                    img {
+                        cursor: pointer;
+                    }
+                    .schema-version {
+                        display: flex;
+                        .schema-title {
+                            color: #000000;
+                            font-size: 14px;
+                            font-family: 'InterSemiBold';
+                            margin-right: 5px;
+                            margin-bottom: 0px;
+                        }
+                    }
+                }
+                .name-and-version {
+                    font-size: 12px;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    p {
+                        margin-bottom: 0;
+                    }
+                    svg {
+                        width: 6px;
+                        margin: 0px 5px;
+                    }
                 }
             }
-            .average {
+            .middle {
                 cursor: pointer;
                 border-left: 1px solid #f3f3f3;
+                border-right: 1px solid #f3f3f3;
             }
         }
         .info-buttons {
             display: flex;
-            width: 20vw;
-            min-width: 370px;
+            width: 18vw;
+            min-width: 140px;
             height: 100%;
             background: #ffffff;
-            box-shadow: 0px 23px 44px rgb(176 183 195 / 14%);
             border-radius: 8px;
             p {
                 font-style: normal;
@@ -262,7 +255,7 @@
     }
 }
 .modal-wrapper {
-    .ant-modal-body{
+    .ant-modal-body {
         padding-top: 0px;
     }
     .tabs-headers {
