@@ -128,25 +128,32 @@ function OverView() {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data`);
-        const jc = JSONCodec();
         const sc = StringCodec();
-        if (sub) {
-            (async () => {
-                for await (const msg of sub) {
-                    let data = jc.decode(msg.data);
-                    data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-                    dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-                }
-            })();
-        }
-        setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+        const jc = JSONCodec();
+        let sub;
+
+        setTimeout(async () => {
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+            } catch (err) {
+                return;
+            }
             setisLoading(false);
+            if (sub) {
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+                        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+                    }
+                })();
+            }
+            return () => {
+                sub?.unsubscribe();
+            };
         }, 1000);
-        return () => {
-            sub?.unsubscribe();
-        };
     }, [state.socket]);
 
     const setBotImage = (botId) => {

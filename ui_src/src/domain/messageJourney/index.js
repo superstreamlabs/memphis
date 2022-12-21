@@ -39,6 +39,7 @@ const MessageJourney = () => {
     const [messageData, setMessageData] = useState({});
     const [nodes, setNodes] = useState();
     const [edges, setEdges] = useState();
+    const [brokerName, setBrokerName] = useState('');
 
     const history = useHistory();
 
@@ -61,20 +62,25 @@ const MessageJourney = () => {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}`);
+        let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        if (sub) {
-            (async () => {
-                for await (const msg of sub) {
-                    let data = jc.decode(msg.data);
-                    arrangeData(data);
-                }
-            })();
-        }
-
-        setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
+        setTimeout(async () => {
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
+                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}.${brokerName}`);
+            } catch (err) {
+                return;
+            }
+            if (sub) {
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        arrangeData(data);
+                    }
+                })();
+            }
         }, 1000);
 
         return () => {
