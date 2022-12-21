@@ -158,21 +158,23 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest logs ({logs?.length})</p>
+                    <p className="header-title">Latest logs {logs?.length > 0 && `(${logs?.length})`}</p>
                 </list-header>
-                <Virtuoso
-                    data={logs}
-                    rangeChanged={setVisibleRange}
-                    className="logsl"
-                    endReached={!stopLoad ? loadMore : null}
-                    overscan={100}
-                    itemContent={(index, log) => (
-                        <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                            <LogPayload selectedRow={selectedRow} value={log} onSelected={(e) => selsectLog(e)} />
-                        </div>
-                    )}
-                    components={!stopLoad ? { Footer } : {}}
-                />
+                {logs?.length > 0 && (
+                    <Virtuoso
+                        data={logs}
+                        rangeChanged={setVisibleRange}
+                        className="logsl"
+                        endReached={!stopLoad ? loadMore : null}
+                        overscan={100}
+                        itemContent={(index, log) => (
+                            <div className={index % 2 === 0 ? 'even' : 'odd'}>
+                                <LogPayload selectedRow={selectedRow} value={log} onSelected={(e) => selsectLog(e)} />
+                            </div>
+                        )}
+                        components={!stopLoad ? { Footer } : {}}
+                    />
+                )}
             </logs>
             <LogContent displayedLog={displayedLog} />
         </div>
