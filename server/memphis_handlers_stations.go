@@ -107,7 +107,7 @@ func removeStationResources(s *Server, station models.Station, nonNativeRemoveSt
 	removeFunc := nonNativeRemoveStreamFunc
 	if removeFunc == nil {
 		if !station.IsNative {
-			s.Fatalf("non native station uses native remove stream function")
+			return errors.New("non native station uses native remove stream function")
 		}
 
 		removeFunc = func() error {

@@ -134,7 +134,11 @@ func handleConnectMessage(client *client) error {
 			Value: sdkName,
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(username, analyticsParams, "user-connect-sdk")
+		event := "user-connect-sdk"
+		if !isNativeMemphisClient {
+			event = "user-connect-nats-sdk"
+		}
+		analytics.SendEventWithParams(username, analyticsParams, event)
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
