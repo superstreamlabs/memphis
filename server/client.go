@@ -285,6 +285,7 @@ type client struct {
 type memphisClientInfo struct {
 	username     string
 	connectionId primitive.ObjectID `json:"connection_id,omitempty"`
+	isNative     bool
 }
 
 type rrTracking struct {

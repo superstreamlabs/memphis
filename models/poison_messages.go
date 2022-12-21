@@ -48,10 +48,10 @@ type MessagePayload struct {
 }
 
 type MessagePayloadDlq struct {
-	TimeSent time.Time   `json:"time_sent"`
-	Size     int         `json:"size"`
-	Data     string      `json:"data"`
-	Headers  []MsgHeader `json:"headers"`
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
 }
 
 type PoisonedCg struct {
@@ -89,7 +89,7 @@ type PoisonMessageResponse struct {
 }
 
 type DlqMessage struct {
-	ID           string            `json:"id"`
+	ID           string            `json:"_id"`
 	StationName  string            `json:"station_name"`
 	MessageSeq   int               `json:"message_seq"`
 	Producer     ProducerDetails   `json:"producer"`
@@ -99,11 +99,11 @@ type DlqMessage struct {
 }
 
 type DlqMessageResponse struct {
-	ID           string            `json:"id"`
+	ID           string            `json:"_id"`
 	StationName  string            `json:"station_name"`
 	MessageSeq   int               `json:"message_seq"`
 	Producer     ProducerDetails   `json:"producer"`
-	PoisonedCg   PoisonedCg        `json:"poisoned_cg"`
+	PoisonedCgs  []PoisonedCg      `json:"poisoned_cgs"`
 	Message      MessagePayloadDlq `json:"message"`
 	CreationDate time.Time         `json:"creation_date"`
 }
@@ -124,6 +124,19 @@ type LightweightPoisonMessage struct {
 }
 
 type PmAckMsg struct {
-	ID     string `json:"id" binding:"required"`
-	CgName string `json:"cg_name" binding:"required"`
+	ID       string `json:"id" binding:"required"`
+	CgName   string `json:"cg_name"`
+	Sequence string `json:"sequence"`
+}
+
+type LightDlqMessage struct {
+	MessageSeq int               `json:"message_seq"`
+	ID         string            `json:"_id"`
+	Message    MessagePayloadDlq `json:"message" bson:"message"`
+}
+
+type LightDlqMessageResponse struct {
+	MessageSeq int               `json:"message_seq"`
+	ID         string            `json:"_id"`
+	Message    MessagePayloadDlq `json:"message"`
 }

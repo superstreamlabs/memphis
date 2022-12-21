@@ -64,16 +64,6 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 	return nil
 }
 
-func removeOldPoisonMsgs() error {
-	filter := bson.M{"creation_date": bson.M{"$lte": (time.Now().Add(-(time.Hour * time.Duration(POISON_MSGS_RETENTION_IN_HOURS))))}}
-	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), filter)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (srv *Server) removeRedundantStations() {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(nil, bson.M{"is_deleted": false})
@@ -205,11 +195,6 @@ func killFunc(s *Server) {
 				serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
 			}
 		}
-	}
-
-	err = removeOldPoisonMsgs()
-	if err != nil {
-		serv.Errorf("killFunc: removeOldPoisonMsgs: " + err.Error())
 	}
 
 	s.removeRedundantStations()
