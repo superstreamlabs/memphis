@@ -14,6 +14,8 @@
 package server
 
 import (
+	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"memphis-broker/models"
@@ -24,6 +26,7 @@ import (
 
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -94,16 +97,27 @@ func (s *Server) HandleNewPoisonMessage(msg []byte) {
 		return
 	}
 
-	producer := models.ProducerDetails{
+	filter := bson.M{"name": producedByHeader, "connection_id": connId}
+	var producer models.Producer
+	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err != nil {
+		serv.Errorf("HandleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+		return
+	}
+
+	producerDetails := models.ProducerDetails{
 		Name:          producedByHeader,
 		ClientAddress: conn.ClientAddress,
 		ConnectionId:  connId,
+		CreatedByUser: producer.CreatedByUser,
+		IsActive:      producer.IsActive,
+		IsDeleted:     producer.IsDeleted,
 	}
 
 	messagePayload := models.MessagePayloadDlq{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
-		Data:     string(poisonMessageContent.Data),
+		Data:     hex.EncodeToString(poisonMessageContent.Data),
 		Headers:  headersJson,
 	}
 	poisonedCg := models.PoisonedCg{
@@ -117,7 +131,7 @@ func (s *Server) HandleNewPoisonMessage(msg []byte) {
 		ID:           id,
 		StationName:  stationName.Ext(),
 		MessageSeq:   int(messageSeq),
-		Producer:     producer,
+		Producer:     producerDetails,
 		PoisonedCg:   poisonedCg,
 		Message:      messagePayload,
 		CreationDate: time.Now(),
@@ -143,7 +157,7 @@ func (pmh PoisonMessagesHandler) GetDlqMsgsByStationLight(station models.Station
 	poisonMessages := make([]models.LightDlqMessageResponse, 0)
 	schemaMessages := make([]models.LightDlqMessageResponse, 0)
 
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 
 	sn, err := StationNameFromStr(station.Name)
 	if err != nil {
@@ -228,9 +242,6 @@ cleanup:
 		return []models.LightDlqMessageResponse{}, []models.LightDlqMessageResponse{}, err
 	}
 
-	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return pmh.GetDlqMsgsByStationLight(station)
-	}
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
@@ -255,11 +266,11 @@ cleanup:
 	}
 
 	sort.Slice(poisonMessages, func(i, j int) bool {
-		return poisonMessages[i].Message.TimeSent.Before(poisonMessages[j].Message.TimeSent)
+		return poisonMessages[i].Message.TimeSent.After(poisonMessages[j].Message.TimeSent)
 	})
 
 	sort.Slice(schemaMessages, func(i, j int) bool {
-		return schemaMessages[i].Message.TimeSent.Before(schemaMessages[j].Message.TimeSent)
+		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
 	return poisonMessages, schemaMessages, nil
@@ -272,7 +283,7 @@ func (pmh PoisonMessagesHandler) GetDlqMsgsByStationFull(station models.Station)
 	idToMsgListP := make(map[string]models.DlqMessageResponse)
 	idToMsgListS := make(map[string]models.DlqMessageResponse)
 
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 
 	sn, err := StationNameFromStr(station.Name)
 	if err != nil {
@@ -356,9 +367,6 @@ cleanup:
 		return []models.DlqMessageResponse{}, []models.DlqMessageResponse{}, err
 	}
 
-	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return pmh.GetDlqMsgsByStationFull(station)
-	}
 	cgToMsgListP := make(map[string]bool)
 	cgToMsgListS := make(map[string]bool)
 	for _, msg := range msgs {
@@ -469,11 +477,11 @@ cleanup:
 	}
 
 	sort.Slice(poisonMessages, func(i, j int) bool {
-		return poisonMessages[i].Message.TimeSent.Before(poisonMessages[j].Message.TimeSent)
+		return poisonMessages[i].Message.TimeSent.After(poisonMessages[j].Message.TimeSent)
 	})
 
 	sort.Slice(schemaMessages, func(i, j int) bool {
-		return schemaMessages[i].Message.TimeSent.Before(schemaMessages[j].Message.TimeSent)
+		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
 	return poisonMessages, schemaMessages, nil
@@ -481,7 +489,7 @@ cleanup:
 
 func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string) (int, error) {
 	count := 0
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 	idCheck := make(map[string]bool)
 
 	sn, err := StationNameFromStr(stationName)
@@ -490,7 +498,8 @@ func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string)
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
-	durableName := "$memphis_fetch_dlqp_consumer_" + stationName
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_dlqp_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -585,11 +594,12 @@ cleanup:
 }
 
 func RemovePoisonedCg(stationName StationName, cgName string) error {
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 
 	streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
 
-	durableName := "$memphis_fetch_dlqp_consumer_" + cgName
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_dlqp_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -664,9 +674,6 @@ cleanup:
 		return err
 	}
 
-	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return RemovePoisonedCg(stationName, cgName)
-	}
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
@@ -690,7 +697,7 @@ cleanup:
 
 func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	count := 0
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -698,7 +705,8 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
-	durableName := "$memphis_fetch_dlqp_consumer_" + cgName
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_dlqp_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -773,9 +781,6 @@ cleanup:
 		return 0, err
 	}
 
-	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return GetTotalPoisonMsgsByCg(stationName, cgName)
-	}
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
@@ -796,7 +801,7 @@ cleanup:
 
 func GetTotalSchemaFailMsgsByCg(stationName, cgName string) (int, error) {
 	count := 0
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 	idCheck := make(map[string]bool)
 
 	sn, err := StationNameFromStr(stationName)
@@ -805,7 +810,8 @@ func GetTotalSchemaFailMsgsByCg(stationName, cgName string) (int, error) {
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
-	durableName := "$memphis_fetch_dlqp_consumer_" + cgName
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_dlqp_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -880,9 +886,6 @@ cleanup:
 		return 0, err
 	}
 
-	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return GetTotalPoisonMsgsByCg(stationName, cgName)
-	}
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
@@ -904,11 +907,12 @@ cleanup:
 }
 
 func GetPoisonedCgsByMessage(stationNameInter string, message models.MessageDetails) ([]models.PoisonedCg, error) {
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 	poisonedCgs := []models.PoisonedCg{}
 	streamName := fmt.Sprintf(dlsStreamName, stationNameInter)
 	cgCheck := make(map[string]bool)
-	durableName := "$memphis_fetch_pcg_consumer_" + stationNameInter
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_pcg_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -985,9 +989,6 @@ cleanup:
 		return []models.PoisonedCg{}, err
 	}
 
-	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return GetPoisonedCgsByMessage(stationNameInter, message)
-	}
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]

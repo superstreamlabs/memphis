@@ -984,7 +984,6 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-
 func (sh StationsHandler) GetDlqMessageJourneyDetails(dlqMsgId string) (models.DlqMessageResponse, error) {
 	dlqMsgId = strings.ReplaceAll(dlqMsgId, " ", "+")
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
@@ -1100,7 +1099,7 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 	splitId := strings.Split(body.PoisonMessageIds[0], "-")
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1214,7 +1213,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timeout := 3 * time.Second
+	timeout := 1 * time.Second
 	splitId := strings.Split(body.PoisonMessageIds[0], "-")
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1321,13 +1320,19 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(msg.Sequence, 10)
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlqMsg.PoisonedCg.CgName + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlqMsg.PoisonedCg.CgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			err = sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(dlqMsg.Message.Data), headers)
+			data, err := hex.DecodeString(dlqMsg.Message.Data)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlqMsg.PoisonedCg.CgName + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlqMsg.PoisonedCg.CgName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			err = sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(data), headers)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlqMsg.PoisonedCg.CgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
