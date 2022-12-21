@@ -1028,11 +1028,3 @@ func GetDlqSubject(subjType string, stationName string, id string) string {
 func GetDlqMsgId(stationName string, messageSeq int, producerName string, timeSent time.Time) string {
 	return strings.ReplaceAll(stationName+"-"+producerName+"-"+strconv.Itoa(messageSeq)+"-"+timeSent.String(), " ", "")
 }
-
-func GetDlqSubject(subjType string, stationName string, id string) string {
-	return fmt.Sprintf(dlsStreamName, stationName) + "." + subjType + "." + id
-}
-
-func GetPoisonMsgId(messageSeq int, producerName string, timeSent time.Time) string {
-	return producerName + "-" + timeSent.String() + "-" + strconv.Itoa(messageSeq)
-}
