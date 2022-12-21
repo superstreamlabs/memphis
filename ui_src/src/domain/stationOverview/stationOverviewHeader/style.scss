@@ -65,13 +65,13 @@
         justify-content: space-between;
         height: 85px;
         align-items: center;
-
+        width: 100%;
+        display: grid;
+        grid-template-columns: 20% 55% 20%;
         .main-details {
             font-size: 12px;
             padding-left: 15px;
             background: #ffffff;
-            width: 18vw;
-            min-width: 140px;
             border-radius: 8px;
             height: 100%;
             display: flex;
@@ -99,15 +99,15 @@
         .icons-wrapper {
             display: flex;
             height: 100%;
+            display: grid;
+            grid-template-columns: 40% 30% 30%;
             position: relative;
             background: #ffffff;
             border-radius: 8px;
-            width: 50vw;
-            min-width: 500px;
             .details-wrapper {
                 padding: 10px 10px 10px 30px;
                 display: flex;
-                width: 33%;
+                min-width: 300px;
                 height: 100%;
                 justify-content: space-between;
                 align-items: center;
@@ -216,8 +216,6 @@
         }
         .info-buttons {
             display: flex;
-            width: 18vw;
-            min-width: 140px;
             height: 100%;
             background: #ffffff;
             border-radius: 8px;
