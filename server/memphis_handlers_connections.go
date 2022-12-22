@@ -34,14 +34,34 @@ var connectionsHandler ConnectionsHandler
 var producersHandler ProducersHandler
 var consumersHandler ConsumersHandler
 
+const connectItemSep = "::"
+
 func handleConnectMessage(client *client) error {
-	splittedMemphisInfo := strings.Split(client.opts.Name, "::")
-	if len(splittedMemphisInfo) != 2 {
+	splittedMemphisInfo := strings.Split(client.opts.Name, connectItemSep)
+
+	var (
+		isNativeMemphisClient bool
+		username              string
+		objID                 primitive.ObjectID
+	)
+	switch len(splittedMemphisInfo) {
+	case 2:
+		// normal Memphis SDK carry on to the rest of the function
+		isNativeMemphisClient = true
+		username = strings.ToLower(splittedMemphisInfo[1])
+	case 1:
+		// NATS SDK, means we extract username from the token field
+		isNativeMemphisClient = false
+		splittedToken := strings.Split(client.opts.Token, connectItemSep)
+		if len(splittedToken) != 2 {
+			client.Warnf("handleConnectMessage: missing username or token")
+			return errors.New("missing username or token")
+		}
+		username = strings.ToLower(splittedToken[0])
+	default:
 		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
-	objIdString := splittedMemphisInfo[0]
-	username := strings.ToLower(splittedMemphisInfo[1])
 
 	exist, user, err := IsUserExist(username)
 	if err != nil {
@@ -59,49 +79,52 @@ func handleConnectMessage(client *client) error {
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}
 
-	objID, err := primitive.ObjectIDFromHex(objIdString)
-	if err != nil {
-		errMsg := "User " + username + ": " + err.Error()
-		client.Errorf("handleConnectMessage: " + errMsg)
-		return err
+	if isNativeMemphisClient {
+		objIdString := splittedMemphisInfo[0]
+		objID, err = primitive.ObjectIDFromHex(objIdString)
+		if err != nil {
+			errMsg := "User " + username + ": " + err.Error()
+			client.Errorf("handleConnectMessage: " + errMsg)
+			return err
+		}
+
+		exist, _, err = IsConnectionExist(objID)
+		if err != nil {
+			errMsg := "User " + username + ": " + err.Error()
+			client.Errorf("handleConnectMessage: " + errMsg)
+			return err
+		}
+
+		if exist {
+			err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
+			if err != nil {
+				errMsg := "User " + username + ": " + err.Error()
+				client.Errorf("handleConnectMessage: " + errMsg)
+				return err
+			}
+			err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
+			if err != nil {
+				errMsg := "User " + username + ": " + err.Error()
+				client.Errorf("handleConnectMessage: " + errMsg)
+				return err
+			}
+			err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
+			if err != nil {
+
+				errMsg := "User " + username + ": " + err.Error()
+				client.Errorf("handleConnectMessage: " + errMsg)
+				return err
+			}
+		} else {
+			err := connectionsHandler.CreateConnection(username, client.RemoteAddress().String(), objID)
+			if err != nil {
+				errMsg := "User " + username + ": " + err.Error()
+				client.Errorf("handleConnectMessage: " + errMsg)
+				return err
+			}
+		}
 	}
 
-	exist, _, err = IsConnectionExist(objID)
-	if err != nil {
-		errMsg := "User " + username + ": " + err.Error()
-		client.Errorf("handleConnectMessage: " + errMsg)
-		return err
-	}
-
-	clientAddress := client.RemoteAddress().String()
-
-	if exist {
-		err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
-		if err != nil {
-			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
-			return err
-		}
-		err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
-		if err != nil {
-			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
-			return err
-		}
-		err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
-		if err != nil {
-			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
-			return err
-		}
-	} else {
-		err := connectionsHandler.CreateConnection(username, clientAddress, objID)
-		if err != nil {
-			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
-			return err
-		}
-	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
@@ -111,10 +134,14 @@ func handleConnectMessage(client *client) error {
 			Value: sdkName,
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.Username, analyticsParams, "user-connect-sdk")
+		event := "user-connect-sdk"
+		if !isNativeMemphisClient {
+			event = "user-connect-nats-sdk"
+		}
+		analytics.SendEventWithParams(username, analyticsParams, event)
 	}
 
-	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID}
+	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
 	return nil
 }
 

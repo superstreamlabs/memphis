@@ -86,21 +86,28 @@ const StationOverview = () => {
     }, []);
 
     useEffect(() => {
-        const sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}`);
+        let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        if (sub) {
+        try {
             (async () => {
-                for await (const msg of sub) {
-                    let data = jc.decode(msg.data);
-                    sortData(data);
-                    stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
-                }
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
+                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
             })();
+        } catch (err) {
+            return;
         }
-
-        setTimeout(() => {
-            state.socket?.publish(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
+        setTimeout(async () => {
+            if (sub) {
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        sortData(data);
+                        stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+                    }
+                })();
+            }
         }, 1000);
         return () => {
             sub?.unsubscribe();

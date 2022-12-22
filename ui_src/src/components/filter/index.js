@@ -40,6 +40,7 @@ const Filter = ({ filterComponent, height }) => {
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
+    let sub;
 
     useEffect(() => {
         if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: '' });
@@ -74,41 +75,53 @@ const Filter = ({ filterComponent, height }) => {
         let sc;
         switch (filterComponent) {
             case 'stations':
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data`);
                 jc = JSONCodec();
                 sc = StringCodec();
-                if (sub) {
+                try {
                     (async () => {
-                        for await (const msg of sub) {
-                            let data = jc.decode(msg.data);
-                            data?.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-                            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-                        }
+                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
                     })();
+                } catch (err) {
+                    return;
                 }
-
-                setTimeout(() => {
-                    state.socket?.publish(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
+                setTimeout(async () => {
+                    if (sub) {
+                        (async () => {
+                            for await (const msg of sub) {
+                                let data = jc.decode(msg.data);
+                                data?.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                            }
+                        })();
+                    }
                 }, 1000);
 
                 return () => {
                     sub?.unsubscribe();
                 };
             case 'schemaverse':
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data`);
                 jc = JSONCodec();
                 sc = StringCodec();
-                if (sub) {
+                try {
                     (async () => {
-                        for await (const msg of sub) {
-                            let data = jc.decode(msg.data);
-                            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-                        }
+                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
                     })();
+                } catch (err) {
+                    return;
                 }
-
-                setTimeout(() => {
-                    state.socket?.publish(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
+                setTimeout(async () => {
+                    if (sub) {
+                        (async () => {
+                            for await (const msg of sub) {
+                                let data = jc.decode(msg.data);
+                                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                            }
+                        })();
+                    }
                 }, 1000);
 
                 return () => {

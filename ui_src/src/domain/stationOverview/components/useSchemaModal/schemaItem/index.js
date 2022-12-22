@@ -13,12 +13,9 @@
 
 import './style.scss';
 
-import { BrokenImageRounded, CancelRounded, CloseRounded, FiberManualRecord, LinkOffRounded } from '@material-ui/icons';
-import React, { useState } from 'react';
-
+import { CloseRounded, FiberManualRecord } from '@material-ui/icons';
+import React from 'react';
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
-import deleteIcon from '../../../../../assets/images/deleteIcon.svg';
-
 import { parsingDate } from '../../../../../services/valueConvertor';
 
 const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, handleStopUseSchema }) => {

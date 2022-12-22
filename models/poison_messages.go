@@ -28,19 +28,19 @@ type ProducerDetails struct {
 	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
-type MessagePayloadDb struct {
-	TimeSent time.Time   `json:"time_sent" bson:"time_sent"`
-	Size     int         `json:"size" bson:"size"`
-	Data     string      `json:"data" bson:"data"`
-	Headers  []MsgHeader `json:"headers" bson:"headers"`
-}
-
 type MsgHeader struct {
 	HeaderKey   string `json:"header_key" bson:"header_key"`
 	HeaderValue string `json:"header_value" bson:"header_value"`
 }
 
 type MessagePayload struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
+type MessagePayloadDls struct {
 	TimeSent time.Time         `json:"time_sent"`
 	Size     int               `json:"size"`
 	Data     string            `json:"data"`
@@ -61,42 +61,40 @@ type PoisonedCg struct {
 	IsDeleted           bool       `json:"is_deleted" bson:"is_deleted"`
 }
 
-type PoisonMessage struct {
-	ID           primitive.ObjectID `json:"_id" bson:"_id"`
-	StationName  string             `json:"station_name" bson:"station_name"`
-	MessageSeq   int                `json:"message_seq" bson:"message_seq"`
-	Producer     ProducerDetails    `json:"producer" bson:"producer"`
-	PoisonedCgs  []PoisonedCg       `json:"poisoned_cgs" bson:"poisoned_cgs"`
-	Message      MessagePayloadDb   `json:"message" bson:"message"`
-	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
+type DlsMessage struct {
+	ID           string            `json:"_id"`
+	StationName  string            `json:"station_name"`
+	MessageSeq   int               `json:"message_seq"`
+	Producer     ProducerDetails   `json:"producer"`
+	PoisonedCg   PoisonedCg        `json:"poisoned_cg"`
+	Message      MessagePayloadDls `json:"message"`
+	CreationDate time.Time         `json:"creation_date"`
 }
 
-type PoisonMessageResponse struct {
-	ID           primitive.ObjectID `json:"_id"`
-	StationName  string             `json:"station_name"`
-	MessageSeq   int                `json:"message_seq"`
-	Producer     ProducerDetails    `json:"producer"`
-	PoisonedCgs  []PoisonedCg       `json:"poisoned_cgs"`
-	Message      MessagePayload     `json:"message"`
-	CreationDate time.Time          `json:"creation_date"`
-}
-
-type LightPoisonMessage struct {
-	ID      primitive.ObjectID `json:"_id" bson:"_id"`
-	Message MessagePayloadDb   `json:"message" bson:"message"`
-}
-
-type LightPoisonMessageResponse struct {
-	ID      primitive.ObjectID `json:"_id"`
-	Message MessagePayload     `json:"message"`
-}
-
-type LightweightPoisonMessage struct {
-	ID   primitive.ObjectID `json:"_id" bson:"_id"`
-	Data string             `json:"data" bson:"data"`
+type DlsMessageResponse struct {
+	ID           string            `json:"_id"`
+	StationName  string            `json:"station_name"`
+	MessageSeq   int               `json:"message_seq"`
+	Producer     ProducerDetails   `json:"producer"`
+	PoisonedCgs  []PoisonedCg      `json:"poisoned_cgs"`
+	Message      MessagePayloadDls `json:"message"`
+	CreationDate time.Time         `json:"creation_date"`
 }
 
 type PmAckMsg struct {
-	ID     string `json:"id" binding:"required"`
-	CgName string `json:"cg_name" binding:"required"`
+	ID       string `json:"id" binding:"required"`
+	CgName   string `json:"cg_name"`
+	Sequence string `json:"sequence"`
+}
+
+type LightDlsMessage struct {
+	MessageSeq int               `json:"message_seq"`
+	ID         string            `json:"_id"`
+	Message    MessagePayloadDls `json:"message" bson:"message"`
+}
+
+type LightDlsMessageResponse struct {
+	MessageSeq int               `json:"message_seq"`
+	ID         string            `json:"_id"`
+	Message    MessagePayloadDls `json:"message"`
 }

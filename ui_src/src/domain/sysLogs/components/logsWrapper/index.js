@@ -17,15 +17,13 @@ import { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import Lottie from 'lottie-react';
 
-import searchIcon from '../../../../assets/images/searchIcon.svg';
 import animationData from '../../../../assets/lotties/MemphisGif.json';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import { Context } from '../../../../hooks/store';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { StringCodec, JSONCodec, DebugEvents } from 'nats.ws';
+import { StringCodec, JSONCodec } from 'nats.ws';
 let sub;
 
 const LogsWrapper = () => {
@@ -92,29 +90,46 @@ const LogsWrapper = () => {
     }, [stateRef.current[1]]);
 
     const startListen = () => {
-        sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data`);
         const jc = JSONCodec();
         const sc = StringCodec();
-        if (sub) {
-            (async () => {
-                for await (const msg of sub) {
-                    let data = jc.decode(msg.data);
-                    let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
-                    const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
-                    if (stateRef.current[4]) {
-                        setSelectedRow(data.logs[0].message_seq);
-                        setDisplayedLog(data.logs[0]);
-                    }
-                    setLastMgsSeq(data.logs[0].message_seq);
-                    setLogs((users) => [...uniqueItems, ...users]);
-                }
-            })();
+
+        if (logType === '') {
+            try {
+                (async () => {
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
+                })();
+            } catch (err) {
+                return;
+            }
+        } else {
+            try {
+                (async () => {
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'));
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
+                })();
+            } catch (err) {
+                return;
+            }
         }
-        setTimeout(() => {
-            if (logType === '') {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
-            } else {
-                state.socket?.publish(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'));
+
+        setTimeout(async () => {
+            if (sub) {
+                (async () => {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
+                        const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
+                        if (stateRef.current[4]) {
+                            setSelectedRow(data.logs[0].message_seq);
+                            setDisplayedLog(data.logs[0]);
+                        }
+                        setLastMgsSeq(data.logs[0].message_seq);
+                        setLogs((users) => [...uniqueItems, ...users]);
+                    }
+                })();
             }
         }, 2000);
     };
@@ -144,21 +159,23 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest logs ({logs?.length})</p>
+                    <p className="header-title">Latest logs {logs?.length > 0 && `(${logs?.length})`}</p>
                 </list-header>
-                <Virtuoso
-                    data={logs}
-                    rangeChanged={setVisibleRange}
-                    className="logsl"
-                    endReached={!stopLoad ? loadMore : null}
-                    overscan={100}
-                    itemContent={(index, log) => (
-                        <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                            <LogPayload selectedRow={selectedRow} value={log} onSelected={(e) => selsectLog(e)} />
-                        </div>
-                    )}
-                    components={!stopLoad ? { Footer } : {}}
-                />
+                {logs?.length > 0 && (
+                    <Virtuoso
+                        data={logs}
+                        rangeChanged={setVisibleRange}
+                        className="logsl"
+                        endReached={!stopLoad ? loadMore : null}
+                        overscan={100}
+                        itemContent={(index, log) => (
+                            <div className={index % 2 === 0 ? 'even' : 'odd'}>
+                                <LogPayload selectedRow={selectedRow} value={log} onSelected={(e) => selsectLog(e)} />
+                            </div>
+                        )}
+                        components={!stopLoad ? { Footer } : {}}
+                    />
+                )}
             </logs>
             <LogContent displayedLog={displayedLog} />
         </div>

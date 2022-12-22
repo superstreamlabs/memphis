@@ -67,7 +67,7 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan st
 		select {
 		case <-ticker.C:
 			for k, updateFiller := range subs {
-				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
+				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+configuration.SERVER_NAME)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
 					delete(subs, k)
@@ -130,6 +130,23 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		default:
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
+		if configuration.SERVER_NAME == "" {
+			configuration.SERVER_NAME = "broker"
+		}
+
+		type brokerName struct {
+			Name string `json:"name"`
+		}
+
+		broName := brokerName{configuration.SERVER_NAME}
+		serverName, err := json.Marshal(broName)
+
+		if err != nil {
+			s.Errorf("memphis websocket: " + err.Error())
+			return
+		}
+
+		s.sendInternalAccountMsg(s.GlobalAccount(), reply, serverName)
 	}
 }
 
@@ -160,7 +177,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
+			return h.Stations.GetDlsMessageJourneyDetails(poisonMsgId)
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
@@ -242,7 +259,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, err := h.PoisonMsgs.GetPoisonMsgsByStation(station)
+	poisonMessages, schemaFailMessages, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -277,6 +294,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_fail_messages":     schemaFailMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
@@ -306,6 +324,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"audit_logs":               auditLogs,
 		"messages":                 messages,
 		"poison_messages":          poisonMessages,
+		"schema_fail_messages":     schemaFailMessages,
 		"tags":                     tags,
 		"leader":                   leader,
 		"followers":                followers,

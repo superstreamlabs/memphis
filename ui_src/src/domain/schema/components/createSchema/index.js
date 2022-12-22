@@ -12,7 +12,8 @@
 // limitations under the License.package server
 
 import './style.scss';
-
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../../../router';
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
@@ -156,7 +157,8 @@ const SchemaEditorExample = {
     }
 };
 
-function CreateSchema() {
+function CreateSchema({ createNew }) {
+    const history = useHistory();
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: '',
@@ -196,7 +198,8 @@ function CreateSchema() {
     }, [formFields?.type]);
 
     const goBack = () => {
-        dispatch({ type: 'SET_CREATE_SCHEMA', payload: false });
+        history.push(pathDomains.schemaverse);
+        createNew(false);
     };
 
     const handleSubmit = async () => {

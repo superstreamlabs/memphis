@@ -759,6 +759,14 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 
 	if c.kind == CLIENT {
 		if token != _EMPTY_ {
+			if !strings.Contains(c.opts.Name, connectItemSep) {
+				// if the Name field does not contain '::' this is native NATS SDK
+				tokenSplit := strings.Split(c.opts.Token, connectItemSep)
+				if len(tokenSplit) != 2 {
+					return false
+				}
+				return comparePasswords(token, tokenSplit[1])
+			}
 			return comparePasswords(token, c.opts.Token)
 		} else if username != _EMPTY_ {
 			if username != c.opts.Username {

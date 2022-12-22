@@ -19,7 +19,7 @@ import MultiCollapse from '../../../stationOverview/stationObservabilty/componen
 const ConsumerGroup = ({ header, details, cgMembers }) => {
     const [consumers, setConsumers] = useState([]);
     useEffect(() => {
-        cgMembers.map((row, index) => {
+        cgMembers?.map((row, index) => {
             let consumer = {
                 name: row.name,
                 is_active: row.is_active,
