@@ -690,6 +690,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
+				"is_native":                newStation.IsNative,
 			},
 		}
 	} else {
@@ -709,6 +710,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
+				"is_native":                newStation.IsNative,
 			},
 		}
 	}
