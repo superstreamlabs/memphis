@@ -295,7 +295,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+	poisonMessages, schemaFailedMessages, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -349,6 +349,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_failed_messages":   schemaFailedMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
@@ -371,6 +372,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_failed_messages":   schemaFailedMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,

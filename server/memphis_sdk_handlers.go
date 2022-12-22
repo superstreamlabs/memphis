@@ -184,6 +184,16 @@ func respondWithErr(s *Server, replySubject string, err error) {
 	s.respondOnGlobalAcc(replySubject, resp)
 }
 
+func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
+	if jsApi {
+		s := c.srv
+		ci := c.getClientInfo(false)
+		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		return
+	}
+	respondWithErr(c.srv, reply, err)
+}
+
 func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
