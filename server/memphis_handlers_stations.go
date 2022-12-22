@@ -1099,11 +1099,17 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 	if err != nil {
 		return dlsMessage, err
 	}
+	
+	cgs := make([]models.PoisonedCg, 0)
 	sort.Slice(poisonedCgs, func(i, j int) bool {
 		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
 	})
-
+	cgCheck := make(map[string]bool)
 	for _, cg := range poisonedCgs {
+		if _, value := cgCheck[cg.CgName]; value {
+			continue
+		}
+		cgCheck[cg.CgName] = true
 		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 		if err != nil {
 			return dlsMessage, err
@@ -1114,16 +1120,22 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 		if err != nil {
 			return dlsMessage, err
 		}
+		totalPms, err := GetTotalPoisonMsgsByCg(sn.Intern(), cg.CgName)
+		if err != nil {
+			return dlsMessage, err
+		}
 		cg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
 		cg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 		cg.UnprocessedMessages = int(cgInfo.NumPending)
 		cg.InProcessMessages = cgInfo.NumAckPending
+		cg.TotalPoisonMessages = totalPms
 		cg.CgMembers = cgMembers
 		cg.IsActive = isActive
 		cg.IsDeleted = isDeleted
+		cgs = append(cgs, cg)
 	}
 
-	copy(dlsMessage.PoisonedCgs, poisonedCgs)
+	dlsMessage.PoisonedCgs = cgs
 
 	return dlsMessage, nil
 }
