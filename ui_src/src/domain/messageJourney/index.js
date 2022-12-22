@@ -47,7 +47,6 @@ const MessageJourney = () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${messageId}`);
-            console.log(data);
             arrangeData(data);
         } catch (error) {
             setisLoading(false);
