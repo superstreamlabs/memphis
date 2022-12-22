@@ -30,7 +30,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const PoisonMessageTitle = "Poison message"
+const (
+	PoisonMessageTitle = "Poison message"
+	dlsMsgSep          = "~"
+)
 
 type PoisonMessagesHandler struct{ S *Server }
 
@@ -179,7 +182,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -305,7 +308,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationFull(station models.Station)
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -512,7 +515,7 @@ func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string)
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -613,7 +616,7 @@ func RemovePoisonedCg(stationName StationName, cgName string) error {
 	streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
 
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -720,7 +723,7 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -825,7 +828,7 @@ func GetTotalSchemaFailMsgsByCg(stationName, cgName string) (int, error) {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
@@ -1035,7 +1038,7 @@ func GetDlsSubject(subjType string, stationName string, id string) string {
 }
 
 func GetDlsMsgId(stationName string, messageSeq int, producerName string, timeSent time.Time) string {
-	msgId := strings.ReplaceAll(stationName+"~"+producerName+"~"+strconv.Itoa(messageSeq)+"~"+timeSent.String(), " ", "")
+	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producerName+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent.String(), " ", "")
 	msgId = strings.ReplaceAll(msgId, ".", "-")
 	return msgId
 }

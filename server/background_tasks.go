@@ -139,16 +139,15 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func ackPoisonMsgV0(msgId string, cgName string) error {
-	splitId := strings.Split(msgId, "~")
+	splitId := strings.Split(msgId, dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		return err
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	timeout := 1 * time.Second
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlsp_consumer_" + uid
+	durableName := "$memphis_fetch_dls_consumer_" + uid
 	var msgs []StoredMsg
 	streamInfo, err := serv.memphisStreamInfo(streamName)
 	if err != nil {
@@ -195,7 +194,7 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	}
 
 	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
+	timeout := 30 * time.Second
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
 		select {
@@ -227,6 +226,7 @@ cleanup:
 				if err != nil {
 					return err
 				}
+				return nil
 			}
 		}
 	}
@@ -250,7 +250,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 					return
 				}
 			} else {
-				splitId := strings.Split(msgToAck.ID, "~")
+				splitId := strings.Split(msgToAck.ID, dlsMsgSep)
 				stationName := splitId[0]
 				sn, err := StationNameFromStr(stationName)
 				if err != nil {

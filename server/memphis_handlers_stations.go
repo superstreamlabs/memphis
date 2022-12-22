@@ -1042,7 +1042,7 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 	dlsMsgId = strings.ReplaceAll(dlsMsgId, " ", "+")
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	var dlsMessage models.DlsMessageResponse
-	splitId := strings.Split(dlsMsgId, "~")
+	splitId := strings.Split(dlsMsgId, dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -1161,7 +1161,7 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 		return
 	}
 	timeout := 1 * time.Second
-	splitId := strings.Split(body.PoisonMessageIds[0], "~")
+	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -1172,7 +1172,7 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	for _, msgId := range body.PoisonMessageIds {
 		uid := serv.memphis.nuid.Next()
-		durableName := "$memphis_fetch_dlsp_consumer_" + uid
+		durableName := "$memphis_fetch_dls_consumer_" + uid
 		var msgs []StoredMsg
 		streamInfo, err := serv.memphisStreamInfo(streamName)
 		if err != nil {
@@ -1269,13 +1269,13 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 }
 
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
-	var body models.ResendPoisonMessagesSchemaV2
+	var body models.ResendPoisonMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 	timeout := 1 * time.Second
-	splitId := strings.Split(body.PoisonMessageIds[0], "~")
+	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -1286,7 +1286,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	for _, msgId := range body.PoisonMessageIds {
 		uid := serv.memphis.nuid.Next()
-		durableName := "$memphis_fetch_dlsp_consumer_" + uid
+		durableName := "$memphis_fetch_dls_consumer_" + uid
 		var msgs []StoredMsg
 		streamInfo, err := serv.memphisStreamInfo(streamName)
 		if err != nil {

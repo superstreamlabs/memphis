@@ -156,10 +156,6 @@ type AckPoisonMessagesSchema struct {
 }
 
 type ResendPoisonMessagesSchema struct {
-	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
-}
-
-type ResendPoisonMessagesSchemaV2 struct {
 	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
 }
 
