@@ -14,6 +14,8 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
+import { StringCodec, JSONCodec } from 'nats.ws';
+import { useHistory } from 'react-router-dom';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../services/valueConvertor';
 import PoisonMessage from './components/poisonMessage';
@@ -22,12 +24,11 @@ import BackIcon from '../../assets/images/backIcon.svg';
 import ConsumerGroup from './components/consumerGroup';
 import { Canvas, Node, Edge, Label } from 'reaflow';
 import { httpRequest } from '../../services/http';
-import { useHistory } from 'react-router-dom';
 import Producer from './components/producer';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
+import { message } from 'antd';
 import pathDomains from '../../router';
-import { StringCodec, JSONCodec } from 'nats.ws';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
@@ -46,6 +47,7 @@ const MessageJourney = () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${messageId}`);
+            console.log(data);
             arrangeData(data);
         } catch (error) {
             setisLoading(false);
@@ -131,7 +133,17 @@ const MessageJourney = () => {
             }
         ];
         if (data) {
-            data.poisoned_cgs.map((row, index) => {
+            if (!data?.poisoned_cgs) {
+                message.success({
+                    key: 'memphisSuccessMessage',
+                    content: 'All the CGs acked the message',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisSuccessMessage')
+                });
+                returnBack();
+            }
+            data?.poisoned_cgs?.map((row, index) => {
                 let cg = {
                     name: row.cg_name,
                     is_active: row.is_active,

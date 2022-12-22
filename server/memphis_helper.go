@@ -620,7 +620,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 				}
 			}
 
-			if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
+			if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent
 				continue
 			}
 			messageDetails.ProducedBy = producedByHeader
@@ -833,7 +833,7 @@ func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error
 		return err
 	}
 
-	hdrs["$memphis_producedBy"] = "$memphis_dlq"
+	hdrs["$memphis_producedBy"] = "$memphis_dls"
 
 	if hdrs["producedBy"] != "" {
 		delete(hdrs, "producedBy")

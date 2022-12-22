@@ -295,7 +295,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, schemaFailMessages, err := poisonMsgsHandler.GetDlqMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -338,17 +338,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
 
 		response = gin.H{
-			"connected_producers":    connectedProducers,
-			"disconnected_producers": disconnectedProducers,
-			"deleted_producers":      deletedProducers,
-			"connected_cgs":          connectedCgs,
-			"disconnected_cgs":       disconnectedCgs,
-			"deleted_cgs":            deletedCgs,
-			"total_messages":         totalMessages,
-			"average_message_size":   avgMsgSize,
-			"audit_logs":             auditLogs,
-			"messages":               messages,
-			"poison_messages":        poisonMessages,
+			"connected_producers":      connectedProducers,
+			"disconnected_producers":   disconnectedProducers,
+			"deleted_producers":        deletedProducers,
+			"connected_cgs":            connectedCgs,
+			"disconnected_cgs":         disconnectedCgs,
+			"deleted_cgs":              deletedCgs,
+			"total_messages":           totalMessages,
+			"average_message_size":     avgMsgSize,
+			"audit_logs":               auditLogs,
+			"messages":                 messages,
+			"poison_messages":          poisonMessages,
 			"schema_fail_messages":     schemaFailMessages,
 			"tags":                     tags,
 			"leader":                   leader,
@@ -361,17 +361,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	} else {
 		var emptyResponse struct{}
 		response = gin.H{
-			"connected_producers":    connectedProducers,
-			"disconnected_producers": disconnectedProducers,
-			"deleted_producers":      deletedProducers,
-			"connected_cgs":          connectedCgs,
-			"disconnected_cgs":       disconnectedCgs,
-			"deleted_cgs":            deletedCgs,
-			"total_messages":         totalMessages,
-			"average_message_size":   avgMsgSize,
-			"audit_logs":             auditLogs,
-			"messages":               messages,
-			"poison_messages":        poisonMessages,
+			"connected_producers":      connectedProducers,
+			"disconnected_producers":   disconnectedProducers,
+			"deleted_producers":        deletedProducers,
+			"connected_cgs":            connectedCgs,
+			"disconnected_cgs":         disconnectedCgs,
+			"deleted_cgs":              deletedCgs,
+			"total_messages":           totalMessages,
+			"average_message_size":     avgMsgSize,
+			"audit_logs":               auditLogs,
+			"messages":                 messages,
+			"poison_messages":          poisonMessages,
 			"schema_fail_messages":     schemaFailMessages,
 			"tags":                     tags,
 			"leader":                   leader,

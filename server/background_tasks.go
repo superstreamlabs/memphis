@@ -139,7 +139,7 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func ackPoisonMsgV0(msgId string, cgName string) error {
-	splitId := strings.Split(msgId, "-")
+	splitId := strings.Split(msgId, "~")
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -148,13 +148,13 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	timeout := 1 * time.Second
 	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dlqp_consumer_" + uid
+	durableName := "$memphis_fetch_dlsp_consumer_" + uid
 	var msgs []StoredMsg
 	streamInfo, err := serv.memphisStreamInfo(streamName)
 	if err != nil {
 		return err
 	}
-	filter := GetDlqSubject("poison", sn.Intern(), msgId)
+	filter := GetDlsSubject("poison", sn.Intern(), msgId)
 	amount := streamInfo.State.Msgs
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
@@ -216,13 +216,13 @@ cleanup:
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
-		var dlqMsg models.DlqMessage
-		err = json.Unmarshal(msg.Data, &dlqMsg)
+		var dlsMsg models.DlsMessage
+		err = json.Unmarshal(msg.Data, &dlsMsg)
 		if err != nil {
 			return err
 		}
 		if msgType == "poison" {
-			if dlqMsg.PoisonedCg.CgName == cgName {
+			if dlsMsg.PoisonedCg.CgName == cgName {
 				_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
 				if err != nil {
 					return err
@@ -250,7 +250,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 					return
 				}
 			} else {
-				splitId := strings.Split(msgToAck.ID, "-")
+				splitId := strings.Split(msgToAck.ID, "~")
 				stationName := splitId[0]
 				sn, err := StationNameFromStr(stationName)
 				if err != nil {
