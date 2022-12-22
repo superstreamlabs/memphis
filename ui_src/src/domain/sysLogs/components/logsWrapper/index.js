@@ -17,10 +17,8 @@ import { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import Lottie from 'lottie-react';
 
-import searchIcon from '../../../../assets/images/searchIcon.svg';
 import animationData from '../../../../assets/lotties/MemphisGif.json';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import { Context } from '../../../../hooks/store';
 import LogPayload from '../logPayload';
@@ -92,29 +90,32 @@ const LogsWrapper = () => {
     }, [stateRef.current[1]]);
 
     const startListen = () => {
-        let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
 
-        setTimeout(async () => {
-            if (logType === '') {
-                try {
+        if (logType === '') {
+            try {
+                (async () => {
                     const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
                     const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
-                } catch (err) {
-                    return;
-                }
-            } else {
-                try {
+                })();
+            } catch (err) {
+                return;
+            }
+        } else {
+            try {
+                (async () => {
                     const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'));
                     const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
-                } catch (err) {
-                    return;
-                }
+                })();
+            } catch (err) {
+                return;
             }
+        }
 
+        setTimeout(async () => {
             if (sub) {
                 (async () => {
                     for await (const msg of sub) {

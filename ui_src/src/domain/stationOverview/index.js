@@ -84,15 +84,16 @@ const StationOverview = () => {
         let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        setTimeout(async () => {
-            try {
+        try {
+            (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
                 const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
-            } catch (err) {
-                return;
-            }
-
+            })();
+        } catch (err) {
+            return;
+        }
+        setTimeout(async () => {
             if (sub) {
                 (async () => {
                     for await (const msg of sub) {

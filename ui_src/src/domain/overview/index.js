@@ -132,15 +132,17 @@ function OverView() {
         const jc = JSONCodec();
         let sub;
 
-        setTimeout(async () => {
-            try {
+        try {
+            (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
                 const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
-            } catch (err) {
-                return;
-            }
-            setisLoading(false);
+            })();
+        } catch (err) {
+            return;
+        }
+        setisLoading(false);
+        setTimeout(async () => {
             if (sub) {
                 (async () => {
                     for await (const msg of sub) {
@@ -150,10 +152,11 @@ function OverView() {
                     }
                 })();
             }
-            return () => {
-                sub?.unsubscribe();
-            };
         }, 1000);
+
+        return () => {
+            sub?.unsubscribe();
+        };
     }, [state.socket]);
 
     const setBotImage = (botId) => {
@@ -161,7 +164,6 @@ function OverView() {
     };
 
     const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
-
     return (
         <div className="overview-container">
             {isLoading && (
