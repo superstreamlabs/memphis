@@ -249,8 +249,8 @@ const Messages = () => {
                         </div>
                     )}
                 </div>
-                {tabValue === 'Dead-letter' && (
-                    <TooltipComponent text={stationState?.stationMetaData.is_deleted && 'Gross size. Payload + headers + Memphis metadata'}>
+                {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                    <TooltipComponent text={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}>
                         <div className="right-side">
                             <Button
                                 width="80px"
@@ -261,7 +261,7 @@ const Messages = () => {
                                 backgroundColorType="purple"
                                 fontSize="12px"
                                 fontWeight="600"
-                                disabled={isCheck.length === 0 || stationState?.stationMetaData.is_deleted}
+                                disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
                                 isLoading={ignoreProcced}
                                 onClick={() => handleAck()}
                             />
@@ -274,7 +274,7 @@ const Messages = () => {
                                 backgroundColorType="purple"
                                 fontSize="12px"
                                 fontWeight="600"
-                                disabled={isCheck.length === 0 || stationState?.stationMetaData.is_deleted}
+                                disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
                                 isLoading={resendProcced}
                                 onClick={() => handleResend()}
                             />

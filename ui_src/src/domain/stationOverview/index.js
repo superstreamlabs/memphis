@@ -27,7 +27,7 @@ import pathDomains from '../../router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
 
-const initialState = {
+const initializeState = {
     stationMetaData: {},
     stationSocketData: {}
 };
@@ -137,5 +137,5 @@ const StationOverview = () => {
     );
 };
 
-export const StationStoreContext = createContext({ initialState });
+export const StationStoreContext = createContext({ initializeState });
 export default StationOverview;
