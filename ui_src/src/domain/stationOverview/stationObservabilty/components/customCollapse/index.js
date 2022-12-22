@@ -101,7 +101,6 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                                 {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
                             </p>
                             <status is="x3d">
-                                {/* {status && <StatusIndication is_active={data?.is_active} is_deleted={data?.is_deleted} />} */}
                                 <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
                             </status>
                         </div>
@@ -117,29 +116,6 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                                 <Copy data={data} />
                                 <div className="second-row">
                                     <SegmentButton options={['bytes', 'string', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
-                                    {/* <div className="switcher">
-                                        <div className={parser === 'bytes' ? 'selected-parser left selected' : 'selected-parser left'} onClick={() => setParser('bytes')}>
-                                            <p>bytes</p>
-                                        </div>
-                                        <div
-                                            className={parser === 'string' ? 'selected-parser middle selected' : 'selected-parser middle'}
-                                            onClick={() => setParser('string')}
-                                        >
-                                            <p>string</p>
-                                        </div>
-                                        <div
-                                            className={parser === 'json' ? 'selected-parser middle selected' : 'selected-parser middle'}
-                                            onClick={() => setParser('json')}
-                                        >
-                                            <p>json</p>
-                                        </div>
-                                        <div
-                                            className={parser === 'protobuf' ? 'selected-parser right selected' : 'selected-parser right'}
-                                            onClick={() => setParser('protobuf')}
-                                        >
-                                            <p>protobuf</p>
-                                        </div>
-                                    </div> */}
                                 </div>
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>

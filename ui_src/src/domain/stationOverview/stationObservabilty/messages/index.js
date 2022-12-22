@@ -36,6 +36,7 @@ import DetailBox from '../../../../components/detailBox';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import CheckboxComponent from '../../../../components/checkBox';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -248,35 +249,37 @@ const Messages = () => {
                         </div>
                     )}
                 </div>
-                {tabValue === 'Dead-letter' && (
-                    <div className="right-side">
-                        <Button
-                            width="80px"
-                            height="32px"
-                            placeholder="Drop"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            disabled={isCheck.length === 0}
-                            isLoading={ignoreProcced}
-                            onClick={() => handleAck()}
-                        />
-                        <Button
-                            width="100px"
-                            height="32px"
-                            placeholder="Resend"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            disabled={isCheck.length === 0}
-                            isLoading={resendProcced}
-                            onClick={() => handleResend()}
-                        />
-                    </div>
+                {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                    <TooltipComponent text={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}>
+                        <div className="right-side">
+                            <Button
+                                width="80px"
+                                height="32px"
+                                placeholder="Drop"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
+                                isLoading={ignoreProcced}
+                                onClick={() => handleAck()}
+                            />
+                            <Button
+                                width="100px"
+                                height="32px"
+                                placeholder="Resend"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
+                                isLoading={resendProcced}
+                                onClick={() => handleResend()}
+                            />
+                        </div>
+                    </TooltipComponent>
                 )}
             </div>
             <div className="tabs">

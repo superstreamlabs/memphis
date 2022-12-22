@@ -252,8 +252,8 @@
     }
 }
 .modal-wrapper {
-    .ant-modal-body {
-        padding-top: 0px;
+    .ant-modal-body{
+        padding-top: 0px !important;
     }
     .tabs-headers {
         .ant-tabs-tab {

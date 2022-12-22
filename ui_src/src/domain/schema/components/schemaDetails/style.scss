@@ -156,7 +156,8 @@ schema-details {
                     font-family: 'InterSemiBold';
                     font-size: 18px;
                     margin-right: 15px;
-                }.attach-button{
+                }
+                .attach-button{
                     color: var(--purple);
                     font-size: 14px;
                     font-family: 'InterSemiBold' !important; 
@@ -288,6 +289,9 @@ schema-details {
                 width: 23px;
             }
         }
+    }
+    .ant-modal-body{
+        padding-top:0
     }
     
 }

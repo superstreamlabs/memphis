@@ -41,9 +41,6 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import ProtocolExample from '../components/protocolExsample';
-import SegmentButton from '../../../components/segmentButton';
-import CustomTabs from '../../../components/Tabs';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -55,7 +52,6 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
-    const [segment, setSegment] = useState(`Sdk's`);
     const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
@@ -193,24 +189,27 @@ const StationOverviewHeader = () => {
                             {stationState?.stationSocketData?.schema === undefined ||
                                 (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                                     <>
-                                        <div className="add-new">
-                                            <Button
-                                                width="120px"
-                                                height="25px"
-                                                placeholder={
-                                                    <div className="use-schema-button">
-                                                        <Add />
-                                                        <p>Attach schema</p>
-                                                    </div>
-                                                }
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="purple"
-                                                fontSize="12px"
-                                                fontFamily="InterSemiBold"
-                                                onClick={() => setUseSchemaModal(true)}
-                                            />
-                                        </div>
+                                        <TooltipComponent text={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}>
+                                            <div className="add-new">
+                                                <Button
+                                                    width="120px"
+                                                    height="25px"
+                                                    placeholder={
+                                                        <div className="use-schema-button">
+                                                            <Add />
+                                                            <p>Attach schema</p>
+                                                        </div>
+                                                    }
+                                                    colorType="white"
+                                                    radiusType="circle"
+                                                    backgroundColorType="purple"
+                                                    fontSize="12px"
+                                                    fontFamily="InterSemiBold"
+                                                    disabled={!stationState?.stationMetaData.is_native}
+                                                    onClick={() => setUseSchemaModal(true)}
+                                                />
+                                            </div>
+                                        </TooltipComponent>
                                     </>
                                 ) : (
                                     <div className="buttons">
@@ -281,22 +280,15 @@ const StationOverviewHeader = () => {
                     </div>
                 </div>
                 <Modal
-                    header={
-                        <div className="tabs-headers">
-                            <CustomTabs value={segment} onChange={(e) => setSegment(e)} tabs={[`Sdk's`, 'Protocols']}></CustomTabs>
-                        </div>
-                    }
                     width="710px"
-                    height={'640px'}
+                    height={'700px'}
                     clickOutside={() => {
                         setSdkModal(false);
-                        setSegment(`Sdk's`);
                     }}
                     open={sdkModal}
                     displayButtons={false}
                 >
-                    {segment === `Sdk's` && <SdkExample />}
-                    {segment === 'Protocols' && <ProtocolExample />}
+                    <SdkExample />
                 </Modal>
                 <Modal
                     header={

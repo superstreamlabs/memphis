@@ -166,7 +166,7 @@ function SideBar() {
             </div>
             <div className="bottom-icons">
                 <Link to={`${pathDomains.preferences}/integrations`}>
-                    <TooltipComponent text="Integration" placement="right">
+                    <TooltipComponent text="Integrations" placement="right">
                         <div className="integration-icon-wrapper">
                             <img src={integrationNavIcon} />
                         </div>

@@ -44,9 +44,9 @@ function ClusterConfiguration() {
 
     const updateConfiguration = async () => {
         try {
-            await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
+            const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
             setIsChanged(false);
-            setOldValues(...formFields);
+            setOldValues(data);
         } catch (err) {
             return;
         }
