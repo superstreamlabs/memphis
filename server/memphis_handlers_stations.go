@@ -346,12 +346,11 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	var stations []models.Station
 
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{
-			bson.D{{"is_deleted", false}},
-			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
-		}}}}},
-	})
+	filter := bson.M{"$or": []interface{}{
+		bson.M{"is_deleted": bson.M{"$exists": false}},
+		bson.M{"is_deleted": false},
+	}}
+	cursor, err := stationsCollection.Find(context.TODO(), filter)
 	if err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
@@ -389,6 +388,9 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 				station.StorageType = "disk"
 			}
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
+		}
+		if exStations == nil {
+			return []models.ExtendedStationDetails{}, nil
 		}
 		return exStations, nil
 	}
