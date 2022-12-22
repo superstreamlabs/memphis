@@ -128,15 +128,15 @@ function SideBar() {
                     </Link>
                 </div>
                 <div className="item-wrapper">
-                    <Link to={pathDomains.schemas}>
+                    <Link to={pathDomains.schemaverse}>
                         <div className="icon">
-                            {state.route === 'schemas' ? (
+                            {state.route === 'schemaverse' ? (
                                 <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
                             ) : (
                                 <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
                             )}
                         </div>
-                        <p className={state.route === 'schemas' ? 'checked' : 'name'}>Schemaverse</p>
+                        <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                     </Link>
                 </div>
                 <div className="item-wrapper">
