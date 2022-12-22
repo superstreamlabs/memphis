@@ -138,7 +138,7 @@ const MessageJourney = () => {
             }
         ];
         if (data) {
-            if (!data?.poisoned_cgs) {
+            if (!data?.poisoned_cgs || data?.poisoned_cgs.length === 0) {
                 message.success({
                     key: 'memphisSuccessMessage',
                     content: 'All the CGs acked the message',

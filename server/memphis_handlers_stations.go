@@ -126,11 +126,6 @@ func removeStationResources(s *Server, station models.Station, nonNativeRemoveSt
 		return err
 	}
 
-	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
-	if err != nil {
-		return err
-	}
-
 	DeleteTagsFromStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
@@ -1099,7 +1094,7 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 	if err != nil {
 		return dlsMessage, err
 	}
-	
+
 	cgs := make([]models.PoisonedCg, 0)
 	sort.Slice(poisonedCgs, func(i, j int) bool {
 		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
