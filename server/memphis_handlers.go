@@ -54,7 +54,6 @@ var producersCollection *mongo.Collection
 var consumersCollection *mongo.Collection
 var systemKeysCollection *mongo.Collection
 var auditLogsCollection *mongo.Collection
-var poisonMessagesCollection *mongo.Collection
 var tagsCollection *mongo.Collection
 var schemasCollection *mongo.Collection
 var schemaVersionCollection *mongo.Collection
@@ -98,17 +97,12 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	consumersCollection = db.GetCollection("consumers", dbInstance.Client)
 	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
 	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
-	poisonMessagesCollection = db.GetCollection("poison_messages", dbInstance.Client)
 	tagsCollection = db.GetCollection("tags", dbInstance.Client)
 	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
 	schemaVersionCollection = db.GetCollection("schema_versions", dbInstance.Client)
 	sandboxUsersCollection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 	integrationsCollection = db.GetCollection("integrations", dbInstance.Client)
 	configurationsCollection = db.GetCollection("configurations", dbInstance.Client)
-
-	poisonMessagesCollection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
-		Keys: bson.M{"creation_date": -1}, Options: nil,
-	})
 
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
