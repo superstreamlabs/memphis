@@ -121,6 +121,11 @@ func removeStationResources(s *Server, station models.Station, nonNativeRemoveSt
 		return err
 	}
 
+	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
+	if err != nil {
+		return err
+	}
+
 	DeleteTagsFromStation(station.ID)
 
 	_, err = producersCollection.UpdateMany(context.TODO(),
