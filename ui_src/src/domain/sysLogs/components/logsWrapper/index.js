@@ -14,6 +14,7 @@
 import './style.scss';
 
 import { useState, useRef, useEffect, useCallback, useContext } from 'react';
+import { StringCodec, JSONCodec } from 'nats.ws';
 import { Virtuoso } from 'react-virtuoso';
 import Lottie from 'lottie-react';
 
@@ -23,21 +24,21 @@ import { httpRequest } from '../../../../services/http';
 import { Context } from '../../../../hooks/store';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { StringCodec, JSONCodec } from 'nats.ws';
+import Filter from '../../../../components/filter';
+import { Sleep } from '../../../../utils/sleep';
+
 let sub;
 
 const LogsWrapper = () => {
     const [state, dispatch] = useContext(Context);
     const [displayedLog, setDisplayedLog] = useState({});
     const [selectedRow, setSelectedRow] = useState(null);
-    const [visibleRange, setVisibleRange] = useState({
-        startIndex: 0,
-        endIndex: 0
-    });
-    const [logType, setLogType] = useState('');
+    const [visibleRange, setVisibleRange] = useState(0);
+    const [logType, setLogType] = useState('all');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
+    const [changed, setChanged] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
     const [changeSelected, setChangeSelected] = useState(true);
     const [lastMgsSeq, setLastMgsSeq] = useState(-1);
@@ -46,10 +47,10 @@ const LogsWrapper = () => {
 
     stateRef.current = [seqNum, visibleRange, socketOn, lastMgsSeq, changeSelected];
 
-    const getLogs = async () => {
+    const getLogs = async (e = null) => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${logType || 'all'}&start_index=${stateRef.current[0]}`);
-            if (data.logs) {
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${e || logType}&start_index=${stateRef.current[0]}`);
+            if (data.logs && !e) {
                 if (stateRef.current[0] === -1) {
                     setLastMgsSeq(data.logs[0].message_seq);
                     setDisplayedLog(data.logs[0]);
@@ -62,6 +63,16 @@ const LogsWrapper = () => {
                     setSeqNum(message_seq);
                     setLogs((users) => [...users, ...data.logs]);
                 }
+            }
+            if (e && data.logs) {
+                setLastMgsSeq(data.logs[0].message_seq);
+                setDisplayedLog(data.logs[0]);
+                setSelectedRow(data.logs[0].message_seq);
+                let message_seq = data.logs[data.logs.length - 1].message_seq;
+                setSeqNum(message_seq);
+                setLogs(data.logs);
+                setStopLoad(false);
+                startListen();
             }
         } catch (error) {}
     };
@@ -79,21 +90,28 @@ const LogsWrapper = () => {
 
     useEffect(() => {
         if (stateRef.current[2]) {
-            if (stateRef.current[1].startIndex !== 0) {
+            if (stateRef.current[1] !== 0) {
                 stopListen();
             } else {
-                stopListen();
                 startListen();
             }
         }
         return () => {};
     }, [stateRef.current[1]]);
 
-    const startListen = () => {
+    useEffect(() => {
+        if (changed && sub) {
+            stopListen();
+            getLogs(logType);
+            setChanged(false);
+        }
+        return () => {};
+    }, [sub, changed]);
+
+    const startListen = async () => {
         const jc = JSONCodec();
         const sc = StringCodec();
-
-        if (logType === '') {
+        if (logType === 'all') {
             try {
                 (async () => {
                     const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
@@ -131,7 +149,7 @@ const LogsWrapper = () => {
                     }
                 })();
             }
-        }, 2000);
+        }, 1000);
     };
 
     const stopListen = () => {
@@ -141,6 +159,7 @@ const LogsWrapper = () => {
     useEffect(() => {
         if (state.socket) {
             setSocketOn(true);
+            startListen();
         }
         return () => {
             stopListen();
@@ -155,16 +174,22 @@ const LogsWrapper = () => {
         setDisplayedLog(logs.find((log) => log.message_seq === key));
     };
 
+    const handleFilter = async (e) => {
+        setLogType(e);
+        setChanged(true);
+    };
+
     return (
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
                     <p className="header-title">Latest logs {logs?.length > 0 && `(${logs?.length})`}</p>
+                    {/* <Filter filterComponent="syslogs" height="34px" applyFilter={(e) => handleFilter(e)} /> */}
                 </list-header>
                 {logs?.length > 0 && (
                     <Virtuoso
                         data={logs}
-                        rangeChanged={setVisibleRange}
+                        rangeChanged={(e) => setVisibleRange(e.startIndex)}
                         className="logsl"
                         endReached={!stopLoad ? loadMore : null}
                         overscan={100}
