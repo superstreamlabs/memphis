@@ -22,10 +22,11 @@ import Copy from '../../../../../components/copy';
 import { decodeMessage } from '../../../../../services/decoder';
 import { hex_to_ascii } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
+import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const { Panel } = Collapse;
 
-const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
+const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [parser, setParser] = useState('bytes');
     const [payload, setPayload] = useState(data);
@@ -91,20 +92,22 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse">
             <Panel
                 showArrow={false}
-                collapsible={data?.length === 0 || (data !== undefined && Object?.keys(data)?.length === 0) ? 'disabled' : null}
+                collapsible={collapsible || data?.length === 0 || (data !== undefined && Object?.keys(data)?.length === 0) ? 'disabled' : null}
                 className={header === 'Payload' ? 'payload-header' : ''}
                 header={
-                    <div className="collapse-header">
-                        <div className="first-row">
-                            <p className="title">
-                                {header}
-                                {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
-                            </p>
-                            <status is="x3d">
-                                <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
-                            </status>
+                    <TooltipComponent text={tooltip}>
+                        <div className="collapse-header">
+                            <div className="first-row">
+                                <p className="title">
+                                    {header}
+                                    {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
+                                </p>
+                                <status is="x3d">
+                                    <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+                                </status>
+                            </div>
                         </div>
-                    </div>
+                    </TooltipComponent>
                 }
                 key="1"
             >

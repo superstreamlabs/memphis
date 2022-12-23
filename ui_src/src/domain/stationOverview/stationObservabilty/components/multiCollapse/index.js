@@ -17,10 +17,11 @@ import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
 import StatusIndication from '../../../../../components/indication';
+import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const { Panel } = Collapse;
 
-const MultiCollapse = ({ data, header, defaultOpen }) => {
+const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [activeChiledKey, setActiveChiledKey] = useState();
     const [collapseData, setCollapseData] = useState();
@@ -44,15 +45,17 @@ const MultiCollapse = ({ data, header, defaultOpen }) => {
                         showArrow={false}
                         collapsible={collapseData?.length === 0 ? 'disabled' : null}
                         header={
-                            <div className="collapse-header">
-                                <p className="title">
-                                    {header} <span className="consumer-number">{collapseData?.length}</span>
-                                </p>
+                            <TooltipComponent text={tooltip}>
+                                <div className="collapse-header">
+                                    <p className="title">
+                                        {header} <span className="consumer-number">{collapseData?.length}</span>
+                                    </p>
 
-                                <status is="x3d">
-                                    <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
-                                </status>
-                            </div>
+                                    <status is="x3d">
+                                        <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+                                    </status>
+                                </div>
+                            </TooltipComponent>
                         }
                         key="1"
                     >

@@ -30,10 +30,10 @@ const tabs = ['Producer', 'Consumer'];
 
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
-    const [protocolSelected, setProtocolSelected] = useState('SDK(TCP)');
+    const [protocolSelected, setProtocolSelected] = useState('SDK (TCP)');
     const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
     const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
-    const selectProtocolOption = ['SDK(TCP)', 'Rest'];
+    const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
     const [codeExample, setCodeExample] = useState({
         import: '',
         connect: '',
@@ -75,7 +75,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     };
 
     useEffect(() => {
-        protocolSelected === 'SDK(TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode('cURL');
+        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode('cURL');
     }, []);
 
     const handleSelectLang = (e, isSdk = true) => {
@@ -85,7 +85,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
 
     const handleSelectProtocol = (e) => {
         setProtocolSelected(e);
-        if (e === 'Rest') {
+        if (e === 'REST (HTTP)') {
             changeProtocolDynamicCode('cURL');
             setLangSelected('cURL');
         } else {
@@ -151,13 +151,13 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                         radiusType="semi-round"
                         width="220px"
                         height="50px"
-                        options={protocolSelected === 'SDK(TCP)' ? selectLngOption : selectProtocolLngOptions}
-                        onChange={(e) => (protocolSelected === 'SDK(TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
+                        options={protocolSelected === 'SDK (TCP)' ? selectLngOption : selectProtocolLngOptions}
+                        onChange={(e) => (protocolSelected === 'SDK (TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
                         popupClassName="select-options"
                     />
                 </div>
             </div>
-            {protocolSelected === 'SDK(TCP)' && (
+            {protocolSelected === 'SDK (TCP)' && (
                 <>
                     <div className="installation">
                         <p className="field-title">Package installation</p>
@@ -182,7 +182,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                     </div>
                 </>
             )}
-            {protocolSelected === 'Rest' && (
+            {protocolSelected === 'REST (HTTP)' && (
                 <>
                     <div className="installation">
                         <p className="field-title">Step 1: Generate a token</p>
