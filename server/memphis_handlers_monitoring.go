@@ -260,12 +260,14 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(stationName, station)
-	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+	if station.IsNative {
+		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)

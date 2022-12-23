@@ -1088,44 +1088,46 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 	if err != nil {
 		return dlsMessage, err
 	}
-	poisonedCgs, err := GetPoisonedCgsByMessage(sn.Intern(), models.MessageDetails{MessageSeq: seq, ProducedBy: dlsMessage.Producer.Name, TimeSent: dlsMessage.Message.TimeSent})
-	if err != nil {
-		return dlsMessage, err
-	}
-
 	cgs := make([]models.PoisonedCg, 0)
-	sort.Slice(poisonedCgs, func(i, j int) bool {
-		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
-	})
-	cgCheck := make(map[string]bool)
-	for _, cg := range poisonedCgs {
-		if _, value := cgCheck[cg.CgName]; value {
-			continue
-		}
-		cgCheck[cg.CgName] = true
-		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+	poisonedCgs := make([]models.PoisonedCg, 0)
+	if station.IsNative {
+		poisonedCgs, err = GetPoisonedCgsByMessage(sn.Intern(), models.MessageDetails{MessageSeq: seq, ProducedBy: dlsMessage.Producer.Name, TimeSent: dlsMessage.Message.TimeSent})
 		if err != nil {
 			return dlsMessage, err
 		}
+		sort.Slice(poisonedCgs, func(i, j int) bool {
+			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+		})
+		cgCheck := make(map[string]bool)
+		for _, cg := range poisonedCgs {
+			if _, value := cgCheck[cg.CgName]; value {
+				continue
+			}
+			cgCheck[cg.CgName] = true
+			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+			if err != nil {
+				return dlsMessage, err
+			}
 
-		isActive, isDeleted := getCgStatus(cgMembers)
-		cgInfo, err := sh.S.GetCgInfo(sn, cg.CgName)
-		if err != nil {
-			return dlsMessage, err
+			isActive, isDeleted := getCgStatus(cgMembers)
+			cgInfo, err := sh.S.GetCgInfo(sn, cg.CgName)
+			if err != nil {
+				return dlsMessage, err
+			}
+			totalPms, err := GetTotalPoisonMsgsByCg(sn.Intern(), cg.CgName)
+			if err != nil {
+				return dlsMessage, err
+			}
+			cg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+			cg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+			cg.UnprocessedMessages = int(cgInfo.NumPending)
+			cg.InProcessMessages = cgInfo.NumAckPending
+			cg.TotalPoisonMessages = totalPms
+			cg.CgMembers = cgMembers
+			cg.IsActive = isActive
+			cg.IsDeleted = isDeleted
+			cgs = append(cgs, cg)
 		}
-		totalPms, err := GetTotalPoisonMsgsByCg(sn.Intern(), cg.CgName)
-		if err != nil {
-			return dlsMessage, err
-		}
-		cg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		cg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		cg.UnprocessedMessages = int(cgInfo.NumPending)
-		cg.InProcessMessages = cgInfo.NumAckPending
-		cg.TotalPoisonMessages = totalPms
-		cg.CgMembers = cgMembers
-		cg.IsActive = isActive
-		cg.IsDeleted = isDeleted
-		cgs = append(cgs, cg)
 	}
 
 	dlsMessage.PoisonedCgs = cgs
@@ -1417,11 +1419,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if !ok {
 		return
 	}
+	msgId := strings.ReplaceAll(body.MessageId, " ", "+")
 
 	if body.IsPoisonMessage {
-		poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId)
+		poisonMessage, err := sh.GetDlsMessageJourneyDetails(msgId)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1432,7 +1435,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Warnf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -1445,14 +1448,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + body.MessageId + ": " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1481,7 +1484,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 	headersJson, err := DecodeHeader(sm.Header)
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1507,44 +1510,50 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-	poisonedCgs, err := GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	for i, cg := range poisonedCgs {
-		cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
+	poisonedCgs := make([]models.PoisonedCg, 0)
+	if station.IsNative {
+		poisonedCgs, err = GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+		for i, cg := range poisonedCgs {
+			cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
+			if err != nil {
+				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
+			if err != nil {
+				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+			if err != nil {
+				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			isActive, isDeleted := getCgStatus(cgMembers)
+
+			poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+			poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+			poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+			poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+			poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+			poisonedCgs[i].IsActive = isActive
+			poisonedCgs[i].IsDeleted = isDeleted
 		}
-
-		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		isActive, isDeleted := getCgStatus(cgMembers)
-
-		poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-		poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-		poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
-		poisonedCgs[i].IsActive = isActive
-		poisonedCgs[i].IsDeleted = isDeleted
+		sort.Slice(poisonedCgs, func(i, j int) bool {
+			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+		})
 	}
 
 	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
@@ -1562,10 +1571,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	sort.Slice(poisonedCgs, func(i, j int) bool {
-		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
-	})
 
 	msg := models.MessageResponse{
 		MessageSeq: body.MessageSeq,

@@ -384,7 +384,6 @@ cleanup:
 	}
 
 	cgToMsgListP := make(map[string]bool)
-	cgToMsgListS := make(map[string]bool)
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
@@ -397,30 +396,8 @@ cleanup:
 
 		msgId := dlsMsg.ID
 		if msgType == "poison" {
-			if _, value := idCheck[msgId]; !value {
-				cgInfo, err := pmh.S.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
-				if err != nil {
-					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
-				}
-				pCg := dlsMsg.PoisonedCg
-				pCg.UnprocessedMessages = int(cgInfo.NumPending)
-				pCg.InProcessMessages = cgInfo.NumAckPending
-				pCg.TotalPoisonMessages, err = GetTotalPoisonMsgsByCg(dlsMsg.StationName, dlsMsg.PoisonedCg.CgName)
-				if err != nil {
-					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
-				}
-				idCheck[msgId] = true
-				idToMsgListP[msgId] = models.DlsMessageResponse{
-					ID:           msgId,
-					StationName:  dlsMsg.StationName,
-					MessageSeq:   dlsMsg.MessageSeq,
-					Producer:     dlsMsg.Producer,
-					Message:      dlsMsg.Message,
-					CreationDate: dlsMsg.CreationDate,
-					PoisonedCgs:  []models.PoisonedCg{pCg},
-				}
-			} else {
-				if _, value := cgToMsgListP[dlsMsg.PoisonedCg.CgName]; !value {
+			if station.IsNative {
+				if _, value := idCheck[msgId]; !value {
 					cgInfo, err := pmh.S.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
 					if err != nil {
 						return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
@@ -432,53 +409,62 @@ cleanup:
 					if err != nil {
 						return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
 					}
-					cgToMsgListP[dlsMsg.PoisonedCg.CgName] = true
-					dlm := idToMsgListP[msgId]
-					pcgs := append(dlm.PoisonedCgs, pCg)
-					dlm.PoisonedCgs = pcgs
-					idToMsgListP[msgId] = dlm
+					idCheck[msgId] = true
+					idToMsgListP[msgId] = models.DlsMessageResponse{
+						ID:           msgId,
+						StationName:  dlsMsg.StationName,
+						MessageSeq:   dlsMsg.MessageSeq,
+						Producer:     dlsMsg.Producer,
+						Message:      dlsMsg.Message,
+						CreationDate: dlsMsg.CreationDate,
+						PoisonedCgs:  []models.PoisonedCg{pCg},
+					}
+				} else {
+					if _, value := cgToMsgListP[dlsMsg.PoisonedCg.CgName]; !value {
+						cgInfo, err := pmh.S.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
+						if err != nil {
+							return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
+						}
+						pCg := dlsMsg.PoisonedCg
+						pCg.UnprocessedMessages = int(cgInfo.NumPending)
+						pCg.InProcessMessages = cgInfo.NumAckPending
+						pCg.TotalPoisonMessages, err = GetTotalPoisonMsgsByCg(dlsMsg.StationName, dlsMsg.PoisonedCg.CgName)
+						if err != nil {
+							return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
+						}
+						cgToMsgListP[dlsMsg.PoisonedCg.CgName] = true
+						dlm := idToMsgListP[msgId]
+						pcgs := append(dlm.PoisonedCgs, pCg)
+						dlm.PoisonedCgs = pcgs
+						idToMsgListP[msgId] = dlm
+					}
+				}
+			} else {
+				payload := dlsMsg.Message
+				if payload.Headers == nil {
+					payload.Headers = make(map[string]string, 0)
+				}
+				idToMsgListP[msgId] = models.DlsMessageResponse{
+					ID:           dlsMsg.ID,
+					StationName:  dlsMsg.StationName,
+					MessageSeq:   int(dlsMsg.MessageSeq),
+					Producer:     dlsMsg.Producer,
+					PoisonedCgs:  []models.PoisonedCg{},
+					Message:      payload,
+					CreationDate: dlsMsg.CreationDate,
 				}
 			}
 		} else if msgType == "schema" {
 			if _, value := idCheck[msgId]; !value {
-				cgInfo, err := pmh.S.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
-				if err != nil {
-					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
-				}
-				pCg := dlsMsg.PoisonedCg
-				pCg.UnprocessedMessages = int(cgInfo.NumPending)
-				pCg.InProcessMessages = cgInfo.NumAckPending
-				pCg.TotalPoisonMessages, err = GetTotalPoisonMsgsByCg(dlsMsg.StationName, dlsMsg.PoisonedCg.CgName)
-				if err != nil {
-					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
-				}
 				idCheck[msgId] = true
 				idToMsgListS[msgId] = models.DlsMessageResponse{
 					ID:           msgId,
 					StationName:  dlsMsg.StationName,
-					MessageSeq:   dlsMsg.MessageSeq,
+					MessageSeq:   int(msg.Sequence),
 					Producer:     dlsMsg.Producer,
 					Message:      dlsMsg.Message,
 					CreationDate: dlsMsg.CreationDate,
-					PoisonedCgs:  []models.PoisonedCg{pCg},
-				}
-			} else {
-				if _, value := cgToMsgListS[dlsMsg.PoisonedCg.CgName]; !value {
-					cgInfo, err := pmh.S.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
-					if err != nil {
-						return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
-					}
-					pCg := dlsMsg.PoisonedCg
-					pCg.UnprocessedMessages = int(cgInfo.NumPending)
-					pCg.InProcessMessages = cgInfo.NumAckPending
-					pCg.TotalPoisonMessages, err = GetTotalPoisonMsgsByCg(dlsMsg.StationName, dlsMsg.PoisonedCg.CgName)
-					if err != nil {
-						return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
-					}
-					cgToMsgListS[dlsMsg.PoisonedCg.CgName] = true
-					dlm := idToMsgListS[msgId]
-					dlm.PoisonedCgs = append(dlm.PoisonedCgs, pCg)
-					idToMsgListS[msgId] = dlm
+					PoisonedCgs:  []models.PoisonedCg{},
 				}
 			}
 		}
@@ -1038,7 +1024,11 @@ func GetDlsSubject(subjType string, stationName string, id string) string {
 }
 
 func GetDlsMsgId(stationName string, messageSeq int, producerName string, timeSent time.Time) string {
-	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producerName+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent.String(), " ", "")
+	producer := producerName
+	if producer == "" {
+		producer = "nonNative"
+	}
+	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producer+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent.String(), " ", "")
 	msgId = strings.ReplaceAll(msgId, ".", "-")
 	return msgId
 }

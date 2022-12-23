@@ -80,7 +80,7 @@ const Messages = () => {
     const arrangeData = (data) => {
         let poisonedCGs = [];
         if (data) {
-            data.poisoned_cgs.map((row, index) => {
+            data?.poisoned_cgs?.map((row, index) => {
                 let cg = {
                     name: row.cg_name,
                     is_active: row.is_active,
@@ -124,20 +124,20 @@ const Messages = () => {
                     }
                 ],
                 producer: {
-                    is_active: data.producer?.is_active,
-                    is_deleted: data.producer?.is_deleted,
+                    is_active: data?.producer?.is_active,
+                    is_deleted: data?.producer?.is_deleted,
                     details: [
                         {
                             name: 'Name',
-                            value: data.producer?.name
+                            value: data.producer?.name || ''
                         },
                         {
                             name: 'User',
-                            value: data.producer?.created_by_user
+                            value: data.producer?.created_by_user || ''
                         },
                         {
                             name: 'IP',
-                            value: data.producer?.client_address
+                            value: data.producer?.client_address || ''
                         }
                     ]
                 },
@@ -315,11 +315,11 @@ const Messages = () => {
                         <div className="message-wrapper">
                             <div className="row-data">
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
-                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails?.poisonedCGs} />
+                                    <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
                                 </Space>
                             </div>
                         </div>
@@ -360,11 +360,11 @@ const Messages = () => {
                         <div className="message-wrapper">
                             <div className="row-data">
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
-                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails?.poisonedCGs} />
+                                    <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
                                 </Space>
                             </div>
                             <Button
