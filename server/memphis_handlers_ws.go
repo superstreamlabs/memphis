@@ -357,7 +357,7 @@ func memphisWSGetSystemLogs(h *Handlers, filterSubjectSuffix string) (models.Sys
 	const timeout = 3 * time.Second
 	filterSubject := ""
 	if filterSubjectSuffix != "" {
-		filterSubject = "$memphis_syslogs." + filterSubjectSuffix
+		filterSubject = "$memphis_syslogs.*." + filterSubjectSuffix
 	}
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }
