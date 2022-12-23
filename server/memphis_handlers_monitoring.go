@@ -581,33 +581,14 @@ cleanup:
 			logSource, logType = splittedSubj[1], splittedSubj[2]
 		}
 
-		filterSubjectType := strings.Split(cc.FilterSubject, ".")
-		var filterSub string
-		if len(strings.Split(cc.FilterSubject, ".")) == 2 {
-			filterSub = filterSubjectType[1]
-		} else if len(strings.Split(cc.FilterSubject, ".")) == 3 {
-			filterSub = filterSubjectType[2]
-		}
-
-		if filterSubject != "" && filterSub == logType {
-			data := string(msg.Data)
-			resMsgs = append(resMsgs, models.Log{
-				MessageSeq: int(msg.Sequence),
-				Type:       logType,
-				Data:       data,
-				Source:     logSource,
-				TimeSent:   msg.Time,
-			})
-		} else {
-			data := string(msg.Data)
-			resMsgs = append(resMsgs, models.Log{
-				MessageSeq: int(msg.Sequence),
-				Type:       logType,
-				Data:       data,
-				Source:     logSource,
-				TimeSent:   msg.Time,
-			})
-		}
+		data := string(msg.Data)
+		resMsgs = append(resMsgs, models.Log{
+			MessageSeq: int(msg.Sequence),
+			Type:       logType,
+			Data:       data,
+			Source:     logSource,
+			TimeSent:   msg.Time,
+		})
 	}
 
 	if getAll {
