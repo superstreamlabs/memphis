@@ -2002,7 +2002,9 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 		return
 	}
 
-	if station.DlsConfiguration.Poison != body.Poison || station.DlsConfiguration.Schemaverse != body.Schemaverse {
+	poisonConfigChanged := station.DlsConfiguration.Poison != body.Poison
+	schemaverseConfigChanged := station.DlsConfiguration.Schemaverse != body.Schemaverse
+	if poisonConfigChanged || schemaverseConfigChanged {
 		dlsConfigurationNew := models.DlsConfiguration{
 			Poison:      body.Poison,
 			Schemaverse: body.Schemaverse,
@@ -2026,6 +2028,13 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
+		}
+
+		if schemaverseConfigChanged {
+			update := models.ProducerSchemaUpdate{
+				UpdateType: models.SchemaverseDLSConfToSchemaUpdateType(body.Schemaverse),
+			}
+			sh.S.updateStationProducersOfSchemaChange(stationName, update)
 		}
 	}
 	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
