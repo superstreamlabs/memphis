@@ -184,7 +184,7 @@ const LogsWrapper = () => {
             <logs is="3xd">
                 <list-header is="3xd">
                     <p className="header-title">Latest logs {logs?.length > 0 && `(${logs?.length})`}</p>
-                    {/* <Filter filterComponent="syslogs" height="34px" applyFilter={(e) => handleFilter(e)} /> */}
+                    <Filter filterComponent="syslogs" height="34px" applyFilter={(e) => handleFilter(e)} />
                 </list-header>
                 {logs?.length > 0 && (
                     <Virtuoso
