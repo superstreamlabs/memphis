@@ -1041,6 +1041,7 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 }
 
 func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.DlsMessageResponse, error) {
+	// Replace " " for "+" - Timestamp in ID often has " " in it
 	dlsMsgId = strings.ReplaceAll(dlsMsgId, " ", "+")
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	var dlsMessage models.DlsMessageResponse
@@ -1090,6 +1091,7 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 	}
 	cgs := make([]models.PoisonedCg, 0)
 	poisonedCgs := make([]models.PoisonedCg, 0)
+	// Only native stations have CGs
 	if station.IsNative {
 		poisonedCgs, err = GetPoisonedCgsByMessage(sn.Intern(), models.MessageDetails{MessageSeq: seq, ProducedBy: dlsMessage.Producer.Name, TimeSent: dlsMessage.Message.TimeSent})
 		if err != nil {
@@ -1419,6 +1421,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if !ok {
 		return
 	}
+	// Replace " " for "+" - Timestamp in ID often has " " in it
 	msgId := strings.ReplaceAll(body.MessageId, " ", "+")
 
 	if body.IsPoisonMessage {
@@ -1460,6 +1463,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	// For non-native stations - default values
 	if !station.IsNative {
 		msg := models.MessageResponse{
 			MessageSeq: body.MessageSeq,
@@ -1511,6 +1515,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
 	poisonedCgs := make([]models.PoisonedCg, 0)
+	// Only native stations have CGs
 	if station.IsNative {
 		poisonedCgs, err = GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 		if err != nil {

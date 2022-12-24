@@ -440,6 +440,7 @@ cleanup:
 					}
 				}
 			} else {
+				// non-native station messages often have nil value in headers - for uniformity with native stations replace nil with empty map
 				payload := dlsMsg.Message
 				if payload.Headers == nil {
 					payload.Headers = make(map[string]string, 0)
@@ -1020,15 +1021,17 @@ cleanup:
 }
 
 func GetDlsSubject(subjType string, stationName string, id string) string {
-	return fmt.Sprintf(dlsStreamName, stationName) + "." + subjType + "." + id
+	return fmt.Sprintf(dlsStreamName, stationName) + tsep + subjType + tsep + id
 }
 
 func GetDlsMsgId(stationName string, messageSeq int, producerName string, timeSent time.Time) string {
 	producer := producerName
+	// Support for dls messages from nonNative Memphis SDKs
 	if producer == "" {
 		producer = "nonNative"
 	}
+	// Remove any spaces might be in ID
 	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producer+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent.String(), " ", "")
-	msgId = strings.ReplaceAll(msgId, ".", "-")
+	msgId = strings.ReplaceAll(msgId, tsep, "+")
 	return msgId
 }
