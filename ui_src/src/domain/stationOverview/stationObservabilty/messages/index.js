@@ -70,7 +70,9 @@ const Messages = () => {
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isPoisonMessage}&message_id=${messageId}&message_seq=${message_seq}`
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isPoisonMessage}&message_id=${encodeURIComponent(
+                    messageId
+                )}&message_seq=${message_seq}`
             );
             arrangeData(data);
         } catch (error) {}

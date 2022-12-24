@@ -54,15 +54,26 @@ func (sn StationName) Intern() string {
 }
 
 func StationNameFromStr(name string) (StationName, error) {
-	extern := strings.ToLower(name)
+	var intern, extern string
+	if strings.Contains(name, delimiterReplacement) {
+		extern = revertDelimiters(name)
+		extern = strings.ToLower(extern)
+		err := validateName(extern, stationObjectName)
+		if err != nil {
+			return StationName{}, err
+		}
 
-	err := validateName(extern, stationObjectName)
-	if err != nil {
-		return StationName{}, err
+		intern = strings.ToLower(name)
+	} else {
+		extern = strings.ToLower(name)
+		err := validateName(extern, stationObjectName)
+		if err != nil {
+			return StationName{}, err
+		}
+
+		intern = replaceDelimiters(name)
+		intern = strings.ToLower(intern)
 	}
-
-	intern := replaceDelimiters(name)
-	intern = strings.ToLower(intern)
 
 	return StationName{internal: intern, external: extern}, nil
 }
@@ -1041,8 +1052,6 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 }
 
 func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.DlsMessageResponse, error) {
-	// Replace " " for "+" - Timestamp in ID often has " " in it
-	dlsMsgId = strings.ReplaceAll(dlsMsgId, " ", "+")
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	var dlsMessage models.DlsMessageResponse
 	splitId := strings.Split(dlsMsgId, dlsMsgSep)
@@ -1421,8 +1430,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if !ok {
 		return
 	}
-	// Replace " " for "+" - Timestamp in ID often has " " in it
-	msgId := strings.ReplaceAll(body.MessageId, " ", "+")
+	msgId := body.MessageId
 
 	if body.IsPoisonMessage {
 		poisonMessage, err := sh.GetDlsMessageJourneyDetails(msgId)
