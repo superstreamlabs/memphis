@@ -1747,7 +1747,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if !exist {
-		errMsg := "Schema " + schemaName + " does not exist" + err.Error()
+		errMsg := "Schema " + schemaName + " does not exist"
 		serv.Warnf("useSchemaDirect: " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
 		return
