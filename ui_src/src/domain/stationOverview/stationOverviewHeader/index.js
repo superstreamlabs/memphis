@@ -189,7 +189,7 @@ const StationOverviewHeader = () => {
                             {stationState?.stationSocketData?.schema === undefined ||
                                 (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                                     <>
-                                        <TooltipComponent text={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}>
+                                        <TooltipComponent text={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}>
                                             <div className="add-new">
                                                 <Button
                                                     width="120px"

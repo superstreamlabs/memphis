@@ -85,7 +85,13 @@ const DlsConfig = () => {
             </div>
             <div className="toggle-dls-config">
                 <TitleComponent headerTitle="Schemaverse" typeTitle="sub-header" headerDescription="Contrary to popular belief, Lorem Ipsum is not " />
-                <Switcher onChange={handleSchemaChange} checked={dlsTypes?.schemaverse} loading={dlsLoading.schemaverse} />
+                <Switcher
+                    disabled={!stationState?.stationMetaData.is_native}
+                    onChange={handleSchemaChange}
+                    checked={dlsTypes?.schemaverse}
+                    tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
+                    loading={dlsLoading.schemaverse}
+                />
             </div>
         </div>
     );
