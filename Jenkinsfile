@@ -18,18 +18,21 @@ node {
 
     stage('UI build'){
       dir ('ui_src'){
-	sh "npm install"
-	sh "CI=false npm run build"
+	sh """
+	  npm install
+	  CI=false npm run build
+	"""
       }
     }
 	  
     stage('Create memphis namespace in Kubernetes'){
-      sh "kubectl config use-context minikube"
-      sh "kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -"
-      sh "aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml ."
-      sh "kubectl apply -f regcred.yaml -n memphis-$unique_id"
-      sh "kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}' -n memphis-$unique_id"
-      //sh "sleep 40"
+      sh """
+        kubectl config use-context minikube
+        kubectl create namespace memphis-$unique_id --dry-run=client -o yaml | kubectl apply -f -
+        aws s3 cp s3://memphis-jenkins-backup-bucket/regcred.yaml .
+        kubectl apply -f regcred.yaml -n memphis-$unique_id
+        kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"regcred\"}]}' -n memphis-$unique_id
+      """
     }
 
     stage('Build and push docker image to Docker Hub') {
@@ -37,8 +40,10 @@ node {
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
-      sh "sudo npm uninstall memphis-dev-cli"
-      sh "sudo npm i memphis-dev-cli -g"
+      sh """
+        sudo npm uninstall memphis-dev-cli
+        sudo npm i memphis-dev-cli -g
+      """
     }
 
     ////////////////////////////////////////
@@ -50,7 +55,7 @@ node {
       dir ('memphis-docker'){
         git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-docker.git', branch: gitBranch
       }
-        sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
+      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis up -d"
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -63,8 +68,10 @@ node {
     }
 
     stage('Tests - Remove Docker compose') {
-      sh "docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down"
-      sh "docker volume prune -f"
+      sh """
+        docker-compose -f ./memphis-docker/docker-compose-dev-tests-broker.yml -p memphis down
+        docker volume prune -f
+      """
     }
 
     ////////////////////////////////////////
@@ -74,26 +81,32 @@ node {
     stage('Tests - Install memphis with helm') {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
-       	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
-            sh "helm install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id --wait"
+       	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
+          sh "helm install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id --wait"
       	}
     }
 
 
     stage('Open port forwarding to memphis service') {
-      sh(script: """until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
-      sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis-$unique_id &"
+      sh """
+        until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done
+        nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis-$unique_id &
+      """
     }
 
     stage('Tests - Run e2e tests over kubernetes') {
-      sh "npm install --prefix ./memphis-e2e-tests"
-      sh "node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id"
+      sh """
+        npm install --prefix ./memphis-e2e-tests
+        node ./memphis-e2e-tests/index.js kubernetes memphis-$unique_id
+      """
     }
 
     stage('Tests - Uninstall helm') {
-      sh "helm uninstall memphis-tests -n memphis-$unique_id"
-      sh "kubectl delete ns memphis-$unique_id &"
-      sh(script: """/usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
+      sh """
+        helm uninstall memphis-tests -n memphis-$unique_id
+        kubectl delete ns memphis-$unique_id &
+        /usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
+      """
     }
 
 
@@ -119,10 +132,11 @@ node {
 
       if (env.BRANCH_NAME ==~ /(master)/) {
     	stage('Push to staging'){
-	  sh "aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"
-          sh "helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"
-	  sh(script: """kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done""", returnStdout: true )
-          //sh 'helm install --wait my-memphis memphis-k8s/memphis --set analytics="false",cluster.enabled="true" --kubeconfig ~/.kube/config --create-namespace --namespace memphis'
+	  sh """
+	    aws eks --region eu-central-1 update-kubeconfig --name staging-cluster
+            helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis
+	    kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done
+	  """
 	  dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
 	    sh 'helm install my-memphis memphis --set analytics="false",cluster.enabled="true",websocket.tls.cert="memphis_local.pem",websocket.tls.key="memphis-key_local.pem",websocket.tls.secret.name="tls-secret" --create-namespace --namespace memphis --wait'
@@ -131,13 +145,17 @@ node {
 	}
 	      
 	stage('Open port forwarding to memphis service') {
-          sh(script: """until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis  | grep -q "Running" ; do sleep 1; done""", returnStdout: true)
-     	  sh "nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 7770 --namespace memphis &"
+          sh """
+	    until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis  | grep -q "Running" ; do sleep 1; done
+     	    nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 7770 --namespace memphis &
+	  """
    	}
 
    	stage('Tests - Run e2e tests over memphis cluster') {
-          sh "npm install --prefix ./memphis-e2e-tests"
-          sh "node ./memphis-e2e-tests/index.js kubernetes memphis"
+          sh """
+	    npm install --prefix ./memphis-e2e-tests
+            node ./memphis-e2e-tests/index.js kubernetes memphis
+	  """
         }
 
     	stage('Tests - remove port-forwarding') {
@@ -156,15 +174,22 @@ node {
       if (env.BRANCH_NAME ==~ /(latest)/) {
     	stage('checkout to version branch'){
 	    withCredentials([sshUserPrivateKey(keyFileVariable:'check',credentialsId: 'main-github')]) {
-	    sh "git reset --hard origin/latest"
-	    sh "GIT_SSH_COMMAND='ssh -i $check'  git checkout -b ${versionTag}"
-       	    sh "GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin ${versionTag}"
+	      sh """
+	        git reset --hard origin/latest
+	        GIT_SSH_COMMAND='ssh -i $check'  git checkout -b ${versionTag}
+       	        GIT_SSH_COMMAND='ssh -i $check' git push --set-upstream origin ${versionTag}
+	      """
   	  }
 	}
 	      
+	stage('Install gh'){
+	  sh """
+	    sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+            sudo yum install gh -y
+	  """
+	}
+	      
 	stage('Create new release') {
-          sh 'sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo'
-          sh 'sudo yum install gh -y'
           withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
 	    sh "gh release create v${versionTag}-beta --generate-notes"
           }
