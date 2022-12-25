@@ -236,9 +236,13 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	if err != nil {
 		return map[string]any{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(sn, station)
-	if err != nil {
-		return map[string]any{}, err
+	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+	// Only native stations have CGs
+	if station.IsNative {
+		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station)
+		if err != nil {
+			return map[string]any{}, err
+		}
 	}
 	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
 	if err != nil {
@@ -357,7 +361,7 @@ func memphisWSGetSystemLogs(h *Handlers, filterSubjectSuffix string) (models.Sys
 	const timeout = 3 * time.Second
 	filterSubject := ""
 	if filterSubjectSuffix != "" {
-		filterSubject = "$memphis_syslogs." + filterSubjectSuffix
+		filterSubject = "$memphis_syslogs.*." + filterSubjectSuffix
 	}
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }
