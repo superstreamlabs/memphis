@@ -59,18 +59,21 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
+	_, station, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+		return
+	}
+	if !station.DlsConfiguration.Poison {
+		return
+	}
+
 	cgName := message["consumer"].(string)
 	cgName = revertDelimiters(cgName)
 	messageSeq := message["stream_seq"].(float64)
 	deliveriesCount := message["deliveries"].(float64)
 
 	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
-	if err != nil {
-		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-		return
-	}
-
-	_, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return

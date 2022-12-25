@@ -16,6 +16,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"memphis-broker/models"
 )
 
 const (
@@ -91,6 +92,10 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		DedupEnabled:      true,
 		DedupWindowMillis: 0,
 		IdempotencyWindow: int(cfg.Duplicates.Milliseconds()),
+		DlsConfiguration: models.DlsConfiguration{
+			Poison:      true,
+			Schemaverse: false,
+		},
 	}
 
 	s.createStationDirectIntern(c, reply, &csr, createStreamFunc)
