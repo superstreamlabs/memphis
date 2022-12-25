@@ -145,7 +145,7 @@ const Messages = () => {
                     ]
                 },
                 message: data.message?.data,
-                headers: data.message?.headers,
+                headers: data.message?.headers || {},
                 poisonedCGs: poisonedCGs
             };
             setMessageDetails(messageDetails);
@@ -256,7 +256,7 @@ const Messages = () => {
                         </div>
                     )}
                 </div>
-                {tabValue === 'Dead-letter' && (
+                {tabValue === 'Dead-letter' && subTabValue === 'Poison' && (
                     <div className="right-side">
                         <Button
                             width="80px"
@@ -292,7 +292,12 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]} //sum schemaverse
+                    length={
+                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && [
+                            null,
+                            stationState?.stationSocketData?.poison_messages?.length + stationState?.stationSocketData?.schema_failed_messages?.length
+                        ]
+                    }
                 ></CustomTabs>
             </div>
             {tabValue === 'Dead-letter' && (
@@ -330,18 +335,18 @@ const Messages = () => {
                         <div className="message-wrapper">
                             <div className="row-data">
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails.poisonedCGs} />
-                                    <CustomCollapse status={false} header="Metadata" data={messageDetails.details} />
-                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails.headers} message={true} />
-                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails.message} message={true} />
+                                    <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />
+                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails?.poisonedCGs} />
+                                    <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
                                 </Space>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                 //
                 <div className="list-wrapper dls-list">
                     <div className="coulmns-table">
@@ -415,12 +420,14 @@ const Messages = () => {
                     )}
                 </div>
             )}
-            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                <div className="waiting-placeholder msg-plc">
-                    <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
-                    <p>Hooray! No messages</p>
-                </div>
-            )}
+            {tabValue === 'Dead-letter' &&
+                ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                    <div className="waiting-placeholder msg-plc">
+                        <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
+                        <p>Hooray! No messages</p>
+                    </div>
+                )}
             {tabValue === 'Details' && (
                 <div className="details">
                     <DetailBox
