@@ -35,7 +35,7 @@ const DetailBox = ({ img, title, desc, data, children }) => {
                     })}
                 </div>
             </div>
-            {children}
+            <div className="detail-box-body">{children}</div>
         </div>
     );
 };

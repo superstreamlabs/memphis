@@ -40,7 +40,6 @@ import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 
-
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(0);
@@ -298,9 +297,9 @@ const Messages = () => {
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
                     length={
-                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && [
+                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_fail_messages?.length > 0) && [
                             null,
-                            stationState?.stationSocketData?.poison_messages?.length + stationState?.stationSocketData?.schema_failed_messages?.length
+                            (stationState?.stationSocketData?.poison_messages?.length || 0) + (stationState?.stationSocketData?.schema_fail_messages?.length || 0)
                         ]
                     }
                 ></CustomTabs>
@@ -441,7 +440,7 @@ const Messages = () => {
             )}
             {tabValue === 'Dead-letter' &&
                 ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
@@ -477,7 +476,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="lorem ipsumelorem ipsumelorem ipsumelorem ipsume.">
+                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="By which event, messages will be stored in the dead-letter station.">
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
