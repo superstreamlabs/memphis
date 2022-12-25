@@ -35,7 +35,7 @@ const LogsWrapper = () => {
     const [displayedLog, setDisplayedLog] = useState({});
     const [selectedRow, setSelectedRow] = useState(null);
     const [visibleRange, setVisibleRange] = useState(0);
-    const [logType, setLogType] = useState('all');
+    const [logType, setLogType] = useState('external');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
@@ -122,7 +122,7 @@ const LogsWrapper = () => {
     const startListen = async () => {
         const jc = JSONCodec();
         const sc = StringCodec();
-        if (logType === 'all') {
+        if (logType === 'external') {
             try {
                 (async () => {
                     const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));

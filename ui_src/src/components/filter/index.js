@@ -384,8 +384,8 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
         setFilterTerms([]);
         if (filterComponent === 'syslogs') {
-            dispatch({ type: 'SET_LOG_FILTER', payload: 'all' });
-            applyFilter('all');
+            dispatch({ type: 'SET_LOG_FILTER', payload: 'external' });
+            applyFilter('external');
         }
     };
 

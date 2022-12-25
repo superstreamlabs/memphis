@@ -1220,7 +1220,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "type": schemaType, "usage": usage})
 		return
 	case "syslogs":
-		logType := []string{"info", "warning", "error"}
+		logType := []string{"info", "warn", "err"}
 		c.IndentedJSON(200, gin.H{"type": logType})
 		return
 	default:
