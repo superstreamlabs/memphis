@@ -528,21 +528,42 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 
 func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 	requestSubject := fmt.Sprintf(JSApiStreamList)
+	streams := make([]*StreamInfo, 0)
 
-	request := JSApiStreamListRequest{}
+	offset := 0
+	offsetReq := ApiPagedRequest{Offset: offset}
+	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
 	rawRequest, err := json.Marshal(request)
 	var resp JSApiStreamListResponse
 	err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 	if err != nil {
 		return nil, err
 	}
-
 	err = resp.ToError()
 	if err != nil {
 		return nil, err
 	}
+	streams = append(streams, resp.Streams...)
 
-	return resp.Streams, nil
+	for len(streams) < resp.Total {
+		offset += resp.Limit
+		offsetReq := ApiPagedRequest{Offset: offset}
+		request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
+		rawRequest, err := json.Marshal(request)
+		var resp JSApiStreamListResponse
+		err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
+		if err != nil {
+			return nil, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return nil, err
+		}
+
+		streams = append(streams, resp.Streams...)
+	}
+
+	return streams, nil
 }
 
 func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {

@@ -216,6 +216,11 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 		LastUpdate:        time.Now(),
 		Functions:         []models.Function{},
 		IdempotencyWindow: 120000,
+		DlsConfiguration: models.DlsConfiguration{
+			Poison:      true,
+			Schemaverse: true,
+		},
+		IsNative: true,
 	}
 
 	err := s.CreateStream(sn, newStation)
@@ -243,7 +248,8 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 			"last_update":              newStation.LastUpdate,
 			"functions":                newStation.Functions,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"is_native":                true,
+			"is_native":                newStation.IsNative,
+			"dls_configuration":        newStation.DlsConfiguration,
 		},
 	}
 	opts := options.Update().SetUpsert(true)
