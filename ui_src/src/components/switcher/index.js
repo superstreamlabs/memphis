@@ -14,25 +14,23 @@ import './style.scss';
 
 import { Switch } from 'antd';
 import React from 'react';
+import TooltipComponent from '../tooltip/tooltip';
 
-const Switcher = (props) => {
-    const { checkedChildren, unCheckedChildren, onChange, checked, disabled } = props;
-
-    const fieldProps = {
-        disabled
-    };
+const Switcher = ({ checkedChildren, unCheckedChildren, onChange, checked, disabled, tooltip, loading }) => {
     return (
-        <div className="switch-button">
-            <Switch
-                {...fieldProps}
-                className="test"
-                onChange={(e) => onChange(e)}
-                checked={checked}
-                checkedChildren={checkedChildren}
-                unCheckedChildren={unCheckedChildren}
-                loading={props.loading}
-            />
-        </div>
+        <TooltipComponent text={tooltip}>
+            <div className="switch-button">
+                <Switch
+                    disabled={disabled}
+                    className="test"
+                    onChange={(e) => onChange(e)}
+                    checked={checked}
+                    checkedChildren={checkedChildren}
+                    unCheckedChildren={unCheckedChildren}
+                    loading={loading}
+                />
+            </div>
+        </TooltipComponent>
     );
 };
 export default Switcher;
