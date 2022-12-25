@@ -34,7 +34,7 @@ const initialState = {
     filterFields: []
 };
 
-const Filter = ({ filterComponent, height }) => {
+const Filter = ({ filterComponent, height, applyFilter }) => {
     const [state, dispatch] = useContext(Context);
     const [filterState, filterDispatch] = useReducer(Reducer, initialState);
     const [filterFields, setFilterFields] = useState([]);
@@ -326,7 +326,10 @@ const Filter = ({ filterComponent, height }) => {
     const handleApply = () => {
         if (filterComponent === 'syslogs') {
             const selectedField = filterState?.filterFields[0]?.radioValue;
-            dispatch({ type: 'SET_LOG_FILTER', payload: filterState?.filterFields[0]?.fields[selectedField]?.name || '' });
+            if (selectedField !== -1) {
+                dispatch({ type: 'SET_LOG_FILTER', payload: filterState?.filterFields[0]?.fields[selectedField]?.name });
+                applyFilter(filterState?.filterFields[0]?.fields[selectedField]?.name);
+            }
         } else {
             let filterTerms = [];
             filterState?.filterFields.forEach((element) => {
@@ -379,6 +382,10 @@ const Filter = ({ filterComponent, height }) => {
         });
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
         setFilterTerms([]);
+        if (filterComponent === 'syslogs') {
+            dispatch({ type: 'SET_LOG_FILTER', payload: 'all' });
+            applyFilter('all');
+        }
     };
 
     const handleCancel = () => {

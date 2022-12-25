@@ -158,7 +158,7 @@ const StationOverviewHeader = () => {
                         <div className="icon">
                             <img src={schemaIconActive} width={22} height={44} alt="schemaIconActive" />
                         </div>
-                        <div className="more-details">
+                        <div className="more-details schema-box">
                             <div className="schema-header">
                                 <div className="schema-version">
                                     <p className="schema-title">Schema</p>
@@ -265,7 +265,7 @@ const StationOverviewHeader = () => {
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
-                        <p>Code example</p>
+                        <p>Code examples</p>
                         <span
                             onClick={() => {
                                 setSdkModal(true);

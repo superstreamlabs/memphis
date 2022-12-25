@@ -252,36 +252,35 @@ const Messages = () => {
                     )}
                 </div>
                 {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                    <TooltipComponent text={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}>
-                        <div className="right-side">
-                            <Button
-                                width="80px"
-                                height="32px"
-                                placeholder="Drop"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
-                                isLoading={ignoreProcced}
-                                onClick={() => handleAck()}
-                            />
-                            <Button
-                                width="100px"
-                                height="32px"
-                                placeholder="Resend"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
-                                isLoading={resendProcced}
-                                onClick={() => handleResend()}
-                            />
-                        </div>
-                    </TooltipComponent>
+                    <div className="right-side">
+                        <Button
+                            width="80px"
+                            height="32px"
+                            placeholder="Drop"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            disabled={isCheck.length === 0}
+                            isLoading={ignoreProcced}
+                            onClick={() => handleAck()}
+                        />
+                        <Button
+                            width="100px"
+                            height="32px"
+                            placeholder="Resend"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
+                            tooltip={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}
+                            isLoading={resendProcced}
+                            onClick={() => handleResend()}
+                        />
+                    </div>
                 )}
             </div>
             <div className="tabs">
@@ -317,8 +316,20 @@ const Messages = () => {
                         <div className="message-wrapper">
                             <div className="row-data">
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />
-                                    <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails?.poisonedCGs} />
+                                    <CustomCollapse
+                                        collapsible={!stationState?.stationMetaData?.is_native}
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without Memphis SDK’s'}
+                                        header="Producer"
+                                        status={true}
+                                        data={messageDetails?.producer}
+                                    />
+
+                                    <MultiCollapse
+                                        header="Failed CGs"
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without Memphis SDK’s'}
+                                        defaultOpen={true}
+                                        data={messageDetails?.poisonedCGs}
+                                    />
                                     <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
                                     <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
@@ -362,7 +373,7 @@ const Messages = () => {
                         <div className="message-wrapper">
                             <div className="row-data">
                                 <Space direction="vertical">
-                                    <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />
+                                    {stationState?.stationMetaData.is_native && <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />}
                                     <MultiCollapse header="Failed CGs" defaultOpen={true} data={messageDetails?.poisonedCGs} />
                                     <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
                                     <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
@@ -383,6 +394,8 @@ const Messages = () => {
                                 backgroundColorType="orange"
                                 fontSize="12px"
                                 fontWeight="600"
+                                tooltip={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}
+                                disabled={!stationState?.stationMetaData.is_native}
                                 onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
                             />
                         </div>
