@@ -366,9 +366,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 )}
                 <div className="toggle-add-schema">
                     <TitleComponent
-                        headerTitle="Dead-letter station configuration"
+                        headerTitle="Dead-letter station"
                         typeTitle="sub-header"
-                        headerDescription="By which criteria messages will be expel from the station"
+                        headerDescription="Dead-letter stations are useful for debugging your application"
                     />
                     <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
                 </div>

@@ -80,14 +80,14 @@ const DlsConfig = () => {
             <div className="toggle-dls-config">
                 <div>
                     <p className="header-dls">Poison</p>
-                    <p className="sub-header-dls">Contrary to popular belief, Lorem Ipsum is not</p>
+                    <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
                 </div>
                 <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading.poison} />
             </div>
             <div className="toggle-dls-config">
                 <div>
-                    <p className="header-dls">Schemaverse</p>
-                    <p className="sub-header-dls">Contrary to popular belief, Lorem Ipsum is not</p>
+                    <p className="header-dls">Schema violation</p>
+                    <p className="sub-header-dls">Messages that did not pass schema validation</p>
                 </div>
                 <Switcher
                     disabled={!stationState?.stationMetaData.is_native}

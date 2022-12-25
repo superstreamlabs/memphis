@@ -476,7 +476,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="By which event, messages will be stored in the dead-letter station.">
+                    <DetailBox img={dlsEnableIcon} title={'DLS enable'} desc="By which event, messages will be stored in the dead-letter station.">
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
