@@ -145,7 +145,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		messagePayload.Headers = headersJson
 	}
 
-	id := GetDlsMsgId(stationName.Intern(), int(messageSeq), producedByHeader, poisonMessageContent.Time)
+	id := GetDlsMsgId(stationName.Intern(), int(messageSeq), producedByHeader, poisonMessageContent.Time.String())
 	pmMessage := models.DlsMessage{
 		ID:           id,
 		StationName:  stationName.Ext(),
@@ -264,7 +264,6 @@ cleanup:
 	for _, msg := range msgs {
 		splittedSubj := strings.Split(msg.Subject, tsep)
 		msgType := splittedSubj[1]
-
 		var dlsMsg models.DlsMessage
 		err = json.Unmarshal(msg.Data, &dlsMsg)
 		if err != nil {
@@ -276,9 +275,19 @@ cleanup:
 				idCheck[msgId] = true
 				poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
 			}
-		} else if msgType == "schema" {
+		} else {
 			if _, value := idCheck[msgId]; !value {
 				idCheck[msgId] = true
+				message := dlsMsg.Message
+				if dlsMsg.CreationDate.IsZero() {
+					unixNum, err := strconv.ParseInt(string(dlsMsg.CreationUnix), 10, 64)
+					if err != nil {
+						return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+					}
+					message.TimeSent = time.Unix(unixNum, 0)
+				} else {
+					message.TimeSent = dlsMsg.CreationDate
+				}
 				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
 			}
 		}
@@ -461,11 +470,28 @@ cleanup:
 		} else if msgType == "schema" {
 			if _, value := idCheck[msgId]; !value {
 				idCheck[msgId] = true
+				filter := bson.M{"name": dlsMsg.Producer.Name, "station_id": station.ID, "connection_id": dlsMsg.Producer.ConnectionId}
+				var producer models.Producer
+				err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+				if err != nil {
+					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
+				}
+				_, conn, err := IsConnectionExist(dlsMsg.Producer.ConnectionId)
+				if err != nil {
+					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
+				}
 				idToMsgListS[msgId] = models.DlsMessageResponse{
-					ID:           msgId,
-					StationName:  dlsMsg.StationName,
-					MessageSeq:   int(msg.Sequence),
-					Producer:     dlsMsg.Producer,
+					ID:          msgId,
+					StationName: dlsMsg.StationName,
+					MessageSeq:  int(msg.Sequence),
+					Producer: models.ProducerDetails{
+						Name:          producer.Name,
+						ClientAddress: conn.ClientAddress,
+						ConnectionId:  dlsMsg.Producer.ConnectionId,
+						CreatedByUser: producer.CreatedByUser,
+						IsActive:      producer.IsActive,
+						IsDeleted:     producer.IsDeleted,
+					},
 					Message:      dlsMsg.Message,
 					CreationDate: dlsMsg.CreationDate,
 					PoisonedCgs:  []models.PoisonedCg{},
@@ -932,7 +958,7 @@ func GetPoisonedCgsByMessage(stationNameInter string, message models.MessageDeta
 	if streamInfo.State.FirstSeq > 0 {
 		startSeq = streamInfo.State.FirstSeq
 	}
-	msgId := GetDlsMsgId(stationNameInter, message.MessageSeq, message.ProducedBy, message.TimeSent)
+	msgId := GetDlsMsgId(stationNameInter, message.MessageSeq, message.ProducedBy, message.TimeSent.String())
 	filter := GetDlsSubject("poison", stationNameInter, msgId)
 	cc := ConsumerConfig{
 		OptStartSeq:   startSeq,
@@ -1027,14 +1053,14 @@ func GetDlsSubject(subjType string, stationName string, id string) string {
 	return fmt.Sprintf(dlsStreamName, stationName) + tsep + subjType + tsep + id
 }
 
-func GetDlsMsgId(stationName string, messageSeq int, producerName string, timeSent time.Time) string {
+func GetDlsMsgId(stationName string, messageSeq int, producerName string, timeSent string) string {
 	producer := producerName
 	// Support for dls messages from nonNative Memphis SDKs
 	if producer == "" {
 		producer = "nonNative"
 	}
 	// Remove any spaces might be in ID
-	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producer+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent.String(), " ", "")
+	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producer+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent, " ", "")
 	msgId = strings.ReplaceAll(msgId, tsep, "+")
 	return msgId
 }

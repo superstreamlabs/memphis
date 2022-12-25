@@ -57,8 +57,9 @@ type createProducerRequestV1 struct {
 }
 
 type createProducerResponse struct {
-	SchemaUpdate models.ProducerSchemaUpdateInit `json:"schema_update"`
-	Err          string                          `json:"error"`
+	SchemaUpdate     models.ProducerSchemaUpdateInit `json:"schema_update"`
+	SchemaVerseToDls bool                            `json:"schemaverse_to_dls"`
+	Err              string                          `json:"error"`
 }
 
 type destroyProducerRequest struct {

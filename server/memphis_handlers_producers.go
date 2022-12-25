@@ -186,6 +186,20 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		}
 
+		update := models.ConfigurationsUpdate{
+			StationName: pStationName.Intern(),
+			Type:        sentNotificationType,
+			Update:      station.DlsConfiguration.Schemaverse,
+		}
+		serv.UpdateClusterConfigurationsChange(update)
+
+		configUpdate := models.ConfigurationsUpdate{
+			StationName: pStationName.Intern(),
+			Type:        schemaToDlsUpdateType,
+			Update:      station.DlsConfiguration.Schemaverse,
+		}
+		serv.UpdateStationProducersOfConfigurationsChange(pStationName, configUpdate)
+
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
 			param := analytics.EventParam{

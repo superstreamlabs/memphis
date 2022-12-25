@@ -29,6 +29,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const configurationsUpdatesSubjectTemplate = "$memphis_configurations_updates"
+
 type ConfigurationsHandler struct{}
 
 var userMgmtHandler UserMgmtHandler
@@ -198,4 +200,24 @@ func changeLogsRetention(logsRetention int) error {
 
 func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
+}
+
+func (s *Server) UpdateStationProducersOfConfigurationsChange(sn StationName, configurationUpdate models.ConfigurationsUpdate) {
+	subject := configurationsUpdatesSubjectTemplate
+	msg, err := json.Marshal(configurationUpdate)
+	if err != nil {
+		s.Errorf("UpdateStationProducersOfConfigurationsChange: marshal failed at station " + sn.external)
+		return
+	}
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
+}
+
+func (s *Server) UpdateClusterConfigurationsChange(configurationUpdate models.ConfigurationsUpdate) {
+	subject := configurationsUpdatesSubjectTemplate
+	msg, err := json.Marshal(configurationUpdate)
+	if err != nil {
+		s.Errorf("UpdateClusterConfigurationsChange: marshal failed at memphisClusterConfig")
+		return
+	}
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }

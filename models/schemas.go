@@ -70,16 +70,7 @@ type ProducerSchemaUpdateType int
 const (
 	SchemaUpdateTypeInit ProducerSchemaUpdateType = iota + 1
 	SchemaUpdateTypeDrop
-	SchemaUpdateTypeEnableDLS
-	SchemaUpdateTypeDisableDLS
 )
-
-func SchemaverseDLSConfToSchemaUpdateType(enable bool) ProducerSchemaUpdateType {
-	if enable {
-		return SchemaUpdateTypeEnableDLS
-	}
-	return SchemaUpdateTypeDisableDLS
-}
 
 type ProducerSchemaUpdate struct {
 	UpdateType ProducerSchemaUpdateType
