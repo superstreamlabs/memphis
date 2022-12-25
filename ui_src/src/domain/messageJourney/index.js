@@ -40,7 +40,6 @@ const MessageJourney = () => {
     const [messageData, setMessageData] = useState({});
     const [nodes, setNodes] = useState();
     const [edges, setEdges] = useState();
-    const [brokerName, setBrokerName] = useState('');
 
     const history = useHistory();
 
@@ -286,15 +285,15 @@ const MessageJourney = () => {
                             {stationName} / Poison message #{messageId.substring(0, 5)}
                         </p>
                     </div>
-
                     <div className="canvas-wrapper">
                         <Canvas
                             className="canvas"
                             readonly={true}
                             direction="RIGHT"
-                            // defaultPosition={null}
                             nodes={nodes}
                             edges={edges}
+                            fit={true}
+                            maxHeight={nodes?.length * 150}
                             node={
                                 <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                     {(event) => (
