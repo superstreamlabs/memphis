@@ -153,7 +153,8 @@ type UpdateDlsConfigSchema struct {
 }
 
 type DropDlsMessagesSchema struct {
-	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
+	DlsType       string   `json:"dls_type" binding:"required"`
+	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
 }
 
 type ResendPoisonMessagesSchema struct {

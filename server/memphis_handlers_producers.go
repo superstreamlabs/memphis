@@ -191,14 +191,14 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			Type:        sentNotificationType,
 			Update:      station.DlsConfiguration.Schemaverse,
 		}
-		serv.UpdateClusterConfigurationsChange(update)
+		serv.UpdateClusterAndStationConfigurationsChange(update)
 
 		configUpdate := models.ConfigurationsUpdate{
 			StationName: pStationName.Intern(),
 			Type:        schemaToDlsUpdateType,
 			Update:      station.DlsConfiguration.Schemaverse,
 		}
-		serv.UpdateStationProducersOfConfigurationsChange(pStationName, configUpdate)
+		serv.UpdateClusterAndStationConfigurationsChange(configUpdate)
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {

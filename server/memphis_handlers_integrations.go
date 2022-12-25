@@ -221,7 +221,7 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 			Type:   sentNotificationType,
 			Update: svfAlert,
 		}
-		serv.UpdateClusterConfigurationsChange(update)
+		serv.UpdateClusterAndStationConfigurationsChange(update)
 
 		return slackIntegration, nil
 	} else if err != nil {
@@ -283,7 +283,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		Type:   sentNotificationType,
 		Update: svfAlert,
 	}
-	serv.UpdateClusterConfigurationsChange(update)
+	serv.UpdateClusterAndStationConfigurationsChange(update)
 
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
@@ -412,7 +412,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 			Type:   sentNotificationType,
 			Update: false,
 		}
-		serv.UpdateClusterConfigurationsChange(update)
+		serv.UpdateClusterAndStationConfigurationsChange(update)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

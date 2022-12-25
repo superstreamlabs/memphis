@@ -351,7 +351,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		Type:        sentNotificationType,
 		Update:      csr.DlsConfiguration.Schemaverse,
 	}
-	serv.UpdateClusterConfigurationsChange(update)
+	serv.UpdateClusterAndStationConfigurationsChange(update)
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
@@ -1161,31 +1161,22 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	c.IndentedJSON(200, poisonMessage)
 }
 
-func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
-	var body models.DropDlsMessagesSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+func ackPoisonMessages(poisonMessageIds []string) error {
 	timeout := 1 * time.Second
-	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
+	splitId := strings.Split(poisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
-		serv.Errorf("AckPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		return errors.New("ackPoisonMessages: " + err.Error())
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	for _, msgId := range body.PoisonMessageIds {
+	for _, msgId := range poisonMessageIds {
 		uid := serv.memphis.nuid.Next()
 		durableName := "$memphis_fetch_dls_consumer_" + uid
 		var msgs []StoredMsg
 		streamInfo, err := serv.memphisStreamInfo(streamName)
 		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+			return errors.New("ackPoisonMessages: " + err.Error())
 		}
 		filter := GetDlsSubject("poison", sn.Intern(), msgId)
 		amount := streamInfo.State.Msgs
@@ -1198,9 +1189,7 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 
 		err = serv.memphisAddConsumer(streamName, &cc)
 		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+			return errors.New("ackPoisonMessages: " + err.Error())
 		}
 
 		responseChan := make(chan StoredMsg)
@@ -1229,9 +1218,7 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 			}(responseChan, subject, reply, copyBytes(msg))
 		})
 		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+			return errors.New("ackPoisonMessages: " + err.Error())
 		}
 
 		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
@@ -1251,28 +1238,18 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 		serv.unsubscribeOnGlobalAcc(sub)
 		err = serv.memphisRemoveConsumer(streamName, durableName)
 		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+			return errors.New("ackPoisonMessages: " + err.Error())
 		}
 
 		for _, msg := range msgs {
-			_, err = sh.S.memphisDeleteMsgFromStream(streamName, msg.Sequence)
+			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
 			if err != nil {
-				serv.Errorf("AckPoisonMessages: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+				return errors.New("ackPoisonMessages: " + err.Error())
 			}
 		}
 	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-ack-poison-message")
-	}
-
-	c.IndentedJSON(200, gin.H{})
+	return nil
 }
 
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
@@ -1281,109 +1258,118 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timeout := 1 * time.Second
-	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		serv.Errorf("AckPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	for _, msgId := range body.PoisonMessageIds {
-		uid := serv.memphis.nuid.Next()
-		durableName := "$memphis_fetch_dls_consumer_" + uid
-		var msgs []StoredMsg
-		streamInfo, err := serv.memphisStreamInfo(streamName)
+	if body.DlsType == "poison" {
+		err := ackPoisonMessages(body.DlsMessageIds)
 		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
+			serv.Errorf("DropDlsMessages: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		amount := streamInfo.State.Msgs
-		cc := ConsumerConfig{
-			DeliverPolicy: DeliverAll,
-			AckPolicy:     AckExplicit,
-			Durable:       durableName,
-		}
-
-		err = serv.memphisAddConsumer(streamName, &cc)
+	} else {
+		timeout := 1 * time.Second
+		splitId := strings.Split(body.DlsMessageIds[0], dlsMsgSep)
+		stationName := splitId[0]
+		sn, err := StationNameFromStr(stationName)
 		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
+			serv.Errorf("DropDlsMessages: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-
-		responseChan := make(chan StoredMsg)
-		subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-		reply := durableName + "_reply"
-		req := []byte(strconv.FormatUint(amount, 10))
-
-		sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-			go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-				// ack
-				serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-				rawTs := tokenAt(reply, 8)
-				seq, _, _ := ackReplyInfo(reply)
-
-				intTs, err := strconv.Atoi(rawTs)
-				if err != nil {
-					serv.Errorf("GetTotalPoisonMsgsByCg: " + err.Error())
-				}
-
-				respCh <- StoredMsg{
-					Subject:  subject,
-					Sequence: uint64(seq),
-					Data:     msg,
-					Time:     time.Unix(0, int64(intTs)),
-				}
-			}(responseChan, subject, reply, copyBytes(msg))
-		})
-		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-		timer := time.NewTimer(timeout)
-		for i := uint64(0); i < amount; i++ {
-			select {
-			case <-timer.C:
-				goto cleanup
-			case msg := <-responseChan:
-				msgs = append(msgs, msg)
-			}
-		}
-
-	cleanup:
-		timer.Stop()
-		serv.unsubscribeOnGlobalAcc(sub)
-		err = serv.memphisRemoveConsumer(streamName, durableName)
-		if err != nil {
-			serv.Errorf("AckPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		for _, msg := range msgs {
-			var dlsMsg models.DlsMessage
-			err = json.Unmarshal(msg.Data, &dlsMsg)
+		streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+		for _, msgId := range body.DlsMessageIds {
+			uid := serv.memphis.nuid.Next()
+			durableName := "$memphis_fetch_dls_consumer_" + uid
+			var msgs []StoredMsg
+			streamInfo, err := serv.memphisStreamInfo(streamName)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: " + err.Error())
+				serv.Errorf("DropDlsMessages: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			if msgId == dlsMsg.ID {
-				_, err = sh.S.memphisDeleteMsgFromStream(streamName, msg.Sequence)
+			amount := streamInfo.State.Msgs
+			cc := ConsumerConfig{
+				DeliverPolicy: DeliverAll,
+				AckPolicy:     AckExplicit,
+				Durable:       durableName,
+			}
+
+			err = serv.memphisAddConsumer(streamName, &cc)
+			if err != nil {
+				serv.Errorf("DropDlsMessages: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			responseChan := make(chan StoredMsg)
+			subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
+			reply := durableName + "_reply"
+			req := []byte(strconv.FormatUint(amount, 10))
+
+			sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+					// ack
+					serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+					rawTs := tokenAt(reply, 8)
+					seq, _, _ := ackReplyInfo(reply)
+
+					intTs, err := strconv.Atoi(rawTs)
+					if err != nil {
+						serv.Errorf("DropDlsMessages: " + err.Error())
+					}
+
+					respCh <- StoredMsg{
+						Subject:  subject,
+						Sequence: uint64(seq),
+						Data:     msg,
+						Time:     time.Unix(0, int64(intTs)),
+					}
+				}(responseChan, subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				serv.Errorf("DropDlsMessages: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+
+			timer := time.NewTimer(timeout)
+			for i := uint64(0); i < amount; i++ {
+				select {
+				case <-timer.C:
+					goto cleanup
+				case msg := <-responseChan:
+					msgs = append(msgs, msg)
+				}
+			}
+
+		cleanup:
+			timer.Stop()
+			serv.unsubscribeOnGlobalAcc(sub)
+			err = serv.memphisRemoveConsumer(streamName, durableName)
+			if err != nil {
+				serv.Errorf("DropDlsMessages: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			for _, msg := range msgs {
+				var dlsMsg models.DlsMessage
+				err = json.Unmarshal(msg.Data, &dlsMsg)
 				if err != nil {
-					serv.Errorf("AckPoisonMessages: " + err.Error())
+					serv.Errorf("DropDlsMessages: " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 					return
 				}
-				break
+				if msgId == dlsMsg.ID {
+					_, err = sh.S.memphisDeleteMsgFromStream(streamName, msg.Sequence)
+					if err != nil {
+						serv.Errorf("DropDlsMessages: " + err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+						return
+					}
+					break
+				}
 			}
 		}
 	}
@@ -2167,7 +2153,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 				Type:   schemaToDlsUpdateType,
 				Update: body.Schemaverse,
 			}
-			sh.S.UpdateStationProducersOfConfigurationsChange(stationName, update)
+			sh.S.UpdateClusterAndStationConfigurationsChange(update)
 		}
 	}
 	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
