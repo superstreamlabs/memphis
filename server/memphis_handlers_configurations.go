@@ -29,7 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const configurationsUpdatesSubjectTemplate = "$memphis_configurations_updates"
+const configurationsUpdatesSubjectTemplate = "$memphis_sdk_configurations_updates"
 
 type ConfigurationsHandler struct{}
 
