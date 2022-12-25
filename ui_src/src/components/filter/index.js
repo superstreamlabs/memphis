@@ -329,6 +329,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             if (selectedField !== -1) {
                 dispatch({ type: 'SET_LOG_FILTER', payload: filterState?.filterFields[0]?.fields[selectedField]?.name });
                 applyFilter(filterState?.filterFields[0]?.fields[selectedField]?.name);
+                setFilterTerms([filterState?.filterFields[0]?.fields[selectedField]?.name]);
             }
         } else {
             let filterTerms = [];
@@ -422,7 +423,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                         <div className="filter-container">
                             <img src={filterImg} width="25" alt="filter" />
                             <label className="filter-title">Filters</label>
-                            {filterTerms?.length > 0 && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
+                            {filterTerms?.length > 0 && filterState?.counter > 0 && <div className="filter-counter">{filterTerms?.length || filterState?.counter}</div>}
                         </div>
                     }
                     colorType="black"
