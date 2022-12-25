@@ -886,23 +886,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		}
 
-		message := "Station " + stationName.Ext() + " has been deleted by user " + user.Username
-		serv.Noticef(message)
-
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			UserType:      user.UserType,
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Warnf("RemoveStation: Station " + name + " - create audit logs error: " + err.Error())
-		}
+		serv.Noticef("Station " + stationName.Ext() + " has been deleted by user " + user.Username)
 	}
 	c.IndentedJSON(200, gin.H{})
 }
