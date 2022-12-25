@@ -22,21 +22,23 @@ import { Checkbox, Space } from 'antd';
 import { convertBytes, msToUnits, numberWithCommas, parsingDate } from '../../../../services/valueConvertor';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
-import leaderImg from '../../../../assets/images/leaderDetails.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
+import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
+import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import CheckboxComponent from '../../../../components/checkBox';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Journey from '../../../../assets/images/journey.svg';
 import CustomCollapse from '../components/customCollapse';
+import DetailBox from '../../../../components/detailBox';
+import DlsConfig from '../../../../components/dlsConfig';
 import MultiCollapse from '../components/multiCollapse';
 import { httpRequest } from '../../../../services/http';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
-import DetailBox from '../../../../components/detailBox';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
-import CheckboxComponent from '../../../../components/checkBox';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -53,7 +55,9 @@ const Messages = () => {
     const stationName = url.split('stations/')[1];
 
     const [tabValue, setTabValue] = useState('All');
+    const [subTabValue, setSubTabValue] = useState('Poison');
     const tabs = ['All', 'Dead-letter', 'Details'];
+    const subTabs = ['Poison', 'Schemaverse'];
     const history = useHistory();
 
     useEffect(() => {
@@ -144,7 +148,7 @@ const Messages = () => {
                     ]
                 },
                 message: data.message?.data,
-                headers: data.message?.headers,
+                headers: data.message?.headers || {},
                 poisonedCGs: poisonedCGs
             };
             setMessageDetails(messageDetails);
@@ -189,6 +193,10 @@ const Messages = () => {
         }
         setTabValue(newValue);
         setSelectedRowIndex(0);
+    };
+
+    const handleChangeSubMenuItem = (newValue) => {
+        setSubTabValue(newValue);
     };
 
     const handleAck = async () => {
@@ -251,7 +259,7 @@ const Messages = () => {
                         </div>
                     )}
                 </div>
-                {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                     <div className="right-side">
                         <Button
                             width="80px"
@@ -276,7 +284,7 @@ const Messages = () => {
                             fontSize="12px"
                             fontWeight="600"
                             disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
-                            tooltip={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}
+                            tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
                             isLoading={resendProcced}
                             onClick={() => handleResend()}
                         />
@@ -288,11 +296,26 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={stationState?.stationSocketData?.poison_messages?.length > 0 && [null, stationState?.stationSocketData?.poison_messages?.length]}
+                    length={
+                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && [
+                            null,
+                            stationState?.stationSocketData?.poison_messages?.length + stationState?.stationSocketData?.schema_failed_messages?.length
+                        ]
+                    }
                 ></CustomTabs>
             </div>
+            {tabValue === 'Dead-letter' && (
+                <div className="tabs">
+                    <CustomTabs
+                        value={subTabValue}
+                        onChange={handleChangeSubMenuItem}
+                        tabs={subTabs}
+                        length={stationState?.stationSocketData?.poison_messages?.length > 0 && [stationState?.stationSocketData?.poison_messages?.length, null]}
+                    ></CustomTabs>
+                </div>
+            )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
-                <div className="list-wrapper">
+                <div className="list-wrapper msg-list">
                     <div className="coulmns-table">
                         <div className="left-coulmn all">
                             <p>Messages</p>
@@ -318,7 +341,7 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse
                                         collapsible={!stationState?.stationMetaData?.is_native}
-                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without Memphis SDK’s'}
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
                                         header="Producer"
                                         status={true}
                                         data={messageDetails?.producer}
@@ -326,7 +349,7 @@ const Messages = () => {
 
                                     <MultiCollapse
                                         header="Failed CGs"
-                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without Memphis SDK’s'}
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
                                         defaultOpen={true}
                                         data={messageDetails?.poisonedCGs}
                                     />
@@ -339,8 +362,9 @@ const Messages = () => {
                     </div>
                 </div>
             )}
-            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                <div className="list-wrapper">
+            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                //
+                <div className="list-wrapper dls-list">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
                             <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
@@ -394,7 +418,7 @@ const Messages = () => {
                                 backgroundColorType="orange"
                                 fontSize="12px"
                                 fontWeight="600"
-                                tooltip={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}
+                                tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
                                 disabled={!stationState?.stationMetaData.is_native}
                                 onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
                             />
@@ -414,12 +438,14 @@ const Messages = () => {
                     )}
                 </div>
             )}
-            {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                <div className="waiting-placeholder msg-plc">
-                    <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
-                    <p>Hooray! No messages</p>
-                </div>
-            )}
+            {tabValue === 'Dead-letter' &&
+                ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                    <div className="waiting-placeholder msg-plc">
+                        <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
+                        <p>Hooray! No messages</p>
+                    </div>
+                )}
             {tabValue === 'Details' && (
                 <div className="details">
                     <DetailBox
@@ -450,6 +476,9 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
+                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="lorem ipsumelorem ipsumelorem ipsumelorem ipsume.">
+                        <DlsConfig />
+                    </DetailBox>
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}

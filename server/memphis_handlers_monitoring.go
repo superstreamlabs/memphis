@@ -418,7 +418,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsWarnSubject
 	case "info":
 		filterSubjectSuffix = syslogsInfoSubject
-	case "system":
+	case "sys":
 		filterSubjectSuffix = syslogsSysSubject
 	}
 

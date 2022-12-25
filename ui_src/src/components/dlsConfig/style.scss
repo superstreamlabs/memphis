@@ -1,0 +1,14 @@
+.dls-config-container {
+    margin-top: 20px;
+    .toggle-dls-config {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        .switch-button {
+            margin-left: 10px;
+        }
+        .ant-switch {
+            min-width: 35px;
+        }
+    }
+}
