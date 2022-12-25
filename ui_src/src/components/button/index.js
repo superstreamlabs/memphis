@@ -17,6 +17,7 @@ import { Button as ButtonDesign } from 'antd';
 import React from 'react';
 
 import { getBorderRadius, getFontColor, getBackgroundColor, getBoxShadows, getBorderColor } from '../../utils/styleTemplates';
+import TooltipComponent from '../tooltip/tooltip';
 
 const Button = ({
     width,
@@ -43,7 +44,8 @@ const Button = ({
     zIndex,
     border,
     alignSelf,
-    fontFamily = 'Inter'
+    fontFamily = 'Inter',
+    tooltip
 }) => {
     const handleClick = (e) => {
         onClick(e);
@@ -90,11 +92,13 @@ const Button = ({
     };
 
     return (
-        <div className="button-container" style={styleButtonContainer}>
-            <ButtonDesign {...fieldProps} type="primary" htmlType="submit" className={disabled && 'noHover'}>
-                <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
-            </ButtonDesign>
-        </div>
+        <TooltipComponent text={tooltip}>
+            <div className="button-container" style={styleButtonContainer}>
+                <ButtonDesign {...fieldProps} type="primary" htmlType="submit" className={disabled && 'noHover'}>
+                    <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
+                </ButtonDesign>
+            </div>
+        </TooltipComponent>
     );
 };
 

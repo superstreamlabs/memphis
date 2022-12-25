@@ -12,41 +12,6 @@
     background: #f5f6f8;
 }
 
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-.App-header {
-    background-color: #282c34;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
-}
-
-.App-link {
-    color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 #panel-open-menu {
     position: absolute;
     top: 30px;
@@ -60,7 +25,7 @@
     height: 60px;
 }
 .main-header-h1 {
-    font-weight: 600;
+    font-family: 'InterSemiBold';
     font-size: 24px;
     color: var(--blue);
     position: relative;
@@ -68,7 +33,7 @@
     line-height: 30px;
     .length-list {
         color: #b4b4b4;
-        font-weight: 400;
+        font-family: 'Inter';
     }
 }
 
@@ -90,7 +55,7 @@
     background: #f7f7f7 !important;
     border-radius: 15px;
     color: var(--blue);
-    font-weight: bold !important;
+    font-family: 'InterBold' !important;
     font-size: 16px;
 }
 .ant-message-warning .anticon {
@@ -128,7 +93,7 @@
 }
 .menu-item-label {
     font-size: 12px;
-    font-weight: 400;
+    font-family: 'Inter';
     color: black;
     margin-left: 10px;
 

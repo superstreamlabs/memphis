@@ -32,7 +32,6 @@ const initialState = {
     analytics_modal: true,
     socket: null,
     skipSignup: false,
-    createSchema: false,
     domainList: [],
     filteredList: [],
     logsFilter: '',

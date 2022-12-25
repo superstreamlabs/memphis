@@ -9,19 +9,19 @@
     header{
         p{
             font-family: 'InterSemiBold';
-            font-weight: 500;
+            font-family: 'InterMedium';
             font-size: 18px;
             line-height: 28px;
             margin-bottom: 8px;
         }
         span{
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 14px;
             line-height: 20px;
             color: #667085;
             a{
                 color: var(--purple);
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 text-decoration-line: underline;
             }
         }
@@ -45,7 +45,7 @@
             border: 1px solid #EAECF0;
             border-radius: 8px;
             color: #101828;
-            font-weight: 500;
+            font-family: 'InterMedium';
             font-size: 16px;
             align-items: center;
             justify-content: space-between;

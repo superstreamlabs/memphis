@@ -14,21 +14,23 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { Segmented, Space } from 'antd';
+import { Space } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
 
-import { numberWithCommas } from '../../../../services/valueConvertor';
+import producerPlaceholder from '../../../../assets/images/producerPlaceholder.svg';
+import consumerPlaceholder from '../../../../assets/images/consumerPlaceholder.svg';
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
 import waitingConsumer from '../../../../assets/images/waitingConsumer.svg';
+import { numberWithCommas } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-import Modal from '../../../../components/modal';
+import unsupported from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
 import CustomCollapse from '../components/customCollapse';
 import MultiCollapse from '../components/multiCollapse';
-import { StationStoreContext } from '../..';
-import Button from '../../../../components/button';
 import SdkExample from '../../components/sdkExsample';
-import ProtocolExample from '../../components/protocolExsample';
+import Button from '../../../../components/button';
+import Modal from '../../../../components/modal';
+import { StationStoreContext } from '../..';
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -39,7 +41,6 @@ const ProduceConsumList = ({ producer }) => {
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
-    const [segment, setSegment] = useState('Sdk');
 
     useEffect(() => {
         if (producer) {
@@ -168,129 +169,151 @@ const ProduceConsumList = ({ producer }) => {
     };
 
     return (
-        <div className="pubSub-list-container">
-            <div className="header">
-                <p className="title">{producer ? `Producers (${producersList?.length})` : `Consumer groups (${cgsList?.length})`}</p>
-                {/* <p className="add-connector-button">{producer ? 'Add producer' : 'Add consumer'}</p> */}
-            </div>
-            {producer && producersList?.length > 0 && (
-                <div className="coulmns-table">
-                    <span style={{ width: '100px' }}>Name</span>
-                    <span style={{ width: '80px' }}>User</span>
-                    <span style={{ width: '35px' }}>Status</span>
-                </div>
-            )}
-            {!producer && cgsList.length > 0 && (
-                <div className="coulmns-table">
-                    <span style={{ width: '75px' }}>Name</span>
-                    <span style={{ width: '65px', textAlign: 'center' }}>Poison</span>
-                    <span style={{ width: '75px', textAlign: 'center' }}>Unprocessed</span>
-                    <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
-                </div>
-            )}
-            {(producersList?.length > 0 || cgsList?.length > 0) && (
-                <div className="rows-wrapper">
-                    <div className="list-container">
-                        {producer && producersList?.length > 0 && (
-                            <Virtuoso
-                                data={producersList}
-                                overscan={100}
-                                itemContent={(index, row) => (
-                                    <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
-                                        <OverflowTip text={row.name} width={'100px'}>
-                                            {row.name}
-                                        </OverflowTip>
-                                        <OverflowTip text={row.created_by_user} width={'80px'}>
-                                            {row.created_by_user}
-                                        </OverflowTip>
-                                        <span className="status-icon" style={{ width: '38px' }}>
-                                            <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                        </span>
-                                    </div>
-                                )}
-                            />
-                        )}
-                        {!producer && cgsList?.length > 0 && (
-                            <Virtuoso
-                                data={cgsList}
-                                overscan={100}
-                                itemContent={(index, row) => (
-                                    <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
-                                        <OverflowTip text={row.name} width={'75px'}>
-                                            {row.name}
-                                        </OverflowTip>
-                                        <OverflowTip
-                                            text={row.poison_messages}
-                                            width={'60px'}
-                                            textAlign={'center'}
-                                            textColor={row.poison_messages > 0 ? '#F7685B' : null}
-                                        >
-                                            {row.poison_messages}
-                                        </OverflowTip>
-                                        <OverflowTip text={row.unprocessed_messages} width={'75px'} textAlign={'center'}>
-                                            {row.unprocessed_messages}
-                                        </OverflowTip>
-                                        <span className="status-icon" style={{ width: '38px' }}>
-                                            <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                        </span>
-                                    </div>
-                                )}
-                            />
-                        )}
+        <div>
+            {stationState?.stationMetaData.is_native ? (
+                <div className="pubSub-list-container">
+                    {' '}
+                    <div className="header">
+                        {producer && <p className="title">Producers {producersList?.length > 0 && `(${producersList?.length})`}</p>}
+                        {!producer && <p className="title">Consumer groups {cgsList?.length > 0 && `(${cgsList?.length})`}</p>}
                     </div>
-                    <div style={{ marginRight: '10px' }}>
-                        {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
-                        {!producer && cgsList?.length > 0 && (
-                            <Space direction="vertical">
-                                <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
-                                <MultiCollapse header="Consumers" data={cgDetails.consumers} />
-                            </Space>
-                        )}
-                    </div>
+                    {producer && producersList?.length > 0 && (
+                        <div className="coulmns-table">
+                            <span style={{ width: '100px' }}>Name</span>
+                            <span style={{ width: '80px' }}>User</span>
+                            <span style={{ width: '35px' }}>Status</span>
+                        </div>
+                    )}
+                    {!producer && cgsList.length > 0 && (
+                        <div className="coulmns-table">
+                            <span style={{ width: '75px' }}>Name</span>
+                            <span style={{ width: '65px', textAlign: 'center' }}>Poison</span>
+                            <span style={{ width: '75px', textAlign: 'center' }}>Unprocessed</span>
+                            <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
+                        </div>
+                    )}
+                    {(producersList?.length > 0 || cgsList?.length > 0) && (
+                        <div className="rows-wrapper">
+                            <div className="list-container">
+                                {producer && producersList?.length > 0 && (
+                                    <Virtuoso
+                                        data={producersList}
+                                        overscan={100}
+                                        itemContent={(index, row) => (
+                                            <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'producer')}>
+                                                <OverflowTip text={row.name} width={'100px'}>
+                                                    {row.name}
+                                                </OverflowTip>
+                                                <OverflowTip text={row.created_by_user} width={'80px'}>
+                                                    {row.created_by_user}
+                                                </OverflowTip>
+                                                <span className="status-icon" style={{ width: '38px' }}>
+                                                    <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                </span>
+                                            </div>
+                                        )}
+                                    />
+                                )}
+                                {!producer && cgsList?.length > 0 && (
+                                    <Virtuoso
+                                        data={cgsList}
+                                        overscan={100}
+                                        itemContent={(index, row) => (
+                                            <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
+                                                <OverflowTip text={row.name} width={'75px'}>
+                                                    {row.name}
+                                                </OverflowTip>
+                                                <OverflowTip
+                                                    text={row.poison_messages}
+                                                    width={'60px'}
+                                                    textAlign={'center'}
+                                                    textColor={row.poison_messages > 0 ? '#F7685B' : null}
+                                                >
+                                                    {row.poison_messages}
+                                                </OverflowTip>
+                                                <OverflowTip text={row.unprocessed_messages} width={'75px'} textAlign={'center'}>
+                                                    {row.unprocessed_messages}
+                                                </OverflowTip>
+                                                <span className="status-icon" style={{ width: '38px' }}>
+                                                    <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                </span>
+                                            </div>
+                                        )}
+                                    />
+                                )}
+                            </div>
+                            <div style={{ marginRight: '10px' }}>
+                                {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
+                                {!producer && cgsList?.length > 0 && (
+                                    <Space direction="vertical">
+                                        <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
+                                        <MultiCollapse header="Consumers" data={cgDetails.consumers} />
+                                    </Space>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
+                        <div className="waiting-placeholder">
+                            <img width={62} src={producer ? waitingProducer : waitingConsumer} alt="producer" />
+                            <p>Waiting for the 1st {producer ? 'producer' : 'consumer'}</p>
+                            {producer && <span className="des">A producer is the source application that pushes data to the station</span>}
+                            {!producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
+                            <Button
+                                className="open-sdk"
+                                width="200px"
+                                height="37px"
+                                placeholder={`Create your first ${producer ? 'producer' : 'consumer'}`}
+                                colorType={'black'}
+                                radiusType="circle"
+                                border={'gray-light'}
+                                backgroundColorType={'none'}
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => (producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
+                            />
+                        </div>
+                    )}
                 </div>
-            )}
-            {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
-                <div className="waiting-placeholder">
-                    <img width={62} src={producer ? waitingProducer : waitingConsumer} alt="producer" />
-                    <p>Waiting for the 1st {producer ? 'producer' : 'consumer'}</p>
-                    {producer && <span className="des">A producer is the source application that pushes data to the station</span>}
-                    {!producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
-                    <Button
-                        className="open-sdk"
-                        width="200px"
-                        height="37px"
-                        placeholder={`Create your first ${producer ? 'producer' : 'consumer'}`}
-                        colorType={'black'}
-                        radiusType="circle"
-                        border={'gray-light'}
-                        backgroundColorType={'none'}
-                        fontSize="12px"
-                        fontFamily="InterSemiBold"
-                        onClick={() => (producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
-                    />
+            ) : (
+                <div className="unsupported-placeholder">
+                    {producer ? (
+                        <img className="placeholder-img" src={producerPlaceholder} alt="producerPlaceholder" />
+                    ) : (
+                        <img className="placeholder-img" src={consumerPlaceholder} alt="consumerPlaceholder" />
+                    )}
+                    <div className="wrapper">
+                        <img src={unsupported} alt="unsupported" />
+                        <p>Not supported without Memphis SDK’s</p>
+                        <Button
+                            className="open-sdk"
+                            width="200px"
+                            height="37px"
+                            placeholder="View Memphis SDK's"
+                            colorType={'white'}
+                            radiusType="circle"
+                            border={'none'}
+                            backgroundColorType={'purple'}
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => (producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
+                        />
+                    </div>
                 </div>
             )}
             <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
                 <SdkExample showTabs={false} consumer={true} />
             </Modal>
             <Modal
-                header={
-                    <div className="sdk-header">
-                        <p className="title">Code example</p>
-                        <Segmented size="small" className="segment" options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
-                    </div>
-                }
                 width="710px"
-                height="600px"
+                height="700px"
                 clickOutside={() => {
                     setOpenCreateProducer(false);
-                    setSegment('Sdk');
                 }}
                 open={openCreateProducer}
                 displayButtons={false}
             >
-                {segment === 'Sdk' && <SdkExample showTabs={false} />}
-                {segment === 'Protocol' && <ProtocolExample />}
+                <SdkExample showTabs={false} />
             </Modal>
         </div>
     );

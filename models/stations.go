@@ -71,6 +71,7 @@ type Station struct {
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema            SchemaDetails      `json:"schema" bson:"schema"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 
@@ -90,6 +91,7 @@ type GetStationResponseSchema struct {
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Tags              []CreateTag        `json:"tags"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 
@@ -110,6 +112,7 @@ type ExtendedStation struct {
 	PoisonMessages    int                `json:"posion_messages"`
 	Tags              []CreateTag        `json:"tags"`
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
 
@@ -145,16 +148,16 @@ type DlsConfiguration struct {
 
 type UpdateDlsConfigSchema struct {
 	StationName string `json:"station_name" binding:"required"`
-	Poison      bool   `json:"poison" binding:"required"`
-	Schemaverse bool   `json:"schemaverse" binding:"required"`
+	Poison      bool   `json:"poison"`
+	Schemaverse bool   `json:"schemaverse"`
 }
 
 type AckPoisonMessagesSchema struct {
-	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
+	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
 }
 
 type ResendPoisonMessagesSchema struct {
-	PoisonMessageIds []primitive.ObjectID `json:"poison_message_ids" binding:"required"`
+	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
 }
 
 type RemoveStationSchema struct {

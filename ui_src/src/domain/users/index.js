@@ -14,6 +14,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
 import searchIcon from '../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -131,10 +132,14 @@ function Users() {
                             <Loader />
                         </div>
                     )}
-                    {!isLoading &&
-                        userList.map((user) => {
-                            return <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />;
-                        })}
+                    {!isLoading && userList.length > 0 && (
+                        <Virtuoso
+                            data={userList}
+                            overscan={100}
+                            className="testt"
+                            itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
+                        />
+                    )}
                 </div>
             </div>
             <Modal

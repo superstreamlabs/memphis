@@ -22,10 +22,11 @@ import Copy from '../../../../../components/copy';
 import { decodeMessage } from '../../../../../services/decoder';
 import { hex_to_ascii } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
+import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const { Panel } = Collapse;
 
-const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
+const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [parser, setParser] = useState('bytes');
     const [payload, setPayload] = useState(data);
@@ -91,21 +92,22 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
         <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse">
             <Panel
                 showArrow={false}
-                collapsible={data?.length === 0 || (data !== undefined && Object?.keys(data)?.length === 0) ? 'disabled' : null}
+                collapsible={collapsible || data?.length === 0 || (data !== undefined && Object?.keys(data)?.length === 0) ? 'disabled' : null}
                 className={header === 'Payload' ? 'payload-header' : ''}
                 header={
-                    <div className="collapse-header">
-                        <div className="first-row">
-                            <p className="title">
-                                {header}
-                                {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
-                            </p>
-                            <status is="x3d">
-                                {/* {status && <StatusIndication is_active={data?.is_active} is_deleted={data?.is_deleted} />} */}
-                                <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
-                            </status>
+                    <TooltipComponent text={tooltip}>
+                        <div className="collapse-header">
+                            <div className="first-row">
+                                <p className="title">
+                                    {header}
+                                    {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
+                                </p>
+                                <status is="x3d">
+                                    <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+                                </status>
+                            </div>
                         </div>
-                    </div>
+                    </TooltipComponent>
                 }
                 key="1"
             >
@@ -117,29 +119,6 @@ const CustomCollapse = ({ status, data, header, defaultOpen, message }) => {
                                 <Copy data={data} />
                                 <div className="second-row">
                                     <SegmentButton options={['bytes', 'string', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
-                                    {/* <div className="switcher">
-                                        <div className={parser === 'bytes' ? 'selected-parser left selected' : 'selected-parser left'} onClick={() => setParser('bytes')}>
-                                            <p>bytes</p>
-                                        </div>
-                                        <div
-                                            className={parser === 'string' ? 'selected-parser middle selected' : 'selected-parser middle'}
-                                            onClick={() => setParser('string')}
-                                        >
-                                            <p>string</p>
-                                        </div>
-                                        <div
-                                            className={parser === 'json' ? 'selected-parser middle selected' : 'selected-parser middle'}
-                                            onClick={() => setParser('json')}
-                                        >
-                                            <p>json</p>
-                                        </div>
-                                        <div
-                                            className={parser === 'protobuf' ? 'selected-parser right selected' : 'selected-parser right'}
-                                            onClick={() => setParser('protobuf')}
-                                        >
-                                            <p>protobuf</p>
-                                        </div>
-                                    </div> */}
                                 </div>
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>

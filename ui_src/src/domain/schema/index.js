@@ -13,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 
 import { Context } from '../../hooks/store';
 import SchemaList from './components/schemaList';
@@ -21,12 +21,21 @@ import CreateSchema from './components/createSchema';
 
 function SchemaManagment() {
     const [state, dispatch] = useContext(Context);
+    const [schemaAction, setSchemaAction] = useState('');
 
     useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'schemas' });
+        dispatch({ type: 'SET_ROUTE', payload: 'schemaverse' });
+        const url = window.location.href;
+        const schema = url.split('schemaverse/')[1];
+        setSchemaAction(schema);
     }, []);
 
-    return <div>{state?.createSchema ? <CreateSchema /> : <SchemaList />}</div>;
+    const createNew = (e) => {
+        if (e) setSchemaAction('$new');
+        else setSchemaAction('');
+    };
+
+    return <div>{schemaAction === '$new' ? <CreateSchema createNew={(e) => createNew(e)} /> : <SchemaList createNew={(e) => createNew(e)} />}</div>;
 }
 
 export default SchemaManagment;

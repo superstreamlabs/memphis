@@ -90,7 +90,7 @@ const Login = (props) => {
                     try {
                         const conn = await connect({
                             servers: [SOCKET_URL],
-                            token: 'memphis'
+                            token: '::memphis'
                         });
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {}

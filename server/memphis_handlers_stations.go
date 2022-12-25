@@ -18,9 +18,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -51,15 +54,26 @@ func (sn StationName) Intern() string {
 }
 
 func StationNameFromStr(name string) (StationName, error) {
-	extern := strings.ToLower(name)
+	var intern, extern string
+	if strings.Contains(name, delimiterReplacement) {
+		extern = revertDelimiters(name)
+		extern = strings.ToLower(extern)
+		err := validateName(extern, stationObjectName)
+		if err != nil {
+			return StationName{}, err
+		}
 
-	err := validateName(extern, stationObjectName)
-	if err != nil {
-		return StationName{}, err
+		intern = strings.ToLower(name)
+	} else {
+		extern = strings.ToLower(name)
+		err := validateName(extern, stationObjectName)
+		if err != nil {
+			return StationName{}, err
+		}
+
+		intern = replaceDelimiters(name)
+		intern = strings.ToLower(intern)
 	}
-
-	intern := replaceDelimiters(name)
-	intern = strings.ToLower(intern)
 
 	return StationName{internal: intern, external: extern}, nil
 }
@@ -96,12 +110,25 @@ func validateReplicas(replicas int) error {
 }
 
 // TODO remove the station resources - functions, connectors
-func removeStationResources(s *Server, station models.Station) error {
+func removeStationResources(s *Server, station models.Station, nonNativeRemoveStreamFunc func() error) error {
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
-	err = s.RemoveStream(stationName.Intern())
+
+	removeFunc := nonNativeRemoveStreamFunc
+	if removeFunc == nil {
+		removeFunc = func() error {
+			return s.RemoveStream(stationName.Intern())
+		}
+	}
+
+	err = removeFunc()
+	if err != nil {
+		return err
+	}
+
+	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
 	if err != nil {
 		return err
 	}
@@ -124,11 +151,6 @@ func removeStationResources(s *Server, station models.Station) error {
 		return err
 	}
 
-	err = RemovePoisonMsgsByStation(station.Name)
-	if err != nil {
-		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
-	}
-
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
 		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
@@ -144,24 +166,37 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
+	s.createStationDirectIntern(c, reply, &csr, nil)
+}
+
+func (s *Server) createStationDirectIntern(c *client,
+	reply string,
+	csr *createStationRequest,
+	nonNativeCreateStreamFunc func() error) {
+	isNative := nonNativeCreateStreamFunc == nil
+	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
+
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
 	exist, _, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
 	if exist {
 		errMsg := "Station " + stationName.Ext() + " already exists"
 		serv.Warnf("createStationDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
+		jsApiResp.Error = NewJSStreamNameExistError()
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -172,20 +207,23 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		exist, schema, err := IsSchemaExist(schemaName)
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		if !exist {
 			errMsg := "Schema " + csr.SchemaName + " does not exist"
 			serv.Warnf("createStationDirect: " + errMsg)
-			respondWithErr(s, reply, errors.New(errMsg))
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 
 		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
@@ -198,7 +236,8 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		retentionValue = csr.RetentionValue
@@ -213,7 +252,8 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 	} else {
@@ -225,7 +265,8 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		err = validateReplicas(replicas)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
-			respondWithErr(s, reply, err)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 	} else {
@@ -254,12 +295,28 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		Schema:            schemaDetails,
 		Functions:         []models.Function{},
 		IdempotencyWindow: csr.IdempotencyWindow,
+		IsNative:          isNative,
 		DlsConfiguration:  csr.DlsConfiguration,
 	}
 
-	err = s.CreateStream(stationName, newStation)
+	createStreamFunc := nonNativeCreateStreamFunc
+
+	if createStreamFunc == nil {
+		createStreamFunc = func() error {
+			return s.CreateStream(stationName, newStation)
+		}
+	}
+
+	err = createStreamFunc()
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	err = s.CreateDlsStream(stationName, newStation)
+	if err != nil {
+		serv.Errorf("createStationDirect: Create DLS at station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -346,12 +403,11 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	var stations []models.Station
 
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{
-			bson.D{{"is_deleted", false}},
-			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
-		}}}}},
-	})
+	filter := bson.M{"$or": []interface{}{
+		bson.M{"is_deleted": bson.M{"$exists": false}},
+		bson.M{"is_deleted": false},
+	}}
+	cursor, err := stationsCollection.Find(context.TODO(), filter)
 	if err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
@@ -389,6 +445,9 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 				station.StorageType = "disk"
 			}
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: poisonMessages, TotalMessages: totalMessages, Tags: tags})
+		}
+		if exStations == nil {
+			return []models.ExtendedStationDetails{}, nil
 		}
 		return exStations, nil
 	}
@@ -598,11 +657,19 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		Schema:            schemaDetails,
 		IdempotencyWindow: body.IdempotencyWindow,
 		DlsConfiguration:  body.DlsConfiguration,
+		IsNative:          true,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = sh.S.CreateDlsStream(stationName, newStation)
+	if err != nil {
+		serv.Errorf("CreateStation: Create DLS at station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -627,6 +694,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
+				"is_native":                newStation.IsNative,
 			},
 		}
 	} else {
@@ -646,6 +714,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
+				"is_native":                newStation.IsNative,
 			},
 		}
 	}
@@ -774,7 +843,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 
-		err = removeStationResources(sh.S, station)
+		err = removeStationResources(sh.S, station, nil)
 		if err != nil {
 			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -845,27 +914,41 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
+	s.removeStationDirectIntern(c, reply, &dsr, nil)
+}
+
+func (s *Server) removeStationDirectIntern(c *client,
+	reply string,
+	dsr *destroyStationRequest,
+	nonNativeRemoveStreamFunc func() error) {
+	isNative := nonNativeRemoveStreamFunc == nil
+	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
+
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
 		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 	if !exist {
 		errMsg := "Station " + station.Name + " does not exist"
 		serv.Warnf("removeStationDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
+		err := errors.New(errMsg)
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
-	err = removeStationResources(s, station)
+	err = removeStationResources(s, station, nonNativeRemoveStreamFunc)
 	if err != nil {
 		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -968,96 +1051,99 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetPoisonMessageJourneyDetails(poisonMsgId string) (models.PoisonMessageResponse, error) {
-	messageId, _ := primitive.ObjectIDFromHex(poisonMsgId)
-	poisonMessage, err := GetPoisonMsgById(messageId)
-	var results models.PoisonMessageResponse
+func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.DlsMessageResponse, error) {
+	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+	var dlsMessage models.DlsMessageResponse
+	splitId := strings.Split(dlsMsgId, dlsMsgSep)
+	stationName := splitId[0]
+	sn, err := StationNameFromStr(stationName)
 	if err != nil {
-		return results, err
+		return dlsMessage, err
 	}
-
-	stationName, err := StationNameFromStr(poisonMessage.StationName)
+	exist, station, err := IsStationExist(sn)
 	if err != nil {
-		return results, err
-	}
-	exist, station, err := IsStationExist(stationName)
-	if err != nil {
-		return results, err
+		return dlsMessage, err
 	}
 	if !exist {
-		return results, errors.New("Station " + station.Name + " does not exist")
+		return dlsMessage, errors.New("Station " + station.Name + " does not exist")
 	}
 
-	filter := bson.M{"name": poisonMessage.Producer.Name, "station_id": station.ID, "connection_id": poisonMessage.Producer.ConnectionId}
-	var producer models.Producer
-	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return results, errors.New("Producer does not exist")
-	} else if err != nil {
-		return results, err
+	poisoned, schemaFailed, err := poisonMsgsHandler.GetDlsMsgsByStationFull(station)
+	if err != nil {
+		return dlsMessage, err
+	}
+	for _, dlm := range poisoned {
+		if dlm.ID == dlsMsgId {
+			dlsMessage = dlm
+			headersJson := dlsMessage.Message.Headers
+			for header := range headersJson {
+				if strings.HasPrefix(header, "$memphis") {
+					delete(headersJson, header)
+				}
+			}
+			dlsMessage.Message.Headers = headersJson
+			break
+		}
 	}
 
-	poisonMessage.Producer.CreatedByUser = producer.CreatedByUser
-	poisonMessage.Producer.IsActive = producer.IsActive
-	poisonMessage.Producer.IsDeleted = producer.IsDeleted
-
-	for i, _ := range poisonMessage.PoisonedCgs {
-		cgMembers, err := GetConsumerGroupMembers(poisonMessage.PoisonedCgs[i].CgName, station)
+	if dlsMessage.ID == "" {
+		for _, dlm := range schemaFailed {
+			if dlm.ID == dlsMsgId {
+				dlsMessage = dlm
+				break
+			}
+		}
+	}
+	seq, err := strconv.Atoi(splitId[2])
+	if err != nil {
+		return dlsMessage, err
+	}
+	cgs := make([]models.PoisonedCg, 0)
+	poisonedCgs := make([]models.PoisonedCg, 0)
+	// Only native stations have CGs
+	if station.IsNative {
+		poisonedCgs, err = GetPoisonedCgsByMessage(sn.Intern(), models.MessageDetails{MessageSeq: seq, ProducedBy: dlsMessage.Producer.Name, TimeSent: dlsMessage.Message.TimeSent})
 		if err != nil {
-			return results, err
+			return dlsMessage, err
 		}
+		sort.Slice(poisonedCgs, func(i, j int) bool {
+			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+		})
+		cgCheck := make(map[string]bool)
+		for _, cg := range poisonedCgs {
+			if _, value := cgCheck[cg.CgName]; value {
+				continue
+			}
+			cgCheck[cg.CgName] = true
+			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+			if err != nil {
+				return dlsMessage, err
+			}
 
-		isActive, isDeleted := getCgStatus(cgMembers)
-
-		stationName, err := StationNameFromStr(poisonMessage.StationName)
-		if err != nil {
-			return results, err
+			isActive, isDeleted := getCgStatus(cgMembers)
+			cgInfo, err := sh.S.GetCgInfo(sn, cg.CgName)
+			if err != nil {
+				return dlsMessage, err
+			}
+			totalPms, err := GetTotalPoisonMsgsByCg(sn.Intern(), cg.CgName)
+			if err != nil {
+				return dlsMessage, err
+			}
+			cg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+			cg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+			cg.UnprocessedMessages = int(cgInfo.NumPending)
+			cg.InProcessMessages = cgInfo.NumAckPending
+			cg.TotalPoisonMessages = totalPms
+			cg.CgMembers = cgMembers
+			cg.IsActive = isActive
+			cg.IsDeleted = isDeleted
+			cgs = append(cgs, cg)
 		}
-		cgInfo, err := sh.S.GetCgInfo(stationName, poisonMessage.PoisonedCgs[i].CgName)
-		if err != nil {
-			return results, err
-		}
-
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(poisonMessage.StationName, poisonMessage.PoisonedCgs[i].CgName)
-		if err != nil {
-			return results, err
-		}
-
-		poisonMessage.PoisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		poisonMessage.PoisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		poisonMessage.PoisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-		poisonMessage.PoisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-		poisonMessage.PoisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
-		poisonMessage.PoisonedCgs[i].CgMembers = cgMembers
-		poisonMessage.PoisonedCgs[i].IsActive = isActive
-		poisonMessage.PoisonedCgs[i].IsDeleted = isDeleted
 	}
 
-	headers := map[string]string{}
-	for _, value := range poisonMessage.Message.Headers {
-		if strings.HasPrefix(value.HeaderKey, "$memphis") {
-			continue
-		}
-		headers[value.HeaderKey] = value.HeaderValue
-	}
+	dlsMessage.PoisonedCgs = cgs
 
-	msg := models.MessagePayload{
-		TimeSent: poisonMessage.Message.TimeSent,
-		Size:     poisonMessage.Message.Size,
-		Data:     hex.EncodeToString([]byte(poisonMessage.Message.Data)),
-		Headers:  headers,
-	}
-	results = models.PoisonMessageResponse{
-		ID:           poisonMessage.ID,
-		StationName:  poisonMessage.StationName,
-		MessageSeq:   poisonMessage.MessageSeq,
-		Producer:     poisonMessage.Producer,
-		PoisonedCgs:  poisonMessage.PoisonedCgs,
-		Message:      msg,
-		CreationDate: poisonMessage.CreationDate,
-	}
-
-	return results, nil
+	return dlsMessage, nil
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
@@ -1067,13 +1153,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
-	if err == mongo.ErrNoDocuments {
-		errMsg := "Poison message with ID: " + body.MessageId + " does not exist"
-		serv.Warnf("GetPoisonMessageJourney: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+	poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId)
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1095,12 +1175,103 @@ func (sh StationsHandler) AckPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-
-	_, err := poisonMessagesCollection.DeleteMany(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
+	timeout := 1 * time.Second
+	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
+	stationName := splitId[0]
+	sn, err := StationNameFromStr(stationName)
 	if err != nil {
-		serv.Errorf("AckPoisonMessage: " + err.Error())
+		serv.Errorf("AckPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+	for _, msgId := range body.PoisonMessageIds {
+		uid := serv.memphis.nuid.Next()
+		durableName := "$memphis_fetch_dls_consumer_" + uid
+		var msgs []StoredMsg
+		streamInfo, err := serv.memphisStreamInfo(streamName)
+		if err != nil {
+			serv.Errorf("AckPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		filter := GetDlsSubject("poison", sn.Intern(), msgId)
+		amount := streamInfo.State.Msgs
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       durableName,
+			FilterSubject: filter,
+		}
+
+		err = serv.memphisAddConsumer(streamName, &cc)
+		if err != nil {
+			serv.Errorf("AckPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		responseChan := make(chan StoredMsg)
+		subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
+		reply := durableName + "_reply"
+		req := []byte(strconv.FormatUint(amount, 10))
+
+		sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+				// ack
+				serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+				rawTs := tokenAt(reply, 8)
+				seq, _, _ := ackReplyInfo(reply)
+
+				intTs, err := strconv.Atoi(rawTs)
+				if err != nil {
+					serv.Errorf("GetTotalPoisonMsgsByCg: " + err.Error())
+				}
+
+				respCh <- StoredMsg{
+					Subject:  subject,
+					Sequence: uint64(seq),
+					Data:     msg,
+					Time:     time.Unix(0, int64(intTs)),
+				}
+			}(responseChan, subject, reply, copyBytes(msg))
+		})
+		if err != nil {
+			serv.Errorf("AckPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+
+		timer := time.NewTimer(timeout)
+		for i := uint64(0); i < amount; i++ {
+			select {
+			case <-timer.C:
+				goto cleanup
+			case msg := <-responseChan:
+				msgs = append(msgs, msg)
+			}
+		}
+
+	cleanup:
+		timer.Stop()
+		serv.unsubscribeOnGlobalAcc(sub)
+		err = serv.memphisRemoveConsumer(streamName, durableName)
+		if err != nil {
+			serv.Errorf("AckPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		for _, msg := range msgs {
+			_, err = sh.S.memphisDeleteMsgFromStream(streamName, msg.Sequence)
+			if err != nil {
+				serv.Errorf("AckPoisonMessages: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1118,38 +1289,126 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-
-	var msgs []models.PoisonMessage
-	cursor, err := poisonMessagesCollection.Find(context.TODO(), bson.M{"_id": bson.M{"$in": body.PoisonMessageIds}})
+	timeout := 1 * time.Second
+	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
+	stationName := splitId[0]
+	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if err = cursor.All(context.TODO(), &msgs); err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+	for _, msgId := range body.PoisonMessageIds {
+		uid := serv.memphis.nuid.Next()
+		durableName := "$memphis_fetch_dls_consumer_" + uid
+		var msgs []StoredMsg
+		streamInfo, err := serv.memphisStreamInfo(streamName)
+		if err != nil {
+			serv.Errorf("ResendPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		filter := GetDlsSubject("poison", sn.Intern(), msgId)
+		amount := streamInfo.State.Msgs
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       durableName,
+			FilterSubject: filter,
+		}
 
-	for _, msg := range msgs {
-		stationName := replaceDelimiters(msg.StationName)
-		for _, cg := range msg.PoisonedCgs {
-			cgName := replaceDelimiters(cg.CgName)
-			headersJson := map[string]string{}
-			for _, value := range msg.Message.Headers {
-				headersJson[value.HeaderKey] = value.HeaderValue
+		err = serv.memphisAddConsumer(streamName, &cc)
+		if err != nil {
+			serv.Errorf("ResendPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		responseChan := make(chan StoredMsg)
+		subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
+		reply := durableName + "_reply"
+		req := []byte(strconv.FormatUint(amount, 10))
+
+		sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+				// ack
+				serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+				rawTs := tokenAt(reply, 8)
+				seq, _, _ := ackReplyInfo(reply)
+
+				intTs, err := strconv.Atoi(rawTs)
+				if err != nil {
+					serv.Errorf("ResendPoisonMessages: " + err.Error())
+				}
+
+				respCh <- StoredMsg{
+					Subject:  subject,
+					Sequence: uint64(seq),
+					Data:     msg,
+					Time:     time.Unix(0, int64(intTs)),
+				}
+			}(responseChan, subject, reply, copyBytes(msg))
+		})
+		if err != nil {
+			serv.Errorf("ResendPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+
+		timer := time.NewTimer(timeout)
+		for i := uint64(0); i < amount; i++ {
+			select {
+			case <-timer.C:
+				goto cleanup
+			case msg := <-responseChan:
+				msgs = append(msgs, msg)
 			}
-			headersJson["$memphis_pm_id"] = msg.ID.Hex()
-			headers, err := json.Marshal(headersJson)
+		}
+
+	cleanup:
+		timer.Stop()
+		serv.unsubscribeOnGlobalAcc(sub)
+		err = serv.memphisRemoveConsumer(streamName, durableName)
+		if err != nil {
+			serv.Errorf("ResendPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		for _, msg := range msgs {
+			var dlsMsg models.DlsMessage
+			err = json.Unmarshal(msg.Data, &dlsMsg)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cg.CgName + err.Error())
+				serv.Errorf("ResendPoisonMessages: " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			err = sh.S.ResendPoisonMessage("$memphis_dlq_"+stationName+"_"+cgName, []byte(msg.Message.Data), headers)
+			stationName := replaceDelimiters(dlsMsg.StationName)
+			cgName := replaceDelimiters(dlsMsg.PoisonedCg.CgName)
+			headersJson := map[string]string{}
+			for key, value := range dlsMsg.Message.Headers {
+				headersJson[key] = value
+			}
+			headersJson["$memphis_pm_id"] = dlsMsg.ID
+			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(msg.Sequence, 10)
+			headers, err := json.Marshal(headersJson)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cg.CgName + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			data, err := hex.DecodeString(dlsMsg.Message.Data)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			err = sh.S.ResendPoisonMessage("$memphis_dls_"+stationName+"_"+cgName, []byte(data), headers)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1171,17 +1430,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if !ok {
 		return
 	}
+	msgId := body.MessageId
 
 	if body.IsPoisonMessage {
-		poisonMessage, err := sh.GetPoisonMessageJourneyDetails(body.MessageId)
-		if err == mongo.ErrNoDocuments {
-			errMsg := "Poison message with ID: " + body.MessageId + " does not exist"
-			serv.Warnf("GetMessageDetails: " + errMsg)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-			return
-		}
+		poisonMessage, err := sh.GetDlsMessageJourneyDetails(msgId)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1192,7 +1446,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Warnf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -1205,21 +1459,44 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + body.MessageId + ": " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
+	// For non-native stations - default values
+	if !station.IsNative {
+		msg := models.MessageResponse{
+			MessageSeq: body.MessageSeq,
+			Message: models.MessagePayload{
+				TimeSent: sm.Time,
+				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
+				Data:     hex.EncodeToString(sm.Data),
+				Headers:  map[string]string{},
+			},
+			Producer: models.ProducerDetails{
+				Name:          "",
+				ConnectionId:  primitive.ObjectID{},
+				ClientAddress: "",
+				CreatedByUser: "",
+				IsActive:      false,
+				IsDeleted:     false,
+			},
+			PoisonedCgs: []models.PoisonedCg{},
+		}
+		c.IndentedJSON(200, msg)
+		return
+	}
 	headersJson, err := DecodeHeader(sm.Header)
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1245,58 +1522,65 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-	poisonedCgs, err := GetPoisonedCgsByMessage(stationName.Ext(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	for i, cg := range poisonedCgs {
-		cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
+	poisonedCgs := make([]models.PoisonedCg, 0)
+	// Only native stations have CGs
+	if station.IsNative {
+		poisonedCgs, err = GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+		for i, cg := range poisonedCgs {
+			cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
+			if err != nil {
+				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
+			if err != nil {
+				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+			if err != nil {
+				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			isActive, isDeleted := getCgStatus(cgMembers)
+
+			poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+			poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+			poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+			poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+			poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+			poisonedCgs[i].IsActive = isActive
+			poisonedCgs[i].IsDeleted = isDeleted
 		}
-
-		cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + body.MessageId + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		isActive, isDeleted := getCgStatus(cgMembers)
-
-		poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-		poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-		poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
-		poisonedCgs[i].IsActive = isActive
-		poisonedCgs[i].IsDeleted = isDeleted
+		sort.Slice(poisonedCgs, func(i, j int) bool {
+			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+		})
 	}
 
 	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
 	var producer models.Producer
 	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
 	if err != nil {
-		serv.Errorf("GetMessageDetails error: " + err.Error())
+		serv.Errorf("GetMessageDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	_, conn, err := IsConnectionExist(connectionId)
 	if err != nil {
-		serv.Errorf("GetMessageDetails error: " + err.Error())
+		serv.Errorf("GetMessageDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1463,7 +1747,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	if !exist {
-		errMsg := "Schema " + schemaName + " does not exist" + err.Error()
+		errMsg := "Schema " + schemaName + " does not exist"
 		serv.Warnf("useSchemaDirect: " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
 		return
@@ -1709,7 +1993,7 @@ func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (sh StationsHandler) UpdateDlsCofnig(c *gin.Context) {
+func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	var body models.UpdateDlsConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1763,4 +2047,64 @@ func (sh StationsHandler) UpdateDlsCofnig(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
+}
+
+func (s *Server) LaunchDlsForOldStations() error {
+	var stations []models.Station
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
+		"$or": []interface{}{
+			bson.M{"is_deleted": false},
+			bson.M{"is_deleted": bson.M{"$exists": false}},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if err = cursor.All(context.TODO(), &stations); err != nil {
+		return err
+	}
+	for _, station := range stations {
+		sn, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+
+		_, err = s.memphisStreamInfo(streamName)
+		if err != nil {
+			if IsNatsErr(err, JSStreamNotFoundErr) {
+				dlsConfigurationNew := models.DlsConfiguration{
+					Poison:      true,
+					Schemaverse: true,
+				}
+				filter := bson.M{
+					"name": station.Name,
+					"$or": []interface{}{
+						bson.M{"is_deleted": false},
+						bson.M{"is_deleted": bson.M{"$exists": false}},
+					}}
+
+				update := bson.M{
+					"$set": bson.M{
+						"dls_configuration": dlsConfigurationNew,
+					},
+				}
+				opts := options.Update().SetUpsert(true)
+
+				_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+				if err != nil {
+					return err
+				}
+				err = s.CreateDlsStream(sn, station)
+				if err != nil {
+					serv.Errorf("LaunchDlsForOldStations: CreateDlsStream: At station " + station.Name + ": " + err.Error())
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+	}
+	return nil
 }

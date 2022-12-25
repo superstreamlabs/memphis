@@ -9,7 +9,7 @@
         width: 100%;
         p {
             font-size: 16px;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             margin-bottom: 0;
             margin-left: 30px;
         }
@@ -39,7 +39,7 @@
                 }
                 .function-name {
                     width: 200px;
-                    font-weight: 800;
+                    font-family: 'InterBold';
                     size: 14px;
                     margin-bottom: 2px;
                     white-space: nowrap;
@@ -89,7 +89,7 @@
             }
             .anticon:hover {
                 color: #979797;
-                font-weight: 600;
+                font-family: 'InterSemiBold';
             }
             a {
                 color: #979797;
@@ -97,7 +97,7 @@
             }
             a:hover {
                 color: #979797;
-                font-weight: 600;
+                font-family: 'InterSemiBold';
             }
             .ant-pagination-prev {
                 margin-left: 20px;

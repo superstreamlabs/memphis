@@ -53,7 +53,7 @@ schema-details {
                 display: flex;
                 align-items:center;
                 .tlt{
-                    font-weight: 600;
+                    font-family: 'InterSemiBold';
                     font-size: 18px;
                     padding-right: 15px;
                 }
@@ -68,7 +68,7 @@ schema-details {
 
                 }
             .radio-button span.ant-radio + * {
-                    font-weight: 600;
+                    font-family: 'InterSemiBold';
                     font-size: 14px;
                     color: #1D1D1D;
                     padding-right: 0;
@@ -153,10 +153,11 @@ schema-details {
                 display: flex;
                 justify-content:space-between;
                 p{
-                    font-weight: 600;
+                    font-family: 'InterSemiBold';
                     font-size: 18px;
                     margin-right: 15px;
-                }.attach-button{
+                }
+                .attach-button{
                     color: var(--purple);
                     font-size: 14px;
                     font-family: 'InterSemiBold' !important; 
@@ -288,6 +289,9 @@ schema-details {
                 width: 23px;
             }
         }
+    }
+    .ant-modal-body{
+        padding-top:0
     }
     
 }
