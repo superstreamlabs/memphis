@@ -284,7 +284,7 @@ const ProduceConsumList = ({ producer }) => {
                     )}
                     <div className="wrapper">
                         <img src={unsupported} alt="unsupported" />
-                        <p>Not supported without Memphis SDK’s</p>
+                        <p>Not supported without using the native Memphis SDK’s</p>
                         <Button
                             className="open-sdk"
                             width="200px"

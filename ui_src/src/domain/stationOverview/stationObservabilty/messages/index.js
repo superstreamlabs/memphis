@@ -40,7 +40,6 @@ import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 
-
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(0);
@@ -285,7 +284,7 @@ const Messages = () => {
                             fontSize="12px"
                             fontWeight="600"
                             disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
-                            tooltip={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}
+                            tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
                             isLoading={resendProcced}
                             onClick={() => handleResend()}
                         />
@@ -342,7 +341,7 @@ const Messages = () => {
                                 <Space direction="vertical">
                                     <CustomCollapse
                                         collapsible={!stationState?.stationMetaData?.is_native}
-                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without Memphis SDK’s'}
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
                                         header="Producer"
                                         status={true}
                                         data={messageDetails?.producer}
@@ -350,7 +349,7 @@ const Messages = () => {
 
                                     <MultiCollapse
                                         header="Failed CGs"
-                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without Memphis SDK’s'}
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
                                         defaultOpen={true}
                                         data={messageDetails?.poisonedCGs}
                                     />
@@ -419,7 +418,7 @@ const Messages = () => {
                                 backgroundColorType="orange"
                                 fontSize="12px"
                                 fontWeight="600"
-                                tooltip={!stationState?.stationMetaData.is_native && 'Not supported without Memphis SDK’s'}
+                                tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
                                 disabled={!stationState?.stationMetaData.is_native}
                                 onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
                             />
