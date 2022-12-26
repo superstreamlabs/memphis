@@ -64,10 +64,17 @@ const Messages = () => {
         if (stationState?.stationSocketData?.messages?.length > 0 && (Object.keys(messageDetails).length === 0 || tabValue === 'All') && selectedRowIndex === 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, false);
         }
-        if (tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && selectedRowIndex === 0) {
+        if (tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && selectedRowIndex === 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, false);
         }
-    }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages]);
+        if (tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && selectedRowIndex === 0) {
+            getMessageDetails(true, stationState?.stationSocketData?.schema_fail_messages[0]?._id, null, false);
+        }
+    }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages, stationState?.stationSocketData?.schema_fail_messages]);
+
+    useEffect(() => {
+        handleChangeMenuItem('Dead-letter');
+    }, [subTabValue]);
 
     const getMessageDetails = async (isPoisonMessage, messageId = null, message_seq = null, loadMessage) => {
         setLoadMessageData(loadMessage);
@@ -188,8 +195,11 @@ const Messages = () => {
         if (newValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) {
             getMessageDetails(false, null, stationState?.stationSocketData?.messages[0]?.message_seq, true);
         }
-        if (newValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0) {
+        if (newValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null, true);
+        }
+        if (newValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0) {
+            getMessageDetails(true, stationState?.stationSocketData?.schema_fail_messages[0]?._id, null, true);
         }
         setTabValue(newValue);
         setSelectedRowIndex(0);
@@ -310,7 +320,7 @@ const Messages = () => {
                         value={subTabValue}
                         onChange={handleChangeSubMenuItem}
                         tabs={subTabs}
-                        length={stationState?.stationSocketData?.poison_messages?.length > 0 && [stationState?.stationSocketData?.poison_messages?.length, null]}
+                        length={[stationState?.stationSocketData?.poison_messages?.length || null, stationState?.stationSocketData?.schema_fail_messages?.length || null]}
                     ></CustomTabs>
                 </div>
             )}
@@ -363,7 +373,6 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                //
                 <div className="list-wrapper dls-list">
                     <div className="coulmns-table">
                         <div className="left-coulmn">
@@ -422,6 +431,51 @@ const Messages = () => {
                                 disabled={!stationState?.stationMetaData.is_native}
                                 onClick={() => history.push(`${window.location.pathname}/${messageDetails.id}`)}
                             />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && (
+                //
+                <div className="list-wrapper dls-list">
+                    <div className="coulmns-table">
+                        <div className="left-coulmn">
+                            <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
+                            <p>Messages</p>
+                        </div>
+                        <p className="right-coulmn">Details</p>
+                    </div>
+                    <div className="list">
+                        <div className="rows-wrapper">
+                            {stationState?.stationSocketData?.schema_fail_messages?.map((message, id) => {
+                                return (
+                                    <div
+                                        className={selectedRowIndex === id ? 'message-row selected' : 'message-row'}
+                                        key={id}
+                                        onClick={() => onSelectedRow(true, message._id, id)}
+                                    >
+                                        {tabValue === 'Dead-letter' && (
+                                            <CheckboxComponent
+                                                checked={isCheck.includes(message._id)}
+                                                id={message._id}
+                                                onChange={handleCheckedClick}
+                                                name={message._id}
+                                            />
+                                        )}
+                                        <span className="preview-message">{message?.message.data}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="message-wrapper">
+                            <div className="row-data">
+                                <Space direction="vertical">
+                                    {stationState?.stationMetaData.is_native && <CustomCollapse header="Producer" status={true} data={messageDetails?.producer} />}
+                                    <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
+                                    <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
+                                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
+                                </Space>
+                            </div>
                         </div>
                     </div>
                 </div>
