@@ -1160,7 +1160,7 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
-		return errors.New("ackPoisonMessages: " + err.Error())
+		return errors.New("dropPoisonDlsMessages: " + err.Error())
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	for _, msgId := range poisonMessageIds {
@@ -1169,7 +1169,7 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 		var msgs []StoredMsg
 		streamInfo, err := serv.memphisStreamInfo(streamName)
 		if err != nil {
-			return errors.New("ackPoisonMessages: " + err.Error())
+			return errors.New("dropPoisonDlsMessages: " + err.Error())
 		}
 		filter := GetDlsSubject("poison", sn.Intern(), msgId)
 		amount := streamInfo.State.Msgs
@@ -1182,7 +1182,7 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 
 		err = serv.memphisAddConsumer(streamName, &cc)
 		if err != nil {
-			return errors.New("ackPoisonMessages: " + err.Error())
+			return errors.New("dropPoisonDlsMessages: " + err.Error())
 		}
 
 		responseChan := make(chan StoredMsg)
@@ -1211,7 +1211,7 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 			}(responseChan, subject, reply, copyBytes(msg))
 		})
 		if err != nil {
-			return errors.New("ackPoisonMessages: " + err.Error())
+			return errors.New("dropPoisonDlsMessages: " + err.Error())
 		}
 
 		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
@@ -1231,13 +1231,13 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 		serv.unsubscribeOnGlobalAcc(sub)
 		err = serv.memphisRemoveConsumer(streamName, durableName)
 		if err != nil {
-			return errors.New("ackPoisonMessages: " + err.Error())
+			return errors.New("dropPoisonDlsMessages: " + err.Error())
 		}
 
 		for _, msg := range msgs {
 			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
 			if err != nil {
-				return errors.New("ackPoisonMessages: " + err.Error())
+				return errors.New("dropPoisonDlsMessages: " + err.Error())
 			}
 		}
 	}
@@ -1251,7 +1251,7 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
-		return errors.New("DropDlsMessages: " + err.Error())
+		return errors.New("dropSchemaDlsMsg: " + err.Error())
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	for _, msgId := range schemaMessageIds {
@@ -1260,7 +1260,7 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 		var msgs []StoredMsg
 		streamInfo, err := serv.memphisStreamInfo(streamName)
 		if err != nil {
-			return errors.New("DropDlsMessages: " + err.Error())
+			return errors.New("dropSchemaDlsMsg: " + err.Error())
 		}
 		amount := streamInfo.State.Msgs
 		cc := ConsumerConfig{
@@ -1271,7 +1271,7 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 
 		err = serv.memphisAddConsumer(streamName, &cc)
 		if err != nil {
-			return errors.New("DropDlsMessages: " + err.Error())
+			return errors.New("dropSchemaDlsMsg: " + err.Error())
 		}
 
 		responseChan := make(chan StoredMsg)
@@ -1288,7 +1288,7 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 
 				intTs, err := strconv.Atoi(rawTs)
 				if err != nil {
-					serv.Errorf("DropDlsMessages: " + err.Error())
+					serv.Errorf("dropSchemaDlsMsg: " + err.Error())
 				}
 
 				respCh <- StoredMsg{
@@ -1300,7 +1300,7 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 			}(responseChan, subject, reply, copyBytes(msg))
 		})
 		if err != nil {
-			return errors.New("DropDlsMessages: " + err.Error())
+			return errors.New("dropSchemaDlsMsg: " + err.Error())
 		}
 
 		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
@@ -1320,19 +1320,19 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 		serv.unsubscribeOnGlobalAcc(sub)
 		err = serv.memphisRemoveConsumer(streamName, durableName)
 		if err != nil {
-			return errors.New("DropDlsMessages: " + err.Error())
+			return errors.New("dropSchemaDlsMsg: " + err.Error())
 		}
 
 		for _, msg := range msgs {
 			var dlsMsg models.DlsMessage
 			err = json.Unmarshal(msg.Data, &dlsMsg)
 			if err != nil {
-				return errors.New("DropDlsMessages: " + err.Error())
+				return errors.New("dropSchemaDlsMsg: " + err.Error())
 			}
 			if msgId == dlsMsg.ID {
 				_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
 				if err != nil {
-					return errors.New("DropDlsMessages: " + err.Error())
+					return errors.New("dropSchemaDlsMsg: " + err.Error())
 				}
 				break
 			}

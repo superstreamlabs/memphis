@@ -197,12 +197,9 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-producer")
 		}
 	}
-	shouldSendNotifications := false
-	slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
-	if ok {
-		if slackIntegration.Properties[notifications.SchemaVAlert] {
-			shouldSendNotifications = true
-		}
+	shouldSendNotifications, err := notifications.IsSlackEnabled()
+	if err != nil {
+		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 	}
 
 	return shouldSendNotifications, station.DlsConfiguration.Schemaverse, nil
