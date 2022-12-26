@@ -67,17 +67,11 @@ const Messages = () => {
         }
         if (tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && selectedRowIndex === 0) {
             getMessageDetails(true, stationState?.stationSocketData?.poison_messages[0]?._id, null);
-
-
         }
         if (tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && selectedRowIndex === 0) {
             getMessageDetails(true, stationState?.stationSocketData?.schema_fail_messages[0]?._id, null);
         }
     }, [stationState?.stationSocketData?.messages, stationState?.stationSocketData?.poison_messages, stationState?.stationSocketData?.schema_fail_messages]);
-
-    useEffect(() => {
-        handleChangeMenuItem('Dead-letter');
-    }, [subTabValue]);
 
     const getMessageDetails = async (isPoisonMessage, messageId = null, message_seq = null, loadMessage) => {
         loadMessage && setLoadMessageData(loadMessage);
@@ -557,7 +551,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox img={dlsEnableIcon} title={'DLS enable'} desc="By which event, messages will be stored in the dead-letter station.">
+                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="By which event, messages will be stored in the dead-letter station.">
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
