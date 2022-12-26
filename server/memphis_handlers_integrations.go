@@ -32,7 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const sentNotificationType = "send_notification"
+const sendNotificationType = "send_notification"
 
 type IntegrationsHandler struct{ S *Server }
 
@@ -218,10 +218,10 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 			return slackIntegration, err
 		}
 		update := models.ConfigurationsUpdate{
-			Type:   sentNotificationType,
+			Type:   sendNotificationType,
 			Update: svfAlert,
 		}
-		serv.UpdateClusterAndStationConfigurationsChange(update)
+		serv.SendUpdateToClients(update)
 
 		return slackIntegration, nil
 	} else if err != nil {
@@ -280,10 +280,10 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	}
 
 	update := models.ConfigurationsUpdate{
-		Type:   sentNotificationType,
+		Type:   sendNotificationType,
 		Update: svfAlert,
 	}
-	serv.UpdateClusterAndStationConfigurationsChange(update)
+	serv.SendUpdateToClients(update)
 
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
@@ -409,10 +409,10 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	switch body.Name {
 	case "slack":
 		update := models.ConfigurationsUpdate{
-			Type:   sentNotificationType,
+			Type:   sendNotificationType,
 			Update: false,
 		}
-		serv.UpdateClusterAndStationConfigurationsChange(update)
+		serv.SendUpdateToClients(update)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

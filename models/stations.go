@@ -153,7 +153,7 @@ type UpdateDlsConfigSchema struct {
 }
 
 type DropDlsMessagesSchema struct {
-	DlsType       string   `json:"dls_type" binding:"required"`
+	DlsMsgType       string   `json:"dls_type" binding:"required"`
 	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
 }
 

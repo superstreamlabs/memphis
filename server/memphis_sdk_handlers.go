@@ -208,3 +208,13 @@ func respondWithRespErr(s *Server, replySubject string, err error, resp memphisR
 	resp.SetError(err)
 	respondWithResp(s, replySubject, resp)
 }
+
+func (s *Server) SendUpdateToClients(configurationUpdate models.ConfigurationsUpdate) {
+	subject := configurationsUpdatesSubject
+	msg, err := json.Marshal(configurationUpdate)
+	if err != nil {
+		s.Errorf("SendUpdateToClients: " + err.Error())
+		return
+	}
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
+}

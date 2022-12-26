@@ -280,11 +280,7 @@ cleanup:
 				idCheck[msgId] = true
 				message := dlsMsg.Message
 				if dlsMsg.CreationDate.IsZero() {
-					unixNum, err := strconv.ParseInt(string(dlsMsg.CreationUnix), 10, 64)
-					if err != nil {
-						return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
-					}
-					message.TimeSent = time.Unix(unixNum, 0)
+					message.TimeSent = time.Unix(int64(dlsMsg.CreationUnix), 0)
 				} else {
 					message.TimeSent = dlsMsg.CreationDate
 				}
@@ -421,12 +417,24 @@ cleanup:
 					if err != nil {
 						return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
 					}
+					filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": dlsMsg.Producer.ConnectionId}
+					var producer models.Producer
+					err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+					if err != nil {
+						return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
+					}
 					idCheck[msgId] = true
 					idToMsgListP[msgId] = models.DlsMessageResponse{
-						ID:           msgId,
-						StationName:  dlsMsg.StationName,
-						MessageSeq:   dlsMsg.MessageSeq,
-						Producer:     dlsMsg.Producer,
+						ID:          msgId,
+						StationName: dlsMsg.StationName,
+						MessageSeq:  dlsMsg.MessageSeq,
+						Producer: models.ProducerDetails{
+							Name:          producer.Name,
+							ConnectionId:  producer.ConnectionId,
+							CreatedByUser: producer.CreatedByUser,
+							IsActive:      producer.IsActive,
+							IsDeleted:     producer.IsDeleted,
+						},
 						Message:      dlsMsg.Message,
 						CreationDate: dlsMsg.CreationDate,
 						PoisonedCgs:  []models.PoisonedCg{pCg},
@@ -824,113 +832,6 @@ cleanup:
 		}
 		if msgType == "poison" {
 			if dlsMsg.PoisonedCg.CgName == cgName {
-				count++
-			}
-		}
-	}
-
-	return count, nil
-}
-
-func GetTotalSchemaFailMsgsByCg(stationName, cgName string) (int, error) {
-	count := 0
-	timeout := 1 * time.Second
-	idCheck := make(map[string]bool)
-
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return 0, err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dls_consumer_" + uid
-	var msgs []StoredMsg
-
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return 0, err
-	}
-
-	amount := streamInfo.State.Msgs
-	startSeq := uint64(1)
-	if streamInfo.State.FirstSeq > 0 {
-		startSeq = streamInfo.State.FirstSeq
-	}
-
-	cc := ConsumerConfig{
-		OptStartSeq:   startSeq,
-		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-	}
-
-	err = serv.memphisAddConsumer(streamName, &cc)
-	if err != nil {
-		return 0, err
-	}
-
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("GetTotalPoisonMsgsByCg: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
-	}
-
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
-	err = serv.memphisRemoveConsumer(streamName, durableName)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, msg := range msgs {
-		splittedSubj := strings.Split(msg.Subject, tsep)
-		msgType := splittedSubj[1]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return 0, err
-		}
-		msgId := dlsMsg.ID
-		if msgType == "schema" {
-			if _, value := idCheck[msgId]; !value {
-				idCheck[msgId] = true
 				count++
 			}
 		}

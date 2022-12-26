@@ -29,7 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const configurationsUpdatesSubjectTemplate = "$memphis_sdk_configurations_updates"
+const configurationsUpdatesSubject = "$memphis_sdk_configurations_updates"
 
 type ConfigurationsHandler struct{}
 
@@ -202,12 +202,3 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
 }
 
-func (s *Server) UpdateClusterAndStationConfigurationsChange(configurationUpdate models.ConfigurationsUpdate) {
-	subject := configurationsUpdatesSubjectTemplate
-	msg, err := json.Marshal(configurationUpdate)
-	if err != nil {
-		s.Errorf("UpdateClusterAndStationConfigurationsChange: " + err.Error())
-		return
-	}
-	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
-}
