@@ -298,7 +298,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, schemaFailedMessages, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailedMessages, totalPoisonAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -359,6 +359,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"schema":                   schemaDetails,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
+			"total_poison_messages":    totalPoisonAmount,
 		}
 
 	} else {

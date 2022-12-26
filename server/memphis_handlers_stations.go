@@ -2148,6 +2148,14 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 }
 
 func (s *Server) LaunchDlsForOldStations() error {
+	err := alignOldStations(s)
+	if err != nil {
+		return err
+	}
+	return updateOldStationNativeness(s)
+}
+
+func alignOldStations(s *Server) error {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
 		"$or": []interface{}{
@@ -2204,10 +2212,13 @@ func (s *Server) LaunchDlsForOldStations() error {
 			}
 		}
 	}
+	return nil
+}
 
-	_, err = stationsCollection.UpdateMany(context.TODO(),
+func updateOldStationNativeness(s *Server) error {
+	_, err := stationsCollection.UpdateMany(context.TODO(),
 		bson.M{"is_native": bson.M{"$exists": false}},
 		bson.M{"$set": bson.M{"is_native": true}},
 	)
-	return nil
+	return err
 }

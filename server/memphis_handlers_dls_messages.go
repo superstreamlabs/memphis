@@ -172,7 +172,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, error) {
+func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
 
@@ -180,7 +180,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	sn, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
@@ -190,9 +190,10 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
+	totalPoisonAmount := int(streamInfo.State.Msgs)
 	amount := min(streamInfo.State.Msgs, 1000)
 	startSeq := uint64(1)
 	if streamInfo.State.FirstSeq > 0 {
@@ -208,7 +209,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	err = serv.memphisAddConsumer(streamName, &cc)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
 	responseChan := make(chan StoredMsg)
@@ -237,7 +238,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		}(responseChan, subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
 	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
@@ -258,7 +259,7 @@ cleanup:
 	err = serv.memphisRemoveConsumer(streamName, durableName)
 	idCheck := make(map[string]bool)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
 	for _, msg := range msgs {
@@ -267,7 +268,7 @@ cleanup:
 		var dlsMsg models.DlsMessage
 		err = json.Unmarshal(msg.Data, &dlsMsg)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 		msgId := dlsMsg.ID
 		if msgType == "poison" {
@@ -298,7 +299,7 @@ cleanup:
 		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
-	return poisonMessages, schemaMessages, nil
+	return poisonMessages, schemaMessages, totalPoisonAmount, nil
 }
 
 func (pmh PoisonMessagesHandler) GetDlsMsgsByStationFull(station models.Station) ([]models.DlsMessageResponse, []models.DlsMessageResponse, error) {

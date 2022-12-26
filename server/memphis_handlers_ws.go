@@ -263,12 +263,10 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, schemaFailMessages, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalPoisonAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
 	}
-
-	totalPoisonAmount := len(poisonMessages) + len(schemaFailMessages)
 
 	tags, err := h.Tags.GetTagsByStation(station.ID)
 	if err != nil {
