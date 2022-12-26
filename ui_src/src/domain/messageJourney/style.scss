@@ -20,10 +20,6 @@
             color: #1D1D1D; 
         }
     }
-    // svg {
-    //     width: 100% !important;
-    //     height: 095% !important;
-    // }
     .ant-collapse-item.ant-collapse-no-arrow {
         background: #FFFFFF;
         border: 1px solid #EFEFEF;
@@ -54,8 +50,6 @@
         height: calc(100% - 90px);
         .edge {
             stroke-width: 8;
-            // stroke-dasharray: 5;
-            // animation: dashdraw .5s linear infinite;
         }
         .producer{
             stroke: rgba(101, 87, 255, 0.1);

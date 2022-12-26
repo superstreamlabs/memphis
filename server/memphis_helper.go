@@ -40,12 +40,13 @@ const (
 )
 
 const (
-	syslogsStreamName  = "$memphis_syslogs"
-	syslogsInfoSubject = "info"
-	syslogsWarnSubject = "warn"
-	syslogsErrSubject  = "err"
-	syslogsSysSubject  = "sys"
-	dlsStreamName      = "$memphis-%s-dls"
+	syslogsStreamName      = "$memphis_syslogs"
+	syslogsExternalSubject = "extern.*"
+	syslogsInfoSubject     = "extern.info"
+	syslogsWarnSubject     = "extern.warn"
+	syslogsErrSubject      = "extern.err"
+	syslogsSysSubject      = "intern.sys"
+	dlsStreamName          = "$memphis-%s-dls"
 )
 
 // JetStream API request kinds

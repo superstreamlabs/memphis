@@ -33,9 +33,6 @@ const (
 	memphisWS_Subj_PoisonMsgJourneyData = "poison_message_journey_data"
 	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
-	memphisWS_Subj_SysLogsDataInf       = "syslogs_data.info"
-	memphisWS_Subj_SysLogsDataWrn       = "syslogs_data.warn"
-	memphisWS_Subj_SysLogsDataErr       = "syslogs_data.err"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 )
 
@@ -356,12 +353,22 @@ func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDeta
 	return stations, nil
 }
 
-func memphisWSGetSystemLogs(h *Handlers, filterSubjectSuffix string) (models.SystemLogsResponse, error) {
+func memphisWSGetSystemLogs(h *Handlers, logLevel string) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
-	filterSubject := ""
-	if filterSubjectSuffix != "" {
-		filterSubject = "$memphis_syslogs.*." + filterSubjectSuffix
+	filterSubjectSuffix := ""
+	switch logLevel {
+	case "err":
+		filterSubjectSuffix = syslogsErrSubject
+	case "warn":
+		filterSubjectSuffix = syslogsWarnSubject
+	case "info":
+		filterSubjectSuffix = syslogsInfoSubject
+	default:
+		filterSubjectSuffix = syslogsExternalSubject
 	}
+
+	filterSubject := "$memphis_syslogs.*." + filterSubjectSuffix
+
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }

@@ -38,7 +38,6 @@ function SchemaList({ createNew }) {
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
-    const [searchInput, setSearchInput] = useState('');
     const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
@@ -100,10 +99,6 @@ function SchemaList({ createNew }) {
         }
     };
 
-    const handleSearch = (e) => {
-        setSearchInput(e.target.value);
-    };
-
     const createNewSchema = () => {
         history.push(`${pathDomains.schemaverse}/$new`);
         createNew(true);
@@ -143,30 +138,6 @@ function SchemaList({ createNew }) {
                         onClick={() => onCheckedAll()}
                     />
                     <Filter filterComponent="schemaverse" height="34px" />
-                    {/* <Button
-                        width="111px"
-                        height="34px"
-                        placeholder={'Filters'}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType="white"
-                        fontSize="12px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        // onClick={() => addUserModalFlip(true)}
-                    /> */}
-                    {/* <Button
-                        width="81px"
-                        height="34px"
-                        placeholder={'Sort'}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType="white"
-                        fontSize="12px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        // onClick={() => addUserModalFlip(true)}
-                    /> */}
                     <Button
                         width="160px"
                         height="34px"
@@ -179,18 +150,6 @@ function SchemaList({ createNew }) {
                         aria-haspopup="true"
                         onClick={createNewSchema}
                     />
-                    {/* <Button
-                        width="145px"
-                        height="34px"
-                        placeholder={'Import schema'}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="12px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        // onClick={() => createNew()}
-                    /> */}
                 </div>
             </div>
             <div className="schema-list">
