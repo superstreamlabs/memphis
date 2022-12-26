@@ -14,6 +14,7 @@
 package server
 
 import (
+	"encoding/json"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
@@ -34,7 +35,24 @@ var connectionsHandler ConnectionsHandler
 var producersHandler ProducersHandler
 var consumersHandler ConsumersHandler
 
-const connectItemSep = "::"
+const (
+	connectItemSep                      = "::"
+	connectConfigUpdatesSubjectTemplate = "$memphis_connect_config_update.%s"
+)
+
+type connectConfigUpdate struct {
+	SlackNotif bool `json:"slack_notifications"`
+}
+
+func sendConnectUpdate(c *client, ccu connectConfigUpdate) {
+	s := c.srv
+	rawMsg, err := json.Marshal(ccu)
+	if err != nil {
+		s.Errorf(err.Error())
+		return
+	}
+	s.sendInternalAccountMsg(c.acc, connectConfigUpdatesSubjectTemplate, rawMsg)
+}
 
 func handleConnectMessage(client *client) error {
 	splittedMemphisInfo := strings.Split(client.opts.Name, connectItemSep)
@@ -123,6 +141,7 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		}
+		sendConnectUpdate(client, connectConfigUpdate{})
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
