@@ -2204,5 +2204,17 @@ func (s *Server) LaunchDlsForOldStations() error {
 			}
 		}
 	}
+
+	_, err = stationsCollection.UpdateMany(context.TODO(),
+		bson.M{
+			"$and": []interface{}{
+				bson.M{"is_native": bson.M{"$exists": false}},
+				bson.M{"$or": []interface{}{
+					bson.M{"is_deleted": false},
+					bson.M{"is_deleted": bson.M{"$exists": false}},
+				}}},
+		},
+		bson.M{"$set": bson.M{"is_native": true}},
+	)
 	return nil
 }
