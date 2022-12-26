@@ -15,6 +15,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
@@ -37,21 +38,42 @@ var consumersHandler ConsumersHandler
 
 const (
 	connectItemSep                      = "::"
-	connectConfigUpdatesSubjectTemplate = "$memphis_connect_config_update.%s"
+	connectConfigUpdatesSubjectTemplate = CONFIGURATIONS_UPDATES_SUBJ + ".init.%s"
 )
 
-type connectConfigUpdate struct {
-	SlackNotif bool `json:"slack_notifications"`
+func (s *Server) isSlackEnabled() bool {
+	filter := bson.M{"name": "slack"}
+	var slackIntegration models.Integration
+	err := notifications.IntegrationsCollection.FindOne(context.TODO(),
+		filter).Decode(&slackIntegration)
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			s.Errorf(err.Error())
+		}
+		return false
+	}
+	return true
 }
 
-func sendConnectUpdate(c *client, ccu connectConfigUpdate) {
+func updateNewClientWithConfig(c *client) {
+	// TODO more configurations logic here
+	config := models.GlobalConfigurationsUpdate{
+		Notifications: c.srv.isSlackEnabled(),
+	}
+
+	sendConnectUpdate(c, config)
+}
+
+func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate) {
 	s := c.srv
 	rawMsg, err := json.Marshal(ccu)
 	if err != nil {
 		s.Errorf(err.Error())
 		return
 	}
-	s.sendInternalAccountMsg(c.acc, connectConfigUpdatesSubjectTemplate, rawMsg)
+	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate,
+		c.memphisInfo.connectionId.Hex())
+	s.sendInternalAccountMsg(c.acc, subject, rawMsg)
 }
 
 func handleConnectMessage(client *client) error {
@@ -141,7 +163,7 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		}
-		sendConnectUpdate(client, connectConfigUpdate{})
+		updateNewClientWithConfig(client)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
