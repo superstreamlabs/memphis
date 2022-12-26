@@ -41,24 +41,16 @@ const (
 	connectConfigUpdatesSubjectTemplate = CONFIGURATIONS_UPDATES_SUBJ + ".init.%s"
 )
 
-func (s *Server) isSlackEnabled() bool {
-	filter := bson.M{"name": "slack"}
-	var slackIntegration models.Integration
-	err := notifications.IntegrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&slackIntegration)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
-			s.Errorf(err.Error())
-		}
-		return false
-	}
-	return true
-}
-
 func updateNewClientWithConfig(c *client) {
 	// TODO more configurations logic here
+
+	slackEnabled, err := notifications.IsSlackEnabled()
+	if err != nil {
+		c.Errorf("updateNewClientWithConfig: " + err.Error())
+	}
+
 	config := models.GlobalConfigurationsUpdate{
-		Notifications: c.srv.isSlackEnabled(),
+		Notifications: slackEnabled,
 	}
 
 	sendConnectUpdate(c, config)
