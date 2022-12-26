@@ -41,7 +41,7 @@ const (
 	connectConfigUpdatesSubjectTemplate = CONFIGURATIONS_UPDATES_SUBJ + ".init.%s"
 )
 
-func updateNewClientWithConfig(c *client) {
+func updateNewClientWithConfig(c *client, connId string) {
 	// TODO more configurations logic here
 
 	slackEnabled, err := notifications.IsSlackEnabled()
@@ -53,18 +53,17 @@ func updateNewClientWithConfig(c *client) {
 		Notifications: slackEnabled,
 	}
 
-	sendConnectUpdate(c, config)
+	sendConnectUpdate(c, config, connId)
 }
 
-func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate) {
+func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate, connId string) {
 	s := c.srv
 	rawMsg, err := json.Marshal(ccu)
 	if err != nil {
 		s.Errorf(err.Error())
 		return
 	}
-	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate,
-		c.memphisInfo.connectionId.Hex())
+	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate, connId)
 	s.sendInternalAccountMsg(c.acc, subject, rawMsg)
 }
 
@@ -155,7 +154,7 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		}
-		updateNewClientWithConfig(client)
+		updateNewClientWithConfig(client, objIdString)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
