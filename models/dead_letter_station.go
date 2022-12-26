@@ -69,7 +69,7 @@ type DlsMessage struct {
 	PoisonedCg   PoisonedCg        `json:"poisoned_cg"`
 	Message      MessagePayloadDls `json:"message"`
 	CreationDate time.Time         `json:"creation_date"`
-	CreationUnix int            `json:"creation_unix"`
+	CreationUnix int64             `json:"creation_unix"`
 }
 
 type DlsMessageResponse struct {

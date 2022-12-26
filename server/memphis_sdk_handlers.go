@@ -18,6 +18,8 @@ import (
 	"memphis-broker/models"
 )
 
+const configurationsUpdatesSubject = "$memphis_sdk_configurations_updates"
+
 type simplifiedMsgHandler func(*client, string, string, []byte)
 
 type memphisResponse interface {
@@ -57,9 +59,10 @@ type createProducerRequestV1 struct {
 }
 
 type createProducerResponse struct {
-	SchemaUpdate     models.ProducerSchemaUpdateInit `json:"schema_update"`
-	SchemaVerseToDls bool                            `json:"schemaverse_to_dls"`
-	Err              string                          `json:"error"`
+	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
+	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
+	ClusterSendNotification bool                            `json:"send_notification"`
+	Err                     string                          `json:"error"`
 }
 
 type destroyProducerRequest struct {

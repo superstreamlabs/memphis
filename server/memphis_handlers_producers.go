@@ -19,6 +19,7 @@ import (
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
+	"memphis-broker/notifications"
 	"memphis-broker/utils"
 	"sort"
 	"strings"
@@ -49,53 +50,53 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName) (bool, error) {
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName) (bool, bool, error) {
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, err
+		return false, false, err
 	}
 
 	producerType := strings.ToLower(pType)
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, err
+		return false, false, err
 	}
 
 	connectionIdObj, err := primitive.ObjectIDFromHex(pConnectionId)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": Connection ID " + pConnectionId + " is not valid")
-		return false, err
+		return false, false, err
 	}
 	exist, connection, err := IsConnectionExist(connectionIdObj)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, err
+		return false, false, err
 	}
 	if !exist {
 		errMsg := "Connection ID " + pConnectionId + " was not found"
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
-		return false, errors.New("memphis: " + errMsg)
+		return false, false, errors.New("memphis: " + errMsg)
 	}
 	if !connection.IsActive {
 		errMsg := "Connection with ID " + pConnectionId + " is not active"
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
-		return false, errors.New("memphis: " + errMsg)
+		return false, false, errors.New("memphis: " + errMsg)
 	}
 
 	exist, station, err := IsStationExist(pStationName)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, err
+		return false, false, err
 	}
 	if !exist {
 		var created bool
 		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedByUser)
 		if err != nil {
 			serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-			return false, err
+			return false, false, err
 		}
 
 		if created {
@@ -131,12 +132,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	exist, _, err = IsProducerExist(name, station.ID)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, err
+		return false, false, err
 	}
 	if exist {
 		errMsg := "Producer name (" + pName + ") has to be unique per station (" + pStationName.external + ")"
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
-		return false, errors.New("memphis: " + errMsg)
+		return false, false, errors.New("memphis: " + errMsg)
 	}
 
 	newProducer := models.Producer{
@@ -165,7 +166,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, err
+		return false, false, err
 	}
 
 	if updateResults.MatchedCount == 0 {
@@ -196,8 +197,15 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-producer")
 		}
 	}
+	shouldSendNotifications := false
+	slackIntegration, ok := notifications.NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+	if ok {
+		if slackIntegration.Properties[notifications.SchemaVAlert] {
+			shouldSendNotifications = true
+		}
+	}
 
-	return station.DlsConfiguration.Schemaverse, nil
+	return shouldSendNotifications, station.DlsConfiguration.Schemaverse, nil
 }
 
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
@@ -206,7 +214,7 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 		respondWithErr(s, reply, err)
 		return
 	}
-	_, err = s.createProducerDirectCommon(c, cpr.Name,
+	_, _, err = s.createProducerDirectCommon(c, cpr.Name,
 		cpr.ProducerType, cpr.ConnectionId, sn)
 	respondWithErr(s, reply, err)
 }
@@ -233,7 +241,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
+	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
 	if err != nil {
 		respondWithRespErr(s, reply, err, &resp)
 		return
@@ -252,6 +260,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 	resp.SchemaUpdate = *schemaUpdate
 	resp.SchemaVerseToDls = schemaVerseToDls
+	resp.ClusterSendNotification = clusterSendNotification
 
 	respondWithResp(s, reply, &resp)
 }

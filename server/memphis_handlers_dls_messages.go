@@ -280,10 +280,11 @@ cleanup:
 				idCheck[msgId] = true
 				message := dlsMsg.Message
 				if dlsMsg.CreationDate.IsZero() {
-					message.TimeSent = time.Unix(int64(dlsMsg.CreationUnix), 0)
+					message.TimeSent = time.Unix(dlsMsg.CreationUnix, 0)
 				} else {
 					message.TimeSent = dlsMsg.CreationDate
 				}
+				dlsMsg.Message.Size = len(msg.Subject) + len(msg.Data) + len(msg.Header)
 				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
 			}
 		}

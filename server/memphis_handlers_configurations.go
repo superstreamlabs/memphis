@@ -29,8 +29,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const configurationsUpdatesSubject = "$memphis_sdk_configurations_updates"
-
 type ConfigurationsHandler struct{}
 
 var userMgmtHandler UserMgmtHandler
