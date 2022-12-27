@@ -310,6 +310,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	err = createStreamFunc()
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		fmt.Println("Error: duplicates window can not be larger then max age", error.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
