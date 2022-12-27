@@ -43,8 +43,8 @@ const DlsConfig = () => {
     const updateDlsConfigurations = async () => {
         const conf = {
             station_name: stationState?.stationMetaData?.name,
-            poison: dlsTypes.poison,
-            schemaverse: dlsTypes.schemaverse
+            poison: dlsTypes?.poison,
+            schemaverse: dlsTypes?.schemaverse
         };
         try {
             await httpRequest('PUT', ApiEndpoints.UPDATE_DLS_CONFIGURATION, conf);
@@ -65,14 +65,14 @@ const DlsConfig = () => {
             poison: true,
             schemaverse: false
         });
-        setDlsTypes({ ...dlsTypes, poison: !dlsTypes.poison });
+        setDlsTypes({ ...dlsTypes, poison: !dlsTypes?.poison });
     };
     const handleSchemaChange = () => {
         setDlsLoading({
             poison: false,
             schemaverse: true
         });
-        setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes.schemaverse });
+        setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes?.schemaverse });
     };
 
     return (
@@ -82,7 +82,7 @@ const DlsConfig = () => {
                     <p className="header-dls">Poison</p>
                     <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
                 </div>
-                <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading.poison} />
+                <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
             </div>
             <div className="toggle-dls-config">
                 <div>
@@ -90,11 +90,11 @@ const DlsConfig = () => {
                     <p className="sub-header-dls">Messages that did not pass schema validation</p>
                 </div>
                 <Switcher
-                    disabled={!stationState?.stationMetaData.is_native}
+                    disabled={!stationState?.stationMetaData?.is_native}
                     onChange={handleSchemaChange}
                     checked={dlsTypes?.schemaverse}
-                    tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
-                    loading={dlsLoading.schemaverse}
+                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                    loading={dlsLoading?.schemaverse}
                 />
             </div>
         </div>

@@ -211,6 +211,17 @@
                     width: 10vw;
                 }
             }
+            .placeholder{
+                align-items: center;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                p{
+                    font-family: 'InterSemiBold';
+                    font-size: 16px;
+                    color: rgba(74, 73, 92, 0.8);
+                }
+            }
         }
     }
     .empty-messages {

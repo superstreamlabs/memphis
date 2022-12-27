@@ -42,12 +42,7 @@
         
     }
     .canvas-wrapper{
-        position: absolute;
-        top: 50px;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: calc(100% - 90px);
+        height: calc(100vh - 50px);
         .edge {
             stroke-width: 8;
         }
