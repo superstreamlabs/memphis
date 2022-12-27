@@ -141,7 +141,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	// For backward compatibility
-	err = s.LaunchDlsForOldStations()
+	err = s.AlignOldStations()
 	if err != nil {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}

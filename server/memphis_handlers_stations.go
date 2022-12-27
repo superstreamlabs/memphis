@@ -2147,15 +2147,15 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
 }
 
-func (s *Server) LaunchDlsForOldStations() error {
-	err := alignOldStations(s)
+func (s *Server) AlignOldStations() error {
+	err := launchDlsForOldStations(s)
 	if err != nil {
 		return err
 	}
 	return updateOldStationNativeness(s)
 }
 
-func alignOldStations(s *Server) error {
+func launchDlsForOldStations(s *Server) error {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
 		"$or": []interface{}{
