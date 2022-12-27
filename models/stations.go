@@ -152,8 +152,9 @@ type UpdateDlsConfigSchema struct {
 	Schemaverse bool   `json:"schemaverse"`
 }
 
-type AckPoisonMessagesSchema struct {
-	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
+type DropDlsMessagesSchema struct {
+	DlsMsgType       string   `json:"dls_type" binding:"required"`
+	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
 }
 
 type ResendPoisonMessagesSchema struct {

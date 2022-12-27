@@ -5,10 +5,9 @@ import (
 
 	"memphis-broker/models"
 
+	"github.com/slack-go/slack"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-
-	"github.com/slack-go/slack"
 )
 
 func InitializeSlackConnection(c *mongo.Client) error {
@@ -23,6 +22,21 @@ func InitializeSlackConnection(c *mongo.Client) error {
 	}
 	CacheSlackDetails(slackIntegration.Keys, slackIntegration.Properties)
 	return nil
+}
+
+func IsSlackEnabled() (bool, error) {
+	filter := bson.M{"name": "slack"}
+	var slackIntegration models.Integration
+	err := IntegrationsCollection.FindOne(context.TODO(),
+		filter).Decode(&slackIntegration)
+	if err == nil {
+		return true, nil
+	}
+
+	if err == mongo.ErrNoDocuments {
+		err = nil
+	}
+	return false, err
 }
 
 func clearSlackCache() {

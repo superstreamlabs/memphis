@@ -20,9 +20,14 @@ type EditClusterConfigSchema struct {
 	LogsRetention int `json:"logs_retention" binding:"required"`
 }
 
+type GlobalConfigurationsUpdate struct {
+	Notifications bool `json:"notifications"`
+}
+
 type ConfigurationsUpdate struct {
-	Type   string `json:"type"`
-	Update any    `json:"update"`
+	StationName string `json:"station_name"`
+	Type        string `json:"type"`
+	Update      any    `json:"update"`
 }
 
 type ConfigurationsIntValue struct {
