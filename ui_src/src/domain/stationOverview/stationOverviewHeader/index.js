@@ -60,10 +60,10 @@ const StationOverviewHeader = () => {
                 setRetentionValue(convertSecondsToDate(stationState?.stationMetaData?.retention_value));
                 break;
             case 'bytes':
-                setRetentionValue(`${stationState?.stationMetaData?.retention_value} bytes`);
+                setRetentionValue(`${numberWithCommas(stationState?.stationMetaData?.retention_value)} bytes`);
                 break;
             case 'messages':
-                setRetentionValue(`${stationState?.stationMetaData?.retention_value} messages`);
+                setRetentionValue(`${numberWithCommas(stationState?.stationMetaData?.retention_value)} messages`);
                 break;
             default:
                 break;

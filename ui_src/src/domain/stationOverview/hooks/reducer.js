@@ -42,6 +42,11 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationSocketData: updatedSocketState
             };
+        case 'SET_SELECTED_ROW_ID':
+            return {
+                ...stationState,
+                selectedRowId: action.payload
+            };
         default:
             return stationState;
     }

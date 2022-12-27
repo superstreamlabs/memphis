@@ -227,8 +227,8 @@ const MessageJourney = () => {
             });
 
             let messageDetails = {
-                id: data._id ?? null,
-                messageSeq: data.message_seq,
+                _id: data._id ?? null,
+                message_seq: data.message_seq,
                 details: [
                     {
                         name: 'Message size',
