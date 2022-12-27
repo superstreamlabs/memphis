@@ -18,6 +18,7 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,7 +65,7 @@ func killConsumersByConnections(connectionIds []primitive.ObjectID) error {
 	return nil
 }
 
-func (srv *Server) removeRedundantStations() {
+func (srv *Server) removeStaleStations() {
 	var stations []models.Station
 	cursor, err := stationsCollection.Find(nil, bson.M{"is_deleted": false})
 	if err != nil {
@@ -148,6 +149,22 @@ func killFunc(s *Server) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(connections))
 	for _, conn := range connections {
+		connOpts := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
+		conns, _ := s.Connz(connOpts)
+		found := false
+		for _, clientConn := range conns.Conns { // check with local connections
+			connId := strings.Split(clientConn.Name, "::")[0]
+			if connId == (conn.ID).Hex() {
+				found = true
+				break
+			}
+		}
+		if found {
+			wg.Done()
+			continue
+		}
+
+		// check with other brokers
 		go func(s *Server, conn models.Connection, wg *sync.WaitGroup, lock *sync.Mutex) {
 			respCh := make(chan []byte)
 			msg := (conn.ID).Hex()
@@ -166,6 +183,7 @@ func killFunc(s *Server) {
 			timeout := time.After(30 * time.Second)
 			select {
 			case <-respCh:
+				s.unsubscribeOnGlobalAcc(sub)
 				wg.Done()
 				return
 			case <-timeout:
@@ -197,7 +215,7 @@ func killFunc(s *Server) {
 		}
 	}
 
-	s.removeRedundantStations()
+	s.removeStaleStations()
 }
 
 func (s *Server) KillZombieResources() {

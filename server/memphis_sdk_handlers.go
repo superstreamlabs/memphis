@@ -18,6 +18,8 @@ import (
 	"memphis-broker/models"
 )
 
+const configurationsUpdatesSubject = "$memphis_sdk_configurations_updates"
+
 type simplifiedMsgHandler func(*client, string, string, []byte)
 
 type memphisResponse interface {
@@ -57,8 +59,10 @@ type createProducerRequestV1 struct {
 }
 
 type createProducerResponse struct {
-	SchemaUpdate models.ProducerSchemaUpdateInit `json:"schema_update"`
-	Err          string                          `json:"error"`
+	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
+	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
+	ClusterSendNotification bool                            `json:"send_notification"`
+	Err                     string                          `json:"error"`
 }
 
 type destroyProducerRequest struct {
@@ -206,4 +210,14 @@ func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
 func respondWithRespErr(s *Server, replySubject string, err error, resp memphisResponse) {
 	resp.SetError(err)
 	respondWithResp(s, replySubject, resp)
+}
+
+func (s *Server) SendUpdateToClients(configurationUpdate models.ConfigurationsUpdate) {
+	subject := configurationsUpdatesSubject
+	msg, err := json.Marshal(configurationUpdate)
+	if err != nil {
+		s.Errorf("SendUpdateToClients: " + err.Error())
+		return
+	}
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }

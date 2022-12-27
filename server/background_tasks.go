@@ -52,7 +52,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func checkAndReportConnFound(s *Server, message, reply string) bool {
-	connInfo := &ConnzOptions{}
+	connInfo := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
 	conns, _ := s.Connz(connInfo)
 	for _, conn := range conns.Conns {
 		connId := strings.Split(conn.Name, "::")[0]

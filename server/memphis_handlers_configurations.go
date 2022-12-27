@@ -199,3 +199,4 @@ func changeLogsRetention(logsRetention int) error {
 func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
 }
+

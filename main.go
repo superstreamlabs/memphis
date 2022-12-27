@@ -130,7 +130,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	// go s.KillZombieResources() // TODO
+	// go s.KillZombieResources() // TODO only leader
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
@@ -141,7 +141,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	// For backward compatibility
-	err = s.LaunchDlsForOldStations()
+	err = s.AlignOldStations()
 	if err != nil {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}

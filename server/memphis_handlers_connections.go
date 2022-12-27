@@ -14,6 +14,8 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/notifications"
@@ -34,7 +36,36 @@ var connectionsHandler ConnectionsHandler
 var producersHandler ProducersHandler
 var consumersHandler ConsumersHandler
 
-const connectItemSep = "::"
+const (
+	connectItemSep                      = "::"
+	connectConfigUpdatesSubjectTemplate = CONFIGURATIONS_UPDATES_SUBJ + ".init.%s"
+)
+
+func updateNewClientWithConfig(c *client, connId string) {
+	// TODO more configurations logic here
+
+	slackEnabled, err := notifications.IsSlackEnabled()
+	if err != nil {
+		c.Errorf("updateNewClientWithConfig: " + err.Error())
+	}
+
+	config := models.GlobalConfigurationsUpdate{
+		Notifications: slackEnabled,
+	}
+
+	sendConnectUpdate(c, config, connId)
+}
+
+func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate, connId string) {
+	s := c.srv
+	rawMsg, err := json.Marshal(ccu)
+	if err != nil {
+		s.Errorf(err.Error())
+		return
+	}
+	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate, connId)
+	s.sendInternalAccountMsg(c.acc, subject, rawMsg)
+}
 
 func handleConnectMessage(client *client) error {
 	splittedMemphisInfo := strings.Split(client.opts.Name, connectItemSep)
@@ -123,6 +154,7 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		}
+		updateNewClientWithConfig(client, objIdString)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

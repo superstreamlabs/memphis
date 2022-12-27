@@ -260,7 +260,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, schemaFailMessages, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -302,6 +302,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 			"schema":                   struct{}{},
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
+			"total_dls_messages":       totalDlsAmount,
 		}
 		return response, nil
 	}
@@ -332,6 +333,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"schema":                   schemaDetails,
 		"idempotency_window_in_ms": station.IdempotencyWindow,
 		"dls_configuration":        station.DlsConfiguration,
+		"total_dls_messages":       totalDlsAmount,
 	}
 
 	return response, nil

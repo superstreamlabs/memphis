@@ -235,7 +235,7 @@ const Messages = () => {
                     length={
                         (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_fail_messages?.length > 0) && [
                             null,
-                            (stationState?.stationSocketData?.poison_messages?.length || 0) + (stationState?.stationSocketData?.schema_fail_messages?.length || 0)
+                            stationState?.stationSocketData?.total_dls_messages || 0
                         ]
                     }
                 ></CustomTabs>
@@ -246,7 +246,7 @@ const Messages = () => {
                         value={subTabValue}
                         onChange={handleChangeSubMenuItem}
                         tabs={subTabs}
-                        length={[stationState?.stationSocketData?.poison_messages?.length || null, stationState?.stationSocketData?.schema_fail_messages?.length || null]}
+                        length={[stationState?.stationSocketData?.total_dls_messages || null, stationState?.stationSocketData?.schema_fail_messages?.length || null]}
                     ></CustomTabs>
                 </div>
             )}
