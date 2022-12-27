@@ -1,9 +1,22 @@
 .dls-config-container {
     margin-top: 20px;
+    overflow-y: auto;
     .toggle-dls-config {
         display: flex;
         justify-content: space-between;
         margin-bottom: 5px;
+        .header-dls {
+            font-size: 14px;
+            font-family: 'InterSemiBold';
+            margin-bottom: 5px;
+        }
+        .sub-header-dls {
+            font-family: 'Inter';
+            font-size: 12px;
+            line-height: 15px;
+            color: #b4b4b4;
+            margin-bottom: 10px;
+        }
         .switch-button {
             margin-left: 10px;
         }

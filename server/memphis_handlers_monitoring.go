@@ -421,6 +421,8 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsInfoSubject
 	case "sys":
 		filterSubjectSuffix = syslogsSysSubject
+	case "external":
+		filterSubjectSuffix = syslogsExternalSubject
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
@@ -491,6 +493,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		if amount >= streamInfo.State.LastSeq {
 			startSeq = 1
 		}
+		lastKnownSeq = streamInfo.State.LastSeq
 
 	} else if amount >= lastKnownSeq {
 		startSeq = 1
@@ -564,7 +567,7 @@ cleanup:
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return s.GetSystemLogs(amount, timeout, false, startSeq-1, filterSubject, getAll)
+		return s.GetSystemLogs(amount*2, timeout, false, lastKnownSeq, filterSubject, getAll)
 	}
 	for _, msg := range msgs {
 		if err != nil {
@@ -581,8 +584,11 @@ cleanup:
 			// old version's logs
 			logSource = "broker"
 			logType = splittedSubj[1]
-		} else {
+		} else if len(splittedSubj) == 3 {
+			// old version's logs
 			logSource, logType = splittedSubj[1], splittedSubj[2]
+		} else {
+			logSource, logType = splittedSubj[1], splittedSubj[3]
 		}
 
 		data := string(msg.Data)
@@ -603,6 +609,11 @@ cleanup:
 		sort.Slice(resMsgs, func(i, j int) bool {
 			return resMsgs[i].MessageSeq > resMsgs[j].MessageSeq
 		})
+
+		if len(resMsgs) > 100 {
+			resMsgs = resMsgs[:100]
+		}
 	}
+
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }

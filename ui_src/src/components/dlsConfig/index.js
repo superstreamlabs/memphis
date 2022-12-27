@@ -13,8 +13,6 @@
 import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import { StationStoreContext } from '../../domain/stationOverview';
-
-import TitleComponent from '../titleComponent';
 import Switcher from '../switcher';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
@@ -80,11 +78,17 @@ const DlsConfig = () => {
     return (
         <div className="dls-config-container">
             <div className="toggle-dls-config">
-                <TitleComponent headerTitle="Poison" typeTitle="sub-header" headerDescription="Contrary to popular belief, Lorem Ipsum is not " />
+                <div>
+                    <p className="header-dls">Poison</p>
+                    <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
+                </div>
                 <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading.poison} />
             </div>
             <div className="toggle-dls-config">
-                <TitleComponent headerTitle="Schemaverse" typeTitle="sub-header" headerDescription="Contrary to popular belief, Lorem Ipsum is not " />
+                <div>
+                    <p className="header-dls">Schema violation</p>
+                    <p className="sub-header-dls">Messages that did not pass schema validation</p>
+                </div>
                 <Switcher
                     disabled={!stationState?.stationMetaData.is_native}
                     onChange={handleSchemaChange}

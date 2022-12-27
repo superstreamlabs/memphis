@@ -1,11 +1,11 @@
-FROM golang:1.18-alpine3.15 as build
+FROM golang:1.19-alpine3.17 as build
 
 WORKDIR $GOPATH/src/memphis-broker
 COPY . .
 
 RUN CGO_ENABLED=0 go build -ldflags="-w" -a -o  .
 
-FROM alpine:3.15
+FROM alpine:3.17
 ENV GOPATH="/go/src"
 WORKDIR /run
 
