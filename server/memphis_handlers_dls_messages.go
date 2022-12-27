@@ -193,7 +193,10 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
-	totalPoisonAmount := int(streamInfo.State.Msgs)
+	totalDlsAmount, err := pmh.GetTotalDlsMsgsByStation(sn.Ext())
+	if err != nil {
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+	}
 	amount := min(streamInfo.State.Msgs, 1000)
 	startSeq := uint64(1)
 	if streamInfo.State.FirstSeq > 0 {
@@ -299,7 +302,7 @@ cleanup:
 		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
-	return poisonMessages, schemaMessages, totalPoisonAmount, nil
+	return poisonMessages, schemaMessages, totalDlsAmount, nil
 }
 
 func (pmh PoisonMessagesHandler) GetDlsMsgsByStationFull(station models.Station) ([]models.DlsMessageResponse, []models.DlsMessageResponse, error) {
@@ -529,7 +532,7 @@ cleanup:
 	return poisonMessages, schemaMessages, nil
 }
 
-func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string) (int, error) {
+func (pmh PoisonMessagesHandler) GetTotalDlsMsgsByStation(stationName string) (int, error) {
 	count := 0
 	timeout := 1 * time.Second
 	idCheck := make(map[string]bool)
@@ -626,10 +629,12 @@ cleanup:
 		}
 		msgId := dlsMsg.ID
 		if msgType == "poison" {
-			if _, value := idCheck[msgId]; !value {
+			if _, ok := idCheck[msgId]; !ok {
 				idCheck[msgId] = true
 				count++
 			}
+		} else if msgType == "schema" {
+			count++
 		}
 	}
 
