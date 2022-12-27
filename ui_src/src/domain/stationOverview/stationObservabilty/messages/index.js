@@ -13,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
@@ -37,10 +37,11 @@ import MessageDetails from '../components/messageDetails';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
-    const [selectedRowIndex, setSelectedRowIndex] = useState(0);
+    const [selectedRowIndex, setSelectedRowIndex] = useState(null);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
+    const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Poison');
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [tabValue, setTabValue] = useState('All');
@@ -50,9 +51,14 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const onSelectedRow = (id, rowIndex) => {
-        setSelectedRowIndex(rowIndex);
+    const onSelectedRow = (id) => {
+        setUserScrolled(false);
+        setSelectedRowIndex(id);
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     };
 
     const onCheckedAll = (e) => {
@@ -80,18 +86,19 @@ const Messages = () => {
     };
 
     const handleChangeMenuItem = (newValue) => {
-        if (newValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) {
-            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: stationState?.stationSocketData?.messages[0].message_seq });
-        }
-        if (newValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0) {
-            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: stationState?.stationSocketData?.poison_messages[0]?._id });
-        }
-        if (newValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0) {
-            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: stationState?.stationSocketData?.schema_fail_messages[0]?._id });
-        }
+        stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+        setSelectedRowIndex(null);
         setTabValue(newValue);
-        setSelectedRowIndex(0);
     };
+
+    useEffect(() => {
+        if (selectedRowIndex && !userScrolled) {
+            const element = document.getElementById(selectedRowIndex);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    }, [stationState?.stationSocketData]);
 
     const handleChangeSubMenuItem = (newValue) => {
         setSubTabValue(newValue);
@@ -139,9 +146,18 @@ const Messages = () => {
         }
     };
 
-    const listGenerator = (message, id) => {
+    const handleScroll = () => {
+        setUserScrolled(true);
+    };
+
+    const listGenerator = (message) => {
         return (
-            <div className={selectedRowIndex === id ? 'message-row selected' : 'message-row'} key={id} onClick={() => onSelectedRow(message._id, id)}>
+            <div
+                className={selectedRowIndex === message._id ? 'message-row selected' : 'message-row'}
+                id={message._id}
+                key={message._id}
+                onClick={() => onSelectedRow(message._id)}
+            >
                 {tabValue === 'Dead-letter' && (
                     <CheckboxComponent checked={isCheck.includes(message._id)} id={message._id} onChange={handleCheckedClick} name={message._id} />
                 )}
@@ -161,14 +177,14 @@ const Messages = () => {
                     <p className="right-coulmn">Details</p>
                 </div>
                 <div className="list">
-                    <div className="rows-wrapper">
+                    <div className="rows-wrapper" onScroll={() => handleScroll()}>
                         {subTabValue === 'Poison' &&
                             stationState?.stationSocketData?.poison_messages?.map((message, id) => {
-                                return listGenerator(message, id);
+                                return listGenerator(message);
                             })}
                         {subTabValue === 'Schemaverse' &&
                             stationState?.stationSocketData?.schema_fail_messages?.map((message, id) => {
-                                return listGenerator(message, id);
+                                return listGenerator(message);
                             })}
                     </div>
                     <MessageDetails isPoisonMessage={true} />
@@ -219,8 +235,8 @@ const Messages = () => {
                             backgroundColorType="purple"
                             fontSize="12px"
                             fontWeight="600"
-                            disabled={isCheck.length === 0 || !stationState?.stationMetaData.is_native}
-                            tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
+                            disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
+                            tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
                             isLoading={resendProcced}
                             onClick={() => handleResend()}
                         />
@@ -259,13 +275,14 @@ const Messages = () => {
                         <p className="right-coulmn">Details</p>
                     </div>
                     <div className="list">
-                        <div className="rows-wrapper all">
-                            {stationState?.stationSocketData?.messages?.map((message, id) => {
+                        <div className="rows-wrapper all" onScroll={() => handleScroll()}>
+                            {stationState?.stationSocketData?.messages?.map((message) => {
                                 return (
                                     <div
-                                        className={selectedRowIndex === id ? 'message-row selected' : 'message-row'}
-                                        key={id}
-                                        onClick={() => onSelectedRow(message.message_seq, id)}
+                                        className={selectedRowIndex === message?.message_seq ? 'message-row selected' : 'message-row'}
+                                        key={message?.message_seq}
+                                        id={message?.message_seq}
+                                        onClick={() => onSelectedRow(message?.message_seq)}
                                     >
                                         <span className="preview-message">{message?.data}</span>
                                     </div>

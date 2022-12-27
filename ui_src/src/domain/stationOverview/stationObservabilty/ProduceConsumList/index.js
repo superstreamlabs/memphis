@@ -170,7 +170,7 @@ const ProduceConsumList = ({ producer }) => {
 
     return (
         <div>
-            {stationState?.stationMetaData.is_native ? (
+            {stationState?.stationMetaData?.is_native ? (
                 <div className="pubSub-list-container">
                     {' '}
                     <div className="header">

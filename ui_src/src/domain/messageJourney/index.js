@@ -293,7 +293,8 @@ const MessageJourney = () => {
                             nodes={nodes}
                             edges={edges}
                             fit={true}
-                            maxHeight={nodes?.length * 150}
+                            height={'100%'}
+                            maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 150}
                             node={
                                 <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                     {(event) => (

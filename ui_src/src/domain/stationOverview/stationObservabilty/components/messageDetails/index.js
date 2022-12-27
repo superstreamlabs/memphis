@@ -10,49 +10,41 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
-import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import Lottie from 'lottie-react';
+import { Space } from 'antd';
 
 import { convertBytes, numberWithCommas, parsingDate } from '../../../../../services/valueConvertor';
+import attachedPlaceholder from '../../../../../assets/images/attachedPlaceholder.svg';
 import animationData from '../../../../../assets/lotties/MemphisGif.json';
-import Journey from '../../../../../assets/images/journey.svg';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
+import Journey from '../../../../../assets/images/journey.svg';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { StationStoreContext } from '../../..';
-import { Space } from 'antd';
 import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 
-const url = window.location.href;
-const stationName = url.split('stations/')[1];
-
 const MessageDetails = ({ isPoisonMessage, id }) => {
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1];
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [messageDetails, setMessageDetails] = useState({});
-    const [loadMessageData, setLoadMessageData] = useState(true);
-    const [firstLoad, setFirstLoad] = useState(true);
+    const [loadMessageData, setLoadMessageData] = useState(false);
 
     const history = useHistory();
 
     useEffect(() => {
         if (Object.keys(messageDetails).length !== 0) {
             setLoadMessageData(false);
-            setFirstLoad(false);
         }
         return () => {};
     }, [messageDetails]);
 
     useEffect(() => {
-        if (firstLoad && isPoisonMessage) getMessageDetails(stationState?.stationSocketData?.poison_messages[0]?._id);
-        if (firstLoad && !isPoisonMessage) getMessageDetails(stationState?.stationSocketData?.messages[0]?.message_seq);
-    }, []);
-
-    useEffect(() => {
-        if (!loadMessageData && !firstLoad) {
+        if (stationState?.selectedRowId && !loadMessageData) {
             getMessageDetails(stationState?.selectedRowId);
         }
     }, [stationState?.selectedRowId]);
@@ -158,7 +150,7 @@ const MessageDetails = ({ isPoisonMessage, id }) => {
             <div className="message-wrapper">
                 {loadMessageData ? (
                     loader()
-                ) : (
+                ) : stationState?.selectedRowId && Object.keys(messageDetails).length > 0 ? (
                     <>
                         <div className="row-data">
                             <Space direction="vertical">
@@ -196,12 +188,17 @@ const MessageDetails = ({ isPoisonMessage, id }) => {
                                 backgroundColorType="orange"
                                 fontSize="12px"
                                 fontWeight="600"
-                                tooltip={!stationState?.stationMetaData.is_native && 'Not supported without using the native Memphis SDK’s'}
-                                disabled={!stationState?.stationMetaData.is_native || !messageDetails._id}
-                                onClick={() => history.push(`${window.location.pathname}/${messageDetails._id}`)}
+                                tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                disabled={!stationState?.stationMetaData?.is_native || !messageDetails?._id}
+                                onClick={() => history.push(`${window.location.pathname}/${messageDetails?._id}`)}
                             />
                         )}
                     </>
+                ) : (
+                    <div className="placeholder">
+                        <img src={attachedPlaceholder} />
+                        <p>No message selected</p>
+                    </div>
                 )}
             </div>
         </>
