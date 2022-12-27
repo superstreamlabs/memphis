@@ -663,7 +663,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error: duplicates window can not be larger then max age"})
 		return
 	}
 
