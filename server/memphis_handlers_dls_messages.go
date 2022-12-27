@@ -193,7 +193,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
-	totalDlsAmount, err := pmh.GetTotalPoisonMsgsByStation(sn.Ext())
+	totalDlsAmount, err := pmh.GetTotalDlsMsgsByStation(sn.Ext())
 	if err != nil {
 		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
@@ -532,7 +532,7 @@ cleanup:
 	return poisonMessages, schemaMessages, nil
 }
 
-func (pmh PoisonMessagesHandler) GetTotalPoisonMsgsByStation(stationName string) (int, error) {
+func (pmh PoisonMessagesHandler) GetTotalDlsMsgsByStation(stationName string) (int, error) {
 	count := 0
 	timeout := 1 * time.Second
 	idCheck := make(map[string]bool)
