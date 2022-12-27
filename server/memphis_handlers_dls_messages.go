@@ -193,7 +193,10 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
-	totalPoisonAmount := int(streamInfo.State.Msgs)
+	totalPoisonAmount, err := pmh.GetTotalPoisonMsgsByStation(sn.Ext())
+	if err != nil {
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+	}
 	amount := min(streamInfo.State.Msgs, 1000)
 	startSeq := uint64(1)
 	if streamInfo.State.FirstSeq > 0 {
@@ -626,10 +629,12 @@ cleanup:
 		}
 		msgId := dlsMsg.ID
 		if msgType == "poison" {
-			if _, value := idCheck[msgId]; !value {
+			if _, ok := idCheck[msgId]; !ok {
 				idCheck[msgId] = true
 				count++
 			}
+		} else if msgType == "schema" {
+			count++
 		}
 	}
 
