@@ -183,7 +183,7 @@ const Messages = () => {
                                 return listGenerator(message);
                             })}
                         {subTabValue === 'Schemaverse' &&
-                            stationState?.stationSocketData?.schema_fail_messages?.map((message, id) => {
+                            stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
                                 return listGenerator(message);
                             })}
                     </div>
@@ -249,7 +249,7 @@ const Messages = () => {
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
                     length={
-                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_fail_messages?.length > 0) && [
+                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && [
                             null,
                             stationState?.stationSocketData?.total_dls_messages || 0
                         ]
@@ -262,7 +262,7 @@ const Messages = () => {
                         value={subTabValue}
                         onChange={handleChangeSubMenuItem}
                         tabs={subTabs}
-                        length={[stationState?.stationSocketData?.total_dls_messages || null, stationState?.stationSocketData?.schema_fail_messages?.length || null]}
+                        length={[stationState?.stationSocketData?.total_dls_messages || null, stationState?.stationSocketData?.schema_failed_messages?.length || null]}
                     ></CustomTabs>
                 </div>
             )}
@@ -294,7 +294,7 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
@@ -309,7 +309,7 @@ const Messages = () => {
             )}
             {tabValue === 'Dead-letter' &&
                 ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length === 0)) && (
+                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
