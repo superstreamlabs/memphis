@@ -215,10 +215,10 @@ func killFunc(s *Server) {
 
 func (s *Server) KillZombieResources() {
 	js, _ := s.getJetStreamCluster()
-	s.Systemf(fmt.Sprintf("isLeaderless: %v", js.isLeaderless()))
+	s.Systemf(fmt.Sprintf("leader: %v", js.getMetaGroup().Leader()))
 
 	for range time.Tick(time.Second * 60) {
-		s.Systemf(fmt.Sprintf("isLeaderless: %v", js.isLeaderless()))
+		s.Systemf(fmt.Sprintf("leader: %v", js.getMetaGroup().Leader()))
 		s.Systemf(fmt.Sprintf("isLeader: %v", s.JetStreamIsLeader()))
 		
 		s.Debugf("Killing Zombie resources iteration")
