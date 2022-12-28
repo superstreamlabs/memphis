@@ -179,7 +179,7 @@ function SchemaList({ createNew }) {
                             fontFamily="InterSemiBold"
                             aria-controls="usecse-menu"
                             aria-haspopup="true"
-                            onClick={() => createNew()}
+                            onClick={createNewSchema}
                         />
                     </div>
                 )}

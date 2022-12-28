@@ -166,7 +166,7 @@ const Messages = () => {
         );
     };
 
-    const listGeneratorWrapper = () => {
+    const listGeneratorWrapper = (isPoison) => {
         return (
             <div className="list-wrapper dls-list">
                 <div className="coulmns-table">
@@ -187,7 +187,7 @@ const Messages = () => {
                                 return listGenerator(message);
                             })}
                     </div>
-                    <MessageDetails isPoisonMessage={true} />
+                    <MessageDetails isPoisonMessage={isPoison} />
                 </div>
             </div>
         );
@@ -248,22 +248,12 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={
-                        (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && [
-                            null,
-                            stationState?.stationSocketData?.total_dls_messages || 0
-                        ]
-                    }
+                    length={[null, stationState?.stationSocketData?.total_dls_messages || null]}
                 ></CustomTabs>
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">
-                    <CustomTabs
-                        value={subTabValue}
-                        onChange={handleChangeSubMenuItem}
-                        tabs={subTabs}
-                        length={[stationState?.stationSocketData?.total_dls_messages || null, stationState?.stationSocketData?.schema_failed_messages?.length || null]}
-                    ></CustomTabs>
+                    <CustomTabs value={subTabValue} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
@@ -293,8 +283,9 @@ const Messages = () => {
                     </div>
                 </div>
             )}
-            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper(true)}
+            {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && listGeneratorWrapper()}
+
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
