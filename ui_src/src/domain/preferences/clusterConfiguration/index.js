@@ -22,6 +22,7 @@ import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
 import SliderRow from './components/sliderRow';
+import { message } from 'antd';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});
@@ -47,6 +48,13 @@ function ClusterConfiguration() {
             const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
             setIsChanged(false);
             setOldValues(data);
+            message.success({
+                key: 'memphisSuccessMessage',
+                content: 'Successfully updated',
+                duration: 5,
+                style: { cursor: 'pointer' },
+                onClick: () => message.destroy('memphisSuccessMessage')
+            });
         } catch (err) {
             return;
         }
@@ -71,8 +79,8 @@ function ClusterConfiguration() {
             </div>
             <div className="configuration-body">
                 <SliderRow
-                    title="POISON MSGS RETENTION IN HOURS"
-                    desc="Amount of hours to retain poison messages in a DLS"
+                    title="DEAD LETTER MESSAGES RETENTION IN HOURS"
+                    desc="Amount of hours to retain dead letter messages in a DLS"
                     value={formFields?.pm_retention}
                     img={ConfImg2}
                     min={1}
@@ -82,7 +90,7 @@ function ClusterConfiguration() {
                 />
                 <SliderRow
                     title="LOGS RETENTION IN DAYS"
-                    desc="Amount of days to retain log messages"
+                    desc="Amount of days to retain system logs"
                     img={ConfImg1}
                     value={formFields?.logs_retention}
                     min={1}

@@ -224,7 +224,7 @@ const Messages = () => {
                 <div className="messages-amount">
                     <InfoOutlined />
                     <p>
-                        Showing last {amount} out of{' '}
+                        Showing last {numberWithCommas(amount)} out of{' '}
                         {tabValue === 'All'
                             ? numberWithCommas(stationState?.stationSocketData?.total_messages)
                             : numberWithCommas(stationState?.stationSocketData?.total_dls_messages)}{' '}
