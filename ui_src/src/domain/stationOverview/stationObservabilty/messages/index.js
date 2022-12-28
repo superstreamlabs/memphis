@@ -92,7 +92,6 @@ const Messages = () => {
     };
 
     useEffect(() => {
-        console.log(stationState?.stationSocketData);
         if (selectedRowIndex && !userScrolled) {
             const element = document.getElementById(selectedRowIndex);
             if (element) {
