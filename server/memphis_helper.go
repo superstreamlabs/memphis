@@ -809,6 +809,73 @@ func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg
 	return resp.Message, nil
 }
 
+func (s *Server) memphisGetMessagesByFilter(streamName, filterSubject string, startSeq, amount uint64, timeout time.Duration) ([]StoredMsg, error) {
+	uid := serv.memphis.nuid.Next()
+	durableName := uid
+
+	deliverPolicy := DeliverAll
+	if startSeq != 0 {
+		deliverPolicy = DeliverByStartSequence
+	}
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: deliverPolicy,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+		FilterSubject: filterSubject,
+	}
+	var msgs []StoredMsg
+	err := serv.memphisAddConsumer(streamName, &cc)
+	if err != nil {
+		return msgs, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				serv.Errorf("dropSchemaDlsMsg: " + err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return msgs, err
+	}
+
+	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	serv.unsubscribeOnGlobalAcc(sub)
+	return msgs, nil
+}
+
 func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHandler) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
