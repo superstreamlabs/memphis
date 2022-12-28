@@ -205,29 +205,29 @@ const Messages = () => {
         );
     };
 
+    const showLastMsg = () => {
+        let amount = 0;
+        if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
+        else if (tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0)
+            amount = stationState?.stationSocketData?.poison_messages?.length;
+        else if (tabValue === 'Dead-letter' && subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+            amount = stationState?.stationSocketData?.schema_failed_messages?.length;
+        return (
+            amount > 0 && (
+                <div className="messages-amount">
+                    <InfoOutlined />
+                    <p>Showing last {amount} messages</p>
+                </div>
+            )
+        );
+    };
+
     return (
         <div className="messages-container">
             <div className="header">
                 <div className="left-side">
                     <p className="title">Station</p>
-                    {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
-                        <div className="messages-amount">
-                            <InfoOutlined />
-                            <p>Showing last {stationState?.stationSocketData?.messages?.length} messages</p>
-                        </div>
-                    )}
-                    {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                        <div className="messages-amount">
-                            <InfoOutlined />
-                            <p>Showing last {stationState?.stationSocketData?.poison_messages?.length} messages</p>
-                        </div>
-                    )}
-                    {tabValue === 'Dead-letter' && subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && (
-                        <div className="messages-amount">
-                            <InfoOutlined />
-                            <p>Showing last {stationState?.stationSocketData?.schema_failed_messages?.length} messages</p>
-                        </div>
-                    )}
+                    {showLastMsg()}
                 </div>
                 {tabValue === 'Dead-letter' &&
                     (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && (
