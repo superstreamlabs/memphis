@@ -216,10 +216,16 @@ const Messages = () => {
                             <p>Showing last {stationState?.stationSocketData?.messages?.length} messages</p>
                         </div>
                     )}
-                    {tabValue === 'Dead-letter' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                    {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <div className="messages-amount">
                             <InfoOutlined />
                             <p>Showing last {stationState?.stationSocketData?.poison_messages?.length} messages</p>
+                        </div>
+                    )}
+                    {tabValue === 'Dead-letter' && subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && (
+                        <div className="messages-amount">
+                            <InfoOutlined />
+                            <p>Showing last {stationState?.stationSocketData?.schema_failed_messages?.length} messages</p>
                         </div>
                     )}
                 </div>
