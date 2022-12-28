@@ -27,7 +27,7 @@ import { StationStoreContext } from '../../..';
 import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 
-const MessageDetails = ({ isDls, isFailedSchemaMessage }) => {
+const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -166,7 +166,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage }) => {
                                     <MultiCollapse
                                         header="Failed CGs"
                                         tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
-                                        defaultOpen={true}
+                                        defaultOpen={false}
                                         data={messageDetails?.poisonedCGs}
                                     />
                                 )}
