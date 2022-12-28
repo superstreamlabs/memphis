@@ -193,11 +193,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 	}
 
-	totalDlsAmount, err := pmh.GetTotalDlsMsgsByStation(sn.Ext())
-	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
-	}
-	amount := min(streamInfo.State.Msgs, 1000)
+	amount := streamInfo.State.Msgs
 	startSeq := uint64(1)
 	if streamInfo.State.FirstSeq > 0 {
 		startSeq = streamInfo.State.FirstSeq
@@ -294,6 +290,9 @@ cleanup:
 		}
 	}
 
+	lenPoison, lenSchema := len(poisonMessages), len(schemaMessages)
+	totalDlsAmount := lenPoison + lenSchema
+
 	sort.Slice(poisonMessages, func(i, j int) bool {
 		return poisonMessages[i].Message.TimeSent.After(poisonMessages[j].Message.TimeSent)
 	})
@@ -302,6 +301,13 @@ cleanup:
 		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
 	})
 
+	if lenPoison > 1000 {
+		poisonMessages = poisonMessages[:1000]
+	}
+
+	if lenSchema > 1000 {
+		schemaMessages = schemaMessages[:1000]
+	}
 	return poisonMessages, schemaMessages, totalDlsAmount, nil
 }
 
