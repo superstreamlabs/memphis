@@ -16,7 +16,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"strconv"
@@ -218,7 +217,7 @@ func (s *Server) KillZombieResources() {
 	for range time.Tick(time.Second * 20) {
 		if s.JetStreamIsLeader() {
 			break
-		} else if count > 5 {
+		} else if count > 3 {
 			return
 		}
 		count++
