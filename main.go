@@ -130,9 +130,6 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	s.Systemf(fmt.Sprintf("Leader: %v", s.JetStreamIsLeader()))
-
-	// if s.JetStreamIsLeader() {
 	go s.KillZombieResources()
 
 	// For backward compatibility
@@ -140,7 +137,6 @@ func runMemphis(s *server.Server) db.DbInstance {
 	if err != nil {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}
-	// }
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

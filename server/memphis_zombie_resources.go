@@ -16,6 +16,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"strconv"
@@ -212,8 +213,14 @@ func killFunc(s *Server) {
 	s.removeStaleStations()
 }
 
-func (s *Server) KillZombieResources() {	
+func (s *Server) KillZombieResources() {
+	js, _ := s.getJetStreamCluster()
+	s.Systemf(fmt.Sprintf("isLeaderless: %v", js.isLeaderless()))
+
 	for range time.Tick(time.Second * 60) {
+		s.Systemf(fmt.Sprintf("isLeaderless: %v", js.isLeaderless()))
+		s.Systemf(fmt.Sprintf("isLeader: %v", s.JetStreamIsLeader()))
+		
 		s.Debugf("Killing Zombie resources iteration")
 		killFunc(s)
 		updateActiveProducersAndConsumers() // TODO to be deleted
