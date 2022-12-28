@@ -88,12 +88,18 @@ export const convertSecondsToDate = (seconds) => {
 };
 
 export const parsingDate = (date) => {
-    var options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-    return new Date(date).toLocaleDateString([], options);
+    if (date) {
+        var options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+        return new Date(date).toLocaleDateString([], options);
+    } else {
+        return '';
+    }
 };
 export const parsingDateWithotTime = (date) => {
-    var options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(date).toLocaleDateString([], options);
+    if (date) {
+        var options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(date).toLocaleDateString([], options);
+    } else return '';
 };
 
 function isFloat(n) {

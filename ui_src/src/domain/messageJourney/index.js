@@ -282,7 +282,7 @@ const MessageJourney = () => {
                     <div className="bread-crumbs">
                         <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
-                            {stationName} / Poison message #{messageId.substring(0, 5)}
+                            {stationName} / Poison message id: {messageId.substring(0, 5)}
                         </p>
                     </div>
                     <div className="canvas-wrapper">
@@ -294,7 +294,7 @@ const MessageJourney = () => {
                             edges={edges}
                             fit={true}
                             height={'100%'}
-                            maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 150}
+                            maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 170}
                             node={
                                 <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                     {(event) => (

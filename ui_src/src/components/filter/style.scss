@@ -85,9 +85,10 @@
         }
         .collapse-arrow {
             transition: transform 0.4s;
+            transform: rotate(-90deg);
         }
         .open {
-            transform: rotate(180deg);
+            transform: rotate(0deg);
         }
     }
     .ant-collapse-content-box {
