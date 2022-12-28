@@ -91,9 +91,9 @@ function SchemaList({ createNew }) {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
-                setDeleteLoader(false);
             }
         } catch (error) {
+        } finally {
             setDeleteLoader(false);
             setDeleteModal(false);
         }
@@ -179,7 +179,7 @@ function SchemaList({ createNew }) {
                             fontFamily="InterSemiBold"
                             aria-controls="usecse-menu"
                             aria-haspopup="true"
-                            onClick={() => createNew()}
+                            onClick={createNewSchema}
                         />
                     </div>
                 )}

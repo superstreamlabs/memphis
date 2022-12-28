@@ -45,7 +45,7 @@ const FailedStations = ({ createStationTrigger }) => {
                             <span style={{ width: '100px' }}>Name</span>
                             <span style={{ width: '200px' }}>Creation date</span>
                             <span style={{ width: '120px' }}>Total messages</span>
-                            <span style={{ width: '120px' }}>Poison messages</span>
+                            <span style={{ width: '120px' }}>Dead-letter</span>
                             <span style={{ width: '120px' }}></span>
                         </div>
                         <div className="rows-wrapper">

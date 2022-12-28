@@ -39,7 +39,7 @@ export const ApiEndpoints = {
     GET_STATIONS: '/stations/getStations',
     GET_POISON_MESSAGE_JOURNEY: '/stations/getPoisonMessageJourney',
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
-    ACK_POISON_MESSAGE: '/stations/ackPoisonMessages',
+    DROP_DLS_MESSAGE: '/stations/dropDlsMessages',
     RESEND_POISON_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
     USE_SCHEMA: '/stations/useSchema',
     GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',

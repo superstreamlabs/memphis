@@ -383,6 +383,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"schema":                   emptyResponse,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
+			"total_dls_messages":       totalDlsAmount,
 		}
 	}
 

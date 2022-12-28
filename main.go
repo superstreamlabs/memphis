@@ -130,7 +130,13 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	// go s.KillZombieResources() // TODO
+	go s.KillZombieResources()
+
+	// For backward compatibility
+	err = s.AlignOldStations()
+	if err != nil {
+		s.Errorf("LaunchDlsForOldStations: " + err.Error())
+	}
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
@@ -138,12 +144,6 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000\nBroker: localhost:6666 (client connections)\nHTTP Proxy: localhost: 4444 (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis  \n\n**********")
 	} else {
 		env = "K8S"
-	}
-
-	// For backward compatibility
-	err = s.AlignOldStations()
-	if err != nil {
-		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)

@@ -227,8 +227,8 @@ const MessageJourney = () => {
             });
 
             let messageDetails = {
-                id: data._id ?? null,
-                messageSeq: data.message_seq,
+                _id: data._id ?? null,
+                message_seq: data.message_seq,
                 details: [
                     {
                         name: 'Message size',
@@ -293,7 +293,8 @@ const MessageJourney = () => {
                             nodes={nodes}
                             edges={edges}
                             fit={true}
-                            maxHeight={nodes?.length * 150}
+                            height={'100%'}
+                            maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 150}
                             node={
                                 <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                     {(event) => (

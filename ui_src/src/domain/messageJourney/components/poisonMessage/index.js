@@ -28,7 +28,7 @@ const PoisonMessage = ({ stationName, messageId, details, message, headers, proc
     const handleIgnore = async () => {
         setIgnoreProcess(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: [messageId] });
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [messageId] });
             setTimeout(() => {
                 setIgnoreProcess(false);
                 returnBack();
