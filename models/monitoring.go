@@ -19,6 +19,7 @@ type SystemComponent struct {
 	Component   string `json:"component"`
 	DesiredPods int    `json:"desired_pods"`
 	ActualPods  int    `json:"actual_pods"`
+	Ports       []int  `json:"ports"`
 }
 
 type MainOverviewData struct {

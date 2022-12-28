@@ -12,13 +12,24 @@
 // limitations under the License.package server
 
 import './style.scss';
-
+import { useHistory } from 'react-router-dom';
+import pathDomains from '../../../../router';
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
 import React, { useContext, useEffect, useState } from 'react';
+import { validate, parse, buildASTSchema } from 'graphql';
 import Schema from 'protocol-buffers-schema';
+import GenerateSchema from 'generate-schema';
+import { loader } from '@monaco-editor/react';
+import jsonSchemaDraft04 from 'ajv-draft-04';
 import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+import Ajv2019 from 'ajv/dist/2019';
+import Ajv2020 from 'ajv/dist/2020';
 import { Form } from 'antd';
 
+import { generateName, getUnique } from '../../../../services/valueConvertor';
 import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
 import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
@@ -27,19 +38,13 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
+import TagsList from '../../../../components/tagList';
 import Button from '../../../../components/button';
+import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
-import TagsList from '../../../../components/tagList';
-import { Context } from '../../../../hooks/store';
-import { generateName, getUnique } from '../../../../services/valueConvertor';
-import Ajv2019 from 'ajv/dist/2019';
-import jsonSchemaDraft04 from 'ajv-draft-04';
-import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
-import Ajv2020 from 'ajv/dist/2020';
-import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
-import GenerateSchema from 'generate-schema';
-import { validate, parse, buildASTSchema } from 'graphql';
+
+loader.config({ monaco });
 
 const schemaTypes = [
     {
@@ -152,7 +157,8 @@ const SchemaEditorExample = {
     }
 };
 
-function CreateSchema() {
+function CreateSchema({ createNew }) {
+    const history = useHistory();
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         name: '',
@@ -192,7 +198,8 @@ function CreateSchema() {
     }, [formFields?.type]);
 
     const goBack = () => {
-        dispatch({ type: 'SET_CREATE_SCHEMA', payload: false });
+        history.push(pathDomains.schemaverse);
+        createNew(false);
     };
 
     const handleSubmit = async () => {
@@ -394,7 +401,7 @@ function CreateSchema() {
                                 message: 'Please name this schema.'
                             }
                         ]}
-                        style={{ height: '114px' }}
+                        style={{ height: '100px' }}
                     >
                         <div className="schema-field name">
                             <p className="field-title">Schema name</p>

@@ -21,11 +21,13 @@ import { Segmented } from 'antd';
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
+import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
 import deleteIcon from '../../../assets/images/deleteIcon.svg';
+import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import VersionBadge from '../../../components/versionBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import BackIcon from '../../../assets/images/backIcon.svg';
@@ -39,8 +41,6 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import ProtocolExample from '../components/protocolExsample';
-import SegmentButton from '../../../components/segmentButton';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -52,7 +52,6 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
-    const [segment, setSegment] = useState('Sdk');
     const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
@@ -61,10 +60,10 @@ const StationOverviewHeader = () => {
                 setRetentionValue(convertSecondsToDate(stationState?.stationMetaData?.retention_value));
                 break;
             case 'bytes':
-                setRetentionValue(`${stationState?.stationMetaData?.retention_value} bytes`);
+                setRetentionValue(`${numberWithCommas(stationState?.stationMetaData?.retention_value)} bytes`);
                 break;
             case 'messages':
-                setRetentionValue(`${stationState?.stationMetaData?.retention_value} messages`);
+                setRetentionValue(`${numberWithCommas(stationState?.stationMetaData?.retention_value)} messages`);
                 break;
             default:
                 break;
@@ -153,71 +152,97 @@ const StationOverviewHeader = () => {
                             <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
                         </p>
                     </div>
-                    {stationState?.stationSocketData?.schema === undefined || Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
-                        <div className="schema-details sd-center">
-                            <div className="add-new">
-                                <Button
-                                    width="120px"
-                                    height="25px"
-                                    placeholder={
-                                        <div className="use-schema-button">
-                                            <Add />
-                                            <p>Attach schema</p>
-                                        </div>
-                                    }
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => setUseSchemaModal(true)}
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="schema-details sd-flex">
-                            <div className="title-and-badge">
-                                <p className="title">Schema</p>
-                                {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates available" active={false} />}
-                                {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updated" active={true} />}
-                            </div>
-                            <div className="name-and-version">
-                                <p>{stationState?.stationSocketData?.schema?.name}</p>
-                                <FiberManualRecord />
-                                <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
-                            </div>
-                            <div className="buttons">
-                                <Button
-                                    width="80px"
-                                    minWidth="80px"
-                                    height="16px"
-                                    placeholder="Edit / Detach"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="10px"
-                                    fontFamily="InterMedium"
-                                    onClick={() => setUseSchemaModal(true)}
-                                />
-                                {stationState?.stationSocketData?.schema?.updates_available && (
-                                    <Button
-                                        width="80px"
-                                        height="16px"
-                                        placeholder="Update now"
-                                        colorType="white"
-                                        radiusType="circle"
-                                        backgroundColorType="purple"
-                                        fontSize="10px"
-                                        fontFamily="InterMedium"
-                                        onClick={() => setUpdateSchemaModal(true)}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
                 <div className="icons-wrapper">
                     <div className="details-wrapper">
+                        <div className="icon">
+                            <img src={schemaIconActive} width={22} height={44} alt="schemaIconActive" />
+                        </div>
+                        <div className="more-details schema-box">
+                            <div className="schema-header">
+                                <div className="schema-version">
+                                    <p className="schema-title">Schema</p>
+                                    {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                        <div className="schema-details sd-flex">
+                                            {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates available" active={false} />}
+                                            {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updated" active={true} />}
+                                        </div>
+                                    )}
+                                </div>
+                                {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                    <img
+                                        src={redirectIcon}
+                                        width={15}
+                                        height={15}
+                                        alt="redirectIcon"
+                                        onClick={() => history.push(`${pathDomains.schemaverse}/${stationState?.stationSocketData?.schema?.name}`)}
+                                    />
+                                )}
+                            </div>
+                            {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
+                                <div className="name-and-version">
+                                    <p>{stationState?.stationSocketData?.schema?.name}</p>
+                                    <FiberManualRecord />
+                                    <p>v{stationState?.stationSocketData?.schema?.version_number}</p>
+                                </div>
+                            )}
+                            {stationState?.stationSocketData?.schema === undefined ||
+                                (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
+                                    <>
+                                        <TooltipComponent text={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}>
+                                            <div className="add-new">
+                                                <Button
+                                                    width="120px"
+                                                    height="25px"
+                                                    placeholder={
+                                                        <div className="use-schema-button">
+                                                            <Add />
+                                                            <p>Attach schema</p>
+                                                        </div>
+                                                    }
+                                                    colorType="white"
+                                                    radiusType="circle"
+                                                    backgroundColorType="purple"
+                                                    fontSize="12px"
+                                                    fontFamily="InterSemiBold"
+                                                    disabled={!stationState?.stationMetaData?.is_native}
+                                                    onClick={() => setUseSchemaModal(true)}
+                                                />
+                                            </div>
+                                        </TooltipComponent>
+                                    </>
+                                ) : (
+                                    <div className="buttons">
+                                        <Button
+                                            width="80px"
+                                            minWidth="80px"
+                                            height="16px"
+                                            placeholder="Edit / Detach"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            fontSize="10px"
+                                            fontFamily="InterMedium"
+                                            onClick={() => setUseSchemaModal(true)}
+                                        />
+                                        {stationState?.stationSocketData?.schema?.updates_available && (
+                                            <Button
+                                                width="80px"
+                                                height="16px"
+                                                placeholder="Update now"
+                                                colorType="white"
+                                                radiusType="circle"
+                                                backgroundColorType="purple"
+                                                fontSize="10px"
+                                                fontFamily="InterMedium"
+                                                onClick={() => setUpdateSchemaModal(true)}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                    <div className="details-wrapper middle">
                         <div className="icon">
                             <img src={awaitingIcon} width={22} height={44} alt="awaitingIcon" />
                         </div>
@@ -226,7 +251,7 @@ const StationOverviewHeader = () => {
                             <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
-                    <div className="details-wrapper average">
+                    <div className="details-wrapper">
                         <div className="icon">
                             <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
                         </div>
@@ -237,40 +262,10 @@ const StationOverviewHeader = () => {
                             </TooltipComponent>
                         </div>
                     </div>
-                    {/* <div className="details-wrapper">
-                        <div className="icon">
-                            <img src={memoryIcon} width={24} height={24} alt="memoryIcon" />
-                        </div>
-                        <div className="more-details">
-                            <p className="number">20Mb/80Mb</p>
-                            <Progress showInfo={false} status={(20 / 80) * 100 > 60 ? 'exception' : 'success'} percent={(20 / 80) * 100} size="small" />
-                            <p className="title">Mem</p>
-                        </div>
-                    </div> */}
-                    {/* <div className="details-wrapper">
-                        <div className="icon">
-                            <img src={cpuIcon} width={22} height={22} alt="cpuIcon" />
-                        </div>
-                        <div className="more-details">
-                            <p className="number">50%</p>
-                            <Progress showInfo={false} status={(35 / 100) * 100 > 60 ? 'exception' : 'success'} percent={(35 / 100) * 100} size="small" />
-                            <p className="title">CPU</p>
-                        </div>
-                    </div> */}
-                    {/* <div className="details-wrapper">
-                        <div className="icon">
-                            <img src={storageIcon} width={30} height={30} alt="storageIcon" />
-                        </div>
-                        <div className="more-details">
-                            <p className="number">{60}Mb/100Mb</p>
-                            <Progress showInfo={false} status={(60 / 100) * 100 > 60 ? 'exception' : 'success'} percent={(60 / 100) * 100} size="small" />
-                            <p className="title">Storage</p>
-                        </div>
-                    </div> */}
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
-                        <p>Code example</p>
+                        <p>Code examples</p>
                         <span
                             onClick={() => {
                                 setSdkModal(true);
@@ -285,22 +280,15 @@ const StationOverviewHeader = () => {
                     </div>
                 </div>
                 <Modal
-                    header={
-                        <div className="sdk-header">
-                            <p className="title">Code example</p>
-                            <SegmentButton options={['Sdk', 'Protocol']} onChange={(e) => setSegment(e)} />
-                        </div>
-                    }
                     width="710px"
+                    height={'700px'}
                     clickOutside={() => {
                         setSdkModal(false);
-                        setSegment('Sdk');
                     }}
                     open={sdkModal}
                     displayButtons={false}
                 >
-                    {segment === 'Sdk' && <SdkExample />}
-                    {segment === 'Protocol' && <ProtocolExample />}
+                    <SdkExample />
                 </Modal>
                 <Modal
                     header={

@@ -101,8 +101,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
     };
 
     const createNew = () => {
-        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
-        history.push(pathDomains.schemas);
+        history.push(`${pathDomains.schemaverse}/$new`);
     };
     return (
         <div className="use-schema-modal-container">
@@ -124,6 +123,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                         {schemaList?.map((schema) => {
                             return (
                                 <SchemaItem
+                                    key={schema.name}
                                     schema={schema}
                                     schemaSelected={schemaSelected}
                                     selected={selected}

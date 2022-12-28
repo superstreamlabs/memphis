@@ -88,6 +88,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
     const [useSchema, setUseSchema] = useState(false);
+    const [dlsConfiguration, setDlsConfiguration] = useState(true);
     const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
     const [selectedOption, setSelectedOption] = useState('file');
     const [selectedTier2Option, setSelectedTier2Option] = useState(1);
@@ -136,7 +137,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             storage_type: formFields.storage_type,
             replicas: Number(formFields.replicas),
             schema_name: formFields.schemaValue,
-            idempotency_window_in_ms: idempotencyValue
+            idempotency_window_in_ms: idempotencyValue,
+            dls_configuration: {
+                poison: dlsConfiguration,
+                schemaverse: dlsConfiguration
+            }
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
@@ -271,7 +276,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 </div>
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
-                        <div className="toggle-add-schema">
+                        <div>
                             <TitleComponent
                                 headerTitle="Idempotency"
                                 typeTitle="sub-header"
@@ -324,6 +329,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 <SelectComponent
                                     colorType="black"
                                     backgroundColorType="none"
+                                    fontFamily="Inter"
                                     borderColorType="gray"
                                     radiusType="semi-round"
                                     height="40px"
@@ -358,6 +364,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         )}
                     </div>
                 )}
+                <div className="toggle-add-schema">
+                    <TitleComponent
+                        headerTitle="Dead-letter station"
+                        typeTitle="sub-header"
+                        headerDescription="Dead-letter stations are useful for debugging your application"
+                    />
+                    <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
+                </div>
             </div>
             <div className={'right-side'}>
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />

@@ -36,18 +36,25 @@
         }
     }
     .left-section {
-        width: 275px;
+        max-width:300px;
         .check-box {
             display: flex;
             align-items: center;
             margin-bottom: 10px;
             .station-name {
                 font-size: 17px;
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 margin: 0;
                 margin-left: 25px;
                 color: #2e2c34;
             }
+        }
+        .date{
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            max-width: 300px;
         }
     }
     .middle-section {

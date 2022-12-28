@@ -132,7 +132,7 @@ function Users() {
                             <Loader />
                         </div>
                     )}
-                    {!isLoading && (
+                    {!isLoading && userList.length > 0 && (
                         <Virtuoso
                             data={userList}
                             overscan={100}

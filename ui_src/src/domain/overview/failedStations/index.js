@@ -41,13 +41,41 @@ const FailedStations = ({ createStationTrigger }) => {
             <p className="overview-components-header">Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
             <div className="err-stations-list">
                 {state?.monitor_data?.stations?.length > 0 ? (
-                    <div className="coulmns-table">
-                        <span style={{ width: '100px' }}>Name</span>
-                        <span style={{ width: '200px' }}>Creation date</span>
-                        <span style={{ width: '120px' }}>Total messages</span>
-                        <span style={{ width: '120px' }}>Poison messages</span>
-                        <span style={{ width: '120px' }}></span>
-                    </div>
+                    <>
+                        <div className="coulmns-table">
+                            <span style={{ width: '100px' }}>Name</span>
+                            <span style={{ width: '200px' }}>Creation date</span>
+                            <span style={{ width: '120px' }}>Total messages</span>
+                            <span style={{ width: '120px' }}>Dead-letter</span>
+                            <span style={{ width: '120px' }}></span>
+                        </div>
+                        <div className="rows-wrapper">
+                            <Virtuoso
+                                data={state?.monitor_data?.stations}
+                                overscan={100}
+                                className="testt"
+                                components={{ Item }}
+                                itemContent={(index, station) => (
+                                    <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
+                                        <OverflowTip className="station-details" text={station.name} width={'100px'}>
+                                            {station.name}
+                                        </OverflowTip>
+                                        <OverflowTip className="station-creation" text={parsingDate(station.creation_date)} width={'200px'}>
+                                            {parsingDate(station.creation_date)}
+                                        </OverflowTip>
+                                        <span className="station-details centered">{numberWithCommas(station.total_messages)}</span>
+                                        <span className="station-details centered">{numberWithCommas(station.posion_messages)}</span>
+                                        <div className="link-wrapper">
+                                            <div className="staion-link">
+                                                <span>View Station</span>
+                                                <KeyboardArrowRightRounded />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    </>
                 ) : (
                     <div className="empty-stations-container">
                         <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
@@ -67,32 +95,6 @@ const FailedStations = ({ createStationTrigger }) => {
                         />
                     </div>
                 )}
-                <div className="rows-wrapper">
-                    <Virtuoso
-                        data={state?.monitor_data?.stations}
-                        overscan={100}
-                        className="testt"
-                        components={{ Item }}
-                        itemContent={(index, station) => (
-                            <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
-                                <OverflowTip className="station-details" text={station.name} width={'100px'}>
-                                    {station.name}
-                                </OverflowTip>
-                                <OverflowTip className="station-creation" text={parsingDate(station.creation_date)} width={'200px'}>
-                                    {parsingDate(station.creation_date)}
-                                </OverflowTip>
-                                <span className="station-details centered">{numberWithCommas(station.total_messages)}</span>
-                                <span className="station-details centered">{numberWithCommas(station.posion_messages)}</span>
-                                <div className="link-wrapper">
-                                    <div className="staion-link">
-                                        <span>View Station</span>
-                                        <KeyboardArrowRightRounded />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    />
-                </div>
             </div>
         </div>
     );

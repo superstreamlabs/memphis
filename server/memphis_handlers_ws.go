@@ -33,9 +33,6 @@ const (
 	memphisWS_Subj_PoisonMsgJourneyData = "poison_message_journey_data"
 	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
-	memphisWS_Subj_SysLogsDataInf       = "syslogs_data.info"
-	memphisWS_Subj_SysLogsDataWrn       = "syslogs_data.warn"
-	memphisWS_Subj_SysLogsDataErr       = "syslogs_data.err"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 )
 
@@ -67,7 +64,7 @@ func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan st
 		select {
 		case <-ticker.C:
 			for k, updateFiller := range subs {
-				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k)
+				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+configuration.SERVER_NAME)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
 					delete(subs, k)
@@ -130,6 +127,23 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		default:
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
+		if configuration.SERVER_NAME == "" {
+			configuration.SERVER_NAME = "broker"
+		}
+
+		type brokerName struct {
+			Name string `json:"name"`
+		}
+
+		broName := brokerName{configuration.SERVER_NAME}
+		serverName, err := json.Marshal(broName)
+
+		if err != nil {
+			s.Errorf("memphis websocket: " + err.Error())
+			return
+		}
+
+		s.sendInternalAccountMsg(s.GlobalAccount(), reply, serverName)
 	}
 }
 
@@ -160,7 +174,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetPoisonMessageJourneyDetails(poisonMsgId)
+			return h.Stations.GetDlsMessageJourneyDetails(poisonMsgId)
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
@@ -219,9 +233,13 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	if err != nil {
 		return map[string]any{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs, err := h.Consumers.GetCgsByStation(sn, station)
-	if err != nil {
-		return map[string]any{}, err
+	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+	// Only native stations have CGs
+	if station.IsNative {
+		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station)
+		if err != nil {
+			return map[string]any{}, err
+		}
 	}
 	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
 	if err != nil {
@@ -242,7 +260,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, err := h.PoisonMsgs.GetPoisonMsgsByStation(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -277,12 +295,14 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_failed_messages":     schemaFailMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
 			"schema":                   struct{}{},
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
+			"total_dls_messages":       totalDlsAmount,
 		}
 		return response, nil
 	}
@@ -306,12 +326,14 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"audit_logs":               auditLogs,
 		"messages":                 messages,
 		"poison_messages":          poisonMessages,
+		"schema_failed_messages":     schemaFailMessages,
 		"tags":                     tags,
 		"leader":                   leader,
 		"followers":                followers,
 		"schema":                   schemaDetails,
 		"idempotency_window_in_ms": station.IdempotencyWindow,
 		"dls_configuration":        station.DlsConfiguration,
+		"total_dls_messages":       totalDlsAmount,
 	}
 
 	return response, nil
@@ -333,12 +355,22 @@ func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDeta
 	return stations, nil
 }
 
-func memphisWSGetSystemLogs(h *Handlers, filterSubjectSuffix string) (models.SystemLogsResponse, error) {
+func memphisWSGetSystemLogs(h *Handlers, logLevel string) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
-	filterSubject := ""
-	if filterSubjectSuffix != "" {
-		filterSubject = "$memphis_syslogs." + filterSubjectSuffix
+	filterSubjectSuffix := ""
+	switch logLevel {
+	case "err":
+		filterSubjectSuffix = syslogsErrSubject
+	case "warn":
+		filterSubjectSuffix = syslogsWarnSubject
+	case "info":
+		filterSubjectSuffix = syslogsInfoSubject
+	default:
+		filterSubjectSuffix = syslogsExternalSubject
 	}
+
+	filterSubject := "$memphis_syslogs.*." + filterSubjectSuffix
+
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }

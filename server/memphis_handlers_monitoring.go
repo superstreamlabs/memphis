@@ -91,12 +91,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				Component:   "memphis-http-proxy",
 				DesiredPods: 1,
 				ActualPods:  0,
+				Ports:       []int{4444},
 			})
 		} else {
 			components = append(components, models.SystemComponent{
 				Component:   "memphis-http-proxy",
 				DesiredPods: 1,
 				ActualPods:  1,
+				Ports:       []int{4444},
 			})
 		}
 
@@ -106,12 +108,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				Component:   "mongodb",
 				DesiredPods: 1,
 				ActualPods:  0,
+				Ports:       []int{27017},
 			})
 		} else {
 			components = append(components, models.SystemComponent{
 				Component:   "mongodb",
 				DesiredPods: 1,
 				ActualPods:  1,
+				Ports:       []int{27017},
 			})
 		}
 
@@ -119,8 +123,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			Component:   "memphis-broker",
 			DesiredPods: 1,
 			ActualPods:  1,
+			Ports:       []int{9000, 6666, 7770},
 		})
-
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetConfig()
@@ -136,10 +140,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 		}
 
 		for _, d := range deploymentsList.Items {
+			var ports []int
+			for _, container := range d.Spec.Template.Spec.Containers {
+				for _, port := range container.Ports {
+					ports = append(ports, int(port.ContainerPort))
+				}
+			}
+
 			components = append(components, models.SystemComponent{
 				Component:   d.GetName(),
 				DesiredPods: int(*d.Spec.Replicas),
 				ActualPods:  int(d.Status.ReadyReplicas),
+				Ports:       ports,
 			})
 		}
 
@@ -149,10 +161,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			return components, err
 		}
 		for _, s := range statefulsetsList.Items {
+			var ports []int
+			for _, container := range s.Spec.Template.Spec.Containers {
+				for _, port := range container.Ports {
+					ports = append(ports, int(port.ContainerPort))
+				}
+			}
+
 			components = append(components, models.SystemComponent{
 				Component:   s.GetName(),
 				DesiredPods: int(*s.Spec.Replicas),
 				ActualPods:  int(s.Status.ReadyReplicas),
+				Ports:       ports,
 			})
 		}
 	}
@@ -240,12 +260,15 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	connectedCgs, disconnectedCgs, deletedCgs, err := consumersHandler.GetCgsByStation(stationName, station)
-	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+	// Only native stations have CGs
+	if station.IsNative {
+		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
@@ -275,7 +298,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, err := poisonMsgsHandler.GetPoisonMsgsByStation(station)
+	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -329,12 +352,14 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_failed_messages":   schemaFailedMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
 			"schema":                   schemaDetails,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
+			"total_dls_messages":       totalDlsAmount,
 		}
 
 	} else {
@@ -351,12 +376,14 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
+			"schema_failed_messages":   schemaFailedMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
 			"schema":                   emptyResponse,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
+			"total_dls_messages":       totalDlsAmount,
 		}
 	}
 
@@ -393,8 +420,10 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsWarnSubject
 	case "info":
 		filterSubjectSuffix = syslogsInfoSubject
-	case "system":
+	case "sys":
 		filterSubjectSuffix = syslogsSysSubject
+	case "external":
+		filterSubjectSuffix = syslogsExternalSubject
 	}
 
 	if filterSubjectSuffix != _EMPTY_ {
@@ -465,6 +494,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		if amount >= streamInfo.State.LastSeq {
 			startSeq = 1
 		}
+		lastKnownSeq = streamInfo.State.LastSeq
 
 	} else if amount >= lastKnownSeq {
 		startSeq = 1
@@ -538,7 +568,7 @@ cleanup:
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
-		return s.GetSystemLogs(amount, timeout, false, startSeq-1, filterSubject, getAll)
+		return s.GetSystemLogs(amount*2, timeout, false, lastKnownSeq, filterSubject, getAll)
 	}
 	for _, msg := range msgs {
 		if err != nil {
@@ -555,8 +585,11 @@ cleanup:
 			// old version's logs
 			logSource = "broker"
 			logType = splittedSubj[1]
-		} else {
+		} else if len(splittedSubj) == 3 {
+			// old version's logs
 			logSource, logType = splittedSubj[1], splittedSubj[2]
+		} else {
+			logSource, logType = splittedSubj[1], splittedSubj[3]
 		}
 
 		data := string(msg.Data)
@@ -577,6 +610,11 @@ cleanup:
 		sort.Slice(resMsgs, func(i, j int) bool {
 			return resMsgs[i].MessageSeq > resMsgs[j].MessageSeq
 		})
+
+		if len(resMsgs) > 100 {
+			resMsgs = resMsgs[:100]
+		}
 	}
+
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }

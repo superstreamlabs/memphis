@@ -298,7 +298,8 @@ func (s *Server) createMemphisLoggerFallbackFunc() srvlog.HybridLogPublishFunc {
 }
 
 func (s *Server) sendLogToSubject(label string, log []byte) {
-	logLabelToSubjectMap := map[string]string{"INF": syslogsInfoSubject,
+	logLabelToSubjectMap := map[string]string{
+		"INF": syslogsInfoSubject,
 		"WRN": syslogsWarnSubject,
 		"ERR": syslogsErrSubject,
 		"SYS": syslogsSysSubject,

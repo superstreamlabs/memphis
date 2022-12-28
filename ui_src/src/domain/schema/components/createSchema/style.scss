@@ -30,7 +30,7 @@
                 .flex-title{
                     display: flex;
                     p{
-                        font-weight: 600;
+                        font-family: 'InterSemiBold';
                         font-size: 24px;
                         margin: 0;
                     }
@@ -44,14 +44,14 @@
                     color: #979797;
                     a{
                         color: var(--purple);
-                        font-weight: 600;
+                        font-family: 'InterSemiBold';
                         text-decoration-line: underline;
                         margin-left: 5px;
                     }
                 }
             }
             .ant-row{
-                padding-bottom: 30px;
+                padding-bottom: 15px;
             }
             .schema-field{
                 .title-icon-img{
@@ -100,7 +100,7 @@
                         color: #B4B4B4;
                         a{
                             color: var(--purple);
-                            font-weight: 600;
+                            font-family: 'InterSemiBold';
                             text-decoration-line: underline;
                             margin-left: 5px;
                         }

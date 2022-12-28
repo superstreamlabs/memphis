@@ -60,7 +60,9 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                 {station?.station?.name}
                             </OverflowTip>
                         </div>
-                        <label className="data-labels">Created at {parsingDate(station?.station?.creation_date)}</label>
+                        <label className="data-labels date">
+                            Created at {parsingDate(station?.station?.creation_date)} by {station?.station.created_by_user}
+                        </label>
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
@@ -114,7 +116,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta">
                             <img src={poisonMsgIcon} alt="poison messages" />
-                            <label className="data-labels poison">Poison messages</label>
+                            <label className="data-labels poison">Dead-letter</label>
                             <p className="data-info">{station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(station?.posion_messages)}</p>
                         </div>
                         <div className="station-actions">

@@ -37,10 +37,12 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-**[Memphis{dev}](https://memphis.dev)** is an open-source real-time data processing platform<br>
-that provides end-to-end support for in-app streaming use cases using Memphis distributed message broker.<br>
-Memphis' platform requires zero ops, enables rapid development, extreme cost reduction, <br>
-eliminates coding barriers, and saves a great amount of dev time for data-oriented developers and data engineers.
+**[Memphis](https://memphis.dev)** is a next-generation message broker.<br>
+A simple, robust, and durable cloud-native message broker wrapped with<br>
+an entire ecosystem that enables fast and reliable development of next-generation event-driven use cases.<br><br>
+Memphis enables building next-generation applications that require large volumes of streamed and enriched data,<br>
+modern protocols, zero ops, rapid development, extreme cost reduction,<br>
+and a significantly lower amount of dev time for data-oriented developers and data engineers.
 
 ## 📸 Screenshots
 Dashboard             |  Station (Topic) overview|  CLI
@@ -48,17 +50,25 @@ Dashboard             |  Station (Topic) overview|  CLI
 <img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
 
 ## ⭐️ Why
-Working with data streaming is HARD.<br>
+When your application requires a message broker or a queue for various reasons,<br>
+Implementing one will require you to -
+- Build a dead-letter queue
+- Create observability
+- Build a scalable environment
+- Create client wrappers
+- Handle back pressure. Client or queue side
+- Create a retry mechanism
+- Configure monitoring and real-time alerts
+- Deal with ACLs
+- Somehow create a cloud-agnostic implementation
+- Create config alignment between production to a dev environment
+- Spent weeks and months learning the internals through archival documentation, ebooks, and courses
+- Onboard your developers<br>
+And the list continues...
+<br>
 
-As a developer, you need to build a dedicated pipeline for each data source,<br>
-work with schemas, formats, serializations, analyze each source individually,<br>
-enrich the data with other sources, constantly change APIs, and scale for better performance 🥵.<br>
-Besides that, it constantly crashes and requires adaptation to different rate limits.<br>
-**It takes time and resources that you probably don't have.**<br>
+**Or, you can just use [Memphis](https://memphis.dev)** broker and focus your resources on tasks that matter**
 
-Message broker acts as the middleman and supports streaming architecture,<br>
-but then you encounter Apache Kafka and its documentation and run back to the monolith and batch jobs.<br>
-**Give memphis{dev} a spin before.**
 
 ## 👉 Use-cases
 - Async task management
@@ -118,25 +128,28 @@ docker compose -f docker-compose.yml -p memphis up
 
 ## Local access
 ### Via Kubernetes
-To access Memphis UI from localhost, run the below commands:
 ```shell
-kubectl port-forward service/memphis-ui 9000:80 --namespace memphis > /dev/null &
-```
+To access Memphis using UI/CLI/SDK from localhost, run the below commands:
 
-To access Memphis using CLI or SDK from localhost, run the below commands:</br>
-```shell
-kubectl port-forward service/memphis-cluster 6666:6666 5555:5555 --namespace memphis > /dev/null &
+  - kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 7770:7770 --namespace memphis > /dev/null &
+
+For interacting with the broker via HTTP:
+
+  - kubectl port-forward service/memphis-http-proxy 4444:4444 --namespace memphis > /dev/null &
+
+Dashboard/CLI: http://localhost:9000
+Broker: localhost:6666 (Client Connections)
+HTTP proxy: localhost:4444 (Data + Mgmt)
 ```
-Dashboard: http://localhost:9000</br>
-Memphis broker: http://localhost:6666
 
 **For Production Environments**
 Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer / nodeport
 
 ### Via Docker
-UI - http://localhost:9000<br>
-Broker - http://localhost:6666<br>
-
+```shell
+Dashboard/CLI: http://localhost:9000
+Broker: localhost:6666
+```
 ## Beta
 Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing, schema registry and inline processing as well as making more SDKs and supporting materials.
 

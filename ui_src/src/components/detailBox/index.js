@@ -13,26 +13,29 @@
 import './style.scss';
 import React from 'react';
 
-const DetailBox = ({ img, title, desc, data }) => {
+const DetailBox = ({ img, title, desc, data, children }) => {
     return (
-        <div className="detail-box-wrapper">
-            <div className="detail-img">
-                <img width={24} src={img} alt="leader" />
+        <div className="detail-box-container">
+            <div className="detail-box-wrapper">
+                <div className="detail-img">
+                    <img width={24} src={img} alt="leader" />
+                </div>
+                <div className="detail-title-wrapper">
+                    <div className="detail-title">{title}</div>
+                    <div className="detail-description">{desc}</div>
+                </div>
+                {data && <div className="separator" />}
+                <div className="detail-data">
+                    {data?.map((row) => {
+                        return (
+                            <div key={row} className="detail-data-row">
+                                {row}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
-            <div className="detail-title-wrapper">
-                <div className="detail-title">{title}</div>
-                <div className="detail-description">{desc}</div>
-            </div>
-            <div className="separator" />
-            <div className="detail-data">
-                {data.map((row) => {
-                    return (
-                        <div key={row} className="detail-data-row">
-                            {row}
-                        </div>
-                    );
-                })}
-            </div>
+            <div className="detail-box-body">{children}</div>
         </div>
     );
 };

@@ -14,8 +14,6 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { useHistory } from 'react-router-dom';
-
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
 import searchIcon from '../../../../assets/images/searchIcon.svg';
@@ -30,15 +28,16 @@ import Modal from '../../../../components/modal';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import { Link, useHistory } from 'react-router-dom';
+import pathDomains from '../../../../router';
 
-function SchemaList() {
+function SchemaList({ createNew }) {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
-    const [searchInput, setSearchInput] = useState('');
     const [deleteLoader, setDeleteLoader] = useState(false);
 
     useEffect(() => {
@@ -92,20 +91,17 @@ function SchemaList() {
                 dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
-                setDeleteLoader(false);
             }
         } catch (error) {
+        } finally {
             setDeleteLoader(false);
             setDeleteModal(false);
         }
     };
 
-    const handleSearch = (e) => {
-        setSearchInput(e.target.value);
-    };
-
-    const createNew = () => {
-        dispatch({ type: 'SET_CREATE_SCHEMA', payload: true });
+    const createNewSchema = () => {
+        history.push(`${pathDomains.schemaverse}/$new`);
+        createNew(true);
     };
 
     return (
@@ -142,30 +138,6 @@ function SchemaList() {
                         onClick={() => onCheckedAll()}
                     />
                     <Filter filterComponent="schemaverse" height="34px" />
-                    {/* <Button
-                        width="111px"
-                        height="34px"
-                        placeholder={'Filters'}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType="white"
-                        fontSize="12px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        // onClick={() => addUserModalFlip(true)}
-                    /> */}
-                    {/* <Button
-                        width="81px"
-                        height="34px"
-                        placeholder={'Sort'}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType="white"
-                        fontSize="12px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        // onClick={() => addUserModalFlip(true)}
-                    /> */}
                     <Button
                         width="160px"
                         height="34px"
@@ -176,20 +148,8 @@ function SchemaList() {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        onClick={() => createNew()}
+                        onClick={createNewSchema}
                     />
-                    {/* <Button
-                        width="145px"
-                        height="34px"
-                        placeholder={'Import schema'}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="12px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        // onClick={() => createNew()}
-                    /> */}
                 </div>
             </div>
             <div className="schema-list">
@@ -219,7 +179,7 @@ function SchemaList() {
                             fontFamily="InterSemiBold"
                             aria-controls="usecse-menu"
                             aria-haspopup="true"
-                            onClick={() => createNew()}
+                            onClick={createNewSchema}
                         />
                     </div>
                 )}

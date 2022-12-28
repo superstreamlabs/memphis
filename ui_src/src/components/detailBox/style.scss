@@ -1,56 +1,63 @@
-.detail-box-wrapper {
+.detail-box-container {
     display: flex;
+    flex-direction: column;
+    justify-content: center;
     border: 1px solid #dadada;
     border-radius: 8px;
     position: relative;
     width: 100%;
-    min-height: 120px;
     padding: 16px;
-    overflow: auto;
-    .detail-img {
-        width: 50px;
-    }
-    .separator {
-        opacity: 0.1;
-        background: #979797;
-        width: 2px;
+    .detail-box-wrapper {
         display: flex;
-        height: 80%;
-        align-self: center;
-        margin: 0 5px;
-    }
-    .detail-data {
-        width: 140px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        .detail-data-row {
-            font-family: 'InterSemiBold';
-            font-size: 14px;
-            color: #000000;
-            line-height: 18px;
+        position: relative;
+        width: 100%;
+        .detail-img {
+            width: 50px;
+        }
+        .separator {
+            opacity: 0.1;
+            background: #979797;
+            width: 2px;
+            display: flex;
+            height: 80%;
+            align-self: center;
+            margin: 0 5px;
+        }
+        .detail-data {
+            width: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            .detail-data-row {
+                font-family: 'InterSemiBold';
+                font-size: 14px;
+                color: #000000;
+                line-height: 18px;
+            }
+        }
+        .detail-title-wrapper {
+            width: calc(100% - 170px);
+            .detail-title {
+                font-family: 'InterSemiBold';
+                font-size: 16px;
+                color: #1d1d1d;
+                padding-bottom: 6px;
+            }
+            .detail-description {
+                font-family: 'Inter';
+                font-size: 12px;
+                color: rgba(74, 73, 92, 0.8);
+            }
+        }
+        a {
+            color: var(--purple);
+        }
+        a:hover {
+            text-decoration: underline;
         }
     }
-    .detail-title-wrapper {
-        width: calc(100% - 170px);
-        .detail-title {
-            font-family: 'InterSemiBold';
-            font-size: 16px;
-            color: #1d1d1d;
-            padding-bottom: 6px;
-        }
-        .detail-description {
-            font-family: 'Inter';
-            font-size: 12px;
-            color: rgba(74, 73, 92, 0.8);
-        }
+    .detail-box-body {
+        margin-left: 50px;
     }
-    a{
-        color: var(--purple);
-    }
-    a:hover{
-        text-decoration: underline;
-    }
-
 }

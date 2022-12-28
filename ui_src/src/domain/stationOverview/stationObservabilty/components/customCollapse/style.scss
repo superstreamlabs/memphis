@@ -33,7 +33,7 @@
             display: flex;
             justify-content: center;
             border-radius: 20px;
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             margin-left: 10px;
             padding: 0 10px;
         }
@@ -42,7 +42,7 @@
         display: flex;
         justify-content: space-between;
         p {
-            font-weight: 400;
+            font-family: 'Inter';
             font-size: 12px;
             color: #84818a;
             min-width: 80px;
@@ -57,7 +57,7 @@
     .message {
         font-size: 11px;
         color: #84818a;
-        font-weight: 400;
+        font-family: 'Inter';
         max-height: 195px;
         overflow: scroll;
         padding-right: 10px;

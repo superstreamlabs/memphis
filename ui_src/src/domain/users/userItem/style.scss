@@ -1,6 +1,6 @@
 .users-item {
     position: relative;
-    min-width: 800px;
+    min-width: 1100px;
     color: var(--blue);
     font-size: 14px;
     display: flex;
@@ -16,8 +16,16 @@
         display: flex;
         padding-left: 45px;
         align-items: center;
-        font-weight: 400;
+        font-family: 'Inter';
         font-size: 14px;
+        p{
+            margin: 0;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            display: inline-block;
+            overflow: hidden;
+            max-width: 250px;
+        }
         .user-avatar {
             width: 35px;
             height: 35px;
@@ -33,7 +41,7 @@
     .user-type {
         position: absolute;
         padding-left: 350px;
-        font-weight: 400;
+        font-family: 'Inter';
         font-size: 12px;
         text-transform: capitalize;
         div {
@@ -58,7 +66,7 @@
             margin: 0;
             padding-right: 50px;
             color: var(--purple);
-            font-weight: 600;
+            font-family: 'InterSemiBold';
             font-size: 12px;
         }
         :hover{

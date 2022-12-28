@@ -15,11 +15,14 @@
         min-width: 300px;
         min-height: 400px;
         list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
             .header-title {
-                font-weight: 600;
+                font-family: 'InterSemiBold';
                 font-size: 18px;
                 color: #1d1d1d;
-                padding: 25px;
                 line-height: 18px;
             }
             .search-input-container {
@@ -42,6 +45,27 @@
                 background-color: #f9f9fa;
                 border-radius: 4px;
             }
+        }
+        .placeholder{
+            width: 100%;
+            height: calc(100% - 90px);
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            p{
+                font-family: 'InterSemiBold';
+                font-size: 22px;
+                color: #CED6E2;
+            }
+        }
+        .loader{
+            width: 100%;
+            height: calc(100% - 90px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     }
 }

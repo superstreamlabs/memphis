@@ -24,8 +24,14 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationSocketData: action.payload
             };
-        case 'SET_POISINS_MESSAGES':
+        case 'SET_POISON_MESSAGES':
             updatedSocketState.poison_messages = action.payload;
+            return {
+                ...stationState,
+                stationSocketData: updatedSocketState
+            };
+        case 'SET_FAILED_MESSAGES':
+            updatedSocketState.schema_failed_messages = action.payload;
             return {
                 ...stationState,
                 stationSocketData: updatedSocketState
@@ -41,6 +47,11 @@ const Reducer = (stationState, action) => {
             return {
                 ...stationState,
                 stationSocketData: updatedSocketState
+            };
+        case 'SET_SELECTED_ROW_ID':
+            return {
+                ...stationState,
+                selectedRowId: action.payload
             };
         default:
             return stationState;

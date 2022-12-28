@@ -29,11 +29,11 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.GET("/getPoisonMessageJourney", stationsHandler.GetPoisonMessageJourney)
 	stationsRoutes.POST("/createStation", stationsHandler.CreateStation)
 	stationsRoutes.POST("/resendPoisonMessages", stationsHandler.ResendPoisonMessages)
-	stationsRoutes.POST("/ackPoisonMessages", stationsHandler.AckPoisonMessages)
 	stationsRoutes.DELETE("/removeStation", stationsHandler.RemoveStation)
 	stationsRoutes.POST("/useSchema", stationsHandler.UseSchema)
 	stationsRoutes.DELETE("/removeSchemaFromStation", stationsHandler.RemoveSchemaFromStation)
 	stationsRoutes.GET("/getUpdatesForSchemaByStation", stationsHandler.GetUpdatesForSchemaByStation)
 	stationsRoutes.GET("/tierdStorageClicked", stationsHandler.TierdStorageClicked) // TODO to be deleted
-	stationsRoutes.PUT("/updateDlsConfig", stationsHandler.UpdateDlsCofnig)
+	stationsRoutes.PUT("/updateDlsConfig", stationsHandler.UpdateDlsConfig)
+	stationsRoutes.POST("/dropDlsMessages", stationsHandler.DropDlsMessages)
 }

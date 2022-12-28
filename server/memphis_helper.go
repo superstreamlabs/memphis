@@ -40,11 +40,13 @@ const (
 )
 
 const (
-	syslogsStreamName  = "$memphis_syslogs"
-	syslogsInfoSubject = "info"
-	syslogsWarnSubject = "warn"
-	syslogsErrSubject  = "err"
-	syslogsSysSubject  = "sys"
+	syslogsStreamName      = "$memphis_syslogs"
+	syslogsExternalSubject = "extern.*"
+	syslogsInfoSubject     = "extern.info"
+	syslogsWarnSubject     = "extern.warn"
+	syslogsErrSubject      = "extern.err"
+	syslogsSysSubject      = "intern.sys"
+	dlsStreamName          = "$memphis-%s-dls"
 )
 
 // JetStream API request kinds
@@ -58,6 +60,7 @@ const (
 	kindDeleteStream   = "$memphis_delete_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
+	kindDeleteMsg      = "$memphis_delete_msg"
 )
 
 // errors
@@ -169,6 +172,39 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			MaxConsumers: -1,
 			MaxMsgs:      int64(maxMsgs),
 			MaxBytes:     int64(maxBytes),
+			Discard:      DiscardOld,
+			MaxAge:       maxAge,
+			MaxMsgsPer:   -1,
+			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:      storage,
+			Replicas:     station.Replicas,
+			NoAck:        false,
+			Duplicates:   idempotencyWindow,
+		})
+}
+
+func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
+	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+
+	var storage StorageType
+	if station.StorageType == "memory" {
+		storage = MemoryStorage
+	} else {
+		storage = FileStorage
+	}
+
+	idempotencyWindow := time.Duration(100) * time.Millisecond // minimum is 100 millis
+
+	name := fmt.Sprintf(dlsStreamName, sn.Intern())
+
+	return s.
+		memphisAddStream(&StreamConfig{
+			Name:         (name),
+			Subjects:     []string{name + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(-1),
+			MaxBytes:     int64(-1),
 			Discard:      DiscardOld,
 			MaxAge:       maxAge,
 			MaxMsgsPer:   -1,
@@ -451,6 +487,32 @@ func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 	return resp.StreamInfo, nil
 }
 
+func (s *Server) memphisDeleteMsgFromStream(streamName string, seq uint64) (ApiResponse, error) {
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, streamName)
+
+	msg := JSApiMsgDeleteRequest{
+		Seq: seq,
+	}
+
+	req, err := json.Marshal(msg)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	var resp JSApiMsgDeleteResponse
+	err = jsApiRequest(s, requestSubject, kindDeleteMsg, req, &resp)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	err = resp.ToError()
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	return resp.ApiResponse, nil
+}
+
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
@@ -467,21 +529,42 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 
 func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 	requestSubject := fmt.Sprintf(JSApiStreamList)
+	streams := make([]*StreamInfo, 0)
 
-	request := JSApiStreamListRequest{}
+	offset := 0
+	offsetReq := ApiPagedRequest{Offset: offset}
+	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
 	rawRequest, err := json.Marshal(request)
 	var resp JSApiStreamListResponse
 	err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 	if err != nil {
 		return nil, err
 	}
-
 	err = resp.ToError()
 	if err != nil {
 		return nil, err
 	}
+	streams = append(streams, resp.Streams...)
 
-	return resp.Streams, nil
+	for len(streams) < resp.Total {
+		offset += resp.Limit
+		offsetReq := ApiPagedRequest{Offset: offset}
+		request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
+		rawRequest, err := json.Marshal(request)
+		var resp JSApiStreamListResponse
+		err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
+		if err != nil {
+			return nil, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return nil, err
+		}
+
+		streams = append(streams, resp.Streams...)
+	}
+
+	return streams, nil
 }
 
 func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
@@ -503,58 +586,71 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	msgs, err := s.memphisGetMsgs(stationName.Intern()+".final",
+	filterSubj := stationName.Intern() + ".final"
+	if !station.IsNative {
+		filterSubj = ""
+	}
+
+	msgs, err := s.memphisGetMsgs(filterSubj,
 		stationName.Intern(),
 		startSequence,
 		messagesToFetch,
-		5*time.Second)
+		5*time.Second,
+		station.IsNative, // in non-native stations we don't look for headers in messages
+	)
 	var messages []models.MessageDetails
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
 
+	stationIsNative := station.IsNative
+
 	for _, msg := range msgs {
-		headersJson, err := DecodeHeader(msg.Header)
-		if err != nil {
-			return nil, err
-		}
-
-		connectionIdHeader := headersJson["$memphis_connectionId"]
-		producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
-
-		//This check for backward compatability
-		if connectionIdHeader == "" || producedByHeader == "" {
-			connectionIdHeader = headersJson["connectionId"]
-			producedByHeader = strings.ToLower(headersJson["producedBy"])
-			if connectionIdHeader == "" || producedByHeader == "" {
-				return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			}
-		}
-
-		for header := range headersJson {
-			if strings.HasPrefix(header, "$memphis") {
-				delete(headersJson, header)
-			}
-		}
-
-		if producedByHeader == "$memphis_dlq" { // skip poison messages which have been resent
-			continue
+		messageDetails := models.MessageDetails{
+			MessageSeq: int(msg.Sequence),
+			TimeSent:   msg.Time,
+			Size:       len(msg.Subject) + len(msg.Data) + len(msg.Header),
 		}
 
 		data := hex.EncodeToString(msg.Data)
 		if len(data) > 40 { // get the first chars for preview needs
 			data = data[0:40]
 		}
+		messageDetails.Data = data
 
-		messages = append(messages, models.MessageDetails{
-			MessageSeq:   int(msg.Sequence),
-			Data:         data,
-			ProducedBy:   producedByHeader,
-			ConnectionId: connectionIdHeader,
-			TimeSent:     msg.Time,
-			Size:         len(msg.Subject) + len(msg.Data) + len(msg.Header),
-			Headers:      headersJson,
-		})
+		if stationIsNative {
+			headersJson, err := DecodeHeader(msg.Header)
+			if err != nil {
+				return nil, err
+			}
+
+			connectionIdHeader := headersJson["$memphis_connectionId"]
+			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
+
+			//This check for backward compatability
+			if connectionIdHeader == "" || producedByHeader == "" {
+				connectionIdHeader = headersJson["connectionId"]
+				producedByHeader = strings.ToLower(headersJson["producedBy"])
+				if connectionIdHeader == "" || producedByHeader == "" {
+					return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+				}
+			}
+
+			for header := range headersJson {
+				if strings.HasPrefix(header, "$memphis") {
+					delete(headersJson, header)
+				}
+			}
+
+			if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent
+				continue
+			}
+			messageDetails.ProducedBy = producedByHeader
+			messageDetails.ConnectionId = connectionIdHeader
+			messageDetails.Headers = headersJson
+		}
+
+		messages = append(messages, messageDetails)
 	}
 
 	sort.Slice(messages, func(i, j int) bool {
@@ -584,11 +680,12 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64, amount int, timeout time.Duration) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 
 	cc := ConsumerConfig{
+		FilterSubject: filterSubj,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
 		Durable:       durableName,
@@ -606,7 +703,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 	req := []byte(strconv.Itoa(amount))
 
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
 			// ack
 			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 
@@ -618,12 +715,16 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 				s.Errorf("memphisGetMsgs: " + err.Error())
 			}
 
-			dataFirstIdx := getHdrLastIdxFromRaw(msg) + 1
-			if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
-				s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
-			}
+			dataFirstIdx := 0
+			dataLen := len(msg)
+			if findHeader {
+				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
+				if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
+					s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
+				}
 
-			dataLen := len(msg) - dataFirstIdx
+				dataLen = len(msg) - dataFirstIdx
+			}
 
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
@@ -631,7 +732,7 @@ func (s *Server) memphisGetMsgs(subjectName, streamName string, startSeq uint64,
 				Data:     msg[dataFirstIdx : dataFirstIdx+dataLen],
 				Time:     time.Unix(0, int64(intTs)),
 			}
-		}(responseChan, reply, copyBytes(msg))
+		}(responseChan, reply, copyBytes(msg), findHeader)
 	})
 	if err != nil {
 		return nil, err
@@ -754,7 +855,7 @@ func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error
 		return err
 	}
 
-	hdrs["$memphis_producedBy"] = "$memphis_dlq"
+	hdrs["$memphis_producedBy"] = "$memphis_dls"
 
 	if hdrs["producedBy"] != "" {
 		delete(hdrs, "producedBy")

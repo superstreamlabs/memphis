@@ -16,9 +16,10 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 
 import CheckboxComponent from '../../../../components/checkBox';
-import Button from '../../../../components/button';
-import { httpRequest } from '../../../../services/http';
+import attachedPlaceholder from '../../../../assets/images/attachedPlaceholder.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import { httpRequest } from '../../../../services/http';
+import Button from '../../../../components/button';
 
 function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName }) {
     const [isCheck, setIsCheck] = useState([]);
@@ -28,27 +29,40 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
     const [indeterminate, setIndeterminate] = useState(false);
 
     const onCheckedAll = (e) => {
-        setIsCheckAll(!isCheckAll);
-        setIsCheck(allStations.map((li) => li.name));
-        setIndeterminate(false);
-        if (isCheckAll) {
-            setIsCheck([]);
+        if (attachedStations?.length > 0) {
+            setIndeterminate(!indeterminate);
+            if (indeterminate) {
+                setIsCheck([]);
+            } else {
+                allStations?.map((li) => {
+                    if (attachedStations?.includes(li.name)) return;
+                    else setIsCheck(...li.name);
+                });
+            }
+        } else {
+            setIsCheckAll(!isCheckAll);
+            setIndeterminate(false);
+            if (isCheckAll) {
+                setIsCheck([]);
+            } else {
+                setIsCheck(allStations?.map((li) => li.name));
+            }
         }
     };
 
     const handleCheckedClick = (id, checked) => {
-        if (attachedStations.includes(id)) return;
+        if (attachedStations?.includes(id)) return;
         let checkedList = [];
         if (!checked) {
-            setIsCheck(isCheck.filter((item) => item !== id));
-            checkedList = isCheck.filter((item) => item !== id);
+            setIsCheck(isCheck?.filter((item) => item !== id));
+            checkedList = isCheck?.filter((item) => item !== id);
         }
         if (checked) {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
         }
-        setIsCheckAll(checkedList.length === allStations.length);
-        setIndeterminate(!!checkedList.length && checkedList.length < allStations.length);
+        setIsCheckAll(checkedList?.length === allStations?.length);
+        setIndeterminate(!!checkedList?.length && checkedList?.length < allStations?.length);
     };
 
     const getAllStations = async () => {
@@ -69,7 +83,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
         try {
             const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: isCheck, schema_name: schemaName });
             if (data) {
-                handleAttachedStations(isCheck);
+                handleAttachedStations([...attachedStations, ...isCheck]);
                 setAttachLoader(false);
                 close();
             }
@@ -83,17 +97,35 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
             <p className="title">Attach to Station</p>
             <p className="desc">Attaching a scheme to a station will force the producers to follow it</p>
             <div className="stations-list">
-                <div className="header">
-                    <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                    <p>Station Name</p>
-                </div>
-                <div className="staion-wraper">
-                    {allStations.length > 0 &&
-                        allStations?.map((station, index) => {
+                {allStations?.length > 0 ? (
+                    <div className="header">
+                        <CheckboxComponent
+                            disabled={attachedStations?.length === allStations?.length}
+                            indeterminate={indeterminate}
+                            checked={isCheckAll}
+                            id={'selectAll'}
+                            onChange={onCheckedAll}
+                            name={'selectAll'}
+                        />
+                        <p>Station Name</p>
+                    </div>
+                ) : (
+                    <div className="placeholder">
+                        <img src={attachedPlaceholder} alt="attachedPlaceholder" />
+                        <p>No Station found</p>
+                    </div>
+                )}
+                {allStations?.length > 0 && (
+                    <div className="station-wraper">
+                        {allStations?.map((station, index) => {
                             return (
-                                <div className="station-row" onClick={() => handleCheckedClick(station.name, isCheck.includes(station.name) ? false : true)}>
+                                <div
+                                    key={station.name}
+                                    className="station-row"
+                                    onClick={() => handleCheckedClick(station.name, isCheck.includes(station.name) ? false : true)}
+                                >
                                     <CheckboxComponent
-                                        disabled={attachedStations.includes(station.name)}
+                                        disabled={attachedStations?.includes(station.name)}
                                         checked={isCheck.includes(station.name) || attachedStations.includes(station.name)}
                                         id={station.name}
                                         onChange={(e) => handleCheckedClick(e.target.id, e.target.checked)}
@@ -103,33 +135,39 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                                 </div>
                             );
                         })}
-                </div>
+                    </div>
+                )}
             </div>
             <div className="buttons">
-                <Button
-                    width="150px"
-                    height="34px"
-                    placeholder="Cancel"
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType="white"
-                    border="gray-light"
-                    fontSize="12px"
-                    fontFamily="InterSemiBold"
-                    onClick={() => close()}
-                />
-                <Button
-                    width="150px"
-                    height="34px"
-                    placeholder="Attach Selected"
-                    colorType="white"
-                    radiusType="circle"
-                    backgroundColorType="purple"
-                    fontSize="12px"
-                    fontFamily="InterSemiBold"
-                    loading={attachLoader}
-                    onClick={() => attachToStation()}
-                />
+                {allStations?.length > 0 && (
+                    <>
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Cancel"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            border="gray-light"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => close()}
+                        />
+                        <Button
+                            width="150px"
+                            height="34px"
+                            placeholder="Attach Selected"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            loading={attachLoader}
+                            disabled={isCheck?.length === 0}
+                            onClick={() => attachToStation()}
+                        />
+                    </>
+                )}
             </div>
         </div>
     );
