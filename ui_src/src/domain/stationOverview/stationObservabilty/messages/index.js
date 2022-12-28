@@ -47,7 +47,7 @@ const Messages = () => {
     const [tabValue, setTabValue] = useState('All');
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['All', 'Dead-letter', 'Details'];
-    const subTabs = ['Poison', 'Schemaverse'];
+    const subTabs = ['Poison', 'Failed schema'];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
@@ -61,9 +61,11 @@ const Messages = () => {
         }
     };
 
-    const onCheckedAll = (e) => {
+    const onCheckedAll = () => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id));
+        subTabValue === 'Poison'
+            ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
+            : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
         setIndeterminate(false);
         if (isCheckAll) {
             setIsCheck([]);
@@ -81,14 +83,20 @@ const Messages = () => {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
         }
-        setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
-        setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
+        if (subTabValue === 'Poison') {
+            setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
+            setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
+        } else {
+            setIsCheckAll(checkedList.length === stationState?.stationSocketData?.schema_failed_messages?.length);
+            setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.schema_failed_messages?.length);
+        }
     };
 
     const handleChangeMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
         setTabValue(newValue);
+        subTabValue === 'Failed schema' && setSubTabValue('Poison');
     };
 
     useEffect(() => {
@@ -102,21 +110,25 @@ const Messages = () => {
 
     const handleChangeSubMenuItem = (newValue) => {
         setSubTabValue(newValue);
+        setIsCheck([]);
+        setIsCheckAll(false);
     };
 
-    const handleAck = async () => {
+    const handleDrop = async () => {
         setIgnoreProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.ACK_POISON_MESSAGE}`, { poison_message_ids: isCheck });
-            let poisons = stationState?.stationSocketData?.poison_messages;
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Poison' ? 'poison' : 'schema', dls_message_ids: isCheck });
+            let messages = subTabValue === 'Poison' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
             isCheck.map((messageId, index) => {
-                poisons = poisons?.filter((item) => {
+                messages = messages?.filter((item) => {
                     return item._id !== messageId;
                 });
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                stationDispatch({ type: 'SET_POISINS_MESSAGES', payload: poisons });
+                subTabValue === 'Poison'
+                    ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
+                    : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 setIsCheck([]);
                 setIsCheckAll(false);
             }, 1500);
@@ -166,7 +178,7 @@ const Messages = () => {
         );
     };
 
-    const listGeneratorWrapper = (isPoison) => {
+    const listGeneratorWrapper = () => {
         return (
             <div className="list-wrapper dls-list">
                 <div className="coulmns-table">
@@ -182,12 +194,12 @@ const Messages = () => {
                             stationState?.stationSocketData?.poison_messages?.map((message, id) => {
                                 return listGenerator(message);
                             })}
-                        {subTabValue === 'Schemaverse' &&
+                        {subTabValue === 'Failed schema' &&
                             stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
                                 return listGenerator(message);
                             })}
                     </div>
-                    <MessageDetails isPoisonMessage={isPoison} />
+                    <MessageDetails isDls={true} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
                 </div>
             </div>
         );
@@ -211,37 +223,40 @@ const Messages = () => {
                         </div>
                     )}
                 </div>
-                {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                    <div className="right-side">
-                        <Button
-                            width="80px"
-                            height="32px"
-                            placeholder="Drop"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            disabled={isCheck.length === 0}
-                            isLoading={ignoreProcced}
-                            onClick={() => handleAck()}
-                        />
-                        <Button
-                            width="100px"
-                            height="32px"
-                            placeholder="Resend"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
-                            tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
-                            isLoading={resendProcced}
-                            onClick={() => handleResend()}
-                        />
-                    </div>
-                )}
+                {tabValue === 'Dead-letter' &&
+                    (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && (
+                        <div className="right-side">
+                            <Button
+                                width="80px"
+                                height="32px"
+                                placeholder="Drop"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                disabled={isCheck.length === 0}
+                                isLoading={ignoreProcced}
+                                onClick={() => handleDrop()}
+                            />
+                            {subTabValue === 'Poison' && (
+                                <Button
+                                    width="100px"
+                                    height="32px"
+                                    placeholder="Resend"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontWeight="600"
+                                    disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
+                                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                    isLoading={resendProcced}
+                                    onClick={() => handleResend()}
+                                />
+                            )}
+                        </div>
+                    )}
             </div>
             <div className="tabs">
                 <CustomTabs
@@ -253,7 +268,7 @@ const Messages = () => {
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">
-                    <CustomTabs value={subTabValue} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
+                    <CustomTabs defaultValue value={subTabValue} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && (
@@ -279,12 +294,15 @@ const Messages = () => {
                                 );
                             })}
                         </div>
-                        <MessageDetails isPoisonMessage={false} />
+                        <MessageDetails isDls={false} />
                     </div>
                 </div>
             )}
-            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper(true)}
-            {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' &&
+                subTabValue === 'Failed schema' &&
+                stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
+                listGeneratorWrapper()}
 
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
@@ -300,7 +318,7 @@ const Messages = () => {
             )}
             {tabValue === 'Dead-letter' &&
                 ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                    (subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
