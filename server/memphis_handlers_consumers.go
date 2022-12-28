@@ -353,7 +353,7 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
+func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station, poisonedCgMap map[string]int) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
 	var cgs []models.Cg
 	var consumers []models.ExtendedConsumer
 
@@ -427,9 +427,9 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				return cgs, cgs, cgs, err
 			}
 
-			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(station.Name, cg.Name)
-			if err != nil {
-				return cgs, cgs, cgs, err
+			totalPoisonMsgs := 0
+			if _, ok := poisonedCgMap[cg.Name]; ok {
+				totalPoisonMsgs = poisonedCgMap[cg.Name]
 			}
 
 			cg.InProcessMessages = cgInfo.NumAckPending

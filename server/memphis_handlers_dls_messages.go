@@ -172,15 +172,15 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
+func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, map[string]int, error) {
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
-
+	poisonedCgMap := make(map[string]int)
 	timeout := 1 * time.Second
 
 	sn, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
@@ -190,7 +190,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	amount := streamInfo.State.Msgs
@@ -208,7 +208,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	err = serv.memphisAddConsumer(streamName, &cc)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	responseChan := make(chan StoredMsg)
@@ -237,7 +237,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		}(responseChan, subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
@@ -258,7 +258,7 @@ cleanup:
 	err = serv.memphisRemoveConsumer(streamName, durableName)
 	idCheck := make(map[string]bool)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	for _, msg := range msgs {
@@ -267,13 +267,18 @@ cleanup:
 		var dlsMsg models.DlsMessage
 		err = json.Unmarshal(msg.Data, &dlsMsg)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 		}
 		msgId := dlsMsg.ID
 		if msgType == "poison" {
-			if _, value := idCheck[msgId]; !value {
+			if _, ok := idCheck[msgId]; !ok {
 				idCheck[msgId] = true
 				poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
+			}
+			if _, ok := poisonedCgMap[dlsMsg.PoisonedCg.CgName]; !ok {
+				poisonedCgMap[dlsMsg.PoisonedCg.CgName] = 1
+			} else {
+				poisonedCgMap[dlsMsg.PoisonedCg.CgName] += 1
 			}
 		} else {
 			if _, value := idCheck[msgId]; !value {
@@ -308,7 +313,7 @@ cleanup:
 	if lenSchema > 1000 {
 		schemaMessages = schemaMessages[:1000]
 	}
-	return poisonMessages, schemaMessages, totalDlsAmount, nil
+	return poisonMessages, schemaMessages, totalDlsAmount, poisonedCgMap, nil
 }
 
 func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) (models.DlsMessageResponse, error) {
