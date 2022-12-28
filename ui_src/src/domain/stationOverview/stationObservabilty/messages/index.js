@@ -183,7 +183,7 @@ const Messages = () => {
                                 return listGenerator(message);
                             })}
                         {subTabValue === 'Schemaverse' &&
-                            stationState?.stationSocketData?.schema_fail_messages?.map((message, id) => {
+                            stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
                                 return listGenerator(message);
                             })}
                     </div>
@@ -285,6 +285,7 @@ const Messages = () => {
             )}
             {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper(true)}
             {tabValue === 'Dead-letter' && subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length > 0 && listGeneratorWrapper()}
+
             {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
@@ -299,7 +300,7 @@ const Messages = () => {
             )}
             {tabValue === 'Dead-letter' &&
                 ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_fail_messages?.length === 0)) && (
+                    (subTabValue === 'Schemaverse' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
