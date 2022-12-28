@@ -143,9 +143,9 @@ function Users() {
                 </div>
             </div>
             <Modal
-                header="Add new user"
+                header="Create new user"
                 height="550px"
-                rBtnText="Add"
+                rBtnText="Create"
                 lBtnText="Cancel"
                 lBtnClick={() => {
                     addUserModalFlip(false);

@@ -17,7 +17,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
-import { msToUnits } from '../../../../services/valueConvertor';
+import { msToUnits, numberWithCommas } from '../../../../services/valueConvertor';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -223,7 +223,13 @@ const Messages = () => {
             amount > 0 && (
                 <div className="messages-amount">
                     <InfoOutlined />
-                    <p>Showing last {amount} messages</p>
+                    <p>
+                        Showing last {amount} out of{' '}
+                        {tabValue === 'All'
+                            ? numberWithCommas(stationState?.stationSocketData?.total_messages)
+                            : numberWithCommas(stationState?.stationSocketData?.total_dls_messages)}{' '}
+                        messages
+                    </p>
                 </div>
             )
         );

@@ -19,6 +19,8 @@ import './style.scss';
 import { Tabs } from 'antd';
 import React from 'react';
 
+import errorModal from '../../assets/images/errorModal.svg';
+
 const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
@@ -33,8 +35,8 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
                             <label className="tabs-name">
                                 {tab}{' '}
                                 {length && length[index] && (
-                                    <div className="badge">
-                                        <span>{length[index]}</span>
+                                    <div className="error-icon">
+                                        <img src={errorModal} />
                                     </div>
                                 )}
                             </label>
