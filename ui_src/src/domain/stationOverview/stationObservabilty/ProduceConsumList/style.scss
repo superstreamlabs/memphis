@@ -62,9 +62,9 @@
                 cursor: pointer;
                 font-family: 'Inter';
                 font-size: 12px;
-                padding-left: 5px;
+                padding: 5px;
                 margin-right: 10px;
-                margin-top: 1%;
+                margin-top: 5px;
                 .status-icon
                 {
                     position: relative;
@@ -121,6 +121,7 @@
                 background: #E3E0FF !important;
                 border: 1px solid #6557FF;
                 border-radius: 4px;
+                padding: 4px;
             }
             .pubSub-row:nth-child(even) {
                 background-color: #f8f8f8;

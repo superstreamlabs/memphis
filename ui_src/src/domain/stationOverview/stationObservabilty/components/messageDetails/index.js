@@ -27,7 +27,7 @@ import { StationStoreContext } from '../../..';
 import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 
-const MessageDetails = ({ isPoisonMessage, id }) => {
+const MessageDetails = ({ isDls, isFailedSchemaMessage }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -55,9 +55,9 @@ const MessageDetails = ({ isPoisonMessage, id }) => {
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isPoisonMessage}&message_id=${
-                    isPoisonMessage ? encodeURIComponent(id) : null
-                }&message_seq=${isPoisonMessage ? null : id}`
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isDls}&message_id=${
+                    isDls ? encodeURIComponent(id) : null
+                }&message_seq=${isDls ? null : id}`
             );
             arrangeData(data);
         } catch (error) {
@@ -162,18 +162,20 @@ const MessageDetails = ({ isPoisonMessage, id }) => {
                                     data={messageDetails?.producer}
                                 />
 
-                                <MultiCollapse
-                                    header="Failed CGs"
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
-                                    defaultOpen={true}
-                                    data={messageDetails?.poisonedCGs}
-                                />
+                                {!isFailedSchemaMessage && (
+                                    <MultiCollapse
+                                        header="Failed CGs"
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                        defaultOpen={true}
+                                        data={messageDetails?.poisonedCGs}
+                                    />
+                                )}
                                 <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
                                 <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
                                 <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
                             </Space>
                         </div>
-                        {isPoisonMessage && (
+                        {isDls && !isFailedSchemaMessage && (
                             <Button
                                 width="96%"
                                 height="40px"

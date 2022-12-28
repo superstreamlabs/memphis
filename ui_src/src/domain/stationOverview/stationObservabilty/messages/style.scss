@@ -38,9 +38,8 @@
         .right-side {
             position: relative;
             display: flex;
-            width: 190px;
-            justify-content: space-between;
             top: 10px;
+            gap: 10px;
         }
         .add-functions-button {
             cursor: pointer;
