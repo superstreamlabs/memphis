@@ -288,7 +288,7 @@ cleanup:
 				} else {
 					message.TimeSent = dlsMsg.CreationDate
 				}
-				dlsMsg.Message.Size = len(msg.Subject) + len(msg.Data) + len(msg.Header)
+				dlsMsg.Message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
 				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
 			}
 		}
@@ -493,6 +493,10 @@ cleanup:
 				if err != nil {
 					return []models.DlsMessageResponse{}, []models.DlsMessageResponse{}, err
 				}
+
+				size := len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers) + len(msg.Subject)
+				dlsMsg.Message.Size = size
+
 				idToMsgListS[msgId] = models.DlsMessageResponse{
 					ID:          msgId,
 					StationName: dlsMsg.StationName,
