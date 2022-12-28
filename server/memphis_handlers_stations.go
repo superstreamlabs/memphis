@@ -109,6 +109,14 @@ func validateReplicas(replicas int) error {
 	return nil
 }
 
+func validateIdempotencyWindow(retentionValue int, idempotencyWindow int) error {
+	if retentionValue > idempotencyWindow {
+		return errors.New("idempotency window cannot be greater than retention value")
+	}
+
+	return nil
+}
+
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station, nonNativeRemoveStreamFunc func() error) error {
 	stationName, err := StationNameFromStr(station.Name)
@@ -273,6 +281,16 @@ func (s *Server) createStationDirectIntern(c *client,
 		replicas = 1
 	}
 
+	if csr.RetentionType == "message_age_sec" {
+		err = validateIdempotencyWindow(csr.RetentionValue, csr.IdempotencyWindow)
+		if err != nil {
+			serv.Warnf("createStationDirect: " + err.Error())
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+	}
+
 	if csr.IdempotencyWindow <= 0 {
 		csr.IdempotencyWindow = 120000 // default
 	} else if csr.IdempotencyWindow < 100 {
@@ -310,7 +328,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	err = createStreamFunc()
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		fmt.Println("Error: duplicates window can not be larger then max age", error.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -635,6 +652,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.Replicas = 1
 	}
 
+	if body.RetentionType == "message_age_sec" {
+		err = validateIdempotencyWindow(body.RetentionValue, body.IdempotencyWindow)
+		if err != nil {
+			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	}
+
 	if body.IdempotencyWindow <= 0 {
 		body.IdempotencyWindow = 120000 // default
 	} else if body.IdempotencyWindow < 100 {
@@ -664,7 +690,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error: duplicates window can not be larger then max age"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
 		return
 	}
 
