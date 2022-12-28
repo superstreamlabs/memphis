@@ -137,87 +137,25 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_dls_consumer_" + uid
-	var msgs []StoredMsg
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return err
-	}
-	filter := GetDlsSubject("poison", sn.Intern(), msgId)
-	amount := streamInfo.State.Msgs
-	cc := ConsumerConfig{
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		FilterSubject: filter,
-	}
-	err = serv.memphisAddConsumer(streamName, &cc)
-	if err != nil {
-		return err
-	}
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("ackPoisonMsgV0: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return err
-	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	amount := uint64(1)
+	filter := GetDlsSubject("poison", sn.Intern(), msgId, cgName)
 	timeout := 30 * time.Second
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
+	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
+
+	if len(msgs) != 1 {
+		return errors.New("message was not found")
 	}
 
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
+	msg := msgs[0]
+	var dlsMsg models.DlsMessage
+	err = json.Unmarshal(msg.Data, &dlsMsg)
+	if err != nil {
+		return err
+	}
+
 	err = serv.memphisRemoveConsumer(streamName, durableName)
 	if err != nil {
 		return err
-	}
-	for _, msg := range msgs {
-		splittedSubj := strings.Split(msg.Subject, tsep)
-		msgType := splittedSubj[1]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return err
-		}
-		if msgType == "poison" {
-			if dlsMsg.PoisonedCg.CgName == cgName {
-				_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-		}
 	}
 	return nil
 }
