@@ -130,6 +130,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
+	// run only on the leader
 	go s.KillZombieResources()
 
 	// For backward compatibility

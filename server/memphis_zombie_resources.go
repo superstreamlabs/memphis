@@ -224,7 +224,6 @@ func (s *Server) KillZombieResources() {
 	}
 
 	for range time.Tick(time.Second * 60) {
-		s.Systemf("Idan Asulin")
 		s.Debugf("Killing Zombie resources iteration")
 		killFunc(s)
 		updateActiveProducersAndConsumers() // TODO to be deleted
