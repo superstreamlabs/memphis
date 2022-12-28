@@ -15,10 +15,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -137,6 +137,38 @@ func updateActiveProducersAndConsumers() {
 	}
 }
 
+func aggregateClientConnections(s *Server) (map[string]string, error) {
+	connectionIds := make(map[string]string)
+	var lock sync.Mutex
+	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
+	sub, err := s.subscribeOnGlobalAcc(replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var incomingConnIds map[string]string
+			err := json.Unmarshal(msg, &incomingConnIds)
+			if err != nil {
+				s.Errorf("aggregateClientConnections: " + err.Error())
+				return
+			}
+
+			for k := range incomingConnIds {
+				lock.Lock()
+				connectionIds[k] = ""
+				lock.Unlock()
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// send message to all brokers to get their connections
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
+	timeout := time.After(50 * time.Second)
+	<-timeout
+	s.unsubscribeOnGlobalAcc(sub)
+	return connectionIds, nil
+}
+
 func killFunc(s *Server) {
 	connections, err := getActiveConnections()
 	if err != nil {
@@ -144,85 +176,44 @@ func killFunc(s *Server) {
 		return
 	}
 
-	var zombieConnections []primitive.ObjectID
-	var lock sync.Mutex
-	wg := sync.WaitGroup{}
-	wg.Add(len(connections))
-	for _, conn := range connections {
-		connOpts := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
-		conns, _ := s.Connz(connOpts)
-		found := false
-		for _, clientConn := range conns.Conns { // check with local connections
-			connId := strings.Split(clientConn.Name, "::")[0]
-			if connId == (conn.ID).Hex() {
-				found = true
-				break
-			}
-		}
-		if found {
-			wg.Done()
-			continue
-		}
-
-		// check with other brokers
-		go func(s *Server, conn models.Connection, wg *sync.WaitGroup, lock *sync.Mutex) {
-			respCh := make(chan []byte)
-			msg := (conn.ID).Hex()
-			reply := CONN_STATUS_SUBJ + "_reply" + s.memphis.nuid.Next()
-
-			sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-				go func(msg []byte) { respCh <- msg }(copyBytes(msg))
-			})
-			if err != nil {
-				s.Errorf("killFunc: subscribeOnGlobalAcc: " + err.Error())
-				wg.Done()
-				return
-			}
-
-			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, reply, nil, msg, true)
-			timeout := time.After(30 * time.Second)
-			select {
-			case <-respCh:
-				s.unsubscribeOnGlobalAcc(sub)
-				wg.Done()
-				return
-			case <-timeout:
-				lock.Lock()
-				zombieConnections = append(zombieConnections, conn.ID)
-				lock.Unlock()
-			}
-			s.unsubscribeOnGlobalAcc(sub)
-			wg.Done()
-		}(s, conn, &wg, &lock)
-	}
-	wg.Wait()
-
-	if len(zombieConnections) > 0 {
-		serv.Warnf("Zombie connections found, killing")
-		err := killRelevantConnections(zombieConnections)
+	if len(connections) > 0 {
+		var zombieConnections []primitive.ObjectID
+		clientConnectionIds, err := aggregateClientConnections(s)
 		if err != nil {
-			serv.Errorf("killFunc: killRelevantConnections: " + err.Error())
-		} else {
-			err = killProducersByConnections(zombieConnections)
-			if err != nil {
-				serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
+			serv.Errorf("killFunc: aggregateClientConnections: " + err.Error())
+			return
+		}
+		for _, conn := range connections {
+			if _, exist := clientConnectionIds[(conn.ID).Hex()]; exist { // existence check
+				continue
+			} else {
+				zombieConnections = append(zombieConnections, conn.ID)
 			}
+		}
 
-			err = killConsumersByConnections(zombieConnections)
+		if len(zombieConnections) > 0 {
+			serv.Warnf("Zombie connections found, killing")
+			err := killRelevantConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
+				serv.Errorf("killFunc: killRelevantConnections: " + err.Error())
+			} else {
+				err = killProducersByConnections(zombieConnections)
+				if err != nil {
+					serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
+				}
+
+				err = killConsumersByConnections(zombieConnections)
+				if err != nil {
+					serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
+				}
 			}
 		}
 	}
-
 	s.removeStaleStations()
 }
 
-func (s *Server) KillZombieResources() {
-	s.Debugf("Killing Zombie resources iteration")
-	killFunc(s)
-
-	for range time.Tick(time.Second * 30) {
+func (s *Server) KillZombieResources() {	
+	for range time.Tick(time.Second * 60) {
 		s.Debugf("Killing Zombie resources iteration")
 		killFunc(s)
 		updateActiveProducersAndConsumers() // TODO to be deleted
