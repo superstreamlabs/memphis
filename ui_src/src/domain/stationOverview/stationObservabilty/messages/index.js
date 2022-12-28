@@ -193,18 +193,18 @@ const Messages = () => {
                 </div>
                 <div className="list">
                     <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'} onScroll={() => handleScroll()}>
-                        {!isDls &&
-                            stationState?.stationSocketData?.messages?.map((message) => {
-                                return listGenerator(message);
-                            })}
-                        {subTabValue === 'Poison' &&
-                            stationState?.stationSocketData?.poison_messages?.map((message, id) => {
-                                return listGenerator(message);
-                            })}
-                        {subTabValue === 'Failed schema' &&
-                            stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
-                                return listGenerator(message);
-                            })}
+                        {!isDls
+                            ? stationState?.stationSocketData?.messages?.map((message) => {
+                                  return listGenerator(message);
+                              })
+                            : subTabValue === 'Poison'
+                            ? stationState?.stationSocketData?.poison_messages?.map((message, id) => {
+                                  return listGenerator(message);
+                              })
+                            : subTabValue === 'Failed schema' &&
+                              stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
+                                  return listGenerator(message);
+                              })}
                     </div>
                     <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
                 </div>
