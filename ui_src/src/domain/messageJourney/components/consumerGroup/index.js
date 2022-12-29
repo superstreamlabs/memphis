@@ -48,12 +48,14 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                 <div className="details">
                     <p className="title">Details</p>
                     {details?.map((row, index) => {
-                        return (
-                            <content is="x3d" key={index}>
-                                <p>{row.name}</p>
-                                <span>{row.value}</span>
-                            </content>
-                        );
+                        if (row.value !== '-1') {
+                            return (
+                                <content is="x3d" key={index}>
+                                    <p>{row.name}</p>
+                                    <span>{row.value}</span>
+                                </content>
+                            );
+                        }
                     })}
                 </div>
                 <div className="consumers">
