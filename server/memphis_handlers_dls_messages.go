@@ -164,7 +164,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	s.sendInternalAccountMsg(s.GlobalAccount(), poisonSubjectName, msgToSend)
 
 	idForUrl := pmMessage.ID
-	var msgUrl = idForUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
+	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
 	if err != nil {
 		serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
@@ -317,7 +317,7 @@ cleanup:
 }
 
 func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) (models.DlsMessageResponse, error) {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 
 	dlsStreamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
@@ -356,6 +356,8 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 	poisonedCgs := []models.PoisonedCg{}
 	var producer models.Producer
 	var dlsMsg models.DlsMessage
+	var clientAddress string
+	var connectionId primitive.ObjectID
 
 	for i, msg := range msgs {
 		err = json.Unmarshal(msg.Data, &dlsMsg)
@@ -364,7 +366,21 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		}
 
 		if i == 0 {
-			filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": dlsMsg.Producer.ConnectionId}
+			connectionIdHeader := dlsMsg.Message.Headers["$memphis_connectionId"]
+			//This check for backward compatability
+			if connectionIdHeader == "" {
+				connectionIdHeader = dlsMsg.Message.Headers["connectionId"]
+				if connectionIdHeader == "" {
+					return models.DlsMessageResponse{}, err
+				}
+			}
+			connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
+			_, conn, err := IsConnectionExist(connectionId)
+			if err != nil {
+				return models.DlsMessageResponse{}, err
+			}
+			clientAddress = conn.ClientAddress
+			filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": connectionId}
 			err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
 			if err != nil {
 				return models.DlsMessageResponse{}, err
@@ -379,11 +395,22 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		pCg := dlsMsg.PoisonedCg
 		pCg.UnprocessedMessages = int(cgInfo.NumPending)
 		pCg.InProcessMessages = cgInfo.NumAckPending
-		pCg.TotalPoisonMessages, err = GetTotalPoisonMsgsByCg(dlsMsg.StationName, dlsMsg.PoisonedCg.CgName)
+		cgMembers, err := GetConsumerGroupMembers(pCg.CgName, station)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}
+		pCg.IsActive, pCg.IsDeleted = getCgStatus(cgMembers)
+
+		pCg.TotalPoisonMessages = -1
+		pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 		poisonedCgs = append(poisonedCgs, pCg)
+
+		for header := range dlsMsg.Message.Headers {
+			if strings.HasPrefix(header, "$memphis") {
+				delete(dlsMsg.Message.Headers, header)
+			}
+		}
 	}
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,
@@ -392,6 +419,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		Producer: models.ProducerDetails{
 			Name:          producer.Name,
 			ConnectionId:  producer.ConnectionId,
+			ClientAddress: clientAddress,
 			CreatedByUser: producer.CreatedByUser,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
@@ -514,7 +542,7 @@ cleanup:
 }
 
 func RemovePoisonedCg(stationName StationName, cgName string) error {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 
 	streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
 
@@ -616,7 +644,7 @@ cleanup:
 }
 
 func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -644,7 +672,7 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 }
 
 func GetPoisonedCgsByMessage(stationNameInter string, message models.MessageDetails) ([]models.PoisonedCg, error) {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	poisonedCgs := []models.PoisonedCg{}
 	streamName := fmt.Sprintf(dlsStreamName, stationNameInter)
 	streamInfo, err := serv.memphisStreamInfo(streamName)
