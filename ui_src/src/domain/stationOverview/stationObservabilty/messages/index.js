@@ -17,7 +17,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
-import { msToUnits } from '../../../../services/valueConvertor';
+import { msToUnits, numberWithCommas } from '../../../../services/valueConvertor';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -51,11 +51,11 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const onSelectedRow = (id) => {
+    const onSelectedRow = (messageSeq, id) => {
         setUserScrolled(false);
-        setSelectedRowIndex(id);
-        stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
-        const element = document.getElementById(id);
+        setSelectedRowIndex(messageSeq);
+        stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: { seq: messageSeq, id: id } });
+        const element = document.getElementById(messageSeq);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
@@ -168,11 +168,19 @@ const Messages = () => {
     };
 
     const listGenerator = (message) => {
-        const id = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
+        const messageSeq = tabValue === 'Dead-letter' ? message?.message_seq : message?.message_seq;
+        const id = tabValue === 'Dead-letter' ? message?._id : null;
         return (
-            <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
-                {selectedRowIndex === id && <div className="hr-selected"></div>}
-                {tabValue === 'Dead-letter' && <CheckboxComponent checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />}
+            <div
+                className={selectedRowIndex === messageSeq ? 'row-message selected' : 'row-message'}
+                key={messageSeq}
+                id={messageSeq}
+                onClick={() => onSelectedRow(messageSeq, id)}
+            >
+                {selectedRowIndex === messageSeq && <div className="hr-selected"></div>}
+                {tabValue === 'Dead-letter' && (
+                    <CheckboxComponent checked={isCheck.includes(messageSeq)} id={messageSeq} onChange={handleCheckedClick} name={messageSeq} />
+                )}
                 <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
             </div>
         );
@@ -223,7 +231,13 @@ const Messages = () => {
             amount > 0 && (
                 <div className="messages-amount">
                     <InfoOutlined />
-                    <p>Showing last {amount} messages</p>
+                    <p>
+                        Showing last {numberWithCommas(amount)} out of{' '}
+                        {tabValue === 'All'
+                            ? numberWithCommas(stationState?.stationSocketData?.total_messages)
+                            : numberWithCommas(stationState?.stationSocketData?.total_dls_messages)}{' '}
+                        messages
+                    </p>
                 </div>
             )
         );

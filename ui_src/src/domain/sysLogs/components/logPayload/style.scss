@@ -51,12 +51,12 @@
     }
     .selected{
         background: #6557FF;
-        border-radius: 0px 4px 4px 0px;
+        border-radius: 0px 10px 10px 0px;
         position: absolute;
         height: 100%;
-        width: 3px;
+        width: 10px;
         top: 0;
-        left: -15px;
+        left: -21px;
     }
 }
 .log-payload:hover {

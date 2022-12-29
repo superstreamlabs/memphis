@@ -318,7 +318,6 @@ cleanup:
 
 func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) (models.DlsMessageResponse, error) {
 	timeout := 500 * time.Millisecond
-
 	dlsStreamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	streamInfo, err := serv.memphisStreamInfo(dlsStreamName)
@@ -411,6 +410,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 				delete(dlsMsg.Message.Headers, header)
 			}
 		}
+		poisonedCgs = append(poisonedCgs, pCg)
 	}
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,

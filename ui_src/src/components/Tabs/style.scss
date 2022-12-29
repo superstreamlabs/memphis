@@ -19,21 +19,10 @@
     }
     .tabs-name{
         display: flex;
-        .badge {
-            background-color: #f7685b;
-            color: #ffffff;
-            font-size: 12px;
-            align-items: center;
-            border-radius: 50px;
-            margin: 0 5px;
-            padding: 0px 5px;
-            line-height: 12px;
-            display: flex;
-            min-width: 19px;
-            height: 19px;
-            display: flex;
-            justify-content: center;
-
+        align-items:center;
+        .error-icon img{
+            width: 20px;
+            margin-left: 3px;
         }
     }
 

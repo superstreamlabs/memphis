@@ -255,7 +255,7 @@ function OverView() {
                 }
                 height="70vh"
                 width="1020px"
-                rBtnText="Add"
+                rBtnText="Create"
                 lBtnText="Cancel"
                 lBtnClick={() => {
                     modalFlip(false);
