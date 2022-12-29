@@ -244,8 +244,11 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+	resp.SchemaVerseToDls = schemaVerseToDls
+	resp.ClusterSendNotification = clusterSendNotification
 	schemaUpdate, err := getSchemaUpdateInitFromStation(sn)
 	if err == ErrNoSchema {
+		resp.SchemaUpdate = models.ProducerSchemaUpdateInit{}
 		respondWithResp(s, reply, &resp)
 		return
 	}
@@ -256,9 +259,6 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	resp.SchemaUpdate = *schemaUpdate
-	resp.SchemaVerseToDls = schemaVerseToDls
-	resp.ClusterSendNotification = clusterSendNotification
-
 	respondWithResp(s, reply, &resp)
 }
 
