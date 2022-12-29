@@ -44,20 +44,20 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     }, [messageDetails]);
 
     useEffect(() => {
-        if (stationState?.selectedRowId && !loadMessageData) {
+        if (stationState?.selectedRowId?.seq && !loadMessageData) {
             getMessageDetails(stationState?.selectedRowId);
         }
     }, [stationState?.selectedRowId]);
 
-    const getMessageDetails = async (id) => {
+    const getMessageDetails = async (selectedRow) => {
         setMessageDetails({});
         setLoadMessageData(true);
         try {
             const data = await httpRequest(
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isDls}&message_id=${
-                    isDls ? encodeURIComponent(id) : null
-                }&message_seq=${isDls ? null : id}`
+                    isDls ? encodeURIComponent(selectedRow?.id) : null
+                }&message_seq=${selectedRow?.seq}`
             );
             arrangeData(data);
         } catch (error) {
