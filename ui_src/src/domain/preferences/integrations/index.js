@@ -72,7 +72,7 @@ const Integrations = () => {
                 <Button
                     width="140px"
                     height="35px"
-                    placeholder="Request Integration"
+                    placeholder="Request integration"
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType="purple"
