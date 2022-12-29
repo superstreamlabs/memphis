@@ -310,6 +310,12 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	err = createStreamFunc()
 	if err != nil {
+		if IsNatsErr(err, JSInsufficientResourcesErr) {
+			serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
+			respondWithErr(s, reply, errors.New("Station can not be created, probably since replicas count is larger than the cluster size"))
+			return
+		}
+
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
@@ -663,6 +669,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
+		if IsNatsErr(err, JSInsufficientResourcesErr) {
+			serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+			return
+		}
+
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
