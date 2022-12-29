@@ -164,7 +164,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	s.sendInternalAccountMsg(s.GlobalAccount(), poisonSubjectName, msgToSend)
 
 	idForUrl := pmMessage.ID
-	var msgUrl = idForUrl + "/stations/" + stationName.Ext() + "/" + idForUrl
+	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
 	if err != nil {
 		serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
@@ -172,15 +172,15 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
+func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, map[string]int, error) {
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
-
+	poisonedCgMap := make(map[string]int)
 	timeout := 1 * time.Second
 
 	sn, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
@@ -190,7 +190,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	streamInfo, err := serv.memphisStreamInfo(streamName)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	amount := streamInfo.State.Msgs
@@ -208,7 +208,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 
 	err = serv.memphisAddConsumer(streamName, &cc)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	responseChan := make(chan StoredMsg)
@@ -237,7 +237,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		}(responseChan, subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
@@ -258,7 +258,7 @@ cleanup:
 	err = serv.memphisRemoveConsumer(streamName, durableName)
 	idCheck := make(map[string]bool)
 	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 	}
 
 	for _, msg := range msgs {
@@ -267,13 +267,18 @@ cleanup:
 		var dlsMsg models.DlsMessage
 		err = json.Unmarshal(msg.Data, &dlsMsg)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, poisonedCgMap, err
 		}
 		msgId := dlsMsg.ID
 		if msgType == "poison" {
-			if _, value := idCheck[msgId]; !value {
+			if _, ok := idCheck[msgId]; !ok {
 				idCheck[msgId] = true
 				poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
+			}
+			if _, ok := poisonedCgMap[dlsMsg.PoisonedCg.CgName]; !ok {
+				poisonedCgMap[dlsMsg.PoisonedCg.CgName] = 1
+			} else {
+				poisonedCgMap[dlsMsg.PoisonedCg.CgName] += 1
 			}
 		} else {
 			if _, value := idCheck[msgId]; !value {
@@ -308,12 +313,11 @@ cleanup:
 	if lenSchema > 1000 {
 		schemaMessages = schemaMessages[:1000]
 	}
-	return poisonMessages, schemaMessages, totalDlsAmount, nil
+	return poisonMessages, schemaMessages, totalDlsAmount, poisonedCgMap, nil
 }
 
 func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) (models.DlsMessageResponse, error) {
-	timeout := 1 * time.Second
-
+	timeout := 500 * time.Millisecond
 	dlsStreamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
 	streamInfo, err := serv.memphisStreamInfo(dlsStreamName)
@@ -351,6 +355,8 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 	poisonedCgs := []models.PoisonedCg{}
 	var producer models.Producer
 	var dlsMsg models.DlsMessage
+	var clientAddress string
+	var connectionId primitive.ObjectID
 
 	for i, msg := range msgs {
 		err = json.Unmarshal(msg.Data, &dlsMsg)
@@ -359,7 +365,21 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		}
 
 		if i == 0 {
-			filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": dlsMsg.Producer.ConnectionId}
+			connectionIdHeader := dlsMsg.Message.Headers["$memphis_connectionId"]
+			//This check for backward compatability
+			if connectionIdHeader == "" {
+				connectionIdHeader = dlsMsg.Message.Headers["connectionId"]
+				if connectionIdHeader == "" {
+					return models.DlsMessageResponse{}, err
+				}
+			}
+			connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
+			_, conn, err := IsConnectionExist(connectionId)
+			if err != nil {
+				return models.DlsMessageResponse{}, err
+			}
+			clientAddress = conn.ClientAddress
+			filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": connectionId}
 			err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
 			if err != nil {
 				return models.DlsMessageResponse{}, err
@@ -374,9 +394,21 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		pCg := dlsMsg.PoisonedCg
 		pCg.UnprocessedMessages = int(cgInfo.NumPending)
 		pCg.InProcessMessages = cgInfo.NumAckPending
-		pCg.TotalPoisonMessages, err = GetTotalPoisonMsgsByCg(dlsMsg.StationName, dlsMsg.PoisonedCg.CgName)
+		cgMembers, err := GetConsumerGroupMembers(pCg.CgName, station)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
+		}
+		pCg.IsActive, pCg.IsDeleted = getCgStatus(cgMembers)
+
+		pCg.TotalPoisonMessages = -1
+		pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+		pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+		poisonedCgs = append(poisonedCgs, pCg)
+		pCg.CgMembers = cgMembers
+		for header := range dlsMsg.Message.Headers {
+			if strings.HasPrefix(header, "$memphis") {
+				delete(dlsMsg.Message.Headers, header)
+			}
 		}
 		poisonedCgs = append(poisonedCgs, pCg)
 	}
@@ -387,6 +419,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		Producer: models.ProducerDetails{
 			Name:          producer.Name,
 			ConnectionId:  producer.ConnectionId,
+			ClientAddress: clientAddress,
 			CreatedByUser: producer.CreatedByUser,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
@@ -509,7 +542,7 @@ cleanup:
 }
 
 func RemovePoisonedCg(stationName StationName, cgName string) error {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 
 	streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
 
@@ -611,7 +644,7 @@ cleanup:
 }
 
 func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -639,7 +672,7 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 }
 
 func GetPoisonedCgsByMessage(stationNameInter string, message models.MessageDetails) ([]models.PoisonedCg, error) {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	poisonedCgs := []models.PoisonedCg{}
 	streamName := fmt.Sprintf(dlsStreamName, stationNameInter)
 	streamInfo, err := serv.memphisStreamInfo(streamName)

@@ -1091,7 +1091,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 }
 
 func dropPoisonDlsMessages(poisonMessageIds []string) error {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	splitId := strings.Split(poisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1121,7 +1121,7 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 }
 
 func dropSchemaDlsMsg(schemaMessageIds []string) error {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1191,7 +1191,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1380,13 +1380,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				return
 			}
 
-			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
-			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
 				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
@@ -1400,7 +1393,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 			poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
 			poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-			poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+			poisonedCgs[i].TotalPoisonMessages = -1
 			poisonedCgs[i].IsActive = isActive
 			poisonedCgs[i].IsDeleted = isDeleted
 		}
