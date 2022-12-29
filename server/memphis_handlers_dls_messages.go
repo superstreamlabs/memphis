@@ -404,7 +404,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
 		pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 		poisonedCgs = append(poisonedCgs, pCg)
-
+		pCg.CgMembers = cgMembers
 		for header := range dlsMsg.Message.Headers {
 			if strings.HasPrefix(header, "$memphis") {
 				delete(dlsMsg.Message.Headers, header)
