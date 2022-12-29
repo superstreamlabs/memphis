@@ -52,6 +52,10 @@
             font-size: 12px;
             color: #1d1d1d;
             font-family: 'InterSemiBold';
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
         }
     }
 
@@ -59,7 +63,7 @@
         font-size: 11px;
         color: #84818a;
         font-family: 'Inter';
-        max-height: 195px;
+        max-height: 190px;
         overflow: scroll;
         padding-right: 10px;
         img {
@@ -72,7 +76,6 @@
         .second-row {
             position: absolute;
             top: 40px;
-            // left: 12px;
             p {
                 margin: 0;
             }
