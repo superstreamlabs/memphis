@@ -53,6 +53,11 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 selectedRowId: action.payload
             };
+        case 'SET_DLS_TYPE':
+            return {
+                ...stationState,
+                dlsType: action.payload
+            };
         default:
             return stationState;
     }

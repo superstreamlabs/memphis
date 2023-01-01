@@ -114,6 +114,7 @@ const Messages = () => {
         setSubTabValue(newValue);
         setIsCheck([]);
         setIsCheckAll(false);
+        stationDispatch({ type: 'SET_DLS_TYPE', payload: newValue });
     };
 
     const handleDrop = async () => {
@@ -168,7 +169,7 @@ const Messages = () => {
     };
 
     const listGenerator = (message) => {
-        const messageSeq = tabValue === 'Dead-letter' ? message?.message_seq : message?.message_seq;
+        const messageSeq = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
         const id = tabValue === 'Dead-letter' ? message?._id : null;
         return (
             <div

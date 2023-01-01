@@ -316,7 +316,7 @@ cleanup:
 	return poisonMessages, schemaMessages, totalDlsAmount, poisonedCgMap, nil
 }
 
-func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) (models.DlsMessageResponse, error) {
+func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType string) (models.DlsMessageResponse, error) {
 	timeout := 500 * time.Millisecond
 	dlsStreamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 
@@ -331,7 +331,17 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 		startSeq = streamInfo.State.FirstSeq
 	}
 
-	filterSubj := GetDlsSubject("*", sn.Intern(), dlsMsgId, ">")
+	dlsType = strings.ToLower(dlsType)
+	var filterSubj string
+	switch dlsType {
+	case "poison":
+		filterSubj = GetDlsSubject(dlsType, sn.Intern(), dlsMsgId, ">")
+	case "failed schema":
+		filterSubj = GetDlsSubject("schema", sn.Intern(), dlsMsgId, "")
+	default:
+		filterSubj = GetDlsSubject(dlsType, sn.Intern(), dlsMsgId, ">")
+	}
+
 	msgs, err := serv.memphisGetMessagesByFilter(dlsStreamName, filterSubj, startSeq, amount, timeout)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
@@ -344,10 +354,6 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 
 	msgType := tokenAt(msgs[0].Subject, 2)
 	if !station.IsNative {
-		return models.DlsMessageResponse{}, nil
-	}
-
-	if msgType == "schema" {
 		return models.DlsMessageResponse{}, nil
 	}
 
@@ -386,31 +392,38 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId string) 
 			}
 		}
 
-		cgInfo, err := serv.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
-		if err != nil {
-			return models.DlsMessageResponse{}, err
-		}
-
-		pCg := dlsMsg.PoisonedCg
-		pCg.UnprocessedMessages = int(cgInfo.NumPending)
-		pCg.InProcessMessages = cgInfo.NumAckPending
-		cgMembers, err := GetConsumerGroupMembers(pCg.CgName, station)
-		if err != nil {
-			return models.DlsMessageResponse{}, err
-		}
-		pCg.IsActive, pCg.IsDeleted = getCgStatus(cgMembers)
-
-		pCg.TotalPoisonMessages = -1
-		pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-		pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-		poisonedCgs = append(poisonedCgs, pCg)
-		pCg.CgMembers = cgMembers
-		for header := range dlsMsg.Message.Headers {
-			if strings.HasPrefix(header, "$memphis") {
-				delete(dlsMsg.Message.Headers, header)
+		if msgType == "poison" {
+			cgInfo, err := serv.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
+			if err != nil {
+				return models.DlsMessageResponse{}, err
 			}
+
+			pCg := dlsMsg.PoisonedCg
+			pCg.UnprocessedMessages = int(cgInfo.NumPending)
+			pCg.InProcessMessages = cgInfo.NumAckPending
+			cgMembers, err := GetConsumerGroupMembers(pCg.CgName, station)
+			if err != nil {
+				return models.DlsMessageResponse{}, err
+			}
+			pCg.IsActive, pCg.IsDeleted = getCgStatus(cgMembers)
+
+			pCg.TotalPoisonMessages = -1
+			pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+			pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+			poisonedCgs = append(poisonedCgs, pCg)
+			pCg.CgMembers = cgMembers
+			for header := range dlsMsg.Message.Headers {
+				if strings.HasPrefix(header, "$memphis") {
+					delete(dlsMsg.Message.Headers, header)
+				}
+			}
+			poisonedCgs = append(poisonedCgs, pCg)
 		}
-		poisonedCgs = append(poisonedCgs, pCg)
+
+		if msgType == "schema" {
+			size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
+			dlsMsg.Message.Size = size
+		}
 	}
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,
