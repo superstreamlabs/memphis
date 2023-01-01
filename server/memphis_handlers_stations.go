@@ -1074,7 +1074,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId, "Poison")
+	poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

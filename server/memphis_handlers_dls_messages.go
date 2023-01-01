@@ -337,7 +337,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	case "poison":
 		filterSubj = GetDlsSubject(dlsType, sn.Intern(), dlsMsgId, ">")
 	case "schema":
-		filterSubj = GetDlsSubject("schema", sn.Intern(), dlsMsgId, "")
+		filterSubj = GetDlsSubject(dlsType, sn.Intern(), dlsMsgId, "")
 	default:
 		filterSubj = GetDlsSubject("poison", sn.Intern(), dlsMsgId, ">")
 	}
