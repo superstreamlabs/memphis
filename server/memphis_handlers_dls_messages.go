@@ -339,7 +339,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	case "failed schema":
 		filterSubj = GetDlsSubject("schema", sn.Intern(), dlsMsgId, "")
 	default:
-		filterSubj = GetDlsSubject(dlsType, sn.Intern(), dlsMsgId, ">")
+		filterSubj = GetDlsSubject("poison", sn.Intern(), dlsMsgId, ">")
 	}
 
 	msgs, err := serv.memphisGetMessagesByFilter(dlsStreamName, filterSubj, startSeq, amount, timeout)
