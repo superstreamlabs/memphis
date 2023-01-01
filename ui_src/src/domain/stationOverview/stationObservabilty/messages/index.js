@@ -42,7 +42,6 @@ const Messages = () => {
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
-    const [subTabValue, setSubTabValue] = useState('Poison');
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [tabValue, setTabValue] = useState('All');
     const [isCheck, setIsCheck] = useState([]);
@@ -63,7 +62,7 @@ const Messages = () => {
 
     const onCheckedAll = () => {
         setIsCheckAll(!isCheckAll);
-        subTabValue === 'Poison'
+        stationState?.dlsType === 'Poison'
             ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
             : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
         setIndeterminate(false);
@@ -83,7 +82,7 @@ const Messages = () => {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
         }
-        if (subTabValue === 'Poison') {
+        if (stationState?.dlsType === 'Poison') {
             setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
         } else {
@@ -96,7 +95,7 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
         setTabValue(newValue);
-        subTabValue === 'Failed schema' && setSubTabValue('Poison');
+        stationState?.dlsType === 'Failed schema' && stationDispatch({ type: 'SET_DLS_TYPE', payload: 'Poison' });
     };
 
     useEffect(() => {
@@ -111,7 +110,6 @@ const Messages = () => {
     const handleChangeSubMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
-        setSubTabValue(newValue);
         setIsCheck([]);
         setIsCheckAll(false);
         stationDispatch({ type: 'SET_DLS_TYPE', payload: newValue });
@@ -121,8 +119,11 @@ const Messages = () => {
         setIgnoreProcced(true);
         const isCheckLength = isCheck.length;
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Poison' ? 'poison' : 'schema', dls_message_ids: isCheck });
-            let messages = subTabValue === 'Poison' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, {
+                dls_type: stationState?.dlsType === 'Poison' ? 'poison' : 'schema',
+                dls_message_ids: isCheck
+            });
+            let messages = stationState?.dlsType === 'Poison' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
             isCheck.map((messageId, index) => {
                 messages = messages?.filter((item) => {
                     return item._id !== messageId;
@@ -130,7 +131,7 @@ const Messages = () => {
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                subTabValue === 'Poison'
+                stationState?.dlsType === 'Poison'
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'REDUCE_COUNTER', payload: isCheckLength });
@@ -206,16 +207,16 @@ const Messages = () => {
                             ? stationState?.stationSocketData?.messages?.map((message) => {
                                   return listGenerator(message);
                               })
-                            : subTabValue === 'Poison'
+                            : stationState?.dlsType === 'Poison'
                             ? stationState?.stationSocketData?.poison_messages?.map((message, id) => {
                                   return listGenerator(message);
                               })
-                            : subTabValue === 'Failed schema' &&
+                            : stationState?.dlsType === 'Failed schema' &&
                               stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
                                   return listGenerator(message);
                               })}
                     </div>
-                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
+                    <MessageDetails isDls={isDls} isFailedSchemaMessage={stationState?.dlsType === 'Failed schema'} />
                 </div>
             </div>
         );
@@ -224,9 +225,9 @@ const Messages = () => {
     const showLastMsg = () => {
         let amount = 0;
         if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0)
+        else if (tabValue === 'Dead-letter' && stationState?.dlsType === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === 'Dead-letter' && stationState?.dlsType === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
         return (
             amount > 0 && (
@@ -267,7 +268,7 @@ const Messages = () => {
                                 isLoading={ignoreProcced}
                                 onClick={() => handleDrop()}
                             />
-                            {subTabValue === 'Poison' && (
+                            {stationState?.dlsType === 'Poison' && (
                                 <Button
                                     width="100px"
                                     height="32px"
@@ -296,13 +297,13 @@ const Messages = () => {
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">
-                    <CustomTabs defaultValue value={subTabValue} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
+                    <CustomTabs defaultValue value={stationState?.dlsType} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' && stationState?.dlsType === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
             {tabValue === 'Dead-letter' &&
-                subTabValue === 'Failed schema' &&
+                stationState?.dlsType === 'Failed schema' &&
                 stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
                 listGeneratorWrapper()}
 
@@ -319,8 +320,8 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' &&
-                ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                ((stationState?.dlsType === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                    (stationState?.dlsType === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
