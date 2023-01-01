@@ -57,7 +57,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_dls=${isDls}&message_id=${
                     isDls ? encodeURIComponent(selectedRow?.id) : null
-                }&message_seq=${selectedRow?.seq}&dls_type=${stationState.dlsType}`
+                }&message_seq=${selectedRow?.seq}&dls_type=${isFailedSchemaMessage ? "schema": "poison"}`
             );
             arrangeData(data);
         } catch (error) {
