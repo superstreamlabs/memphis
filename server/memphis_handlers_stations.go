@@ -109,7 +109,7 @@ func validateReplicas(replicas int) error {
 	return nil
 }
 
-func validateIdempotencyWindow(retentionValue int, idempotencyWindow int, retentionType string) error {
+func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int) error {
 	if retentionType == "message_age_sec" && (retentionValue < idempotencyWindow) {
 		return errors.New("idempotency window cannot be greater than the station retention")
 	}
@@ -281,7 +281,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		replicas = 1
 	}
 
-	err = validateIdempotencyWindow(csr.RetentionValue, csr.IdempotencyWindow, csr.RetentionType)
+	err = validateIdempotencyWindow(csr.RetentionType, csr.RetentionValue, csr.IdempotencyWindow)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -650,7 +650,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.Replicas = 1
 	}
 
-	err = validateIdempotencyWindow(body.RetentionValue, body.IdempotencyWindow, body.RetentionType)
+	err = validateIdempotencyWindow(body.RetentionType, body.RetentionValue, body.IdempotencyWindow)
 	if err != nil {
 		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
