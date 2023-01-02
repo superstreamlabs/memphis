@@ -61,9 +61,12 @@
                     font-family: 'InterSemiBold';
                     font-size: 14px;
                 }
-                .centered {
+                .total {
                     width: 120px;
-                    text-align: center;
+                }
+                .status{
+                    width: 45px;
+                    justify-content: center;
                 }
                 .station-creation {
                     font-family: 'Inter';

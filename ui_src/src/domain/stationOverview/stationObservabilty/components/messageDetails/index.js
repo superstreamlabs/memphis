@@ -55,9 +55,11 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isDls}&message_id=${
-                    isDls ? encodeURIComponent(selectedRow) : null
-                }&message_seq=${isDls ? null : selectedRow}`
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
+                    isFailedSchemaMessage ? 'schema' : 'poison'
+                }&station_name=${stationName}&is_poison_message=${isDls}&message_id=${isDls ? encodeURIComponent(selectedRow) : null}&message_seq=${
+                    isDls ? null : selectedRow
+                }`
             );
             arrangeData(data);
         } catch (error) {

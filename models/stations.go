@@ -114,6 +114,7 @@ type ExtendedStation struct {
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	HasDlsMsgs        bool               `json:"has_dls_messages"`
 }
 
 type ExtendedStationDetails struct {
@@ -121,6 +122,7 @@ type ExtendedStationDetails struct {
 	TotalMessages  int         `json:"total_messages"`
 	PoisonMessages int         `json:"posion_messages"`
 	Tags           []CreateTag `json:"tags"`
+	HasDlsMsgs     bool        `json:"has_dls_messages"`
 }
 
 type GetStationSchema struct {
@@ -153,7 +155,7 @@ type UpdateDlsConfigSchema struct {
 }
 
 type DropDlsMessagesSchema struct {
-	DlsMsgType       string   `json:"dls_type" binding:"required"`
+	DlsMsgType    string   `json:"dls_type" binding:"required"`
 	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
 }
 
@@ -170,10 +172,11 @@ type GetPoisonMessageJourneySchema struct {
 }
 
 type GetMessageDetailsSchema struct {
-	IsPoisonMessage bool   `form:"is_poison_message" json:"is_poison_message"`
-	MessageId       string `form:"message_id" json:"message_id"`
-	MessageSeq      int    `form:"message_seq" json:"message_seq"`
-	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+	IsDls       bool   `form:"is_dls" json:"is_dls"`
+	DlsType     string `form:"dls_type" json:"dls_type"`
+	MessageId   string `form:"message_id" json:"message_id"`
+	MessageSeq  int    `form:"message_seq" json:"message_seq"`
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
 
 type UseSchema struct {

@@ -67,7 +67,7 @@ Implementing one will require you to -
 And the list continues...
 <br>
 
-**Or, you can just use [Memphis](https://memphis.dev)** broker and focus your resources on tasks that matter**
+**Or, you can just use [Memphis](https://memphis.dev)** broker and focus your resources on tasks that matter
 
 
 ## 👉 Use-cases

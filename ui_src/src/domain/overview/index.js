@@ -119,7 +119,6 @@ function OverView() {
         const sc = StringCodec();
         const jc = JSONCodec();
         let sub;
-
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
@@ -141,7 +140,6 @@ function OverView() {
                 })();
             }
         }, 1000);
-
         return () => {
             sub?.unsubscribe();
         };

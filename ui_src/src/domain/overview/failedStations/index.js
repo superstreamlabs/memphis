@@ -24,6 +24,7 @@ import NoStations from '../../../assets/images/noStations.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 import { Virtuoso } from 'react-virtuoso';
+import HealthyBadge from '../../../components/healthyBadge';
 
 const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -42,10 +43,10 @@ const FailedStations = ({ createStationTrigger }) => {
                 {state?.monitor_data?.stations?.length > 0 ? (
                     <>
                         <div className="coulmns-table">
-                            <span style={{ width: '100px' }}>Name</span>
+                            <span style={{ width: '200px' }}>Name</span>
                             <span style={{ width: '200px' }}>Creation date</span>
-                            <span style={{ width: '120px' }}>Total messages</span>
-                            <span style={{ width: '120px' }}>Dead-letter</span>
+                            <span style={{ width: '150px' }}>Total messages</span>
+                            <span style={{ width: '45px' }}>Status</span>
                             <span style={{ width: '120px' }}></span>
                         </div>
                         <div className="rows-wrapper">
@@ -56,14 +57,18 @@ const FailedStations = ({ createStationTrigger }) => {
                                 components={{ Item }}
                                 itemContent={(index, station) => (
                                     <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
-                                        <OverflowTip className="station-details" text={station.name} width={'100px'}>
+                                        <OverflowTip className="station-details" text={station.name} width={'200px'}>
                                             {station.name}
                                         </OverflowTip>
                                         <OverflowTip className="station-creation" text={parsingDate(station.creation_date)} width={'200px'}>
                                             {parsingDate(station.creation_date)}
                                         </OverflowTip>
-                                        <span className="station-details centered">{numberWithCommas(station.total_messages)}</span>
-                                        <span className="station-details centered">{numberWithCommas(station.posion_messages)}</span>
+                                        <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)} width={'150px'}>
+                                            {numberWithCommas(station.total_messages)}
+                                        </OverflowTip>
+                                        <span className="station-details status">
+                                            <HealthyBadge icon={true} status={station?.has_dls_messages ? 0 : 1} />
+                                        </span>
                                         <div className="link-wrapper">
                                             <div className="staion-link">
                                                 <span>View Station</span>

@@ -275,12 +275,7 @@ const Messages = () => {
                     )}
             </div>
             <div className="tabs">
-                <CustomTabs
-                    value={tabValue}
-                    onChange={handleChangeMenuItem}
-                    tabs={tabs}
-                    length={[null, stationState?.stationSocketData?.total_dls_messages || null]}
-                ></CustomTabs>
+                <CustomTabs value={tabValue} onChange={handleChangeMenuItem} tabs={tabs} length={[null, stationState?.stationSocketData?.total_dls_messages || null]} />
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">

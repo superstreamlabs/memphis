@@ -174,7 +174,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetDlsMessageJourneyDetails(poisonMsgId)
+			return h.Stations.GetDlsMessageJourneyDetails(poisonMsgId, "poison")
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
@@ -233,14 +233,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	if err != nil {
 		return map[string]any{}, err
 	}
-	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
-	// Only native stations have CGs
-	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station)
-		if err != nil {
-			return map[string]any{}, err
-		}
-	}
+
 	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
 	if err != nil {
 		return map[string]any{}, err
@@ -260,9 +253,18 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, poisonedCgMap, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
+	}
+
+	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+	// Only native stations have CGs
+	if station.IsNative {
+		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station, poisonedCgMap)
+		if err != nil {
+			return map[string]any{}, err
+		}
 	}
 
 	tags, err := h.Tags.GetTagsByStation(station.ID)
@@ -295,7 +297,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 			"audit_logs":               auditLogs,
 			"messages":                 messages,
 			"poison_messages":          poisonMessages,
-			"schema_failed_messages":     schemaFailMessages,
+			"schema_failed_messages":   schemaFailMessages,
 			"tags":                     tags,
 			"leader":                   leader,
 			"followers":                followers,
@@ -326,7 +328,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"audit_logs":               auditLogs,
 		"messages":                 messages,
 		"poison_messages":          poisonMessages,
-		"schema_failed_messages":     schemaFailMessages,
+		"schema_failed_messages":   schemaFailMessages,
 		"tags":                     tags,
 		"leader":                   leader,
 		"followers":                followers,
