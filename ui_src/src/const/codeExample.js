@@ -301,13 +301,8 @@ if __name__ == '__main__':
 export const PROTOCOL_CODE_EXAMPLE = {
     cURL: {
         langCode: 'apex',
-        producer: `curl --location --request POST 'localhost:4444/stations/s1/produce/single' \n--header 'Authorization: Bearer ' \n--header 'Content-Type: application/json' \n--data-raw '{"message": "New Message"}'`,
-        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' \n--header 'Content-Type: application/json' \n--data-raw '{
-            "username": "root",
-            "connection_token": "memphis",
-            "token_expiry_in_minutes": 123,
-            "refresh_token_expiry_in_minutes": 10000092
-        }'`
+        producer: `curl --location --request POST 'localhost:4444/stations/<station-name>/produce/single' --header 'Authorization: Bearer <jwt>' --header 'Content-Type: application/json' --data-raw '{"message": "New Message"}'`,
+        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' --header 'Content-Type: application/json' --data-raw '{"username": "root", "connection_token": "memphis", "token_expiry_in_minutes": 123, "refresh_token_expiry_in_minutes": 10000092}'`
     },
     Go: {
         langCode: 'go',
@@ -322,7 +317,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         
         func main() {
         
-          url := "localhost:4444/stations/s1/produce/single"
+          url := "localhost:4444/stations/<station-name>/produce/single"
           method := "POST"
         
           payload := strings.NewReader('{"message": "New Message"}')
@@ -335,7 +330,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
             fmt.Println(err)
             return
           }
-          req.Header.Add("Authorization", "Bearer ")
+          req.Header.Add("Authorization", "Bearer <jwt>")
           req.Header.Add("Content-Type", "application/json")
         
           res, err := client.Do(req)
@@ -407,9 +402,9 @@ export const PROTOCOL_CODE_EXAMPLE = {
         
         var config = {
           method: 'post',
-          url: 'localhost:4444/stations/s1/produce/single',
+          url: 'localhost:4444/stations/<station-name>/produce/single',
           headers: { 
-            'Authorization': 'Bearer ', 
+            'Authorization': 'Bearer <jwt>', 
             'Content-Type': 'application/json'
           },
           data : data
@@ -454,13 +449,13 @@ export const PROTOCOL_CODE_EXAMPLE = {
         producer: `import requests
         import json
         
-        url = "localhost:4444/stations/s1/produce/single"
+        url = "localhost:4444/stations/<station-name>/produce/single"
         
         payload = json.dumps({
           "message": "New Message"
         })
         headers = {
-          'Authorization': 'Bearer ',
+          'Authorization': 'Bearer <jwt>',
           'Content-Type': 'application/json'
         }
         
@@ -495,9 +490,9 @@ export const PROTOCOL_CODE_EXAMPLE = {
       MediaType mediaType = MediaType.parse("application/json");
       RequestBody body = RequestBody.create(mediaType, "{\"message\": \"New Message\"}");
       Request request = new Request.Builder()
-        .url("localhost:4444/stations/s1/produce/single")
+        .url("localhost:4444/stations/<station-name>/produce/single")
         .method("POST", body)
-        .addHeader("Authorization", "Bearer ")
+        .addHeader("Authorization", "Bearer <jwt>")
         .addHeader("Content-Type", "application/json")
         .build();
       Response response = client.newCall(request).execute();`,
@@ -515,7 +510,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
     'JavaScript - Fetch': {
         langCode: 'javascript',
         producer: `var myHeaders = new Headers();
-        myHeaders.append("Authorization", "Bearer ");
+        myHeaders.append("Authorization", "Bearer <jwt>");
         myHeaders.append("Content-Type", "application/json");
         
         var raw = JSON.stringify({
@@ -529,7 +524,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
           redirect: 'follow'
         };
         
-        fetch("localhost:4444/stations/s1/produce/single", requestOptions)
+        fetch("localhost:4444/stations/<station-name>/produce/single", requestOptions)
           .then(response => response.text())
           .then(result => console.log(result))
           .catch(error => console.log('error', error));`,
@@ -558,11 +553,11 @@ export const PROTOCOL_CODE_EXAMPLE = {
     'JavaScript - jQuery': {
         langCode: 'javascript',
         producer: `var settings = {
-            "url": "localhost:4444/stations/s1/produce/single",
+            "url": "localhost:4444/stations/<station-name>/produce/single",
             "method": "POST",
             "timeout": 0,
             "headers": {
-              "Authorization": "Bearer ",
+              "Authorization": "Bearer <jwt>",
               "Content-Type": "application/json"
             },
             "data": JSON.stringify({
