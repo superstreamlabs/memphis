@@ -117,7 +117,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <div className="station-meta">
                             <img src={poisonMsgIcon} alt="poison messages" />
                             <label className="data-labels poison">Dead-letter</label>
-                            <p className="data-info">{station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(station?.posion_messages)}</p>
+                            <p className="data-info">{station?.has_dls_messages ? 'True' : 'False'}</p>
                         </div>
                         <div className="station-actions">
                             <div className="action">
