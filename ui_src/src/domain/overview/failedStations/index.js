@@ -63,7 +63,7 @@ const FailedStations = ({ createStationTrigger }) => {
                                             {parsingDate(station.creation_date)}
                                         </OverflowTip>
                                         <span className="station-details centered">{numberWithCommas(station.total_messages)}</span>
-                                        <span className="station-details centered">{numberWithCommas(station.posion_messages)}</span>
+                                        <span className="station-details centered">{numberWithCommas(station.has_dls_messages ? 'True' : 'False')}</span>
                                         <div className="link-wrapper">
                                             <div className="staion-link">
                                                 <span>View Station</span>

@@ -436,7 +436,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 					return []models.ExtendedStationDetails{}, err
 				}
 			}
-			totalDlsAmount, err := poisonMsgsHandler.GetTotalDlsMsgsByStation(station.Name)
+			hasDlsMsgs, err := poisonMsgsHandler.GetDlsMsgsInfoByStation(station.Name)
 			if err != nil {
 				if IsNatsErr(err, JSStreamNotFoundErr) {
 					continue
@@ -451,7 +451,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			if station.StorageType == "file" {
 				station.StorageType = "disk"
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: totalDlsAmount, TotalMessages: totalMessages, Tags: tags})
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMessages, Tags: tags})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -492,7 +492,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 					return []models.ExtendedStation{}, err
 				}
 			}
-			totalDlsAmount, err := poisonMsgsHandler.GetTotalDlsMsgsByStation(stations[i].Name)
+			hasDlsMsgs, err := poisonMsgsHandler.GetDlsMsgsInfoByStation(stations[i].Name)
 			if err != nil {
 				if IsNatsErr(err, JSStreamNotFoundErr) {
 					continue
@@ -506,7 +506,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			}
 
 			stations[i].TotalMessages = totalMessages
-			stations[i].PoisonMessages = totalDlsAmount
+			stations[i].HasDlsMsgs = hasDlsMsgs
 			stations[i].Tags = tags
 			extStations = append(extStations, stations[i])
 		}
