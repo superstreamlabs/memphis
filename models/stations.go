@@ -202,3 +202,8 @@ type StationOverviewSchemaDetails struct {
 type GetUpdatesForSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
+
+type StationMsgsDetails struct {
+	HasDlsMsgs    bool `json:"has_dls_messages"`
+	TotalMessages int  `json:"total_messages"`
+}
