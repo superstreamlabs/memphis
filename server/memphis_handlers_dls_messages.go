@@ -353,9 +353,6 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	}
 
 	msgType := tokenAt(msgs[0].Subject, 2)
-	if !station.IsNative {
-		return models.DlsMessageResponse{}, nil
-	}
 
 	// if msgType == "poison"
 	poisonedCgs := []models.PoisonedCg{}
@@ -370,59 +367,60 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			return models.DlsMessageResponse{}, err
 		}
 
-		if i == 0 {
-			connectionIdHeader := dlsMsg.Message.Headers["$memphis_connectionId"]
-			//This check for backward compatability
-			if connectionIdHeader == "" {
-				connectionIdHeader = dlsMsg.Message.Headers["connectionId"]
+		if station.IsNative {
+			if i == 0 {
+				connectionIdHeader := dlsMsg.Message.Headers["$memphis_connectionId"]
+				//This check for backward compatability
 				if connectionIdHeader == "" {
+					connectionIdHeader = dlsMsg.Message.Headers["connectionId"]
+					if connectionIdHeader == "" {
+						return models.DlsMessageResponse{}, err
+					}
+				}
+				connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
+				_, conn, err := IsConnectionExist(connectionId)
+				if err != nil {
+					return models.DlsMessageResponse{}, err
+				}
+				clientAddress = conn.ClientAddress
+				filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": connectionId}
+				err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+				if err != nil {
 					return models.DlsMessageResponse{}, err
 				}
 			}
-			connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
-			_, conn, err := IsConnectionExist(connectionId)
-			if err != nil {
-				return models.DlsMessageResponse{}, err
-			}
-			clientAddress = conn.ClientAddress
-			filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": connectionId}
-			err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-			if err != nil {
-				return models.DlsMessageResponse{}, err
-			}
-		}
 
-		if msgType == "poison" {
-			cgInfo, err := serv.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
-			if err != nil {
-				return models.DlsMessageResponse{}, err
-			}
+			if msgType == "poison" {
+				cgInfo, err := serv.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
+				if err != nil {
+					return models.DlsMessageResponse{}, err
+				}
 
-			pCg := dlsMsg.PoisonedCg
-			pCg.UnprocessedMessages = int(cgInfo.NumPending)
-			pCg.InProcessMessages = cgInfo.NumAckPending
-			cgMembers, err := GetConsumerGroupMembers(pCg.CgName, station)
-			if err != nil {
-				return models.DlsMessageResponse{}, err
-			}
-			pCg.IsActive, pCg.IsDeleted = getCgStatus(cgMembers)
+				pCg := dlsMsg.PoisonedCg
+				pCg.UnprocessedMessages = int(cgInfo.NumPending)
+				pCg.InProcessMessages = cgInfo.NumAckPending
+				cgMembers, err := GetConsumerGroupMembers(pCg.CgName, station)
+				if err != nil {
+					return models.DlsMessageResponse{}, err
+				}
+				pCg.IsActive, pCg.IsDeleted = getCgStatus(cgMembers)
 
-			pCg.TotalPoisonMessages = -1
-			pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-			pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-			poisonedCgs = append(poisonedCgs, pCg)
-			pCg.CgMembers = cgMembers
-			for header := range dlsMsg.Message.Headers {
-				if strings.HasPrefix(header, "$memphis") {
-					delete(dlsMsg.Message.Headers, header)
+				pCg.TotalPoisonMessages = -1
+				pCg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+				pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+				pCg.CgMembers = cgMembers
+				poisonedCgs = append(poisonedCgs, pCg)
+				for header := range dlsMsg.Message.Headers {
+					if strings.HasPrefix(header, "$memphis") {
+						delete(dlsMsg.Message.Headers, header)
+					}
 				}
 			}
-			poisonedCgs = append(poisonedCgs, pCg)
-		}
 
-		if msgType == "schema" {
-			size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
-			dlsMsg.Message.Size = size
+			if msgType == "schema" {
+				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
+				dlsMsg.Message.Size = size
+			}
 		}
 	}
 	result := models.DlsMessageResponse{
