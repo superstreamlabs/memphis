@@ -282,7 +282,7 @@ const MessageJourney = () => {
                     <div className="bread-crumbs">
                         <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
-                            {stationName} / Poison message id: {messageId.substring(0, 5)}
+                            Message id: <span>{messageId}</span>
                         </p>
                     </div>
                     <div className="canvas-wrapper">

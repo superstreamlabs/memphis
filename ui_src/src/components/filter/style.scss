@@ -42,10 +42,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding-left: 20px;
-        padding-right: 20px;
+        margin: 0 20px;
+        padding-bottom:5px;
         font-size: 16px;
         font-family: 'InterSemiBold';
+        border-bottom: 1px solid #EFEFEF;
         .header-name-counter {
             display: flex;
             align-items: center;
@@ -94,7 +95,12 @@
     .ant-collapse-content-box {
         padding: 0 !important;
         .tag-container {
-            padding: 10px 20px 10px 20px;
+            padding: 12px 20px;
+            .label-option-text{
+                color: #1d1d1d;
+                font-family: 'InterSemiBold';
+                font-size: 13px;
+            }
         }
     }
     .label-container {

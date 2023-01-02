@@ -76,9 +76,7 @@ function OverView() {
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [showInstallaion, setShowInstallaion] = useState(false);
-
     const [isDataLoaded, setIsDataLoaded] = useState(false);
-    const [allStations, setAllStations] = useState([]);
     const [showWelcome, setShowWelcome] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
@@ -104,17 +102,7 @@ function OverView() {
         }
     };
 
-    const getAllStations = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
-            setAllStations(res);
-        } catch (err) {
-            return;
-        }
-    };
-
     useEffect(() => {
-        getAllStations();
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
         setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
@@ -131,7 +119,6 @@ function OverView() {
         const sc = StringCodec();
         const jc = JSONCodec();
         let sub;
-
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
@@ -153,7 +140,6 @@ function OverView() {
                 })();
             }
         }, 1000);
-
         return () => {
             sub?.unsubscribe();
         };
@@ -163,7 +149,8 @@ function OverView() {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
-    const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
+    const userStations = state?.monitor_data?.stations?.filter((station) => station.created_by_user === username.toLowerCase());
+
     return (
         <div className="overview-container">
             {isLoading && (
@@ -208,6 +195,7 @@ function OverView() {
                                     border="purple"
                                     fontSize="12px"
                                     fontWeight="600"
+                                    boxShadowStyle="float"
                                     aria-haspopup="true"
                                     onClick={() => setShowInstallaion(true)}
                                 />
@@ -223,6 +211,7 @@ function OverView() {
                                 fontSize="12px"
                                 fontWeight="600"
                                 aria-haspopup="true"
+                                boxShadowStyle="float"
                                 onClick={() => modalFlip(true)}
                             />
                         </div>
