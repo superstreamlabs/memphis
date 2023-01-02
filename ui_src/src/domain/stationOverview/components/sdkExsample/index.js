@@ -70,6 +70,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 ? 'localhost'
                 : 'memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
         codeEx.producer = codeEx.producer.replaceAll('localhost', host);
+        codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
         setCodeExample(codeEx);
     };
