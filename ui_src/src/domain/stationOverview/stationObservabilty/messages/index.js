@@ -167,13 +167,23 @@ const Messages = () => {
         setUserScrolled(true);
     };
 
-    const listGenerator = (message) => {
+    const listGenerator = (index, message) => {
         const id = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
         return (
-            <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
-                {selectedRowIndex === id && <div className="hr-selected"></div>}
-                {tabValue === 'Dead-letter' && <CheckboxComponent checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />}
-                <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
+            <div className={index % 2 === 0 ? 'even' : 'odd'}>
+                {tabValue === 'Dead-letter' && (
+                    <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
+                )}
+                <div
+                    className={selectedRowIndex === id ? 'row-message selected' : 'row-message'}
+                    style={{ paddingLeft: tabValue === 'Dead-letter' && '35px' }}
+                    key={id}
+                    id={id}
+                    onClick={() => onSelectedRow(id)}
+                >
+                    {selectedRowIndex === id && <div className="hr-selected"></div>}
+                    <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
+                </div>
             </div>
         );
     };
@@ -203,7 +213,7 @@ const Messages = () => {
                             }
                             onScroll={() => handleScroll()}
                             overscan={100}
-                            itemContent={(index, message) => listGenerator(message)}
+                            itemContent={(index, message) => listGenerator(index, message)}
                         />
                     </div>
                     <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
@@ -278,7 +288,12 @@ const Messages = () => {
                     )}
             </div>
             <div className="tabs">
-                <CustomTabs value={tabValue} onChange={handleChangeMenuItem} tabs={tabs} length={[null, stationState?.stationSocketData?.total_dls_messages || null]} />
+                <CustomTabs
+                    value={tabValue}
+                    onChange={handleChangeMenuItem}
+                    tabs={tabs}
+                    length={[null, stationState?.stationSocketData?.total_dls_messages || null, null]}
+                />
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">

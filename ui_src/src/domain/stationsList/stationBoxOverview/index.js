@@ -115,12 +115,10 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                 {station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : numberWithCommas(station?.total_messages)}
                             </p>
                         </div>
-                        <div className="station-meta">
+                        <div className="station-meta poison">
                             <img src={poisonMsgIcon} alt="poison messages" />
-                            <label className="data-labels poison">Status</label>
-                            <p className="data-info">
-                                <HealthyBadge status={station?.has_dls_messages ? 0 : 1} />
-                            </p>
+                            <label className="data-labels">Status</label>
+                            <HealthyBadge status={station?.has_dls_messages ? 0 : 1} />
                         </div>
                         <div className="station-actions">
                             <div className="action">

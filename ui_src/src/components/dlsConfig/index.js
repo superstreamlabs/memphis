@@ -29,23 +29,19 @@ const DlsConfig = () => {
         schemaverse: false
     });
 
-    useEffect(() => {
-        updateDlsConfigurations();
-    }, [dlsTypes]);
-
-    useEffect(() => {
-        setDlsTypes({
-            poison: stationState?.stationSocketData?.dls_configuration?.poison,
-            schemaverse: stationState?.stationSocketData?.dls_configuration?.schemaverse
+    const updateDlsConfigurations = async (poison = false, schema = false) => {
+        setDlsLoading({
+            poison: poison,
+            schemaverse: schema
         });
-    }, [stationState?.stationSocketData?.dls_configuration]);
-
-    const updateDlsConfigurations = async () => {
         const conf = {
             station_name: stationState?.stationMetaData?.name,
-            poison: dlsTypes?.poison,
-            schemaverse: dlsTypes?.schemaverse
+            poison: poison ? !dlsTypes?.poison : dlsTypes?.poison,
+            schemaverse: schema ? !dlsTypes?.schemaverse : dlsTypes?.schemaverse
         };
+        poison && setDlsTypes({ ...dlsTypes, poison: !dlsTypes?.poison });
+        schema && setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes?.schemaverse });
+
         try {
             await httpRequest('PUT', ApiEndpoints.UPDATE_DLS_CONFIGURATION, conf);
             setDlsLoading({
@@ -60,21 +56,6 @@ const DlsConfig = () => {
         }
     };
 
-    const handlePoisonChange = () => {
-        setDlsLoading({
-            poison: true,
-            schemaverse: false
-        });
-        setDlsTypes({ ...dlsTypes, poison: !dlsTypes?.poison });
-    };
-    const handleSchemaChange = () => {
-        setDlsLoading({
-            poison: false,
-            schemaverse: true
-        });
-        setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes?.schemaverse });
-    };
-
     return (
         <div className="dls-config-container">
             <div className="toggle-dls-config">
@@ -82,7 +63,7 @@ const DlsConfig = () => {
                     <p className="header-dls">Poison</p>
                     <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
                 </div>
-                <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
+                <Switcher onChange={() => updateDlsConfigurations(true, false)} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
             </div>
             <div className="toggle-dls-config">
                 <div>
@@ -91,7 +72,7 @@ const DlsConfig = () => {
                 </div>
                 <Switcher
                     disabled={!stationState?.stationMetaData?.is_native}
-                    onChange={handleSchemaChange}
+                    onChange={() => updateDlsConfigurations(false, true)}
                     checked={dlsTypes?.schemaverse}
                     tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
                     loading={dlsLoading?.schemaverse}

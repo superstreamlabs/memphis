@@ -32,7 +32,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
                         key: tab?.name || tab,
                         disabled: tab?.disabled || disabled,
                         label: (
-                            <label className="tabs-name">
+                            <label className="tabs-name" style={{ width: length && length[index] && '90px' }}>
                                 {tab?.name || tab}{' '}
                                 {length && length[index] && (
                                     <div className="error-icon">
