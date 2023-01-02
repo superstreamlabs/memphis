@@ -392,9 +392,11 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     const handleCancel = () => {
         filterDispatch({ type: 'SET_IS_OPEN', payload: false });
     };
+
     const handleOpenChange = () => {
         flipOpen();
     };
+
     const content = <CustomCollapse header="Details" data={filterState?.filterFields} cancel={handleCancel} apply={handleApply} clear={handleClear} />;
 
     return (
@@ -431,7 +433,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     backgroundColorType="white"
                     fontSize="14px"
                     fontWeight="bold"
-                    boxShadowStyle="login-input"
+                    boxShadowStyle="float"
                     onClick={() => {}}
                 />
             </Popover>

@@ -55,6 +55,7 @@ const SysLogs = () => {
                     fontSize="14px"
                     fontWeight="600"
                     aria-haspopup="true"
+                    boxShadowStyle="float"
                     onClick={downloadLogs}
                 />
             </div>

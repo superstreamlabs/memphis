@@ -18,27 +18,36 @@ import ErrorSharpIcon from '@material-ui/icons/ErrorSharp';
 import Cancel from '@material-ui/icons/Cancel';
 import React from 'react';
 
-const HealthyBadge = ({ status }) => {
+const HealthyBadge = ({ status, icon }) => {
+    const healthy = () => {
+        return (
+            <div className={icon ? 'healthy no-bg' : 'healthy'}>
+                <CheckCircleSharpIcon className="badge-icon" theme="outlined" />
+                {!icon && <p>Healthy</p>}
+            </div>
+        );
+    };
+
+    const unHealthy = () => {
+        return (
+            <div className={icon ? 'unhealthy no-bg' : 'unhealthy'}>
+                <Cancel className="badge-icon" theme="outlined" />
+                {!icon && <p>Unhealthy</p>}
+            </div>
+        );
+    };
     return (
         <div className="healthy-badge-container">
-            {status > 0.6 && (
-                <div className="healthy">
-                    <CheckCircleSharpIcon className="badge-icon" theme="outlined" />
-                    <p>Healthy</p>
-                </div>
-            )}
-            {status > 0.3 && status <= 0.6 && (
+            {status > 0.6 ? (
+                healthy()
+            ) : status > 0.3 && status <= 0.6 ? (
                 <div className="risky">
                     <ErrorSharpIcon className="badge-icon" theme="outlined" />
                     <p>Risky</p>
                 </div>
-            )}
-            {status <= 0.3 && (
-                <div className="unhealthy">
-                    <Cancel className="badge-icon" theme="outlined" />
-                    <p>Unhealthy</p>
-                </div>
-            )}
+            ) : status <= 0.3 ? (
+                unHealthy()
+            ) : null}
         </div>
     );
 };

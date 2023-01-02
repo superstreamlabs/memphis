@@ -168,6 +168,7 @@ const StationsList = () => {
                             fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
+                            boxShadowStyle="float"
                             disabled={isCheck?.length === 0}
                             onClick={() => modalDeleteFlip(true)}
                         />
@@ -181,6 +182,7 @@ const StationsList = () => {
                             fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
+                            boxShadowStyle="float"
                             disabled={state?.filteredList?.length === 0}
                             onClick={() => onCheckedAll()}
                         />
@@ -193,6 +195,7 @@ const StationsList = () => {
                             radiusType="circle"
                             backgroundColorType="purple"
                             fontSize="12px"
+                            boxShadowStyle="float"
                             fontWeight="600"
                             aria-haspopup="true"
                             onClick={() => modalFlip(true)}

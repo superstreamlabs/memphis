@@ -34,6 +34,7 @@ import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import MessageDetails from '../components/messageDetails';
+import { Virtuoso } from 'react-virtuoso';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -51,14 +52,10 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const onSelectedRow = (messageSeq, id) => {
+    const onSelectedRow = (id) => {
         setUserScrolled(false);
-        setSelectedRowIndex(messageSeq);
-        stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: { seq: messageSeq, id: id } });
-        const element = document.getElementById(messageSeq);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        setSelectedRowIndex(id);
+        stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
     };
 
     const onCheckedAll = () => {
@@ -118,7 +115,6 @@ const Messages = () => {
 
     const handleDrop = async () => {
         setIgnoreProcced(true);
-        const isCheckLength = isCheck.length;
         try {
             await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Poison' ? 'poison' : 'schema', dls_message_ids: isCheck });
             let messages = subTabValue === 'Poison' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
@@ -132,7 +128,8 @@ const Messages = () => {
                 subTabValue === 'Poison'
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
-                stationDispatch({ type: 'REDUCE_COUNTER', payload: isCheckLength });
+                stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                setSelectedRowIndex(null);
                 setIsCheck([]);
                 setIsCheckAll(false);
                 setIndeterminate(false);
@@ -168,19 +165,11 @@ const Messages = () => {
     };
 
     const listGenerator = (message) => {
-        const messageSeq = tabValue === 'Dead-letter' ? message?.message_seq : message?.message_seq;
-        const id = tabValue === 'Dead-letter' ? message?._id : null;
+        const id = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
         return (
-            <div
-                className={selectedRowIndex === messageSeq ? 'row-message selected' : 'row-message'}
-                key={messageSeq}
-                id={messageSeq}
-                onClick={() => onSelectedRow(messageSeq, id)}
-            >
-                {selectedRowIndex === messageSeq && <div className="hr-selected"></div>}
-                {tabValue === 'Dead-letter' && (
-                    <CheckboxComponent checked={isCheck.includes(messageSeq)} id={messageSeq} onChange={handleCheckedClick} name={messageSeq} />
-                )}
+            <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
+                {selectedRowIndex === id && <div className="hr-selected"></div>}
+                {tabValue === 'Dead-letter' && <CheckboxComponent checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />}
                 <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
             </div>
         );
@@ -200,19 +189,19 @@ const Messages = () => {
                     <p className="right-coulmn">Details</p>
                 </div>
                 <div className="list">
-                    <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'} onScroll={() => handleScroll()}>
-                        {!isDls
-                            ? stationState?.stationSocketData?.messages?.map((message) => {
-                                  return listGenerator(message);
-                              })
-                            : subTabValue === 'Poison'
-                            ? stationState?.stationSocketData?.poison_messages?.map((message, id) => {
-                                  return listGenerator(message);
-                              })
-                            : subTabValue === 'Failed schema' &&
-                              stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
-                                  return listGenerator(message);
-                              })}
+                    <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'}>
+                        <Virtuoso
+                            data={
+                                !isDls
+                                    ? stationState?.stationSocketData?.messages
+                                    : subTabValue === 'Poison'
+                                    ? stationState?.stationSocketData?.poison_messages
+                                    : stationState?.stationSocketData?.schema_failed_messages
+                            }
+                            onScroll={() => handleScroll()}
+                            overscan={100}
+                            itemContent={(index, message) => listGenerator(message)}
+                        />
                     </div>
                     <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
                 </div>
@@ -286,12 +275,7 @@ const Messages = () => {
                     )}
             </div>
             <div className="tabs">
-                <CustomTabs
-                    value={tabValue}
-                    onChange={handleChangeMenuItem}
-                    tabs={tabs}
-                    length={[null, stationState?.stationSocketData?.total_dls_messages || null]}
-                ></CustomTabs>
+                <CustomTabs value={tabValue} onChange={handleChangeMenuItem} tabs={tabs} length={[null, stationState?.stationSocketData?.total_dls_messages || null]} />
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">

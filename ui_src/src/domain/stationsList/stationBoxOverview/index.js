@@ -29,6 +29,7 @@ import CheckboxComponent from '../../../components/checkBox';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
 import pathDomains from '../../../router';
+import HealthyBadge from '../../../components/healthyBadge';
 
 const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
@@ -61,12 +62,12 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </OverflowTip>
                         </div>
                         <label className="data-labels date">
-                            Created at {parsingDate(station?.station?.creation_date)} by {station?.station.created_by_user}
+                            Created by {station?.station?.created_by_user} at {parsingDate(station?.station?.creation_date)}
                         </label>
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
-                            <label className="data-labels">Attached Schema</label>
+                            <label className="data-labels attached">Attached Schema</label>
                             <OverflowTip
                                 className="data-info"
                                 text={station?.station?.schema?.name === '' ? <MinusOutlined /> : station?.station?.schema?.name}
@@ -116,8 +117,10 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta">
                             <img src={poisonMsgIcon} alt="poison messages" />
-                            <label className="data-labels poison">Dead-letter</label>
-                            <p className="data-info">{station?.has_dls_messages ? 'True' : 'False'}</p>
+                            <label className="data-labels poison">Status</label>
+                            <p className="data-info">
+                                <HealthyBadge status={station?.has_dls_messages ? 0 : 1} />
+                            </p>
                         </div>
                         <div className="station-actions">
                             <div className="action">
