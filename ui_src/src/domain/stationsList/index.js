@@ -220,7 +220,7 @@ const StationsList = () => {
                             <label>A station is a distributed unit that stores the produced data.</label>
                         </div>
                     }
-                    height="70vh"
+                    height="65vh"
                     width="1020px"
                     rBtnText="Create"
                     lBtnText="Cancel"

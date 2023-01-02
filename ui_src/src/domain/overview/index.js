@@ -149,8 +149,6 @@ function OverView() {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
-    const userStations = state?.monitor_data?.stations?.filter((station) => station.created_by_user === username.toLowerCase());
-
     return (
         <div className="overview-container">
             {isLoading && (
@@ -158,7 +156,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || userStations?.length > 0) && (
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -229,9 +227,7 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && userStations?.length === 0 && (
-                <GetStarted username={username} dataSentence={dataSentence} />
-            )}
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
                 header={
                     <div className="modal-header">
@@ -242,7 +238,7 @@ function OverView() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="70vh"
+                height="65vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"

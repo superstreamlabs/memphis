@@ -48,7 +48,10 @@ const Messages = () => {
     const [tabValue, setTabValue] = useState('All');
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['All', 'Dead-letter', 'Details'];
-    const subTabs = ['Poison', 'Failed schema'];
+    const subTabs = [
+        { name: 'Poison', disabled: false },
+        { name: 'Failed schema', disabled: !stationState?.stationMetaData?.is_native }
+    ];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 

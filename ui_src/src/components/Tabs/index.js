@@ -29,11 +29,11 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
                 onChange={onChange}
                 items={tabs.map((tab, index) => {
                     return {
-                        key: tab,
-                        disabled: disabled,
+                        key: tab?.name || tab,
+                        disabled: tab?.disabled || disabled,
                         label: (
                             <label className="tabs-name">
-                                {tab}{' '}
+                                {tab?.name || tab}{' '}
                                 {length && length[index] && (
                                     <div className="error-icon">
                                         <img src={errorModal} />
