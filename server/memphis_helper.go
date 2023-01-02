@@ -535,6 +535,9 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 	offsetReq := ApiPagedRequest{Offset: offset}
 	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
 	rawRequest, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
 	var resp JSApiStreamListResponse
 	err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 	if err != nil {
@@ -551,6 +554,9 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 		offsetReq := ApiPagedRequest{Offset: offset}
 		request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
 		rawRequest, err := json.Marshal(request)
+		if err != nil {
+			return nil, err
+		}
 		var resp JSApiStreamListResponse
 		err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 		if err != nil {
