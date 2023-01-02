@@ -410,16 +410,17 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 				pCg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 				pCg.CgMembers = cgMembers
 				poisonedCgs = append(poisonedCgs, pCg)
-				for header := range dlsMsg.Message.Headers {
-					if strings.HasPrefix(header, "$memphis") {
-						delete(dlsMsg.Message.Headers, header)
-					}
-				}
 			}
 
 			if msgType == "schema" {
 				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 				dlsMsg.Message.Size = size
+			}
+
+			for header := range dlsMsg.Message.Headers {
+				if strings.HasPrefix(header, "$memphis") {
+					delete(dlsMsg.Message.Headers, header)
+				}
 			}
 		}
 	}
@@ -550,24 +551,6 @@ cleanup:
 	}
 
 	return count, nil
-}
-
-func (pmh PoisonMessagesHandler) GetDlsMsgsInfoByStation(stationName string) (bool, error) {
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return false, err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return false, err
-	}
-
-	amount := streamInfo.State.Msgs
-	if amount > 0 {
-		return true, nil
-	}
-	return false, nil
 }
 
 func RemovePoisonedCg(stationName StationName, cgName string) error {

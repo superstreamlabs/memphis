@@ -142,7 +142,7 @@ const MessageJourney = () => {
             if (!data?.poisoned_cgs || data?.poisoned_cgs.length === 0) {
                 message.success({
                     key: 'memphisSuccessMessage',
-                    content: 'All the CGs acked the message',
+                    content: 'Poison message has been acked by all of its failed CGs',
                     duration: 5,
                     style: { cursor: 'pointer' },
                     onClick: () => message.destroy('memphisSuccessMessage')
