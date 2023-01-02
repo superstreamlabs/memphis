@@ -409,7 +409,6 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	var exStations []models.ExtendedStationDetails
 	var stations []models.Station
 
-	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	filter := bson.M{"$or": []interface{}{
 		bson.M{"is_deleted": bson.M{"$exists": false}},
 		bson.M{"is_deleted": false},
@@ -422,21 +421,25 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
-
+	streamInfoToDls := make(map[string]bool)
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
+		allStreamInfo, err := serv.memphisAllStreamsInfo()
+		if err != nil {
+			return []models.ExtendedStationDetails{}, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+				splitName := strings.Split(streamName, "-")
+				stationName := splitName[1]
+				streamInfoToDls[stationName] = info.State.Msgs > 0
+			}
+		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
 			totalMessages, err := sh.GetTotalMessages(station.Name)
-			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStationDetails{}, err
-				}
-			}
-			hasDlsMsgs, err := poisonMsgsHandler.GetDlsMsgsInfoByStation(station.Name)
 			if err != nil {
 				if IsNatsErr(err, JSStreamNotFoundErr) {
 					continue
@@ -451,7 +454,11 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			if station.StorageType == "file" {
 				station.StorageType = "disk"
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMessages, Tags: tags})
+			fullStationName, err := StationNameFromStr(station.Name)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: streamInfoToDls[fullStationName.Intern()], TotalMessages: totalMessages, Tags: tags})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -476,12 +483,23 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return stations, err
 	}
-
+	streamInfoToDls := make(map[string]bool)
 	if len(stations) == 0 {
 		return []models.ExtendedStation{}, nil
 	} else {
-		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 		tagsHandler := TagsHandler{S: sh.S}
+		allStreamInfo, err := serv.memphisAllStreamsInfo()
+		if err != nil {
+			return []models.ExtendedStation{}, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+				splitName := strings.Split(streamName, "-")
+				stationName := splitName[1]
+				streamInfoToDls[stationName] = info.State.Msgs > 0
+			}
+		}
 		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
@@ -492,13 +510,9 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 					return []models.ExtendedStation{}, err
 				}
 			}
-			hasDlsMsgs, err := poisonMsgsHandler.GetDlsMsgsInfoByStation(stations[i].Name)
+			fullStationName, err := StationNameFromStr(stations[i].Name)
 			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStation{}, err
-				}
+				return []models.ExtendedStation{}, err
 			}
 			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
@@ -506,7 +520,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			}
 
 			stations[i].TotalMessages = totalMessages
-			stations[i].HasDlsMsgs = hasDlsMsgs
+			stations[i].HasDlsMsgs = streamInfoToDls[fullStationName.Intern()]
 			stations[i].Tags = tags
 			extStations = append(extStations, stations[i])
 		}
