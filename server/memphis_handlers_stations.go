@@ -421,7 +421,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
-	streamInfoToDls := make(map[string]bool)
+	streamInfoToDls := make(map[string]models.StationMsgsDetails)
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
@@ -434,19 +434,27 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
 				splitName := strings.Split(streamName, "-")
 				stationName := splitName[1]
-				streamInfoToDls[stationName] = info.State.Msgs > 0
+				_, ok := streamInfoToDls[stationName]
+				if ok {
+					infoToUpdate := streamInfoToDls[stationName]
+					infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
+					streamInfoToDls[stationName] = infoToUpdate
+				} else {
+					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
+				}
+			} else {
+				_, ok := streamInfoToDls[streamName]
+				if ok {
+					infoToUpdate := streamInfoToDls[streamName]
+					infoToUpdate.TotalMessages = int(info.State.Msgs)
+					streamInfoToDls[streamName] = infoToUpdate
+				} else {
+					streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
+				}
 			}
 		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
-			totalMessages, err := sh.GetTotalMessages(station.Name)
-			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStationDetails{}, err
-				}
-			}
 			tags, err := tagsHandler.GetTagsByStation(station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
@@ -458,7 +466,8 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: streamInfoToDls[fullStationName.Intern()], TotalMessages: totalMessages, Tags: tags})
+			msgsInfo := streamInfoToDls[fullStationName.Intern()]
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -483,7 +492,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return stations, err
 	}
-	streamInfoToDls := make(map[string]bool)
+	streamInfoToDls := make(map[string]models.StationMsgsDetails)
 	if len(stations) == 0 {
 		return []models.ExtendedStation{}, nil
 	} else {
@@ -497,19 +506,27 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
 				splitName := strings.Split(streamName, "-")
 				stationName := splitName[1]
-				streamInfoToDls[stationName] = info.State.Msgs > 0
+				_, ok := streamInfoToDls[stationName]
+				if ok {
+					infoToUpdate := streamInfoToDls[stationName]
+					infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
+					streamInfoToDls[stationName] = infoToUpdate
+				} else {
+					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
+				}
+			} else {
+				_, ok := streamInfoToDls[streamName]
+				if ok {
+					infoToUpdate := streamInfoToDls[streamName]
+					infoToUpdate.TotalMessages = int(info.State.Msgs)
+					streamInfoToDls[streamName] = infoToUpdate
+				} else {
+					streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
+				}
 			}
 		}
 		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
-			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
-			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStation{}, err
-				}
-			}
 			fullStationName, err := StationNameFromStr(stations[i].Name)
 			if err != nil {
 				return []models.ExtendedStation{}, err
@@ -518,9 +535,9 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			if err != nil {
 				return []models.ExtendedStation{}, err
 			}
-
-			stations[i].TotalMessages = totalMessages
-			stations[i].HasDlsMsgs = streamInfoToDls[fullStationName.Intern()]
+			msgsInfo := streamInfoToDls[fullStationName.Intern()]
+			stations[i].TotalMessages = msgsInfo.TotalMessages
+			stations[i].HasDlsMsgs = msgsInfo.HasDlsMsgs
 			stations[i].Tags = tags
 			extStations = append(extStations, stations[i])
 		}
