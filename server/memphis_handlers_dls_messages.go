@@ -155,7 +155,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		Message:      messagePayload,
 		CreationDate: time.Now(),
 	}
-	poisonSubjectName := GetDlsSubject("poison", stationName.Intern(), id, cgName)
+	internalCgName := replaceDelimiters(cgName)
+	poisonSubjectName := GetDlsSubject("poison", stationName.Intern(), id, internalCgName)
 	msgToSend, err := json.Marshal(pmMessage)
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
@@ -674,8 +675,8 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	if streamInfo.State.FirstSeq > 0 {
 		startSeq = streamInfo.State.FirstSeq
 	}
-
-	filter := GetDlsSubject("poison", sn.Intern(), "*", cgName)
+	internalCgName := replaceDelimiters(cgName)
+	filter := GetDlsSubject("poison", sn.Intern(), "*", internalCgName)
 	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, startSeq, amount, timeout)
 	if err != nil {
 		return 0, err

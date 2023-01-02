@@ -138,7 +138,8 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_dls_consumer_" + uid
 	amount := uint64(1)
-	filter := GetDlsSubject("poison", sn.Intern(), msgId, cgName)
+	internalCgName := replaceDelimiters(cgName)
+	filter := GetDlsSubject("poison", sn.Intern(), msgId, internalCgName)
 	timeout := 30 * time.Second
 	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
 
