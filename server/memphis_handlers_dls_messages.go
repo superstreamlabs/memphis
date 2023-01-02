@@ -286,12 +286,12 @@ cleanup:
 				idCheck[msgId] = true
 				message := dlsMsg.Message
 				if dlsMsg.CreationDate.IsZero() {
-					message.TimeSent = time.Unix(dlsMsg.CreationUnix, 0)
+					message.TimeSent = time.Unix(0, dlsMsg.CreationUnix * 1000000)
 				} else {
 					message.TimeSent = dlsMsg.CreationDate
 				}
-				dlsMsg.Message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
-				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: dlsMsg.Message})
+				message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
+				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: message})
 			}
 		}
 	}
@@ -416,6 +416,11 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			if msgType == "schema" {
 				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 				dlsMsg.Message.Size = size
+				if dlsMsg.CreationDate.IsZero() {
+					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix * 1000000)
+				} else {
+					dlsMsg.Message.TimeSent = dlsMsg.CreationDate
+				}
 			}
 
 			for header := range dlsMsg.Message.Headers {
