@@ -172,10 +172,11 @@ type GetPoisonMessageJourneySchema struct {
 }
 
 type GetMessageDetailsSchema struct {
-	IsPoisonMessage bool   `form:"is_poison_message" json:"is_poison_message"`
-	MessageId       string `form:"message_id" json:"message_id"`
-	MessageSeq      int    `form:"message_seq" json:"message_seq"`
-	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+	IsDls       bool   `form:"is_dls" json:"is_dls"`
+	DlsType     string `form:"dls_type" json:"dls_type"`
+	MessageId   string `form:"message_id" json:"message_id"`
+	MessageSeq  int    `form:"message_seq" json:"message_seq"`
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
 
 type UseSchema struct {

@@ -55,7 +55,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isDls}&message_id=${
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${isFailedSchemaMessage ? 'schema' : 'poison'}&station_name=${stationName}&is_dls=${isDls}&message_id=${
                     isDls ? encodeURIComponent(selectedRow?.id) : null
                 }&message_seq=${selectedRow?.seq}`
             );

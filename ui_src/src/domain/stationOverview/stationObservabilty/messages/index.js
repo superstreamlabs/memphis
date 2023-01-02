@@ -168,7 +168,7 @@ const Messages = () => {
     };
 
     const listGenerator = (message) => {
-        const messageSeq = tabValue === 'Dead-letter' ? message?.message_seq : message?.message_seq;
+        const messageSeq = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
         const id = tabValue === 'Dead-letter' ? message?._id : null;
         return (
             <div
