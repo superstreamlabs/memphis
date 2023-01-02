@@ -82,14 +82,16 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                         >
                                             {row.details?.length > 0 &&
                                                 row.details?.map((row, index) => {
-                                                    return (
-                                                        <div className="panel-child" key={index}>
-                                                            <content is="x3d" key={index}>
-                                                                <p>{row.name}</p>
-                                                                <span>{row.value}</span>
-                                                            </content>
-                                                        </div>
-                                                    );
+                                                    if (row.value !== '-1') {
+                                                        return (
+                                                            <div className="panel-child" key={index}>
+                                                                <content is="x3d" key={index}>
+                                                                    <p>{row.name}</p>
+                                                                    <span>{row.value}</span>
+                                                                </content>
+                                                            </div>
+                                                        );
+                                                    }
                                                 })}
                                         </Panel>
                                     );
