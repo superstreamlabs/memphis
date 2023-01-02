@@ -540,24 +540,6 @@ cleanup:
 	return count, nil
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsInfoByStation(stationName string) (bool, error) {
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return false, err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return false, err
-	}
-
-	amount := streamInfo.State.Msgs
-	if amount > 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
 func RemovePoisonedCg(stationName StationName, cgName string) error {
 	timeout := 500 * time.Millisecond
 
