@@ -103,7 +103,7 @@ export function getBoxShadows(boxShadowsType) {
             return '0px 0px 2px 0px rgba(0,0,0,0.5)';
         case 'gray2':
             return '0px 1px 2px 0px rgba(0,0,0,0.5)';
-        case 'login-input':
+        case 'float':
             return '0px 1px 2px 0px rgba(0,0,0,0.21)';
         case 'search-input':
             return '0px 1px 2px 0px rgba(90, 79, 229, 1)';

@@ -29,6 +29,7 @@ import CheckboxComponent from '../../../components/checkBox';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
 import pathDomains from '../../../router';
+import HealthyBadge from '../../../components/healthyBadge';
 
 const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
@@ -61,7 +62,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </OverflowTip>
                         </div>
                         <label className="data-labels date">
-                            Created at {parsingDate(station?.station?.creation_date)} by {station?.station.created_by_user}
+                            Created by {station?.station.created_by_user} at {parsingDate(station?.station?.creation_date)}
                         </label>
                     </div>
                     <div className="middle-section">
@@ -116,8 +117,8 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta">
                             <img src={poisonMsgIcon} alt="poison messages" />
-                            <label className="data-labels poison">Dead-letter</label>
-                            <p className="data-info">{station?.posion_messages === 0 ? <MinusOutlined /> : numberWithCommas(station?.posion_messages)}</p>
+                            <label className="data-labels poison">Status</label>
+                            <p className="data-info">{station?.posion_messages === 0 ? <HealthyBadge isHealthy={true} /> : <HealthyBadge isHealthy={false} />}</p>
                         </div>
                         <div className="station-actions">
                             <div className="action">

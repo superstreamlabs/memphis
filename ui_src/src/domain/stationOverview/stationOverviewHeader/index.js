@@ -97,9 +97,9 @@ const StationOverviewHeader = () => {
             await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
                 station_names: [stationState?.stationMetaData?.name]
             });
+            returnToStaionsList();
             setDeleteLoader(false);
             modalDeleteFlip(false);
-            returnToStaionsList();
         } catch (error) {
             setDeleteLoader(false);
             modalDeleteFlip(false);
@@ -223,6 +223,7 @@ const StationOverviewHeader = () => {
                                             backgroundColorType="purple"
                                             fontSize="10px"
                                             fontFamily="InterMedium"
+                                            boxShadowStyle="float"
                                             onClick={() => setUseSchemaModal(true)}
                                         />
                                         {stationState?.stationSocketData?.schema?.updates_available && (
@@ -235,6 +236,7 @@ const StationOverviewHeader = () => {
                                                 backgroundColorType="purple"
                                                 fontSize="10px"
                                                 fontFamily="InterMedium"
+                                                boxShadowStyle="float"
                                                 onClick={() => setUpdateSchemaModal(true)}
                                             />
                                         )}

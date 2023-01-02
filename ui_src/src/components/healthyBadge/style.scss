@@ -5,10 +5,9 @@
         display: flex;
         align-items: center;
         border-radius: 15px;
-        width: 5.5vw;
         justify-content: center;
-        width: 90px;
-        font-family: 'Inter';
+        width: 100px;
+        font-family: 'InterSemiBold';
         font-size: 12px;
         height: 25px;
         p {
@@ -17,12 +16,12 @@
         }
     }
     .healthy {
-        background-color: rgba(46, 212, 122, 0.1);
-        color: #2ed47a;
+        background-color: rgba(32, 201, 172, 0.2);
+        color: rgb(32, 201, 172);
     }
     .unhealthy {
-        background-color: rgba(247, 104, 91, 0.1);
-        color: #f7685b;
+        background-color: rgba(252, 52, 0, 0.1);
+        color: rgb(252, 52, 0);
     }
     .risky {
         background-color: #fffbeb;

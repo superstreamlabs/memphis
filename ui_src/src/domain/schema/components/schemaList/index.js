@@ -121,6 +121,7 @@ function SchemaList({ createNew }) {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
+                        boxShadowStyle="float"
                         disabled={isCheck?.length === 0}
                         onClick={() => setDeleteModal(true)}
                     />
@@ -134,6 +135,7 @@ function SchemaList({ createNew }) {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
+                        boxShadowStyle="float"
                         disabled={state?.filteredList?.length === 0}
                         onClick={() => onCheckedAll()}
                     />
@@ -147,6 +149,7 @@ function SchemaList({ createNew }) {
                         backgroundColorType="purple"
                         fontSize="12px"
                         fontWeight="600"
+                        boxShadowStyle="float"
                         aria-haspopup="true"
                         onClick={createNewSchema}
                     />

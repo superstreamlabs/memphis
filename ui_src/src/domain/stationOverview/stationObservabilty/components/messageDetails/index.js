@@ -44,7 +44,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     }, [messageDetails]);
 
     useEffect(() => {
-        if (stationState?.selectedRowId?.seq && !loadMessageData) {
+        if (stationState?.selectedRowId && !loadMessageData) {
             getMessageDetails(stationState?.selectedRowId);
         }
     }, [stationState?.selectedRowId]);
@@ -56,8 +56,8 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
             const data = await httpRequest(
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?station_name=${stationName}&is_poison_message=${isDls}&message_id=${
-                    isDls ? encodeURIComponent(selectedRow?.id) : null
-                }&message_seq=${selectedRow?.seq}`
+                    isDls ? encodeURIComponent(selectedRow) : null
+                }&message_seq=${isDls ? null : selectedRow}`
             );
             arrangeData(data);
         } catch (error) {

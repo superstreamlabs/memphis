@@ -115,6 +115,7 @@ function Users() {
                         backgroundColorType="purple"
                         fontSize="12px"
                         fontWeight="600"
+                        boxShadowStyle="float"
                         aria-haspopup="true"
                         onClick={() => addUserModalFlip(true)}
                     />
