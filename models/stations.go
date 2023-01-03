@@ -70,7 +70,7 @@ type Station struct {
 	Functions         []Function         `json:"functions" bson:"functions"`
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema            SchemaDetails      `json:"schema" bson:"schema"`
-	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IdempotencyWindow int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
@@ -139,7 +139,7 @@ type CreateStationSchema struct {
 	DedupWindowInMs   int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
 	Tags              []CreateTag      `json:"tags"`
 	SchemaName        string           `json:"schema_name"`
-	IdempotencyWindow int              `json:"idempotency_window_in_ms"`
+	IdempotencyWindow int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration  DlsConfiguration `json:"dls_configuration"`
 }
 

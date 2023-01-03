@@ -35,7 +35,7 @@ type createStationRequest struct {
 	Replicas          int                     `json:"replicas"`
 	DedupEnabled      bool                    `json:"dedup_enabled"`      // TODO deprecated
 	DedupWindowMillis int                     `json:"dedup_window_in_ms"` // TODO deprecated
-	IdempotencyWindow int                     `json:"idempotency_window_in_ms"`
+	IdempotencyWindow int64                   `json:"idempotency_window_in_ms"`
 	DlsConfiguration  models.DlsConfiguration `json:"dls_configuration"`
 }
 

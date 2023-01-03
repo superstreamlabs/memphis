@@ -91,7 +91,7 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		Replicas:          cfg.Replicas,
 		DedupEnabled:      true,
 		DedupWindowMillis: 0,
-		IdempotencyWindow: int(cfg.Duplicates.Milliseconds()),
+		IdempotencyWindow: int64(cfg.Duplicates.Milliseconds()),
 		DlsConfiguration: models.DlsConfiguration{
 			Poison:      true,
 			Schemaverse: false,
