@@ -206,7 +206,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
     return (
         <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
-            <div className={'left-side'}>
+            <div className={getStarted ? 'left-side left-gs' : 'left-side'}>
                 <div className="station-name-section">
                     <TitleComponent
                         headerTitle="Enter station name"
