@@ -119,8 +119,11 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 
 func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	removeStreamFunc := func() error {
-		if !s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg) {
+		deleted, ok := s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
+		if !deleted && !ok {
 			return errors.New("Stream removal failed")
+		} else if !deleted && ok {
+			return errors.New(_EMPTY_)
 		}
 		return nil
 	}

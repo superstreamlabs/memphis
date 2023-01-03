@@ -2557,14 +2557,14 @@ func (s *Server) jsStreamDeleteRequest(sub *subscription, c *client, acc *Accoun
 	s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
 
-func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) bool {
+func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) (bool, bool) {
 	if c == nil || !s.JetStreamEnabled() {
-		return false
+		return false, false
 	}
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
 	if err != nil {
 		s.Warnf(badAPIRequestT, msg)
-		return false
+		return false, false
 	}
 
 	var resp = JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
@@ -2573,16 +2573,16 @@ func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Ac
 	if s.JetStreamIsClustered() {
 		js, cc := s.getJetStreamCluster()
 		if js == nil || cc == nil {
-			return false
+			return false, false
 		}
 		if js.isLeaderless() {
 			resp.Error = NewJSClusterNotAvailError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-			return false
+			return false, false
 		}
 		// Make sure we are meta leader.
 		if !s.JetStreamIsLeader() {
-			return false
+			return false, true
 		}
 	}
 
@@ -2591,37 +2591,37 @@ func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Ac
 			resp.Error = NewJSNotEnabledForAccountError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		}
-		return false
+		return false, false
 	}
 
 	if !isEmptyRequest(msg) {
 		resp.Error = NewJSNotEmptyRequestError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 	stream := streamNameFromSubject(subject)
 
 	// Clustered.
 	if s.JetStreamIsClustered() {
-		s.jsClusteredStreamDeleteRequest(ci, acc, stream, subject, reply, msg)
-		return false
+		deleted := s.jsClusteredStreamDeleteRequest(ci, acc, stream, subject, reply, msg)
+		return deleted, deleted
 	}
 
 	mset, err := acc.lookupStream(stream)
 	if err != nil {
 		resp.Error = NewJSStreamNotFoundError(Unless(err))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	if err := mset.delete(); err != nil {
 		resp.Error = NewJSStreamDeleteError(err, Unless(err))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 	resp.Success = true
 	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
-	return true
+	return true, true
 }
 
 // Request to delete a message.

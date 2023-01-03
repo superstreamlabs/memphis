@@ -1007,6 +1007,9 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	err = removeStationResources(s, station, nonNativeRemoveStreamFunc)
 	if err != nil {
+		if nonNativeRemoveStreamFunc != nil && err.Error() == _EMPTY_ {
+			return
+		}
 		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
