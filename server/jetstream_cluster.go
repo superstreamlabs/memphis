@@ -4707,10 +4707,10 @@ func (js *jetStream) jsClusteredStreamLimitsCheck(acc *Account, cfg *StreamConfi
 	return nil
 }
 
-func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject, reply string, rmsg []byte, config *StreamConfig) {
+func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject, reply string, rmsg []byte, config *StreamConfig) (bool, bool) {
 	js, cc := s.getJetStreamCluster()
 	if js == nil || cc == nil {
-		return
+		return false, false
 	}
 
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
@@ -4719,7 +4719,7 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 	if apiErr != nil {
 		resp.Error = apiErr
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(rmsg), s.jsonResponse(&resp))
-		return
+		return false, false
 	}
 	cfg := &ccfg
 
@@ -4731,7 +4731,7 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 	if apiErr != nil {
 		resp.Error = apiErr
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(rmsg), s.jsonResponse(&resp))
-		return
+		return false, false
 	}
 
 	// Now process the request and proposal.
@@ -4752,18 +4752,18 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 			}
 			// Send this as system account, but include client info header.
 			s.sendInternalAccountMsgWithReply(nil, isubj, reply, hdr, nil, true)
-			return
+			return false, true
 		}
 
 		resp.Error = NewJSStreamNameExistError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(rmsg), s.jsonResponse(&resp))
-		return
+		return false, false
 	}
 
 	if cfg.Sealed {
 		resp.Error = NewJSStreamInvalidConfigError(fmt.Errorf("stream configuration for create can not be sealed"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(rmsg), s.jsonResponse(&resp))
-		return
+		return false, false
 	}
 
 	// Check for subject collisions here.
@@ -4773,7 +4773,7 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 				if SubjectsCollide(tsubj, subj) {
 					resp.Error = NewJSStreamSubjectOverlapError()
 					s.sendAPIErrResponse(ci, acc, subject, reply, string(rmsg), s.jsonResponse(&resp))
-					return
+					return false, false
 				}
 			}
 		}
@@ -4784,13 +4784,14 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 	if rg == nil {
 		resp.Error = NewJSInsufficientResourcesError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(rmsg), s.jsonResponse(&resp))
-		return
+		return false, false
 	}
 	// Pick a preferred leader.
 	rg.setPreferred()
 	// Sync subject for post snapshot sync.
 	sa := &streamAssignment{Group: rg, Sync: syncSubjForStream(), Config: cfg, Subject: subject, Reply: reply, Client: ci, Created: time.Now().UTC()}
 	cc.meta.Propose(encodeAddStreamAssignment(sa))
+	return true, true
 }
 
 var (

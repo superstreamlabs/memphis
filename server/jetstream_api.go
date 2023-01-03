@@ -1236,15 +1236,15 @@ func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, acc *Accoun
 	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
 
-func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) bool {
+func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) (bool, bool) {
 	var cfg StreamConfig
 	if c == nil || !s.JetStreamEnabled() {
-		return false
+		return false, false
 	}
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
 	if err != nil {
 		s.Warnf(badAPIRequestT, msg)
-		return false
+		return false, false
 	}
 
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
@@ -1253,17 +1253,16 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 	if s.JetStreamIsClustered() {
 		js, cc := s.getJetStreamCluster()
 		if js == nil || cc == nil {
-			return false
+			return false, false
 		}
 		if js.isLeaderless() {
 			resp.Error = NewJSClusterNotAvailError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-			return false
+			return false, false
 		}
 		// Make sure we are meta leader.
 		if !s.JetStreamIsLeader() {
-			s.Warnf("idan asulin 1")
-			return false
+			return false, true
 		}
 	}
 
@@ -1272,54 +1271,52 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 			resp.Error = NewJSNotEnabledForAccountError()
 			s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		}
-		return false
+		return false, false
 	}
 
 	if err := json.Unmarshal(msg, &cfg); err != nil {
 		resp.Error = NewJSInvalidJSONError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	streamName := streamNameFromSubject(subject)
 	if streamName != cfg.Name {
 		resp.Error = NewJSStreamMismatchError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	// Check for path like separators in the name.
 	if strings.ContainsAny(streamName, `\/`) {
 		resp.Error = NewJSStreamNameContainsPathSeparatorsError()
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	// Can't create a stream with a sealed state.
 	if cfg.Sealed {
 		resp.Error = NewJSStreamInvalidConfigError(fmt.Errorf("stream configuration for create can not be sealed"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	// If we are told to do mirror direct but are not mirroring, error.
 	if cfg.MirrorDirect && cfg.Mirror == nil {
 		resp.Error = NewJSStreamInvalidConfigError(fmt.Errorf("stream has no mirror but does have mirror direct"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	// Hand off to cluster for processing.
 	if s.JetStreamIsClustered() {
-		s.jsClusteredStreamRequest(ci, acc, subject, reply, rmsg, &cfg)
-		s.Warnf("idan asulin 2")
-		return false
+		return s.jsClusteredStreamRequest(ci, acc, subject, reply, rmsg, &cfg)
 	}
 
 	if err := acc.jsNonClusteredStreamLimitsCheck(&cfg); err != nil {
 		resp.Error = err
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 
 	mset, err := acc.addStream(&cfg)
@@ -1330,7 +1327,7 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 		}
 		resp.Error = NewJSStreamCreateError(err, Unless(err))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return false
+		return false, false
 	}
 	resp.StreamInfo = &StreamInfo{
 		Created: mset.createdTime(),
@@ -1339,7 +1336,7 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 	}
 	resp.DidCreate = true
 	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
-	return true
+	return true, true
 }
 
 // Request to update a stream.

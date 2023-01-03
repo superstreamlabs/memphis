@@ -329,6 +329,9 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	err = createStreamFunc()
 	if err != nil {
+		if nonNativeCreateStreamFunc != nil && err.Error() == _EMPTY_ {
+			return
+		}
 		if IsNatsErr(err, JSInsufficientResourcesErr) {
 			serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
 			respondWithErr(s, reply, errors.New("Station can not be created, probably since replicas count is larger than the cluster size"))
