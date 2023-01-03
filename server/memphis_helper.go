@@ -557,7 +557,7 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		var resp JSApiStreamListResponse
+
 		err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 		if err != nil {
 			return nil, err
