@@ -62,7 +62,7 @@ const storageTierOneOptions = [
         id: 2,
         value: 'memory',
         label: 'Memory',
-        desc: 'Memory is used for better performance'
+        desc: 'Memory can boost your performance. Lower availability'
     }
 ];
 const storageTierTwoOptions = [
@@ -382,7 +382,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <div className="content">
                         {tabValue === tabs[0] && (
                             <p className="description">
-                                By which criteria will messages be expelled from the station.&nbsp;
+                                The criteria for which messages will be expelled from the station .&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
                                     Learn More
                                 </a>
@@ -391,7 +391,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         {tabValue === tabs[1] && (
                             <p className="description">
                                 For archiving and higher retention of ingested data. <br />
-                                Once a message passes tier 1 policy, it will automatically migrate to tier 2 storage.&nbsp;
+                                Once a message passes the 1st storage tier, it will automatically be migrated to the 2nd storage tier, if defined.&nbsp;
                             </p>
                         )}
 
@@ -421,7 +421,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                             <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                                 <InputNumberComponent
                                                     min={0}
-                                                    max={100}
+                                                    max={1000}
                                                     onChange={(e) => getStarted && updateFormState('days', e)}
                                                     value={getStartedStateRef?.formFieldsCreateStation?.days}
                                                     placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}

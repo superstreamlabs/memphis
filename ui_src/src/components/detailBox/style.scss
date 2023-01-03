@@ -29,6 +29,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            text-align:center;
             .detail-data-row {
                 font-family: 'InterSemiBold';
                 font-size: 14px;
@@ -37,7 +38,7 @@
             }
         }
         .detail-title-wrapper {
-            width: calc(100% - 170px);
+            width: calc(100%);
             .detail-title {
                 font-family: 'InterSemiBold';
                 font-size: 16px;
@@ -58,6 +59,6 @@
         }
     }
     .detail-box-body {
-        margin-left: 50px;
+        margin-left: 35px;
     }
 }
