@@ -158,6 +158,19 @@ node {
 	  """
         }
 
+	stage('Install memphis CLI') {
+        sh """
+          sudo npm i memphis-dev-cli -g
+        """
+        }
+	      
+   	stage('Create staging user') {
+   	  sh """
+   	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
+   	    mem user add -u staging -p memphis
+   	  """
+   	}
+	      
     	stage('Tests - remove port-forwarding') {
           sh(script: """/usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh""", returnStdout: true)
         }
