@@ -357,7 +357,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="By which event, messages will be stored in the dead-letter station.">
+                    <DetailBox img={dlsEnableIcon} title={'Dead-Letter Station configuration'} desc="Triggers for storing messages in the dead-letter station.">
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
@@ -365,7 +365,7 @@ const Messages = () => {
                         title={'Idempotency'}
                         desc={
                             <span>
-                                Ensures messages will be produced once.{' '}
+                                Ensures messages with the same "msgId" value will be produced only once for the configured time.{' '}
                                 <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
                                     Learn More
                                 </a>

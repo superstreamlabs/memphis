@@ -163,7 +163,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
                         ) : (
                             <div className="no-tags">
                                 <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
-                                <span className="no-tags-message">No Tags Found</span>
+                                <span className="no-tags-message">No tags found</span>
                             </div>
                         )}
                     </div>
@@ -182,7 +182,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
             {!getTagsLoading && allTags?.length === 0 && (
                 <div className="no-tags">
                     <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
-                    <span className="no-tags-message">No Tags Exist</span>
+                    <span className="no-tags-message">No tags exist</span>
                     <span className="tags-info-message">Tags will help you control, group, search, and filter your different entities</span>
                     <div className="create-new-tag-empty" onClick={() => setNewTagModal(true)}>
                         <AddRounded className="add" />
