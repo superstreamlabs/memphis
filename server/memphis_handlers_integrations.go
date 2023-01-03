@@ -372,6 +372,10 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+	
 	var body models.DisconnectIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -431,6 +435,10 @@ func InitializeIntegrations(c *mongo.Client) error {
 	err := notifications.InitializeSlackConnection(c)
 	if err != nil {
 		return err
+	}
+
+	if configuration.SANDBOX_ENV == "true" {
+		createSlackIntegration(configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, configuration.SANDBOX_UI_URL)
 	}
 	return nil
 }

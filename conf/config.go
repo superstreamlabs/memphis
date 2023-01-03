@@ -54,6 +54,9 @@ type Configuration struct {
 	MAILCHIMP_KEY                  string
 	MAILCHIMP_LIST_ID              string
 	SERVER_NAME                    string
+	SANDBOX_SLACK_BOT_TOKEN        string
+	SANDBOX_SLACK_CHANNEL_ID       string
+	SANDBOX_UI_URL                 string
 }
 
 func GetConfig() Configuration {

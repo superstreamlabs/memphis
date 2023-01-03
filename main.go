@@ -107,12 +107,13 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
+	s.InitializeMemphisHandlers(dbInstance)
+
 	err = server.InitializeIntegrations(dbInstance.Client)
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
-	s.InitializeMemphisHandlers(dbInstance)
 	go s.CreateSystemLogsStream()
 
 	err = server.CreateRootUserOnFirstSystemLoad()
