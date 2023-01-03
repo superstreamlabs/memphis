@@ -111,7 +111,7 @@ func validateReplicas(replicas int) error {
 }
 
 func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int) error {
-	if retentionType == "message_age_sec" && (retentionValue < idempotencyWindow) {
+	if retentionType == "message_age_sec" && (retentionValue * 1000 < idempotencyWindow) {
 		return errors.New("idempotency window cannot be greater than the station retention")
 	}
 
