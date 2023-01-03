@@ -1262,6 +1262,7 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 		}
 		// Make sure we are meta leader.
 		if !s.JetStreamIsLeader() {
+			s.Warnf("idan asulin 1")
 			return false
 		}
 	}
@@ -1311,6 +1312,7 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 	// Hand off to cluster for processing.
 	if s.JetStreamIsClustered() {
 		s.jsClusteredStreamRequest(ci, acc, subject, reply, rmsg, &cfg)
+		s.Warnf("idan asulin 2")
 		return false
 	}
 

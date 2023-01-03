@@ -82,11 +82,24 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		storageType = "file"
 	}
 
+	var retentionType string
+	var retentionValue int
+	if cfg.MaxAge > 0 {
+		retentionType = "message_age_sec"
+		retentionValue=int(cfg.MaxAge/1000000000)
+	} else if cfg.MaxBytes > 0 {
+		retentionType = "bytes"
+		retentionValue=int(cfg.MaxBytes)
+	} else if cfg.MaxMsgs > 0 {
+		retentionType = "messages"
+		retentionValue=int(cfg.MaxMsgs)
+	}
+
 	csr := createStationRequest{
 		StationName:       cfg.Name,
 		SchemaName:        "",
-		RetentionType:     "",
-		RetentionValue:    0,
+		RetentionType:     retentionType,
+		RetentionValue:    retentionValue,
 		StorageType:       storageType,
 		Replicas:          cfg.Replicas,
 		DedupEnabled:      true,
