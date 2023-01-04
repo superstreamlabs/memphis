@@ -1233,7 +1233,6 @@ func (jsa *jsAccount) tieredReservation(tier string, cfg *StreamConfig) int64 {
 
 // Request to create a stream.
 func (s *Server) jsStreamCreateRequest(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-	s.Warnf("idan")
 	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
 

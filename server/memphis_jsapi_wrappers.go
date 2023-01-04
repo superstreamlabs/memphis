@@ -47,11 +47,9 @@ func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
 }
 
 func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamConfig, c *client) {
-	s.Warnf("1111")
 	respCh := make(chan *JSApiStreamCreateResponse)
 	sub, err := s.subscribeOnAcc(s.SystemAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte, respCh chan *JSApiStreamCreateResponse) {
-			s.Warnf("2222")
 			var resp JSApiStreamCreateResponse
 			if err := json.Unmarshal(msg, &resp); err != nil {
 				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: " + err.Error())
@@ -69,7 +67,6 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 	timeout := time.NewTimer(5 * time.Second)
 	select {
 	case resp := <-respCh:
-		s.Warnf("3333")
 		if resp != nil && resp.DidCreate {
 			var storageType string
 			if cfg.Storage == MemoryStorage {
@@ -110,7 +107,6 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			s.createStationDirectIntern(c, reply, &csr, false)
 		}
 	case <-timeout.C:
-		s.Warnf("4444")
 		break
 	}
 
@@ -123,7 +119,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 		go func(msg []byte, respCh chan *JSApiStreamDeleteResponse) {
 			var resp JSApiStreamDeleteResponse
 			if err := json.Unmarshal(msg, &resp); err != nil {
-				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: " + err.Error())
+				s.Errorf("memphisJSApiWrapStreamDelete: unmarshal error: " + err.Error())
 				respCh <- nil
 				return
 			}
@@ -131,7 +127,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 		}(copyBytes(msg), respCh)
 	})
 	if err != nil {
-		s.Errorf("memphisJSApiWrapStreamCreate: failed to subscribe: " + err.Error())
+		s.Errorf("memphisJSApiWrapStreamDelete: failed to subscribe: " + err.Error())
 		return
 	}
 
@@ -150,7 +146,6 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 }
 
 func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-	s.Warnf("asulin")
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 
 	var cfg StreamConfig
@@ -178,9 +173,7 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 }
 
 func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-	if (s.JetStreamIsClustered() && s.JetStreamIsLeader()) || !s.JetStreamIsClustered() {
-		go memphisDeleteNonNativeStationIfNeeded(s, reply, streamNameFromSubject(subject), c)
-	}
+	go memphisDeleteNonNativeStationIfNeeded(s, reply, streamNameFromSubject(subject), c)
 
 	s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
