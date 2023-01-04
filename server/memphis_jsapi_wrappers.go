@@ -16,6 +16,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/models"
 	"time"
 )
@@ -172,7 +173,9 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		return
 	}
 
+	s.Warnf(fmt.Sprintf("iscluster: %v, isLeader: %v", s.JetStreamIsClustered(), s.JetStreamIsLeader()))
 	if (s.JetStreamIsClustered() && s.JetStreamIsLeader()) || !s.JetStreamIsClustered() {
+		s.Warnf("0000")
 		go memphisCreateNonNativeStationIfNeeded(s, reply, cfg, c)
 	}
 
