@@ -741,7 +741,7 @@ func (js *jetStream) apiDispatch(sub *subscription, c *client, acc *Account, sub
 
 	// Copy the state. Note the JSAPI only uses the hdr index to piece apart the
 	// header from the msg body. No other references are needed.
-	s.jsAPIRoutedReqs.push(&jsAPIRoutedReq{jsub, sub, acc, subject, reply, copyBytes(rmsg), c.pa})
+	s.jsAPIRoutedReqs.push(&jsAPIRoutedReq{jsub, sub, acc, wrappedSubject, reply, copyBytes(rmsg), c.pa})
 }
 
 func (s *Server) processJSAPIRoutedRequests() {
