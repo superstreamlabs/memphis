@@ -16,7 +16,9 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/models"
+	"time"
 )
 
 const (
@@ -74,7 +76,45 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		}
 		return nil
 	}
+	if s.JetStreamIsClustered() && s.JetStreamIsLeader() {
+		s.Warnf(fmt.Sprintf("create stream %s: 111", cfg.Name))
+		quit := make(chan bool)
+		resultCh := make(chan *StreamInfo)
+		go func(quitCh chan bool, resultChan chan *StreamInfo) {
+			ticker := time.NewTicker(500 * time.Millisecond)
+			for {
+				select {
+				case <-ticker.C:
+					info, err := s.memphisStreamInfo(cfg.Name)
+					if err == nil {
+						resultChan <- info
+						return
+					}
+				case <-quitCh:
+					return
+				}
+			}
+		}(quit, resultCh)
 
+		var result *StreamInfo
+		select {
+		case result = <-resultCh:
+			s.Warnf(fmt.Sprintf("create stream %s: 222", cfg.Name))
+			break
+		case <-time.After(5 * time.Second):
+			s.Warnf(fmt.Sprintf("create stream %s: 333", cfg.Name))
+			quit <- true
+		}
+
+		if result == nil {
+			return
+		}
+
+		createStreamFunc = func() error {
+			return nil
+		}
+	}
+	s.Warnf(fmt.Sprintf("create stream %s: 444", cfg.Name))
 	var storageType string
 	if cfg.Storage == MemoryStorage {
 		storageType = "memory"
@@ -109,6 +149,45 @@ func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc 
 		return nil
 	}
 
+	if s.JetStreamIsClustered() && s.JetStreamIsLeader() {
+		s.Warnf(fmt.Sprintf("delete stream %s: 111", streamNameFromSubject(subject)))
+		quit := make(chan bool)
+		resultCh := make(chan error)
+		go func(quitCh chan bool, resultChan chan error) {
+			ticker := time.NewTicker(500 * time.Millisecond)
+			for {
+				select {
+				case <-ticker.C:
+					_, err := s.memphisStreamInfo(streamNameFromSubject(subject))
+					if IsNatsErr(err, JSStreamNotFoundErr) {
+						resultChan <- err
+						return
+					}
+				case <-quitCh:
+					return
+				}
+			}
+		}(quit, resultCh)
+
+		var err error
+		select {
+		case err = <-resultCh:
+			s.Warnf(fmt.Sprintf("delete stream %s: 222", streamNameFromSubject(subject)))
+			break
+		case <-time.After(5 * time.Second):
+			s.Warnf(fmt.Sprintf("delete stream %s: 333", streamNameFromSubject(subject)))
+			quit <- true
+		}
+
+		if err == nil {
+			return
+		}
+
+		removeStreamFunc = func() error {
+			return nil
+		}
+	}
+	s.Warnf(fmt.Sprintf("delete stream %s: 444", streamNameFromSubject(subject)))
 	dsr := destroyStationRequest{StationName: streamNameFromSubject(subject)}
 	s.removeStationDirectIntern(c, reply, &dsr, removeStreamFunc)
 }
