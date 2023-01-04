@@ -71,10 +71,13 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 	createStreamFunc := func() error {
 		created, ok := s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
 		if !created && !ok {
+			s.Warnf("111")
 			return errors.New("Stream creation failed")
 		} else if !created && ok {
+			s.Warnf("222")
 			return errors.New(_EMPTY_)
 		}
+		s.Warnf("333")
 		return nil
 	}
 

@@ -329,6 +329,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	err = createStreamFunc()
 	if err != nil {
+		s.Warnf("createStationDirect: 111 :" + err.Error())
 		if nonNativeCreateStreamFunc != nil && err.Error() == _EMPTY_ {
 			return
 		}

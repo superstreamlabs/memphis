@@ -1262,6 +1262,7 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 		}
 		// Make sure we are meta leader.
 		if !s.JetStreamIsLeader() {
+			s.Warnf("jsStreamCreateRequestIntern: 111")
 			return false, true
 		}
 	}

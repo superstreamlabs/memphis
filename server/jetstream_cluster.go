@@ -4752,6 +4752,7 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 			}
 			// Send this as system account, but include client info header.
 			s.sendInternalAccountMsgWithReply(nil, isubj, reply, hdr, nil, true)
+			s.Warnf("jsClusteredStreamRequest: 111")
 			return false, true
 		}
 
@@ -4791,6 +4792,7 @@ func (s *Server) jsClusteredStreamRequest(ci *ClientInfo, acc *Account, subject,
 	// Sync subject for post snapshot sync.
 	sa := &streamAssignment{Group: rg, Sync: syncSubjForStream(), Config: cfg, Subject: subject, Reply: reply, Client: ci, Created: time.Now().UTC()}
 	cc.meta.Propose(encodeAddStreamAssignment(sa))
+	s.Warnf("jsClusteredStreamRequest: 222")
 	return true, true
 }
 
