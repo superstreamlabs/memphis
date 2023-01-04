@@ -122,22 +122,17 @@ func validateIdempotencyWindow(retentionType string, retentionValue int, idempot
 }
 
 // TODO remove the station resources - functions, connectors
-func removeStationResources(s *Server, station models.Station, nonNativeRemoveStreamFunc func() error) error {
+func removeStationResources(s *Server, station models.Station, shouldDeleteStream bool) error {
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
 
-	removeFunc := nonNativeRemoveStreamFunc
-	if removeFunc == nil {
-		removeFunc = func() error {
-			return s.RemoveStream(stationName.Intern())
+	if shouldDeleteStream {
+		err = s.RemoveStream(stationName.Intern())
+		if err != nil {
+			return err
 		}
-	}
-
-	err = removeFunc()
-	if err != nil {
-		return err
 	}
 
 	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
@@ -178,14 +173,14 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	s.createStationDirectIntern(c, reply, &csr, nil)
+	s.createStationDirectIntern(c, reply, &csr, true)
 }
 
 func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
-	nonNativeCreateStreamFunc func() error) {
-	isNative := nonNativeCreateStreamFunc == nil
+	shouldCreateStream bool) {
+	isNative := shouldCreateStream == true
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 
 	stationName, err := StationNameFromStr(csr.StationName)
@@ -319,25 +314,19 @@ func (s *Server) createStationDirectIntern(c *client,
 		DlsConfiguration:  csr.DlsConfiguration,
 	}
 
-	createStreamFunc := nonNativeCreateStreamFunc
+	if shouldCreateStream {
+		err = s.CreateStream(stationName, newStation)
+		if err != nil {
+			if IsNatsErr(err, JSInsufficientResourcesErr) {
+				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
+				respondWithErr(s, reply, errors.New("Station can not be created, probably since replicas count is larger than the cluster size"))
+				return
+			}
 
-	if createStreamFunc == nil {
-		createStreamFunc = func() error {
-			return s.CreateStream(stationName, newStation)
-		}
-	}
-
-	err = createStreamFunc()
-	if err != nil {
-		if IsNatsErr(err, JSInsufficientResourcesErr) {
-			serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
-			respondWithErr(s, reply, errors.New("Station can not be created, probably since replicas count is larger than the cluster size"))
+			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+			respondWithErr(s, reply, err)
 			return
 		}
-
-		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
 	}
 
 	err = s.CreateDlsStream(stationName, newStation)
@@ -913,7 +902,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 
-		err = removeStationResources(sh.S, station, nil)
+		err = removeStationResources(sh.S, station, true)
 		if err != nil {
 			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -968,14 +957,14 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	s.removeStationDirectIntern(c, reply, &dsr, nil)
+	s.removeStationDirectIntern(c, reply, &dsr, true)
 }
 
 func (s *Server) removeStationDirectIntern(c *client,
 	reply string,
 	dsr *destroyStationRequest,
-	nonNativeRemoveStreamFunc func() error) {
-	isNative := nonNativeRemoveStreamFunc == nil
+	shouldDeleteStream bool) {
+	isNative := shouldDeleteStream == true
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 
 	stationName, err := StationNameFromStr(dsr.StationName)
@@ -1002,7 +991,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	err = removeStationResources(s, station, nonNativeRemoveStreamFunc)
+	err = removeStationResources(s, station, shouldDeleteStream)
 	if err != nil {
 		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1368,6 +1357,13 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	headersJson, err := DecodeHeader(sm.Header)
+	if err != nil {
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	// For non-native stations - default values
 	if !station.IsNative {
 		msg := models.MessageResponse{
@@ -1376,7 +1372,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				TimeSent: sm.Time,
 				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
 				Data:     hex.EncodeToString(sm.Data),
-				Headers:  map[string]string{},
+				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetails{
 				Name:          "",
@@ -1391,17 +1387,17 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		c.IndentedJSON(200, msg)
 		return
 	}
-	headersJson, err := DecodeHeader(sm.Header)
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 
 	connectionIdHeader := headersJson["$memphis_connectionId"]
 	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-	//This check for backward compatability
+	for header := range headersJson {
+		if strings.HasPrefix(header, "$memphis") {
+			delete(headersJson, header)
+		}
+	}
+
+	// This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
 		connectionIdHeader = headersJson["connectionId"]
 		producedByHeader = strings.ToLower(headersJson["producedBy"])
@@ -1409,12 +1405,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
 			return
-		}
-	}
-
-	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
-			delete(headersJson, header)
 		}
 	}
 

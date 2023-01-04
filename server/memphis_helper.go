@@ -910,8 +910,22 @@ func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler)
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
+func (s *Server) subscribeOnAcc(acc *Account, subj, sid string, cb simplifiedMsgHandler) (*subscription, error) {
+	c := acc.ic
+	wcb := func(_ *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(c, subject, reply, rmsg)
+	}
+
+	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
+}
+
 func (s *Server) unsubscribeOnGlobalAcc(sub *subscription) error {
 	acc := s.GlobalAccount()
+	c := acc.ic
+	return c.processUnsub(sub.sid)
+}
+
+func (s *Server) unsubscribeOnAcc(acc *Account, sub *subscription) error {
 	c := acc.ic
 	return c.processUnsub(sub.sid)
 }

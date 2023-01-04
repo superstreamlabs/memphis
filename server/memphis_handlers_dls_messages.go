@@ -82,23 +82,25 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	producerDetails := models.ProducerDetails{}
 	producedByHeader := ""
 	poisonedCg := models.PoisonedCg{}
+	
+	headersJson, err := DecodeHeader(poisonMessageContent.Header)
+	if err != nil {
+		serv.Errorf("handleNewPoisonMessage: " + err.Error())
+		return
+	}
+	
 	messagePayload := models.MessagePayloadDls{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     hex.EncodeToString(poisonMessageContent.Data),
+		Headers: headersJson,
 	}
 
 	if station.IsNative {
-		headersJson, err := DecodeHeader(poisonMessageContent.Header)
-
-		if err != nil {
-			serv.Errorf("handleNewPoisonMessage: " + err.Error())
-			return
-		}
 		connectionIdHeader := headersJson["$memphis_connectionId"]
 		producedByHeader = headersJson["$memphis_producedBy"]
 
-		//This check for backward compatability
+		// This check for backward compatability
 		if connectionIdHeader == "" || producedByHeader == "" {
 			connectionIdHeader = headersJson["connectionId"]
 			producedByHeader = headersJson["producedBy"]
@@ -141,8 +143,6 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			PoisoningTime:   time.Now(),
 			DeliveriesCount: int(deliveriesCount),
 		}
-
-		messagePayload.Headers = headersJson
 	}
 
 	id := GetDlsMsgId(stationName.Intern(), int(messageSeq), producedByHeader, poisonMessageContent.Time.String())
