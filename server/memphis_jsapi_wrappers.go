@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis-broker/models"
+	"time"
 )
 
 const (
@@ -46,6 +47,105 @@ func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
 	return subject
 }
 
+func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamConfig, c *client) {
+	respCh := make(chan *JSApiStreamCreateResponse)
+	sub, err := s.subscribeOnAcc(s.SystemAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte, respCh chan *JSApiStreamCreateResponse) {
+			var resp JSApiStreamCreateResponse
+			if err := json.Unmarshal(msg, &resp); err != nil {
+				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: " + err.Error())
+				respCh <- nil
+				return
+			}
+			respCh <- &resp
+		}(copyBytes(msg), respCh)
+	})
+	if err != nil {
+		s.Errorf("memphisJSApiWrapStreamCreate: failed to subscribe: " + err.Error())
+		return
+	}
+
+	timeout := time.NewTimer(5 * time.Second)
+	select {
+	case resp := <-respCh:
+		if resp != nil && resp.DidCreate {
+			var storageType string
+			if cfg.Storage == MemoryStorage {
+				storageType = "memory"
+			} else if cfg.Storage == FileStorage {
+				storageType = "file"
+			}
+
+			var retentionType string
+			var retentionValue int
+			if cfg.MaxAge > 0 {
+				retentionType = "message_age_sec"
+				retentionValue = int(cfg.MaxAge / 1000000000)
+			} else if cfg.MaxBytes > 0 {
+				retentionType = "bytes"
+				retentionValue = int(cfg.MaxBytes)
+			} else if cfg.MaxMsgs > 0 {
+				retentionType = "messages"
+				retentionValue = int(cfg.MaxMsgs)
+			}
+
+			csr := createStationRequest{
+				StationName:       cfg.Name,
+				SchemaName:        "",
+				RetentionType:     retentionType,
+				RetentionValue:    retentionValue,
+				StorageType:       storageType,
+				Replicas:          cfg.Replicas,
+				DedupEnabled:      true,
+				DedupWindowMillis: 0,
+				IdempotencyWindow: int64(cfg.Duplicates.Milliseconds()),
+				DlsConfiguration: models.DlsConfiguration{
+					Poison:      true,
+					Schemaverse: false,
+				},
+			}
+
+			s.createStationDirectIntern(c, reply, &csr, false)
+		}
+	case <-timeout.C:
+		break
+	}
+
+	s.unsubscribeOnGlobalAcc(sub)
+}
+
+func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName string, c *client) {
+	respCh := make(chan *JSApiStreamDeleteResponse)
+	sub, err := s.subscribeOnAcc(s.SystemAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte, respCh chan *JSApiStreamDeleteResponse) {
+			var resp JSApiStreamDeleteResponse
+			if err := json.Unmarshal(msg, &resp); err != nil {
+				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: " + err.Error())
+				respCh <- nil
+				return
+			}
+			respCh <- &resp
+		}(copyBytes(msg), respCh)
+	})
+	if err != nil {
+		s.Errorf("memphisJSApiWrapStreamCreate: failed to subscribe: " + err.Error())
+		return
+	}
+
+	timeout := time.NewTimer(5 * time.Second)
+	select {
+	case resp := <-respCh:
+		if resp != nil && resp.Success {
+			dsr := destroyStationRequest{StationName: streamName}
+			s.removeStationDirectIntern(c, reply, &dsr, false)
+		}
+	case <-timeout.C:
+		break
+	}
+
+	s.unsubscribeOnGlobalAcc(sub)
+}
+
 func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 
@@ -68,47 +168,17 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		return
 	}
 
-	createStreamFunc := func() error {
-		if !s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg) {
-			return errors.New("Stream creation failed")
-		}
-		return nil
+	if (s.JetStreamIsClustered() && s.JetStreamIsLeader()) || !s.JetStreamIsClustered() {
+		go memphisCreateNonNativeStationIfNeeded(s, reply, cfg, c)
 	}
 
-	var storageType string
-	if cfg.Storage == MemoryStorage {
-		storageType = "memory"
-	} else if cfg.Storage == FileStorage {
-		storageType = "file"
-	}
-
-	csr := createStationRequest{
-		StationName:       cfg.Name,
-		SchemaName:        "",
-		RetentionType:     "",
-		RetentionValue:    0,
-		StorageType:       storageType,
-		Replicas:          cfg.Replicas,
-		DedupEnabled:      true,
-		DedupWindowMillis: 0,
-		IdempotencyWindow: int64(cfg.Duplicates.Milliseconds()),
-		DlsConfiguration: models.DlsConfiguration{
-			Poison:      true,
-			Schemaverse: false,
-		},
-	}
-
-	s.createStationDirectIntern(c, reply, &csr, createStreamFunc)
+	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
 
 func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
-	removeStreamFunc := func() error {
-		if !s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg) {
-			return errors.New("Stream removal failed")
-		}
-		return nil
+	if (s.JetStreamIsClustered() && s.JetStreamIsLeader()) || !s.JetStreamIsClustered() {
+		go memphisDeleteNonNativeStationIfNeeded(s, reply, streamNameFromSubject(subject), c)
 	}
 
-	dsr := destroyStationRequest{StationName: streamNameFromSubject(subject)}
-	s.removeStationDirectIntern(c, reply, &dsr, removeStreamFunc)
+	s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
