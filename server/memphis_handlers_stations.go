@@ -1357,6 +1357,13 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	headersJson, err := DecodeHeader(sm.Header)
+	if err != nil {
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	// For non-native stations - default values
 	if !station.IsNative {
 		msg := models.MessageResponse{
@@ -1365,7 +1372,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				TimeSent: sm.Time,
 				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
 				Data:     hex.EncodeToString(sm.Data),
-				Headers:  map[string]string{},
+				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetails{
 				Name:          "",
@@ -1380,17 +1387,17 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		c.IndentedJSON(200, msg)
 		return
 	}
-	headersJson, err := DecodeHeader(sm.Header)
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 
 	connectionIdHeader := headersJson["$memphis_connectionId"]
 	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-	//This check for backward compatability
+	for header := range headersJson {
+		if strings.HasPrefix(header, "$memphis") {
+			delete(headersJson, header)
+		}
+	}
+
+	// This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
 		connectionIdHeader = headersJson["connectionId"]
 		producedByHeader = strings.ToLower(headersJson["producedBy"])
@@ -1398,12 +1405,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
 			return
-		}
-	}
-
-	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
-			delete(headersJson, header)
 		}
 	}
 
