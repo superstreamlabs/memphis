@@ -48,9 +48,11 @@ func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
 }
 
 func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamConfig, c *client) {
+	s.Warnf("1111")
 	respCh := make(chan *JSApiStreamCreateResponse)
 	sub, err := s.subscribeOnAcc(s.SystemAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte, respCh chan *JSApiStreamCreateResponse) {
+			s.Warnf("2222")
 			var resp JSApiStreamCreateResponse
 			if err := json.Unmarshal(msg, &resp); err != nil {
 				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: " + err.Error())
@@ -68,6 +70,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 	timeout := time.NewTimer(5 * time.Second)
 	select {
 	case resp := <-respCh:
+		s.Warnf("3333")
 		if resp != nil && resp.DidCreate {
 			var storageType string
 			if cfg.Storage == MemoryStorage {
@@ -108,6 +111,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			s.createStationDirectIntern(c, reply, &csr, false)
 		}
 	case <-timeout.C:
+		s.Warnf("4444")
 		break
 	}
 
