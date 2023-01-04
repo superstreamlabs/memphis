@@ -16,7 +16,6 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"memphis-broker/models"
 	"time"
 )
@@ -34,8 +33,7 @@ var wrapperMap = map[string]string{
 }
 
 func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
-	if c.memphisInfo.isNative ||
-		c.kind != CLIENT {
+	if c.memphisInfo.isNative || c.kind != CLIENT {
 		return subject
 	}
 
@@ -152,6 +150,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 }
 
 func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
+	s.Warnf("asulin")
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 
 	var cfg StreamConfig
@@ -173,11 +172,7 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		return
 	}
 
-	s.Warnf(fmt.Sprintf("iscluster: %v, isLeader: %v", s.JetStreamIsClustered(), s.JetStreamIsLeader()))
-	if (s.JetStreamIsClustered() && s.JetStreamIsLeader()) || !s.JetStreamIsClustered() {
-		s.Warnf("0000")
-		go memphisCreateNonNativeStationIfNeeded(s, reply, cfg, c)
-	}
+	go memphisCreateNonNativeStationIfNeeded(s, reply, cfg, c)
 
 	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
 }
