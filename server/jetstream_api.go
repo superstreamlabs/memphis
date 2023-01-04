@@ -3496,6 +3496,7 @@ func (s *Server) jsDurableCreateRequest(sub *subscription, c *client, acc *Accou
 
 // Request to create a consumer.
 func (s *Server) jsConsumerCreateRequest(sub *subscription, c *client, acc *Account, subject, reply string, msg []byte) {
+	s.Warnf("here 1")
 	s.jsConsumerCreate(sub, c, acc, subject, reply, msg, false)
 }
 
