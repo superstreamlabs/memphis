@@ -925,6 +925,11 @@ func (s *Server) unsubscribeOnGlobalAcc(sub *subscription) error {
 	return c.processUnsub(sub.sid)
 }
 
+func (s *Server) unsubscribeOnAcc(acc *Account, sub *subscription) error {
+	c := acc.ic
+	return c.processUnsub(sub.sid)
+}
+
 func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {
 	acc := s.GlobalAccount()
 	s.sendInternalAccountMsg(acc, reply, msg)

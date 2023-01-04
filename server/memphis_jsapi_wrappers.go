@@ -111,7 +111,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 		break
 	}
 
-	s.unsubscribeOnGlobalAcc(sub)
+	s.unsubscribeOnAcc(s.SystemAccount(), sub)
 }
 
 func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName string, c *client) {
@@ -143,7 +143,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 		break
 	}
 
-	s.unsubscribeOnGlobalAcc(sub)
+	s.unsubscribeOnAcc(s.SystemAccount(), sub)
 }
 
 func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
