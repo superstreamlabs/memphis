@@ -34,6 +34,7 @@ var wrapperMap = map[string]string{
 }
 
 func memphisFindJSAPIWrapperSubject(c *client, subject string) string {
+	c.Warnf(fmt.Sprintf("here 2: %v", c.kind))
 	if c.memphisInfo.isNative ||
 		c.kind != CLIENT {
 		return subject

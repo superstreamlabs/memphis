@@ -3496,12 +3496,10 @@ func (s *Server) jsDurableCreateRequest(sub *subscription, c *client, acc *Accou
 
 // Request to create a consumer.
 func (s *Server) jsConsumerCreateRequest(sub *subscription, c *client, acc *Account, subject, reply string, msg []byte) {
-	s.Warnf("here 1")
 	s.jsConsumerCreate(sub, c, acc, subject, reply, msg, false)
 }
 
 func (s *Server) jsConsumerCreate(sub *subscription, c *client, a *Account, subject, reply string, rmsg []byte, expectDurable bool) {
-	s.Warnf("here 1")
 	if c == nil || !s.JetStreamEnabled() {
 		return
 	}
