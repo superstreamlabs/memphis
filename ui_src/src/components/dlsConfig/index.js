@@ -60,7 +60,7 @@ const DlsConfig = () => {
         <div className="dls-config-container">
             <div className="toggle-dls-config">
                 <div>
-                    <p className="header-dls">Poison</p>
+                    <p className="header-dls">Unacknowledged</p>
                     <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
                 </div>
                 <Switcher onChange={() => updateDlsConfigurations(true, false)} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />

@@ -20,7 +20,7 @@ const ProduceData = (props) => {
     const { createStationFormRef } = props;
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
     const [displayScreen, setDisplayScreen] = useState();
-    const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
+    const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'Python'];
 
     const onNext = () => {
         if (displayScreen === produceConsumeScreenEnum['DATA_SNIPPET']) {

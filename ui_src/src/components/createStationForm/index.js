@@ -19,7 +19,7 @@ import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
 import comingSoonImg from '../../assets/images/comingSoonImg.svg';
-import { convertDateToSeconds, generateName } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -83,7 +83,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [allowEdit, setAllowEdit] = useState(true);
     const [actualPods, setActualPods] = useState(['1']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
-    const [idempotencyType, setIdempotencyType] = useState(retanionOptions[2]);
+    const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
 
     const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
@@ -204,6 +204,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             creationForm.setFieldValue('storage_type', value);
         }
     };
+
     return (
         <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
             <div className={getStarted ? 'left-side left-gs' : 'left-side'}>
@@ -220,7 +221,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             {
                                 validator: (_, value) => {
                                     return new Promise((resolve, reject) => {
-                                        if (value === '') {
+                                        if (value === '' || value === undefined) {
                                             setTimeout(() => {
                                                 return reject('Please input station name!');
                                             }, 100);
@@ -296,16 +297,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_number || 2}
                                 rules={[
                                     {
-                                        required: true,
-                                        message: 'Please add value'
-                                    },
-                                    {
                                         validator: (_, value) => {
-                                            if (idempotencyType === idempotencyOptions[0] && value < 100) {
-                                                return Promise.reject('Has to be greater than 100ms');
-                                            } else {
-                                                return Promise.resolve();
-                                            }
+                                            return idempotencyValidator(value, idempotencyType);
                                         }
                                     }
                                 ]}

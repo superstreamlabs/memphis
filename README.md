@@ -91,7 +91,7 @@ And the list continues...
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
 - 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
-- ⛓  SDKs: Node.JS, Go, Python, Typescript, NestJS
+- ⛓  SDKs: Node.JS, Go, Python, TypeScript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
 

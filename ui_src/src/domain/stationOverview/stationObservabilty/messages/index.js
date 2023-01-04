@@ -43,14 +43,14 @@ const Messages = () => {
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
-    const [subTabValue, setSubTabValue] = useState('Poison');
+    const [subTabValue, setSubTabValue] = useState('Unacknowledged');
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [tabValue, setTabValue] = useState('All');
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['All', 'Dead-letter', 'Details'];
     const subTabs = [
-        { name: 'Poison', disabled: false },
-        { name: 'Failed schema', disabled: !stationState?.stationMetaData?.is_native }
+        { name: 'Unacknowledged', disabled: false },
+        { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
     ];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
@@ -63,7 +63,7 @@ const Messages = () => {
 
     const onCheckedAll = () => {
         setIsCheckAll(!isCheckAll);
-        subTabValue === 'Poison'
+        subTabValue === 'Unacknowledged'
             ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
             : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
         setIndeterminate(false);
@@ -83,7 +83,7 @@ const Messages = () => {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
         }
-        if (subTabValue === 'Poison') {
+        if (subTabValue === 'Unacknowledged') {
             setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
         } else {
@@ -96,7 +96,7 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
         setTabValue(newValue);
-        subTabValue === 'Failed schema' && setSubTabValue('Poison');
+        subTabValue === 'Schema violation' && setSubTabValue('Unacknowledged');
     };
 
     useEffect(() => {
@@ -119,8 +119,8 @@ const Messages = () => {
     const handleDrop = async () => {
         setIgnoreProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Poison' ? 'poison' : 'schema', dls_message_ids: isCheck });
-            let messages = subTabValue === 'Poison' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacknowledged' ? 'poison' : 'schema', dls_message_ids: isCheck });
+            let messages = subTabValue === 'Unacknowledged' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
             isCheck.map((messageId, index) => {
                 messages = messages?.filter((item) => {
                     return item._id !== messageId;
@@ -128,7 +128,7 @@ const Messages = () => {
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                subTabValue === 'Poison'
+                subTabValue === 'Unacknowledged'
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -197,9 +197,9 @@ const Messages = () => {
                         {tabValue === 'Dead-letter' && (
                             <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
                         )}
-                        <p>Messages</p>
+                        <p>Messages (In hexa)</p>
                     </div>
-                    <p className="right-coulmn">Details</p>
+                    <p className="right-coulmn">Information</p>
                 </div>
                 <div className="list">
                     <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'}>
@@ -207,7 +207,7 @@ const Messages = () => {
                             data={
                                 !isDls
                                     ? stationState?.stationSocketData?.messages
-                                    : subTabValue === 'Poison'
+                                    : subTabValue === 'Unacknowledged'
                                     ? stationState?.stationSocketData?.poison_messages
                                     : stationState?.stationSocketData?.schema_failed_messages
                             }
@@ -216,7 +216,7 @@ const Messages = () => {
                             itemContent={(index, message) => listGenerator(index, message)}
                         />
                     </div>
-                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
+                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} />
                 </div>
             </div>
         );
@@ -225,9 +225,9 @@ const Messages = () => {
     const showLastMsg = () => {
         let amount = 0;
         if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0)
+        else if (tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === 'Dead-letter' && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
         return (
             amount > 0 && (
@@ -268,7 +268,7 @@ const Messages = () => {
                                 isLoading={ignoreProcced}
                                 onClick={() => handleDrop()}
                             />
-                            {subTabValue === 'Poison' && (
+                            {subTabValue === 'Unacknowledged' && (
                                 <Button
                                     width="100px"
                                     height="32px"
@@ -301,9 +301,9 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
             {tabValue === 'Dead-letter' &&
-                subTabValue === 'Failed schema' &&
+                subTabValue === 'Schema violation' &&
                 stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
                 listGeneratorWrapper()}
 
@@ -320,8 +320,8 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' &&
-                ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                ((subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                    (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>

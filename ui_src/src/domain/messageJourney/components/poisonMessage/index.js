@@ -63,7 +63,7 @@ const PoisonMessage = ({ stationName, messageId, details, message, headers, proc
     return (
         <div className="poison-message">
             <header is="x3d">
-                <p>Poison message details</p>
+                <p>Unacknowledged message details</p>
                 <div className="btn-row">
                     <Button
                         width="75px"
