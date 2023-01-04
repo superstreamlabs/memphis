@@ -55,11 +55,9 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
-                    isFailedSchemaMessage ? 'schema' : 'poison'
-                }&station_name=${stationName}&is_dls=${isDls}&message_id=${isDls ? encodeURIComponent(selectedRow) : null}&message_seq=${
-                    isDls ? -1 : selectedRow
-                }`
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${isFailedSchemaMessage ? 'schema' : 'poison'}&station_name=${stationName}&is_dls=${isDls}&message_id=${
+                    isDls ? encodeURIComponent(selectedRow) : null
+                }&message_seq=${isDls ? -1 : selectedRow}`
             );
             arrangeData(data);
         } catch (error) {
@@ -77,7 +75,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                     is_deleted: row.is_deleted,
                     details: [
                         {
-                            name: 'Poison messages',
+                            name: 'Unacknowledged messages',
                             value: numberWithCommas(row?.total_poison_messages)
                         },
                         {

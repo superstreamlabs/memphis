@@ -19,7 +19,7 @@ import './style.scss';
 import { Tabs } from 'antd';
 import React from 'react';
 
-import errorModal from '../../assets/images/errorModal.svg';
+import { PriorityHighRounded } from '@material-ui/icons';
 
 const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
     return (
@@ -32,11 +32,13 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
                         key: tab?.name || tab,
                         disabled: tab?.disabled || disabled,
                         label: (
-                            <label className="tabs-name" style={{ width: length && length[index] && '90px' }}>
+                            <label className="tabs-name" style={{ width: length && length[index] && '95px' }}>
                                 {tab?.name || tab}{' '}
                                 {length && length[index] && (
                                     <div className="error-icon">
-                                        <img src={errorModal} />
+                                        <div>
+                                            <PriorityHighRounded />
+                                        </div>
                                     </div>
                                 )}
                             </label>

@@ -31,7 +31,7 @@ const tabs = ['Producer', 'Consumer'];
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
     const [protocolSelected, setProtocolSelected] = useState('SDK (TCP)');
-    const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
+    const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'Python'];
     const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
     const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
     const [codeExample, setCodeExample] = useState({
@@ -123,8 +123,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     return (
         <div className="code-example-details-container sdk-example">
             <div className="header-wrapper">
-                <p>Code example</p>
-                <span>We'll provide you with snippets that you can easily connect your application with Memphis</span>
+                <p>Code examples</p>
+                <span>Some code snippets that will help you get started with Memphis</span>
             </div>
             <div className="select-lan">
                 <div>

@@ -110,7 +110,7 @@ const StationsList = () => {
                 />
             );
         }
-        return <StationsInstructions header="You don’t have any station yet?" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
+        return <StationsInstructions header="You don’t have any station yet" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
     };
 
     const onCheckedAll = (e) => {

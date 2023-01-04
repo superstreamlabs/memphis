@@ -28,7 +28,7 @@ const { Panel } = Collapse;
 
 const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
-    const [parser, setParser] = useState('bytes');
+    const [parser, setParser] = useState('string');
     const [payload, setPayload] = useState(data);
 
     useEffect(() => {
@@ -118,7 +118,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                             <>
                                 <Copy data={data} />
                                 <div className="second-row">
-                                    <SegmentButton options={['bytes', 'string', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
+                                    <SegmentButton options={['string', 'bytes', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
                                 </div>
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>

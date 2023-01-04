@@ -79,7 +79,7 @@ export const SDK_CODE_EXAMPLE = {
         `
     },
 
-    Typescript: {
+    TypeScript: {
         langCode: 'typescript',
         installation: `npm i memphis-dev --save`,
         producer: `import memphis from 'memphis-dev';

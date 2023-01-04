@@ -20,9 +20,30 @@
     .tabs-name{
         display: flex;
         align-items:center;
-        .error-icon img{
-            width: 20px;
-            margin-left: 3px;
+        gap: 4px;
+        .error-icon{
+            background-color: rgba(217, 45, 32, 0.1);
+            border-radius: 63%;
+            width: 24px;
+            height: 24px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            div{
+                width: 14px;
+                height: 14px;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(217, 45, 32, 0.8);
+                border-radius: 50%;
+                svg{
+                    width: 12px;
+                    color: white;
+                }
+            }
         }
     }
 

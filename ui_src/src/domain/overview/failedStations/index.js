@@ -83,7 +83,7 @@ const FailedStations = ({ createStationTrigger }) => {
                 ) : (
                     <div className="empty-stations-container">
                         <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
-                        <p>No station Exsits</p>
+                        <p>No station exsit</p>
                         <Button
                             className="modal-btn"
                             width="160px"

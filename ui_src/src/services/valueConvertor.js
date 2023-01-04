@@ -249,5 +249,47 @@ export const msToUnits = (value) => {
 };
 
 export const generateName = (value) => {
-    return value.replaceAll(' ', '-').toLowerCase();
+    return value?.replaceAll(' ', '-')?.toLowerCase();
+};
+
+export const idempotencyValidator = (value, idempotencyType) => {
+    const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
+
+    return new Promise((resolve, reject) => {
+        if (value !== '') {
+            switch (idempotencyType) {
+                case idempotencyOptions[0]:
+                    if (value < 100) {
+                        return reject('Has to be greater than 100ms');
+                    }
+                    if (value > 8.64e7) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                case idempotencyOptions[1]:
+                    if (value > 86400) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                case idempotencyOptions[2]:
+                    if (value > 1440) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                case idempotencyOptions[3]:
+                    if (value > 24) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                default:
+                    break;
+            }
+        } else {
+            return reject('Please input idempotency value');
+        }
+    });
 };
