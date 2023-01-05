@@ -602,7 +602,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		startSequence,
 		messagesToFetch,
 		5*time.Second,
-		station.IsNative, // in non-native stations we don't look for headers in messages
+		true,
 	)
 	var messages []models.MessageDetails
 	if err != nil {
