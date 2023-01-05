@@ -43,8 +43,8 @@ function SchemaList({ createNew }) {
     useEffect(() => {
         getAllSchemas();
         return () => {
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+            dispatch({ type: 'SET_SCHEMA_LIST', payload: [] });
+            dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: [] });
         };
     }, []);
 
@@ -52,8 +52,8 @@ function SchemaList({ createNew }) {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: data });
+            dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
+            dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: data });
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -64,7 +64,7 @@ function SchemaList({ createNew }) {
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(state.filteredList.map((li) => li.name));
+        setIsCheck(state.schemaFilteredList.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -88,7 +88,7 @@ function SchemaList({ createNew }) {
                 schema_names: isCheck
             });
             if (data) {
-                dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
+                dispatch({ type: 'SET_SCHEMA_LIST', payload: filterArray(state.schemaFilteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
             }
@@ -108,7 +108,7 @@ function SchemaList({ createNew }) {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    Schemaverse <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
+                    Schemaverse <label className="length-list">{state.schemaFilteredList?.length > 0 && `(${state.schemaFilteredList?.length})`}</label>
                 </label>
                 <div className="action-section">
                     <Button
@@ -136,7 +136,7 @@ function SchemaList({ createNew }) {
                         fontWeight="600"
                         aria-haspopup="true"
                         boxShadowStyle="float"
-                        disabled={state?.filteredList?.length === 0}
+                        disabled={state?.schemaFilteredList?.length === 0}
                         onClick={() => onCheckedAll()}
                     />
                     <Filter filterComponent="schemaverse" height="34px" />
@@ -162,10 +162,10 @@ function SchemaList({ createNew }) {
                     </div>
                 )}
                 {!isLoading &&
-                    state.filteredList?.map((schema, index) => {
+                    state.schemaFilteredList?.map((schema, index) => {
                         return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                     })}
-                {!isLoading && state.domainList?.length === 0 && (
+                {!isLoading && state.schemaList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
                         <p className="title">No schemas found</p>
@@ -186,7 +186,7 @@ function SchemaList({ createNew }) {
                         />
                     </div>
                 )}
-                {!isLoading && state.domainList?.length > 0 && state.filteredList?.length === 0 && (
+                {!isLoading && state.schemaList?.length > 0 && state.schemaFilteredList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
                         <p className="title">No schemas found</p>

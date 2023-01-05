@@ -58,7 +58,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
 
     useEffect(() => {
         handleFilter();
-    }, [searchInput, filterTerms, state?.domainList]);
+    }, [searchInput, filterTerms, state?.stationList, state?.schemaList]);
 
     const getFilterDetails = async () => {
         try {
@@ -92,7 +92,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                             for await (const msg of sub) {
                                 let data = jc.decode(msg.data);
                                 data?.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-                                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                                dispatch({ type: 'SET_STATION_LIST', payload: data });
                             }
                         })();
                     }
@@ -118,7 +118,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                         (async () => {
                             for await (const msg of sub) {
                                 let data = jc.decode(msg.data);
-                                dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
+                                dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
                             }
                         })();
                     }
@@ -268,33 +268,35 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         let objStorage = [];
         let objType = '';
         let objUsage = null;
-        let data = state?.domainList;
+
         switch (filterComponent) {
             case 'stations':
+                let stationData = state?.stationList;
                 if (filterTerms?.find((o) => o?.name === 'tags')) {
                     objTags = filterTerms?.find((o) => o?.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
-                    data = data?.filter((item) =>
+                    stationData = stationData?.filter((item) =>
                         objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag?.name)) : !item.tags.some((tag) => objTags?.includes(tag?.name))
                     );
                 }
                 if (filterTerms?.find((o) => o?.name === 'created')) {
                     objCreated = filterTerms?.find((o) => o?.name === 'created')?.fields?.map((element) => element?.toLowerCase());
-                    data = data?.filter((item) =>
+                    stationData = stationData?.filter((item) =>
                         objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
                     );
                 }
                 if (filterTerms?.find((o) => o?.name === 'storage')) {
                     objStorage = filterTerms?.find((o) => o?.name === 'storage')?.fields?.map((element) => element?.toLowerCase());
-                    data = data.filter((item) =>
+                    stationData = stationData.filter((item) =>
                         objStorage?.length > 0 ? objStorage?.includes(item.station.storage_type) : !objStorage?.includes(item.station.storage_type)
                     );
                 }
                 if (searchInput !== '' && searchInput?.length >= 2) {
-                    data = data.filter((station) => station.station?.name.includes(searchInput));
+                    stationData = stationData.filter((station) => station.station?.name.includes(searchInput));
                 }
-                dispatch({ type: 'SET_FILTERED_LIST', payload: data });
+                dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: stationData });
                 return;
             case 'schemaverse':
+                let data = state?.schemaList;
                 if (filterTerms?.find((o) => o?.name === 'tags')) {
                     objTags = filterTerms?.find((o) => o?.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
                     data = data?.filter((item) =>
@@ -316,7 +318,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 if (searchInput !== '' && searchInput?.length >= 2) {
                     data = data.filter((schema) => schema?.name.includes(searchInput));
                 }
-                dispatch({ type: 'SET_FILTERED_LIST', payload: data });
+                dispatch({ type: 'SET_SCHEMA_FILTERED_LIST', payload: data });
                 return;
             default:
                 return;

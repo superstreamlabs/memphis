@@ -16,7 +16,7 @@ import './style.scss';
 import React from 'react';
 
 import LogBadge from '../../../../components/logBadge';
-import { cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
+import { parsingDate } from '../../../../services/valueConvertor';
 import Copy from '../../../../components/copy';
 
 const LogContent = ({ displayedLog }) => {
@@ -43,9 +43,9 @@ const LogContent = ({ displayedLog }) => {
                 <div></div>
             </log-payload>
             <log-content is="3xd">
-                <p>{cutInfoLog(displayedLog?.data)}</p>
+                <p>{displayedLog?.data}</p>
                 <div className="copy-button">
-                    <Copy data={cutInfoLog(displayedLog?.data)} />
+                    <Copy data={displayedLog?.data} />
                 </div>
             </log-content>
         </div>

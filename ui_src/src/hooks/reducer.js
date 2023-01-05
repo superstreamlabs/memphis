@@ -13,7 +13,7 @@
 
 const Reducer = (state, action) => {
     let index;
-    let updateDomainState = state?.domainList;
+    let updateSchemaListState = state?.schemaList;
     let copyIntegration = state?.integrationsList;
     switch (action.type) {
         case 'SET_USER_DATA':
@@ -68,15 +68,25 @@ const Reducer = (state, action) => {
                 ...state,
                 skipSignup: action.payload
             };
-        case 'SET_DOMAIN_LIST':
+        case 'SET_STATION_LIST':
             return {
                 ...state,
-                domainList: action.payload
+                stationList: action.payload
             };
-        case 'SET_FILTERED_LIST':
+        case 'SET_STATION_FILTERED_LIST':
             return {
                 ...state,
-                filteredList: action.payload
+                stationFilteredList: action.payload
+            };
+        case 'SET_SCHEMA_LIST':
+            return {
+                ...state,
+                schemaList: action.payload
+            };
+        case 'SET_SCHEMA_FILTERED_LIST':
+            return {
+                ...state,
+                schemaFilteredList: action.payload
             };
         case 'SET_FILTERED_OPTION':
             return {
@@ -84,25 +94,25 @@ const Reducer = (state, action) => {
                 FilterOption: action.payload
             };
         case 'SET_SCHEMA_TAGS':
-            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateDomainState[index].tags = action.payload.tags;
+            index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateSchemaListState[index].tags = action.payload.tags;
             return {
                 ...state,
-                domainList: updateDomainState
+                schemaList: updateSchemaListState
             };
         case 'SET_IS_USED':
-            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateDomainState[index].used = true;
+            index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateSchemaListState[index].used = true;
             return {
                 ...state,
-                domainList: updateDomainState
+                schemaList: updateSchemaListState
             };
         case 'SET_UPDATE_SCHEMA':
-            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateDomainState[index] = action.payload.schemaDetails;
+            index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateSchemaListState[index] = action.payload.schemaDetails;
             return {
                 ...state,
-                domainList: updateDomainState
+                schemaList: updateSchemaListState
             };
         case 'SET_INTEGRATIONS':
             return {
