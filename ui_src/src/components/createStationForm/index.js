@@ -346,7 +346,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
                         </div>
                         {!getStarted && useSchema && (
-                            <Form.Item name="schemaValue" initialValue={schemas.length > 0 ? schemas[0].name : null}>
+                            <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
                                 <SelectSchema
                                     placeholder={creationForm.schemaValue || 'Select schema'}
                                     value={creationForm.schemaValue || schemas[0]}

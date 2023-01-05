@@ -271,50 +271,50 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         let data = state?.domainList;
         switch (filterComponent) {
             case 'stations':
-                if (filterTerms?.find((o) => o.name === 'tags')) {
-                    objTags = filterTerms?.find((o) => o.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
+                if (filterTerms?.find((o) => o?.name === 'tags')) {
+                    objTags = filterTerms?.find((o) => o?.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
                     data = data?.filter((item) =>
-                        objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag.name)) : !item.tags.some((tag) => objTags?.includes(tag.name))
+                        objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag?.name)) : !item.tags.some((tag) => objTags?.includes(tag?.name))
                     );
                 }
-                if (filterTerms?.find((o) => o.name === 'created')) {
-                    objCreated = filterTerms?.find((o) => o.name === 'created')?.fields?.map((element) => element?.toLowerCase());
+                if (filterTerms?.find((o) => o?.name === 'created')) {
+                    objCreated = filterTerms?.find((o) => o?.name === 'created')?.fields?.map((element) => element?.toLowerCase());
                     data = data?.filter((item) =>
                         objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
                     );
                 }
-                if (filterTerms?.find((o) => o.name === 'storage')) {
-                    objStorage = filterTerms?.find((o) => o.name === 'storage')?.fields?.map((element) => element?.toLowerCase());
+                if (filterTerms?.find((o) => o?.name === 'storage')) {
+                    objStorage = filterTerms?.find((o) => o?.name === 'storage')?.fields?.map((element) => element?.toLowerCase());
                     data = data.filter((item) =>
                         objStorage?.length > 0 ? objStorage?.includes(item.station.storage_type) : !objStorage?.includes(item.station.storage_type)
                     );
                 }
                 if (searchInput !== '' && searchInput?.length >= 2) {
-                    data = data.filter((station) => station.station.name.includes(searchInput));
+                    data = data.filter((station) => station.station?.name.includes(searchInput));
                 }
                 dispatch({ type: 'SET_FILTERED_LIST', payload: data });
                 return;
             case 'schemaverse':
-                if (filterTerms?.find((o) => o.name === 'tags')) {
-                    objTags = filterTerms?.find((o) => o.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
+                if (filterTerms?.find((o) => o?.name === 'tags')) {
+                    objTags = filterTerms?.find((o) => o?.name === 'tags')?.fields?.map((element) => element?.toLowerCase());
                     data = data?.filter((item) =>
-                        objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag.name)) : !item.tags.some((tag) => objTags?.includes(tag.name))
+                        objTags?.length > 0 ? item.tags.some((tag) => objTags?.includes(tag?.name)) : !item.tags.some((tag) => objTags?.includes(tag?.name))
                     );
                 }
-                if (filterTerms?.find((o) => o.name === 'created')) {
-                    objCreated = filterTerms?.find((o) => o.name === 'created')?.fields?.map((element) => element?.toLowerCase());
+                if (filterTerms?.find((o) => o?.name === 'created')) {
+                    objCreated = filterTerms?.find((o) => o?.name === 'created')?.fields?.map((element) => element?.toLowerCase());
                     data = data?.filter((item) => (objCreated?.length > 0 ? objCreated?.includes(item.created_by_user) : !objCreated?.includes(item.created_by_user)));
                 }
-                if (filterTerms?.find((o) => o.name === 'type')) {
-                    objType = filterTerms?.find((o) => o.name === 'type')?.fields[0];
+                if (filterTerms?.find((o) => o?.name === 'type')) {
+                    objType = filterTerms?.find((o) => o?.name === 'type')?.fields[0];
                     data = data?.filter((item) => objType !== '' && item.type === objType);
                 }
-                if (filterTerms?.find((o) => o.name === 'usage')) {
-                    objUsage = filterTerms?.find((o) => o.name === 'usage')?.fields[0] === 'used';
+                if (filterTerms?.find((o) => o?.name === 'usage')) {
+                    objUsage = filterTerms?.find((o) => o?.name === 'usage')?.fields[0] === 'used';
                     data = data.filter((item) => item.used === objUsage);
                 }
                 if (searchInput !== '' && searchInput?.length >= 2) {
-                    data = data.filter((schema) => schema.name.includes(searchInput));
+                    data = data.filter((schema) => schema?.name.includes(searchInput));
                 }
                 dispatch({ type: 'SET_FILTERED_LIST', payload: data });
                 return;
@@ -335,27 +335,27 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             let filterTerms = [];
             filterState?.filterFields.forEach((element) => {
                 let term = {
-                    name: element.name,
+                    name: element?.name,
                     fields: []
                 };
                 if (element.filterType === filterType.CHECKBOX) {
                     element.fields.forEach((field) => {
                         if (field.checked) {
                             let t = term.fields;
-                            t.push(field.name);
+                            t.push(field?.name);
                             term.fields = t;
                         }
                     });
                 } else if (element.filterType === filterType.RADIOBUTTON && element.radioValue !== -1) {
                     let t = [];
-                    t.push(element.fields[element.radioValue].name);
+                    t.push(element.fields[element.radioValue]?.name);
                     term.fields = t;
                 } else {
                     element.fields.forEach((field) => {
                         if (field?.value !== undefined && field?.value !== '') {
                             let t = term.fields;
                             let d = {};
-                            d[field.name] = field.value;
+                            d[field?.name] = field.value;
                             t.push(d);
                             term.fields = t;
                         }

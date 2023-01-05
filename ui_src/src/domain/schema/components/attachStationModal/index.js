@@ -68,7 +68,8 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
     const getAllStations = async () => {
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
-            setAllStations(res);
+            let native_staion = res.filter((station) => station.is_native);
+            setAllStations(native_staion);
         } catch (err) {
             return;
         }
