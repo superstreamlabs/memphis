@@ -92,13 +92,13 @@ const Button = ({
     };
 
     return (
-        <TooltipComponent text={tooltip}>
-            <div className="button-container" style={styleButtonContainer}>
+        <div className="button-container" style={styleButtonContainer}>
+            <TooltipComponent text={tooltip}>
                 <ButtonDesign {...fieldProps} type="primary" htmlType="submit" className={disabled && 'noHover'}>
                     <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
                 </ButtonDesign>
-            </div>
-        </TooltipComponent>
+            </TooltipComponent>
+        </div>
     );
 };
 

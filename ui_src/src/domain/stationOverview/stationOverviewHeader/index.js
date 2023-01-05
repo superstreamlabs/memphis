@@ -189,27 +189,26 @@ const StationOverviewHeader = () => {
                             {stationState?.stationSocketData?.schema === undefined ||
                                 (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                                     <>
-                                        <TooltipComponent text={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}>
-                                            <div className="add-new">
-                                                <Button
-                                                    width="120px"
-                                                    height="25px"
-                                                    placeholder={
-                                                        <div className="use-schema-button">
-                                                            <Add />
-                                                            <p>Attach schema</p>
-                                                        </div>
-                                                    }
-                                                    colorType="white"
-                                                    radiusType="circle"
-                                                    backgroundColorType="purple"
-                                                    fontSize="12px"
-                                                    fontFamily="InterSemiBold"
-                                                    disabled={!stationState?.stationMetaData?.is_native}
-                                                    onClick={() => setUseSchemaModal(true)}
-                                                />
-                                            </div>
-                                        </TooltipComponent>
+                                        <div className="add-new">
+                                            <Button
+                                                width="120px"
+                                                height="25px"
+                                                placeholder={
+                                                    <div className="use-schema-button">
+                                                        <Add />
+                                                        <p>Attach schema</p>
+                                                    </div>
+                                                }
+                                                tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                                                colorType="white"
+                                                radiusType="circle"
+                                                backgroundColorType="purple"
+                                                fontSize="12px"
+                                                fontFamily="InterSemiBold"
+                                                disabled={!stationState?.stationMetaData?.is_native}
+                                                onClick={() => setUseSchemaModal(true)}
+                                            />
+                                        </div>
                                     </>
                                 ) : (
                                     <div className="buttons">

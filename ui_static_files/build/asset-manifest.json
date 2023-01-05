@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.30e37ad2.css",
-    "main.js": "/static/js/main.8b9a8e44.js",
+    "main.css": "/static/css/main.e0639c52.css",
+    "main.js": "/static/js/main.c8c4e73e.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -87,8 +87,6 @@
     "static/js/4027.81c097fc.chunk.js": "/static/js/4027.81c097fc.chunk.js",
     "static/media/installingBG.png": "/static/media/installingBG.a00b4d5ad4ed7b143d55.png",
     "static/media/connectBG.png": "/static/media/connectBG.3b046fdcad87a00ad7c1.png",
-    "static/media/consumerPlaceholder.svg": "/static/media/consumerPlaceholder.b0234e610acf5877677d62b345e26df5.svg",
-    "static/media/producerPlaceholder.svg": "/static/media/producerPlaceholder.92a1166d951bfadfbee0023bcf3a10d1.svg",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
     "static/media/Inter-Medium.ttf": "/static/media/Inter-Medium.e7231ba33760832432b8.ttf",
@@ -236,7 +234,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.30e37ad2.css",
-    "static/js/main.8b9a8e44.js"
+    "static/css/main.e0639c52.css",
+    "static/js/main.c8c4e73e.js"
   ]
 }
