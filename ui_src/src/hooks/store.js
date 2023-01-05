@@ -32,8 +32,10 @@ const initialState = {
     analytics_modal: true,
     socket: null,
     skipSignup: false,
-    domainList: [],
-    filteredList: [],
+    stationList: [],
+    stationFilteredList: [],
+    schemaList: [],
+    schemaFilteredList: [],
     logsFilter: '',
     integrationsList: []
 };

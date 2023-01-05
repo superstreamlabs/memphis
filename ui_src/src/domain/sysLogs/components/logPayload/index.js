@@ -15,7 +15,7 @@ import './style.scss';
 
 import React from 'react';
 
-import { cutInfoLog, parsingDate } from '../../../../services/valueConvertor';
+import { parsingDate } from '../../../../services/valueConvertor';
 import sourceIcon from '../../../../assets/images/sourceIcon.svg';
 import LogBadge from '../../../../components/logBadge';
 
@@ -23,7 +23,7 @@ const LogPayload = ({ value, onSelected, selectedRow }) => {
     return (
         <div className={selectedRow === value?.message_seq ? 'log-payload log-selected' : 'log-payload'} onClick={() => onSelected(value?.message_seq)}>
             {selectedRow === value?.message_seq && <div className="selected"></div>}
-            <p className="title">{cutInfoLog(value?.data)}</p>
+            <p className="title">{value?.data}</p>
             <p className="created-date">{parsingDate(value?.creation_date)}</p>
             <div className="log-info">
                 <div className="source">
