@@ -279,7 +279,7 @@ const Messages = () => {
                                     fontSize="12px"
                                     fontWeight="600"
                                     disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                                     isLoading={resendProcced}
                                     onClick={() => handleResend()}
                                 />
@@ -297,7 +297,13 @@ const Messages = () => {
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">
-                    <CustomTabs defaultValue value={subTabValue} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
+                    <CustomTabs
+                        defaultValue
+                        value={subTabValue}
+                        onChange={handleChangeSubMenuItem}
+                        tabs={subTabs}
+                        tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
+                    />
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}

@@ -20,8 +20,9 @@ import { Tabs } from 'antd';
 import React from 'react';
 
 import { PriorityHighRounded } from '@material-ui/icons';
+import TooltipComponent from '../tooltip/tooltip';
 
-const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
+const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip }) => {
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
             <Tabs
@@ -33,7 +34,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length }) => {
                         disabled: tab?.disabled || disabled,
                         label: (
                             <label className="tabs-name" style={{ width: length && length[index] && '95px' }}>
-                                {tab?.name || tab}{' '}
+                                <TooltipComponent text={tooltip && tooltip[index]}>{tab?.name || tab} </TooltipComponent>
                                 {length && length[index] && (
                                     <div className="error-icon">
                                         <div>

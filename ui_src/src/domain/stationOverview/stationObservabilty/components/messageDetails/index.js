@@ -156,7 +156,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                             <Space direction="vertical">
                                 <CustomCollapse
                                     collapsible={!stationState?.stationMetaData?.is_native}
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                                     header="Producer"
                                     status={true}
                                     data={messageDetails?.producer}
@@ -165,7 +165,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 {!isFailedSchemaMessage && (
                                     <MultiCollapse
                                         header="Failed CGs"
-                                        tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                        tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                                         defaultOpen={false}
                                         data={messageDetails?.poisonedCGs}
                                     />
@@ -190,7 +190,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 backgroundColorType="orange"
                                 fontSize="12px"
                                 fontWeight="600"
-                                tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                                 disabled={!stationState?.stationMetaData?.is_native || !messageDetails?._id}
                                 onClick={() => history.push(`${window.location.pathname}/${messageDetails?._id}`)}
                             />

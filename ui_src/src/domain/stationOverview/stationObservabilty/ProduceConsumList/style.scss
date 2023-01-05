@@ -151,19 +151,17 @@
     }
 }
 .unsupported-placeholder{
-    position: relative;
+    position: absolute;
     display: flex;
     place-content: center;
     align-items:center;
-    .placeholder-img{
-        height: 68vh;
-        min-height: 500px;
-    }
-    .wrapper{
-        position: absolute;
-        text-align: -webkit-center;
-        text-align: -moz-center;
-        width: 90%;
+    height: calc(100% - 60px);
+    text-align: -webkit-center;
+    text-align: -moz-center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(1.5px);
+    top: 56px;
+    flex-direction:column;
         p{
             margin: 20px 0px;
             color: #1D1D1D;
@@ -171,7 +169,6 @@
             font-size: 22px;
             text-shadow: 0px 0px 24px rgba(0, 0, 0, 0.4);
         }
-    }
 }
 
 @keyframes blinker {  

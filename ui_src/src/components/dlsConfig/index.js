@@ -74,7 +74,7 @@ const DlsConfig = () => {
                     disabled={!stationState?.stationMetaData?.is_native}
                     onChange={() => updateDlsConfigurations(false, true)}
                     checked={dlsTypes?.schemaverse}
-                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                     loading={dlsLoading?.schemaverse}
                 />
             </div>
