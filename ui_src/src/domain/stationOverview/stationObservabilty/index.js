@@ -32,17 +32,29 @@ const StationObservabilty = () => {
         <div className="station-observabilty-container">
             <ProduceConsumList producer={true} />
             <div className="thunnel-from-sub">
-                {stationState?.stationSocketData?.connected_producers?.length === 0 && <Lottie animationData={produceEmpty} loop={true} />}
-                {stationState?.stationSocketData?.connected_producers?.length > 0 && <Lottie animationData={produce} loop={true} />}
+                {stationState?.stationMetaData?.is_native ? (
+                    <>
+                        {stationState?.stationSocketData?.connected_producers?.length === 0 && <Lottie animationData={produceEmpty} loop={true} />}
+                        {stationState?.stationSocketData?.connected_producers?.length > 0 && <Lottie animationData={produce} loop={true} />}
+                    </>
+                ) : (
+                    <Lottie animationData={produceEmpty} loop={true} />
+                )}
             </div>
             <Messages />
             <div className="thunnel-to-pub">
-                {stationState?.stationSocketData?.connected_cgs?.length === 0 && <Lottie animationData={consumeEmpty} loop={true} />}
-                {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
-                    <Lottie animationData={consumePoison} loop={true} />
-                )}
-                {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length === 0 && (
-                    <Lottie animationData={consumer} loop={true} />
+                {stationState?.stationMetaData?.is_native ? (
+                    <>
+                        {stationState?.stationSocketData?.connected_cgs?.length === 0 && <Lottie animationData={consumeEmpty} loop={true} />}
+                        {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                            <Lottie animationData={consumePoison} loop={true} />
+                        )}
+                        {stationState?.stationSocketData?.connected_cgs?.length > 0 && stationState?.stationSocketData?.poison_messages?.length === 0 && (
+                            <Lottie animationData={consumer} loop={true} />
+                        )}
+                    </>
+                ) : (
+                    <Lottie animationData={produceEmpty} loop={true} />
                 )}
             </div>
             <ProduceConsumList producer={false} />
