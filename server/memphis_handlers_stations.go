@@ -1357,11 +1357,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	headersJson, err := DecodeHeader(sm.Header)
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	var headersJson map[string]string
+	if sm.Header != nil {
+		headersJson, err = DecodeHeader(sm.Header)
+		if err != nil {
+			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	// For non-native stations - default values
