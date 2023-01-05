@@ -54,7 +54,7 @@ const StationObservabilty = () => {
                         )}
                     </>
                 ) : (
-                    <Lottie animationData={produceEmpty} loop={true} />
+                    <Lottie animationData={consumeEmpty} loop={true} />
                 )}
             </div>
             <ProduceConsumList producer={false} />

@@ -158,17 +158,20 @@
     height: calc(100% - 60px);
     text-align: -webkit-center;
     text-align: -moz-center;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(255 255 255 / 76%);
     backdrop-filter: blur(1.5px);
     top: 56px;
     flex-direction:column;
+    .placeholder-wrapper{
+        width: 90%;
         p{
             margin: 20px 0px;
             color: #1D1D1D;
             font-family: 'InterSemiBold';
             font-size: 22px;
-            text-shadow: 0px 0px 24px rgba(0, 0, 0, 0.4);
+            text-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
         }
+    }
 }
 
 @keyframes blinker {  

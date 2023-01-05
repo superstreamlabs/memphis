@@ -273,21 +273,23 @@ const ProduceConsumList = ({ producer }) => {
                 )}
                 {!stationState?.stationMetaData?.is_native && (
                     <div className="unsupported-placeholder">
-                        <img src={unsupported} alt="unsupported" />
-                        <p>For the full Memphis experience, you would need Memphis SDKs</p>
-                        <Button
-                            className="open-sdk"
-                            width="200px"
-                            height="37px"
-                            placeholder="View Memphis SDK's"
-                            colorType={'white'}
-                            radiusType="circle"
-                            border={'none'}
-                            backgroundColorType={'purple'}
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => (producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
-                        />
+                        <div className="placeholder-wrapper">
+                            <img src={unsupported} alt="unsupported" />
+                            <p>For the full Memphis experience, Memphis SDK is needed</p>
+                            <Button
+                                className="open-sdk"
+                                width="200px"
+                                height="37px"
+                                placeholder="View Memphis SDK's"
+                                colorType={'white'}
+                                radiusType="circle"
+                                border={'none'}
+                                backgroundColorType={'purple'}
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => (producer ? setOpenCreateProducer(true) : setOpenCreateConsumer(true))}
+                            />
+                        </div>
                     </div>
                 )}
             </div>

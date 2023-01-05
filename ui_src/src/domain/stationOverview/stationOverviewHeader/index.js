@@ -128,7 +128,8 @@ const StationOverviewHeader = () => {
                         />
                     </div>
                     <span className="created-by">
-                        Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
+                        Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}{' '}
+                        {!stationState?.stationMetaData?.is_native && '(non-native)'}
                     </span>
                 </div>
                 <div className="station-buttons">

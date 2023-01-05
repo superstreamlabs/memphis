@@ -58,11 +58,14 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                     <div className="left-section">
                         <div className="check-box">
                             <OverflowTip className="station-name" text={station?.station?.name}>
-                                {station?.station?.name}
+                                {station?.station?.name}{' '}
+                                <label className="data-labels date" style={{ marginLeft: '5px' }}>
+                                    {!station?.station?.is_native && '(non-native)'}
+                                </label>
                             </OverflowTip>
                         </div>
                         <label className="data-labels date">
-                            Created by {station?.station?.created_by_user} at {parsingDate(station?.station?.creation_date)}
+                            Created by {station?.station?.created_by_user} at {parsingDate(station?.station?.creation_date)}{' '}
                         </label>
                     </div>
                     <div className="middle-section">
