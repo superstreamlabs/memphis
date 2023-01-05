@@ -94,8 +94,8 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             case filterType.DATE:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="date-container" key={filterField.name}>
-                            <label>{filterField.label}</label>
+                        <div className="date-container" key={filterField?.name}>
+                            <label>{filterField?.label}</label>
                             <DatePicker
                                 type="text"
                                 radiusType="semi-round"
@@ -116,7 +116,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         height="25px"
                         fontFamily="InterSemiBold"
                         options={filterGroup.fields.map((item, id) => {
-                            return { id: id, value: id, label: item.name };
+                            return { id: id, value: id, label: item?.name };
                         })}
                         radioStyle="radiobtn-capitalize"
                         radioValue={filterGroup.radioValue}
@@ -132,13 +132,13 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 return filterGroup?.fields?.map((filterField, filterFieldIndex = 0) => {
                     if (filterFieldIndex < 3)
                         return (
-                            <div className="label-container" key={filterField.name}>
+                            <div className="label-container" key={filterField?.name}>
                                 <Checkbox
                                     checked={filterField?.checked || false}
                                     onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)}
-                                    name={filterGroup.name}
+                                    name={filterGroup?.name}
                                 />
-                                <Tag tag={{ color: filterField.color, name: filterField.name }}></Tag>
+                                <Tag tag={{ color: filterField.color, name: filterField?.name }}></Tag>
                             </div>
                         );
                     else {
@@ -148,9 +148,9 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                                     <Checkbox
                                         checked={filterField?.checked || false}
                                         onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)}
-                                        name={filterGroup.name}
+                                        name={filterGroup?.name}
                                     />
-                                    <Tag tag={{ color: filterField.color, name: filterField.name }}></Tag>
+                                    <Tag tag={{ color: filterField.color, name: filterField?.name }}></Tag>
                                 </div>
                                 {filterFieldIndex === filterGroup.fields.length - 1 && (
                                     <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, false)}>
@@ -170,21 +170,25 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             case labelType.CIRCLEDLETTER:
                 return filterGroup?.fields?.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="circle-container" key={filterField.name}>
-                            <Checkbox checked={filterField?.checked || false} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
+                        <div className="circle-container" key={filterField?.name}>
+                            <Checkbox
+                                checked={filterField?.checked || false}
+                                onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)}
+                                name={filterGroup?.name}
+                            />
                             <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
-                                {filterField.name[0]?.toUpperCase()}
+                                {filterField?.name[0]?.toUpperCase()}
                             </p>
-                            <label>{filterField.name}</label>
+                            <label>{filterField?.name}</label>
                         </div>
                     );
                 });
             default:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="default-checkbox" key={filterField.name}>
-                            <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup.name} />
-                            <label>{filterField.name}</label>
+                        <div className="default-checkbox" key={filterField?.name}>
+                            <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup?.name} />
+                            <label>{filterField?.name}</label>
                         </div>
                     );
                 });

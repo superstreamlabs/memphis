@@ -85,8 +85,8 @@ const StationsList = () => {
                     <div>
                         {state.filteredList?.map((station) => (
                             <StationBoxOverview
-                                key={station.station.id}
-                                isCheck={isCheck.includes(station.station.name)}
+                                key={station?.station?.id}
+                                isCheck={isCheck.includes(station?.station?.name)}
                                 handleCheckedClick={handleCheckedClick}
                                 station={station}
                             />
@@ -115,7 +115,7 @@ const StationsList = () => {
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(state.filteredList.map((li) => li.station.name));
+        setIsCheck(state.filteredList.map((li) => li.station?.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
