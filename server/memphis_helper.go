@@ -624,12 +624,14 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		}
 		messageDetails.Data = data
 
+		var headersJson map[string]string
 		if stationIsNative {
-			headersJson, err := DecodeHeader(msg.Header)
-			if err != nil {
-				return nil, err
+			if msg.Header != nil {
+				headersJson, err = DecodeHeader(msg.Header)
+				if err != nil {
+					return nil, err
+				}
 			}
-
 			connectionIdHeader := headersJson["$memphis_connectionId"]
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
@@ -725,7 +727,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 			dataLen := len(msg)
 			if findHeader {
 				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
-				if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
+				if dataFirstIdx > len(msg)-len(CR_LF) {
 					s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
 				}
 

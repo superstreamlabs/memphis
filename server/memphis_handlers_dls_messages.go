@@ -82,18 +82,20 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	producerDetails := models.ProducerDetails{}
 	producedByHeader := ""
 	poisonedCg := models.PoisonedCg{}
-	
-	headersJson, err := DecodeHeader(poisonMessageContent.Header)
-	if err != nil {
-		serv.Errorf("handleNewPoisonMessage: " + err.Error())
-		return
+
+	var headersJson map[string]string
+	if poisonMessageContent.Header != nil {
+		headersJson, err = DecodeHeader(poisonMessageContent.Header)
+		if err != nil {
+			serv.Errorf("handleNewPoisonMessage: " + err.Error())
+			return
+		}
 	}
-	
 	messagePayload := models.MessagePayloadDls{
 		TimeSent: poisonMessageContent.Time,
 		Size:     len(poisonMessageContent.Subject) + len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
 		Data:     hex.EncodeToString(poisonMessageContent.Data),
-		Headers: headersJson,
+		Headers:  headersJson,
 	}
 
 	if station.IsNative {
@@ -286,7 +288,7 @@ cleanup:
 				idCheck[msgId] = true
 				message := dlsMsg.Message
 				if dlsMsg.CreationDate.IsZero() {
-					message.TimeSent = time.Unix(0, dlsMsg.CreationUnix * 1000000)
+					message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
 					message.TimeSent = dlsMsg.CreationDate
 				}
@@ -417,7 +419,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 				dlsMsg.Message.Size = size
 				if dlsMsg.CreationDate.IsZero() {
-					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix * 1000000)
+					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
 					dlsMsg.Message.TimeSent = dlsMsg.CreationDate
 				}
