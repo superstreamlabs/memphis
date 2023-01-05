@@ -36,7 +36,7 @@ export const INSTALLATION_GUIDE = {
             },
             {
                 title: 'Step 2 - Expose memphis to your localhost',
-                command: `kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis > /dev/null &`,
+                command: `kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 7770:7770 --namespace memphis > /dev/null &`,
                 icon: 'copy'
             },
             {
