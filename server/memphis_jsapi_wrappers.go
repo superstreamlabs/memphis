@@ -167,6 +167,12 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 		return
 	}
 
+	if len(cfg.Name) > 32 {
+		resp.Error = NewJSStreamCreateError(errors.New("Stream name can not be greater than 32 characters"))
+		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		return
+	}
+
 	go memphisCreateNonNativeStationIfNeeded(s, reply, cfg, c)
 
 	s.jsStreamCreateRequestIntern(sub, c, acc, subject, reply, rmsg)
