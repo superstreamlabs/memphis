@@ -733,6 +733,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 
 				dataLen = len(msg) - dataFirstIdx
 			}
+			dataLen -= len(CR_LF)
 
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
