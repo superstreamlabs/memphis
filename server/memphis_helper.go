@@ -880,6 +880,10 @@ func (s *Server) memphisGetMessagesByFilter(streamName, filterSubject string, st
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnGlobalAcc(sub)
+	err = serv.memphisRemoveConsumer(streamName, durableName)
+	if err != nil {
+		return msgs, err
+	}
 	return msgs, nil
 }
 
