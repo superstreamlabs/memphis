@@ -48,11 +48,12 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
 
     useEffect(() => {
         if (filterState.isOpen && filterState.counter === 0) {
-            getFilterDetails();
+            getFilterFields();
         }
     }, [filterState.isOpen]);
 
     useEffect(() => {
+        //Initial the state with filterFields
         filterFields.length > 0 && filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
     }, [filterFields]);
 
@@ -60,10 +61,10 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         handleFilter();
     }, [searchInput, filterTerms, state?.domainList]);
 
-    const getFilterDetails = async () => {
+    const getFilterFields = async () => {
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_FILTER_DETAILS}?route=${filterComponent}`);
-            if (res) buildFilter(res);
+            if (res) buildEmptyFilter(res);
         } catch (err) {
             return;
         }
@@ -134,23 +135,23 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         setSearchInput(e.target.value);
     };
 
-    const buildFilter = (rawFilterDetails) => {
+    const buildEmptyFilter = (rawFilterDetails) => {
         switch (filterComponent) {
             case 'stations':
-                drawStationsFilter(rawFilterDetails);
+                buildEmptyStationsFilter(rawFilterDetails);
                 return;
             case 'syslogs':
-                drawLogsFilter(rawFilterDetails);
+                buildEmptyLogsFilter(rawFilterDetails);
                 return;
             case 'schemaverse':
-                drawSchemaFilter(rawFilterDetails);
+                buildEmptySchemaFilter(rawFilterDetails);
                 return;
             default:
                 return;
         }
     };
 
-    const drawStationsFilter = (rawFilterDetails) => {
+    const buildEmptyStationsFilter = (rawFilterDetails) => {
         let filteredFields = [];
         if (rawFilterDetails?.tags?.length > 0) {
             const tagFilter = {
@@ -191,7 +192,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         setFilterFields(filteredFields);
     };
 
-    const drawSchemaFilter = (rawFilterDetails) => {
+    const buildEmptySchemaFilter = (rawFilterDetails) => {
         let filteredFields = [];
         if (rawFilterDetails?.tags?.length > 0) {
             const tagFilter = {
@@ -243,7 +244,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         setFilterFields(filteredFields);
     };
 
-    const drawLogsFilter = (rawFilterDetails) => {
+    const buildEmptyLogsFilter = (rawFilterDetails) => {
         let filteredFields = [];
         const typeFilter = {
             name: 'type',
@@ -260,6 +261,41 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
 
     const flipOpen = () => {
         filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
+    };
+
+    const createFieldsToFilterObj = () => {
+        let filterTerms = [];
+        filterState?.filterFields.forEach((element) => {
+            let term = {
+                name: element.name,
+                fields: []
+            };
+            if (element.filterType === filterType.CHECKBOX) {
+                element.fields.forEach((field) => {
+                    if (field.checked) {
+                        let t = term.fields;
+                        t.push(field.name);
+                        term.fields = t;
+                    }
+                });
+            } else if (element.filterType === filterType.RADIOBUTTON && element.radioValue !== -1) {
+                let t = [];
+                t.push(element.fields[element.radioValue].name);
+                term.fields = t;
+            } else {
+                element.fields.forEach((field) => {
+                    if (field?.value !== undefined && field?.value !== '') {
+                        let t = term.fields;
+                        let d = {};
+                        d[field.name] = field.value;
+                        t.push(d);
+                        term.fields = t;
+                    }
+                });
+            }
+            if (term.fields.length > 0) filterTerms.push(term);
+        });
+        setFilterTerms(filterTerms);
     };
 
     const handleFilter = () => {
@@ -331,47 +367,14 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 applyFilter(filterState?.filterFields[0]?.fields[selectedField]?.name);
                 setFilterTerms([filterState?.filterFields[0]?.fields[selectedField]?.name]);
             }
-        } else {
-            let filterTerms = [];
-            filterState?.filterFields.forEach((element) => {
-                let term = {
-                    name: element.name,
-                    fields: []
-                };
-                if (element.filterType === filterType.CHECKBOX) {
-                    element.fields.forEach((field) => {
-                        if (field.checked) {
-                            let t = term.fields;
-                            t.push(field.name);
-                            term.fields = t;
-                        }
-                    });
-                } else if (element.filterType === filterType.RADIOBUTTON && element.radioValue !== -1) {
-                    let t = [];
-                    t.push(element.fields[element.radioValue].name);
-                    term.fields = t;
-                } else {
-                    element.fields.forEach((field) => {
-                        if (field?.value !== undefined && field?.value !== '') {
-                            let t = term.fields;
-                            let d = {};
-                            d[field.name] = field.value;
-                            t.push(d);
-                            term.fields = t;
-                        }
-                    });
-                }
-                if (term.fields.length > 0) filterTerms.push(term);
-            });
-            setFilterTerms(filterTerms);
-        }
+        } else createFieldsToFilterObj();
         flipOpen();
     };
 
     const handleClear = () => {
         filterDispatch({ type: 'SET_COUNTER', payload: 0 });
-        let filter = filterFields;
-        filter.map((filterGroup) => {
+        let clearFilter = filterFields;
+        clearFilter.map((filterGroup) => {
             switch (filterGroup.filterType) {
                 case filterType.CHECKBOX:
                     filterGroup.fields.map((field) => (field.checked = false));
@@ -381,7 +384,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     filterGroup.radioValue = -1;
             }
         });
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: clearFilter });
         setFilterTerms([]);
         if (filterComponent === 'syslogs') {
             dispatch({ type: 'SET_LOG_FILTER', payload: 'external' });
