@@ -78,6 +78,7 @@ type createConsumerRequest struct {
 	ConsumerGroup    string `json:"consumers_group"`
 	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+	OptStartSequence uint64 `json:"opt_start_sequence"`
 }
 
 type attachSchemaRequest struct {

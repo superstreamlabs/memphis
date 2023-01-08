@@ -361,19 +361,39 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		return err
 	}
 
-	err = s.memphisAddConsumer(stationName.Intern(), &ConsumerConfig{
-		Durable:       consumerName,
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-		MaxDeliver:    MaxMsgDeliveries,
-		FilterSubject: stationName.Intern() + ".final",
-		ReplayPolicy:  ReplayInstant,
-		MaxAckPending: -1,
-		HeadersOnly:   false,
-		// RateLimit: ,// Bits per sec
-		// Heartbeat: // time.Duration,
-	})
+	var ackPolicy DeliverPolicy
+	var consumerConfig *ConsumerConfig
+	if consumer.OptStartSequence == 0 {
+		ackPolicy = DeliverAll
+		consumerConfig = &ConsumerConfig{
+			Durable:       consumerName,
+			DeliverPolicy: ackPolicy,
+			AckPolicy:     AckExplicit,
+			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+			MaxDeliver:    MaxMsgDeliveries,
+			FilterSubject: stationName.Intern() + ".final",
+			ReplayPolicy:  ReplayInstant,
+			MaxAckPending: -1,
+			HeadersOnly:   false,
+		}
+	} else {
+		ackPolicy = DeliverByStartSequence
+		consumerConfig = &ConsumerConfig{
+			Durable:       consumerName,
+			DeliverPolicy: ackPolicy,
+			AckPolicy:     AckExplicit,
+			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+			MaxDeliver:    MaxMsgDeliveries,
+			FilterSubject: stationName.Intern() + ".final",
+			ReplayPolicy:  ReplayInstant,
+			MaxAckPending: -1,
+			HeadersOnly:   false,
+			OptStartSeq:   consumer.OptStartSequence,
+			// RateLimit: ,// Bits per sec
+			// Heartbeat: // time.Duration,
+		}
+	}
+	err = s.memphisAddConsumer(stationName.Intern(), consumerConfig)
 	return err
 }
 

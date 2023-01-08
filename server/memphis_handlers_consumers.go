@@ -246,6 +246,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		IsDeleted:        false,
 		MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
 		MaxMsgDeliveries: ccr.MaxMsgDeliveries,
+		OptStartSequence: ccr.OptStartSequence,
 	}
 
 	if consumerGroupExist {
