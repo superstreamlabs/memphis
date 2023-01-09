@@ -390,7 +390,7 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 			// Heartbeat: // time.Duration,
 		}
 
-	} else if consumer.OptStartSequence == 0 {
+	} else if consumer.OptStartSequence == 0 && consumer.LastMessages == 0 {
 		ackPolicy = DeliverAll
 		consumerConfig = &ConsumerConfig{
 			Durable:       consumerName,
