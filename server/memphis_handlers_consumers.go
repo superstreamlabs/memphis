@@ -251,6 +251,12 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if consumerGroupExist {
+		if newConsumer.OptStartSequence != consumerFromGroup.OptStartSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+			err = errors.New("The consuer already exists with different configuration. You can't change the configuration for existing consumer. You can create a new consumer and add new configuration")
+			respondWithErr(s, reply, err)
+			return
+		}
+
 		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
 			err := s.CreateConsumer(newConsumer, station)
 			if err != nil {
