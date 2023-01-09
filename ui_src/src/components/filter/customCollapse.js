@@ -31,6 +31,11 @@ const { Panel } = Collapse;
 const CustomCollapse = ({ cancel, apply, clear }) => {
     const [filterState, filterDispatch] = useContext(FilterStoreContext);
     const [activeKey, setActiveKey] = useState(['0', '1', '2']);
+    const [filterLocalState, setFilterLocalState] = useState(null);
+
+    useEffect(() => {
+        if (filterState?.filterFields?.length > 0) setFilterLocalState(filterState);
+    }, [filterState.filterFields, filterState.isOpen]);
 
     useEffect(() => {
         if (activeKey.length > 3) {
@@ -43,7 +48,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
         const keyDownHandler = (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                apply();
+                applyFilter();
             }
         };
         document.addEventListener('keydown', keyDownHandler);
@@ -56,12 +61,18 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
         setActiveKey(key);
     };
 
+    const applyFilter = () => {
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterLocalState.filterFields });
+        filterDispatch({ type: 'SET_COUNTER', payload: filterLocalState.counter });
+        apply();
+    };
+
     const updateChoice = (filterGroup, filterField, value) => {
         let updatedCounter;
         let filter;
-        updatedCounter = filterState.counter;
-        filter = filterState.filterFields;
-        switch (filterState.filterFields[filterGroup].filterType) {
+        updatedCounter = filterLocalState.counter;
+        filter = filterLocalState.filterFields;
+        switch (filterLocalState.filterFields[filterGroup].filterType) {
             case filterType.CHECKBOX:
                 if (filter[filterGroup].fields[filterField].checked) updatedCounter--;
                 else updatedCounter++;
@@ -77,14 +88,13 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 filter[filterGroup].fields[filterField].value = value;
                 break;
         }
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-        filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
+        setFilterLocalState({ ...filterLocalState, counter: updatedCounter, filterFields: filter });
     };
 
     const showMoreLess = (index, showMoreFalg) => {
-        let filter = filterState.filterFields;
+        let filter = filterLocalState.filterFields;
         filter[index].showMore = showMoreFalg;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        setFilterLocalState({ ...filterLocalState, filterFields: filter });
     };
 
     const drawComponent = (filterGroup, filterGroupIndex) => {
@@ -196,13 +206,13 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             <div className="collapse-header">
                 <div className="header-name-counter">
                     <label>Filter</label>
-                    {filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
+                    {filterLocalState?.counter > 0 && <div className="filter-counter">{filterLocalState?.counter}</div>}
                 </div>
                 <label className="clear" onClick={clear}>
                     Clear All
                 </label>
             </div>
-            {filterState?.filterFields?.map((filterGroup, filterGroupIndex = 0) => (
+            {filterLocalState?.filterFields?.map((filterGroup, filterGroupIndex = 0) => (
                 <Panel
                     header={
                         filterGroup?.fields?.length > 0 && (
@@ -252,7 +262,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                     backgroundColorType={'purple'}
                     fontSize="12px"
                     fontWeight="bold"
-                    onClick={apply}
+                    onClick={applyFilter}
                 />
             </div>
         </Collapse>
