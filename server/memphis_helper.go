@@ -370,7 +370,7 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	lastSeq := streamInfo.State.LastSeq
 
 	if consumer.LastMessages != 0 {
-		lastMessages := lastSeq - consumer.LastMessages
+		lastMessages := (lastSeq - consumer.LastMessages) + 1
 		if int(lastMessages) < 0 {
 			lastMessages = uint64(1)
 		}
