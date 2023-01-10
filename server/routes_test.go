@@ -696,6 +696,7 @@ type checkDuplicateRouteLogger struct {
 }
 
 func (l *checkDuplicateRouteLogger) Noticef(format string, v ...interface{}) {}
+func (l *checkDuplicateRouteLogger) Systemf(format string, v ...interface{}) {}
 func (l *checkDuplicateRouteLogger) Errorf(format string, v ...interface{})  {}
 func (l *checkDuplicateRouteLogger) Warnf(format string, v ...interface{})   {}
 func (l *checkDuplicateRouteLogger) Fatalf(format string, v ...interface{})  {}

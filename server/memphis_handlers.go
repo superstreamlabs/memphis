@@ -74,7 +74,7 @@ type srvMemphis struct {
 }
 
 type memphisWS struct {
-	subscriptions map[string]memphisWSReqFiller
+	subscriptions *concurrentMap[memphisWSReqFiller]
 	webSocketMu   sync.Mutex
 	quitCh        chan struct{}
 }
