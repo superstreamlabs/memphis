@@ -81,6 +81,12 @@ func (l *DummyLogger) Tracef(format string, v ...interface{}) {
 	l.Msg = fmt.Sprintf(format, v...)
 	l.aggregate()
 }
+func (l *DummyLogger) Systemf(format string, v ...interface{}) {
+	l.Lock()
+	defer l.Unlock()
+	l.Msg = fmt.Sprintf(format, v...)
+	l.aggregate()
+}
 
 // NewDummyLogger creates a dummy logger and allows to ask for logs to be
 // retained instead of just keeping the most recent. Use retain to provide an
