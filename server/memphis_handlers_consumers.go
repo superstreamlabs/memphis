@@ -273,6 +273,21 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 			MaxMsgDeliveries: ccr.MaxMsgDeliveries,
 			LastMessages:     ccr.LastMessages,
 		}
+	} else {
+		newConsumer = models.Consumer{
+			ID:               primitive.NewObjectID(),
+			Name:             name,
+			StationId:        station.ID,
+			Type:             consumerType,
+			ConnectionId:     connectionIdObj,
+			CreatedByUser:    connection.CreatedByUser,
+			ConsumersGroup:   consumerGroup,
+			IsActive:         true,
+			CreationDate:     time.Now(),
+			IsDeleted:        false,
+			MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
+			MaxMsgDeliveries: ccr.MaxMsgDeliveries,
+		}
 	}
 
 	if consumerGroupExist {
