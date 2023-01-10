@@ -20,20 +20,20 @@ import (
 )
 
 type Consumer struct {
-	ID               primitive.ObjectID `json:"id" bson:"_id"`
-	Name             string             `json:"name" bson:"name"`
-	StationId        primitive.ObjectID `json:"station_id" bson:"station_id"`
-	Type             string             `json:"type" bson:"type"`
-	ConnectionId     primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	ConsumersGroup   string             `json:"consumers_group" bson:"consumers_group"`
-	MaxAckTimeMs     int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	CreatedByUser    string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive         bool               `json:"is_active" bson:"is_active"`
-	CreationDate     time.Time          `json:"creation_date" bson:"creation_date"`
-	IsDeleted        bool               `json:"is_deleted" bson:"is_deleted"`
-	MaxMsgDeliveries int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	OptStartSequence uint64             `json:"opt_start_sequence"`
-	LastMessages     uint64             `json:"last_messages"`
+	ID                       primitive.ObjectID `json:"id" bson:"_id"`
+	Name                     string             `json:"name" bson:"name"`
+	StationId                primitive.ObjectID `json:"station_id" bson:"station_id"`
+	Type                     string             `json:"type" bson:"type"`
+	ConnectionId             primitive.ObjectID `json:"connection_id" bson:"connection_id"`
+	ConsumersGroup           string             `json:"consumers_group" bson:"consumers_group"`
+	MaxAckTimeMs             int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
+	CreatedByUser            string             `json:"created_by_user" bson:"created_by_user"`
+	IsActive                 bool               `json:"is_active" bson:"is_active"`
+	CreationDate             time.Time          `json:"creation_date" bson:"creation_date"`
+	IsDeleted                bool               `json:"is_deleted" bson:"is_deleted"`
+	MaxMsgDeliveries         int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
+	StartConsumeFromSequence uint64             `json:"start_consume_from_sequence"`
+	LastMessages             uint64             `json:"last_messages"`
 }
 
 type ExtendedConsumer struct {
