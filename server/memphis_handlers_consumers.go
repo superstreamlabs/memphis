@@ -233,26 +233,57 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	newConsumer := models.Consumer{
-		ID:               primitive.NewObjectID(),
-		Name:             name,
-		StationId:        station.ID,
-		Type:             consumerType,
-		ConnectionId:     connectionIdObj,
-		CreatedByUser:    connection.CreatedByUser,
-		ConsumersGroup:   consumerGroup,
-		IsActive:         true,
-		CreationDate:     time.Now(),
-		IsDeleted:        false,
-		MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
-		MaxMsgDeliveries: ccr.MaxMsgDeliveries,
-		OptStartSequence: ccr.OptStartSequence,
-		LastMessages:     ccr.LastMessages,
+	if ccr.StartConsumeFromSequence != 0 && ccr.LastMessages != 0 {
+		errMsg := "Consumer creation can't contain more than one of the following options: startConsumeFromSequence or LastMessages"
+		serv.Errorf("createConsumerDirect: " + errMsg)
+		respondWithErr(s, reply, err)
+		return
+	}
+
+	var newConsumer models.Consumer
+	if ccr.StartConsumeFromSequence != 0 {
+		newConsumer = models.Consumer{
+			ID:                       primitive.NewObjectID(),
+			Name:                     name,
+			StationId:                station.ID,
+			Type:                     consumerType,
+			ConnectionId:             connectionIdObj,
+			CreatedByUser:            connection.CreatedByUser,
+			ConsumersGroup:           consumerGroup,
+			IsActive:                 true,
+			CreationDate:             time.Now(),
+			IsDeleted:                false,
+			MaxAckTimeMs:             int64(ccr.MaxAckTimeMillis),
+			MaxMsgDeliveries:         ccr.MaxMsgDeliveries,
+			StartConsumeFromSequence: ccr.StartConsumeFromSequence,
+		}
+	} else if ccr.LastMessages != 0 {
+		newConsumer = models.Consumer{
+			ID:               primitive.NewObjectID(),
+			Name:             name,
+			StationId:        station.ID,
+			Type:             consumerType,
+			ConnectionId:     connectionIdObj,
+			CreatedByUser:    connection.CreatedByUser,
+			ConsumersGroup:   consumerGroup,
+			IsActive:         true,
+			CreationDate:     time.Now(),
+			IsDeleted:        false,
+			MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
+			MaxMsgDeliveries: ccr.MaxMsgDeliveries,
+			LastMessages:     ccr.LastMessages,
+		}
 	}
 
 	if consumerGroupExist {
+		if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+			errMsg := errors.New("The consumer already exists with different configuration. You can't change the configuration to an existing consumer.")
+			serv.Errorf("createConsumerDirect: " + errMsg.Error())
+			respondWithErr(s, reply, errMsg)
+			return
+		}
 
-		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries || newConsumer.OptStartSequence != consumerFromGroup.OptStartSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
 			err := s.CreateConsumer(newConsumer, station)
 			if err != nil {
 				errMsg := "Consumer " + ccr.Name + " at station " + ccr.StationName + ": " + err.Error()

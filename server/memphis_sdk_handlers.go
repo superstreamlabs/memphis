@@ -71,15 +71,15 @@ type destroyProducerRequest struct {
 }
 
 type createConsumerRequest struct {
-	Name             string `json:"name"`
-	StationName      string `json:"station_name"`
-	ConnectionId     string `json:"connection_id"`
-	ConsumerType     string `json:"consumer_type"`
-	ConsumerGroup    string `json:"consumers_group"`
-	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
-	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
-	OptStartSequence uint64 `json:"opt_start_sequence"`
-	LastMessages     uint64 `json:"last_messages"`
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
+	LastMessages             uint64 `json:"last_messages"`
 }
 
 type attachSchemaRequest struct {

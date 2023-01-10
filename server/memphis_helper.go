@@ -361,64 +361,44 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		return err
 	}
 
-	var ackPolicy DeliverPolicy
-	var consumerConfig *ConsumerConfig
+	var deliveryPolicy DeliverPolicy
 	streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
 	if err != nil {
 		return errors.New("Streaminfo: " + err.Error())
 	}
 	lastSeq := streamInfo.State.LastSeq
 
+	var optStartSeq uint64
 	if consumer.LastMessages != 0 {
 		lastMessages := (lastSeq - consumer.LastMessages) + 1
 		if int(lastMessages) < 0 {
 			lastMessages = uint64(1)
 		}
-		ackPolicy = DeliverByStartSequence
-		consumerConfig = &ConsumerConfig{
-			Durable:       consumerName,
-			DeliverPolicy: ackPolicy,
-			AckPolicy:     AckExplicit,
-			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-			MaxDeliver:    MaxMsgDeliveries,
-			FilterSubject: stationName.Intern() + ".final",
-			ReplayPolicy:  ReplayInstant,
-			MaxAckPending: -1,
-			HeadersOnly:   false,
-			OptStartSeq:   lastMessages,
-			// RateLimit: ,// Bits per sec
-			// Heartbeat: // time.Duration,
+		deliveryPolicy = DeliverByStartSequence
+		optStartSeq = lastMessages
+	} else if consumer.StartConsumeFromSequence == 0 && consumer.LastMessages == 0 {
+		deliveryPolicy = DeliverAll
+	} else if consumer.StartConsumeFromSequence != 0 {
+		if int(consumer.StartConsumeFromSequence) < 0 {
+			consumer.StartConsumeFromSequence = uint64(1)
 		}
+		deliveryPolicy = DeliverByStartSequence
+		optStartSeq = consumer.StartConsumeFromSequence
+	}
 
-	} else if consumer.OptStartSequence == 0 && consumer.LastMessages == 0 {
-		ackPolicy = DeliverAll
-		consumerConfig = &ConsumerConfig{
-			Durable:       consumerName,
-			DeliverPolicy: ackPolicy,
-			AckPolicy:     AckExplicit,
-			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-			MaxDeliver:    MaxMsgDeliveries,
-			FilterSubject: stationName.Intern() + ".final",
-			ReplayPolicy:  ReplayInstant,
-			MaxAckPending: -1,
-			HeadersOnly:   false,
-		}
-	} else if consumer.OptStartSequence != 0 {
-		ackPolicy = DeliverByStartSequence
-		consumerConfig = &ConsumerConfig{
-			Durable:       consumerName,
-			DeliverPolicy: ackPolicy,
-			AckPolicy:     AckExplicit,
-			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-			MaxDeliver:    MaxMsgDeliveries,
-			FilterSubject: stationName.Intern() + ".final",
-			ReplayPolicy:  ReplayInstant,
-			MaxAckPending: -1,
-			HeadersOnly:   false,
-			OptStartSeq:   consumer.OptStartSequence,
-			// RateLimit: ,// Bits per sec
-			// Heartbeat: // time.Duration,
-		}
+	consumerConfig := &ConsumerConfig{
+		Durable:       consumerName,
+		DeliverPolicy: deliveryPolicy,
+		AckPolicy:     AckExplicit,
+		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+		MaxDeliver:    MaxMsgDeliveries,
+		FilterSubject: stationName.Intern() + ".final",
+		ReplayPolicy:  ReplayInstant,
+		MaxAckPending: -1,
+		HeadersOnly:   false,
+		OptStartSeq:   optStartSeq,
+		// RateLimit: ,// Bits per sec
+		// Heartbeat: // time.Duration,
 	}
 	err = s.memphisAddConsumer(stationName.Intern(), consumerConfig)
 	return err
