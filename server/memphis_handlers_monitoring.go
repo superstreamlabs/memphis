@@ -15,6 +15,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -28,6 +29,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types"
+	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -115,6 +118,80 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				ActualPods:  1,
 				Ports:       []int{27017},
 			})
+		}
+		// Get CPU usage
+		// numCPU := runtime.NumCPU()
+		// maxProcs := runtime.GOMAXPROCS(-1)
+		// fmt.Printf("CPUs: %d\nMax procs: %d\n", numCPU, maxProcs)
+		// fmt.Printf("CPU: %2f%%\n", float64(numCPU/maxProcs))
+
+		// cmd := exec.Command("iostat")
+		// stdout, err := cmd.Output()
+		// if err != nil {
+		// 	return components, err
+		// }
+		// fmt.Printf(string(stdout))
+
+		// Get memory usage
+		// var mem runtime.MemStats
+		// runtime.ReadMemStats(&mem)
+		// fmt.Printf("Total allocated memory: %d bytes\n", mem.TotalAlloc)
+		// fmt.Printf("Number of memory allocations: %d\n", mem.Mallocs)
+		// fmt.Printf("Memory: %2f%%\n", (float64(mem.Mallocs)/float64(mem.TotalAlloc))*100)
+
+		// var stat syscall.Statfs_t
+		// syscall.Statfs("/", &stat)
+		// total := uint64(stat.Bsize) * stat.Blocks
+		// free := uint64(stat.Bsize) * stat.Bfree
+		// used := total - free
+		// fmt.Printf("Total: %d bytes\n", total)
+		// fmt.Printf("Free: %d bytes\n", free)
+		// fmt.Printf("Used: %d bytes\n", used)
+		// fmt.Printf("Storage: %f%%", (float64(used)/float64(total))*100)
+		ctx := context.Background()
+		cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
+		if err != nil {
+			return components, err
+		}
+
+		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+		if err != nil {
+			return components, err
+		}
+
+		for _, container := range containers {
+			// xx := container.SizeRootFs
+			// container.Ports
+			stats, err := cli.ContainerStats(ctx, container.ID, false)
+			if err != nil {
+				return components, err
+			}
+			defer stats.Body.Close()
+
+			body, err := ioutil.ReadAll(stats.Body)
+			if err != nil {
+				return components, err
+			}
+			var statsType types.Stats
+			err = json.Unmarshal(body, &statsType)
+			// err = statsType.Read.UnmarshalBinary(body)
+			if err != nil {
+				return components, err
+			}
+			// inspect, err := cli.ContainerInspect(ctx, container.ID)
+			// if err != nil {
+			// 	panic(err)
+			// }
+			serv.Noticef("Container "+container.Names[0]+" CPU: %.2f%%\n", float64((statsType.CPUStats.CPUUsage.TotalUsage/1000000000)/uint64(statsType.CPUStats.OnlineCPUs)))
+			serv.Noticef("Container "+container.Names[0]+" Memory: %.2f%%\n", (float64(statsType.MemoryStats.Usage)/float64(statsType.MemoryStats.Limit))*100)
+			// fmt.Printf("CPU %.2f%%\n", float64((statsType.CPUStats.CPUUsage.TotalUsage/1000000000)/uint64(statsType.CPUStats.OnlineCPUs)))
+			// fmt.Printf("Memory %.2f%%\n", (float64(statsType.MemoryStats.Usage)/float64(statsType.MemoryStats.Limit))*100)
+			// sum := 0
+			// for _, ioByte := range statsType.BlkioStats.IoServiceBytesRecursive {
+			// 	sum += int(ioByte.Value)
+			// }
+			// fmt.Printf("storage %d\n", sum)
+			// fmt.Printf("Storage %d\n", inspect.HostConfig.Resources.BlkioWeight)
 		}
 
 		components = append(components, models.SystemComponent{
