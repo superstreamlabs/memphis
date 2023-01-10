@@ -252,7 +252,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	if consumerGroupExist {
 
-		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
+		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries || newConsumer.OptStartSequence != consumerFromGroup.OptStartSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
 			err := s.CreateConsumer(newConsumer, station)
 			if err != nil {
 				errMsg := "Consumer " + ccr.Name + " at station " + ccr.StationName + ": " + err.Error()
