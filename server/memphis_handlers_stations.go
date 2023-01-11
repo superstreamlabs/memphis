@@ -439,7 +439,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			streamName := info.Config.Name
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
 				splitName := strings.Split(streamName, "-")
-				stationName := splitName[1]
+				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
 				_, ok := streamInfoToDls[stationName]
 				if ok {
 					infoToUpdate := streamInfoToDls[stationName]
@@ -511,7 +511,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			streamName := info.Config.Name
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
 				splitName := strings.Split(streamName, "-")
-				stationName := splitName[1]
+				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
 				_, ok := streamInfoToDls[stationName]
 				if ok {
 					infoToUpdate := streamInfoToDls[stationName]
