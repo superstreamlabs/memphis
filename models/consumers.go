@@ -33,7 +33,7 @@ type Consumer struct {
 	IsDeleted                bool               `json:"is_deleted" bson:"is_deleted"`
 	MaxMsgDeliveries         int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
 	StartConsumeFromSequence uint64             `json:"start_consume_from_sequence"`
-	LastMessages             uint64             `json:"last_messages"`
+	LastMessages             int64              `json:"last_messages"`
 }
 
 type ExtendedConsumer struct {

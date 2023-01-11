@@ -369,16 +369,16 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	lastSeq := streamInfo.State.LastSeq
 
 	var optStartSeq uint64
-	if consumer.LastMessages != 0 {
-		lastMessages := (lastSeq - consumer.LastMessages) + 1
+	if consumer.LastMessages > 0 {
+		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
 		if int(lastMessages) < 0 {
 			lastMessages = uint64(1)
 		}
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = lastMessages
-	} else if consumer.StartConsumeFromSequence == 0 && consumer.LastMessages == 0 {
+	} else if consumer.StartConsumeFromSequence == 1 || consumer.LastMessages == -1 {
 		deliveryPolicy = DeliverAll
-	} else if consumer.StartConsumeFromSequence != 0 {
+	} else if consumer.StartConsumeFromSequence > 1 {
 		if int(consumer.StartConsumeFromSequence) < 0 {
 			consumer.StartConsumeFromSequence = uint64(1)
 		}

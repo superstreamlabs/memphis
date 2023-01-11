@@ -233,15 +233,15 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if ccr.StartConsumeFromSequence != 0 && ccr.LastMessages != 0 {
-		errMsg := "Consumer creation can't contain more than one of the following options: startConsumeFromSequence or LastMessages"
+	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
+		errMsg := "Consumer creation options can't contain both startConsumeFromSequence and lastMessages"
 		serv.Errorf("createConsumerDirect: " + errMsg)
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	var newConsumer models.Consumer
-	if ccr.StartConsumeFromSequence != 0 {
+	if ccr.StartConsumeFromSequence > 1 {
 		newConsumer = models.Consumer{
 			ID:                       primitive.NewObjectID(),
 			Name:                     name,
@@ -257,7 +257,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 			MaxMsgDeliveries:         ccr.MaxMsgDeliveries,
 			StartConsumeFromSequence: ccr.StartConsumeFromSequence,
 		}
-	} else if ccr.LastMessages != 0 {
+	} else if ccr.LastMessages > -1 {
 		newConsumer = models.Consumer{
 			ID:               primitive.NewObjectID(),
 			Name:             name,
@@ -275,18 +275,20 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	} else {
 		newConsumer = models.Consumer{
-			ID:               primitive.NewObjectID(),
-			Name:             name,
-			StationId:        station.ID,
-			Type:             consumerType,
-			ConnectionId:     connectionIdObj,
-			CreatedByUser:    connection.CreatedByUser,
-			ConsumersGroup:   consumerGroup,
-			IsActive:         true,
-			CreationDate:     time.Now(),
-			IsDeleted:        false,
-			MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
-			MaxMsgDeliveries: ccr.MaxMsgDeliveries,
+			ID:                       primitive.NewObjectID(),
+			Name:                     name,
+			StationId:                station.ID,
+			Type:                     consumerType,
+			ConnectionId:             connectionIdObj,
+			CreatedByUser:            connection.CreatedByUser,
+			ConsumersGroup:           consumerGroup,
+			IsActive:                 true,
+			CreationDate:             time.Now(),
+			IsDeleted:                false,
+			MaxAckTimeMs:             int64(ccr.MaxAckTimeMillis),
+			MaxMsgDeliveries:         ccr.MaxMsgDeliveries,
+			StartConsumeFromSequence: ccr.StartConsumeFromSequence,
+			LastMessages:             ccr.LastMessages,
 		}
 	}
 
