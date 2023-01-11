@@ -300,8 +300,8 @@ if __name__ == '__main__':
 export const PROTOCOL_CODE_EXAMPLE = {
     cURL: {
         langCode: 'apex',
-        producer: `curl --location --request POST 'localhost:4444/stations/<station-name>/produce/single'\n--header 'Authorization: Bearer <jwt>'\n--header 'Content-Type: application/json'\n--data-raw '{"message": "New Message"}'`,
-        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate'\n--header 'Content-Type: application/json'\n--data-raw '{
+        producer: `curl --location --request POST 'localhost:4444/stations/<station-name>/produce/single' \\\n--header 'Authorization: Bearer <jwt>' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{"message": "New Message"}'`,
+        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{
     "username": "root",
     "connection_token": "memphis",
     "token_expiry_in_minutes": 123,
