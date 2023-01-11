@@ -65,7 +65,7 @@ const (
 
 	// MAX_PAYLOAD_SIZE is the maximum allowed payload size. Should be using
 	// something different if > 1MB payloads are needed.
-	MAX_PAYLOAD_SIZE = (1024 * 1024)
+	MAX_PAYLOAD_SIZE = (8 * 1024 * 1024)
 
 	// MAX_PAYLOAD_MAX_SIZE is the size at which the server will warn about
 	// max_payload being too high. In the future, the server may enforce/reject

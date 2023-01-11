@@ -81,12 +81,32 @@ func (c *captureTLSError) Errorf(format string, v ...interface{}) {
 	}
 }
 
+func (c *captureTLSError) Systemf(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	if strings.Contains(msg, "handshake error") {
+		select {
+		case c.ch <- struct{}{}:
+		default:
+		}
+	}
+}
+
 type captureClusterTLSInsecureLogger struct {
 	dummyLogger
 	ch chan struct{}
 }
 
 func (c *captureClusterTLSInsecureLogger) Warnf(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	if strings.Contains(msg, "solicited routes will not be verified") {
+		select {
+		case c.ch <- struct{}{}:
+		default:
+		}
+	}
+}
+
+func (c *captureClusterTLSInsecureLogger) Systemf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	if strings.Contains(msg, "solicited routes will not be verified") {
 		select {
