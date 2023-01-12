@@ -120,11 +120,11 @@ docker compose -f docker-compose.yml -p memphis up
 
 ## High-Level Architecture
 
+<a href="https://docs.memphis.dev/memphis/memphis/architecture">
 <p align="center">
-<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/201409779-f23aa9b7-8175-4165-9720-d0a217b49878.jpeg">
-
-
+<img height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/212160911-aeae5b55-c0cf-46bc-a1aa-fcfdb6d10a2a.png">
 </p>
+</a>
 
 ## Local access
 ### Via Kubernetes
