@@ -152,6 +152,7 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		}
+		client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
 		updateNewClientWithConfig(client, objIdString)
 	}
 
@@ -171,7 +172,6 @@ func handleConnectMessage(client *client) error {
 		analytics.SendEventWithParams(username, analyticsParams, event)
 	}
 
-	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
 	return nil
 }
 
