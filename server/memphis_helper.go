@@ -369,9 +369,11 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	lastSeq := streamInfo.State.LastSeq
 
 	var optStartSeq uint64
-	if consumer.LastMessages > 0 {
+	if consumer.LastMessages == 0 && consumer.StartConsumeFromSequence == 0 {
+		deliveryPolicy = DeliverNew
+	} else if consumer.LastMessages > 0 {
 		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
-		if int(lastMessages) < 0 {
+		if int(lastMessages) < 1 {
 			lastMessages = uint64(1)
 		}
 		deliveryPolicy = DeliverByStartSequence
@@ -379,9 +381,6 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	} else if consumer.StartConsumeFromSequence == 1 || consumer.LastMessages == -1 {
 		deliveryPolicy = DeliverAll
 	} else if consumer.StartConsumeFromSequence > 1 {
-		if int(consumer.StartConsumeFromSequence) < 0 {
-			consumer.StartConsumeFromSequence = uint64(1)
-		}
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = consumer.StartConsumeFromSequence
 	}
@@ -396,9 +395,12 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		ReplayPolicy:  ReplayInstant,
 		MaxAckPending: -1,
 		HeadersOnly:   false,
-		OptStartSeq:   optStartSeq,
 		// RateLimit: ,// Bits per sec
 		// Heartbeat: // time.Duration,
+	}
+
+	if deliveryPolicy == DeliverByStartSequence {
+		consumerConfig.OptStartSeq = optStartSeq
 	}
 	err = s.memphisAddConsumer(stationName.Intern(), consumerConfig)
 	return err

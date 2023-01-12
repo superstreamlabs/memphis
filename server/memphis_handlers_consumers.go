@@ -102,6 +102,28 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
+
+	if ccr.StartConsumeFromSequence <= 0 {
+		errMsg := errors.New("startConsumeFromSequence has to be a positive number and start from 1")
+		serv.Warnf("createConsumerDirect: " + errMsg.Error())
+		respondWithErr(s, reply, errMsg)
+		return
+	}
+
+	if ccr.LastMessages < -1 {
+		errMsg := errors.New("LastMessages has to be start from -1")
+		serv.Warnf("createConsumerDirect: " + errMsg.Error())
+		respondWithErr(s, reply, errMsg)
+		return
+	}
+
+	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
+		errMsg := errors.New("Consumer creation options can't contain both startConsumeFromSequence and lastMessages")
+		serv.Warnf("createConsumerDirect: " + errMsg.Error())
+		respondWithErr(s, reply, errMsg)
+		return
+	}
+
 	name := strings.ToLower(ccr.Name)
 	err := validateConsumerName(name)
 	if err != nil {
@@ -233,69 +255,33 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
-		errMsg := "Consumer creation options can't contain both startConsumeFromSequence and lastMessages"
-		serv.Errorf("createConsumerDirect: " + errMsg)
-		respondWithErr(s, reply, err)
-		return
+	newConsumer := models.Consumer{
+		ID:               primitive.NewObjectID(),
+		Name:             name,
+		StationId:        station.ID,
+		Type:             consumerType,
+		ConnectionId:     connectionIdObj,
+		CreatedByUser:    connection.CreatedByUser,
+		ConsumersGroup:   consumerGroup,
+		IsActive:         true,
+		CreationDate:     time.Now(),
+		IsDeleted:        false,
+		MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
+		MaxMsgDeliveries: ccr.MaxMsgDeliveries,
 	}
-
-	var newConsumer models.Consumer
 	if ccr.StartConsumeFromSequence > 1 {
-		newConsumer = models.Consumer{
-			ID:                       primitive.NewObjectID(),
-			Name:                     name,
-			StationId:                station.ID,
-			Type:                     consumerType,
-			ConnectionId:             connectionIdObj,
-			CreatedByUser:            connection.CreatedByUser,
-			ConsumersGroup:           consumerGroup,
-			IsActive:                 true,
-			CreationDate:             time.Now(),
-			IsDeleted:                false,
-			MaxAckTimeMs:             int64(ccr.MaxAckTimeMillis),
-			MaxMsgDeliveries:         ccr.MaxMsgDeliveries,
-			StartConsumeFromSequence: ccr.StartConsumeFromSequence,
-		}
+		newConsumer.StartConsumeFromSequence = ccr.StartConsumeFromSequence
 	} else if ccr.LastMessages > -1 {
-		newConsumer = models.Consumer{
-			ID:               primitive.NewObjectID(),
-			Name:             name,
-			StationId:        station.ID,
-			Type:             consumerType,
-			ConnectionId:     connectionIdObj,
-			CreatedByUser:    connection.CreatedByUser,
-			ConsumersGroup:   consumerGroup,
-			IsActive:         true,
-			CreationDate:     time.Now(),
-			IsDeleted:        false,
-			MaxAckTimeMs:     int64(ccr.MaxAckTimeMillis),
-			MaxMsgDeliveries: ccr.MaxMsgDeliveries,
-			LastMessages:     ccr.LastMessages,
-		}
+		newConsumer.LastMessages = ccr.LastMessages
 	} else {
-		newConsumer = models.Consumer{
-			ID:                       primitive.NewObjectID(),
-			Name:                     name,
-			StationId:                station.ID,
-			Type:                     consumerType,
-			ConnectionId:             connectionIdObj,
-			CreatedByUser:            connection.CreatedByUser,
-			ConsumersGroup:           consumerGroup,
-			IsActive:                 true,
-			CreationDate:             time.Now(),
-			IsDeleted:                false,
-			MaxAckTimeMs:             int64(ccr.MaxAckTimeMillis),
-			MaxMsgDeliveries:         ccr.MaxMsgDeliveries,
-			StartConsumeFromSequence: ccr.StartConsumeFromSequence,
-			LastMessages:             ccr.LastMessages,
-		}
+		newConsumer.StartConsumeFromSequence = ccr.StartConsumeFromSequence
+		newConsumer.LastMessages = ccr.LastMessages
 	}
 
 	if consumerGroupExist {
 		if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
-			errMsg := errors.New("The consumer already exists with different configuration. You can't change the configuration to an existing consumer.")
-			serv.Errorf("createConsumerDirect: " + errMsg.Error())
+			errMsg := errors.New("Consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
+			serv.Warnf("createConsumerDirect: " + errMsg.Error())
 			respondWithErr(s, reply, errMsg)
 			return
 		}
