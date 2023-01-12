@@ -218,23 +218,41 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 			}
 		}
+		dbActual := 0
+		if dbComponents[0].Connected {
+			dbActual = 1
+		}
 		components = append(components, models.SystemComponents{
-			Name:       dbComponents[0].Name,
-			Components: dbComponents,
-			Status:     checkCompStatus(dbComponents),
-			Ports:      removeDuplicatePorts(dbPorts),
+			Name:        dbComponents[0].Name,
+			Components:  dbComponents,
+			Status:      checkCompStatus(dbComponents),
+			Ports:       removeDuplicatePorts(dbPorts),
+			DesiredPods: 1,
+			ActualPods:  dbActual,
 		})
+		brokerActual := 0
+		if brokerComponents[0].Connected {
+			brokerActual = 1
+		}
 		components = append(components, models.SystemComponents{
-			Name:       brokerComponents[0].Name,
-			Components: brokerComponents,
-			Status:     checkCompStatus(brokerComponents),
-			Ports:      removeDuplicatePorts(brokerPorts),
+			Name:        brokerComponents[0].Name,
+			Components:  brokerComponents,
+			Status:      checkCompStatus(brokerComponents),
+			Ports:       removeDuplicatePorts(brokerPorts),
+			DesiredPods: 1,
+			ActualPods:  brokerActual,
 		})
+		proxyActual := 0
+		if proxyComponents[0].Connected {
+			proxyActual = 1
+		}
 		components = append(components, models.SystemComponents{
-			Name:       proxyComponents[0].Name,
-			Components: proxyComponents,
-			Status:     checkCompStatus(proxyComponents),
-			Ports:      removeDuplicatePorts(proxyPorts),
+			Name:        proxyComponents[0].Name,
+			Components:  proxyComponents,
+			Status:      checkCompStatus(proxyComponents),
+			Ports:       removeDuplicatePorts(proxyPorts),
+			DesiredPods: 1,
+			ActualPods:  proxyActual,
 		})
 	} else { // k8s env
 		if clientset == nil {

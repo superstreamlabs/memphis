@@ -29,10 +29,12 @@ type SysComponent struct {
 }
 
 type SystemComponents struct {
-	Name       string         `json:"name"`
-	Components []SysComponent `json:"components"`
-	Status     string         `json:"status"`
-	Ports      []int          `json:"ports"`
+	Name        string         `json:"name"`
+	Components  []SysComponent `json:"components"`
+	Status      string         `json:"status"`
+	Ports       []int          `json:"ports"`
+	DesiredPods int            `json:"desired_pods"`
+	ActualPods  int            `json:"actual_pods"`
 }
 
 type MainOverviewData struct {
