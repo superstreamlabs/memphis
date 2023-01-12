@@ -16,14 +16,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"memphis-broker/analytics"
+	"memphis-broker/conf"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"net/http"
-	"path/filepath"
+	"os/exec"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,132 +39,142 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
 
 type MonitoringHandler struct{ S *Server }
 
 var clientset *kubernetes.Clientset
 
-func clientSetConfig() error {
+func clientSetClusterConfig() error {
 	var config *rest.Config
 	var err error
-	if configuration.DEV_ENV != "" { // dev environment is running locally and not inside the cluster
-		// outside the cluster config
-		var kubeconfig *string
-		if home := homedir.HomeDir(); home != "" {
-			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "/Users/idanasulin/.kube/config")
-		} else {
-			kubeconfig = flag.String("kubeconfig", "", "/Users/idanasulin/.kube/config")
-		}
-		flag.Parse()
-		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
-		if err != nil {
-			return err
-		}
-	} else {
-		// in cluster config
-		config, err = rest.InClusterConfig()
-		if err != nil {
-			serv.Errorf("clientSetConfig: InClusterConfig: " + err.Error())
-			return err
-		}
+	// in cluster config
+	config, err = rest.InClusterConfig()
+	if err != nil {
+		serv.Errorf("clientSetClusterConfig: InClusterConfig: " + err.Error())
+		return err
 	}
 
 	clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		serv.Errorf("clientSetConfig: NewForConfig: " + err.Error())
+		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, error) {
-	var components []models.SystemComponent
+func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, error) {
+	var components []models.SystemComponents
+	var dbComponents []models.SysComponent
+	var dbPorts []int
+	var brokerComponents []models.SysComponent
+	var brokerPorts []int
+	var proxyComponents []models.SysComponent
+	var proxyPorts []int
 	if configuration.DOCKER_ENV != "" { // docker env
+
+		var rt runtime.MemStats
+		runtime.ReadMemStats(&rt)
+
 		httpProxy := "http://memphis-http-proxy:4444"
 		if configuration.DEV_ENV == "true" {
+			var storage_size float64
+			os := runtime.GOOS
+			switch os {
+			case "windows":
+				storage_size = 500 // TODO: add support
+			default:
+				size, err := getUnixStorageSize()
+				if err != nil {
+					return components, err
+				}
+				storage_size = size
+			}
 			httpProxy = "http://localhost:4444"
+			_, err := http.Get(httpProxy)
+			proxyComponents = append(proxyComponents, models.SysComponent{
+				Name:    "memphis-http-proxy",
+				CPU:     0, // TODO: add from get response
+				Memory:  0, // TODO: add from get response
+				Storage: 0, // TODO: add from get response
+			})
+			if err != nil {
+				components = append(components, models.SystemComponents{
+					Name:       "http-proxy",
+					Components: proxyComponents,
+					Healthy:    false,
+					Ports:      []int{4444},
+				})
+			} else {
+				components = append(components, models.SystemComponents{
+					Name:       "http-proxy",
+					Components: proxyComponents,
+					Healthy:    true,
+					Ports:      []int{4444},
+				})
+			}
+
+			v, err := serv.Varz(nil)
+			if err != nil {
+				return components, err
+			}
+			brokerComponents = append(brokerComponents, models.SysComponent{
+				Name:    "memphis-broker",
+				CPU:     math.Ceil(v.CPU),
+				Memory:  math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
+				Storage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+			})
+
+			components = append(components, models.SystemComponents{
+				Name:       "broker",
+				Components: brokerComponents,
+				Healthy:    true,
+				Ports:      []int{9000, 6666, 7770, 8222},
+			})
 		}
-		_, err := http.Get(httpProxy)
-		if err != nil {
-			components = append(components, models.SystemComponent{
-				Component:   "memphis-http-proxy",
-				DesiredPods: 1,
-				ActualPods:  0,
-				Ports:       []int{4444},
-			})
-		} else {
-			components = append(components, models.SystemComponent{
-				Component:   "memphis-http-proxy",
-				DesiredPods: 1,
-				ActualPods:  1,
-				Ports:       []int{4444},
-			})
-		}
 
-		err = serv.memphis.dbClient.Ping(context.TODO(), nil)
-		if err != nil {
-			components = append(components, models.SystemComponent{
-				Component:   "mongodb",
-				DesiredPods: 1,
-				ActualPods:  0,
-				Ports:       []int{27017},
-			})
-		} else {
-			components = append(components, models.SystemComponent{
-				Component:   "mongodb",
-				DesiredPods: 1,
-				ActualPods:  1,
-				Ports:       []int{27017},
-			})
-		}
-		// Get CPU usage
-		// numCPU := runtime.NumCPU()
-		// maxProcs := runtime.GOMAXPROCS(-1)
-		// fmt.Printf("CPUs: %d\nMax procs: %d\n", numCPU, maxProcs)
-		// fmt.Printf("CPU: %2f%%\n", float64(numCPU/maxProcs))
-
-		// cmd := exec.Command("iostat")
-		// stdout, err := cmd.Output()
-		// if err != nil {
-		// 	return components, err
-		// }
-		// fmt.Printf(string(stdout))
-
-		// Get memory usage
-		// var mem runtime.MemStats
-		// runtime.ReadMemStats(&mem)
-		// fmt.Printf("Total allocated memory: %d bytes\n", mem.TotalAlloc)
-		// fmt.Printf("Number of memory allocations: %d\n", mem.Mallocs)
-		// fmt.Printf("Memory: %2f%%\n", (float64(mem.Mallocs)/float64(mem.TotalAlloc))*100)
-
-		// var stat syscall.Statfs_t
-		// syscall.Statfs("/", &stat)
-		// total := uint64(stat.Bsize) * stat.Blocks
-		// free := uint64(stat.Bsize) * stat.Bfree
-		// used := total - free
-		// fmt.Printf("Total: %d bytes\n", total)
-		// fmt.Printf("Free: %d bytes\n", free)
-		// fmt.Printf("Used: %d bytes\n", used)
-		// fmt.Printf("Storage: %f%%", (float64(used)/float64(total))*100)
 		ctx := context.Background()
-		cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
+		dockerCli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
 		if err != nil {
 			return components, err
 		}
-
-		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+		containers, err := dockerCli.ContainerList(ctx, types.ContainerListOptions{})
 		if err != nil {
 			return components, err
 		}
 
 		for _, container := range containers {
-			// xx := container.SizeRootFs
-			// container.Ports
-			stats, err := cli.ContainerStats(ctx, container.ID, false)
+			colName := ""
+			name := container.Names[0]
+			comps := []models.SysComponent{}
+			ports := []int{}
+			for _, port := range container.Ports {
+				ports = append(ports, int(port.PublicPort))
+			}
+			if container.State != "running" {
+				comps = append(comps, models.SysComponent{
+					Name:    container.Names[0],
+					CPU:     0,
+					Memory:  0,
+					Storage: 0,
+				})
+				if strings.Contains(name, "mongo") {
+					colName = "DB"
+				} else if strings.Contains(name, "broker") {
+					colName = "Broker"
+				} else if strings.Contains(name, "proxy") {
+					colName = "Proxy"
+				}
+				components = append(components, models.SystemComponents{
+					Name:       colName,
+					Components: comps,
+					Healthy:    false,
+					Ports:      ports,
+				})
+				continue
+			}
+			stats, err := dockerCli.ContainerStats(ctx, container.ID, false)
 			if err != nil {
 				return components, err
 			}
@@ -174,35 +186,82 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			}
 			var statsType types.Stats
 			err = json.Unmarshal(body, &statsType)
-			// err = statsType.Read.UnmarshalBinary(body)
 			if err != nil {
 				return components, err
 			}
-			// inspect, err := cli.ContainerInspect(ctx, container.ID)
-			// if err != nil {
-			// 	panic(err)
-			// }
-			serv.Noticef("Container "+container.Names[0]+" CPU: %.2f%%\n", float64((statsType.CPUStats.CPUUsage.TotalUsage/1000000000)/uint64(statsType.CPUStats.OnlineCPUs)))
-			serv.Noticef("Container "+container.Names[0]+" Memory: %.2f%%\n", (float64(statsType.MemoryStats.Usage)/float64(statsType.MemoryStats.Limit))*100)
-			// fmt.Printf("CPU %.2f%%\n", float64((statsType.CPUStats.CPUUsage.TotalUsage/1000000000)/uint64(statsType.CPUStats.OnlineCPUs)))
-			// fmt.Printf("Memory %.2f%%\n", (float64(statsType.MemoryStats.Usage)/float64(statsType.MemoryStats.Limit))*100)
-			// sum := 0
-			// for _, ioByte := range statsType.BlkioStats.IoServiceBytesRecursive {
-			// 	sum += int(ioByte.Value)
-			// }
-			// fmt.Printf("storage %d\n", sum)
-			// fmt.Printf("Storage %d\n", inspect.HostConfig.Resources.BlkioWeight)
+			cpu := math.Ceil(float64((statsType.CPUStats.CPUUsage.TotalUsage / 1000000000) / uint64(statsType.CPUStats.OnlineCPUs)))
+			mem := math.Ceil((float64(statsType.MemoryStats.Usage) / float64(statsType.MemoryStats.Limit)) * 100)
+			storage_size, err := getUnixStorageSize()
+			if err != nil {
+				return components, err
+			}
+			if strings.Contains(container.Names[0], "mongo") {
+				dbStorageSize, err := getDbStorageSize()
+				if err != nil {
+					return components, err
+				}
+				dbComponents = append(dbComponents, models.SysComponent{
+					Name:    container.Names[0],
+					CPU:     cpu,
+					Memory:  mem,
+					Storage: math.Ceil((dbStorageSize / 1024) / storage_size),
+				})
+				for _, port := range container.Ports {
+					dbPorts = append(dbPorts, int(port.PublicPort))
+				}
+			} else if strings.Contains(container.Names[0], "broker") {
+				v, err := serv.Varz(nil)
+				if err != nil {
+					return components, err
+				}
+				brokerComponents = append(brokerComponents, models.SysComponent{
+					Name:    "memphis-broker",
+					CPU:     cpu,
+					Memory:  mem,
+					Storage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+				})
+				for _, port := range container.Ports {
+					brokerPorts = append(brokerPorts, int(port.PublicPort))
+				}
+			} else if strings.Contains(container.Names[0], "proxy") {
+				for _, port := range container.Ports {
+					proxyPorts = append(proxyPorts, int(port.PublicPort))
+				}
+				_, err := http.Get(httpProxy)
+				if err != nil {
+					components = append(components, models.SystemComponents{
+						Name:       "http-proxy",
+						Components: proxyComponents,
+						Healthy:    false,
+						Ports:      proxyPorts,
+					})
+					continue
+				}
+			}
 		}
-
-		components = append(components, models.SystemComponent{
-			Component:   "memphis-broker",
-			DesiredPods: 1,
-			ActualPods:  1,
-			Ports:       []int{9000, 6666, 7770, 8222},
+		components = append(components, models.SystemComponents{
+			Name:       "DB",
+			Components: dbComponents,
+			Healthy:    checkCompHealthy(dbComponents),
+			Ports:      removeDuplicatePorts(dbPorts),
 		})
+		if configuration.DEV_ENV != "true" {
+			components = append(components, models.SystemComponents{
+				Name:       "Broker",
+				Components: brokerComponents,
+				Healthy:    checkCompHealthy(brokerComponents),
+				Ports:      removeDuplicatePorts(brokerPorts),
+			})
+			components = append(components, models.SystemComponents{
+				Name:       "Proxy",
+				Components: proxyComponents,
+				Healthy:    checkCompHealthy(proxyComponents),
+				Ports:      removeDuplicatePorts(proxyPorts),
+			})
+		}
 	} else { // k8s env
 		if clientset == nil {
-			err := clientSetConfig()
+			err := clientSetClusterConfig()
 			if err != nil {
 				return components, err
 			}
@@ -222,12 +281,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				}
 			}
 
-			components = append(components, models.SystemComponent{
-				Component:   d.GetName(),
-				DesiredPods: int(*d.Spec.Replicas),
-				ActualPods:  int(d.Status.ReadyReplicas),
-				Ports:       ports,
-			})
+			// components = append(components, models.SystemComponent{
+			// 	Component:   d.GetName(),
+			// 	DesiredPods: int(*d.Spec.Replicas),
+			// 	ActualPods:  int(d.Status.ReadyReplicas),
+			// 	Ports:       ports,
+			// })
 		}
 
 		statefulsetsClient := clientset.AppsV1().StatefulSets(configuration.K8S_NAMESPACE)
@@ -243,12 +302,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 				}
 			}
 
-			components = append(components, models.SystemComponent{
-				Component:   s.GetName(),
-				DesiredPods: int(*s.Spec.Replicas),
-				ActualPods:  int(s.Status.ReadyReplicas),
-				Ports:       ports,
-			})
+			// components = append(components, models.SystemComponent{
+			// 	Component:   s.GetName(),
+			// 	DesiredPods: int(*s.Spec.Replicas),
+			// 	ActualPods:  int(s.Status.ReadyReplicas),
+			// 	Ports:       ports,
+			// })
 		}
 	}
 
@@ -1081,4 +1140,55 @@ cleanup:
 	}
 
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
+}
+
+func removeDuplicatePorts(ports []int) []int {
+	res := []int{}
+	mPorts := make(map[int]bool)
+	for _, port := range ports {
+		if !mPorts[port] {
+			mPorts[port] = true
+			res = append(res, port)
+		}
+	}
+	return res
+}
+
+func checkCompHealthy(components []models.SysComponent) bool {
+	healthy := true
+	for _, component := range components {
+		if component.CPU > 85 || component.Memory > 85 || component.Storage > 85 {
+			healthy = false
+		}
+	}
+	return healthy
+}
+
+func getDbStorageSize() (float64, error) {
+	var configuration = conf.GetConfig()
+	sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
+		"dbStats": 1,
+	}).DecodeBytes()
+	if err != nil {
+		return 0, err
+	}
+
+	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
+	return dbStorageSize, nil
+}
+
+func getUnixStorageSize() (float64, error) {
+	out, err := exec.Command("df", "-h", "/").Output()
+	if err != nil {
+		return 0, err
+	}
+	var storage_size float64
+	output := string(out[:])
+	splitted_output := strings.Split(output, "\n")
+	parsedline := strings.Fields(splitted_output[1])
+	if len(parsedline) > 0 {
+		stringSize := strings.Split(parsedline[1], "Gi")
+		storage_size, _ = strconv.ParseFloat(stringSize[0], 64)
+	}
+	return storage_size, nil
 }

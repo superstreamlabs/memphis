@@ -20,11 +20,25 @@ type SystemComponent struct {
 	Ports       []int  `json:"ports"`
 }
 
+type SysComponent struct {
+	Name    string  `json:"name"`
+	CPU     float64 `json:"cpu"`
+	Memory  float64 `json:"memory"`
+	Storage float64 `json:"storage"`
+}
+
+type SystemComponents struct {
+	Name       string         `json:"name"`
+	Components []SysComponent `json:"components"`
+	Healthy    bool           `json:"healthy"`
+	Ports      []int          `json:"ports"`
+}
+
 type MainOverviewData struct {
-	TotalStations    int               `json:"total_stations"`
-	TotalMessages    int               `json:"total_messages"`
-	SystemComponents []SystemComponent `json:"system_components"`
-	Stations         []ExtendedStation `json:"stations"`
+	TotalStations    int                `json:"total_stations"`
+	TotalMessages    int                `json:"total_messages"`
+	SystemComponents []SystemComponents `json:"system_components"`
+	Stations         []ExtendedStation  `json:"stations"`
 }
 
 type GetStationOverviewDataSchema struct {
