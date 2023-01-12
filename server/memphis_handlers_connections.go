@@ -156,9 +156,6 @@ func handleConnectMessage(client *client) error {
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
-	if username == "" {
-		client.Errorf(client.opts.Name, connectItemSep)
-	}
  	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
