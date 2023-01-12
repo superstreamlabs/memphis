@@ -280,7 +280,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	if consumerGroupExist {
 		if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
-			errMsg := errors.New("Consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
+			errMsg := errors.New("Consumer creation options can't contain both startConsumeFromSequence and lastMessages")
 			serv.Warnf("createConsumerDirect: " + errMsg.Error())
 			respondWithErr(s, reply, errMsg)
 			return
