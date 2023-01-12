@@ -104,14 +104,14 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if ccr.StartConsumeFromSequence <= 0 {
-		errMsg := errors.New("startConsumeFromSequence has to be a positive number and start from 1")
+		errMsg := errors.New("startConsumeFromSequence has to be a positive number")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
 		respondWithErr(s, reply, errMsg)
 		return
 	}
 
 	if ccr.LastMessages < -1 {
-		errMsg := errors.New("LastMessages has to be start from -1")
+		errMsg := errors.New("Min value for LastMessages is -1")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
 		respondWithErr(s, reply, errMsg)
 		return
