@@ -104,13 +104,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				Storage:   0, // TODO: add from get response
 				Connected: con,
 			})
-			components = append(components, models.SystemComponents{
-				Name:       "http-proxy",
-				Components: proxyComponents,
-				Status:     checkCompStatus(proxyComponents),
-				Ports:      []int{4444},
-			})
-
+			proxyPorts = []int{4444}
 			v, err := serv.Varz(nil)
 			if err != nil {
 				return components, err
@@ -122,13 +116,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				Storage:   math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
 				Connected: true,
 			})
-
-			components = append(components, models.SystemComponents{
-				Name:       "broker",
-				Components: brokerComponents,
-				Status:     checkCompStatus(brokerComponents),
-				Ports:      []int{9000, 6666, 7770, 8222},
-			})
+			brokerPorts = []int{9000, 6666, 7770, 8222}
 		}
 
 		ctx := context.Background()
@@ -142,24 +130,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 
 		for _, container := range containers {
-			name := container.Names[0]
-			ports := []int{}
-			for _, port := range container.Ports {
-				ports = append(ports, int(port.PublicPort))
-			}
+			continerName := container.Names[0]
 			if container.State != "running" {
 				comp := models.SysComponent{
-					Name:      container.Names[0],
+					Name:      continerName,
 					CPU:       0,
 					Memory:    0,
 					Storage:   0,
 					Connected: false,
 				}
-				if strings.Contains(name, "mongo") {
+				if strings.Contains(continerName, "mongo") {
 					dbComponents = append(dbComponents, comp)
-				} else if strings.Contains(name, "broker") {
+				} else if strings.Contains(continerName, "broker") {
 					brokerComponents = append(brokerComponents, comp)
-				} else if strings.Contains(name, "proxy") {
+				} else if strings.Contains(continerName, "proxy") {
 					proxyComponents = append(proxyComponents, comp)
 				}
 				continue
@@ -186,13 +170,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 
-			if strings.Contains(container.Names[0], "mongo") {
+			if strings.Contains(continerName, "mongo") {
 				dbStorageSize, err := getDbStorageSize()
 				if err != nil {
 					return components, err
 				}
 				dbComponents = append(dbComponents, models.SysComponent{
-					Name:      container.Names[0],
+					Name:      continerName,
 					CPU:       cpu,
 					Memory:    mem,
 					Storage:   math.Ceil((dbStorageSize / 1024) / storage_size),
@@ -201,13 +185,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				for _, port := range container.Ports {
 					dbPorts = append(dbPorts, int(port.PublicPort))
 				}
-			} else if strings.Contains(container.Names[0], "broker") {
+			} else if strings.Contains(continerName, "broker") {
 				v, err := serv.Varz(nil)
 				if err != nil {
 					return components, err
 				}
 				brokerComponents = append(brokerComponents, models.SysComponent{
-					Name:      "memphis-broker",
+					Name:      continerName,
 					CPU:       cpu,
 					Memory:    mem,
 					Storage:   math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
@@ -216,21 +200,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				for _, port := range container.Ports {
 					brokerPorts = append(brokerPorts, int(port.PublicPort))
 				}
-			} else if strings.Contains(container.Names[0], "proxy") {
+			} else if strings.Contains(continerName, "proxy") {
 				for _, port := range container.Ports {
 					proxyPorts = append(proxyPorts, int(port.PublicPort))
 				}
 				_, err := http.Get(httpProxy)
 				if err != nil {
-					components = append(components, models.SystemComponents{
-						Name:       "http-proxy",
-						Components: proxyComponents,
-						Status:     "red",
-						Ports:      proxyPorts,
-					})
 					// TODO: add Storage info from get
 					proxyComponents = append(proxyComponents, models.SysComponent{
-						Name:      "memphis-broker",
+						Name:      continerName,
 						CPU:       cpu,
 						Memory:    mem,
 						Storage:   0 / storage_size,
@@ -241,25 +219,23 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 		}
 		components = append(components, models.SystemComponents{
-			Name:       "DB",
+			Name:       dbComponents[0].Name,
 			Components: dbComponents,
 			Status:     checkCompStatus(dbComponents),
 			Ports:      removeDuplicatePorts(dbPorts),
 		})
-		if configuration.DEV_ENV != "true" {
-			components = append(components, models.SystemComponents{
-				Name:       "Broker",
-				Components: brokerComponents,
-				Status:     checkCompStatus(brokerComponents),
-				Ports:      removeDuplicatePorts(brokerPorts),
-			})
-			components = append(components, models.SystemComponents{
-				Name:       "Proxy",
-				Components: proxyComponents,
-				Status:     checkCompStatus(proxyComponents),
-				Ports:      removeDuplicatePorts(proxyPorts),
-			})
-		}
+		components = append(components, models.SystemComponents{
+			Name:       brokerComponents[0].Name,
+			Components: brokerComponents,
+			Status:     checkCompStatus(brokerComponents),
+			Ports:      removeDuplicatePorts(brokerPorts),
+		})
+		components = append(components, models.SystemComponents{
+			Name:       proxyComponents[0].Name,
+			Components: proxyComponents,
+			Status:     checkCompStatus(proxyComponents),
+			Ports:      removeDuplicatePorts(proxyPorts),
+		})
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetClusterConfig()
