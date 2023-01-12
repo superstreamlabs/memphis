@@ -93,43 +93,40 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 			httpProxy = "http://localhost:4444"
 			_, err := http.Get(httpProxy)
-			proxyComponents = append(proxyComponents, models.SysComponent{
-				Name:    "memphis-http-proxy",
-				CPU:     0, // TODO: add from get response
-				Memory:  0, // TODO: add from get response
-				Storage: 0, // TODO: add from get response
-			})
+			con := true
 			if err != nil {
-				components = append(components, models.SystemComponents{
-					Name:       "http-proxy",
-					Components: proxyComponents,
-					Healthy:    false,
-					Ports:      []int{4444},
-				})
-			} else {
-				components = append(components, models.SystemComponents{
-					Name:       "http-proxy",
-					Components: proxyComponents,
-					Healthy:    true,
-					Ports:      []int{4444},
-				})
+				con = false
 			}
+			proxyComponents = append(proxyComponents, models.SysComponent{
+				Name:      "memphis-http-proxy",
+				CPU:       0, // TODO: add from get response
+				Memory:    0, // TODO: add from get response
+				Storage:   0, // TODO: add from get response
+				Connected: con,
+			})
+			components = append(components, models.SystemComponents{
+				Name:       "http-proxy",
+				Components: proxyComponents,
+				Status:     checkCompStatus(proxyComponents),
+				Ports:      []int{4444},
+			})
 
 			v, err := serv.Varz(nil)
 			if err != nil {
 				return components, err
 			}
 			brokerComponents = append(brokerComponents, models.SysComponent{
-				Name:    "memphis-broker",
-				CPU:     math.Ceil(v.CPU),
-				Memory:  math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
-				Storage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+				Name:      "memphis-broker",
+				CPU:       math.Ceil(v.CPU),
+				Memory:    math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
+				Storage:   math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+				Connected: true,
 			})
 
 			components = append(components, models.SystemComponents{
 				Name:       "broker",
 				Components: brokerComponents,
-				Healthy:    true,
+				Status:     checkCompStatus(brokerComponents),
 				Ports:      []int{9000, 6666, 7770, 8222},
 			})
 		}
@@ -145,33 +142,26 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 
 		for _, container := range containers {
-			colName := ""
 			name := container.Names[0]
-			comps := []models.SysComponent{}
 			ports := []int{}
 			for _, port := range container.Ports {
 				ports = append(ports, int(port.PublicPort))
 			}
 			if container.State != "running" {
-				comps = append(comps, models.SysComponent{
-					Name:    container.Names[0],
-					CPU:     0,
-					Memory:  0,
-					Storage: 0,
-				})
-				if strings.Contains(name, "mongo") {
-					colName = "DB"
-				} else if strings.Contains(name, "broker") {
-					colName = "Broker"
-				} else if strings.Contains(name, "proxy") {
-					colName = "Proxy"
+				comp := models.SysComponent{
+					Name:      container.Names[0],
+					CPU:       0,
+					Memory:    0,
+					Storage:   0,
+					Connected: false,
 				}
-				components = append(components, models.SystemComponents{
-					Name:       colName,
-					Components: comps,
-					Healthy:    false,
-					Ports:      ports,
-				})
+				if strings.Contains(name, "mongo") {
+					dbComponents = append(dbComponents, comp)
+				} else if strings.Contains(name, "broker") {
+					brokerComponents = append(brokerComponents, comp)
+				} else if strings.Contains(name, "proxy") {
+					proxyComponents = append(proxyComponents, comp)
+				}
 				continue
 			}
 			stats, err := dockerCli.ContainerStats(ctx, container.ID, false)
@@ -189,22 +179,24 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if err != nil {
 				return components, err
 			}
-			cpu := math.Ceil(float64((statsType.CPUStats.CPUUsage.TotalUsage / 1000000000) / uint64(statsType.CPUStats.OnlineCPUs)))
+			cpu := math.Ceil((float64(statsType.CPUStats.CPUUsage.TotalUsage) / float64(statsType.CPUStats.SystemUsage)) * 100)
 			mem := math.Ceil((float64(statsType.MemoryStats.Usage) / float64(statsType.MemoryStats.Limit)) * 100)
 			storage_size, err := getUnixStorageSize()
 			if err != nil {
 				return components, err
 			}
+
 			if strings.Contains(container.Names[0], "mongo") {
 				dbStorageSize, err := getDbStorageSize()
 				if err != nil {
 					return components, err
 				}
 				dbComponents = append(dbComponents, models.SysComponent{
-					Name:    container.Names[0],
-					CPU:     cpu,
-					Memory:  mem,
-					Storage: math.Ceil((dbStorageSize / 1024) / storage_size),
+					Name:      container.Names[0],
+					CPU:       cpu,
+					Memory:    mem,
+					Storage:   math.Ceil((dbStorageSize / 1024) / storage_size),
+					Connected: true,
 				})
 				for _, port := range container.Ports {
 					dbPorts = append(dbPorts, int(port.PublicPort))
@@ -215,10 +207,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					return components, err
 				}
 				brokerComponents = append(brokerComponents, models.SysComponent{
-					Name:    "memphis-broker",
-					CPU:     cpu,
-					Memory:  mem,
-					Storage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+					Name:      "memphis-broker",
+					CPU:       cpu,
+					Memory:    mem,
+					Storage:   math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+					Connected: true,
 				})
 				for _, port := range container.Ports {
 					brokerPorts = append(brokerPorts, int(port.PublicPort))
@@ -232,8 +225,16 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					components = append(components, models.SystemComponents{
 						Name:       "http-proxy",
 						Components: proxyComponents,
-						Healthy:    false,
+						Status:     "red",
 						Ports:      proxyPorts,
+					})
+					// TODO: add Storage info from get
+					proxyComponents = append(proxyComponents, models.SysComponent{
+						Name:      "memphis-broker",
+						CPU:       cpu,
+						Memory:    mem,
+						Storage:   0 / storage_size,
+						Connected: true,
 					})
 					continue
 				}
@@ -242,20 +243,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		components = append(components, models.SystemComponents{
 			Name:       "DB",
 			Components: dbComponents,
-			Healthy:    checkCompHealthy(dbComponents),
+			Status:     checkCompStatus(dbComponents),
 			Ports:      removeDuplicatePorts(dbPorts),
 		})
 		if configuration.DEV_ENV != "true" {
 			components = append(components, models.SystemComponents{
 				Name:       "Broker",
 				Components: brokerComponents,
-				Healthy:    checkCompHealthy(brokerComponents),
+				Status:     checkCompStatus(brokerComponents),
 				Ports:      removeDuplicatePorts(brokerPorts),
 			})
 			components = append(components, models.SystemComponents{
 				Name:       "Proxy",
 				Components: proxyComponents,
-				Healthy:    checkCompHealthy(proxyComponents),
+				Status:     checkCompStatus(proxyComponents),
 				Ports:      removeDuplicatePorts(proxyPorts),
 			})
 		}
@@ -1154,14 +1155,48 @@ func removeDuplicatePorts(ports []int) []int {
 	return res
 }
 
-func checkCompHealthy(components []models.SysComponent) bool {
-	healthy := true
+func checkCompStatus(components []models.SysComponent) string {
+	status := "green"
+	yellowCount := 0
+	redCount := 0
 	for _, component := range components {
-		if component.CPU > 85 || component.Memory > 85 || component.Storage > 85 {
-			healthy = false
+		if !component.Connected {
+			redCount++
+			continue
+		}
+		compRedCount := 0
+		compYellowCount := 0
+		if component.CPU > 66 {
+			compRedCount++
+		} else if component.CPU > 33 {
+			compYellowCount++
+		}
+		if component.Memory > 66 {
+			compRedCount++
+		} else if component.Memory > 33 {
+			compYellowCount++
+		}
+		if component.Storage > 66 {
+			compRedCount++
+		} else if component.Storage > 33 {
+			compYellowCount++
+		}
+		if compRedCount >= 2 {
+			redCount++
+		} else if compRedCount == 1 {
+			yellowCount++
+		} else if compYellowCount > 0 {
+			yellowCount++
 		}
 	}
-	return healthy
+	redStatus := float64(redCount / len(components))
+	if redStatus >= 0.66 {
+		status = "red"
+	} else if redStatus >= 0.33 || yellowCount > 0 {
+		status = "yellow"
+	}
+
+	return status
 }
 
 func getDbStorageSize() (float64, error) {
