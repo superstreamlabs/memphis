@@ -72,6 +72,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 	var brokerPorts []int
 	var proxyComponents []models.SysComponent
 	var proxyPorts []int
+	defaultStat := models.CompStats{
+		Max:        0,
+		Current:    0,
+		Percentage: 0,
+	}
 	if configuration.DOCKER_ENV != "" { // docker env
 
 		var rt runtime.MemStats
@@ -97,11 +102,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if err != nil {
 				con = false
 			}
+
 			proxyComponents = append(proxyComponents, models.SysComponent{
 				Name:      "memphis-http-proxy",
-				CPU:       0, // TODO: add from get response
-				Memory:    0, // TODO: add from get response
-				Storage:   0, // TODO: add from get response
+				CPU:       defaultStat, // TODO: add from get response
+				Memory:    defaultStat, // TODO: add from get response
+				Storage:   defaultStat, // TODO: add from get response
 				Connected: con,
 			})
 			proxyPorts = []int{4444}
@@ -110,10 +116,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 			brokerComponents = append(brokerComponents, models.SysComponent{
-				Name:      "memphis-broker",
-				CPU:       math.Ceil(v.CPU),
-				Memory:    math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
-				Storage:   math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+				Name: "memphis-broker",
+				CPU: models.CompStats{
+					Max:        float64(runtime.GOMAXPROCS(0)),
+					Current:    (float64(v.CPU / 100)) * float64(runtime.GOMAXPROCS(0)),
+					Percentage: math.Ceil(v.CPU),
+				},
+				Memory: models.CompStats{
+					Max:        float64(v.JetStream.Config.MaxMemory),
+					Current:    float64(v.JetStream.Stats.Memory),
+					Percentage: math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
+				},
+				Storage: models.CompStats{
+					Max:        storage_size * 1024 * 1024 * 1024,
+					Current:    float64(v.JetStream.Stats.Store),
+					Percentage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+				},
 				Connected: true,
 			})
 			brokerPorts = []int{9000, 6666, 7770, 8222}
@@ -134,9 +152,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if container.State != "running" {
 				comp := models.SysComponent{
 					Name:      continerName,
-					CPU:       0,
-					Memory:    0,
-					Storage:   0,
+					CPU:       defaultStat,
+					Memory:    defaultStat,
+					Storage:   defaultStat,
 					Connected: false,
 				}
 				if strings.Contains(continerName, "mongo") {
@@ -163,8 +181,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if err != nil {
 				return components, err
 			}
-			cpu := math.Ceil((float64(statsType.CPUStats.CPUUsage.TotalUsage) / float64(statsType.CPUStats.SystemUsage)) * 100)
-			mem := math.Ceil((float64(statsType.MemoryStats.Usage) / float64(statsType.MemoryStats.Limit)) * 100)
+			cpuLimit := float64(runtime.GOMAXPROCS(0))
+			cpuPercentage := math.Ceil((float64(statsType.CPUStats.CPUUsage.TotalUsage) / float64(statsType.CPUStats.SystemUsage)) * 100)
+			totalCpuUsage := (float64(cpuPercentage) / 100) * cpuLimit
+			totalMemoryUsage := float64(statsType.MemoryStats.Usage)
+			memoryLimit := float64(statsType.MemoryStats.Limit)
+			memoryPercentage := math.Ceil((totalMemoryUsage / memoryLimit) * 100)
 			storage_size, err := getUnixStorageSize()
 			if err != nil {
 				return components, err
@@ -176,10 +198,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					return components, err
 				}
 				dbComponents = append(dbComponents, models.SysComponent{
-					Name:      continerName,
-					CPU:       cpu,
-					Memory:    mem,
-					Storage:   math.Ceil((dbStorageSize / 1024) / storage_size),
+					Name: continerName,
+					CPU: models.CompStats{
+						Max:        cpuLimit,
+						Current:    totalCpuUsage,
+						Percentage: cpuPercentage,
+					},
+					Memory: models.CompStats{
+						Max:        memoryLimit,
+						Current:    totalMemoryUsage,
+						Percentage: memoryPercentage,
+					},
+					Storage: models.CompStats{
+						Max:        storage_size * 1024 * 1024 * 1024,
+						Current:    dbStorageSize * 1024 * 1024,
+						Percentage: math.Ceil((dbStorageSize / 1024) / storage_size),
+					},
 					Connected: true,
 				})
 				for _, port := range container.Ports {
@@ -191,10 +225,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					return components, err
 				}
 				brokerComponents = append(brokerComponents, models.SysComponent{
-					Name:      continerName,
-					CPU:       cpu,
-					Memory:    mem,
-					Storage:   math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+					Name: continerName,
+					CPU: models.CompStats{
+						Max:        cpuLimit,
+						Current:    totalCpuUsage,
+						Percentage: cpuPercentage,
+					},
+					Memory: models.CompStats{
+						Max:        memoryLimit,
+						Current:    totalMemoryUsage,
+						Percentage: memoryPercentage,
+					},
+					Storage: models.CompStats{
+						Max:        storage_size * 1024 * 1024 * 1024,
+						Current:    float64(v.JetStream.Stats.Store),
+						Percentage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+					},
 					Connected: true,
 				})
 				for _, port := range container.Ports {
@@ -206,12 +252,19 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 				_, err := http.Get(httpProxy)
 				if err != nil {
-					// TODO: add Storage info from get
 					proxyComponents = append(proxyComponents, models.SysComponent{
-						Name:      continerName,
-						CPU:       cpu,
-						Memory:    mem,
-						Storage:   0 / storage_size,
+						Name: continerName,
+						CPU: models.CompStats{
+							Max:        cpuLimit,
+							Current:    totalCpuUsage,
+							Percentage: cpuPercentage,
+						},
+						Memory: models.CompStats{
+							Max:        memoryLimit,
+							Current:    totalMemoryUsage,
+							Percentage: memoryPercentage,
+						},
+						Storage:   defaultStat, // TODO: add Storage info from get
 						Connected: true,
 					})
 					continue
@@ -229,6 +282,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			Ports:       removeDuplicatePorts(dbPorts),
 			DesiredPods: 1,
 			ActualPods:  dbActual,
+			Address:     "http://localhost:27017",
 		})
 		brokerActual := 0
 		if brokerComponents[0].Connected {
@@ -241,6 +295,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			Ports:       removeDuplicatePorts(brokerPorts),
 			DesiredPods: 1,
 			ActualPods:  brokerActual,
+			Address:     "http://localhost:9000",
 		})
 		proxyActual := 0
 		if proxyComponents[0].Connected {
@@ -253,6 +308,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			Ports:       removeDuplicatePorts(proxyPorts),
 			DesiredPods: 1,
 			ActualPods:  proxyActual,
+			Address:     "http://localhost:4444",
 		})
 	} else { // k8s env
 		if clientset == nil {
@@ -1160,19 +1216,19 @@ func checkCompStatus(components []models.SysComponent) string {
 		}
 		compRedCount := 0
 		compYellowCount := 0
-		if component.CPU > 66 {
+		if component.CPU.Percentage > 66 {
 			compRedCount++
-		} else if component.CPU > 33 {
+		} else if component.CPU.Percentage > 33 {
 			compYellowCount++
 		}
-		if component.Memory > 66 {
+		if component.Memory.Percentage > 66 {
 			compRedCount++
-		} else if component.Memory > 33 {
+		} else if component.Memory.Percentage > 33 {
 			compYellowCount++
 		}
-		if component.Storage > 66 {
+		if component.Storage.Percentage > 66 {
 			compRedCount++
-		} else if component.Storage > 33 {
+		} else if component.Storage.Percentage > 33 {
 			compYellowCount++
 		}
 		if compRedCount >= 2 {
