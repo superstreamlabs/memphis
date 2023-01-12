@@ -369,6 +369,7 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	lastSeq := streamInfo.State.LastSeq
 
 	var optStartSeq uint64
+	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
 	if consumer.LastMessages == 0 && consumer.StartConsumeFromSequence == 0 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
