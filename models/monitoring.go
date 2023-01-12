@@ -21,16 +21,17 @@ type SystemComponent struct {
 }
 
 type SysComponent struct {
-	Name    string  `json:"name"`
-	CPU     float64 `json:"cpu"`
-	Memory  float64 `json:"memory"`
-	Storage float64 `json:"storage"`
+	Name      string  `json:"name"`
+	CPU       float64 `json:"cpu"`
+	Memory    float64 `json:"memory"`
+	Storage   float64 `json:"storage"`
+	Connected bool    `json:"connected"`
 }
 
 type SystemComponents struct {
 	Name       string         `json:"name"`
 	Components []SysComponent `json:"components"`
-	Healthy    bool           `json:"healthy"`
+	Status     string         `json:"status"`
 	Ports      []int          `json:"ports"`
 }
 
