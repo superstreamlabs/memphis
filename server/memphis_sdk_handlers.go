@@ -58,6 +58,10 @@ type createProducerRequestV1 struct {
 	RequestVersion int    `json:"req_version"`
 }
 
+type createConsumerResponse struct {
+	Err string `json:"error"`
+}
+
 type createProducerResponse struct {
 	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
 	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
@@ -70,7 +74,7 @@ type destroyProducerRequest struct {
 	ProducerName string `json:"name"`
 }
 
-type createConsumerRequest struct {
+type createConsumerRequestV0 struct {
 	Name                     string `json:"name"`
 	StationName              string `json:"station_name"`
 	ConnectionId             string `json:"connection_id"`
@@ -80,6 +84,19 @@ type createConsumerRequest struct {
 	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
 	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
 	LastMessages             int64  `json:"last_messages"`
+}
+
+type createConsumerRequestV1 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
+	LastMessages             int64  `json:"last_messages"`
+	RequestVersion           int    `json:"req_version"`
 }
 
 type attachSchemaRequest struct {
@@ -98,6 +115,10 @@ type destroyConsumerRequest struct {
 
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
+}
+
+func (ccr *createConsumerResponse) SetError(err error) {
+	ccr.Err = err.Error()
 }
 
 func (s *Server) initializeSDKHandlers() {
