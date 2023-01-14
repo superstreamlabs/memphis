@@ -1,0 +1,173 @@
+.system-components-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 15px;
+    min-width: 280px;
+    min-height: 250px;
+    .collapse-arrow {
+        transition: transform 0.4s;
+    }
+    .open {
+        transform: rotate(180deg);
+    }
+    .overview-components-header {
+        align-items: center;
+        font-size: 16px;
+        font-family: 'InterSemiBold';
+        margin-bottom: 0;
+    }
+    .component-list {
+        overflow-y: scroll;
+        height: calc(100% - 25px);
+        position: relative;
+        width: 100%;
+        .ant-tree-switcher {
+            margin-top: 10px !important;
+        }
+        .sys-components-container {
+            width: 100%;
+            position: relative;
+            background-color: #e3e0ff;
+            .sys-components {
+                display: flex;
+                justify-content: space-between;
+                padding-top: 7px;
+                padding-bottom: 7px;
+                align-items: center;
+                width: 100%;
+                .component-name {
+                    font-size: 14px;
+                    font-family: 'InterSemiBold';
+                }
+                .pie-status-component {
+                    display: flex;
+                    align-items: center;
+                    .pie-status {
+                        display: flex;
+                        height: 28px;
+                        width: 65px;
+                        background: #e3e0ff;
+                        border-radius: 4px;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 12px;
+                        margin: 0 5px 0 5px;
+                    }
+                }
+                .green {
+                    color: #2ed47a;
+                    font-size: 20px;
+                }
+                .red {
+                    color: #f7685b;
+                    font-size: 20px;
+                }
+                .yellow {
+                    color: #ffb946;
+                    font-size: 20px;
+                }
+            }
+            .pods-container {
+                display: flex;
+                label {
+                    margin-right: 5px;
+                }
+                .ports {
+                    color: #737373;
+                }
+            }
+        }
+    }
+
+    .system-container {
+        line-height: 20px;
+        width: 100%;
+        border: 1px solid #ececec;
+        box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        .system-container-header {
+            padding: 10px;
+            display: flex;
+            p {
+                size: 14px;
+                // font-family: 'InterSemiBold';
+                font-weight: 500;
+                margin: 0;
+            }
+            img {
+                margin-top: 5px;
+                margin-right: 5px;
+            }
+        }
+
+        .system-container-body {
+            .ant-divider-vertical {
+                height: auto;
+                margin-top: 30px;
+                margin-bottom: 30px;
+            }
+            background-color: #f7f7f7;
+            // display: grid;
+            // grid-template-columns: 33% 33% 33%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            .system-container-item {
+                padding: 10px;
+                height: 100%;
+                width: 33%;
+                .item-name {
+                    font-size: 12px;
+                    color: rgba(74, 73, 92, 0.8);
+                }
+                .item-usage {
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: #1d1d1d;
+                }
+            }
+        }
+    }
+    p {
+        margin-bottom: 0px;
+        padding-right: 5px;
+    }
+    .sys-components-header {
+        margin-top: 15px;
+        color: #979797;
+        display: grid;
+        grid-template-columns: 35% 20% 25% 20%;
+        padding-bottom: 10px;
+        height: 30px;
+    }
+
+    .plus-ports {
+        background-color: rgba(132, 129, 138, 0.1);
+        width: 40px;
+        border-radius: 4px;
+        height: 22px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        p {
+            font-family: 'InterSemiBold';
+            font-size: 12px;
+            color: #2e2c34;
+        }
+        .add {
+            height: 14px;
+            width: 14px;
+            cursor: pointer;
+            display: flex;
+            color: #2e2c34;
+        }
+    }
+    .ant-tree-node-selected {
+        background-color: transparent !important;
+    }
+}
+.port-popover {
+    margin: 3px 0px 3px 0px;
+}
