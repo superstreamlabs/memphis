@@ -78,11 +78,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		Percentage: 0,
 	}
 	if configuration.DOCKER_ENV != "" { // docker env
-
 		var rt runtime.MemStats
 		runtime.ReadMemStats(&rt)
-
-		httpProxy := "http://memphis-http-proxy:4444"
 		if configuration.DEV_ENV == "true" {
 			var storage_size float64
 			os := runtime.GOOS
@@ -96,21 +93,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 				storage_size = size
 			}
-			httpProxy = "http://localhost:4444"
-			_, err := http.Get(httpProxy)
-			con := true
-			if err != nil {
-				con = false
-			}
-
-			proxyComponents = append(proxyComponents, models.SysComponent{
-				Name:      "memphis-http-proxy",
-				CPU:       defaultStat, // TODO: add from get response
-				Memory:    defaultStat, // TODO: add from get response
-				Storage:   defaultStat, // TODO: add from get response
-				Connected: con,
-			})
-			proxyPorts = []int{4444}
+			maxCpu := runtime.GOMAXPROCS(0)
 			v, err := serv.Varz(nil)
 			if err != nil {
 				return components, err
@@ -118,8 +101,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			brokerComponents = append(brokerComponents, models.SysComponent{
 				Name: "memphis-broker",
 				CPU: models.CompStats{
-					Max:        float64(runtime.GOMAXPROCS(0)),
-					Current:    (float64(v.CPU / 100)) * float64(runtime.GOMAXPROCS(0)),
+					Max:        float64(maxCpu),
+					Current:    float64(v.CPU/100) * float64(maxCpu),
 					Percentage: math.Ceil(v.CPU),
 				},
 				Memory: models.CompStats{
@@ -135,6 +118,34 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				Connected: true,
 			})
 			brokerPorts = []int{9000, 6666, 7770, 8222}
+			httpProxy := "http://localhost:4444"
+			resp, err := http.Get(httpProxy + "/dev/getSystemInfo")
+			con := true
+			if err != nil {
+				con = false
+			}
+			var proxyDevInfo models.DevSystemInfoResponse
+			defer resp.Body.Close()
+			err = json.NewDecoder(resp.Body).Decode(&proxyDevInfo)
+			if err != nil {
+				return components, err
+			}
+			proxyComponents = append(proxyComponents, models.SysComponent{
+				Name: "memphis-http-proxy",
+				CPU: models.CompStats{
+					Max:        float64(maxCpu),
+					Current:    float64(proxyDevInfo.CPU/100) * float64(maxCpu),
+					Percentage: math.Ceil(proxyDevInfo.CPU),
+				},
+				Memory: models.CompStats{
+					Max:        float64(v.JetStream.Config.MaxMemory),
+					Current:    float64(proxyDevInfo.Memory/100) * float64(v.JetStream.Config.MaxMemory),
+					Percentage: math.Ceil(float64(proxyDevInfo.Memory)),
+				},
+				Storage:   defaultStat,
+				Connected: con,
+			})
+			proxyPorts = []int{4444}
 		}
 
 		ctx := context.Background()
@@ -250,7 +261,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				for _, port := range container.Ports {
 					proxyPorts = append(proxyPorts, int(port.PublicPort))
 				}
-				_, err := http.Get(httpProxy)
 				if err != nil {
 					proxyComponents = append(proxyComponents, models.SysComponent{
 						Name: continerName,
@@ -264,8 +274,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 							Current:    totalMemoryUsage,
 							Percentage: memoryPercentage,
 						},
-						Storage:   defaultStat, // TODO: add Storage info from get
-						Connected: true,
+						Storage:   defaultStat,
+						Connected: false,
 					})
 					continue
 				}
@@ -395,12 +405,16 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
+	k8sEnv := true
+	if configuration.DOCKER_ENV != "" {
+		k8sEnv = false
+	}
 	response := models.MainOverviewData{
 		TotalStations:    len(stations),
 		TotalMessages:    totalMessages,
 		SystemComponents: systemComponents,
 		Stations:         stations,
+		K8sEnv:           k8sEnv,
 	}
 
 	c.IndentedJSON(200, response)

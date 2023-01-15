@@ -49,6 +49,7 @@ type MainOverviewData struct {
 	TotalMessages    int                `json:"total_messages"`
 	SystemComponents []SystemComponents `json:"system_components"`
 	Stations         []ExtendedStation  `json:"stations"`
+	K8sEnv           bool               `json:"k8s_env"`
 }
 
 type GetStationOverviewDataSchema struct {
@@ -70,4 +71,9 @@ type Log struct {
 
 type SystemLogsResponse struct {
 	Logs []Log `json:"logs"`
+}
+
+type DevSystemInfoResponse struct {
+	CPU    float64 `json:"cpu"`
+	Memory float64 `json:"memory"`
 }
