@@ -300,7 +300,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			Ports:       removeDuplicatePorts(dbPorts),
 			DesiredPods: 1,
 			ActualPods:  dbActual,
-			Address:     "http://localhost:27017",
+			Address:     "http://localhost",
 		})
 		brokerActual := 0
 		if brokerComponents[0].Connected {
@@ -313,7 +313,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			Ports:       removeDuplicatePorts(brokerPorts),
 			DesiredPods: 1,
 			ActualPods:  brokerActual,
-			Address:     "http://localhost:9000",
+			Address:     "http://localhost",
 		})
 		proxyActual := 0
 		if proxyComponents[0].Connected {
@@ -326,7 +326,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			Ports:       removeDuplicatePorts(proxyPorts),
 			DesiredPods: 1,
 			ActualPods:  proxyActual,
-			Address:     "http://localhost:4444",
+			Address:     "http://localhost",
 		})
 	} else { // k8s env
 		if clientset == nil {
