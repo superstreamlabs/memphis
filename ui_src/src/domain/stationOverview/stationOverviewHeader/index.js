@@ -252,11 +252,11 @@ const StationOverviewHeader = () => {
                             <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
-                    <div className="details-wrapper">
+                    <div className="details-wrapper pointer">
                         <div className="icon">
                             <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
                         </div>
-                        <div className="more-details">
+                        <div className="more-details ">
                             <p className="title">Av. message size</p>
                             <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
                                 <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>

@@ -111,7 +111,6 @@ function SchemaList({ createNew }) {
                 </label>
                 <div className="action-section">
                     <Button
-                        width="131px"
                         height="34px"
                         placeholder={`Delete selected (${isCheck?.length})`}
                         colorType="black"

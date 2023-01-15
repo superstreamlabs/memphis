@@ -197,6 +197,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             setParserName(generatedName);
         }
     };
+
     const SelectedStorageOption = (value) => {
         if (allowEdit) {
             setSelectedOption(value);
@@ -256,7 +257,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     )}
                 </div>
                 <div className="replicas-container">
-                    <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
+                    <TitleComponent
+                        headerTitle="Replicas"
+                        typeTitle="sub-header"
+                        headerDescription="Amount of mirrors per message."
+                        learnMore={true}
+                        link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                    />
                     <div>
                         <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
                             <SelectComponent
@@ -374,7 +381,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <div className="content">
                         {tabValue === tabs[0] && (
                             <p className="description">
-                                The criteria for which messages will be expelled from the station .&nbsp;
+                                The criteria for which messages will be expelled from the station.&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
                                     Learn More
                                 </a>

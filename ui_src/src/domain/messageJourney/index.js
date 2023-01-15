@@ -281,7 +281,7 @@ const MessageJourney = () => {
                     <div className="bread-crumbs">
                         <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
-                            Message id: <span>{messageId}</span>
+                            Message seq: <span>{messageData?.message_seq}</span>
                         </p>
                     </div>
                     <div className="canvas-wrapper">

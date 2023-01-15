@@ -74,24 +74,23 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                 handleSetSchema(data);
                 setUseschemaLoading(false);
             }
-        } catch (error) {}
-        setUseschemaLoading(false);
+        } catch (error) {
+            setUseschemaLoading(false);
+        }
     };
 
     const handleStopUseSchema = async () => {
         setDetachLoader(true);
         try {
-            setUseschemaLoading(true);
             const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA_FROM_STATION, { station_name: stationName });
             if (data) {
                 handleSetSchema(data);
-                setUseschemaLoading(false);
-                setDetachLoader(true);
+                setDetachLoader(false);
                 setDeleteModal(false);
             }
         } catch (error) {
-            setDetachLoader(true);
-            setUseschemaLoading(false);
+            setDeleteModal(false);
+            setDetachLoader(false);
         }
     };
 
