@@ -180,7 +180,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	shouldCreateStream bool) {
 	isNative := shouldCreateStream == true
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -292,10 +291,15 @@ func (s *Server) createStationDirectIntern(c *client,
 		csr.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
+	username := c.memphisInfo.username
+	if username == "" {
+		username = csr.Username
+	}
+
 	newStation := models.Station{
 		ID:                primitive.NewObjectID(),
 		Name:              stationName.Ext(),
-		CreatedByUser:     c.memphisInfo.username,
+		CreatedByUser:     username,
 		CreationDate:      time.Now(),
 		IsDeleted:         false,
 		RetentionType:     retentionType,
@@ -340,7 +344,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
+	message := "Station " + stationName.Ext() + " has been created by user " + username
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
@@ -348,7 +352,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -365,7 +369,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			Value: stationName.Ext(),
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
+		analytics.SendEventWithParams(username, analyticsParams, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -1012,14 +1016,14 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	message := "Station " + stationName.Ext() + " has been deleted by user " + c.memphisInfo.username
+	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: dsr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
