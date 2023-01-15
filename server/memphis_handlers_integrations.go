@@ -366,6 +366,13 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 			integrations[i].Keys["auth_token"] = "xoxb-****"
 		}
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-integration-page")
+	}
+
 	c.IndentedJSON(200, integrations)
 }
 
@@ -373,7 +380,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
-	
+
 	var body models.DisconnectIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
