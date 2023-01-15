@@ -86,8 +86,6 @@ type createConsumerRequestV0 struct {
 	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
 	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
 	Username                 string `json:"username"`
-	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
-	LastMessages             int64  `json:"last_messages"`
 }
 
 type createConsumerRequestV1 struct {
