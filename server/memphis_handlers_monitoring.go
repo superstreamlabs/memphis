@@ -123,29 +123,37 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			con := true
 			if err != nil {
 				con = false
+				proxyComponents = append(proxyComponents, models.SysComponent{
+					Name:      "memphis-http-proxy",
+					CPU:       defaultStat,
+					Memory:    defaultStat,
+					Storage:   defaultStat,
+					Connected: con,
+				})
+			} else {
+				var proxyDevInfo models.DevSystemInfoResponse
+				defer resp.Body.Close()
+				err = json.NewDecoder(resp.Body).Decode(&proxyDevInfo)
+				if err != nil {
+					return components, err
+				}
+				proxyComponents = append(proxyComponents, models.SysComponent{
+					Name: "memphis-http-proxy",
+					CPU: models.CompStats{
+						Max:        float64(maxCpu),
+						Current:    float64(proxyDevInfo.CPU/100) * float64(maxCpu),
+						Percentage: math.Ceil(proxyDevInfo.CPU),
+					},
+					Memory: models.CompStats{
+						Max:        float64(v.JetStream.Config.MaxMemory),
+						Current:    float64(proxyDevInfo.Memory/100) * float64(v.JetStream.Config.MaxMemory),
+						Percentage: math.Ceil(float64(proxyDevInfo.Memory)),
+					},
+					Storage:   defaultStat,
+					Connected: con,
+				})
+				proxyPorts = []int{4444}
 			}
-			var proxyDevInfo models.DevSystemInfoResponse
-			defer resp.Body.Close()
-			err = json.NewDecoder(resp.Body).Decode(&proxyDevInfo)
-			if err != nil {
-				return components, err
-			}
-			proxyComponents = append(proxyComponents, models.SysComponent{
-				Name: "memphis-http-proxy",
-				CPU: models.CompStats{
-					Max:        float64(maxCpu),
-					Current:    float64(proxyDevInfo.CPU/100) * float64(maxCpu),
-					Percentage: math.Ceil(proxyDevInfo.CPU),
-				},
-				Memory: models.CompStats{
-					Max:        float64(v.JetStream.Config.MaxMemory),
-					Current:    float64(proxyDevInfo.Memory/100) * float64(v.JetStream.Config.MaxMemory),
-					Percentage: math.Ceil(float64(proxyDevInfo.Memory)),
-				},
-				Storage:   defaultStat,
-				Connected: con,
-			})
-			proxyPorts = []int{4444}
 		}
 
 		ctx := context.Background()
