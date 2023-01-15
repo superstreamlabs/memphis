@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// HTTP://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -40,7 +38,7 @@ type memphisWSReqFiller func() (any, error)
 
 func (s *Server) initWS() {
 	ws := &s.memphis.ws
-	ws.subscriptions = make(map[string]memphisWSReqFiller)
+	ws.subscriptions = NewConcurrentMap[memphisWSReqFiller]()
 	handlers := Handlers{
 		Producers:  ProducersHandler{S: s},
 		Consumers:  ConsumersHandler{S: s},
@@ -58,16 +56,18 @@ func (s *Server) initWS() {
 	go memphisWSLoop(s, ws.subscriptions, ws.quitCh)
 }
 
-func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan struct{}) {
+func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh chan struct{}) {
 	ticker := time.NewTicker(5 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			for k, updateFiller := range subs {
+			keys, values := subs.Array()
+			for i, updateFiller := range values {
+				k := keys[i]
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+configuration.SERVER_NAME)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
-					delete(subs, k)
+					subs.Delete(k)
 					continue
 				}
 				update, err := updateFiller()
@@ -115,13 +115,13 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		trimmedMsg := strings.TrimSuffix(string(msg), "\r\n")
 		switch trimmedMsg {
 		case memphisWS_SubscribeMsg:
-			if _, ok := subscriptions[filteredSubj]; !ok {
+			if _, ok := subscriptions.Load(filteredSubj); !ok {
 				reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj)
 				if err != nil {
 					s.Errorf("memphis websocket: " + err.Error())
 					return
 				}
-				subscriptions[filteredSubj] = reqFiller
+				subscriptions.Add(filteredSubj, reqFiller)
 			}
 
 		default:

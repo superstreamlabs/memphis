@@ -37,7 +37,7 @@ go get -d -v .
 &#x20; 6\. Run the broker in debug mode (If you're using vscode, click F5) or run via terminal via:
 
 ```
-DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?retryWrites=true&w=majority" ROOT_PASSWORD="memphis" CONNECTION_TOKEN="memphis" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" JWT_SECRET="35nhvjfosfklgmfg56+fdsgzvfnjksacvbhfksfkgofadsjfgjkoldsdkfvpl'jbgio;dfsjgkl;'XZFVMifobd;dlgjv[sfvjmiodfkvs2fh;fhk44gfdhksdkfdffk" REFRESH_JWT_SECRET="35c7b3eb969db065bfa3c66b38e4323e8f73113f3965dfb55c6bc585dcb0ba62bd399e2588fdc8f709ae0b63fb24be32590f134506ca1d7a4314339f11b8045a" go run main.go --js --auth memphis --websocket_no_tls
+DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?retryWrites=true&w=majority" ROOT_PASSWORD="memphis" CONNECTION_TOKEN="memphis" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" JWT_SECRET="JWT_TEST_PURPOSE" REFRESH_JWT_SECRET="REFRESH_JWT_TEST_PURPOSE" go run main.go --js --auth memphis --websocket_no_tls
 ```
 
 ### Frontend Contributions

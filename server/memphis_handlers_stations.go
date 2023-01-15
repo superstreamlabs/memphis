@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -182,7 +180,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	shouldCreateStream bool) {
 	isNative := shouldCreateStream == true
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -294,10 +291,15 @@ func (s *Server) createStationDirectIntern(c *client,
 		csr.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
+	username := c.memphisInfo.username
+	if username == "" {
+		username = csr.Username
+	}
+
 	newStation := models.Station{
 		ID:                primitive.NewObjectID(),
 		Name:              stationName.Ext(),
-		CreatedByUser:     c.memphisInfo.username,
+		CreatedByUser:     username,
 		CreationDate:      time.Now(),
 		IsDeleted:         false,
 		RetentionType:     retentionType,
@@ -342,7 +344,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
+	message := "Station " + stationName.Ext() + " has been created by user " + username
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
@@ -350,7 +352,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -367,7 +369,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			Value: stationName.Ext(),
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
+		analytics.SendEventWithParams(username, analyticsParams, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -441,7 +443,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			streamName := info.Config.Name
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
 				splitName := strings.Split(streamName, "-")
-				stationName := splitName[1]
+				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
 				_, ok := streamInfoToDls[stationName]
 				if ok {
 					infoToUpdate := streamInfoToDls[stationName]
@@ -513,7 +515,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			streamName := info.Config.Name
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
 				splitName := strings.Split(streamName, "-")
-				stationName := splitName[1]
+				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
 				_, ok := streamInfoToDls[stationName]
 				if ok {
 					infoToUpdate := streamInfoToDls[stationName]
@@ -1014,14 +1016,14 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	message := "Station " + stationName.Ext() + " has been deleted by user " + c.memphisInfo.username
+	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: dsr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
