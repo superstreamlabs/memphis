@@ -32,8 +32,8 @@ type Consumer struct {
 	CreationDate             time.Time          `json:"creation_date" bson:"creation_date"`
 	IsDeleted                bool               `json:"is_deleted" bson:"is_deleted"`
 	MaxMsgDeliveries         int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	StartConsumeFromSequence uint64             `json:"start_consume_from_sequence"`
-	LastMessages             int64              `json:"last_messages"`
+	StartConsumeFromSequence uint64             `json:"start_consume_from_sequence" bson:"start_consume_from_sequence"`
+	LastMessages             int64              `json:"last_messages" bson:"last_messages"`
 }
 
 type ExtendedConsumer struct {

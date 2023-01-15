@@ -221,66 +221,35 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 
 	newConsumer := models.Consumer{
-		ID:               primitive.NewObjectID(),
-		Name:             name,
-		StationId:        station.ID,
-		Type:             consumerType,
-		ConnectionId:     connectionIdObj,
-		CreatedByUser:    connection.CreatedByUser,
-		ConsumersGroup:   consumerGroup,
-		IsActive:         true,
-		CreationDate:     time.Now(),
-		IsDeleted:        false,
-		MaxAckTimeMs:     int64(maxAckTime),
-		MaxMsgDeliveries: maxMsgDeliveries,
-	}
-
-	if startConsumeFromSequence > 1 {
-		newConsumer.StartConsumeFromSequence = startConsumeFromSequence
-	} else if lastMessages > -1 {
-		newConsumer.LastMessages = lastMessages
-	} else {
-		newConsumer.StartConsumeFromSequence = startConsumeFromSequence
-		newConsumer.LastMessages = lastMessages
-	}
-
-	if consumerGroupExist {
-		if requestVersion == 1 {
-			if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
-				errMsg := errors.New("Consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
-				serv.Warnf("createConsumerDirectCommon: " + errMsg.Error())
-				return errMsg
-			}
-		}
-
-		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
-			err := s.CreateConsumer(newConsumer, station)
-			if err != nil {
-				errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-				serv.Errorf("createConsumerDirectCommon: " + errMsg)
-				return err
-			}
-		}
-	} else {
-		err := s.CreateConsumer(newConsumer, station)
-		if err != nil {
-			errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-			serv.Errorf("createConsumerDirectCommon: " + errMsg)
-			return err
-		}
+		ID:                       primitive.NewObjectID(),
+		Name:                     name,
+		StationId:                station.ID,
+		Type:                     consumerType,
+		ConnectionId:             connectionIdObj,
+		CreatedByUser:            connection.CreatedByUser,
+		ConsumersGroup:           consumerGroup,
+		IsActive:                 true,
+		CreationDate:             time.Now(),
+		IsDeleted:                false,
+		MaxAckTimeMs:             int64(maxAckTime),
+		MaxMsgDeliveries:         maxMsgDeliveries,
+		StartConsumeFromSequence: startConsumeFromSequence,
+		LastMessages:             lastMessages,
 	}
 
 	filter := bson.M{"name": newConsumer.Name, "station_id": station.ID, "is_active": true, "is_deleted": false}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"_id":                newConsumer.ID,
-			"type":               newConsumer.Type,
-			"connection_id":      newConsumer.ConnectionId,
-			"created_by_user":    newConsumer.CreatedByUser,
-			"consumers_group":    newConsumer.ConsumersGroup,
-			"creation_date":      newConsumer.CreationDate,
-			"max_ack_time_ms":    newConsumer.MaxAckTimeMs,
-			"max_msg_deliveries": newConsumer.MaxMsgDeliveries,
+			"_id":                         newConsumer.ID,
+			"type":                        newConsumer.Type,
+			"connection_id":               newConsumer.ConnectionId,
+			"created_by_user":             newConsumer.CreatedByUser,
+			"consumers_group":             newConsumer.ConsumersGroup,
+			"creation_date":               newConsumer.CreationDate,
+			"max_ack_time_ms":             newConsumer.MaxAckTimeMs,
+			"max_msg_deliveries":          newConsumer.MaxMsgDeliveries,
+			"start_consume_from_sequence": newConsumer.StartConsumeFromSequence,
+			"last_messages":               newConsumer.LastMessages,
 		},
 	}
 	opts := options.Update().SetUpsert(true)
@@ -294,6 +263,31 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if updateResults.MatchedCount == 0 {
 		message := "Consumer " + name + " has been created by user " + c.memphisInfo.username
 		serv.Noticef(message)
+		if consumerGroupExist {
+			if requestVersion == 1 {
+				if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+					errMsg := errors.New("Consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
+					serv.Warnf("createConsumerDirectCommon: " + errMsg.Error())
+					return errMsg
+				}
+			}
+
+			if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
+				err := s.CreateConsumer(newConsumer, station)
+				if err != nil {
+					errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+					serv.Errorf("createConsumerDirectCommon: " + errMsg)
+					return err
+				}
+			}
+		} else {
+			err := s.CreateConsumer(newConsumer, station)
+			if err != nil {
+				errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+				serv.Errorf("createConsumerDirectCommon: " + errMsg)
+				return err
+			}
+		}
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
