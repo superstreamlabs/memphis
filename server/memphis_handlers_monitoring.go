@@ -212,7 +212,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 
 			if strings.Contains(continerName, "mongo") {
-				dbStorageSize, err := getDbStorageSize()
+				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
 					return components, err
 				}
@@ -229,9 +229,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 						Percentage: memoryPercentage,
 					},
 					Storage: models.CompStats{
-						Max:        storage_size * 1024 * 1024 * 1024,
-						Current:    dbStorageSize * 1024 * 1024,
-						Percentage: math.Ceil((dbStorageSize / 1024) / storage_size),
+						Max:        totalSize,
+						Current:    dbStorageSize,
+						Percentage: math.Ceil(dbStorageSize / totalSize),
 					},
 					Connected: true,
 				})
@@ -1271,17 +1271,18 @@ func checkCompStatus(components []models.SysComponent) string {
 	return status
 }
 
-func getDbStorageSize() (float64, error) {
+func getDbStorageSize() (float64, float64, error) {
 	var configuration = conf.GetConfig()
 	sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
 		"dbStats": 1,
 	}).DecodeBytes()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
-	return dbStorageSize, nil
+	totalSize := sbStats.Lookup("fsTotalSize").Double()
+	return dbStorageSize, totalSize, nil
 }
 
 func getUnixStorageSize() (float64, error) {
