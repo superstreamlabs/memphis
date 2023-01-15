@@ -182,7 +182,11 @@ func (s *Server) createStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 
 	s.Errorf(c.clientTypeString())
-	s.Errorf(c.getClientInfo(true).Name)
+	if c.getClientInfo(true) != nil {
+		s.Errorf(c.getClientInfo(true).Name)
+	} else {
+		s.Errorf("nil nil nil")
+	}
 	s.Errorf(c.kindString())
 	s.Errorf(c.GetName())
 
