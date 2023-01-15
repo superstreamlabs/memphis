@@ -87,11 +87,11 @@ const SchemaEditorExample = {
     Protobuf: {
         language: 'proto',
         value: `syntax = "proto3";
-        message Test {
-            string field1 = 1;
-            string  field2 = 2;
-            int32  field3 = 3;
-        }`
+message Test {
+    string field1 = 1;
+    string  field2 = 2;
+    int32  field3 = 3;
+}`
     },
     Avro: {
         language: 'avro',
@@ -110,49 +110,49 @@ const SchemaEditorExample = {
     Json: {
         language: 'json',
         value: `{
-            "$id": "https://example.com/address.schema.json",
-            "description": "An address similar to http://microformats.org/wiki/h-card",
-            "type": "object",
-            "properties": {
-              "post-office-box": {
-                "type": "number"
-              },
-              "extended-address": {
-                "type": "string"
-              },
-              "street-address": {
-                "type": "string"
-              },
-              "locality": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              },
-              "postal-code": {
-                "type": "string"
-              },
-              "country-name": {
-                "type": "string"
-              }
-            },
-            "required": [ "locality" ]
-         }`
+    "$id": "https://example.com/address.schema.json",
+    "description": "An address similar to http://microformats.org/wiki/h-card",
+    "type": "object",
+    "properties": {
+        "post-office-box": {
+        "type": "number"
+        },
+        "extended-address": {
+        "type": "string"
+        },
+        "street-address": {
+        "type": "string"
+        },
+        "locality": {
+        "type": "string"
+        },
+        "region": {
+        "type": "string"
+        },
+        "postal-code": {
+        "type": "string"
+        },
+        "country-name": {
+        "type": "string"
+        }
+    },
+    "required": [ "locality" ]
+}`
     },
     GraphQL: {
         language: 'graphql',
         value: `type Query {
-            greeting:String
-            students:[Student]
-         }
-         
-         type Student {
-            id:ID!
-            firstName:String
-            lastName:String
-            password:String
-            collegeId:String
-         }`
+    greeting:String
+    students:[Student]
+}
+
+type Student {
+    id:ID!
+    firstName:String
+    lastName:String
+    password:String
+    collegeId:String
+}`
     }
 };
 
@@ -386,8 +386,8 @@ function CreateSchema({ createNew }) {
                             <p>Create schema</p>
                         </div>
                         <span>
-                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
-                            <a href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank">
+                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
+                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank">
                                 Learn more
                             </a>
                         </span>
@@ -451,7 +451,10 @@ function CreateSchema({ createNew }) {
                                 <div className="title-desc">
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
-                                        Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation
+                                        Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank">
+                                            Learn more
+                                        </a>
                                     </p>
                                 </div>
                             </div>
@@ -549,14 +552,14 @@ function CreateSchema({ createNew }) {
             <Modal
                 header={<img src={errorModal} alt="errorModal" />}
                 width="400px"
-                height="300px"
+                height="280px"
                 displayButtons={false}
                 clickOutside={() => setModalOpen(false)}
                 open={modalOpen}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Too many message types specified in schema structure</p>
-                    <p className="desc">Please choose your master message as a schema structure</p>
+                    <p className="title">Too many message types are specified in the schema structure</p>
+                    <p className="desc">Please choose the root of the schema:</p>
 
                     <SelectComponent
                         value={messageStructName}

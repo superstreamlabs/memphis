@@ -3,7 +3,7 @@ import './style.scss';
 import Lottie from 'lottie-react';
 
 const TitleComponent = (props) => {
-    const { headerTitle, typeTitle = 'header', headerDescription, style, img, finish, required } = props;
+    const { headerTitle, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link } = props;
 
     return (
         <div className="title-container" style={style?.container}>
@@ -27,7 +27,12 @@ const TitleComponent = (props) => {
                 </p>
             )}
             <p className="header-description" style={style?.description}>
-                {headerDescription}
+                {headerDescription}&nbsp;
+                {learnMore && (
+                    <a className="learn-more" href={link} target="_blank">
+                        Learn More
+                    </a>
+                )}
             </p>
         </div>
     );

@@ -157,7 +157,6 @@ import { Memphis, Message } from 'memphis-dev/types';
 import (
     "fmt"
     "os"
-
     "github.com/memphisdev/memphis.go"
 )
 
@@ -174,14 +173,14 @@ func main() {
     err = hdrs.Add("key", "value")
 
     if err != nil {
-        fmt.Printf("Header failed: %v\n", err)
+        fmt.Printf("Header failed: %v", err)
         os.Exit(1)
     }
 
     err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
 
     if err != nil {
-        fmt.Printf("Produce failed: %v\n", err)
+        fmt.Printf("Produce failed: %v", err)
         os.Exit(1)
     }
 }
@@ -192,7 +191,6 @@ import (
     "fmt"
     "os"
     "time"
-
     "github.com/memphisdev/memphis.go"
 )
 
@@ -206,13 +204,13 @@ func main() {
     consumer, err := conn.CreateConsumer("<station-name>", "<consumer-name>", memphis.PullInterval(15*time.Second))
 
     if err != nil {
-        fmt.Printf("Consumer creation failed: %v\n", err)
+        fmt.Printf("Consumer creation failed: %v", err)
         os.Exit(1)
     }
 
     handler := func(msgs []*memphis.Msg, err error) {
         if err != nil {
-            fmt.Printf("Fetch failed: %v\n", err)
+            fmt.Printf("Fetch failed: %v", err)
             return
         }
 
@@ -258,8 +256,7 @@ async def main():
         await memphis.close()
         
 if __name__ == '__main__':
-    asyncio.run(main())
-        `,
+    asyncio.run(main())`,
         consumer: `import asyncio
 from memphis import Memphis, MemphisError, MemphisConnectError, MemphisHeaderError
         
@@ -292,159 +289,161 @@ async def main():
         await memphis.close()
         
 if __name__ == '__main__':
-    asyncio.run(main())
-        `
+    asyncio.run(main())`
     }
 };
 
 export const PROTOCOL_CODE_EXAMPLE = {
     cURL: {
         langCode: 'apex',
-        producer: `curl --location --request POST 'localhost:4444/stations/<station-name>/produce/single' \\\n--header 'Authorization: Bearer <jwt>' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{"message": "New Message"}'`,
-        tokenGenerate: `curl --location --request POST 'localhost:4444/auth/authenticate' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{
-    "username": "root",
-    "connection_token": "memphis",
+        producer: `curl --location --request POST 'localhost/stations/<station-name>/produce/single'
+--header 'Authorization: Bearer <jwt>'
+--header 'Content-Type: application/json'
+--data-raw '{"message": "New Message"}'`,
+        tokenGenerate: `curl --location --request POST 'localhost/auth/authenticate'
+--header 'Content-Type: application/json'
+--data-raw '{
+    "username": "<application type username>",
+    "connection_token": "<broker-token>",
     "token_expiry_in_minutes": 123,
     "refresh_token_expiry_in_minutes": 10000092\n}'`
     },
     Go: {
         langCode: 'go',
         producer: `package main
-
-        import (
-          "fmt"
-          "strings"
-          "net/http"
-          "io/ioutil"
-        )
-        
-        func main() {
-        
-          url := "localhost:4444/stations/<station-name>/produce/single"
-          method := "POST"
-        
-          payload := strings.NewReader('{"message": "New Message"}')
-        
-          client := &http.Client {
-          }
-          req, err := http.NewRequest(method, url, payload)
-        
-          if err != nil {
+    import (
+      "fmt"
+      "strings"
+      "net/http"
+      "io/ioutil"
+    )
+    
+    func main() {
+    
+        url := "localhost/stations/<station-name>/produce/single"
+        method := "POST"
+      
+        payload := strings.NewReader('{"message": "New Message"}')
+      
+        client := &http.Client {
+        }
+        req, err := http.NewRequest(method, url, payload)
+      
+        if err != nil {
             fmt.Println(err)
             return
-          }
-          req.Header.Add("Authorization", "Bearer <jwt>")
-          req.Header.Add("Content-Type", "application/json")
-        
-          res, err := client.Do(req)
-          if err != nil {
+        }
+        req.Header.Add("Authorization", "Bearer <jwt>")
+        req.Header.Add("Content-Type", "application/json")
+      
+        res, err := client.Do(req)
+        if err != nil {
             fmt.Println(err)
             return
-          }
-          defer res.Body.Close()
-        
-          body, err := ioutil.ReadAll(res.Body)
-          if err != nil {
+        }
+        defer res.Body.Close()
+      
+        body, err := ioutil.ReadAll(res.Body)
+        if err != nil {
             fmt.Println(err)
             return
-          }
-          fmt.Println(string(body))
-        }`,
+        }
+        fmt.Println(string(body))
+    }`,
         tokenGenerate: `package main
-
-        import (
-          "fmt"
-          "strings"
-          "net/http"
-          "io/ioutil"
-        )
-        
-        func main() {
-        
-          url := "localhost:4444/auth/authenticate"
-          method := "POST"
-        
-          payload := strings.NewReader({
-            "username": "root",
-            "connection_token": "memphis",
-            "token_expiry_in_minutes": 123,
-            "refresh_token_expiry_in_minutes": 10000092
-        })
-        
-          client := &http.Client {
-          }
-          req, err := http.NewRequest(method, url, payload)
-        
-          if err != nil {
+    import (
+      "fmt"
+      "strings"
+      "net/http"
+      "io/ioutil"
+    )
+    
+    func main() {
+    
+        url := "localhost/auth/authenticate"
+        method := "POST"
+      
+        payload := strings.NewReader({
+          "username": "<application type username>",
+          "connection_token": "<broker-token>",
+          "token_expiry_in_minutes": 123,
+          "refresh_token_expiry_in_minutes": 10000092
+      })
+      
+        client := &http.Client {
+        }
+        req, err := http.NewRequest(method, url, payload)
+      
+        if err != nil {
             fmt.Println(err)
             return
-          }
-          req.Header.Add("Content-Type", "application/json")
-        
-          res, err := client.Do(req)
-          if err != nil {
+        }
+        req.Header.Add("Content-Type", "application/json")
+      
+        res, err := client.Do(req)
+        if err != nil {
             fmt.Println(err)
             return
-          }
-          defer res.Body.Close()
-        
-          body, err := ioutil.ReadAll(res.Body)
-          if err != nil {
+        }
+        defer res.Body.Close()
+      
+        body, err := ioutil.ReadAll(res.Body)
+        if err != nil {
             fmt.Println(err)
             return
-          }
-          fmt.Println(string(body))
-        }`
+        }
+        fmt.Println(string(body))
+    }`
     },
     'Node.js': {
         langCode: 'javascript',
         producer: `var axios = require('axios');
-        var data = JSON.stringify({
-          "message": "New Message"
-        });
-        
-        var config = {
-          method: 'post',
-          url: 'localhost:4444/stations/<station-name>/produce/single',
-          headers: { 
-            'Authorization': 'Bearer <jwt>', 
-            'Content-Type': 'application/json'
-          },
-          data : data
-        };
-        
-        axios(config)
-        .then(function (response) {
-          console.log(JSON.stringify(response.data));
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+var data = JSON.stringify({
+  "message": "New Message"
+});
+
+var config = {
+  method: 'post',
+  url: 'localhost/stations/<station-name>/produce/single',
+  headers: { 
+    'Authorization': 'Bearer <jwt>', 
+    'Content-Type': 'application/json'
+  },
+  data : data
+};
+
+axios(config)
+.then(function (response) {
+  console.log(JSON.stringify(response.data));
+})
+.catch(function (error) {
+  console.log(error);
+});
         `,
         tokenGenerate: `var axios = require('axios');
-        var data = JSON.stringify({
-          "username": "root",
-          "connection_token": "memphis",
-          "token_expiry_in_minutes": 123,
-          "refresh_token_expiry_in_minutes": 10000092
-        });
-        
-        var config = {
-          method: 'post',
-          url: 'localhost:4444/auth/authenticate',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
-          data : data
-        };
-        
-        axios(config)
-        .then(function (response) {
-          console.log(JSON.stringify(response.data));
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+var data = JSON.stringify({
+  "username": "<application type username>",
+  "connection_token": "<broker-token>",
+  "token_expiry_in_minutes": 123,
+  "refresh_token_expiry_in_minutes": 10000092
+});
+
+var config = {
+  method: 'post',
+  url: 'localhost/auth/authenticate',
+  headers: { 
+    'Content-Type': 'application/json'
+  },
+  data : data
+};
+
+axios(config)
+.then(function (response) {
+  console.log(JSON.stringify(response.data));
+})
+.catch(function (error) {
+  console.log(error);
+});
         `
     },
     Python: {
@@ -452,7 +451,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         producer: `import requests
 import json
 
-url = "localhost:4444/stations/<station-name>/produce/single"
+url = "localhost/stations/<station-name>/produce/single"
 
 payload = json.dumps({
   "message": "New Message"
@@ -469,11 +468,11 @@ print(response.text)
         tokenGenerate: `import requests
 import json
 
-url = "localhost:4444/auth/authenticate"
+url = "localhost/auth/authenticate"
 
 payload = json.dumps({
-  "username": "root",
-  "connection_token": "memphis",
+  "username": "<application type username>",
+  "connection_token": "<broker-token>",
   "token_expiry_in_minutes": 123,
   "refresh_token_expiry_in_minutes": 10000092
 })
@@ -493,7 +492,7 @@ print(response.text)
 MediaType mediaType = MediaType.parse("application/json");
 RequestBody body = RequestBody.create(mediaType, "{\"message\": \"New Message\"}");
 Request request = new Request.Builder()
-  .url("localhost:4444/stations/<station-name>/produce/single")
+  .url("localhost/stations/<station-name>/produce/single")
   .method("POST", body)
   .addHeader("Authorization", "Bearer <jwt>")
   .addHeader("Content-Type", "application/json")
@@ -502,9 +501,9 @@ Response response = client.newCall(request).execute();`,
         tokenGenerate: `OkHttpClient client = new OkHttpClient().newBuilder()
   .build();
 MediaType mediaType = MediaType.parse("application/json");
-RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"root\",\n\t\"connection_token\": \"memphis\",\n    \"token_expiry_in_minutes\": 123,\n    \"refresh_token_expiry_in_minutes\": 10000092\n}");
+RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": 123,\n    \"refresh_token_expiry_in_minutes\": 10000092\n}");
 Request request = new Request.Builder()
-  .url("localhost:4444/auth/authenticate")
+  .url("localhost/auth/authenticate")
   .method("POST", body)
   .addHeader("Content-Type", "application/json")
   .build();
@@ -513,81 +512,81 @@ Response response = client.newCall(request).execute();`
     'JavaScript - Fetch': {
         langCode: 'javascript',
         producer: `var myHeaders = new Headers();
-        myHeaders.append("Authorization", "Bearer <jwt>");
-        myHeaders.append("Content-Type", "application/json");
-        
-        var raw = JSON.stringify({
-          "message": "New Message"
-        });
-        
-        var requestOptions = {
-          method: 'POST',
-          headers: myHeaders,
-          body: raw,
-          redirect: 'follow'
-        };
-        
-        fetch("localhost:4444/stations/<station-name>/produce/single", requestOptions)
-          .then(response => response.text())
-          .then(result => console.log(result))
-          .catch(error => console.log('error', error));`,
+myHeaders.append("Authorization", "Bearer <jwt>");
+myHeaders.append("Content-Type", "application/json");
+
+var raw = JSON.stringify({
+  "message": "New Message"
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("localhost/stations/<station-name>/produce/single", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));`,
         tokenGenerate: `var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-        
-        var raw = JSON.stringify({
-          "username": "root",
-          "connection_token": "memphis",
-          "token_expiry_in_minutes": 123,
-          "refresh_token_expiry_in_minutes": 10000092
-        });
-        
-        var requestOptions = {
-          method: 'POST',
-          headers: myHeaders,
-          body: raw,
-          redirect: 'follow'
-        };
-        
-        fetch("localhost:4444/auth/authenticate", requestOptions)
-          .then(response => response.text())
-          .then(result => console.log(result))
-          .catch(error => console.log('error', error));`
+myHeaders.append("Content-Type", "application/json");
+
+var raw = JSON.stringify({
+  "username": "<application type username>",
+  "connection_token": "<broker-token>",
+  "token_expiry_in_minutes": 123,
+  "refresh_token_expiry_in_minutes": 10000092
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("localhost/auth/authenticate", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));`
     },
     'JavaScript - jQuery': {
         langCode: 'javascript',
         producer: `var settings = {
-            "url": "localhost:4444/stations/<station-name>/produce/single",
-            "method": "POST",
-            "timeout": 0,
-            "headers": {
-              "Authorization": "Bearer <jwt>",
-              "Content-Type": "application/json"
-            },
-            "data": JSON.stringify({
-              "message": "New Message"
-            }),
-          };
-          
-          $.ajax(settings).done(function (response) {
-            console.log(response);
-          });`,
+  "url": "localhost/stations/<station-name>/produce/single",
+  "method": "POST",
+  "timeout": 0,
+  "headers": {
+    "Authorization": "Bearer <jwt>",
+    "Content-Type": "application/json"
+  },
+  "data": JSON.stringify({
+    "message": "New Message"
+  }),
+};
+
+$.ajax(settings).done(function (response) {
+console.log(response);
+});`,
         tokenGenerate: `var settings = {
-            "url": "localhost:4444/auth/authenticate",
-            "method": "POST",
-            "timeout": 0,
-            "headers": {
-              "Content-Type": "application/json"
-            },
-            "data": JSON.stringify({
-              "username": "root",
-              "connection_token": "memphis",
-              "token_expiry_in_minutes": 123,
-              "refresh_token_expiry_in_minutes": 10000092
-            }),
-          };
-          
-          $.ajax(settings).done(function (response) {
-            console.log(response);
-          });`
+  "url": "localhost/auth/authenticate",
+  "method": "POST",
+  "timeout": 0,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "data": JSON.stringify({
+    "username": "<application type username>",
+    "connection_token": "<broker-token>",
+    "token_expiry_in_minutes": 123,
+    "refresh_token_expiry_in_minutes": 10000092
+  }),
+  };
+
+$.ajax(settings).done(function (response) {
+console.log(response);
+});`
     }
 };

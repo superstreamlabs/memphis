@@ -244,7 +244,7 @@ export const msToUnits = (value) => {
 };
 
 export const generateName = (value) => {
-    return value?.replaceAll(' ', '-')?.toLowerCase();
+    return value?.trimStart().replaceAll(' ', '-')?.toLowerCase();
 };
 
 export const idempotencyValidator = (value, idempotencyType) => {
