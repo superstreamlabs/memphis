@@ -179,14 +179,14 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		}
 
 		if created {
-			message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
+			message := "Station " + stationName.Ext() + " has been created by user " + connection.CreatedByUser
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   stationName.Ext(),
 				Message:       message,
-				CreatedByUser: c.memphisInfo.username,
+				CreatedByUser: connection.CreatedByUser,
 				CreationDate:  time.Now(),
 				UserType:      "application",
 			}
@@ -204,7 +204,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 					Value: stationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
+				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station")
 			}
 		}
 	}
@@ -289,14 +289,14 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if updateResults.MatchedCount == 0 {
-		message := "Consumer " + name + " has been created by user " + c.memphisInfo.username
+		message := "Consumer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
 			StationName:   stationName.Ext(),
 			Message:       message,
-			CreatedByUser: c.memphisInfo.username,
+			CreatedByUser: connection.CreatedByUser,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -314,7 +314,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 				Value: newConsumer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-consumer")
+			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-consumer")
 		}
 	}
 
@@ -606,14 +606,19 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	message := "Consumer " + name + " has been deleted by user " + c.memphisInfo.username
+	username := c.memphisInfo.username
+	if username == "" {
+		username = dcr.Username
+	}
+
+	message := "Consumer " + name + " has been deleted by user " + username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -626,7 +631,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-remove-consumer")
+		analytics.SendEvent(username, "user-remove-consumer")
 	}
 
 	respondWithErr(s, reply, nil)

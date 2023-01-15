@@ -98,14 +98,14 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 
 		if created {
-			message := "Station " + pStationName.Ext() + " has been created by user " + c.memphisInfo.username
+			message := "Station " + pStationName.Ext() + " has been created by user " + connection.CreatedByUser
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				ID:            primitive.NewObjectID(),
 				StationName:   pStationName.Ext(),
 				Message:       message,
-				CreatedByUser: c.memphisInfo.username,
+				CreatedByUser: connection.CreatedByUser,
 				CreationDate:  time.Now(),
 				UserType:      "application",
 			}
@@ -122,7 +122,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 					Value: pStationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
+				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station")
 			}
 		}
 	}
@@ -168,14 +168,14 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 
 	if updateResults.MatchedCount == 0 {
-		message := "Producer " + name + " has been created by user " + c.memphisInfo.username
+		message := "Producer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			ID:            primitive.NewObjectID(),
 			StationName:   pStationName.Ext(),
 			Message:       message,
-			CreatedByUser: c.memphisInfo.username,
+			CreatedByUser: connection.CreatedByUser,
 			CreationDate:  time.Now(),
 			UserType:      "application",
 		}
@@ -192,7 +192,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				Value: newProducer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-producer")
+			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-producer")
 		}
 	}
 	shouldSendNotifications, err := notifications.IsSlackEnabled()
@@ -443,14 +443,19 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	message := "Producer " + name + " has been deleted by user " + c.memphisInfo.username
+	username := c.memphisInfo.username
+	if username == "" {
+		username = dpr.Username
+	}
+
+	message := "Producer " + name + " has been deleted by user " + username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -462,7 +467,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(c.memphisInfo.username, "user-remove-producer")
+		analytics.SendEvent(username, "user-remove-producer")
 	}
 
 	respondWithErr(s, reply, nil)
