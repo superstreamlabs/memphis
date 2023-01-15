@@ -165,9 +165,6 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 }
 
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
-	if c.memphisInfo.username == "" {
-		s.Errorf("2", c.opts.Name, c.memphisInfo.username)
-	}
 	var csr createStationRequest
 	if err := json.Unmarshal(msg, &csr); err != nil {
 		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
@@ -181,12 +178,13 @@ func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
 	shouldCreateStream bool) {
-
-	if c.memphisInfo.username == "" {
-		s.Errorf("3", c.opts.Name, c.memphisInfo.username)
-	}
 	isNative := shouldCreateStream == true
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
+
+	s.Errorf(c.clientTypeString())
+	s.Errorf(c.getClientInfo(true).Name)
+	s.Errorf(c.kindString())
+	s.Errorf(c.GetName())
 
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {

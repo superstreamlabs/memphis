@@ -132,9 +132,6 @@ func (s *Server) initializeSDKHandlers() {
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		if c.memphisInfo.username == "" {
-			s.Errorf("1", c.opts.Name, c.memphisInfo.username)
-		}
 		go s.createStationDirect(c, reply, copyBytes(msg))
 	}
 }
