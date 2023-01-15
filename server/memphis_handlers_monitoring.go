@@ -152,8 +152,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					Storage:   defaultStat,
 					Connected: con,
 				})
-				proxyPorts = []int{4444}
 			}
+			proxyPorts = []int{4444}
 		}
 
 		ctx := context.Background()
