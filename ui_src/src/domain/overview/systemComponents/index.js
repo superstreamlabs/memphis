@@ -22,7 +22,7 @@ import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
-    const [expanded, setExpanded] = useState([]);
+    const [expandedNodes, setExpandedNodes] = useState(['0-0']);
 
     return (
         <div className="overview-wrapper">
@@ -34,14 +34,18 @@ const SysComponents = () => {
                     {state?.monitor_data?.system_components?.map((comp, i) => {
                         return (
                             <Tree
+                                key={`tree-node${i}`}
                                 blockNode
                                 showLine
                                 switcherIcon={({ expanded }) => (
                                     <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
                                 )}
-                                rootClassName={!expanded?.includes(`0-${i}`) && 'divided'}
+                                rootClassName={!expandedNodes?.includes(`0-${i}`) && 'divided'}
                                 defaultExpandedKeys={['0-0']}
-                                onExpand={(expandedKeys) => setExpanded(expandedKeys)}
+                                onExpand={(_, { expanded }) => {
+                                    if (expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
+                                    else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));
+                                }}
                                 treeData={[
                                     {
                                         title: <Component comp={comp} i={i} />,
