@@ -38,6 +38,7 @@ const SysComponents = () => {
                                 switcherIcon={({ expanded }) => (
                                     <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
                                 )}
+                                rootStyle={{ borderBottom: `1px solid #ECECEC` }}
                                 defaultExpandedKeys={['0-0-0']}
                                 treeData={[
                                     {

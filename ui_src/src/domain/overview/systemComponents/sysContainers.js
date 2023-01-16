@@ -18,6 +18,7 @@ import { Divider } from 'antd';
 import { Progress } from 'antd';
 import SysContainer from '../../../assets/images/sysContainer.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
+import { convertBytes } from '../../../services/valueConvertor';
 
 const SysContainers = ({ component }) => {
     const getColor = (percentage) => {
@@ -26,17 +27,17 @@ const SysContainers = ({ component }) => {
         else return '#FF716E';
     };
 
-    const getTooltipData = (item) => {
+    const getTooltipData = (item, name) => {
         return (
             <div>
-                <p>current: {item?.current} Bytes</p>
-                <p>max: {item?.max} Bytes</p>
+                <p>current: {name === 'CPU' ? `${item?.current} CPU` : `${convertBytes(item?.current)}`}</p>
+                <p>max: {name === 'CPU' ? `${item?.max} CPU` : `${convertBytes(item?.max)}`}</p>
             </div>
         );
     };
     const getContainerItem = (item, name) => {
         return (
-            <TooltipComponent text={() => getTooltipData(item)}>
+            <TooltipComponent text={() => getTooltipData(item, name)}>
                 <div className="system-container-item">
                     <p className="item-name">{name}</p>
                     <p className="item-usage">{item?.percentage}%</p>

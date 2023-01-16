@@ -102,15 +102,28 @@ function isFloat(n) {
 
 export const convertBytes = (bytes) => {
     const KB = 1024;
-    const MB = 1024 * 1024;
+    const MB = KB * 1024;
+    const GB = MB * 1024;
+    const TB = GB * 1024;
+    const PB = TB * 1024;
+
     if (bytes < KB && bytes > 0) {
         return `${bytes} Bytes`;
     } else if (bytes >= KB && bytes < MB) {
         const parsing = isFloat(bytes / KB) ? Math.round((bytes / KB + Number.EPSILON) * 100) / 100 : bytes / KB;
         return `${parsing} KB`;
-    } else if (bytes >= MB) {
+    } else if (bytes >= MB && bytes < GB) {
         const parsing = isFloat(bytes / MB) ? Math.round((bytes / MB + Number.EPSILON) * 100) / 100 : bytes / MB;
         return `${parsing} MB`;
+    } else if (bytes >= GB && bytes < TB) {
+        const parsing = isFloat(bytes / GB) ? Math.round((bytes / GB + Number.EPSILON) * 100) / 100 : bytes / GB;
+        return `${parsing} GB`;
+    } else if (bytes >= TB && bytes < PB) {
+        const parsing = isFloat(bytes / TB) ? Math.round((bytes / TB + Number.EPSILON) * 100) / 100 : bytes / TB;
+        return `${parsing} TB`;
+    } else if (bytes >= PB) {
+        const parsing = isFloat(bytes / PB) ? Math.round((bytes / PB + Number.EPSILON) * 100) / 100 : bytes / PB;
+        return `${parsing} PB`;
     } else {
         return '0 Bytes';
     }
