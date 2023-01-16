@@ -25,58 +25,68 @@
         .divided {
             border-bottom: 1px solid #ececec;
         }
-        .ant-tree-switcher {
-            margin-top: 10px !important;
+        .ant-tree-switcher-icon {
+            margin-top: 35px !important;
         }
         .sys-components-container {
             width: 100%;
             position: relative;
-            .sys-components {
-                display: flex;
-                justify-content: space-between;
-                padding-top: 7px;
-                padding-bottom: 7px;
-                align-items: center;
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            .component-img {
+                margin-right: 10px;
+            }
+            .component {
                 width: 100%;
-                .component-name {
-                    font-size: 14px;
-                    font-family: 'InterSemiBold';
-                }
-                .pie-status-component {
+                padding-top: 10px;
+                padding-bottom: 10px;
+                .sys-components {
                     display: flex;
+                    justify-content: space-between;
                     align-items: center;
-                    .pie-status {
+                    width: 100%;
+                    .component-name {
+                        font-size: 15px;
+                        font-family: 'InterSemiBold';
+                    }
+                    .pie-status-component {
                         display: flex;
-                        height: 28px;
-                        width: 65px;
-                        background: #e3e0ff;
-                        border-radius: 4px;
                         align-items: center;
-                        justify-content: center;
-                        font-size: 12px;
-                        margin: 0 5px 0 5px;
+                        .pie-status {
+                            display: flex;
+                            height: 28px;
+                            width: 65px;
+                            background: #e3e0ff;
+                            border-radius: 4px;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                            margin: 0 5px 0 5px;
+                        }
+                    }
+                    .green {
+                        color: #2ed47a;
+                        font-size: 20px;
+                    }
+                    .red {
+                        color: #f7685b;
+                        font-size: 20px;
+                    }
+                    .yellow {
+                        color: #ffb946;
+                        font-size: 20px;
                     }
                 }
-                .green {
-                    color: #2ed47a;
-                    font-size: 20px;
-                }
-                .red {
-                    color: #f7685b;
-                    font-size: 20px;
-                }
-                .yellow {
-                    color: #ffb946;
-                    font-size: 20px;
-                }
-            }
-            .pods-container {
-                display: flex;
-                label {
-                    margin-right: 5px;
-                }
-                .ports {
-                    color: #737373;
+                .pods-container {
+                    display: flex;
+                    label {
+                        margin-right: 5px;
+                    }
+                    .ports {
+                        color: #737373;
+                        font-weight: 500;
+                    }
                 }
             }
         }
@@ -86,14 +96,12 @@
         line-height: 20px;
         width: 100%;
         border: 1px solid #ececec;
-        box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
         border-radius: 8px;
         .system-container-header {
             padding: 10px;
             display: flex;
             p {
                 size: 14px;
-                // font-family: 'InterSemiBold';
                 font-weight: 500;
                 margin: 0;
             }
@@ -110,8 +118,6 @@
                 margin-bottom: 30px;
             }
             background-color: #f7f7f7;
-            // display: grid;
-            // grid-template-columns: 33% 33% 33%;
             height: 100%;
             display: flex;
             justify-content: space-between;
@@ -168,6 +174,9 @@
     }
     .ant-tree-node-selected {
         background-color: transparent !important;
+    }
+    .ant-tree-node-content-wrapper {
+        line-height: 18px;
     }
 }
 .port-popover {

@@ -21,6 +21,7 @@ import { Popover } from 'antd';
 import CheckCircleSharpIcon from '@material-ui/icons/CheckCircleSharp';
 import ErrorSharpIcon from '@material-ui/icons/ErrorSharp';
 import Cancel from '@material-ui/icons/Cancel';
+import ComponentIcon from '../../../assets/images/componentIcon.svg';
 
 const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
 
@@ -48,7 +49,45 @@ const Component = ({ comp, i }) => {
     };
     return (
         <div className="sys-components-container" key={`${comp.podName}${i}`}>
-            <div className="sys-components">
+            <img src={ComponentIcon} className="component-img" alt="ComponentIcon" width="18" height="18" />
+            <div className="component">
+                <div className="sys-components">
+                    <OverflowTip text={comp.name}>
+                        <p className="component-name">{comp.name}</p>
+                    </OverflowTip>
+                    <div className="pie-status-component">
+                        <div className="pie-status">
+                            <PieChart height={33} width={33}>
+                                <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>
+                            </PieChart>
+                            <p>
+                                {comp.actual_pods}/{comp.desired_pods}
+                            </p>
+                        </div>
+                        {getStatus(comp.status)}
+                    </div>
+                </div>
+                <div className="pods-container">
+                    <label>{comp?.address} </label>
+                    <label className="ports">PORTS</label>
+                    <p>{comp.ports[0]}</p>
+                    {comp.ports?.length > 1 && (
+                        <Popover
+                            overlayInnerStyle={remainingPorstPopInnerStyle}
+                            placement="bottomLeft"
+                            content={comp.ports?.slice(1)?.map((port) => {
+                                return <p className="port-popover">{port}</p>;
+                            })}
+                        >
+                            <div className="plus-ports">
+                                <Add className="add" />
+                                <p>{comp.ports?.length - 1}</p>
+                            </div>
+                        </Popover>
+                    )}
+                </div>
+            </div>
+            {/* <div className="sys-components">
                 <OverflowTip text={comp.name}>
                     <p className="component-name">{comp.name}</p>
                 </OverflowTip>
@@ -64,6 +103,7 @@ const Component = ({ comp, i }) => {
                     {getStatus(comp.status)}
                 </div>
             </div>
+
             <div className="pods-container">
                 <label>{comp?.address} </label>
                 <label className="ports">PORTS</label>
@@ -82,7 +122,7 @@ const Component = ({ comp, i }) => {
                         </div>
                     </Popover>
                 )}
-            </div>
+            </div> */}
         </div>
     );
 };

@@ -52,7 +52,7 @@ const SysContainers = ({ component, k8sEnv, index }) => {
                 <img src={SysContainer} alt="SysContainer" width="15" height="15" />
                 <div>
                     <p>{component?.name}</p>
-                    <label>{k8sEnv ? `POD${index + 1}` : `CONTAINER`}</label>
+                    <label>{k8sEnv ? `POD ${index + 1}` : `CONTAINER`}</label>
                 </div>
             </div>
 
