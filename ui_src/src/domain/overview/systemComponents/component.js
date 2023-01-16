@@ -14,9 +14,6 @@
 import './style.scss';
 
 import React from 'react';
-import { Divider } from '@material-ui/core';
-
-import HealthyBadge from '../../../components/healthyBadge';
 import { PieChart, Pie } from 'recharts';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import { Add } from '@material-ui/icons';

@@ -46,10 +46,10 @@ const SysComponents = () => {
                                     {
                                         title: <Component comp={comp} i={i} />,
                                         key: `0-${i}`,
-                                        children: comp?.components?.map((component) => {
+                                        children: comp?.components?.map((component, index) => {
                                             return {
-                                                title: <SysContainers component={component} />,
-                                                key: `0-${i}-0`,
+                                                title: <SysContainers component={component} k8sEnv={state?.monitor_data?.k8s_env} index={index} />,
+                                                key: `0-${i}-${index}`,
                                                 selectable: false
                                             };
                                         })

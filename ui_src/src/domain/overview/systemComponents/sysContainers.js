@@ -20,7 +20,7 @@ import SysContainer from '../../../assets/images/sysContainer.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import { convertBytes } from '../../../services/valueConvertor';
 
-const SysContainers = ({ component }) => {
+const SysContainers = ({ component, k8sEnv, index }) => {
     const getColor = (percentage) => {
         if (percentage <= 33) return '#2ED47A';
         else if (percentage < 66) return '#4A3AFF';
@@ -52,7 +52,7 @@ const SysContainers = ({ component }) => {
                 <img src={SysContainer} alt="SysContainer" width="15" height="15" />
                 <div>
                     <p>{component?.name}</p>
-                    <label>address</label>
+                    <label>{k8sEnv ? `POD${index + 1}` : `CONTAINER`}</label>
                 </div>
             </div>
 
