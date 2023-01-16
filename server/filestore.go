@@ -26,6 +26,7 @@ import (
 	"hash"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -2068,6 +2069,7 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 
 	var smv StoreMsg
 	sm, err := mb.cacheLookup(seq, &smv)
+	log.Println("msg to delete", string(smv.subj), string(smv.hdr), string(smv.msg), string(smv.buf), smv.seq, string(fs.cfg.StreamConfig.Name))
 	if err != nil {
 		mb.mu.Unlock()
 		fsUnlock()
