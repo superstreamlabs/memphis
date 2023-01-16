@@ -29,6 +29,7 @@ const SysComponents = () => {
             <div className="system-components-container">
                 <div className="overview-components-header">
                     <p>System components</p>
+                    <label>Richard McClintock, a Latin professor </label>
                 </div>
                 <div className="component-list">
                     {state?.monitor_data?.system_components?.map((comp, i) => {
@@ -37,6 +38,7 @@ const SysComponents = () => {
                                 key={`tree-node${i}`}
                                 blockNode
                                 showLine
+                                selectable={false}
                                 switcherIcon={({ expanded }) => (
                                     <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
                                 )}

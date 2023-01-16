@@ -58,7 +58,12 @@ const Component = ({ comp, i }) => {
                     <div className="pie-status-component">
                         <div className="pie-status">
                             <PieChart height={33} width={33}>
-                                <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>
+                                <Pie
+                                    dataKey="value"
+                                    data={getData(comp)}
+                                    startAngle={-270}
+                                    //  stroke="none"
+                                ></Pie>
                             </PieChart>
                             <p>
                                 {comp.actual_pods}/{comp.desired_pods}
@@ -68,6 +73,7 @@ const Component = ({ comp, i }) => {
                     </div>
                 </div>
                 <div className="pods-container">
+                    <label className="ports">HOST</label>
                     <label>{comp?.address} </label>
                     <label className="ports">PORTS</label>
                     <p>{comp.ports[0]}</p>
@@ -87,42 +93,6 @@ const Component = ({ comp, i }) => {
                     )}
                 </div>
             </div>
-            {/* <div className="sys-components">
-                <OverflowTip text={comp.name}>
-                    <p className="component-name">{comp.name}</p>
-                </OverflowTip>
-                <div className="pie-status-component">
-                    <div className="pie-status">
-                        <PieChart height={33} width={33}>
-                            <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>
-                        </PieChart>
-                        <p>
-                            {comp.actual_pods}/{comp.desired_pods}
-                        </p>
-                    </div>
-                    {getStatus(comp.status)}
-                </div>
-            </div>
-
-            <div className="pods-container">
-                <label>{comp?.address} </label>
-                <label className="ports">PORTS</label>
-                <p>{comp.ports[0]}</p>
-                {comp.ports?.length > 1 && (
-                    <Popover
-                        overlayInnerStyle={remainingPorstPopInnerStyle}
-                        placement="bottomLeft"
-                        content={comp.ports?.slice(1)?.map((port) => {
-                            return <p className="port-popover">{port}</p>;
-                        })}
-                    >
-                        <div className="plus-ports">
-                            <Add className="add" />
-                            <p>{comp.ports?.length - 1}</p>
-                        </div>
-                    </Popover>
-                )}
-            </div> */}
         </div>
     );
 };

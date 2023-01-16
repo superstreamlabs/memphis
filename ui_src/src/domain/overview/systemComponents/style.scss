@@ -6,20 +6,30 @@
     min-width: 280px;
     min-height: 250px;
     .collapse-arrow {
+        transform: rotate(-90deg);
         transition: transform 0.4s;
     }
     .open {
-        transform: rotate(180deg);
+        transform: rotate(0deg);
     }
     .overview-components-header {
-        align-items: center;
-        font-size: 16px;
-        font-family: 'InterSemiBold';
-        margin-bottom: 0;
+        p {
+            align-items: center;
+            font-size: 16px;
+            font-family: 'InterSemiBold';
+            margin-bottom: 0;
+        }
+        label {
+            font-weight: 400;
+            font-size: 12px;
+            color: #b4b4b4;
+            font-family: 'Inter';
+        }
     }
     .component-list {
         overflow-y: scroll;
-        height: calc(100% - 25px);
+        margin-top: 30px;
+        height: calc(100% - 35px);
         position: relative;
         width: 100%;
         .divided {
@@ -177,6 +187,7 @@
     }
     .ant-tree-node-content-wrapper {
         line-height: 18px;
+        cursor: default;
     }
 }
 .port-popover {
