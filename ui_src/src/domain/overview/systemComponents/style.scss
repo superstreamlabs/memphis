@@ -22,6 +22,9 @@
         height: calc(100% - 25px);
         position: relative;
         width: 100%;
+        .divided {
+            border-bottom: 1px solid #ececec;
+        }
         .ant-tree-switcher {
             margin-top: 10px !important;
         }

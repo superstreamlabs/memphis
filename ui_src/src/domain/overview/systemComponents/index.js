@@ -13,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import SysContainers from './sysContainers';
 import Component from './component';
 import { Context } from '../../../hooks/store';
@@ -22,6 +22,7 @@ import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
+    const [expanded, setExpanded] = useState([]);
 
     return (
         <div className="overview-wrapper">
@@ -38,8 +39,9 @@ const SysComponents = () => {
                                 switcherIcon={({ expanded }) => (
                                     <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
                                 )}
-                                rootStyle={{ borderBottom: `1px solid #ECECEC` }}
-                                defaultExpandedKeys={['0-0-0']}
+                                rootClassName={!expanded?.includes(`0-${i}`) && 'divided'}
+                                defaultExpandedKeys={['0-0']}
+                                onExpand={(expandedKeys) => setExpanded(expandedKeys)}
                                 treeData={[
                                     {
                                         title: <Component comp={comp} i={i} />,
