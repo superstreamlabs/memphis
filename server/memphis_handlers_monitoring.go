@@ -39,11 +39,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type MonitoringHandler struct{ S *Server }
 
 var clientset *kubernetes.Clientset
+var metricsclientset *metricsv.Clientset
 
 func clientSetClusterConfig() error {
 	var config *rest.Config
@@ -60,6 +62,13 @@ func clientSetClusterConfig() error {
 		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
 		return err
 	}
+	if metricsclientset == nil {
+		metricsclientset, err = metricsv.NewForConfig(config)
+		if err != nil {
+			serv.Errorf("clientSetClusterConfig: metricsclientset: " + err.Error())
+			return err
+		}
+	}
 
 	return nil
 }
@@ -72,6 +81,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 	var brokerPorts []int
 	var proxyComponents []models.SysComponent
 	var proxyPorts []int
+	dbActual := 0
+	dbDesired := 0
+	brokerActual := 0
+	brokerDesired := 0
+	proxyActual := 0
+	proxyDesired := 0
+	dbPodIp := ""
+	proxyPodIp := ""
+	brokerPodIp := ""
 	defaultStat := models.CompStats{
 		Max:        0,
 		Current:    0,
@@ -289,7 +307,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 			}
 		}
-		dbActual := 0
+
 		if dbComponents[0].Connected {
 			dbActual = 1
 		}
@@ -302,7 +320,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			ActualPods:  dbActual,
 			Address:     "http://localhost",
 		})
-		brokerActual := 0
+
 		if brokerComponents[0].Connected {
 			brokerActual = 1
 		}
@@ -315,7 +333,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			ActualPods:  brokerActual,
 			Address:     "http://localhost",
 		})
-		proxyActual := 0
+
 		if proxyComponents[0].Connected {
 			proxyActual = 1
 		}
@@ -341,21 +359,86 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		if err != nil {
 			return components, err
 		}
+		// podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 
+		// for _, m := range podMetrics.Items{
+
+		// for _, container := range m.Containers{
+		// cpu := container.Usage.Cpu()
+		// memory := container.Usage.Memory()
+		// storage := container.Usage.Storage()
+		// storageEphermal := container.Usage.StorageEphemeral()
+
+		// }
+		// }
 		for _, d := range deploymentsList.Items {
+			serv.Noticef("deploymentsList loop")
 			var ports []int
+			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), d.Name, metav1.GetOptions{})
+			if err != nil {
+				return components, err
+			}
+			pod, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), d.Name, metav1.GetOptions{})
+			if err != nil {
+				return components, err
+			}
+			cpuLimit := float64(pod.Spec.Containers[0].Resources.Limits.Cpu().Value())
+			memLimit := float64(pod.Spec.Containers[0].Resources.Limits.Memory().Value())
+			storageLimit := float64(pod.Spec.Containers[0].Resources.Limits.Storage().Value())
+			cpuUsage := float64(0)
+			memUsage := float64(0)
+			storageUsage := float64(0)
+			for _, container := range podMetrics.Containers {
+				cpuUsage += float64(container.Usage.Cpu().Value())
+				memUsage += float64(container.Usage.Memory().Value())
+				storageUsage += float64(container.Usage.Storage().Value())
+			}
 			for _, container := range d.Spec.Template.Spec.Containers {
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
 				}
 			}
-
-			// components = append(components, models.SystemComponent{
-			// 	Component:   d.GetName(),
-			// 	DesiredPods: int(*d.Spec.Replicas),
-			// 	ActualPods:  int(d.Status.ReadyReplicas),
-			// 	Ports:       ports,
-			// })
+			comp := models.SysComponent{
+				Name: pod.Name,
+				CPU: models.CompStats{
+					Max:        cpuLimit,
+					Current:    cpuUsage,
+					Percentage: math.Ceil(cpuUsage / cpuLimit),
+				},
+				Memory: models.CompStats{
+					Max:        memLimit,
+					Current:    memUsage,
+					Percentage: math.Ceil(memUsage / memLimit),
+				},
+				Storage: models.CompStats{
+					Max:        storageLimit,
+					Current:    storageUsage,
+					Percentage: math.Ceil(storageUsage / storageLimit),
+				},
+				Connected: true,
+			}
+			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil(cpuUsage/cpuLimit)) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
+			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil(memUsage/memLimit)) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
+			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil(storageUsage/storageLimit)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
+			if strings.Contains(pod.Name, "mongo") {
+				dbComponents = append(dbComponents, comp)
+				dbPorts = ports
+				dbDesired = int(*d.Spec.Replicas)
+				dbActual = int(d.Status.ReadyReplicas)
+				dbPodIp = pod.Status.PodIP
+			} else if strings.Contains(pod.Name, "broker") {
+				brokerComponents = append(brokerComponents, comp)
+				brokerPorts = ports
+				brokerDesired = int(*d.Spec.Replicas)
+				brokerActual = int(d.Status.ReadyReplicas)
+				brokerPodIp = pod.Status.PodIP
+			} else if strings.Contains(pod.Name, "proxy") {
+				proxyComponents = append(proxyComponents, comp)
+				proxyPorts = ports
+				proxyDesired = int(*d.Spec.Replicas)
+				proxyActual = int(d.Status.ReadyReplicas)
+				proxyPodIp = pod.Status.PodIP
+			}
 		}
 
 		statefulsetsClient := clientset.AppsV1().StatefulSets(configuration.K8S_NAMESPACE)
@@ -364,19 +447,107 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			return components, err
 		}
 		for _, s := range statefulsetsList.Items {
+			serv.Noticef("statefulsetsList loop")
 			var ports []int
+			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), s.Name, metav1.GetOptions{})
+			if err != nil {
+				return components, err
+			}
+			pod, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), s.Name, metav1.GetOptions{})
+			if err != nil {
+				return components, err
+			}
+
+			cpuLimit := float64(pod.Spec.Containers[0].Resources.Limits.Cpu().Value())
+			memLimit := float64(pod.Spec.Containers[0].Resources.Limits.Memory().Value())
+			storageLimit := float64(pod.Spec.Containers[0].Resources.Limits.Storage().Value())
+			cpuUsage := float64(0)
+			memUsage := float64(0)
+			storageUsage := float64(0)
+			for _, container := range podMetrics.Containers {
+				cpuUsage += float64(container.Usage.Cpu().Value())
+				memUsage += float64(container.Usage.Memory().Value())
+				storageUsage += float64(container.Usage.Storage().Value())
+			}
 			for _, container := range s.Spec.Template.Spec.Containers {
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
 				}
 			}
-
-			// components = append(components, models.SystemComponent{
-			// 	Component:   s.GetName(),
-			// 	DesiredPods: int(*s.Spec.Replicas),
-			// 	ActualPods:  int(s.Status.ReadyReplicas),
-			// 	Ports:       ports,
-			// })
+			comp := models.SysComponent{
+				Name: pod.Name,
+				CPU: models.CompStats{
+					Max:        cpuLimit,
+					Current:    cpuUsage,
+					Percentage: math.Ceil(cpuUsage / cpuLimit),
+				},
+				Memory: models.CompStats{
+					Max:        memLimit,
+					Current:    memUsage,
+					Percentage: math.Ceil(memUsage / memLimit),
+				},
+				Storage: models.CompStats{
+					Max:        storageLimit,
+					Current:    storageUsage,
+					Percentage: math.Ceil(storageUsage / storageLimit),
+				},
+				Connected: true,
+			}
+			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil(cpuUsage/cpuLimit)) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
+			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil(memUsage/memLimit)) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
+			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil(storageUsage/storageLimit)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
+			if strings.Contains(pod.Name, "mongo") {
+				dbComponents = append(dbComponents, comp)
+				dbPorts = ports
+				dbDesired = int(*s.Spec.Replicas)
+				dbActual = int(s.Status.ReadyReplicas)
+				dbPodIp = pod.Status.PodIP
+			} else if strings.Contains(pod.Name, "broker") {
+				brokerComponents = append(brokerComponents, comp)
+				brokerPorts = ports
+				brokerDesired = int(*s.Spec.Replicas)
+				brokerActual = int(s.Status.ReadyReplicas)
+				brokerPodIp = pod.Status.PodIP
+			} else if strings.Contains(pod.Name, "proxy") {
+				proxyComponents = append(proxyComponents, comp)
+				proxyPorts = ports
+				proxyDesired = int(*s.Spec.Replicas)
+				proxyActual = int(s.Status.ReadyReplicas)
+				proxyPodIp = pod.Status.PodIP
+			}
+		}
+		if len(proxyComponents) > 0 {
+			components = append(components, models.SystemComponents{
+				Name:        proxyComponents[0].Name,
+				Components:  proxyComponents,
+				Status:      checkCompStatus(proxyComponents),
+				Ports:       removeDuplicatePorts(proxyPorts),
+				DesiredPods: proxyDesired,
+				ActualPods:  proxyActual,
+				Address:     proxyPodIp,
+			})
+		}
+		if len(dbComponents) > 0 {
+			components = append(components, models.SystemComponents{
+				Name:        dbComponents[0].Name,
+				Components:  dbComponents,
+				Status:      checkCompStatus(dbComponents),
+				Ports:       removeDuplicatePorts(dbPorts),
+				DesiredPods: dbDesired,
+				ActualPods:  dbActual,
+				Address:     dbPodIp,
+			})
+		}
+		if len(brokerComponents) > 0 {
+			components = append(components, models.SystemComponents{
+				Name:        brokerComponents[0].Name,
+				Components:  brokerComponents,
+				Status:      checkCompStatus(brokerComponents),
+				Ports:       removeDuplicatePorts(brokerPorts),
+				DesiredPods: brokerDesired,
+				ActualPods:  brokerActual,
+				Address:     brokerPodIp,
+			})
 		}
 	}
 
