@@ -371,8 +371,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 
 		// }
 		// }
-		label := "app=" + configuration.K8S_NAMESPACE
-		pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{LabelSelector: label})
+
+		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return components, err
 		}
