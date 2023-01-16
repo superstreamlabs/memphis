@@ -44,11 +44,6 @@ Memphis enables building next-generation applications that require large volumes
 modern protocols, zero ops, rapid development, extreme cost reduction,<br>
 and a significantly lower amount of dev time for data-oriented developers and data engineers.
 
-## 📸 Screenshots
-Dashboard             |  Station (Topic) overview|  CLI
-:-------------------------:|:-------------------------:|:-------------------------:
-<img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
-
 ## ⭐️ Why
 When your application requires a message broker or a queue for various reasons,<br>
 Implementing one will require you to -
