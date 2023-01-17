@@ -393,9 +393,19 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 			// pod1.Spec.Containers[0].Resources.Limits.Cpu().Value()
-			cpuLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Cpu().Value())
-			memLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Memory().Value())
-			storageLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Storage().Value())
+			re := regexp.MustCompile("[0-9]+")
+			number := re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Cpu().String(), -1)
+			numberFloat, _ := strconv.ParseFloat(number[0], 64)
+			cpuLimit := numberFloat
+			number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Memory().String(), -1)
+			numberFloat, _ = strconv.ParseFloat(number[0], 64)
+			memLimit := numberFloat
+			number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Storage().String(), -1)
+			numberFloat, _ = strconv.ParseFloat(number[0], 64)
+			storageLimit := numberFloat
+			// cpuLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Cpu().Value())
+			// memLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Memory().Value())
+			// storageLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Storage().Value())
 			cpuUsage := float64(0)
 			memUsage := float64(0)
 			storageUsage := float64(0)
