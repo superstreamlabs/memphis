@@ -388,13 +388,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
-			// pod1, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), d.Name, metav1.GetOptions{})
-			// if err != nil {
-			// 	return components, err
-			// }
-			cpuLimit := float64(pod.Spec.Containers[0].Resources.Limits.Cpu().Value())
-			memLimit := float64(pod.Spec.Containers[0].Resources.Limits.Memory().Value())
-			storageLimit := float64(pod.Spec.Containers[0].Resources.Limits.Storage().Value())
+			pod1, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), d.Name, metav1.GetOptions{})
+			if err != nil {
+				return components, err
+			}
+			// pod1.Spec.Containers[0].Resources.Limits.Cpu().Value()
+			cpuLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Cpu().Value())
+			memLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Memory().Value())
+			storageLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Storage().Value())
 			cpuUsage := float64(0)
 			memUsage := float64(0)
 			storageUsage := float64(0)
