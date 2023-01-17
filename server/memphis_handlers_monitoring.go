@@ -25,6 +25,7 @@ import (
 	"memphis-broker/utils"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -398,9 +399,19 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			memUsage := float64(0)
 			storageUsage := float64(0)
 			for _, container := range podMetrics.Containers {
-				cpuUsage += float64(container.Usage.Cpu().Value())
-				memUsage += float64(container.Usage.Memory().Value())
-				storageUsage += float64(container.Usage.Storage().Value())
+				re := regexp.MustCompile("[0-9]+")
+				numbers := re.FindAllString(container.Usage.Cpu().String(), -1)
+				usage, _ := strconv.ParseFloat(numbers[0], 64)
+				cpuUsage += usage
+				// cpuUsage += float64(container.Usage.Cpu().Value())
+				numbers = re.FindAllString(container.Usage.Memory().String(), -1)
+				usage, _ = strconv.ParseFloat(numbers[0], 64)
+				memUsage += usage
+				// memUsage += float64(container.Usage.Memory().Value())
+				numbers = re.FindAllString(container.Usage.Storage().String(), -1)
+				usage, _ = strconv.ParseFloat(numbers[0], 64)
+				storageUsage += usage
+				// storageUsage += float64(container.Usage.Storage().Value())
 			}
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
@@ -412,23 +423,23 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				CPU: models.CompStats{
 					Max:        cpuLimit,
 					Current:    cpuUsage,
-					Percentage: math.Ceil(cpuUsage/cpuLimit) * 100,
+					Percentage: math.Ceil((cpuUsage / cpuLimit) * 100),
 				},
 				Memory: models.CompStats{
 					Max:        memLimit,
 					Current:    memUsage,
-					Percentage: math.Ceil(memUsage/memLimit) * 100,
+					Percentage: math.Ceil((memUsage / memLimit) * 100),
 				},
 				Storage: models.CompStats{
 					Max:        storageLimit,
 					Current:    storageUsage,
-					Percentage: math.Ceil(storageUsage/storageLimit) * 100,
+					Percentage: math.Ceil((storageUsage / storageLimit) * 100),
 				},
 				Connected: true,
 			}
-			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil(cpuUsage/cpuLimit)*100) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
-			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil(memUsage/memLimit)*100) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
-			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil(storageUsage/storageLimit)*100) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
+			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil((cpuUsage/cpuLimit)*100)) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
+			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil((memUsage/memLimit)*100)) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
+			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil((storageUsage/storageLimit)*100)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
 			if strings.Contains(pod.Name, "mongo") {
 				dbComponents = append(dbComponents, comp)
 				dbPorts = ports
@@ -479,12 +490,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				proxyDesired = int(*s.Spec.Replicas)
 				proxyActual = int(s.Status.ReadyReplicas)
 			}
-			// serv.Noticef("statefulsetsList loop")
+
 			// var ports []int
 			// podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), s.Name, metav1.GetOptions{})
 			// if err != nil {
 			// 	return components, err
 			// }
+			// serv.Noticef("statefulsetsList: " + podMetrics.)
 			// pod, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), s.Name, metav1.GetOptions{})
 			// if err != nil {
 			// 	return components, err
