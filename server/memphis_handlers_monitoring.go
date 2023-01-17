@@ -25,7 +25,6 @@ import (
 	"memphis-broker/utils"
 	"net/http"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -388,41 +387,47 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
-			pod1, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
-			if err != nil {
-				return components, err
-			}
+			// pod1, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+			// if err != nil {
+			// 	return components, err
+			// }
 			// pod1.Spec.Containers[0].Resources.Limits.Cpu().Value()
-			re := regexp.MustCompile("[0-9]+")
-			number := re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Cpu().String(), -1)
-			numberFloat, _ := strconv.ParseFloat(number[0], 64)
-			cpuLimit := numberFloat
-			number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Memory().String(), -1)
-			numberFloat, _ = strconv.ParseFloat(number[0], 64)
-			memLimit := numberFloat
-			number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Storage().String(), -1)
-			numberFloat, _ = strconv.ParseFloat(number[0], 64)
-			storageLimit := numberFloat
-			// cpuLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Cpu().Value())
-			// memLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Memory().Value())
-			// storageLimit := float64(pod1.Spec.Containers[0].Resources.Limits.Storage().Value())
+			// re := regexp.MustCompile("[0-9]+")
+			// number := re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Cpu().String(), -1)
+			// numberFloat, _ := strconv.ParseFloat(number[0], 64)
+			// cpuLimit := numberFloat
+			// number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Memory().String(), -1)
+			// numberFloat, _ = strconv.ParseFloat(number[0], 64)
+			// memLimit := numberFloat
+			// number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Storage().String(), -1)
+			// numberFloat, _ = strconv.ParseFloat(number[0], 64)
+			// storageLimit := numberFloat
+			// cpuLimit := float64(pod.Spec.Containers[0].Resources.Limits.Cpu().Value())
+			cpuLimit := float64(0)
+			// memLimit := float64(pod.Spec.Containers[0].Resources.Limits.Memory().Value())
+			memLimit := float64(0)
+			// storageLimit := float64(pod.Spec.Containers[0].Resources.Limits.Storage().Value())
+			storageLimit := float64(0)
 			cpuUsage := float64(0)
 			memUsage := float64(0)
 			storageUsage := float64(0)
-			for _, container := range podMetrics.Containers {
-				re := regexp.MustCompile("[0-9]+")
-				numbers := re.FindAllString(container.Usage.Cpu().String(), -1)
-				usage, _ := strconv.ParseFloat(numbers[0], 64)
-				cpuUsage += usage
-				// cpuUsage += float64(container.Usage.Cpu().Value())
-				numbers = re.FindAllString(container.Usage.Memory().String(), -1)
-				usage, _ = strconv.ParseFloat(numbers[0], 64)
-				memUsage += usage
-				// memUsage += float64(container.Usage.Memory().Value())
-				numbers = re.FindAllString(container.Usage.Storage().String(), -1)
-				usage, _ = strconv.ParseFloat(numbers[0], 64)
-				storageUsage += usage
-				// storageUsage += float64(container.Usage.Storage().Value())
+			for i, container := range podMetrics.Containers {
+				// re := regexp.MustCompile("[0-9]+")
+				// numbers := re.FindAllString(container.Usage.Cpu().String(), -1)
+				// usage, _ := strconv.ParseFloat(numbers[0], 64)
+				// cpuUsage += usage
+				cpuLimit += float64(pod.Spec.Containers[i].Resources.Limits.Cpu().Value())
+				cpuUsage += float64(container.Usage.Cpu().Value())
+				// numbers = re.FindAllString(container.Usage.Memory().String(), -1)
+				// usage, _ = strconv.ParseFloat(numbers[0], 64)
+				// memUsage += usage
+				memUsage += float64(container.Usage.Memory().Value())
+				memLimit += float64(pod.Spec.Containers[i].Resources.Limits.Memory().Value())
+				// numbers = re.FindAllString(container.Usage.Storage().String(), -1)
+				// usage, _ = strconv.ParseFloat(numbers[0], 64)
+				// storageUsage += usage
+				storageUsage += float64(container.Usage.Storage().Value())
+				storageLimit += float64(pod.Spec.Containers[i].Resources.Limits.Storage().Value())
 			}
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
