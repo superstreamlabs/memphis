@@ -19,6 +19,7 @@ import { capitalizeFirst } from '../../../../../services/valueConvertor';
 import { Context } from '../../../../../hooks/store';
 import Modal from '../../../../../components/modal';
 import SlackIntegration from '../slackIntegration';
+import S3Integration from '../s3Integration';
 
 const IntegrationItem = ({ value }) => {
     const [state, dispatch] = useContext(Context);
@@ -44,6 +45,16 @@ const IntegrationItem = ({ value }) => {
             case 'Slack':
                 return (
                     <SlackIntegration
+                        close={(data) => {
+                            modalFlip(false);
+                            setIntegrateValue(data);
+                        }}
+                        value={ref.current}
+                    />
+                );
+            case 'S3':
+                return (
+                    <S3Integration
                         close={(data) => {
                             modalFlip(false);
                             setIntegrateValue(data);

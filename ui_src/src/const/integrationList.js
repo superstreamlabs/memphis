@@ -56,6 +56,36 @@ export const INTEGRATION_LIST = [
         )
     },
     {
+        name: 'S3',
+        by: 'memphis',
+        banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
+        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
+        icon: <img src={slackIogo} alt="slackIogo" />,
+        description: 'S3 alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
+        date: 'Jan 1, 2023',
+        header: (
+            <div className="header-left-side">
+                <img src={slackIogo} alt="slackIogo" />
+                <div className="details">
+                    <p>S3</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Jan 1, 2023')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability
+                </span>
+            </div>
+        )
+    },
+    {
         name: 'PagerDuty',
         by: 'memphis',
         banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
