@@ -412,23 +412,23 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				CPU: models.CompStats{
 					Max:        cpuLimit,
 					Current:    cpuUsage,
-					Percentage: math.Ceil(cpuUsage / cpuLimit),
+					Percentage: math.Ceil(cpuUsage/cpuLimit) * 100,
 				},
 				Memory: models.CompStats{
 					Max:        memLimit,
 					Current:    memUsage,
-					Percentage: math.Ceil(memUsage / memLimit),
+					Percentage: math.Ceil(memUsage/memLimit) * 100,
 				},
 				Storage: models.CompStats{
 					Max:        storageLimit,
 					Current:    storageUsage,
-					Percentage: math.Ceil(storageUsage / storageLimit),
+					Percentage: math.Ceil(storageUsage/storageLimit) * 100,
 				},
 				Connected: true,
 			}
-			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil(cpuUsage/cpuLimit)) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
-			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil(memUsage/memLimit)) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
-			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil(storageUsage/storageLimit)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
+			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil(cpuUsage/cpuLimit)*100) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
+			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil(memUsage/memLimit)*100) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
+			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil(storageUsage/storageLimit)*100) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
 			if strings.Contains(pod.Name, "mongo") {
 				dbComponents = append(dbComponents, comp)
 				dbPorts = ports
