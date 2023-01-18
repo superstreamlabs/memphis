@@ -376,6 +376,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			return components, err
 		}
 
+		// nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+		// if err != nil {
+		// 	return components, err
+		// }
+		// for _, node := range nodes.Items{
+		// 	node.Status.Addresses[0].
+		// }
 		for _, pod := range pods.Items {
 			serv.Noticef("pod loop")
 			fmt.Println(pod.Name)
@@ -386,6 +393,24 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
+			resp, err := http.Get("kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
+			if err != nil {
+				serv.Errorf("http: " + err.Error())
+				return components, err
+			}
+			resBody, _ := ioutil.ReadAll(resp.Body)
+			var jsonRes map[string]interface{}
+			_ = json.Unmarshal(resBody, &jsonRes)
+			serv.Noticef(fmt.Sprintf("%v", jsonRes["container_cpu_usage_seconds_total"]))
+			for key := range jsonRes {
+				serv.Noticef(key)
+			}
+			// nodeMetrics, err := metricsclientset.MetricsV1beta1().NodeMetricses().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+			// if err != nil {
+			// 	serv.Errorf("nodeMetrics: " + err.Error())
+			// 	return components, err
+			// }
+
 			// pod1, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 			// if err != nil {
 			// 	return components, err
@@ -401,42 +426,53 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			// number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Storage().String(), -1)
 			// numberFloat, _ = strconv.ParseFloat(number[0], 64)
 			// storageLimit := numberFloat
+			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+			if err != nil {
+				serv.Errorf("nodes: " + err.Error())
+				return components, err
+			}
+
+			// node.
 			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
 			if cpuLimit == float64(0) {
-				node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-				if err != nil {
-					serv.Errorf("nodes: " + err.Error())
-					return components, err
-				}
+				// node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+				// if err != nil {
+				// 	serv.Errorf("nodes: " + err.Error())
+				// 	return components, err
+				// }
+
 				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
 			}
 			// cpuLimit := float64(0)
 			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
+			// x := pod.Status.ContainerStatuses[0].c
 			if memLimit == float64(0) {
-				node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-				if err != nil {
-					serv.Errorf("nodes: " + err.Error())
-					return components, err
-				}
+				// node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+				// if err != nil {
+				// 	serv.Errorf("nodes: " + err.Error())
+				// 	return components, err
+				// }
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
 			// memLimit := float64(0)
 			// storageLimit := pod.Spec.Containers[0].Resources.Limits.Storage().AsApproximateFloat64()
 			// storageLimit := float64(0)
 			cpuUsage := float64(0)
+			// cpuUsage := pod.Status.Usage
 			memUsage := float64(0)
 			// storageUsage := float64(0)
+			// for _, container := range nodeMetrics.
 			for _, container := range podMetrics.Containers {
 				// re := regexp.MustCompile("[0-9]+")
 				// numbers := re.FindAllString(container.Usage.Cpu().String(), -1)
 				// usage, _ := strconv.ParseFloat(numbers[0], 64)
 				// cpuUsage += usage
 				// cpuLimit += float64(pod.Spec.Containers[i].Resources.Limits.Cpu().Value())
-				cpuUsage += float64(container.Usage.Cpu().Value())
+				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
 				// numbers = re.FindAllString(container.Usage.Memory().String(), -1)
 				// usage, _ = strconv.ParseFloat(numbers[0], 64)
 				// memUsage += usage
-				memUsage += float64(container.Usage.Memory().Value())
+				memUsage += container.Usage.Memory().AsApproximateFloat64()
 
 				// memLimit += float64(pod.Spec.Containers[i].Resources.Limits.Memory().Value())
 				// numbers = re.FindAllString(container.Usage.Storage().String(), -1)
@@ -469,8 +505,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				// },
 				Connected: true,
 			}
-			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil((cpuUsage/cpuLimit)*100)) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
-			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil((memUsage/memLimit)*100)) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
+			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil((cpuUsage/cpuLimit)*100)) + " percentage/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
+			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil((memUsage/memLimit)*100)) + " percentage/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
 			// serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil((storageUsage/storageLimit)*100)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
 			if strings.Contains(pod.Name, "mongo") {
 				dbComponents = append(dbComponents, comp)
