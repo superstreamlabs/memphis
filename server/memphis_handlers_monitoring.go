@@ -393,7 +393,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
-			resp, err := http.Get("kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
+			resp, err := http.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
 			if err != nil {
 				serv.Errorf("http: " + err.Error())
 				return components, err
