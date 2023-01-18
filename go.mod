@@ -30,9 +30,11 @@ require (
 )
 
 require (
+	github.com/docker/docker v20.10.22+incompatible
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
+	k8s.io/metrics v0.26.0
 )
 
 require (
@@ -41,7 +43,6 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.22+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
@@ -101,7 +102,6 @@ require (
 	k8s.io/api v0.26.0 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
-	k8s.io/metrics v0.26.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
