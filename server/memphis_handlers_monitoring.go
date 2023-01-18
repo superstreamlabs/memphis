@@ -15,6 +15,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,6 +26,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"sort"
@@ -46,6 +49,9 @@ type MonitoringHandler struct{ S *Server }
 
 var clientset *kubernetes.Clientset
 var metricsclientset *metricsv.Clientset
+var caCert string
+var k8sToken string
+var k8sHttpClient *http.Client
 
 func clientSetClusterConfig() error {
 	var config *rest.Config
@@ -68,6 +74,48 @@ func clientSetClusterConfig() error {
 			serv.Errorf("clientSetClusterConfig: metricsclientset: " + err.Error())
 			return err
 		}
+	}
+
+	// caFile, err := os.Open("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	// if err != nil {
+	// 	serv.Errorf("clientSetClusterConfig: read cert file: " + err.Error())
+	// 	return err
+	// }
+	// defer caFile.Close()
+
+	// scanner := bufio.NewScanner(caFile)
+	// caCert = ""
+	// for scanner.Scan() {
+	// 	caCert += scanner.Text()
+	// }
+
+	caCert, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	if err != nil {
+		serv.Errorf("clientSetClusterConfig: read cert file: " + err.Error())
+		return err
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	k8sHttpClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: caCertPool,
+			},
+		},
+	}
+
+	tokenFile, err := os.Open("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		serv.Errorf("clientSetClusterConfig: read cert file: " + err.Error())
+		return err
+	}
+	defer tokenFile.Close()
+
+	scanner := bufio.NewScanner(tokenFile)
+	k8sToken = ""
+	for scanner.Scan() {
+		k8sToken += scanner.Text()
 	}
 
 	return nil
@@ -393,7 +441,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
-			resp, err := http.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
+			// bearer := "Bearer " + k8sToken
+			req, err := http.NewRequest("GET", "https://kubernetes.default.svc/api/v1/nodes/"+pod.Spec.NodeName+"/proxy/metrics/cadvisor", nil)
+			if err != nil {
+				serv.Errorf("http: " + err.Error())
+				return components, err
+			}
+
+			req.Header.Add("Authorization", "Bearer "+k8sToken)
+			resp, err := k8sHttpClient.Do(req)
+			// k8sHttpClient.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
+			// resp, err := http.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
 			if err != nil {
 				serv.Errorf("http: " + err.Error())
 				return components, err
