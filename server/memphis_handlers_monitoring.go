@@ -405,7 +405,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if cpuLimit == float64(0) {
 				node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 				if err != nil {
-					panic(err.Error())
+					serv.Errorf("nodes: " + err.Error())
+					return components, err
 				}
 				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
 			}
@@ -414,7 +415,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if memLimit == float64(0) {
 				node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 				if err != nil {
-					panic(err.Error())
+					serv.Errorf("nodes: " + err.Error())
+					return components, err
 				}
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
