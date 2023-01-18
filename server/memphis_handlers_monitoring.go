@@ -39,6 +39,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -489,6 +490,19 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("nodes: " + err.Error())
 				return components, err
 			}
+			// pod.Spec.Persi
+			// for _,volume := range pod.Spec.Volumes {
+			// pvc := volume.PersistentVolumeClaim.
+			// pvc, _ := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE).Get(context.TODO(), volume.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
+			// pvc.
+			// }
+			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
+			pvcList, _ := pvcClient.List(context.TODO(), metav1.ListOptions{})
+			for _, pvc := range pvcList.Items {
+				size := pvc.Spec.Resources.Requests[v1.ResourceStorage]
+				usage := pvc.Status.Capacity[v1.ResourceStorage]
+				serv.Noticef("PVC: " + pvc.Name + ", " + usage.String() + " usage, " + size.String() + " size")
+			}
 
 			// node.
 			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
@@ -518,6 +532,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			cpuUsage := float64(0)
 			// cpuUsage := pod.Status.Usage
 			memUsage := float64(0)
+			// pod.Spec.Volumes[0].Size()
+
+			// node.Status.VolumesInUse
 			// storageUsage := float64(0)
 			// for _, container := range nodeMetrics.
 			for _, container := range podMetrics.Containers {
@@ -531,7 +548,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				// usage, _ = strconv.ParseFloat(numbers[0], 64)
 				// memUsage += usage
 				memUsage += container.Usage.Memory().AsApproximateFloat64()
-
 				// memLimit += float64(pod.Spec.Containers[i].Resources.Limits.Memory().Value())
 				// numbers = re.FindAllString(container.Usage.Storage().String(), -1)
 				// usage, _ = strconv.ParseFloat(numbers[0], 64)
