@@ -485,11 +485,39 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			// number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Storage().String(), -1)
 			// numberFloat, _ = strconv.ParseFloat(number[0], 64)
 			// storageLimit := numberFloat
+			data, err := clientset.RESTClient().Get().AbsPath("/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics").DoRaw(context.TODO())
+			if err != nil {
+				serv.Errorf("get proxy: " + err.Error())
+				return components, err
+			}
+			flag := false
+			var proxyDetails map[string]string
+			var proxyDetails2 map[string]interface{}
+			err = json.Unmarshal(data, &proxyDetails)
+			if err != nil {
+				serv.Errorf("json unmarhsal proxy: " + err.Error())
+				err = json.Unmarshal(data, &proxyDetails2)
+				if err != nil {
+					serv.Errorf("json unmarhsal proxy: " + err.Error())
+					return components, err
+				}
+				flag = true
+			}
+			if !flag {
+				for x := range proxyDetails {
+					serv.Noticef("from proxy details: " + proxyDetails[x])
+				}
+			} else {
+				for x := range proxyDetails2 {
+					fmt.Println(proxyDetails2[x])
+				}
+			}
 			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 			if err != nil {
 				serv.Errorf("nodes: " + err.Error())
 				return components, err
 			}
+			// pod.
 			// pod.Spec.Persi
 			// for _,volume := range pod.Spec.Volumes {
 			// pvc := volume.PersistentVolumeClaim.
@@ -507,7 +535,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 			for _, pvc := range pvcList.Items {
 				size := pvc.Size()
+				// pvc.Status.
 				// size := pvc.Spec.Resources.Requests[v1.ResourceStorage]
+				// pvc.by
 				usage := pvc.Status.Capacity[v1.ResourceStorage]
 				serv.Noticef("PVC: " + pvc.Name + ", " + usage.String() + " usage, " + strconv.Itoa(size) + " size")
 			}
