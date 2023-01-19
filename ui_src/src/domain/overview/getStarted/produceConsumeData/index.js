@@ -14,8 +14,7 @@
 import './style.scss';
 
 import React, { useState, useEffect, useContext } from 'react';
-import { loader } from '@monaco-editor/react';
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
@@ -30,6 +29,7 @@ import Button from '../../../../components/button';
 import Copy from '../../../../components/copy';
 import { GetStartedStoreContext } from '..';
 
+loader.init();
 loader.config({ monaco });
 
 export const produceConsumeScreenEnum = {
