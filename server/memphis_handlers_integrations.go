@@ -20,8 +20,8 @@ import (
 	"memphis-broker/analytics"
 	"memphis-broker/db"
 	"memphis-broker/integrations/notifications"
+	"memphis-broker/integrations/storage"
 	"memphis-broker/models"
-	"memphis-broker/storage"
 	"memphis-broker/utils"
 
 	"github.com/gin-gonic/gin"
