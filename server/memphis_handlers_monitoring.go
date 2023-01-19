@@ -443,27 +443,27 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 			// bearer := "Bearer " + k8sToken
-			req, err := http.NewRequest("GET", "https://kubernetes.default.svc/api/v1/nodes/"+pod.Spec.NodeName+"/proxy/metrics/cadvisor", nil)
-			if err != nil {
-				serv.Errorf("http: " + err.Error())
-				return components, err
-			}
+			// req, err := http.NewRequest("GET", "https://kubernetes.default.svc/api/v1/nodes/"+pod.Spec.NodeName+"/proxy/metrics/cadvisor", nil)
+			// if err != nil {
+			// 	serv.Errorf("http: " + err.Error())
+			// 	return components, err
+			// }
 
-			req.Header.Add("Authorization", "Bearer "+k8sToken)
-			resp, err := k8sHttpClient.Do(req)
+			// req.Header.Add("Authorization", "Bearer "+k8sToken)
+			// resp, err := k8sHttpClient.Do(req)
 			// k8sHttpClient.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
 			// resp, err := http.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
-			if err != nil {
-				serv.Errorf("http: " + err.Error())
-				return components, err
-			}
-			resBody, _ := ioutil.ReadAll(resp.Body)
-			var jsonRes map[string]interface{}
-			_ = json.Unmarshal(resBody, &jsonRes)
-			serv.Noticef(fmt.Sprintf("%v", jsonRes["container_cpu_usage_seconds_total"]))
-			for key := range jsonRes {
-				serv.Noticef(key)
-			}
+			// if err != nil {
+			// 	serv.Errorf("http: " + err.Error())
+			// 	return components, err
+			// }
+			// resBody, _ := ioutil.ReadAll(resp.Body)
+			// var jsonRes map[string]interface{}
+			// _ = json.Unmarshal(resBody, &jsonRes)
+			// serv.Noticef(fmt.Sprintf("%v", jsonRes["container_cpu_usage_seconds_total"]))
+			// for key := range jsonRes {
+			// 	serv.Noticef(key)
+			// }
 			// nodeMetrics, err := metricsclientset.MetricsV1beta1().NodeMetricses().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 			// if err != nil {
 			// 	serv.Errorf("nodeMetrics: " + err.Error())
@@ -496,15 +496,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			// pvc, _ := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE).Get(context.TODO(), volume.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
 			// pvc.
 			// }
-			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
-			pvcList, _ := pvcClient.List(context.TODO(), metav1.ListOptions{})
+			pvcClient := clientset.CoreV1().PersistentVolumes()
+			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				serv.Errorf("pvcList: " + err.Error())
+				return components, err
+			}
+			if len(pvcList.Items) == 0 {
+				serv.Noticef("pvc len is zeroe ")
+			}
 			for _, pvc := range pvcList.Items {
-				size := pvc.Spec.Resources.Requests[v1.ResourceStorage]
-				usage := pvc.Status.Capacity[v1.ResourceStorage]
-				serv.Noticef("PVC: " + pvc.Name + ", " + usage.String() + " usage, " + size.String() + " size")
+				size := pvc.Size()
+				// size := pvc.Spec.Resources.Requests[v1.ResourceStorage]
+				usage := pvc.Spec.Capacity[v1.ResourceStorage]
+				serv.Noticef("PVC: " + pvc.Name + ", " + usage.String() + " usage, " + strconv.Itoa(size) + " size")
 			}
 
-			// node.
 			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
 			if cpuLimit == float64(0) {
 				// node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
@@ -555,6 +562,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				// storageUsage += float64(container.Usage.Storage().Value())
 				// storageLimit += float64(pod.Spec.Containers[i].Resources.Limits.Storage().Value())
 			}
+			// for _, claim := range pod.Spec.ResourceClaims{
+			// 	claim.
+			// }
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
