@@ -19,8 +19,9 @@ import (
 
 	"memphis-broker/analytics"
 	"memphis-broker/db"
+	"memphis-broker/integrations/notifications"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
+	"memphis-broker/storage"
 	"memphis-broker/utils"
 
 	"github.com/gin-gonic/gin"
@@ -28,11 +29,114 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 const sendNotificationType = "send_notification"
 
 type IntegrationsHandler struct{ S *Server }
+
+type MyProvider struct {
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_acess_key_id"`
+}
+
+func (it IntegrationsHandler) CreateAwsIntegrtation(keys map[string]string) (map[string]string, error) {
+	accessKey := keys["access_key"]
+	secretKey := keys["secret_key"]
+	region := keys["region"]
+	bucketName := keys["bucket_name"]
+
+	provider := &credentials.StaticProvider{Value: credentials.Value{
+		AccessKeyID:     accessKey,
+		SecretAccessKey: secretKey,
+	}}
+
+	_, err := provider.Retrieve()
+	if err != nil {
+		err = errors.New("Retrive failure " + err.Error())
+		return map[string]string{}, err
+	}
+
+	credentials := credentials.NewCredentials(provider)
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials},
+	)
+	if err != nil {
+		err = errors.New("NewSession failure " + err.Error())
+		return map[string]string{}, err
+	}
+
+	svc := s3.New(sess)
+	_, err = svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		err = errors.New("create a S3 client with additional configuration failure " + err.Error())
+		return map[string]string{}, err
+	}
+
+	acl, err := svc.GetBucketAcl(&s3.GetBucketAclInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		err = errors.New("GetBucketAcl error" + err.Error())
+		return map[string]string{}, err
+	}
+
+	permission := *acl.Grants[0].Permission
+	permissionValue := permission
+
+	if permissionValue != "FULL_CONTROL" {
+		err = errors.New("you should full control permission: read, write and delete " + err.Error())
+		return map[string]string{}, err
+	}
+
+	uploader := s3manager.NewUploader(sess)
+
+	if configuration.SERVER_NAME == "" {
+		configuration.SERVER_NAME = "memphis"
+	}
+
+	reader := strings.NewReader(string("test") + " " + configuration.SERVER_NAME)
+	// Upload the object to S3.
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(configuration.SERVER_NAME),
+		Body:   reader,
+	})
+	if err != nil {
+		err = errors.New("failed to upload the obeject to S3 " + err.Error())
+		return map[string]string{}, err
+	}
+
+	serv.Noticef("Object " + *aws.String(configuration.SERVER_NAME) + " successfully uploaded to S3")
+
+	//delete the object
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
+	if err != nil {
+		err = errors.New("Unable to delete object from bucket " + bucketName + err.Error())
+		return map[string]string{}, err
+	}
+	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(configuration.SERVER_NAME),
+	})
+	if err != nil {
+		err = errors.New("Error occurred while waiting for object to be deleted from bucket " + bucketName + err.Error())
+		return map[string]string{}, err
+	}
+	serv.Noticef("Object " + *aws.String(configuration.SERVER_NAME) + " successfully deleted")
+
+	return keys, nil
+}
 
 func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
@@ -81,7 +185,8 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			disconnectAlert = false
 		}
 
-		slackIntegration, err := createSlackIntegration(authToken, channelID, pmAlert, svfAlert, disconnectAlert, body.UIUrl)
+		keys, properties := createIntegrationsKeysAndProperties(integrationType, authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
+		slackIntegration, err := createSlackIntegration(keys, properties, body.UIUrl)
 		if err != nil {
 			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
 				serv.Warnf("CreateSlackIntegration: " + err.Error())
@@ -96,6 +201,25 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		integration = slackIntegration
 		if integration.Keys["auth_token"] != "" {
 			integration.Keys["auth_token"] = "xoxb-****"
+		}
+	case "s3":
+		keys, err := it.CreateAwsIntegrtation(body.Keys)
+		if err != nil {
+			serv.Warnf("CreateIntegration: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		}
+		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
+		awsIntegration, err := createAwsIntegration(keys, properties)
+
+		if err != nil {
+			serv.Warnf("CreateIntegration: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		integration = awsIntegration
+		if integration.Keys["secret_key"] != "" {
+			lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
+			integration.Keys["secret_key"] = "****" + lastCharsSecretKey
 		}
 	default:
 		serv.Warnf("CreateIntegration: Unsupported integration type")
@@ -171,6 +295,21 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		if integration.Keys["auth_token"] != "" {
 			integration.Keys["auth_token"] = "xoxb-****"
 		}
+	case "s3":
+		integrationType := strings.ToLower(body.Name)
+		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
+		awsIntegration, err := updateAwsIntegration(keys, properties)
+		if err != nil {
+			serv.Errorf("updateAwsIntegration: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		integration = awsIntegration
+		if integration.Keys["secret_key"] != "" {
+			lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
+			integration.Keys["secret_key"] = "****" + lastCharsSecretKey
+		}
+
 	default:
 		serv.Warnf("CreateIntegration: Unsupported integration type - " + body.Name)
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration: Unsupported integration type - " + body.Name})
@@ -179,17 +318,55 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	c.IndentedJSON(200, integration)
 }
 
-func createSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
+func createAwsIntegration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	var awsIntegration models.Integration
+	filter := bson.M{"name": "s3"}
+	err := integrationsCollection.FindOne(context.TODO(),
+		filter).Decode(&awsIntegration)
+	if err == mongo.ErrNoDocuments {
+		awsIntegration = models.Integration{
+			ID:         primitive.NewObjectID(),
+			Name:       "s3",
+			Keys:       keys,
+			Properties: properties,
+		}
+		_, insertErr := integrationsCollection.InsertOne(context.TODO(), awsIntegration)
+		if insertErr != nil {
+			return awsIntegration, insertErr
+		}
+
+		integrationToUpdate := models.CreateIntegrationSchema{
+			Name:       "s3",
+			Keys:       keys,
+			Properties: properties,
+		}
+		msg, err := json.Marshal(integrationToUpdate)
+		if err != nil {
+			return awsIntegration, err
+		}
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		if err != nil {
+			return awsIntegration, err
+		}
+		return awsIntegration, nil
+
+	} else if err != nil {
+		return awsIntegration, err
+	}
+	return awsIntegration, errors.New("Aws integration already exists")
+
+}
+
+func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	filter := bson.M{"name": "slack"}
 	err := integrationsCollection.FindOne(context.TODO(),
 		filter).Decode(&slackIntegration)
 	if err == mongo.ErrNoDocuments {
-		err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was added successfully")
+		err := testSlackIntegration(keys["auth_token"], keys["channel_id"], "Slack integration with Memphis was added successfully")
 		if err != nil {
 			return slackIntegration, err
 		}
-		keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
 		slackIntegration = models.Integration{
 			ID:         primitive.NewObjectID(),
 			Name:       "slack",
@@ -217,7 +394,7 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		}
 		update := models.ConfigurationsUpdate{
 			Type:   sendNotificationType,
-			Update: svfAlert,
+			Update: properties[notifications.SchemaVAlert],
 		}
 		serv.SendUpdateToClients(update)
 
@@ -226,6 +403,44 @@ func createSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		return slackIntegration, err
 	}
 	return slackIntegration, errors.New("Slack integration already exists")
+}
+
+func updateAwsIntegration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	var awsIntegration models.Integration
+	filter := bson.M{"name": "s3"}
+	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
+		filter,
+		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&awsIntegration)
+	if err == mongo.ErrNoDocuments {
+		awsIntegration = models.Integration{
+			ID:         primitive.NewObjectID(),
+			Name:       "s3",
+			Keys:       keys,
+			Properties: properties,
+		}
+		integrationsCollection.InsertOne(context.TODO(), awsIntegration)
+	} else if err != nil {
+		return awsIntegration, err
+	}
+
+	integrationToUpdate := models.CreateIntegrationSchema{
+		Name:       "s3",
+		Keys:       keys,
+		Properties: properties,
+	}
+
+	msg, err := json.Marshal(integrationToUpdate)
+	if err != nil {
+		return awsIntegration, err
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		return awsIntegration, err
+	}
+
+	awsIntegration.Keys = keys
+	awsIntegration.Properties = properties
+	return awsIntegration, nil
 }
 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
@@ -244,7 +459,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	if err != nil {
 		return slackIntegration, err
 	}
-	keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
 	filter := bson.M{"name": "slack"}
 	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
@@ -310,14 +525,23 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 	return nil
 }
 
-func createSlackKeysAndProperties(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (map[string]string, map[string]bool) {
+func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region string) (map[string]string, map[string]bool) {
 	keys := make(map[string]string)
-	keys["auth_token"] = authToken
-	keys["channel_id"] = channelID
 	properties := make(map[string]bool)
-	properties[notifications.PoisonMAlert] = pmAlert
-	properties[notifications.SchemaVAlert] = svfAlert
-	properties[notifications.DisconEAlert] = disconnectAlert
+	switch integrationType {
+	case "slack":
+		keys["auth_token"] = authToken
+		keys["channel_id"] = channelID
+		properties[notifications.PoisonMAlert] = pmAlert
+		properties[notifications.SchemaVAlert] = svfAlert
+		properties[notifications.DisconEAlert] = disconnectAlert
+	case "s3":
+		keys["access_key"] = accessKey
+		keys["secret_key"] = secretKey
+		keys["bucket_name"] = bucketName
+		keys["region"] = region
+	}
+
 	return keys, properties
 }
 
@@ -441,9 +665,15 @@ func InitializeIntegrations(c *mongo.Client) error {
 	if err != nil {
 		return err
 	}
+	err = storage.InitializeS3Connection(c)
+	if err != nil {
+		return err
+	}
+
+	keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
 
 	if configuration.SANDBOX_ENV == "true" {
-		createSlackIntegration(configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, configuration.SANDBOX_UI_URL)
+		createSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
 	}
 	return nil
 }

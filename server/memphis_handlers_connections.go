@@ -15,8 +15,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"memphis-broker/analytics"
+	"memphis-broker/integrations/notifications"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
 
 	"context"
 	"errors"
@@ -156,7 +156,7 @@ func handleConnectMessage(client *client) error {
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
- 	shouldSendAnalytics, _ := shouldSendAnalytics()
+	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
 		sdkName := splitted[len(splitted)-1]

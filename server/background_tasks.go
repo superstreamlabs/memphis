@@ -16,8 +16,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis-broker/integrations/notifications"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
+	"memphis-broker/storage"
 	"strconv"
 	"strings"
 	"time"
@@ -73,12 +74,14 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
 				return
 			}
-			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
-				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
-			UI_url = integrationUpdate.UIUrl
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
+				systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
+					bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
+				UI_url = integrationUpdate.UIUrl
 				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
+			case "s3":
+				storage.CacheS3Details(integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
 				return
 			}
