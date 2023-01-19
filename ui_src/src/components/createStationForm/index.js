@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
@@ -19,7 +18,7 @@ import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
 import comingSoonImg from '../../assets/images/comingSoonImg.svg';
-import { convertDateToSeconds, generateName } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -62,7 +61,7 @@ const storageTierOneOptions = [
         id: 2,
         value: 'memory',
         label: 'Memory',
-        desc: 'Memory is used for better performance'
+        desc: 'Memory can boost your performance. Lower availability'
     }
 ];
 const storageTierTwoOptions = [
@@ -83,7 +82,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [allowEdit, setAllowEdit] = useState(true);
     const [actualPods, setActualPods] = useState(['1']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
-    const [idempotencyType, setIdempotencyType] = useState(retanionOptions[2]);
+    const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
 
     const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
@@ -198,15 +197,17 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             setParserName(generatedName);
         }
     };
+
     const SelectedStorageOption = (value) => {
         if (allowEdit) {
             setSelectedOption(value);
             creationForm.setFieldValue('storage_type', value);
         }
     };
+
     return (
         <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
-            <div className={'left-side'}>
+            <div className={getStarted ? 'left-side left-gs' : 'left-side'}>
                 <div className="station-name-section">
                     <TitleComponent
                         headerTitle="Enter station name"
@@ -220,7 +221,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             {
                                 validator: (_, value) => {
                                     return new Promise((resolve, reject) => {
-                                        if (value === '') {
+                                        if (value === '' || value === undefined) {
                                             setTimeout(() => {
                                                 return reject('Please input station name!');
                                             }, 100);
@@ -256,7 +257,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     )}
                 </div>
                 <div className="replicas-container">
-                    <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Amount of mirrors per message" />
+                    <TitleComponent
+                        headerTitle="Replicas"
+                        typeTitle="sub-header"
+                        headerDescription="Amount of mirrors per message."
+                        learnMore={true}
+                        link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                    />
                     <div>
                         <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
                             <SelectComponent
@@ -296,16 +303,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 initialValue={getStartedStateRef?.formFieldsCreateStation?.idempotency_number || 2}
                                 rules={[
                                     {
-                                        required: true,
-                                        message: 'Please add value'
-                                    },
-                                    {
                                         validator: (_, value) => {
-                                            if (idempotencyType === idempotencyOptions[0] && value < 100) {
-                                                return Promise.reject('Has to be greater than 100ms');
-                                            } else {
-                                                return Promise.resolve();
-                                            }
+                                            return idempotencyValidator(value, idempotencyType);
                                         }
                                     }
                                 ]}
@@ -353,7 +352,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
                         </div>
                         {!getStarted && useSchema && (
-                            <Form.Item name="schemaValue" initialValue={schemas.length > 0 ? schemas[0].name : null}>
+                            <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
                                 <SelectSchema
                                     placeholder={creationForm.schemaValue || 'Select schema'}
                                     value={creationForm.schemaValue || schemas[0]}
@@ -382,7 +381,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <div className="content">
                         {tabValue === tabs[0] && (
                             <p className="description">
-                                By which criteria will messages be expelled from the station.&nbsp;
+                                The criteria for which messages will be expelled from the station.&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
                                     Learn More
                                 </a>
@@ -391,7 +390,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         {tabValue === tabs[1] && (
                             <p className="description">
                                 For archiving and higher retention of ingested data. <br />
-                                Once a message passes tier 1 policy, it will automatically migrate to tier 2 storage.&nbsp;
+                                Once a message passes the 1st storage tier, it will automatically be migrated to the 2nd storage tier, if defined.&nbsp;
                             </p>
                         )}
 
@@ -421,7 +420,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                             <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                                 <InputNumberComponent
                                                     min={0}
-                                                    max={100}
+                                                    max={1000}
                                                     onChange={(e) => getStarted && updateFormState('days', e)}
                                                     value={getStartedStateRef?.formFieldsCreateStation?.days}
                                                     placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}

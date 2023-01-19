@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package models
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package models
 
 import (
@@ -70,7 +68,7 @@ type Station struct {
 	Functions         []Function         `json:"functions" bson:"functions"`
 	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema            SchemaDetails      `json:"schema" bson:"schema"`
-	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IdempotencyWindow int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 }
@@ -114,6 +112,7 @@ type ExtendedStation struct {
 	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
 	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	HasDlsMsgs        bool               `json:"has_dls_messages"`
 }
 
 type ExtendedStationDetails struct {
@@ -121,6 +120,7 @@ type ExtendedStationDetails struct {
 	TotalMessages  int         `json:"total_messages"`
 	PoisonMessages int         `json:"posion_messages"`
 	Tags           []CreateTag `json:"tags"`
+	HasDlsMsgs     bool        `json:"has_dls_messages"`
 }
 
 type GetStationSchema struct {
@@ -137,7 +137,7 @@ type CreateStationSchema struct {
 	DedupWindowInMs   int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
 	Tags              []CreateTag      `json:"tags"`
 	SchemaName        string           `json:"schema_name"`
-	IdempotencyWindow int              `json:"idempotency_window_in_ms"`
+	IdempotencyWindow int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration  DlsConfiguration `json:"dls_configuration"`
 }
 
@@ -153,7 +153,7 @@ type UpdateDlsConfigSchema struct {
 }
 
 type DropDlsMessagesSchema struct {
-	DlsMsgType       string   `json:"dls_type" binding:"required"`
+	DlsMsgType    string   `json:"dls_type" binding:"required"`
 	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
 }
 
@@ -170,10 +170,11 @@ type GetPoisonMessageJourneySchema struct {
 }
 
 type GetMessageDetailsSchema struct {
-	IsPoisonMessage bool   `form:"is_poison_message" json:"is_poison_message"`
-	MessageId       string `form:"message_id" json:"message_id"`
-	MessageSeq      int    `form:"message_seq" json:"message_seq"`
-	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+	IsDls       bool   `form:"is_dls" json:"is_dls"`
+	DlsType     string `form:"dls_type" json:"dls_type"`
+	MessageId   string `form:"message_id" json:"message_id"`
+	MessageSeq  int    `form:"message_seq" json:"message_seq"`
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
 
 type UseSchema struct {
@@ -198,4 +199,9 @@ type StationOverviewSchemaDetails struct {
 
 type GetUpdatesForSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+type StationMsgsDetails struct {
+	HasDlsMsgs    bool `json:"has_dls_messages"`
+	TotalMessages int  `json:"total_messages"`
 }

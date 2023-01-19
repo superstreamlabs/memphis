@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 
@@ -31,7 +30,7 @@ const tabs = ['Producer', 'Consumer'];
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
     const [protocolSelected, setProtocolSelected] = useState('SDK (TCP)');
-    const selectLngOption = ['Go', 'Node.js', 'Typescript', 'Python'];
+    const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'Python'];
     const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
     const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
     const [codeExample, setCodeExample] = useState({
@@ -65,11 +64,13 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         let codeEx = {};
         codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
         codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
-        let host =
-            localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                ? 'localhost'
-                : 'memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
+        let host = process.env.REACT_APP_SANDBOX_ENV
+            ? 'https://proxy.sandbox.memphis.dev'
+            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? 'http://localhost:4444'
+            : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
         codeEx.producer = codeEx.producer.replaceAll('localhost', host);
+        codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
         setCodeExample(codeEx);
     };
@@ -122,8 +123,8 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     return (
         <div className="code-example-details-container sdk-example">
             <div className="header-wrapper">
-                <p>Code example</p>
-                <span>We'll provide you with snippets that you can easily connect your application with Memphis</span>
+                <p>Code examples</p>
+                <span>Some code snippets that will help you get started with Memphis</span>
             </div>
             <div className="select-lan">
                 <div>

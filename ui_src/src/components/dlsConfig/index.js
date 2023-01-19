@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import './style.scss';
 import React, { useState, useEffect, useContext } from 'react';
 import { StationStoreContext } from '../../domain/stationOverview';
@@ -29,23 +28,19 @@ const DlsConfig = () => {
         schemaverse: false
     });
 
-    useEffect(() => {
-        updateDlsConfigurations();
-    }, [dlsTypes]);
-
-    useEffect(() => {
-        setDlsTypes({
-            poison: stationState?.stationSocketData?.dls_configuration?.poison,
-            schemaverse: stationState?.stationSocketData?.dls_configuration?.schemaverse
+    const updateDlsConfigurations = async (poison = false, schema = false) => {
+        setDlsLoading({
+            poison: poison,
+            schemaverse: schema
         });
-    }, [stationState?.stationSocketData?.dls_configuration]);
-
-    const updateDlsConfigurations = async () => {
         const conf = {
             station_name: stationState?.stationMetaData?.name,
-            poison: dlsTypes?.poison,
-            schemaverse: dlsTypes?.schemaverse
+            poison: poison ? !dlsTypes?.poison : dlsTypes?.poison,
+            schemaverse: schema ? !dlsTypes?.schemaverse : dlsTypes?.schemaverse
         };
+        poison && setDlsTypes({ ...dlsTypes, poison: !dlsTypes?.poison });
+        schema && setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes?.schemaverse });
+
         try {
             await httpRequest('PUT', ApiEndpoints.UPDATE_DLS_CONFIGURATION, conf);
             setDlsLoading({
@@ -60,29 +55,14 @@ const DlsConfig = () => {
         }
     };
 
-    const handlePoisonChange = () => {
-        setDlsLoading({
-            poison: true,
-            schemaverse: false
-        });
-        setDlsTypes({ ...dlsTypes, poison: !dlsTypes?.poison });
-    };
-    const handleSchemaChange = () => {
-        setDlsLoading({
-            poison: false,
-            schemaverse: true
-        });
-        setDlsTypes({ ...dlsTypes, schemaverse: !dlsTypes?.schemaverse });
-    };
-
     return (
         <div className="dls-config-container">
             <div className="toggle-dls-config">
                 <div>
-                    <p className="header-dls">Poison</p>
+                    <p className="header-dls">Unacknowledged</p>
                     <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
                 </div>
-                <Switcher onChange={handlePoisonChange} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
+                <Switcher onChange={() => updateDlsConfigurations(true, false)} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
             </div>
             <div className="toggle-dls-config">
                 <div>
@@ -91,9 +71,9 @@ const DlsConfig = () => {
                 </div>
                 <Switcher
                     disabled={!stationState?.stationMetaData?.is_native}
-                    onChange={handleSchemaChange}
+                    onChange={() => updateDlsConfigurations(false, true)}
                     checked={dlsTypes?.schemaverse}
-                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                     loading={dlsLoading?.schemaverse}
                 />
             </div>

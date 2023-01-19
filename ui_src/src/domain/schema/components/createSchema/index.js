@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 import { useHistory } from 'react-router-dom';
@@ -88,11 +87,11 @@ const SchemaEditorExample = {
     Protobuf: {
         language: 'proto',
         value: `syntax = "proto3";
-        message Test {
-            string field1 = 1;
-            string  field2 = 2;
-            int32  field3 = 3;
-        }`
+message Test {
+    string field1 = 1;
+    string  field2 = 2;
+    int32  field3 = 3;
+}`
     },
     Avro: {
         language: 'avro',
@@ -111,49 +110,49 @@ const SchemaEditorExample = {
     Json: {
         language: 'json',
         value: `{
-            "$id": "https://example.com/address.schema.json",
-            "description": "An address similar to http://microformats.org/wiki/h-card",
-            "type": "object",
-            "properties": {
-              "post-office-box": {
-                "type": "number"
-              },
-              "extended-address": {
-                "type": "string"
-              },
-              "street-address": {
-                "type": "string"
-              },
-              "locality": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              },
-              "postal-code": {
-                "type": "string"
-              },
-              "country-name": {
-                "type": "string"
-              }
-            },
-            "required": [ "locality" ]
-         }`
+    "$id": "https://example.com/address.schema.json",
+    "description": "An address similar to http://microformats.org/wiki/h-card",
+    "type": "object",
+    "properties": {
+        "post-office-box": {
+        "type": "number"
+        },
+        "extended-address": {
+        "type": "string"
+        },
+        "street-address": {
+        "type": "string"
+        },
+        "locality": {
+        "type": "string"
+        },
+        "region": {
+        "type": "string"
+        },
+        "postal-code": {
+        "type": "string"
+        },
+        "country-name": {
+        "type": "string"
+        }
+    },
+    "required": [ "locality" ]
+}`
     },
     GraphQL: {
         language: 'graphql',
         value: `type Query {
-            greeting:String
-            students:[Student]
-         }
-         
-         type Student {
-            id:ID!
-            firstName:String
-            lastName:String
-            password:String
-            collegeId:String
-         }`
+    greeting:String
+    students:[Student]
+}
+
+type Student {
+    id:ID!
+    firstName:String
+    lastName:String
+    password:String
+    collegeId:String
+}`
     }
 };
 
@@ -387,8 +386,8 @@ function CreateSchema({ createNew }) {
                             <p>Create schema</p>
                         </div>
                         <span>
-                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.
-                            <a href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank">
+                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
+                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank">
                                 Learn more
                             </a>
                         </span>
@@ -452,7 +451,10 @@ function CreateSchema({ createNew }) {
                                 <div className="title-desc">
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
-                                        Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation
+                                        Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank">
+                                            Learn more
+                                        </a>
                                     </p>
                                 </div>
                             </div>
@@ -550,14 +552,14 @@ function CreateSchema({ createNew }) {
             <Modal
                 header={<img src={errorModal} alt="errorModal" />}
                 width="400px"
-                height="300px"
+                height="280px"
                 displayButtons={false}
                 clickOutside={() => setModalOpen(false)}
                 open={modalOpen}
             >
                 <div className="roll-back-modal">
-                    <p className="title">Too many message types specified in schema structure</p>
-                    <p className="desc">Please choose your master message as a schema structure</p>
+                    <p className="title">Too many message types are specified in the schema structure</p>
+                    <p className="desc">Please choose the root of the schema:</p>
 
                     <SelectComponent
                         value={messageStructName}

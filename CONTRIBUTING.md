@@ -1,6 +1,6 @@
 # How to contribute?
 
-That's amazing that you reached this page!
+That's amazing that you reached this section!
 
 Memphis is and always will be open-source and community-driven. Our community is our power.
 
@@ -34,14 +34,11 @@ curl -s https://memphisdev.github.io/memphis-docker/docker-compose-mongo.yml -o 
 go get -d -v .
 ```
 
-&#x20; 6\. Run the broker in debug mode (If you're using vscode, click F5)
+&#x20; 6\. Run the broker in debug mode (If you're using vscode, click F5) or run via terminal via:
 
-### 2. You are
-
-* [Frontend Developer](how-to-contribute.md#frontend-contributions)
-* [Backend Developer](how-to-contribute.md#frontend-contributions-1)
-* [Data Engineer](how-to-contribute.md#data-engineer)
-* [DevOps](how-to-contribute.md#data-engineer-1)
+```
+DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?retryWrites=true&w=majority" ROOT_PASSWORD="memphis" CONNECTION_TOKEN="memphis" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" JWT_SECRET="JWT_TEST_PURPOSE" REFRESH_JWT_SECRET="REFRESH_JWT_TEST_PURPOSE" go run main.go --js --auth memphis --websocket_no_tls
+```
 
 ### Frontend Contributions
 
@@ -59,7 +56,7 @@ go get -d -v .
 
 ### Backend Contributions
 
-Once you have established [memphis dev environment](how-to-contribute.md#1.-establish-memphis-dev-environment), you can start coding.
+Once you have established[ memphis dev environment](how-to-contribute.md#1.-establish-memphis-dev-environment), you can start coding.
 
 Memphis backend opportunities are -&#x20;
 

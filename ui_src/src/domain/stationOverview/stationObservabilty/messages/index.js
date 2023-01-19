@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 
@@ -17,7 +16,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
-import { msToUnits } from '../../../../services/valueConvertor';
+import { msToUnits, numberWithCommas } from '../../../../services/valueConvertor';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -34,6 +33,7 @@ import Button from '../../../../components/button';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import MessageDetails from '../components/messageDetails';
+import { Virtuoso } from 'react-virtuoso';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -42,12 +42,15 @@ const Messages = () => {
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
-    const [subTabValue, setSubTabValue] = useState('Poison');
+    const [subTabValue, setSubTabValue] = useState('Unacknowledged');
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [tabValue, setTabValue] = useState('All');
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['All', 'Dead-letter', 'Details'];
-    const subTabs = ['Poison', 'Failed schema'];
+    const subTabs = [
+        { name: 'Unacknowledged', disabled: false },
+        { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
+    ];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
@@ -55,15 +58,11 @@ const Messages = () => {
         setUserScrolled(false);
         setSelectedRowIndex(id);
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
-        const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
     };
 
     const onCheckedAll = () => {
         setIsCheckAll(!isCheckAll);
-        subTabValue === 'Poison'
+        subTabValue === 'Unacknowledged'
             ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
             : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
         setIndeterminate(false);
@@ -83,7 +82,7 @@ const Messages = () => {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
         }
-        if (subTabValue === 'Poison') {
+        if (subTabValue === 'Unacknowledged') {
             setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
         } else {
@@ -96,7 +95,7 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
         setTabValue(newValue);
-        subTabValue === 'Failed schema' && setSubTabValue('Poison');
+        subTabValue === 'Schema violation' && setSubTabValue('Unacknowledged');
     };
 
     useEffect(() => {
@@ -118,10 +117,9 @@ const Messages = () => {
 
     const handleDrop = async () => {
         setIgnoreProcced(true);
-        const isCheckLength = isCheck.length;
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Poison' ? 'poison' : 'schema', dls_message_ids: isCheck });
-            let messages = subTabValue === 'Poison' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacknowledged' ? 'poison' : 'schema', dls_message_ids: isCheck });
+            let messages = subTabValue === 'Unacknowledged' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
             isCheck.map((messageId, index) => {
                 messages = messages?.filter((item) => {
                     return item._id !== messageId;
@@ -129,10 +127,11 @@ const Messages = () => {
             });
             setTimeout(() => {
                 setIgnoreProcced(false);
-                subTabValue === 'Poison'
+                subTabValue === 'Unacknowledged'
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
-                stationDispatch({ type: 'REDUCE_COUNTER', payload: isCheckLength });
+                stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                setSelectedRowIndex(null);
                 setIsCheck([]);
                 setIsCheckAll(false);
                 setIndeterminate(false);
@@ -167,13 +166,23 @@ const Messages = () => {
         setUserScrolled(true);
     };
 
-    const listGenerator = (message) => {
+    const listGenerator = (index, message) => {
         const id = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
         return (
-            <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
-                {selectedRowIndex === id && <div className="hr-selected"></div>}
-                {tabValue === 'Dead-letter' && <CheckboxComponent checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />}
-                <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
+            <div className={index % 2 === 0 ? 'even' : 'odd'}>
+                {tabValue === 'Dead-letter' && (
+                    <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
+                )}
+                <div
+                    className={selectedRowIndex === id ? 'row-message selected' : 'row-message'}
+                    style={{ paddingLeft: tabValue === 'Dead-letter' && '35px' }}
+                    key={id}
+                    id={id}
+                    onClick={() => onSelectedRow(id)}
+                >
+                    {selectedRowIndex === id && <div className="hr-selected"></div>}
+                    <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
+                </div>
             </div>
         );
     };
@@ -187,26 +196,26 @@ const Messages = () => {
                         {tabValue === 'Dead-letter' && (
                             <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
                         )}
-                        <p>Messages</p>
+                        <p>Messages (In hexa)</p>
                     </div>
-                    <p className="right-coulmn">Details</p>
+                    <p className="right-coulmn">Information</p>
                 </div>
                 <div className="list">
-                    <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'} onScroll={() => handleScroll()}>
-                        {!isDls
-                            ? stationState?.stationSocketData?.messages?.map((message) => {
-                                  return listGenerator(message);
-                              })
-                            : subTabValue === 'Poison'
-                            ? stationState?.stationSocketData?.poison_messages?.map((message, id) => {
-                                  return listGenerator(message);
-                              })
-                            : subTabValue === 'Failed schema' &&
-                              stationState?.stationSocketData?.schema_failed_messages?.map((message, id) => {
-                                  return listGenerator(message);
-                              })}
+                    <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'}>
+                        <Virtuoso
+                            data={
+                                !isDls
+                                    ? stationState?.stationSocketData?.messages
+                                    : subTabValue === 'Unacknowledged'
+                                    ? stationState?.stationSocketData?.poison_messages
+                                    : stationState?.stationSocketData?.schema_failed_messages
+                            }
+                            onScroll={() => handleScroll()}
+                            overscan={100}
+                            itemContent={(index, message) => listGenerator(index, message)}
+                        />
                     </div>
-                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Failed schema'} />
+                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} />
                 </div>
             </div>
         );
@@ -215,15 +224,21 @@ const Messages = () => {
     const showLastMsg = () => {
         let amount = 0;
         if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0)
+        else if (tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === 'Dead-letter' && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
         return (
             amount > 0 && (
                 <div className="messages-amount">
                     <InfoOutlined />
-                    <p>Showing last {amount} messages</p>
+                    <p>
+                        Showing last {numberWithCommas(amount)} out of{' '}
+                        {tabValue === 'All'
+                            ? numberWithCommas(stationState?.stationSocketData?.total_messages)
+                            : numberWithCommas(stationState?.stationSocketData?.total_dls_messages)}{' '}
+                        messages
+                    </p>
                 </div>
             )
         );
@@ -252,7 +267,7 @@ const Messages = () => {
                                 isLoading={ignoreProcced}
                                 onClick={() => handleDrop()}
                             />
-                            {subTabValue === 'Poison' && (
+                            {subTabValue === 'Unacknowledged' && (
                                 <Button
                                     width="100px"
                                     height="32px"
@@ -263,7 +278,7 @@ const Messages = () => {
                                     fontSize="12px"
                                     fontWeight="600"
                                     disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
+                                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                                     isLoading={resendProcced}
                                     onClick={() => handleResend()}
                                 />
@@ -276,18 +291,24 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={[null, stationState?.stationSocketData?.total_dls_messages || null]}
-                ></CustomTabs>
+                    length={[null, stationState?.stationSocketData?.total_dls_messages || null, null]}
+                />
             </div>
             {tabValue === 'Dead-letter' && (
                 <div className="tabs">
-                    <CustomTabs defaultValue value={subTabValue} onChange={handleChangeSubMenuItem} tabs={subTabs}></CustomTabs>
+                    <CustomTabs
+                        defaultValue
+                        value={subTabValue}
+                        onChange={handleChangeSubMenuItem}
+                        tabs={subTabs}
+                        tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
+                    />
                 </div>
             )}
             {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' && subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
             {tabValue === 'Dead-letter' &&
-                subTabValue === 'Failed schema' &&
+                subTabValue === 'Schema violation' &&
                 stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
                 listGeneratorWrapper()}
 
@@ -304,8 +325,8 @@ const Messages = () => {
                 </div>
             )}
             {tabValue === 'Dead-letter' &&
-                ((subTabValue === 'Poison' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                    (subTabValue === 'Failed schema' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                ((subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                    (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <img width={100} src={deadLetterPlaceholder} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
@@ -341,7 +362,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox img={dlsEnableIcon} title={'DLS configuration'} desc="By which event, messages will be stored in the dead-letter station.">
+                    <DetailBox img={dlsEnableIcon} title={'Dead-Letter Station configuration'} desc="Triggers for storing messages in the dead-letter station.">
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
@@ -349,7 +370,7 @@ const Messages = () => {
                         title={'Idempotency'}
                         desc={
                             <span>
-                                Ensures messages will be produced once.{' '}
+                                Ensures messages with the same "msgId" value will be produced only once for the configured time.{' '}
                                 <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
                                     Learn More
                                 </a>

@@ -1,3 +1,14 @@
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
+//
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -137,87 +148,26 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_dls_consumer_" + uid
-	var msgs []StoredMsg
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return err
-	}
-	filter := GetDlsSubject("poison", sn.Intern(), msgId)
-	amount := streamInfo.State.Msgs
-	cc := ConsumerConfig{
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		FilterSubject: filter,
-	}
-	err = serv.memphisAddConsumer(streamName, &cc)
-	if err != nil {
-		return err
-	}
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("ackPoisonMsgV0: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return err
-	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	amount := uint64(1)
+	internalCgName := replaceDelimiters(cgName)
+	filter := GetDlsSubject("poison", sn.Intern(), msgId, internalCgName)
 	timeout := 30 * time.Second
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
+	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
+
+	if len(msgs) != 1 {
+		return errors.New("message was not found")
 	}
 
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
+	msg := msgs[0]
+	var dlsMsg models.DlsMessage
+	err = json.Unmarshal(msg.Data, &dlsMsg)
+	if err != nil {
+		return err
+	}
+
 	err = serv.memphisRemoveConsumer(streamName, durableName)
 	if err != nil {
 		return err
-	}
-	for _, msg := range msgs {
-		splittedSubj := strings.Split(msg.Subject, tsep)
-		msgType := splittedSubj[1]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return err
-		}
-		if msgType == "poison" {
-			if dlsMsg.PoisonedCg.CgName == cgName {
-				_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-		}
 	}
 	return nil
 }

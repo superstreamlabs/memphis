@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 
@@ -43,8 +42,8 @@ function SchemaList({ createNew }) {
     useEffect(() => {
         getAllSchemas();
         return () => {
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+            dispatch({ type: 'SET_SCHEMA_LIST', payload: [] });
+            dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: [] });
         };
     }, []);
 
@@ -52,8 +51,8 @@ function SchemaList({ createNew }) {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: data });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: data });
+            dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
+            dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: data });
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -64,7 +63,7 @@ function SchemaList({ createNew }) {
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(state.filteredList.map((li) => li.name));
+        setIsCheck(state.schemaFilteredList.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -88,7 +87,7 @@ function SchemaList({ createNew }) {
                 schema_names: isCheck
             });
             if (data) {
-                dispatch({ type: 'SET_DOMAIN_LIST', payload: filterArray(state.filteredList, isCheck) });
+                dispatch({ type: 'SET_SCHEMA_LIST', payload: filterArray(state.schemaFilteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
             }
@@ -108,11 +107,10 @@ function SchemaList({ createNew }) {
         <div className="schema-container">
             <div className="header-wraper">
                 <label className="main-header-h1">
-                    Schemaverse <label className="length-list">{state.filteredList?.length > 0 && `(${state.filteredList?.length})`}</label>
+                    Schemaverse <label className="length-list">{state.schemaFilteredList?.length > 0 && `(${state.schemaFilteredList?.length})`}</label>
                 </label>
                 <div className="action-section">
                     <Button
-                        width="131px"
                         height="34px"
                         placeholder={`Delete selected (${isCheck?.length})`}
                         colorType="black"
@@ -121,6 +119,7 @@ function SchemaList({ createNew }) {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
+                        boxShadowStyle="float"
                         disabled={isCheck?.length === 0}
                         onClick={() => setDeleteModal(true)}
                     />
@@ -134,7 +133,8 @@ function SchemaList({ createNew }) {
                         fontSize="12px"
                         fontWeight="600"
                         aria-haspopup="true"
-                        disabled={state?.filteredList?.length === 0}
+                        boxShadowStyle="float"
+                        disabled={state?.schemaFilteredList?.length === 0}
                         onClick={() => onCheckedAll()}
                     />
                     <Filter filterComponent="schemaverse" height="34px" />
@@ -147,6 +147,7 @@ function SchemaList({ createNew }) {
                         backgroundColorType="purple"
                         fontSize="12px"
                         fontWeight="600"
+                        boxShadowStyle="float"
                         aria-haspopup="true"
                         onClick={createNewSchema}
                     />
@@ -159,13 +160,13 @@ function SchemaList({ createNew }) {
                     </div>
                 )}
                 {!isLoading &&
-                    state.filteredList?.map((schema, index) => {
+                    state.schemaFilteredList?.map((schema, index) => {
                         return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                     })}
-                {!isLoading && state.domainList?.length === 0 && (
+                {!isLoading && state.schemaList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
-                        <p className="title">No schema found</p>
+                        <p className="title">No schemas found</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
                             className="modal-btn"
@@ -183,10 +184,10 @@ function SchemaList({ createNew }) {
                         />
                     </div>
                 )}
-                {!isLoading && state.domainList?.length > 0 && state.filteredList?.length === 0 && (
+                {!isLoading && state.schemaList?.length > 0 && state.schemaFilteredList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
-                        <p className="title">No schema found</p>
+                        <p className="title">No schemas found</p>
                         <p className="sub-title">Please try to search again</p>
                     </div>
                 )}

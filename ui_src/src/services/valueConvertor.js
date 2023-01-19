@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 export const convertDateToSeconds = (days, hours, minutes, seconds) => {
     let totalSeconds = 0;
@@ -88,12 +87,18 @@ export const convertSecondsToDate = (seconds) => {
 };
 
 export const parsingDate = (date) => {
-    var options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-    return new Date(date).toLocaleDateString([], options);
+    if (date) {
+        var options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+        return new Date(date).toLocaleDateString([], options);
+    } else {
+        return '';
+    }
 };
 export const parsingDateWithotTime = (date) => {
-    var options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(date).toLocaleDateString([], options);
+    if (date) {
+        var options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(date).toLocaleDateString([], options);
+    } else return '';
 };
 
 function isFloat(n) {
@@ -137,10 +142,6 @@ export const numberWithCommas = (x) => {
 
 export const capitalizeFirst = (str) => {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-};
-
-export const cutInfoLog = (str) => {
-    return str?.split('] ')[2];
 };
 
 export const filterArray = (arr1, arr2) => {
@@ -256,5 +257,47 @@ export const msToUnits = (value) => {
 };
 
 export const generateName = (value) => {
-    return value.replaceAll(' ', '-').toLowerCase();
+    return value?.trimStart().replaceAll(' ', '-')?.toLowerCase();
+};
+
+export const idempotencyValidator = (value, idempotencyType) => {
+    const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
+
+    return new Promise((resolve, reject) => {
+        if (value !== '') {
+            switch (idempotencyType) {
+                case idempotencyOptions[0]:
+                    if (value < 100) {
+                        return reject('Has to be greater than 100ms');
+                    }
+                    if (value > 8.64e7) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                case idempotencyOptions[1]:
+                    if (value > 86400) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                case idempotencyOptions[2]:
+                    if (value > 1440) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                case idempotencyOptions[3]:
+                    if (value > 24) {
+                        return reject('Has to be lower than 24 houres');
+                    } else {
+                        return resolve();
+                    }
+                default:
+                    break;
+            }
+        } else {
+            return reject('Please input idempotency value');
+        }
+    });
 };

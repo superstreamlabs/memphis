@@ -54,8 +54,8 @@ const StationsList = () => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getAllStations();
         return () => {
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: [] });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: [] });
+            dispatch({ type: 'SET_STATION_LIST', payload: [] });
+            dispatch({ type: 'SET_SCHEMA_FILTERED_LIST', payload: [] });
         };
     }, []);
 
@@ -64,8 +64,8 @@ const StationsList = () => {
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
             res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
-            dispatch({ type: 'SET_DOMAIN_LIST', payload: res.stations });
-            dispatch({ type: 'SET_FILTERED_LIST', payload: res.stations });
+            dispatch({ type: 'SET_STATION_LIST', payload: res.stations });
+            dispatch({ type: 'SET_SCHEMA_FILTERED_LIST', payload: res.stations });
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -76,17 +76,17 @@ const StationsList = () => {
     };
 
     const renderStationsOverview = () => {
-        if (state?.domainList?.length > 0) {
-            if (state.filteredList?.length === 0) {
+        if (state?.stationList?.length > 0) {
+            if (state.stationFilteredList?.length === 0) {
                 return <StationsInstructions header="No stations found" des="Please try to search again" image={stationsIcon} />;
             }
-            if (state?.domainList?.length <= 2) {
+            if (state?.stationList?.length <= 2) {
                 return (
                     <div>
-                        {state.filteredList?.map((station) => (
+                        {state.stationFilteredList?.map((station) => (
                             <StationBoxOverview
-                                key={station.station.id}
-                                isCheck={isCheck.includes(station.station.name)}
+                                key={station?.station?.id}
+                                isCheck={isCheck.includes(station?.station?.name)}
                                 handleCheckedClick={handleCheckedClick}
                                 station={station}
                             />
@@ -97,7 +97,7 @@ const StationsList = () => {
             }
             return (
                 <Virtuoso
-                    data={state?.filteredList}
+                    data={state?.stationFilteredList}
                     overscan={100}
                     itemContent={(index, station) => (
                         <StationBoxOverview
@@ -110,12 +110,12 @@ const StationsList = () => {
                 />
             );
         }
-        return <StationsInstructions header="You don’t have any station yet?" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
+        return <StationsInstructions header="You don’t have any station yet" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
     };
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(state.filteredList.map((li) => li.station.name));
+        setIsCheck(state.stationFilteredList.map((li) => li.station?.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
@@ -139,7 +139,7 @@ const StationsList = () => {
                 station_names: isCheck
             });
             if (data) {
-                dispatch({ type: 'SET_DOMAIN_LIST', payload: stationFilterArray(state?.filteredList, isCheck) });
+                dispatch({ type: 'SET_STATION_LIST', payload: stationFilterArray(state?.stationFilteredList, isCheck) });
                 setIsCheck([]);
                 setIsCheckAll(false);
                 setDeleteLoader(false);
@@ -155,11 +155,10 @@ const StationsList = () => {
             <div className="stations-details-header">
                 <div className="header-wraper">
                     <label className="main-header-h1">
-                        Stations <label className="length-list">{state?.filteredList?.length > 0 && `(${state?.filteredList?.length})`}</label>
+                        Stations <label className="length-list">{state?.stationFilteredList?.length > 0 && `(${state?.stationFilteredList?.length})`}</label>
                     </label>
                     <div className="right-side">
                         <Button
-                            width="131px"
                             height="34px"
                             placeholder={`Delete selected (${isCheck?.length})`}
                             colorType="black"
@@ -168,6 +167,7 @@ const StationsList = () => {
                             fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
+                            boxShadowStyle="float"
                             disabled={isCheck?.length === 0}
                             onClick={() => modalDeleteFlip(true)}
                         />
@@ -181,7 +181,8 @@ const StationsList = () => {
                             fontSize="12px"
                             fontWeight="600"
                             aria-haspopup="true"
-                            disabled={state?.filteredList?.length === 0}
+                            boxShadowStyle="float"
+                            disabled={state?.stationFilteredList?.length === 0}
                             onClick={() => onCheckedAll()}
                         />
                         <Filter filterComponent="stations" height="34px" />
@@ -193,6 +194,7 @@ const StationsList = () => {
                             radiusType="circle"
                             backgroundColorType="purple"
                             fontSize="12px"
+                            boxShadowStyle="float"
                             fontWeight="600"
                             aria-haspopup="true"
                             onClick={() => modalFlip(true)}
@@ -217,9 +219,9 @@ const StationsList = () => {
                             <label>A station is a distributed unit that stores the produced data.</label>
                         </div>
                     }
-                    height="70vh"
+                    height="65vh"
                     width="1020px"
-                    rBtnText="Add"
+                    rBtnText="Create"
                     lBtnText="Cancel"
                     lBtnClick={() => {
                         modalFlip(false);

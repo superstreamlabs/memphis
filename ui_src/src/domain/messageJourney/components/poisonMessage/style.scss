@@ -5,8 +5,8 @@
     background: #ffffff;
     box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.14);
     border-radius: 8px;
-    padding: 14px;
     header {
+        padding: 10px;
         p {
             font-size: 14px;
             font-family: 'InterSemiBold';
@@ -20,12 +20,19 @@
     }
     .content-wrapper {
         margin-top: 20px;
+        height: calc(100% - 95px);
+        overflow:auto;
+        width: 99%;
+        padding: 0 10px;
         .ant-space {
             width: 100%;
             .ant-collapse-content-box {
                 max-height: 290px;
                 overflow: auto;
                 overflow-wrap: break-word;
+                .message{
+                    max-height: 120px;
+                }
             }
         }
     }

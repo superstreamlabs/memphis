@@ -8,8 +8,12 @@
         align-items: center;
         justify-content: center;
     }
+    .noHover{
+        pointer-events: unset !important;
+    }
 }
 
 .noHover {
     pointer-events: none;
+    display: block !important;
 }

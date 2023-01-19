@@ -8,6 +8,11 @@
         padding-right: 15px;
         overflow: auto;
         height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .left-gs{
+        gap: 20px;
     }
     .right-side {
         padding-left: 15px;

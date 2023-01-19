@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -35,12 +33,14 @@ type createStationRequest struct {
 	Replicas          int                     `json:"replicas"`
 	DedupEnabled      bool                    `json:"dedup_enabled"`      // TODO deprecated
 	DedupWindowMillis int                     `json:"dedup_window_in_ms"` // TODO deprecated
-	IdempotencyWindow int                     `json:"idempotency_window_in_ms"`
+	IdempotencyWindow int64                   `json:"idempotency_window_in_ms"`
 	DlsConfiguration  models.DlsConfiguration `json:"dls_configuration"`
+	Username          string                  `json:"username"`
 }
 
 type destroyStationRequest struct {
 	StationName string `json:"station_name"`
+	Username    string `json:"username"`
 }
 
 type createProducerRequestV0 struct {
@@ -48,6 +48,7 @@ type createProducerRequestV0 struct {
 	StationName  string `json:"station_name"`
 	ConnectionId string `json:"connection_id"`
 	ProducerType string `json:"producer_type"`
+	Username     string `json:"username"`
 }
 
 type createProducerRequestV1 struct {
@@ -56,6 +57,11 @@ type createProducerRequestV1 struct {
 	ConnectionId   string `json:"connection_id"`
 	ProducerType   string `json:"producer_type"`
 	RequestVersion int    `json:"req_version"`
+	Username       string `json:"username"`
+}
+
+type createConsumerResponse struct {
+	Err string `json:"error"`
 }
 
 type createProducerResponse struct {
@@ -68,34 +74,57 @@ type createProducerResponse struct {
 type destroyProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
+	Username     string `json:"username"`
 }
 
-type createConsumerRequest struct {
-	Name             string `json:"name"`
-	StationName      string `json:"station_name"`
-	ConnectionId     string `json:"connection_id"`
-	ConsumerType     string `json:"consumer_type"`
-	ConsumerGroup    string `json:"consumers_group"`
-	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
-	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+type createConsumerRequestV0 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	Username                 string `json:"username"`
+}
+
+type createConsumerRequestV1 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	Username                 string `json:"username"`
+	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
+	LastMessages             int64  `json:"last_messages"`
+	RequestVersion           int    `json:"req_version"`
 }
 
 type attachSchemaRequest struct {
 	Name        string `json:"name"`
 	StationName string `json:"station_name"`
+	Username    string `json:"username"`
 }
 
 type detachSchemaRequest struct {
 	StationName string `json:"station_name"`
+	Username    string `json:"username"`
 }
 
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
+	Username     string `json:"username"`
 }
 
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
+}
+
+func (ccr *createConsumerResponse) SetError(err error) {
+	ccr.Err = err.Error()
 }
 
 func (s *Server) initializeSDKHandlers() {

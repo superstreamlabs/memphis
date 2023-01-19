@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -110,23 +108,29 @@ func validateReplicas(replicas int) error {
 	return nil
 }
 
+func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int64) error {
+	if idempotencyWindow > 86400000 { // 24 hours
+		return errors.New("Idempotency window can not exceed 24 hours")
+	}
+	if retentionType == "message_age_sec" && (int64(retentionValue)*1000 < idempotencyWindow) {
+		return errors.New("idempotency window cannot be greater than the station retention")
+	}
+
+	return nil
+}
+
 // TODO remove the station resources - functions, connectors
-func removeStationResources(s *Server, station models.Station, nonNativeRemoveStreamFunc func() error) error {
+func removeStationResources(s *Server, station models.Station, shouldDeleteStream bool) error {
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
 
-	removeFunc := nonNativeRemoveStreamFunc
-	if removeFunc == nil {
-		removeFunc = func() error {
-			return s.RemoveStream(stationName.Intern())
+	if shouldDeleteStream {
+		err = s.RemoveStream(stationName.Intern())
+		if err != nil {
+			return err
 		}
-	}
-
-	err = removeFunc()
-	if err != nil {
-		return err
 	}
 
 	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
@@ -167,16 +171,15 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	s.createStationDirectIntern(c, reply, &csr, nil)
+	s.createStationDirectIntern(c, reply, &csr, true)
 }
 
 func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
-	nonNativeCreateStreamFunc func() error) {
-	isNative := nonNativeCreateStreamFunc == nil
+	shouldCreateStream bool) {
+	isNative := shouldCreateStream == true
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -274,16 +277,29 @@ func (s *Server) createStationDirectIntern(c *client,
 		replicas = 1
 	}
 
+	err = validateIdempotencyWindow(csr.RetentionType, csr.RetentionValue, csr.IdempotencyWindow)
+	if err != nil {
+		serv.Warnf("createStationDirect: " + err.Error())
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+
 	if csr.IdempotencyWindow <= 0 {
 		csr.IdempotencyWindow = 120000 // default
 	} else if csr.IdempotencyWindow < 100 {
 		csr.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
+	username := c.memphisInfo.username
+	if username == "" {
+		username = csr.Username
+	}
+
 	newStation := models.Station{
 		ID:                primitive.NewObjectID(),
 		Name:              stationName.Ext(),
-		CreatedByUser:     c.memphisInfo.username,
+		CreatedByUser:     username,
 		CreationDate:      time.Now(),
 		IsDeleted:         false,
 		RetentionType:     retentionType,
@@ -300,19 +316,19 @@ func (s *Server) createStationDirectIntern(c *client,
 		DlsConfiguration:  csr.DlsConfiguration,
 	}
 
-	createStreamFunc := nonNativeCreateStreamFunc
+	if shouldCreateStream {
+		err = s.CreateStream(stationName, newStation)
+		if err != nil {
+			if IsNatsErr(err, JSInsufficientResourcesErr) {
+				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
+				respondWithErr(s, reply, errors.New("Station can not be created, probably since replicas count is larger than the cluster size"))
+				return
+			}
 
-	if createStreamFunc == nil {
-		createStreamFunc = func() error {
-			return s.CreateStream(stationName, newStation)
+			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+			respondWithErr(s, reply, err)
+			return
 		}
-	}
-
-	err = createStreamFunc()
-	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
 	}
 
 	err = s.CreateDlsStream(stationName, newStation)
@@ -328,7 +344,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created by user " + c.memphisInfo.username
+	message := "Station " + stationName.Ext() + " has been created by user " + username
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
@@ -336,7 +352,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -353,7 +369,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			Value: stationName.Ext(),
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(c.memphisInfo.username, analyticsParams, "user-create-station")
+		analytics.SendEventWithParams(username, analyticsParams, "user-create-station")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -403,7 +419,6 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	var exStations []models.ExtendedStationDetails
 	var stations []models.Station
 
-	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	filter := bson.M{"$or": []interface{}{
 		bson.M{"is_deleted": bson.M{"$exists": false}},
 		bson.M{"is_deleted": false},
@@ -416,28 +431,40 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
-
+	streamInfoToDls := make(map[string]models.StationMsgsDetails)
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
+		allStreamInfo, err := serv.memphisAllStreamsInfo()
+		if err != nil {
+			return []models.ExtendedStationDetails{}, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+				splitName := strings.Split(streamName, "-")
+				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
+				_, ok := streamInfoToDls[stationName]
+				if ok {
+					infoToUpdate := streamInfoToDls[stationName]
+					infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
+					streamInfoToDls[stationName] = infoToUpdate
+				} else {
+					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
+				}
+			} else {
+				_, ok := streamInfoToDls[streamName]
+				if ok {
+					infoToUpdate := streamInfoToDls[streamName]
+					infoToUpdate.TotalMessages = int(info.State.Msgs)
+					streamInfoToDls[streamName] = infoToUpdate
+				} else {
+					streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
+				}
+			}
+		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
-			totalMessages, err := sh.GetTotalMessages(station.Name)
-			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStationDetails{}, err
-				}
-			}
-			totalDlsAmount, err := poisonMsgsHandler.GetTotalDlsMsgsByStation(station.Name)
-			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStationDetails{}, err
-				}
-			}
 			tags, err := tagsHandler.GetTagsByStation(station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
@@ -445,7 +472,12 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			if station.StorageType == "file" {
 				station.StorageType = "disk"
 			}
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, PoisonMessages: totalDlsAmount, TotalMessages: totalMessages, Tags: tags})
+			fullStationName, err := StationNameFromStr(station.Name)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			msgsInfo := streamInfoToDls[fullStationName.Intern()]
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -461,7 +493,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}}}},
 	})
 	if err != nil {
 		return stations, err
@@ -470,37 +502,52 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return stations, err
 	}
-
+	streamInfoToDls := make(map[string]models.StationMsgsDetails)
 	if len(stations) == 0 {
 		return []models.ExtendedStation{}, nil
 	} else {
-		poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 		tagsHandler := TagsHandler{S: sh.S}
-		var extStations []models.ExtendedStation
-		for i := 0; i < len(stations); i++ {
-			totalMessages, err := sh.GetTotalMessages(stations[i].Name)
-			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
+		allStreamInfo, err := serv.memphisAllStreamsInfo()
+		if err != nil {
+			return []models.ExtendedStation{}, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+				splitName := strings.Split(streamName, "-")
+				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
+				_, ok := streamInfoToDls[stationName]
+				if ok {
+					infoToUpdate := streamInfoToDls[stationName]
+					infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
+					streamInfoToDls[stationName] = infoToUpdate
 				} else {
-					return []models.ExtendedStation{}, err
+					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
+				}
+			} else {
+				_, ok := streamInfoToDls[streamName]
+				if ok {
+					infoToUpdate := streamInfoToDls[streamName]
+					infoToUpdate.TotalMessages = int(info.State.Msgs)
+					streamInfoToDls[streamName] = infoToUpdate
+				} else {
+					streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
 				}
 			}
-			totalDlsAmount, err := poisonMsgsHandler.GetTotalDlsMsgsByStation(stations[i].Name)
+		}
+		var extStations []models.ExtendedStation
+		for i := 0; i < len(stations); i++ {
+			fullStationName, err := StationNameFromStr(stations[i].Name)
 			if err != nil {
-				if IsNatsErr(err, JSStreamNotFoundErr) {
-					continue
-				} else {
-					return []models.ExtendedStation{}, err
-				}
+				return []models.ExtendedStation{}, err
 			}
 			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
 				return []models.ExtendedStation{}, err
 			}
-
-			stations[i].TotalMessages = totalMessages
-			stations[i].PoisonMessages = totalDlsAmount
+			msgsInfo := streamInfoToDls[fullStationName.Intern()]
+			stations[i].TotalMessages = msgsInfo.TotalMessages
+			stations[i].HasDlsMsgs = msgsInfo.HasDlsMsgs
 			stations[i].Tags = tags
 			extStations = append(extStations, stations[i])
 		}
@@ -635,6 +682,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.Replicas = 1
 	}
 
+	err = validateIdempotencyWindow(body.RetentionType, body.RetentionValue, body.IdempotencyWindow)
+	if err != nil {
+		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
 	if body.IdempotencyWindow <= 0 {
 		body.IdempotencyWindow = 120000 // default
 	} else if body.IdempotencyWindow < 100 {
@@ -663,6 +717,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	err = sh.S.CreateStream(stationName, newStation)
 	if err != nil {
+		if IsNatsErr(err, JSInsufficientResourcesErr) {
+			serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+			return
+		}
+
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -844,7 +904,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 			return
 		}
 
-		err = removeStationResources(sh.S, station, nil)
+		err = removeStationResources(sh.S, station, true)
 		if err != nil {
 			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -899,14 +959,14 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	s.removeStationDirectIntern(c, reply, &dsr, nil)
+	s.removeStationDirectIntern(c, reply, &dsr, true)
 }
 
 func (s *Server) removeStationDirectIntern(c *client,
 	reply string,
 	dsr *destroyStationRequest,
-	nonNativeRemoveStreamFunc func() error) {
-	isNative := nonNativeRemoveStreamFunc == nil
+	shouldDeleteStream bool) {
+	isNative := shouldDeleteStream == true
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 
 	stationName, err := StationNameFromStr(dsr.StationName)
@@ -933,7 +993,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	err = removeStationResources(s, station, nonNativeRemoveStreamFunc)
+	err = removeStationResources(s, station, shouldDeleteStream)
 	if err != nil {
 		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -956,14 +1016,14 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	message := "Station " + stationName.Ext() + " has been deleted by user " + c.memphisInfo.username
+	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		ID:            primitive.NewObjectID(),
 		StationName:   stationName.Ext(),
 		Message:       message,
-		CreatedByUser: c.memphisInfo.username,
+		CreatedByUser: dsr.Username,
 		CreationDate:  time.Now(),
 		UserType:      "application",
 	}
@@ -1036,8 +1096,7 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.DlsMessageResponse, error) {
-	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId, dlsType string) (models.DlsMessageResponse, error) {
 	var dlsMessage models.DlsMessageResponse
 	splitId := strings.Split(dlsMsgId, dlsMsgSep)
 	stationName := splitId[0]
@@ -1053,82 +1112,7 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId string) (models.D
 		return dlsMessage, errors.New("Station " + station.Name + " does not exist")
 	}
 
-	poisoned, schemaFailed, err := poisonMsgsHandler.GetDlsMsgsByStationFull(station)
-	if err != nil {
-		return dlsMessage, err
-	}
-	for _, dlm := range poisoned {
-		if dlm.ID == dlsMsgId {
-			dlsMessage = dlm
-			headersJson := dlsMessage.Message.Headers
-			for header := range headersJson {
-				if strings.HasPrefix(header, "$memphis") {
-					delete(headersJson, header)
-				}
-			}
-			dlsMessage.Message.Headers = headersJson
-			break
-		}
-	}
-
-	if dlsMessage.ID == "" {
-		for _, dlm := range schemaFailed {
-			if dlm.ID == dlsMsgId {
-				dlsMessage = dlm
-				break
-			}
-		}
-	}
-	seq, err := strconv.Atoi(splitId[2])
-	if err != nil {
-		return dlsMessage, err
-	}
-	cgs := make([]models.PoisonedCg, 0)
-	poisonedCgs := make([]models.PoisonedCg, 0)
-	// Only native stations have CGs
-	if station.IsNative {
-		poisonedCgs, err = GetPoisonedCgsByMessage(sn.Intern(), models.MessageDetails{MessageSeq: seq, ProducedBy: dlsMessage.Producer.Name, TimeSent: dlsMessage.Message.TimeSent})
-		if err != nil {
-			return dlsMessage, err
-		}
-		sort.Slice(poisonedCgs, func(i, j int) bool {
-			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
-		})
-		cgCheck := make(map[string]bool)
-		for _, cg := range poisonedCgs {
-			if _, value := cgCheck[cg.CgName]; value {
-				continue
-			}
-			cgCheck[cg.CgName] = true
-			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-			if err != nil {
-				return dlsMessage, err
-			}
-
-			isActive, isDeleted := getCgStatus(cgMembers)
-			cgInfo, err := sh.S.GetCgInfo(sn, cg.CgName)
-			if err != nil {
-				return dlsMessage, err
-			}
-			totalPms, err := GetTotalPoisonMsgsByCg(sn.Intern(), cg.CgName)
-			if err != nil {
-				return dlsMessage, err
-			}
-			cg.MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-			cg.MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-			cg.UnprocessedMessages = int(cgInfo.NumPending)
-			cg.InProcessMessages = cgInfo.NumAckPending
-			cg.TotalPoisonMessages = totalPms
-			cg.CgMembers = cgMembers
-			cg.IsActive = isActive
-			cg.IsDeleted = isDeleted
-			cgs = append(cgs, cg)
-		}
-	}
-
-	dlsMessage.PoisonedCgs = cgs
-
-	return dlsMessage, nil
+	return getDlsMessageById(station, sn, dlsMsgId, dlsType)
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
@@ -1138,7 +1122,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId)
+	poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1155,7 +1139,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 }
 
 func dropPoisonDlsMessages(poisonMessageIds []string) error {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	splitId := strings.Split(poisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1163,77 +1147,17 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 		return errors.New("dropPoisonDlsMessages: " + err.Error())
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+	streamInfo, err := serv.memphisStreamInfo(streamName)
+	if err != nil {
+		return errors.New("dropPoisonDlsMessages: " + err.Error())
+	}
+	amount := streamInfo.State.Msgs
 	for _, msgId := range poisonMessageIds {
-		uid := serv.memphis.nuid.Next()
-		durableName := "$memphis_fetch_dls_consumer_" + uid
-		var msgs []StoredMsg
-		streamInfo, err := serv.memphisStreamInfo(streamName)
+		filter := GetDlsSubject("poison", sn.Intern(), msgId, "*")
+		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
 		if err != nil {
 			return errors.New("dropPoisonDlsMessages: " + err.Error())
 		}
-		filter := GetDlsSubject("poison", sn.Intern(), msgId)
-		amount := streamInfo.State.Msgs
-		cc := ConsumerConfig{
-			DeliverPolicy: DeliverAll,
-			AckPolicy:     AckExplicit,
-			Durable:       durableName,
-			FilterSubject: filter,
-		}
-
-		err = serv.memphisAddConsumer(streamName, &cc)
-		if err != nil {
-			return errors.New("dropPoisonDlsMessages: " + err.Error())
-		}
-
-		responseChan := make(chan StoredMsg)
-		subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-		reply := durableName + "_reply"
-		req := []byte(strconv.FormatUint(amount, 10))
-
-		sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-			go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-				// ack
-				serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-				rawTs := tokenAt(reply, 8)
-				seq, _, _ := ackReplyInfo(reply)
-
-				intTs, err := strconv.Atoi(rawTs)
-				if err != nil {
-					serv.Errorf("GetTotalPoisonMsgsByCg: " + err.Error())
-				}
-
-				respCh <- StoredMsg{
-					Subject:  subject,
-					Sequence: uint64(seq),
-					Data:     msg,
-					Time:     time.Unix(0, int64(intTs)),
-				}
-			}(responseChan, subject, reply, copyBytes(msg))
-		})
-		if err != nil {
-			return errors.New("dropPoisonDlsMessages: " + err.Error())
-		}
-
-		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-		timer := time.NewTimer(timeout)
-		for i := uint64(0); i < amount; i++ {
-			select {
-			case <-timer.C:
-				goto cleanup
-			case msg := <-responseChan:
-				msgs = append(msgs, msg)
-			}
-		}
-
-	cleanup:
-		timer.Stop()
-		serv.unsubscribeOnGlobalAcc(sub)
-		err = serv.memphisRemoveConsumer(streamName, durableName)
-		if err != nil {
-			return errors.New("dropPoisonDlsMessages: " + err.Error())
-		}
-
 		for _, msg := range msgs {
 			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
 			if err != nil {
@@ -1241,12 +1165,11 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 			}
 		}
 	}
-
 	return nil
 }
 
 func dropSchemaDlsMsg(schemaMessageIds []string) error {
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1254,90 +1177,28 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 		return errors.New("dropSchemaDlsMsg: " + err.Error())
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+	amount := uint64(1)
 	for _, msgId := range schemaMessageIds {
-		uid := serv.memphis.nuid.Next()
-		durableName := "$memphis_fetch_dls_consumer_" + uid
-		var msgs []StoredMsg
-		streamInfo, err := serv.memphisStreamInfo(streamName)
+		filter := GetDlsSubject("schema", sn.Intern(), msgId, _EMPTY_)
+		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
 		if err != nil {
 			return errors.New("dropSchemaDlsMsg: " + err.Error())
 		}
-		amount := streamInfo.State.Msgs
-		cc := ConsumerConfig{
-			DeliverPolicy: DeliverAll,
-			AckPolicy:     AckExplicit,
-			Durable:       durableName,
-		}
-
-		err = serv.memphisAddConsumer(streamName, &cc)
+		msg := msgs[0]
+		var dlsMsg models.DlsMessage
+		err = json.Unmarshal(msg.Data, &dlsMsg)
 		if err != nil {
 			return errors.New("dropSchemaDlsMsg: " + err.Error())
 		}
-
-		responseChan := make(chan StoredMsg)
-		subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-		reply := durableName + "_reply"
-		req := []byte(strconv.FormatUint(amount, 10))
-
-		sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-			go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-				// ack
-				serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-				rawTs := tokenAt(reply, 8)
-				seq, _, _ := ackReplyInfo(reply)
-
-				intTs, err := strconv.Atoi(rawTs)
-				if err != nil {
-					serv.Errorf("dropSchemaDlsMsg: " + err.Error())
-				}
-
-				respCh <- StoredMsg{
-					Subject:  subject,
-					Sequence: uint64(seq),
-					Data:     msg,
-					Time:     time.Unix(0, int64(intTs)),
-				}
-			}(responseChan, subject, reply, copyBytes(msg))
-		})
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-
-		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-		timer := time.NewTimer(timeout)
-		for i := uint64(0); i < amount; i++ {
-			select {
-			case <-timer.C:
-				goto cleanup
-			case msg := <-responseChan:
-				msgs = append(msgs, msg)
-			}
-		}
-
-	cleanup:
-		timer.Stop()
-		serv.unsubscribeOnGlobalAcc(sub)
-		err = serv.memphisRemoveConsumer(streamName, durableName)
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-
-		for _, msg := range msgs {
-			var dlsMsg models.DlsMessage
-			err = json.Unmarshal(msg.Data, &dlsMsg)
+		if msgId == dlsMsg.ID {
+			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
 			if err != nil {
 				return errors.New("dropSchemaDlsMsg: " + err.Error())
 			}
-			if msgId == dlsMsg.ID {
-				_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-				if err != nil {
-					return errors.New("dropSchemaDlsMsg: " + err.Error())
-				}
-				break
-			}
+			break
 		}
 	}
+
 	return nil
 }
 
@@ -1378,7 +1239,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timeout := 1 * time.Second
+	timeout := 500 * time.Millisecond
 	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
@@ -1388,79 +1249,16 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+	streamInfo, err := serv.memphisStreamInfo(streamName)
+	if err != nil {
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	amount := streamInfo.State.Msgs
 	for _, msgId := range body.PoisonMessageIds {
-		uid := serv.memphis.nuid.Next()
-		durableName := "$memphis_fetch_dls_consumer_" + uid
-		var msgs []StoredMsg
-		streamInfo, err := serv.memphisStreamInfo(streamName)
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		filter := GetDlsSubject("poison", sn.Intern(), msgId)
-		amount := streamInfo.State.Msgs
-		cc := ConsumerConfig{
-			DeliverPolicy: DeliverAll,
-			AckPolicy:     AckExplicit,
-			Durable:       durableName,
-			FilterSubject: filter,
-		}
-
-		err = serv.memphisAddConsumer(streamName, &cc)
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		responseChan := make(chan StoredMsg)
-		subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-		reply := durableName + "_reply"
-		req := []byte(strconv.FormatUint(amount, 10))
-
-		sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-			go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-				// ack
-				serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-				rawTs := tokenAt(reply, 8)
-				seq, _, _ := ackReplyInfo(reply)
-
-				intTs, err := strconv.Atoi(rawTs)
-				if err != nil {
-					serv.Errorf("ResendPoisonMessages: " + err.Error())
-				}
-
-				respCh <- StoredMsg{
-					Subject:  subject,
-					Sequence: uint64(seq),
-					Data:     msg,
-					Time:     time.Unix(0, int64(intTs)),
-				}
-			}(responseChan, subject, reply, copyBytes(msg))
-		})
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-		timer := time.NewTimer(timeout)
-		for i := uint64(0); i < amount; i++ {
-			select {
-			case <-timer.C:
-				goto cleanup
-			case msg := <-responseChan:
-				msgs = append(msgs, msg)
-			}
-		}
-
-	cleanup:
-		timer.Stop()
-		serv.unsubscribeOnGlobalAcc(sub)
-		err = serv.memphisRemoveConsumer(streamName, durableName)
+		filter := GetDlsSubject("poison", sn.Intern(), msgId, "*")
+		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
 		if err != nil {
 			serv.Errorf("ResendPoisonMessages: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1502,6 +1300,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				return
 			}
 		}
+
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1521,8 +1320,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 	msgId := body.MessageId
 
-	if body.IsPoisonMessage {
-		poisonMessage, err := sh.GetDlsMessageJourneyDetails(msgId)
+	if body.IsDls {
+		poisonMessage, err := sh.GetDlsMessageJourneyDetails(msgId, body.DlsType)
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1560,6 +1359,16 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
+	var headersJson map[string]string
+	if sm.Header != nil {
+		headersJson, err = DecodeHeader(sm.Header)
+		if err != nil {
+			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	// For non-native stations - default values
 	if !station.IsNative {
 		msg := models.MessageResponse{
@@ -1568,7 +1377,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				TimeSent: sm.Time,
 				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
 				Data:     hex.EncodeToString(sm.Data),
-				Headers:  map[string]string{},
+				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetails{
 				Name:          "",
@@ -1583,17 +1392,17 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		c.IndentedJSON(200, msg)
 		return
 	}
-	headersJson, err := DecodeHeader(sm.Header)
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 
 	connectionIdHeader := headersJson["$memphis_connectionId"]
 	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-	//This check for backward compatability
+	for header := range headersJson {
+		if strings.HasPrefix(header, "$memphis") {
+			delete(headersJson, header)
+		}
+	}
+
+	// This check for backward compatability
 	if connectionIdHeader == "" || producedByHeader == "" {
 		connectionIdHeader = headersJson["connectionId"]
 		producedByHeader = strings.ToLower(headersJson["producedBy"])
@@ -1601,12 +1410,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
 			return
-		}
-	}
-
-	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
-			delete(headersJson, header)
 		}
 	}
 
@@ -1629,13 +1432,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				return
 			}
 
-			totalPoisonMsgs, err := GetTotalPoisonMsgsByCg(stationName.Ext(), cg.CgName)
-			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
 				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
@@ -1649,7 +1445,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
 			poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
 			poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-			poisonedCgs[i].TotalPoisonMessages = totalPoisonMsgs
+			poisonedCgs[i].TotalPoisonMessages = -1
 			poisonedCgs[i].IsActive = isActive
 			poisonedCgs[i].IsDeleted = isDeleted
 		}

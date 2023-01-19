@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 
@@ -97,9 +96,9 @@ const StationOverviewHeader = () => {
             await httpRequest('DELETE', ApiEndpoints.REMOVE_STATION, {
                 station_names: [stationState?.stationMetaData?.name]
             });
+            returnToStaionsList();
             setDeleteLoader(false);
             modalDeleteFlip(false);
-            returnToStaionsList();
         } catch (error) {
             setDeleteLoader(false);
             modalDeleteFlip(false);
@@ -128,7 +127,8 @@ const StationOverviewHeader = () => {
                         />
                     </div>
                     <span className="created-by">
-                        Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}
+                        Created by {stationState?.stationMetaData?.created_by_user} at {stationState?.stationMetaData?.creation_date}{' '}
+                        {!stationState?.stationMetaData?.is_native && '(non-native)'}
                     </span>
                 </div>
                 <div className="station-buttons">
@@ -189,27 +189,26 @@ const StationOverviewHeader = () => {
                             {stationState?.stationSocketData?.schema === undefined ||
                                 (Object.keys(stationState?.stationSocketData?.schema).length === 0 ? (
                                     <>
-                                        <TooltipComponent text={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}>
-                                            <div className="add-new">
-                                                <Button
-                                                    width="120px"
-                                                    height="25px"
-                                                    placeholder={
-                                                        <div className="use-schema-button">
-                                                            <Add />
-                                                            <p>Attach schema</p>
-                                                        </div>
-                                                    }
-                                                    colorType="white"
-                                                    radiusType="circle"
-                                                    backgroundColorType="purple"
-                                                    fontSize="12px"
-                                                    fontFamily="InterSemiBold"
-                                                    disabled={!stationState?.stationMetaData?.is_native}
-                                                    onClick={() => setUseSchemaModal(true)}
-                                                />
-                                            </div>
-                                        </TooltipComponent>
+                                        <div className="add-new">
+                                            <Button
+                                                width="120px"
+                                                height="25px"
+                                                placeholder={
+                                                    <div className="use-schema-button">
+                                                        <Add />
+                                                        <p>Attach schema</p>
+                                                    </div>
+                                                }
+                                                tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                                                colorType="white"
+                                                radiusType="circle"
+                                                backgroundColorType="purple"
+                                                fontSize="12px"
+                                                fontFamily="InterSemiBold"
+                                                disabled={!stationState?.stationMetaData?.is_native}
+                                                onClick={() => setUseSchemaModal(true)}
+                                            />
+                                        </div>
                                     </>
                                 ) : (
                                     <div className="buttons">
@@ -223,6 +222,7 @@ const StationOverviewHeader = () => {
                                             backgroundColorType="purple"
                                             fontSize="10px"
                                             fontFamily="InterMedium"
+                                            boxShadowStyle="float"
                                             onClick={() => setUseSchemaModal(true)}
                                         />
                                         {stationState?.stationSocketData?.schema?.updates_available && (
@@ -235,6 +235,7 @@ const StationOverviewHeader = () => {
                                                 backgroundColorType="purple"
                                                 fontSize="10px"
                                                 fontFamily="InterMedium"
+                                                boxShadowStyle="float"
                                                 onClick={() => setUpdateSchemaModal(true)}
                                             />
                                         )}
@@ -251,11 +252,11 @@ const StationOverviewHeader = () => {
                             <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
                         </div>
                     </div>
-                    <div className="details-wrapper">
+                    <div className="details-wrapper pointer">
                         <div className="icon">
                             <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
                         </div>
-                        <div className="more-details">
+                        <div className="more-details ">
                             <p className="title">Av. message size</p>
                             <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
                                 <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>

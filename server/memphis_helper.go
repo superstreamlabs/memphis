@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -361,9 +359,34 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		return err
 	}
 
-	err = s.memphisAddConsumer(stationName.Intern(), &ConsumerConfig{
+	var deliveryPolicy DeliverPolicy
+	streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
+	if err != nil {
+		return errors.New("Streaminfo: " + err.Error())
+	}
+	lastSeq := streamInfo.State.LastSeq
+
+	var optStartSeq uint64
+	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
+	if consumer.LastMessages == 0 && consumer.StartConsumeFromSequence == 0 {
+		deliveryPolicy = DeliverNew
+	} else if consumer.LastMessages > 0 {
+		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
+		if int(lastMessages) < 1 {
+			lastMessages = uint64(1)
+		}
+		deliveryPolicy = DeliverByStartSequence
+		optStartSeq = lastMessages
+	} else if consumer.StartConsumeFromSequence == 1 || consumer.LastMessages == -1 {
+		deliveryPolicy = DeliverAll
+	} else if consumer.StartConsumeFromSequence > 1 {
+		deliveryPolicy = DeliverByStartSequence
+		optStartSeq = consumer.StartConsumeFromSequence
+	}
+
+	consumerConfig := &ConsumerConfig{
 		Durable:       consumerName,
-		DeliverPolicy: DeliverAll,
+		DeliverPolicy: deliveryPolicy,
 		AckPolicy:     AckExplicit,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
 		MaxDeliver:    MaxMsgDeliveries,
@@ -373,7 +396,12 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		HeadersOnly:   false,
 		// RateLimit: ,// Bits per sec
 		// Heartbeat: // time.Duration,
-	})
+	}
+
+	if deliveryPolicy == DeliverByStartSequence {
+		consumerConfig.OptStartSeq = optStartSeq
+	}
+	err = s.memphisAddConsumer(stationName.Intern(), consumerConfig)
 	return err
 }
 
@@ -535,6 +563,9 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 	offsetReq := ApiPagedRequest{Offset: offset}
 	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
 	rawRequest, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
 	var resp JSApiStreamListResponse
 	err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 	if err != nil {
@@ -551,7 +582,10 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 		offsetReq := ApiPagedRequest{Offset: offset}
 		request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
 		rawRequest, err := json.Marshal(request)
-		var resp JSApiStreamListResponse
+		if err != nil {
+			return nil, err
+		}
+
 		err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 		if err != nil {
 			return nil, err
@@ -596,7 +630,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		startSequence,
 		messagesToFetch,
 		5*time.Second,
-		station.IsNative, // in non-native stations we don't look for headers in messages
+		true,
 	)
 	var messages []models.MessageDetails
 	if err != nil {
@@ -618,12 +652,14 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		}
 		messageDetails.Data = data
 
+		var headersJson map[string]string
 		if stationIsNative {
-			headersJson, err := DecodeHeader(msg.Header)
-			if err != nil {
-				return nil, err
+			if msg.Header != nil {
+				headersJson, err = DecodeHeader(msg.Header)
+				if err != nil {
+					return nil, err
+				}
 			}
-
 			connectionIdHeader := headersJson["$memphis_connectionId"]
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
@@ -719,12 +755,13 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 			dataLen := len(msg)
 			if findHeader {
 				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
-				if dataFirstIdx == 0 || dataFirstIdx > len(msg)-len(CR_LF) {
+				if dataFirstIdx > len(msg)-len(CR_LF) {
 					s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
 				}
 
 				dataLen = len(msg) - dataFirstIdx
 			}
+			dataLen -= len(CR_LF)
 
 			respCh <- StoredMsg{
 				Sequence: uint64(seq),
@@ -809,6 +846,77 @@ func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg
 	return resp.Message, nil
 }
 
+func (s *Server) memphisGetMessagesByFilter(streamName, filterSubject string, startSeq, amount uint64, timeout time.Duration) ([]StoredMsg, error) {
+	uid := serv.memphis.nuid.Next()
+	durableName := uid
+
+	deliverPolicy := DeliverAll
+	if startSeq != 0 {
+		deliverPolicy = DeliverByStartSequence
+	}
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: deliverPolicy,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+		FilterSubject: filterSubject,
+	}
+	var msgs []StoredMsg
+	err := serv.memphisAddConsumer(streamName, &cc)
+	if err != nil {
+		return msgs, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				serv.Errorf("dropSchemaDlsMsg: " + err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return msgs, err
+	}
+
+	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	serv.unsubscribeOnGlobalAcc(sub)
+	err = serv.memphisRemoveConsumer(streamName, durableName)
+	if err != nil {
+		return msgs, err
+	}
+	return msgs, nil
+}
+
 func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHandler) error {
 	acc := s.GlobalAccount()
 	c := acc.ic
@@ -837,8 +945,22 @@ func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler)
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
+func (s *Server) subscribeOnAcc(acc *Account, subj, sid string, cb simplifiedMsgHandler) (*subscription, error) {
+	c := acc.ic
+	wcb := func(_ *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(c, subject, reply, rmsg)
+	}
+
+	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
+}
+
 func (s *Server) unsubscribeOnGlobalAcc(sub *subscription) error {
 	acc := s.GlobalAccount()
+	c := acc.ic
+	return c.processUnsub(sub.sid)
+}
+
+func (s *Server) unsubscribeOnAcc(acc *Account, sub *subscription) error {
 	c := acc.ic
 	return c.processUnsub(sub.sid)
 }

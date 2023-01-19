@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 
@@ -142,7 +141,7 @@ const MessageJourney = () => {
             if (!data?.poisoned_cgs || data?.poisoned_cgs.length === 0) {
                 message.success({
                     key: 'memphisSuccessMessage',
-                    content: 'All the CGs acked the message',
+                    content: 'Unacknowledged message has been acked by all of its failed CGs',
                     duration: 5,
                     style: { cursor: 'pointer' },
                     onClick: () => message.destroy('memphisSuccessMessage')
@@ -157,7 +156,7 @@ const MessageJourney = () => {
                     cgMembers: row.cg_members,
                     details: [
                         {
-                            name: 'Poison messages',
+                            name: 'Unacknowledged messages',
                             value: numberWithCommas(row?.total_poison_messages)
                         },
                         {
@@ -187,7 +186,7 @@ const MessageJourney = () => {
                         value: 'consumer',
                         cgData: [
                             {
-                                name: 'Poison messages',
+                                name: 'Unacknowledged messages',
                                 value: numberWithCommas(row.total_poison_messages)
                             },
                             {
@@ -282,7 +281,7 @@ const MessageJourney = () => {
                     <div className="bread-crumbs">
                         <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
                         <p>
-                            {stationName} / Poison message #{messageId.substring(0, 5)}
+                            Message seq: <span>{messageData?.message_seq}</span>
                         </p>
                     </div>
                     <div className="canvas-wrapper">
@@ -294,7 +293,7 @@ const MessageJourney = () => {
                             edges={edges}
                             fit={true}
                             height={'100%'}
-                            maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 150}
+                            maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 170}
                             node={
                                 <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                     {(event) => (

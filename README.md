@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-
+<h4>Simple as RabbitMQ, robust as Apache Kafka, and perfect for busy developers.</h4>
 <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
 
   
@@ -40,14 +40,9 @@
 **[Memphis](https://memphis.dev)** is a next-generation message broker.<br>
 A simple, robust, and durable cloud-native message broker wrapped with<br>
 an entire ecosystem that enables fast and reliable development of next-generation event-driven use cases.<br><br>
-Memphis enables building next-generation applications that require large volumes of streamed and enriched data,<br>
+Memphis enables building modern applications that require large volumes of streamed and enriched data,<br>
 modern protocols, zero ops, rapid development, extreme cost reduction,<br>
 and a significantly lower amount of dev time for data-oriented developers and data engineers.
-
-## 📸 Screenshots
-Dashboard             |  Station (Topic) overview|  CLI
-:-------------------------:|:-------------------------:|:-------------------------:
-<img width="300" alt="Dashboard" src="https://user-images.githubusercontent.com/70286779/182221769-3aa953cc-df71-4c0e-b0d2-9dd4ab83fea9.png">|<img width="300" alt="Station Overview" src="https://user-images.githubusercontent.com/70286779/182221788-0a159007-ab93-46aa-9c81-222671144a05.png">|<img src="https://user-images.githubusercontent.com/70286779/175806007-9a37e130-3e5a-4606-bdda-a71a89efae7f.png" alt="drawing" width="300"/>
 
 ## ⭐️ Why
 When your application requires a message broker or a queue for various reasons,<br>
@@ -67,7 +62,7 @@ Implementing one will require you to -
 And the list continues...
 <br>
 
-**Or, you can just use [Memphis](https://memphis.dev)** broker and focus your resources on tasks that matter**
+**Or, you can just use [Memphis](https://memphis.dev)** broker and focus your resources on tasks that matter
 
 
 ## 👉 Use-cases
@@ -84,14 +79,14 @@ And the list continues...
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**[v0.4.2](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.2-beta)**
+**[v0.4.3](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.3-beta)**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
 - 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
-- ⛓  SDKs: Node.JS, Go, Python, Typescript, NestJS
+- ⛓  SDKs: Node.JS, Go, Python, TypeScript, NestJS
 - 🐳☸ Runs on your Docker or Kubernetes
 - 👨‍💻 Community driven
 
@@ -120,11 +115,11 @@ docker compose -f docker-compose.yml -p memphis up
 
 ## High-Level Architecture
 
+<a href="https://docs.memphis.dev/memphis/memphis/architecture">
 <p align="center">
-<img alt="memphis.dev-logo" height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/201409779-f23aa9b7-8175-4165-9720-d0a217b49878.jpeg">
-
-
+<img height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/212160911-aeae5b55-c0cf-46bc-a1aa-fcfdb6d10a2a.png">
 </p>
+</a>
 
 ## Local access
 ### Via Kubernetes

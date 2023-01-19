@@ -141,7 +141,6 @@
                     }
                 }
                 .selected {
-                    padding-left: 5px;
                     background: #efeefd !important;
                 }
                 .empty-messages {
@@ -165,7 +164,7 @@
             .all .row-message div {
                 margin-left: 0px !important;
             }
-            .row-message:nth-child(even) {
+            .even .row-message {
                 background-color: #f8f8f8;
                 border-radius: 5px;
             }
@@ -213,6 +212,9 @@
                         margin: 0;
                     }
                 }
+                .noHover{
+                    display: block !important;
+                }
             }
             .memphis-gif{
                 display: flex;
@@ -233,6 +235,12 @@
                     color: rgba(74, 73, 92, 0.8);
                 }
             }
+        }
+        .check-box-message{
+            position: absolute;
+            z-index: 2;
+            padding-top: 6px;
+            padding-left: 15px;
         }
     }
     .empty-messages {

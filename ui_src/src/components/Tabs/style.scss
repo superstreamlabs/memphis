@@ -19,21 +19,31 @@
     }
     .tabs-name{
         display: flex;
-        .badge {
-            background-color: #f7685b;
-            color: #ffffff;
-            font-size: 12px;
+        align-items:center;
+        gap: 4px;
+        .error-icon{
+            background-color: rgba(217, 45, 32, 0.1);
+            border-radius: 63%;
+            width: 24px;
+            height: 24px;
+            position: relative;
+            display: flex;
             align-items: center;
-            border-radius: 50px;
-            margin: 0 5px;
-            padding: 0px 5px;
-            line-height: 12px;
-            display: flex;
-            min-width: 19px;
-            height: 19px;
-            display: flex;
             justify-content: center;
-
+            div{
+                width: 14px;
+                height: 14px;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(217, 45, 32, 0.8);
+                border-radius: 50%;
+                svg{
+                    width: 12px;
+                    color: white;
+                }
+            }
         }
     }
 

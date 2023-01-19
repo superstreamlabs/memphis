@@ -1,16 +1,14 @@
-// Credit for The NATS.IO Authors
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
@@ -123,7 +121,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponent, err
 			Component:   "memphis-broker",
 			DesiredPods: 1,
 			ActualPods:  1,
-			Ports:       []int{9000, 6666, 7770},
+			Ports:       []int{9000, 6666, 7770, 8222},
 		})
 	} else { // k8s env
 		if clientset == nil {
@@ -221,6 +219,366 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	c.IndentedJSON(200, response)
 }
 
+func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]interface{}, []map[string]interface{}, []map[string]interface{}) {
+	connectedProducers := make([]map[string]interface{}, 0)
+	connectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3d8",
+		"name":            "prod.20",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.999Z",
+		"station_name":    "idanasulin6",
+		"is_active":       true,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	connectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3d6",
+		"name":            "prod.19",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.99Z",
+		"station_name":    "idanasulin6",
+		"is_active":       true,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	connectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3d4",
+		"name":            "prod.18",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.982Z",
+		"station_name":    "idanasulin6",
+		"is_active":       true,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	connectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3d2",
+		"name":            "prod.17",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.969Z",
+		"station_name":    "idanasulin6",
+		"is_active":       true,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+
+	disconnectedProducers := make([]map[string]interface{}, 0)
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3d0",
+		"name":            "prod.16",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.959Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3ce",
+		"name":            "prod.15",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.951Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3cc",
+		"name":            "prod.14",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.941Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3ca",
+		"name":            "prod.13",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.93Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3c8",
+		"name":            "prod.12",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.92Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3c6",
+		"name":            "prod.11",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.911Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3c4",
+		"name":            "prod.10",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.902Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3c2",
+		"name":            "prod.9",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.892Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3c0",
+		"name":            "prod.8",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.882Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3be",
+		"name":            "prod.7",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.872Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+		"id":              "63b68df439e19dd69996f3bc",
+		"name":            "prod.6",
+		"type":            "application",
+		"connection_id":   "f95f24fbcf959dfb941e6ff3",
+		"created_by_user": "root",
+		"creation_date":   "2023-01-05T08:44:36.862Z",
+		"station_name":    "idanasulin6",
+		"is_active":       false,
+		"is_deleted":      false,
+		"client_address":  "127.0.0.1:61430",
+	})
+
+	connectedCgs := make([]map[string]interface{}, 0)
+	connectedCgs = append(connectedCgs, map[string]interface{}{
+		"name":                    "cg.20",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               true,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	connectedCgs = append(connectedCgs, map[string]interface{}{
+		"name":                    "cg.19",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               true,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	connectedCgs = append(connectedCgs, map[string]interface{}{
+		"name":                    "cg.18",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               true,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	connectedCgs = append(connectedCgs, map[string]interface{}{
+		"name":                    "cg.17",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               true,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	connectedCgs = append(connectedCgs, map[string]interface{}{
+		"name":                    "cg.16",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               true,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+
+	disconnectedCgs := make([]map[string]interface{}, 0)
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.15",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.14",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.13",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.12",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.11",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.10",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+	disconnectedCgs = append(disconnectedCgs, map[string]interface{}{
+		"name":                    "cg.9",
+		"unprocessed_messages":    0,
+		"poison_messages":         0,
+		"is_active":               false,
+		"is_deleted":              false,
+		"in_process_messages":     0,
+		"max_ack_time_ms":         30000,
+		"max_msg_deliveries":      10,
+		"connected_consumers":     []string{},
+		"disconnected_consumers":  []string{},
+		"deleted_consumers":       []string{},
+		"last_status_change_date": "2023-01-05T08:44:37.165Z",
+	})
+
+	return connectedProducers, disconnectedProducers, connectedCgs, disconnectedCgs
+}
+
 func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
 	producersHandler := ProducersHandler{S: mh.S}
@@ -254,16 +612,9 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers, err := producersHandler.GetProducersByStation(station)
-	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
-	// Only native stations have CGs
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
 	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
+		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -298,11 +649,23 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailedMessages, totalDlsAmount, poisonCgMap, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+
+	// Only native stations have CGs
+	if station.IsNative {
+		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station, poisonCgMap)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	tags, err := tagsHandler.GetTagsByStation(station.ID)
@@ -321,7 +684,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	var emptySchemaDetailsObj models.SchemaDetails
 	var response gin.H
 
-	//Check when the schema object in station is not empty
+	// Check when the schema object in station is not empty, not optional for non native stations
 	if station.Schema != emptySchemaDetailsObj {
 		var schema models.Schema
 		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
@@ -361,29 +724,53 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"dls_configuration":        station.DlsConfiguration,
 			"total_dls_messages":       totalDlsAmount,
 		}
-
 	} else {
 		var emptyResponse struct{}
-		response = gin.H{
-			"connected_producers":      connectedProducers,
-			"disconnected_producers":   disconnectedProducers,
-			"deleted_producers":        deletedProducers,
-			"connected_cgs":            connectedCgs,
-			"disconnected_cgs":         disconnectedCgs,
-			"deleted_cgs":              deletedCgs,
-			"total_messages":           totalMessages,
-			"average_message_size":     avgMsgSize,
-			"audit_logs":               auditLogs,
-			"messages":                 messages,
-			"poison_messages":          poisonMessages,
-			"schema_failed_messages":   schemaFailedMessages,
-			"tags":                     tags,
-			"leader":                   leader,
-			"followers":                followers,
-			"schema":                   emptyResponse,
-			"idempotency_window_in_ms": station.IdempotencyWindow,
-			"dls_configuration":        station.DlsConfiguration,
-			"total_dls_messages":       totalDlsAmount,
+		if !station.IsNative {
+			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
+			response = gin.H{
+				"connected_producers":      cp,
+				"disconnected_producers":   dp,
+				"deleted_producers":        deletedProducers,
+				"connected_cgs":            cc,
+				"disconnected_cgs":         dc,
+				"deleted_cgs":              deletedCgs,
+				"total_messages":           totalMessages,
+				"average_message_size":     avgMsgSize,
+				"audit_logs":               auditLogs,
+				"messages":                 messages,
+				"poison_messages":          poisonMessages,
+				"schema_failed_messages":   schemaFailedMessages,
+				"tags":                     tags,
+				"leader":                   leader,
+				"followers":                followers,
+				"schema":                   emptyResponse,
+				"idempotency_window_in_ms": station.IdempotencyWindow,
+				"dls_configuration":        station.DlsConfiguration,
+				"total_dls_messages":       totalDlsAmount,
+			}
+		} else {
+			response = gin.H{
+				"connected_producers":      connectedProducers,
+				"disconnected_producers":   disconnectedProducers,
+				"deleted_producers":        deletedProducers,
+				"connected_cgs":            connectedCgs,
+				"disconnected_cgs":         disconnectedCgs,
+				"deleted_cgs":              deletedCgs,
+				"total_messages":           totalMessages,
+				"average_message_size":     avgMsgSize,
+				"audit_logs":               auditLogs,
+				"messages":                 messages,
+				"poison_messages":          poisonMessages,
+				"schema_failed_messages":   schemaFailedMessages,
+				"tags":                     tags,
+				"leader":                   leader,
+				"followers":                followers,
+				"schema":                   emptyResponse,
+				"idempotency_window_in_ms": station.IdempotencyWindow,
+				"dls_configuration":        station.DlsConfiguration,
+				"total_dls_messages":       totalDlsAmount,
+			}
 		}
 	}
 

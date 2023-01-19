@@ -1,15 +1,14 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
 
@@ -76,9 +75,7 @@ function OverView() {
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [showInstallaion, setShowInstallaion] = useState(false);
-
     const [isDataLoaded, setIsDataLoaded] = useState(false);
-    const [allStations, setAllStations] = useState([]);
     const [showWelcome, setShowWelcome] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
@@ -104,17 +101,7 @@ function OverView() {
         }
     };
 
-    const getAllStations = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
-            setAllStations(res);
-        } catch (err) {
-            return;
-        }
-    };
-
     useEffect(() => {
-        getAllStations();
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
         setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
@@ -131,7 +118,6 @@ function OverView() {
         const sc = StringCodec();
         const jc = JSONCodec();
         let sub;
-
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
@@ -153,7 +139,6 @@ function OverView() {
                 })();
             }
         }, 1000);
-
         return () => {
             sub?.unsubscribe();
         };
@@ -163,7 +148,6 @@ function OverView() {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
 
-    const userStations = allStations?.filter((station) => station.created_by_user === username.toLowerCase());
     return (
         <div className="overview-container">
             {isLoading && (
@@ -171,7 +155,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-            {!isLoading && (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' || userStations?.length > 0) && (
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -208,6 +192,7 @@ function OverView() {
                                     border="purple"
                                     fontSize="12px"
                                     fontWeight="600"
+                                    boxShadowStyle="float"
                                     aria-haspopup="true"
                                     onClick={() => setShowInstallaion(true)}
                                 />
@@ -223,6 +208,7 @@ function OverView() {
                                 fontSize="12px"
                                 fontWeight="600"
                                 aria-haspopup="true"
+                                boxShadowStyle="float"
                                 onClick={() => modalFlip(true)}
                             />
                         </div>
@@ -239,9 +225,7 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && userStations?.length === 0 && (
-                <GetStarted username={username} dataSentence={dataSentence} />
-            )}
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && <GetStarted username={username} dataSentence={dataSentence} />}
             <Modal
                 header={
                     <div className="modal-header">
@@ -252,9 +236,9 @@ function OverView() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="70vh"
+                height="65vh"
                 width="1020px"
-                rBtnText="Add"
+                rBtnText="Create"
                 lBtnText="Cancel"
                 lBtnClick={() => {
                     modalFlip(false);

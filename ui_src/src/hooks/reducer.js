@@ -1,19 +1,18 @@
-// Copyright 2021-2022 The Memphis Authors
-// Licensed under the Apache License, Version 2.0 (the “License”);
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an “AS IS” BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.package server
+// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 const Reducer = (state, action) => {
     let index;
-    let updateDomainState = state?.domainList;
+    let updateSchemaListState = state?.schemaList;
     let copyIntegration = state?.integrationsList;
     switch (action.type) {
         case 'SET_USER_DATA':
@@ -68,15 +67,25 @@ const Reducer = (state, action) => {
                 ...state,
                 skipSignup: action.payload
             };
-        case 'SET_DOMAIN_LIST':
+        case 'SET_STATION_LIST':
             return {
                 ...state,
-                domainList: action.payload
+                stationList: action.payload
             };
-        case 'SET_FILTERED_LIST':
+        case 'SET_STATION_FILTERED_LIST':
             return {
                 ...state,
-                filteredList: action.payload
+                stationFilteredList: action.payload
+            };
+        case 'SET_SCHEMA_LIST':
+            return {
+                ...state,
+                schemaList: action.payload
+            };
+        case 'SET_SCHEMA_FILTERED_LIST':
+            return {
+                ...state,
+                schemaFilteredList: action.payload
             };
         case 'SET_FILTERED_OPTION':
             return {
@@ -84,25 +93,25 @@ const Reducer = (state, action) => {
                 FilterOption: action.payload
             };
         case 'SET_SCHEMA_TAGS':
-            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateDomainState[index].tags = action.payload.tags;
+            index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateSchemaListState[index].tags = action.payload.tags;
             return {
                 ...state,
-                domainList: updateDomainState
+                schemaList: updateSchemaListState
             };
         case 'SET_IS_USED':
-            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateDomainState[index].used = true;
+            index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateSchemaListState[index].used = true;
             return {
                 ...state,
-                domainList: updateDomainState
+                schemaList: updateSchemaListState
             };
         case 'SET_UPDATE_SCHEMA':
-            index = state?.domainList?.findIndex((schema) => schema.name === action.payload?.schemaName);
-            updateDomainState[index] = action.payload.schemaDetails;
+            index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
+            updateSchemaListState[index] = action.payload.schemaDetails;
             return {
                 ...state,
-                domainList: updateDomainState
+                schemaList: updateSchemaListState
             };
         case 'SET_INTEGRATIONS':
             return {
