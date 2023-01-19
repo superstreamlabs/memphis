@@ -15,124 +15,13 @@ import './style.scss';
 import React, { useState, useContext } from 'react';
 import { Form } from 'antd';
 
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, REGIONS_OPTIONS } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
 import SelectComponent from '../../../../../components/select';
-
-import { URL } from '../../../../../config';
-
-const urlSplit = URL.split('/', 3);
-
-const regionOptions = [
-    {
-        name: 'US East (Ohio) [us-east-2]',
-        value: 'us-east-2'
-    },
-    {
-        name: 'US East (N. Virginia) [us-east-1]',
-        value: 'us-east-1'
-    },
-    {
-        name: 'US West (N. California) [us-west-1]',
-        value: 'us-west-1'
-    },
-    {
-        name: 'US West (Oregon) [us-west-2]',
-        value: 'us-west-2'
-    },
-    {
-        name: 'Africa (Cape Town) [af-south-1]',
-        value: 'af-south-1'
-    },
-    {
-        name: 'Asia Pacific (Hong Kong) [ap-east-1]',
-        value: 'ap-east-1'
-    },
-    {
-        name: 'Asia Pacific (Hyderabad) [ap-south-2]',
-        value: 'ap-south-2'
-    },
-    {
-        name: 'Asia Pacific (Jakarta) [ap-southeast-3]',
-        value: 'ap-southeast-3'
-    },
-    {
-        name: 'Asia Pacific (Mumbai) [ap-south-1]',
-        value: 'ap-south-1'
-    },
-    {
-        name: 'Asia Pacific (Osaka) [ap-northeast-3]',
-        value: 'ap-northeast-3'
-    },
-    {
-        name: 'Asia Pacific (Seoul) [ap-northeast-2]',
-        value: 'ap-northeast-2'
-    },
-    {
-        name: 'Asia Pacific (Singapore) [ap-southeast-1]',
-        value: 'ap-southeast-1'
-    },
-    {
-        name: 'Asia Pacific (Sydney) [ap-southeast-2]',
-        value: 'ap-southeast-2'
-    },
-    {
-        name: 'Asia Pacific (Tokyo) [ap-northeast-1]',
-        value: 'ap-northeast-1'
-    },
-    {
-        name: 'Canada (Central) [ca-central-1]',
-        value: 'ca-central-1'
-    },
-    {
-        name: 'Europe (Frankfurt) [eu-central-1]',
-        value: 'eu-central-1'
-    },
-    {
-        name: 'Europe (Ireland) [eu-west-1]',
-        value: 'eu-west-1'
-    },
-    {
-        name: 'Europe (London) [eu-west-2]',
-        value: 'eu-west-2'
-    },
-    {
-        name: 'Europe (Milan) [eu-south-1]',
-        value: 'eu-south-1'
-    },
-    {
-        name: 'Europe (Paris) [eu-west-3]',
-        value: 'eu-west-3'
-    },
-    {
-        name: 'Europe (Spain) [eu-south-2]',
-        value: 'eu-south-2'
-    },
-    {
-        name: 'Europe (Stockholm) [eu-north-1]',
-        value: 'eu-north-1'
-    },
-    {
-        name: 'Europe (Zurich) [eu-central-2]',
-        value: 'eu-central-2'
-    },
-    {
-        name: 'Middle East (Bahrain) [me-south-1]',
-        value: 'me-south-1'
-    },
-    {
-        name: 'Middle East (UAE) [me-central-1]',
-        value: 'me-central-1'
-    },
-    {
-        name: 'South America (São Paulo) [sa-east-1]',
-        value: 'sa-east-1'
-    }
-];
 
 const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
@@ -141,13 +30,12 @@ const S3Integration = ({ close, value }) => {
     const [state, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
         name: 's3',
-        ui_url: `${urlSplit[0]}//${urlSplit[2]}`,
         keys: {
-            secret_access_key: value?.keys?.secret_access_key || '',
-            access_key_id: value?.keys?.access_key_id || ''
-        },
-        region: value?.keys?.region || regionOptions[0].value,
-        bucket_name: value?.keys?.bucket_name || ''
+            secret_key: value?.keys?.secret_key || '',
+            access_key: value?.keys?.access_key || '',
+            region: value?.keys?.region || REGIONS_OPTIONS[0].value,
+            bucket_name: value?.keys?.bucket_name || ''
+        }
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
@@ -157,11 +45,6 @@ const S3Integration = ({ close, value }) => {
         updatedValue[field] = value;
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
     };
-    const updateState = (field, value) => {
-        let updatedValue = { ...formFields };
-        updatedValue[field] = value;
-        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
-    };
 
     const handleSubmit = async () => {
         const values = await creationForm.validateFields();
@@ -170,10 +53,10 @@ const S3Integration = ({ close, value }) => {
         } else {
             setLoadingSubmit(true);
             if (isValue) {
-                if (values.secret_access_key === 'xoxb-****') {
-                    updateIntegration(false);
-                } else {
+                if (creationForm.isFieldTouched('secret_key')) {
                     updateIntegration();
+                } else {
+                    updateIntegration(false);
                 }
             } else {
                 createIntegration();
@@ -185,7 +68,7 @@ const S3Integration = ({ close, value }) => {
         let newFormFields = { ...formFields };
         if (!withToken) {
             let updatedKeys = { ...formFields.keys };
-            updatedKeys['secret_access_key'] = '';
+            updatedKeys['secret_key'] = '';
             newFormFields = { ...newFormFields, keys: updatedKeys };
         }
         try {
@@ -276,14 +159,14 @@ const S3Integration = ({ close, value }) => {
                             <b>Memphis encrypts all stored information using Triple DES algorithm</b>
                         </span>
                         <Form.Item
-                            name="secret_access_key"
+                            name="secret_key"
                             rules={[
                                 {
                                     required: true,
                                     message: 'Please insert auth token.'
                                 }
                             ]}
-                            initialValue={formFields?.keys?.secret_access_key}
+                            initialValue={formFields?.keys?.secret_key}
                         >
                             <Input
                                 placeholder="***************3FUIjt"
@@ -294,23 +177,23 @@ const S3Integration = ({ close, value }) => {
                                 borderColorType="none"
                                 height="40px"
                                 fontSize="12px"
-                                onBlur={(e) => updateKeysState('secret_access_key', e.target.value)}
-                                onChange={(e) => updateKeysState('secret_access_key', e.target.value)}
-                                value={formFields?.keys?.secret_access_key}
+                                onBlur={(e) => updateKeysState('secret_key', e.target.value)}
+                                onChange={(e) => updateKeysState('secret_key', e.target.value)}
+                                value={formFields?.keys?.secret_key}
                             />
                         </Form.Item>
                     </div>
                     <div className="input-field">
                         <p>Access Key ID</p>
                         <Form.Item
-                            name="access_key_id"
+                            name="access_key"
                             rules={[
                                 {
                                     required: true,
                                     message: 'Please insert access key id'
                                 }
                             ]}
-                            initialValue={formFields?.keys?.access_key_id}
+                            initialValue={formFields?.keys?.access_key}
                         >
                             <Input
                                 placeholder="AKIOOJB9EKLP69O4RTHR"
@@ -321,15 +204,15 @@ const S3Integration = ({ close, value }) => {
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 height="40px"
-                                onBlur={(e) => updateKeysState('access_key_id', e.target.value)}
-                                onChange={(e) => updateKeysState('access_key_id', e.target.value)}
-                                value={formFields.keys?.access_key_id}
+                                onBlur={(e) => updateKeysState('access_key', e.target.value)}
+                                onChange={(e) => updateKeysState('access_key', e.target.value)}
+                                value={formFields.keys?.access_key}
                             />
                         </Form.Item>
                     </div>
                     <div className="select-field">
                         <p>Region</p>
-                        <Form.Item name="region" initialValue={formFields?.keys?.region || regionOptions[0].name}>
+                        <Form.Item name="region" initialValue={formFields?.keys?.region || REGIONS_OPTIONS[0].name}>
                             <SelectComponent
                                 colorType="black"
                                 backgroundColorType="none"
@@ -337,9 +220,9 @@ const S3Integration = ({ close, value }) => {
                                 radiusType="semi-round"
                                 height="40px"
                                 popupClassName="select-options"
-                                options={regionOptions}
-                                value={formFields?.keys?.region || regionOptions[0].name}
-                                onChange={(e) => updateState('region', e)}
+                                options={REGIONS_OPTIONS}
+                                value={formFields?.keys?.region || REGIONS_OPTIONS[0].name}
+                                onChange={(e) => updateKeysState('region', e)}
                             />
                         </Form.Item>
                     </div>
@@ -364,8 +247,8 @@ const S3Integration = ({ close, value }) => {
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 height="40px"
-                                onBlur={(e) => updateState('bucket_name', e.target.value)}
-                                onChange={(e) => updateState('bucket_name', e.target.value)}
+                                onBlur={(e) => updateKeysState('bucket_name', e.target.value)}
+                                onChange={(e) => updateKeysState('bucket_name', e.target.value)}
                                 value={formFields.keys?.bucket_name}
                             />
                         </Form.Item>
