@@ -31,10 +31,8 @@ const SelectComponent = ({
     popupClassName,
     boxShadowsType,
     radiusType,
-    size,
     dropdownStyle,
     height,
-    customOptions,
     disabled,
     iconColor,
     fontSize,
@@ -72,19 +70,16 @@ const SelectComponent = ({
             <Select
                 {...fieldProps}
                 className="select"
-                size={size}
                 popupClassName={popupClassName}
                 value={value}
                 suffixIcon={<ArrowDropDownRounded style={{ color: dropIconColor }} />}
                 dropdownStyle={dropdownStyle}
             >
-                {customOptions && options}
-                {!customOptions &&
-                    options.map((option) => (
-                        <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
-                            {option?.name || option}
-                        </Option>
-                    ))}
+                {options.map((option) => (
+                    <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
+                        {option?.name || option}
+                    </Option>
+                ))}
             </Select>
         </div>
     );

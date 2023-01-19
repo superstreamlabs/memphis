@@ -20,6 +20,7 @@ import { Context } from '../../../../../hooks/store';
 import Modal from '../../../../../components/modal';
 import SlackIntegration from '../slackIntegration';
 import S3Integration from '../s3Integration';
+import Tag from '../../../../../components/tag';
 
 const IntegrationItem = ({ value }) => {
     const [state, dispatch] = useContext(Context);
@@ -52,7 +53,7 @@ const IntegrationItem = ({ value }) => {
                         value={ref.current}
                     />
                 );
-            case 'S3':
+            case 'Amazon S3':
                 return (
                     <S3Integration
                         close={(data) => {
@@ -84,6 +85,9 @@ const IntegrationItem = ({ value }) => {
                     </div>
                 </div>
                 <p className="integration-description">{value.description} </p>
+                <div className="category">
+                    <Tag tag={value.category} border={true} />
+                </div>
             </integ-item>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 {modalContent()}

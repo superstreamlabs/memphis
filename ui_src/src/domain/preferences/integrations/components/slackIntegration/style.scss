@@ -1,4 +1,4 @@
-slack-integration{
+dynamic-integration{
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -51,7 +51,7 @@ slack-integration{
                     }
                 }
             }
-            .channel-id{
+            .input-field{
                 margin: 10px 0px;
                 font-size: 13px;
                 p{
@@ -65,6 +65,9 @@ slack-integration{
                 .input-component-container{
                     margin-top: 10px;
                 }
+            }
+            .select-field{
+                
             }
             .notification-option{
                 p{

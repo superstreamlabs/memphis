@@ -13,16 +13,39 @@ import slackBannerPopup from '../assets/images/slackBannerPopup.svg';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.svg';
 import influxDBBanner from '../assets/images/influxDBBanner.svg';
 import newrelicBanner from '../assets/images/newrelicBanner.svg';
+import s3BannerPopup from '../assets/images/s3BannerPopup.svg';
 import datadogBanner from '../assets/images/datadogBanner.svg';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.svg';
 import datadogIcon from '../assets/images/datadogIcon.svg';
-import slackIogo from '../assets/images/slackIogo.svg';
+import slackLogo from '../assets/images/slackLogo.svg';
+import s3Banner from '../assets/images/s3Banner.svg';
+import s3Logo from '../assets/images/s3Logo.svg';
 
 import { FiberManualRecord } from '@material-ui/icons';
 import { diffDate } from '../services/valueConvertor';
+import { ColorPalette } from './globalConst';
+
+export const CATEGORY_LIST = {
+    All: {
+        name: 'All',
+        color: ColorPalette[13]
+    },
+    Notifications: {
+        name: 'Notifications',
+        color: ColorPalette[0]
+    },
+    Storage: {
+        name: 'Storage',
+        color: ColorPalette[4]
+    },
+    Monitoring: {
+        name: 'Monitoring',
+        color: ColorPalette[8]
+    }
+};
 
 export const INTEGRATION_LIST = [
     {
@@ -30,12 +53,13 @@ export const INTEGRATION_LIST = [
         by: 'memphis',
         banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
         insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
-        icon: <img src={slackIogo} alt="slackIogo" />,
+        icon: <img src={slackLogo} alt="slackLogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Notifications'],
         header: (
             <div className="header-left-side">
-                <img src={slackIogo} alt="slackIogo" />
+                <img src={slackLogo} alt="slackLogo" />
                 <div className="details">
                     <p>Slack</p>
                     <>
@@ -56,18 +80,19 @@ export const INTEGRATION_LIST = [
         )
     },
     {
-        name: 'S3',
+        name: 'Amazon S3',
         by: 'memphis',
-        banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
-        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
-        icon: <img src={slackIogo} alt="slackIogo" />,
-        description: 'S3 alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
+        banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
+        insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
+        icon: <img src={s3Logo} alt="s3Logo" />,
+        description: 'Amazon S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
         date: 'Jan 1, 2023',
+        category: CATEGORY_LIST['Storage'],
         header: (
             <div className="header-left-side">
-                <img src={slackIogo} alt="slackIogo" />
+                <img src={s3Logo} alt="s3Logo" />
                 <div className="details">
-                    <p>S3</p>
+                    <p>Amazon S3</p>
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
@@ -79,9 +104,7 @@ export const INTEGRATION_LIST = [
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">
-                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability
-                </span>
+                <span className="content">Amazon S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
             </div>
         )
     },
@@ -93,6 +116,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={pagerDutyIcon} alt="pagerDutyIcon" />,
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
         header: (
             <div className="header-left-side">
@@ -124,6 +148,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={newrelicIcon} alt="newrelicIcon" />,
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
             <div className="header-left-side">
@@ -155,6 +180,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={datadogIcon} alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
             <div className="header-left-side">
@@ -186,6 +212,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={influxDBIcon} alt="influxDBIcon" />,
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
             <div className="header-left-side">

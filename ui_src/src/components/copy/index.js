@@ -20,14 +20,14 @@ const Copy = ({ data, key }) => {
 
     const handleCopyWithKey = (key, data) => {
         setCopied(key);
-        navigator.clipboard.writeText(data);
+        data && navigator.clipboard.writeText(data);
         setTimeout(() => {
             setCopied(null);
         }, 3000);
     };
     const handleCopy = (data) => {
         setCopied(true);
-        navigator.clipboard.writeText(data);
+        data && navigator.clipboard.writeText(data);
         setTimeout(() => {
             setCopied(false);
         }, 3000);
