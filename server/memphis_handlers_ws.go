@@ -206,12 +206,16 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
-
+	k8sEnv := true
+	if configuration.DOCKER_ENV != "" {
+		k8sEnv = false
+	}
 	return models.MainOverviewData{
 		TotalStations:    len(stations),
 		TotalMessages:    totalMessages,
 		SystemComponents: systemComponents,
 		Stations:         stations,
+		K8sEnv:           k8sEnv,
 	}, nil
 }
 

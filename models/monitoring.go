@@ -20,11 +20,36 @@ type SystemComponent struct {
 	Ports       []int  `json:"ports"`
 }
 
+type SysComponent struct {
+	Name      string    `json:"name"`
+	CPU       CompStats `json:"cpu"`
+	Memory    CompStats `json:"memory"`
+	Storage   CompStats `json:"storage"`
+	Connected bool      `json:"connected"`
+}
+
+type CompStats struct {
+	Max        float64 `json:"max"`
+	Current    float64 `json:"current"`
+	Percentage float64 `json:"percentage"`
+}
+
+type SystemComponents struct {
+	Name        string         `json:"name"`
+	Components  []SysComponent `json:"components"`
+	Status      string         `json:"status"`
+	Ports       []int          `json:"ports"`
+	DesiredPods int            `json:"desired_pods"`
+	ActualPods  int            `json:"actual_pods"`
+	Address     string         `json:"address"`
+}
+
 type MainOverviewData struct {
-	TotalStations    int               `json:"total_stations"`
-	TotalMessages    int               `json:"total_messages"`
-	SystemComponents []SystemComponent `json:"system_components"`
-	Stations         []ExtendedStation `json:"stations"`
+	TotalStations    int                `json:"total_stations"`
+	TotalMessages    int                `json:"total_messages"`
+	SystemComponents []SystemComponents `json:"system_components"`
+	Stations         []ExtendedStation  `json:"stations"`
+	K8sEnv           bool               `json:"k8s_env"`
 }
 
 type GetStationOverviewDataSchema struct {
@@ -46,4 +71,9 @@ type Log struct {
 
 type SystemLogsResponse struct {
 	Logs []Log `json:"logs"`
+}
+
+type DevSystemInfoResponse struct {
+	CPU    float64 `json:"cpu"`
+	Memory float64 `json:"memory"`
 }
