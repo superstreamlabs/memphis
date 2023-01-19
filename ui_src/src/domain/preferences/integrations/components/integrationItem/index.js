@@ -86,7 +86,7 @@ const IntegrationItem = ({ value }) => {
                 </div>
                 <p className="integration-description">{value.description} </p>
                 <div className="category">
-                    <Tag tag={value.category} border={true} />
+                    <Tag tag={value.category} />
                 </div>
             </integ-item>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>

@@ -55,7 +55,11 @@ integ-item{
         overflow: scroll;
     }
     .category{
-        margin: 0px 15px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        height: 33px;
+        padding: 0 15px;
+        display: flex;
+        align-items: center;
     }
 }
 
