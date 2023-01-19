@@ -496,7 +496,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			// pvc, _ := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE).Get(context.TODO(), volume.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
 			// pvc.
 			// }
-			pvcClient := clientset.CoreV1().PersistentVolumes()
+			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
 			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				serv.Errorf("pvcList: " + err.Error())
@@ -508,7 +508,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			for _, pvc := range pvcList.Items {
 				size := pvc.Size()
 				// size := pvc.Spec.Resources.Requests[v1.ResourceStorage]
-				usage := pvc.Spec.Capacity[v1.ResourceStorage]
+				usage := pvc.Status.Capacity[v1.ResourceStorage]
 				serv.Noticef("PVC: " + pvc.Name + ", " + usage.String() + " usage, " + strconv.Itoa(size) + " size")
 			}
 
