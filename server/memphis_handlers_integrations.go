@@ -18,9 +18,6 @@ import (
 	"strings"
 
 	"memphis-broker/analytics"
-	"memphis-broker/db"
-	"memphis-broker/integrations/notifications"
-	"memphis-broker/integrations/storage"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 
@@ -172,21 +169,21 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Must provide UI url for slack integration"})
 		}
 
-		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
+		pmAlert, ok = body.Properties[PoisonMAlert]
 		if !ok {
 			pmAlert = false
 		}
-		svfAlert, ok = body.Properties[notifications.SchemaVAlert]
+		svfAlert, ok = body.Properties[SchemaVAlert]
 		if !ok {
 			svfAlert = false
 		}
-		disconnectAlert, ok = body.Properties[notifications.DisconEAlert]
+		disconnectAlert, ok = body.Properties[DisconEAlert]
 		if !ok {
 			disconnectAlert = false
 		}
 
-		keys, properties := createIntegrationsKeysAndProperties(integrationType, authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
-		slackIntegration, err := createSlackIntegration(keys, properties, body.UIUrl)
+		keys, properties := CreateIntegrationsKeysAndProperties(integrationType, authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
+		slackIntegration, err := CreateSlackIntegration(keys, properties, body.UIUrl)
 		if err != nil {
 			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
 				serv.Warnf("CreateSlackIntegration: " + err.Error())
@@ -208,7 +205,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			serv.Warnf("CreateIntegration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		}
-		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
+		keys, properties := CreateIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 		awsIntegration, err := createAwsIntegration(keys, properties)
 
 		if err != nil {
@@ -266,15 +263,15 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
 		}
-		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
+		pmAlert, ok = body.Properties[PoisonMAlert]
 		if !ok {
 			pmAlert = false
 		}
-		svfAlert, ok = body.Properties[notifications.SchemaVAlert]
+		svfAlert, ok = body.Properties[SchemaVAlert]
 		if !ok {
 			svfAlert = false
 		}
-		disconnectAlert, ok = body.Properties[notifications.DisconEAlert]
+		disconnectAlert, ok = body.Properties[DisconEAlert]
 		if !ok {
 			disconnectAlert = false
 		}
@@ -297,7 +294,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		}
 	case "s3":
 		integrationType := strings.ToLower(body.Name)
-		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
+		keys, properties := CreateIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
 		awsIntegration, err := updateAwsIntegration(keys, properties)
 		if err != nil {
 			serv.Errorf("updateAwsIntegration: " + err.Error())
@@ -357,7 +354,7 @@ func createAwsIntegration(keys map[string]string, properties map[string]bool) (m
 
 }
 
-func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
+func CreateSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	filter := bson.M{"name": "slack"}
 	err := integrationsCollection.FindOne(context.TODO(),
@@ -394,7 +391,7 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		}
 		update := models.ConfigurationsUpdate{
 			Type:   sendNotificationType,
-			Update: properties[notifications.SchemaVAlert],
+			Update: properties[SchemaVAlert],
 		}
 		serv.SendUpdateToClients(update)
 
@@ -459,7 +456,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	if err != nil {
 		return slackIntegration, err
 	}
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
+	keys, properties := CreateIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
 	filter := bson.M{"name": "slack"}
 	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
@@ -525,16 +522,16 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 	return nil
 }
 
-func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region string) (map[string]string, map[string]bool) {
+func CreateIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region string) (map[string]string, map[string]bool) {
 	keys := make(map[string]string)
 	properties := make(map[string]bool)
 	switch integrationType {
 	case "slack":
 		keys["auth_token"] = authToken
 		keys["channel_id"] = channelID
-		properties[notifications.PoisonMAlert] = pmAlert
-		properties[notifications.SchemaVAlert] = svfAlert
-		properties[notifications.DisconEAlert] = disconnectAlert
+		properties[PoisonMAlert] = pmAlert
+		properties[SchemaVAlert] = svfAlert
+		properties[DisconEAlert] = disconnectAlert
 	case "s3":
 		keys["access_key"] = accessKey
 		keys["secret_key"] = secretKey
@@ -654,28 +651,6 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-disconnect-integration-"+integrationType)
 	}
 	c.IndentedJSON(200, gin.H{})
-}
-
-func InitializeIntegrations(c *mongo.Client) error {
-	notifications.IntegrationsCollection = db.GetCollection("integrations", c)
-	notifications.NotificationIntegrationsMap = make(map[string]interface{})
-	notifications.NotificationFunctionsMap = make(map[string]interface{})
-	notifications.NotificationFunctionsMap["slack"] = notifications.SendMessageToSlackChannel
-	err := notifications.InitializeSlackConnection(c)
-	if err != nil {
-		return err
-	}
-	err = storage.InitializeS3Connection(c)
-	if err != nil {
-		return err
-	}
-
-	keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
-
-	if configuration.SANDBOX_ENV == "true" {
-		createSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
-	}
-	return nil
 }
 
 func (it IntegrationsHandler) RequestIntegration(c *gin.Context) {

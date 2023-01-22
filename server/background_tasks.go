@@ -16,8 +16,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis-broker/integrations/notifications"
-	"memphis-broker/integrations/storage"
 	"memphis-broker/models"
 
 	"strconv"
@@ -80,9 +78,9 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
 					bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
 				UI_url = integrationUpdate.UIUrl
-				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
+				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
-				storage.CacheS3Details(integrationUpdate.Keys, integrationUpdate.Properties)
+				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
 				return
 			}
@@ -130,7 +128,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if notification.Code != "" {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = notifications.SendNotification(notification.Title, notificationMsg, notification.Type)
+			err = SendNotification(notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				return
 			}

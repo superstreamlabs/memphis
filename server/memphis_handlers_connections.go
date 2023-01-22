@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"memphis-broker/analytics"
-	"memphis-broker/integrations/notifications"
 	"memphis-broker/models"
 
 	"context"
@@ -42,7 +41,7 @@ const (
 func updateNewClientWithConfig(c *client, connId string) {
 	// TODO more configurations logic here
 
-	slackEnabled, err := notifications.IsSlackEnabled()
+	slackEnabled, err := IsSlackEnabled()
 	if err != nil {
 		c.Errorf("updateNewClientWithConfig: " + err.Error())
 	}
@@ -294,7 +293,7 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if len(consumerNames) > 0 {
 		msg = msg + consumerNames
 	}
-	err = notifications.SendNotification("Disconnection events", msg, notifications.DisconEAlert)
+	err = SendNotification("Disconnection events", msg, DisconEAlert)
 	if err != nil {
 		return err
 	}
