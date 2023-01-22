@@ -22,7 +22,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var NotificationIntegrationsCache map[string]interface{}
+var IntegrationsCache map[string]interface{}
 var NotificationFunctionsMap map[string]interface{}
 var IntegrationsCollection *mongo.Collection
 
@@ -32,7 +32,7 @@ const DisconEAlert = "disconnection_events_alert"
 
 func InitializeIntegrations(c *mongo.Client) error {
 	IntegrationsCollection = db.GetCollection("integrations", c)
-	NotificationIntegrationsCache = make(map[string]interface{})
+	IntegrationsCache = make(map[string]interface{})
 	NotificationFunctionsMap = make(map[string]interface{})
 	NotificationFunctionsMap["slack"] = SendMessageToSlackChannel
 
@@ -68,7 +68,7 @@ func InitializeConnection(c *mongo.Client, integrationsType string) error {
 }
 
 func clearCache(integrationsType string) {
-	delete(NotificationIntegrationsCache, integrationsType)
+	delete(IntegrationsCache, integrationsType)
 }
 
 func CacheDetails(integrationType string, keys map[string]string, properties map[string]bool) {
@@ -78,7 +78,7 @@ func CacheDetails(integrationType string, keys map[string]string, properties map
 		var poisonMessageAlert, schemaValidationFailAlert, disconnectionEventsAlert bool
 		var slackIntegration models.SlackIntegration
 
-		slackIntegration, ok := NotificationIntegrationsCache["slack"].(models.SlackIntegration)
+		slackIntegration, ok := IntegrationsCache["slack"].(models.SlackIntegration)
 		if !ok {
 			slackIntegration = models.SlackIntegration{}
 			slackIntegration.Keys = make(map[string]string)
@@ -127,9 +127,9 @@ func CacheDetails(integrationType string, keys map[string]string, properties map
 		slackIntegration.Properties[SchemaVAlert] = schemaValidationFailAlert
 		slackIntegration.Properties[DisconEAlert] = disconnectionEventsAlert
 		slackIntegration.Name = "slack"
-		NotificationIntegrationsCache["slack"] = slackIntegration
+		IntegrationsCache["slack"] = slackIntegration
 	case "s3":
-		s3Integration, ok := NotificationIntegrationsCache["s3"].(models.S3Integration)
+		s3Integration, ok := IntegrationsCache["s3"].(models.S3Integration)
 		if !ok {
 			s3Integration = models.S3Integration{}
 			s3Integration.Keys = make(map[string]string)
@@ -145,7 +145,7 @@ func CacheDetails(integrationType string, keys map[string]string, properties map
 		s3Integration.Keys["bucket_name"] = keys["bucket_name"]
 		s3Integration.Keys["region"] = keys["region"]
 		s3Integration.Name = "s3"
-		NotificationIntegrationsCache["s3"] = s3Integration
+		IntegrationsCache["s3"] = s3Integration
 
 	}
 
