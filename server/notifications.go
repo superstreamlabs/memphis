@@ -20,7 +20,7 @@ func SendNotification(title string, message string, msgType string) error {
 	for k, f := range NotificationFunctionsMap {
 		switch k {
 		case "slack":
-			slackIntegration, ok := NotificationIntegrationsMap["slack"].(models.SlackIntegration)
+			slackIntegration, ok := NotificationIntegrationsCache["slack"].(models.SlackIntegration)
 			if ok {
 				if slackIntegration.Properties[msgType] {
 					err := f.(func(models.SlackIntegration, string, string) error)(slackIntegration, title, message)

@@ -43,7 +43,7 @@ type MyProvider struct {
 	SecretAccessKey string `json:"secret_acess_key_id"`
 }
 
-func (it IntegrationsHandler) CreateAwsIntegrtation(keys map[string]string) (map[string]string, error) {
+func (it IntegrationsHandler) CreateS3Integrtation(keys map[string]string) (map[string]string, error) {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
@@ -200,20 +200,20 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			integration.Keys["auth_token"] = "xoxb-****"
 		}
 	case "s3":
-		keys, err := it.CreateAwsIntegrtation(body.Keys)
+		keys, err := it.CreateS3Integrtation(body.Keys)
 		if err != nil {
 			serv.Warnf("CreateIntegration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		}
 		keys, properties := CreateIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
-		awsIntegration, err := createAwsIntegration(keys, properties)
+		s3Integration, err := createS3Integration(keys, properties)
 
 		if err != nil {
 			serv.Warnf("CreateIntegration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		integration = awsIntegration
+		integration = s3Integration
 		if integration.Keys["secret_key"] != "" {
 			lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
 			integration.Keys["secret_key"] = "****" + lastCharsSecretKey
@@ -295,13 +295,13 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	case "s3":
 		integrationType := strings.ToLower(body.Name)
 		keys, properties := CreateIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
-		awsIntegration, err := updateAwsIntegration(keys, properties)
+		s3Integration, err := updateS3Integration(keys, properties)
 		if err != nil {
-			serv.Errorf("updateAwsIntegration: " + err.Error())
+			serv.Errorf("updateS3Integration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		integration = awsIntegration
+		integration = s3Integration
 		if integration.Keys["secret_key"] != "" {
 			lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
 			integration.Keys["secret_key"] = "****" + lastCharsSecretKey
@@ -315,21 +315,21 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	c.IndentedJSON(200, integration)
 }
 
-func createAwsIntegration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var awsIntegration models.Integration
+func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	var s3Integration models.Integration
 	filter := bson.M{"name": "s3"}
 	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&awsIntegration)
+		filter).Decode(&s3Integration)
 	if err == mongo.ErrNoDocuments {
-		awsIntegration = models.Integration{
+		s3Integration = models.Integration{
 			ID:         primitive.NewObjectID(),
 			Name:       "s3",
 			Keys:       keys,
 			Properties: properties,
 		}
-		_, insertErr := integrationsCollection.InsertOne(context.TODO(), awsIntegration)
+		_, insertErr := integrationsCollection.InsertOne(context.TODO(), s3Integration)
 		if insertErr != nil {
-			return awsIntegration, insertErr
+			return s3Integration, insertErr
 		}
 
 		integrationToUpdate := models.CreateIntegrationSchema{
@@ -339,18 +339,18 @@ func createAwsIntegration(keys map[string]string, properties map[string]bool) (m
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
-			return awsIntegration, err
+			return s3Integration, err
 		}
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
-			return awsIntegration, err
+			return s3Integration, err
 		}
-		return awsIntegration, nil
+		return s3Integration, nil
 
 	} else if err != nil {
-		return awsIntegration, err
+		return s3Integration, err
 	}
-	return awsIntegration, errors.New("Aws integration already exists")
+	return s3Integration, errors.New("S3 integration already exists")
 
 }
 
@@ -402,22 +402,22 @@ func CreateSlackIntegration(keys map[string]string, properties map[string]bool, 
 	return slackIntegration, errors.New("Slack integration already exists")
 }
 
-func updateAwsIntegration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var awsIntegration models.Integration
+func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	var s3Integration models.Integration
 	filter := bson.M{"name": "s3"}
 	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
 		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&awsIntegration)
+		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&s3Integration)
 	if err == mongo.ErrNoDocuments {
-		awsIntegration = models.Integration{
+		s3Integration = models.Integration{
 			ID:         primitive.NewObjectID(),
 			Name:       "s3",
 			Keys:       keys,
 			Properties: properties,
 		}
-		integrationsCollection.InsertOne(context.TODO(), awsIntegration)
+		integrationsCollection.InsertOne(context.TODO(), s3Integration)
 	} else if err != nil {
-		return awsIntegration, err
+		return s3Integration, err
 	}
 
 	integrationToUpdate := models.CreateIntegrationSchema{
@@ -428,16 +428,16 @@ func updateAwsIntegration(keys map[string]string, properties map[string]bool) (m
 
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
-		return awsIntegration, err
+		return s3Integration, err
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		return awsIntegration, err
+		return s3Integration, err
 	}
 
-	awsIntegration.Keys = keys
-	awsIntegration.Properties = properties
-	return awsIntegration, nil
+	s3Integration.Keys = keys
+	s3Integration.Properties = properties
+	return s3Integration, nil
 }
 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {

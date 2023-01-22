@@ -30,7 +30,7 @@ type SlackIntegration struct {
 	Client     *slack.Client     `json:"client"`
 }
 
-type AwsIntegration struct {
+type S3Integration struct {
 	Name       string            `json:"name"`
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`

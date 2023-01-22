@@ -27,7 +27,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"memphis-broker/integrations/notifications"
 	"memphis-broker/models"
 	"net"
 	"os"
@@ -2841,7 +2840,7 @@ func (fs *fileStore) expireMsgs() {
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
 		log.Printf("#######expireMsgs#######")
 		// get the cache details
-		credentialsMap, _ := notifications.NotificationIntegrationsMap["s3"].(models.AwsIntegration)
+		credentialsMap, _ := NotificationIntegrationsCache["s3"].(models.S3Integration)
 		//put object to s3
 		provider := &credentials.StaticProvider{Value: credentials.Value{
 			AccessKeyID:     credentialsMap.Keys["access_key"],
