@@ -29,9 +29,9 @@ import (
 )
 
 func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
-	s3Integration, ok := IntegrationsCache["s3"].(models.S3Integration)
+	s3Integration, ok := IntegrationsCache["s3"].(models.Integration)
 	if !ok {
-		s3Integration = models.S3Integration{}
+		s3Integration = models.Integration{}
 		s3Integration.Keys = make(map[string]string)
 		s3Integration.Properties = make(map[string]bool)
 	}

@@ -44,9 +44,8 @@ func InitializeIntegrations(c *mongo.Client) error {
 		return err
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
-
 	if configuration.SANDBOX_ENV == "true" {
+		keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
 		createSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
 	}
 	return nil

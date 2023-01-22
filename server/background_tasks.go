@@ -79,8 +79,10 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 					bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
 				UI_url = integrationUpdate.UIUrl
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
+				s.Warnf("save cache slack details %s %s", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
+				s.Warnf("save cache s3 details %s %s", integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
 				return
 			}
