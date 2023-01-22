@@ -17,7 +17,6 @@ import (
 
 	"memphis-broker/models"
 
-	"github.com/slack-go/slack"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -34,7 +33,7 @@ func InitializeIntegrations(c *mongo.Client) error {
 	IntegrationsCollection = db.GetCollection("integrations", c)
 	IntegrationsCache = make(map[string]interface{})
 	NotificationFunctionsMap = make(map[string]interface{})
-	NotificationFunctionsMap["slack"] = SendMessageToSlackChannel
+	NotificationFunctionsMap["slack"] = sendMessageToSlackChannel
 
 	err := InitializeConnection(c, "slack")
 	if err != nil {
@@ -45,10 +44,10 @@ func InitializeIntegrations(c *mongo.Client) error {
 		return err
 	}
 
-	keys, properties := CreateIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
 
 	if configuration.SANDBOX_ENV == "true" {
-		CreateSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
+		createSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
 	}
 	return nil
 }
@@ -74,78 +73,9 @@ func clearCache(integrationsType string) {
 func CacheDetails(integrationType string, keys map[string]string, properties map[string]bool) {
 	switch integrationType {
 	case "slack":
-		var authToken, channelID string
-		var poisonMessageAlert, schemaValidationFailAlert, disconnectionEventsAlert bool
-		var slackIntegration models.SlackIntegration
-
-		slackIntegration, ok := IntegrationsCache["slack"].(models.SlackIntegration)
-		if !ok {
-			slackIntegration = models.SlackIntegration{}
-			slackIntegration.Keys = make(map[string]string)
-			slackIntegration.Properties = make(map[string]bool)
-		}
-		if keys == nil {
-			clearCache("slack")
-			return
-		}
-		if properties == nil {
-			poisonMessageAlert = false
-			schemaValidationFailAlert = false
-			disconnectionEventsAlert = false
-		}
-		authToken, ok = keys["auth_token"]
-		if !ok {
-			clearCache("slack")
-			return
-		}
-		channelID, ok = keys["channel_id"]
-		if !ok {
-			clearCache("slack")
-			return
-		}
-		poisonMessageAlert, ok = properties[PoisonMAlert]
-		if !ok {
-			poisonMessageAlert = false
-		}
-		schemaValidationFailAlert, ok = properties[SchemaVAlert]
-		if !ok {
-			schemaValidationFailAlert = false
-		}
-		disconnectionEventsAlert, ok = properties[DisconEAlert]
-		if !ok {
-			disconnectionEventsAlert = false
-		}
-		if slackIntegration.Keys["auth_token"] != authToken {
-			slackIntegration.Keys["auth_token"] = authToken
-			if authToken != "" {
-				slackIntegration.Client = slack.New(authToken)
-			}
-		}
-
-		slackIntegration.Keys["channel_id"] = channelID
-		slackIntegration.Properties[PoisonMAlert] = poisonMessageAlert
-		slackIntegration.Properties[SchemaVAlert] = schemaValidationFailAlert
-		slackIntegration.Properties[DisconEAlert] = disconnectionEventsAlert
-		slackIntegration.Name = "slack"
-		IntegrationsCache["slack"] = slackIntegration
+		cacheDetailsSlack(keys, properties)
 	case "s3":
-		s3Integration, ok := IntegrationsCache["s3"].(models.S3Integration)
-		if !ok {
-			s3Integration = models.S3Integration{}
-			s3Integration.Keys = make(map[string]string)
-			s3Integration.Properties = make(map[string]bool)
-		}
-		if keys == nil {
-			clearCache("s3")
-			return
-		}
-
-		s3Integration.Keys["access_key"] = keys["access_key"]
-		s3Integration.Keys["secret_key"] = keys["secret_key"]
-		s3Integration.Keys["bucket_name"] = keys["bucket_name"]
-		s3Integration.Keys["region"] = keys["region"]
-		s3Integration.Name = "s3"
-		IntegrationsCache["s3"] = s3Integration
+		cacheDetailsS3(keys, properties)
 
 	}
 

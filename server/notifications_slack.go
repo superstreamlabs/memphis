@@ -13,10 +13,14 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"memphis-broker/models"
+
 	"github.com/slack-go/slack"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"memphis-broker/models"
 )
 
 func IsSlackEnabled() (bool, error) {
@@ -34,7 +38,7 @@ func IsSlackEnabled() (bool, error) {
 	return false, err
 }
 
-func SendMessageToSlackChannel(integration models.SlackIntegration, title string, message string) error {
+func sendMessageToSlackChannel(integration models.SlackIntegration, title string, message string) error {
 	attachment := slack.Attachment{
 		AuthorName: "Memphis",
 		Title:      title,
@@ -48,6 +52,227 @@ func SendMessageToSlackChannel(integration models.SlackIntegration, title string
 	)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func cacheDetailsSlack(keys map[string]string, properties map[string]bool) {
+	var authToken, channelID string
+	var poisonMessageAlert, schemaValidationFailAlert, disconnectionEventsAlert bool
+	var slackIntegration models.SlackIntegration
+
+	slackIntegration, ok := IntegrationsCache["slack"].(models.SlackIntegration)
+	if !ok {
+		slackIntegration = models.SlackIntegration{}
+		slackIntegration.Keys = make(map[string]string)
+		slackIntegration.Properties = make(map[string]bool)
+	}
+	if keys == nil {
+		clearCache("slack")
+		return
+	}
+	if properties == nil {
+		poisonMessageAlert = false
+		schemaValidationFailAlert = false
+		disconnectionEventsAlert = false
+	}
+	authToken, ok = keys["auth_token"]
+	if !ok {
+		clearCache("slack")
+		return
+	}
+	channelID, ok = keys["channel_id"]
+	if !ok {
+		clearCache("slack")
+		return
+	}
+	poisonMessageAlert, ok = properties[PoisonMAlert]
+	if !ok {
+		poisonMessageAlert = false
+	}
+	schemaValidationFailAlert, ok = properties[SchemaVAlert]
+	if !ok {
+		schemaValidationFailAlert = false
+	}
+	disconnectionEventsAlert, ok = properties[DisconEAlert]
+	if !ok {
+		disconnectionEventsAlert = false
+	}
+	if slackIntegration.Keys["auth_token"] != authToken {
+		slackIntegration.Keys["auth_token"] = authToken
+		if authToken != "" {
+			slackIntegration.Client = slack.New(authToken)
+		}
+	}
+
+	slackIntegration.Keys["channel_id"] = channelID
+	slackIntegration.Properties[PoisonMAlert] = poisonMessageAlert
+	slackIntegration.Properties[SchemaVAlert] = schemaValidationFailAlert
+	slackIntegration.Properties[DisconEAlert] = disconnectionEventsAlert
+	slackIntegration.Name = "slack"
+	IntegrationsCache["slack"] = slackIntegration
+}
+
+func (it IntegrationsHandler) handleSlackIntegrtation(integrationType string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, int, error) {
+	var authToken, channelID, uiUrl string
+	var pmAlert, svfAlert, disconnectAlert bool
+	authToken, ok := body.Keys["auth_token"]
+	if !ok {
+		return map[string]string{}, map[string]bool{}, configuration.SHOWABLE_ERROR_STATUS_CODE, errors.New("Must provide auth token for slack integration")
+	}
+	channelID, ok = body.Keys["channel_id"]
+	if !ok {
+		if !ok {
+			return map[string]string{}, map[string]bool{}, configuration.SHOWABLE_ERROR_STATUS_CODE, errors.New("Must provide channel ID for slack integration")
+		}
+	}
+	uiUrl = body.UIUrl
+	if uiUrl == "" {
+		return map[string]string{}, map[string]bool{}, 500, errors.New("Must provide UI url for slack integration")
+	}
+
+	pmAlert, ok = body.Properties[PoisonMAlert]
+	if !ok {
+		pmAlert = false
+	}
+	svfAlert, ok = body.Properties[SchemaVAlert]
+	if !ok {
+		svfAlert = false
+	}
+	disconnectAlert, ok = body.Properties[DisconEAlert]
+	if !ok {
+		disconnectAlert = false
+	}
+
+	keys, properties := createIntegrationsKeysAndProperties(integrationType, authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
+	return keys, properties, 0, nil
+}
+
+func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
+	var slackIntegration models.Integration
+	filter := bson.M{"name": "slack"}
+	err := integrationsCollection.FindOne(context.TODO(),
+		filter).Decode(&slackIntegration)
+	if err == mongo.ErrNoDocuments {
+		err := testSlackIntegration(keys["auth_token"], keys["channel_id"], "Slack integration with Memphis was added successfully")
+		if err != nil {
+			return slackIntegration, err
+		}
+		slackIntegration = models.Integration{
+			ID:         primitive.NewObjectID(),
+			Name:       "slack",
+			Keys:       keys,
+			Properties: properties,
+		}
+		_, insertErr := integrationsCollection.InsertOne(context.TODO(), slackIntegration)
+		if insertErr != nil {
+			return slackIntegration, insertErr
+		}
+
+		integrationToUpdate := models.CreateIntegrationSchema{
+			Name:       "slack",
+			Keys:       keys,
+			Properties: properties,
+			UIUrl:      uiUrl,
+		}
+		msg, err := json.Marshal(integrationToUpdate)
+		if err != nil {
+			return slackIntegration, err
+		}
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		if err != nil {
+			return slackIntegration, err
+		}
+		update := models.ConfigurationsUpdate{
+			Type:   sendNotificationType,
+			Update: properties[SchemaVAlert],
+		}
+		serv.SendUpdateToClients(update)
+		return slackIntegration, nil
+	} else if err != nil {
+		return slackIntegration, err
+	}
+	return slackIntegration, errors.New("Slack integration already exists")
+}
+
+func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
+	var slackIntegration models.Integration
+	if authToken == "" {
+		var integrationFromDb models.Integration
+		filter := bson.M{"name": "slack"}
+		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
+		if err != nil {
+			return slackIntegration, err
+		}
+		authToken = integrationFromDb.Keys["auth_token"]
+	}
+
+	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
+	if err != nil {
+		return slackIntegration, err
+	}
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
+	filter := bson.M{"name": "slack"}
+	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
+		filter,
+		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
+	if err == mongo.ErrNoDocuments {
+		slackIntegration = models.Integration{
+			ID:         primitive.NewObjectID(),
+			Name:       "slack",
+			Keys:       keys,
+			Properties: properties,
+		}
+		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
+	} else if err != nil {
+		return slackIntegration, err
+	}
+
+	integrationToUpdate := models.CreateIntegrationSchema{
+		Name:       "slack",
+		Keys:       keys,
+		Properties: properties,
+		UIUrl:      uiUrl,
+	}
+
+	msg, err := json.Marshal(integrationToUpdate)
+	if err != nil {
+		return slackIntegration, err
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		return slackIntegration, err
+	}
+
+	update := models.ConfigurationsUpdate{
+		Type:   sendNotificationType,
+		Update: svfAlert,
+	}
+	serv.SendUpdateToClients(update)
+
+	slackIntegration.Keys = keys
+	slackIntegration.Properties = properties
+	return slackIntegration, nil
+}
+
+func testSlackIntegration(authToken string, channelID string, message string) error {
+	slackClientTemp := slack.New(authToken)
+	_, err := slackClientTemp.AuthTest()
+	if err != nil {
+		return errors.New("Invalid auth token")
+	}
+	attachment := slack.Attachment{
+		AuthorName: "Memphis",
+		Text:       message,
+		Color:      "#6557FF",
+	}
+
+	_, _, err = slackClientTemp.PostMessage(
+		channelID,
+		slack.MsgOptionAttachments(attachment),
+	)
+	if err != nil {
+		return errors.New("Invalid channel ID")
 	}
 	return nil
 }
