@@ -21,10 +21,13 @@ import OverflowTip from '../../../components/tooltip/overflowtip';
 import Button from '../../../components/button';
 import Filter from '../../../components/filter';
 import NoStations from '../../../assets/images/noStations.svg';
+import RedActivity from '../../../assets/images/redActivity.svg';
+import GreenActivity from '../../../assets/images/greenActivity.svg';
+import YellowHealth from '../../../assets/images/yellowHealth.svg';
+import GreenHealth from '../../../assets/images/greenHealth.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 import { Virtuoso } from 'react-virtuoso';
-import HealthyBadge from '../../../components/healthyBadge';
 
 const FailedStations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -43,11 +46,12 @@ const FailedStations = ({ createStationTrigger }) => {
                 {state?.monitor_data?.stations?.length > 0 ? (
                     <>
                         <div className="coulmns-table">
-                            <span style={{ width: '200px' }}>Name</span>
-                            <span style={{ width: '200px' }}>Creation date</span>
-                            <span style={{ width: '150px' }}>Total messages</span>
-                            <span style={{ width: '45px' }}>Status</span>
-                            <span style={{ width: '120px' }}></span>
+                            <span className="station-name">Name</span>
+                            <span>Creation date</span>
+                            <span>Total messages</span>
+                            <span>Health</span>
+                            <span>Activity</span>
+                            <span></span>
                         </div>
                         <div className="rows-wrapper">
                             <Virtuoso
@@ -57,19 +61,22 @@ const FailedStations = ({ createStationTrigger }) => {
                                 components={{ Item }}
                                 itemContent={(index, station) => (
                                     <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
-                                        <OverflowTip className="station-details" text={station.name} width={'200px'}>
+                                        <OverflowTip className="station-details station-name" text={station.name}>
                                             {station.name}
                                         </OverflowTip>
-                                        <OverflowTip className="station-creation" text={parsingDate(station.creation_date)} width={'200px'}>
+                                        <OverflowTip className="station-creation" text={parsingDate(station.creation_date)}>
                                             {parsingDate(station.creation_date)}
                                         </OverflowTip>
-                                        <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)} width={'150px'}>
-                                            {numberWithCommas(station.total_messages)}
+                                        <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)}>
+                                            <span className="centered">{numberWithCommas(station.total_messages)}</span>
                                         </OverflowTip>
-                                        <span className="station-details status">
-                                            <HealthyBadge icon={true} status={station?.has_dls_messages ? 0 : 1} />
+                                        <span className="centered">
+                                            <img src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="health" />
                                         </span>
-                                        <div className="link-wrapper">
+                                        <span className="centered">
+                                            <img className="activity" src={station?.has_dls_messages ? RedActivity : GreenActivity} alt="activity" />
+                                        </span>
+                                        <div className="centered">
                                             <div className="staion-link">
                                                 <span>View Station</span>
                                                 <KeyboardArrowRightRounded />

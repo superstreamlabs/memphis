@@ -39,7 +39,7 @@ const GenericDetails = () => {
                     <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
                 </div>
             </div>
-            <div className="overview-wrapper data-box">
+            {/* <div className="overview-wrapper data-box">
                 <div className="coming-soon-wrapper">
                     <img src={comingSoonBox} width={40} height={60} alt="comingSoonBox" />
                 </div>
@@ -48,7 +48,7 @@ const GenericDetails = () => {
                     <span>Total Poison messages</span>
                     <p></p>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 };
