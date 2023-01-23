@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis-broker/models"
+	"strings"
 
 	"github.com/slack-go/slack"
 	"go.mongodb.org/mongo-driver/bson"
@@ -113,7 +114,7 @@ func cacheDetailsSlack(keys map[string]string, properties map[string]bool) {
 	IntegrationsCache["slack"] = slackIntegration
 }
 
-func (it IntegrationsHandler) handleSlackIntegrtation(integrationType string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, int, error) {
+func (it IntegrationsHandler) getSlackIntegrationDetails(integrationType string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, int, error) {
 	var authToken, channelID, uiUrl string
 	var pmAlert, svfAlert, disconnectAlert bool
 	authToken, ok := body.Keys["auth_token"]
@@ -148,6 +149,37 @@ func (it IntegrationsHandler) handleSlackIntegrtation(integrationType string, bo
 	return keys, properties, 0, nil
 }
 
+func (it IntegrationsHandler) handleCreateSlackIntegration(integrationType string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, models.Integration, int, error) {
+	keys, properties, errorCode, err := it.getSlackIntegrationDetails(integrationType, body)
+	if err != nil {
+		return keys, properties, models.Integration{}, errorCode, err
+	}
+	slackIntegration, err := createSlackIntegration(keys, properties, body.UIUrl)
+	if err != nil {
+		if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
+			return map[string]string{}, map[string]bool{}, models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		} else {
+			return map[string]string{}, map[string]bool{}, models.Integration{}, 500, err
+		}
+	}
+	return keys, properties, slackIntegration, 0, nil
+}
+
+func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType string, body models.CreateIntegrationSchema) (models.Integration, int, error) {
+	keys, properties, errorCode, err := it.getSlackIntegrationDetails("slack", body)
+	if err != nil {
+		return models.Integration{}, errorCode, err
+	}
+	slackIntegration, err := updateSlackIntegration(keys["auth_token"], keys["channel_id"], properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
+	if err != nil {
+		if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") {
+			return models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		} else {
+			return models.Integration{}, 500, err
+		}
+	}
+	return slackIntegration, 0, nil
+}
 func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	filter := bson.M{"name": "slack"}

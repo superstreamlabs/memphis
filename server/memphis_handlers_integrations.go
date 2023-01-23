@@ -29,11 +29,6 @@ const sendNotificationType = "send_notification"
 
 type IntegrationsHandler struct{ S *Server }
 
-type MyProvider struct {
-	AccessKeyID     string `json:"access_key_id"`
-	SecretAccessKey string `json:"secret_acess_key_id"`
-}
-
 func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
@@ -48,40 +43,25 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
-		keys, properties, errorCode, err := it.handleSlackIntegrtation(integrationType, body)
+		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(integrationType, body)
 		if err != nil {
-			serv.Warnf("CreateSlackIntegration: " + err.Error())
+			if errorCode == 500 {
+				serv.Errorf("CreateSlackIntegration: " + err.Error())
+			} else {
+				serv.Warnf("CreateSlackIntegration: " + err.Error())
+			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
 			return
-		}
-		slackIntegration, err := createSlackIntegration(keys, properties, body.UIUrl)
-		if err != nil {
-			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
-				serv.Warnf("CreateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-				return
-			} else {
-				serv.Errorf("CreateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
 		}
 		integration = slackIntegration
 		if integration.Keys["auth_token"] != "" {
 			integration.Keys["auth_token"] = "xoxb-****"
 		}
 	case "s3":
-		keys, err := it.handleS3Integrtation(body.Keys)
+		s3Integration, err := it.handleCreateS3Integration(body.Keys, "s3")
 		if err != nil {
-			serv.Warnf("CreateS3Integration: " + err.Error())
+			serv.Errorf("CreateS3Integration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-			return
-		}
-		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
-		s3Integration, err := createS3Integration(keys, properties)
-		if err != nil {
-			serv.Warnf("CreateS3Integration: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		integration = s3Integration
@@ -115,38 +95,22 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	var integration models.Integration
 	switch strings.ToLower(body.Name) {
 	case "slack":
-		keys, properties, errorCode, err := it.handleSlackIntegrtation("slack", body)
+		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration("slack", body)
 		if err != nil {
-			serv.Warnf("UpdateSlackIntegration: " + err.Error())
+			if errorCode == 500 {
+				serv.Errorf("UpdateSlackIntegration: " + err.Error())
+			} else {
+				serv.Warnf("UpdateSlackIntegration: " + err.Error())
+			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
 			return
-		}
-		slackIntegration, err := updateSlackIntegration(keys["auth_token"], keys["channel_id"], properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
-		if err != nil {
-			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") {
-				serv.Warnf("UpdateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-				return
-			} else {
-				serv.Errorf("UpdateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
 		}
 		integration = slackIntegration
 		if integration.Keys["auth_token"] != "" {
 			integration.Keys["auth_token"] = "xoxb-****"
 		}
 	case "s3":
-		_, err := it.handleS3Integrtation(body.Keys)
-		if err != nil {
-			serv.Warnf("UpdateS3Integration: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-			return
-		}
-		integrationType := strings.ToLower(body.Name)
-		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
-		s3Integration, err := updateS3Integration(keys, properties)
+		s3Integration, err := it.handleUpdateS3Integration(body)
 		if err != nil {
 			serv.Errorf("updateS3Integration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -159,8 +123,8 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		}
 
 	default:
-		serv.Warnf("CreateIntegration: Unsupported integration type - " + body.Name)
-		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration: Unsupported integration type - " + body.Name})
+		serv.Warnf("UpdateIntegration: Unsupported integration type - " + body.Name)
+		c.AbortWithStatusJSON(400, gin.H{"message": "Unsupported integration type - " + body.Name})
 		return
 	}
 

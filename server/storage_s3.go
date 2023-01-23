@@ -48,7 +48,35 @@ func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 	IntegrationsCache["s3"] = s3Integration
 }
 
-func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[string]string, error) {
+func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.Integration, error) {
+	err := it.handleS3Integrtation(keys)
+	if err != nil {
+		return models.Integration{}, err
+	}
+
+	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
+	s3Integration, err := createS3Integration(keys, properties)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	return s3Integration, nil
+}
+
+func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, error) {
+	err := it.handleS3Integrtation(body.Keys)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	integrationType := strings.ToLower(body.Name)
+	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
+	s3Integration, err := updateS3Integration(keys, properties)
+	if err != nil {
+		return s3Integration, err
+	}
+	return s3Integration, nil
+}
+
+func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) error {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
@@ -62,7 +90,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 	_, err := provider.Retrieve()
 	if err != nil {
 		err = errors.New("Retrive failure " + err.Error())
-		return map[string]string{}, err
+		return err
 	}
 
 	credentials := credentials.NewCredentials(provider)
@@ -72,7 +100,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 	)
 	if err != nil {
 		err = errors.New("NewSession failure " + err.Error())
-		return map[string]string{}, err
+		return err
 	}
 
 	svc := s3.New(sess)
@@ -81,7 +109,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 	})
 	if err != nil {
 		err = errors.New("create a S3 client with additional configuration failure " + err.Error())
-		return map[string]string{}, err
+		return err
 	}
 
 	acl, err := svc.GetBucketAcl(&s3.GetBucketAclInput{
@@ -89,7 +117,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 	})
 	if err != nil {
 		err = errors.New("GetBucketAcl error" + err.Error())
-		return map[string]string{}, err
+		return err
 	}
 
 	permission := *acl.Grants[0].Permission
@@ -97,14 +125,14 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 
 	if permissionValue != "FULL_CONTROL" {
 		err = errors.New("you should full control permission: read, write and delete " + err.Error())
-		return map[string]string{}, err
+		return err
 	}
 
 	err = testS3Integration(sess, svc, bucketName)
 	if err != nil {
-		return map[string]string{}, err
+		return err
 	}
-	return keys, nil
+	return nil
 }
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
