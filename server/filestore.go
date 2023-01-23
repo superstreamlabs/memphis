@@ -2873,7 +2873,7 @@ func (fs *fileStore) expireMsgs() {
 		// 			log.Printf(err.Error())
 		// 			return
 		// 		}
-		// 		fs.removeMsg(sm.seq, false, true)
+		fs.removeMsg(sm.seq, false, true)
 		// 		log.Printf("#######removeMsgs#######")
 	}
 
