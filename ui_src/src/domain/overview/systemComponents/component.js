@@ -17,11 +17,11 @@ import React from 'react';
 import { PieChart, Pie } from 'recharts';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import { Add } from '@material-ui/icons';
-import { Popover } from 'antd';
-import CheckCircleSharpIcon from '@material-ui/icons/CheckCircleSharp';
-import ErrorSharpIcon from '@material-ui/icons/ErrorSharp';
-import Cancel from '@material-ui/icons/Cancel';
+import { Popover, Divider } from 'antd';
 import ComponentIcon from '../../../assets/images/componentIcon.svg';
+import GreenShield from '../../../assets/images/greenShield.svg';
+import YellowShield from '../../../assets/images/yellowShield.svg';
+import RedShield from '../../../assets/images/redShield.svg';
 
 const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
 
@@ -40,11 +40,11 @@ const Component = ({ comp, i }) => {
     const getStatus = (status) => {
         switch (status) {
             case 'red':
-                return <Cancel className={status} theme="outlined" />;
+                return RedShield;
             case 'yellow':
-                return <ErrorSharpIcon className={status} theme="outlined" />;
+                return YellowShield;
             case 'green':
-                return <CheckCircleSharpIcon className={status} theme="outlined" />;
+                return GreenShield;
         }
     };
     return (
@@ -56,8 +56,9 @@ const Component = ({ comp, i }) => {
                         <p className="component-name">{comp.name}</p>
                     </OverflowTip>
                     <div className="pie-status-component">
+                        <img src={getStatus(comp.status)} className="component-status-shield" alt={`status: ${comp.status}`} />
                         <div className="pie-status">
-                            <PieChart height={33} width={33}>
+                            <PieChart height={30} width={30}>
                                 <Pie
                                     dataKey="value"
                                     data={getData(comp)}
@@ -69,14 +70,16 @@ const Component = ({ comp, i }) => {
                                 {comp.actual_pods}/{comp.desired_pods}
                             </p>
                         </div>
-                        {getStatus(comp.status)}
                     </div>
                 </div>
                 <div className="pods-container">
-                    <label className="ports">HOST</label>
-                    <label>{comp?.address} </label>
-                    <label className="ports">PORTS</label>
-                    <p>{comp.ports[0]}</p>
+                    <label className="host">Host</label>
+                    <OverflowTip text={comp?.address}>
+                        <label>{comp?.address} </label>
+                    </OverflowTip>
+                    <Divider type="vertical" />
+                    <label className="host">Ports</label>
+                    <label>{comp.ports[0]}</label>
                     {comp.ports?.length > 1 && (
                         <Popover
                             overlayInnerStyle={remainingPorstPopInnerStyle}

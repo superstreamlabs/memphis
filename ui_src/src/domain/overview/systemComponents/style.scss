@@ -5,6 +5,9 @@
     padding: 15px;
     min-width: 280px;
     min-height: 250px;
+    p {
+        margin-bottom: 0px;
+    }
     .collapse-arrow {
         transform: rotate(-90deg);
         transition: transform 0.4s;
@@ -36,7 +39,7 @@
             border-bottom: 1px solid #ececec;
         }
         .ant-tree-switcher-icon {
-            margin-top: 35px !important;
+            margin-top: 37px !important;
         }
         .sys-components-container {
             width: 100%;
@@ -65,37 +68,27 @@
                         align-items: center;
                         .pie-status {
                             display: flex;
-                            height: 28px;
-                            width: 65px;
+                            height: 25px;
+                            width: 62px;
                             background: #e3e0ff;
                             border-radius: 4px;
                             align-items: center;
                             justify-content: center;
                             font-size: 12px;
-                            margin: 0 5px 0 5px;
+                            margin-left: 5px;
                         }
                     }
-                    .green {
-                        color: #2ed47a;
-                        font-size: 20px;
-                    }
-                    .red {
-                        color: #f7685b;
-                        font-size: 20px;
-                    }
-                    .yellow {
-                        color: #ffb946;
-                        font-size: 20px;
+                    .component-status-shield {
+                        height: 18px;
                     }
                 }
                 .pods-container {
                     display: flex;
-                    label {
-                        margin-right: 5px;
-                    }
-                    .ports {
+                    align-items: center;
+                    .host {
                         color: #737373;
                         font-weight: 500;
+                        margin-right: 5px;
                     }
                 }
             }
@@ -149,10 +142,7 @@
             }
         }
     }
-    p {
-        margin-bottom: 0px;
-        padding-right: 5px;
-    }
+
     .sys-components-header {
         margin-top: 15px;
         color: #979797;
@@ -164,12 +154,13 @@
 
     .plus-ports {
         background-color: rgba(132, 129, 138, 0.1);
-        width: 40px;
+        width: 36px;
         border-radius: 4px;
-        height: 22px;
+        height: 16px;
         display: flex;
         justify-content: center;
         align-items: center;
+        margin-left: 5px;
         cursor: pointer;
         p {
             font-family: 'InterSemiBold';
@@ -177,8 +168,8 @@
             color: #2e2c34;
         }
         .add {
-            height: 14px;
-            width: 14px;
+            height: 12px;
+            width: 12px;
             cursor: pointer;
             display: flex;
             color: #2e2c34;
@@ -188,7 +179,7 @@
         background-color: transparent !important;
     }
     .ant-tree-node-content-wrapper {
-        line-height: 18px;
+        line-height: 26px;
         cursor: default;
     }
 }
