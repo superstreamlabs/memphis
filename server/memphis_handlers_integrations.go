@@ -75,10 +75,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		if err != nil {
 			serv.Warnf("CreateS3Integration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			return
 		}
 		keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 		s3Integration, err := createS3Integration(keys, properties)
-
 		if err != nil {
 			serv.Warnf("CreateS3Integration: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -161,6 +161,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	default:
 		serv.Warnf("CreateIntegration: Unsupported integration type - " + body.Name)
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration: Unsupported integration type - " + body.Name})
+		return
 	}
 
 	c.IndentedJSON(200, integration)

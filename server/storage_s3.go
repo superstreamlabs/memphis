@@ -66,7 +66,6 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 	}
 
 	credentials := credentials.NewCredentials(provider)
-
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
 		Credentials: credentials},
@@ -102,7 +101,6 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (map[
 	}
 
 	err = testS3Integration(sess, svc, bucketName)
-
 	if err != nil {
 		return map[string]string{}, err
 	}
