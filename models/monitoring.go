@@ -13,18 +13,37 @@ package models
 
 import "time"
 
-type SystemComponent struct {
-	Component   string `json:"component"`
-	DesiredPods int    `json:"desired_pods"`
-	ActualPods  int    `json:"actual_pods"`
-	Ports       []int  `json:"ports"`
+type SysComponent struct {
+	Name    string    `json:"name"`
+	CPU     CompStats `json:"cpu"`
+	Memory  CompStats `json:"memory"`
+	Storage CompStats `json:"storage"`
+	Healthy bool      `json:"healthy"`
+}
+
+type CompStats struct {
+	Total      int64 `json:"total"`
+	Current    int64 `json:"current"`
+	Percentage int   `json:"percentage"`
+}
+
+type SystemComponents struct {
+	Name        string         `json:"name"`
+	Components  []SysComponent `json:"components"`
+	Status      string         `json:"status"`
+	Ports       []int          `json:"ports"`
+	DesiredPods int            `json:"desired_pods"`
+	ActualPods  int            `json:"actual_pods"`
+	Host        string         `json:"host"`
 }
 
 type MainOverviewData struct {
-	TotalStations    int               `json:"total_stations"`
-	TotalMessages    int               `json:"total_messages"`
-	SystemComponents []SystemComponent `json:"system_components"`
-	Stations         []ExtendedStation `json:"stations"`
+	TotalStations     int                `json:"total_stations"`
+	TotalMessages     int                `json:"total_messages"`
+	SystemComponents  []SystemComponents `json:"system_components"`
+	Stations          []ExtendedStation  `json:"stations"`
+	K8sEnv            bool               `json:"k8s_env"`
+	BrokersThroughput []BrokerThroughput `json:"brokers_throughput"`
 }
 
 type GetStationOverviewDataSchema struct {
@@ -46,4 +65,21 @@ type Log struct {
 
 type SystemLogsResponse struct {
 	Logs []Log `json:"logs"`
+}
+
+type ProxyMonitoringResponse struct {
+	CPU     float64 `json:"cpu"`
+	Memory  float64 `json:"memory"`
+	Storage float64 `json:"storage"`
+}
+
+type BrokerThroughput struct {
+	Name  string `json:"name"`
+	Read  int64  `json:"read"`
+	Write int64  `json:"write"`
+}
+
+type Throughput struct {
+	Bytes       int64 `json:"bytes"`
+	BytesPerSec int64 `json:"bytes_per_sec"`
 }

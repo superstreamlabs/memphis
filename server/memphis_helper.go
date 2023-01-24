@@ -45,6 +45,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
+	throughputStreamName   = "$memphis-throughput"
 )
 
 // JetStream API request kinds
@@ -214,34 +215,34 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 		})
 }
 
-func (s *Server) CreateSystemLogsStream() {
+func (s *Server) CreateSystemStreams() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
 	successCh := make(chan error)
 
 	if ready { // stand alone
-		go tryCreateSystemLogsStream(s, retentionDur, successCh)
+		go tryCreateSystemStreams(s, retentionDur, successCh)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("CreateSystemLogsStream: logs-stream creation failed: " + err.Error())
+			s.Errorf("CreateSystemStreams: system streams creation failed: " + err.Error())
 		}
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateSystemLogsStream(s, retentionDur, successCh)
+			go tryCreateSystemStreams(s, retentionDur, successCh)
 			select {
 			case <-timeout.C:
-				s.Warnf("CreateSystemLogsStream: logs-stream creation takes more than a minute")
+				s.Warnf("CreateSystemStreams: system streams creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("CreateSystemLogsStream: " + err.Error())
+					s.Warnf("CreateSystemStreams: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("CreateSystemLogsStream: " + err.Error())
+					s.Warnf("CreateSystemStreams: " + err.Error())
 					<-timeout.C
 					continue
 				}
@@ -252,13 +253,14 @@ func (s *Server) CreateSystemLogsStream() {
 	}
 
 	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: publish activation func is not initialised")
+		s.Fatalf("internal error: sys logs publish activation func is not initialized")
 	}
 	s.memphis.activateSysLogsPubFunc()
 	s.popFallbackLogs()
 }
 
-func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh chan error) {
+func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error) {
+	// sytem logs stream
 	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
@@ -269,6 +271,25 @@ func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh 
 		Storage:      FileStorage,
 	})
 
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		successCh <- err
+		return
+	}
+	// throughput kv
+	err = s.memphisAddStream(&StreamConfig{
+		Name:         (throughputStreamName),
+		Subjects:     []string{throughputStreamName + ".>"},
+		Retention:    LimitsPolicy,
+		MaxConsumers: -1,
+		MaxMsgs:      int64(-1),
+		MaxBytes:     int64(-1),
+		Discard:      DiscardOld,
+		MaxMsgsPer:   1,
+		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+		Storage:      FileStorage,
+		Replicas:     1,
+		NoAck:        false,
+	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
 		return
@@ -1010,7 +1031,6 @@ func DecodeHeader(buf []byte) (map[string]string, error) {
 
 	// tp.readMIMEHeader changes key cases
 	mh, err := readMIMEHeader(tp)
-	// mh, err := readMIMEHeader(tp)
 	if err != nil {
 		return nil, err
 	}
