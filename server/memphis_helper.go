@@ -45,6 +45,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
+	storageStreamName      = "$memphis_tiered_storage"
 )
 
 // JetStream API request kinds
@@ -214,34 +215,43 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 		})
 }
 
-func (s *Server) CreateSystemLogsStream() {
+func (s *Server) CreateMemphisStream(streamName string) {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
 	successCh := make(chan error)
+	var retention RetentionPolicy
+	switch streamName {
+	case syslogsStreamName:
+		retention = LimitsPolicy
+	case storageStreamName:
+		retention = WorkQueuePolicy
+	default:
+		retention = LimitsPolicy
+	}
 
 	if ready { // stand alone
-		go tryCreateSystemLogsStream(s, retentionDur, successCh)
+		go tryCreateMemphisStream(s, streamName, retention, retentionDur, successCh)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("CreateSystemLogsStream: logs-stream creation failed: " + err.Error())
+			s.Errorf("CreateMemphisStream: " + streamName + "creation failed: " + err.Error())
 		}
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateSystemLogsStream(s, retentionDur, successCh)
+			go tryCreateMemphisStream(s, streamName, retention, retentionDur, successCh)
 			select {
 			case <-timeout.C:
-				s.Warnf("CreateSystemLogsStream: logs-stream creation takes more than a minute")
+				s.Warnf("CreateMemphisStream: " + streamName + "creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("CreateSystemLogsStream: " + err.Error())
+					s.Warnf("CreateMemphisStream: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("CreateSystemLogsStream: " + err.Error())
+					s.Warnf("CreateMemphisStream: " + err.Error())
 					<-timeout.C
 					continue
 				}
@@ -251,18 +261,20 @@ func (s *Server) CreateSystemLogsStream() {
 		}
 	}
 
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: publish activation func is not initialised")
+	if streamName == "$memphis_syslogs" {
+		if s.memphis.activateSysLogsPubFunc == nil {
+			s.Fatalf("internal error: publish activation func is not initialised")
+		}
+		s.memphis.activateSysLogsPubFunc()
+		s.popFallbackLogs()
 	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 }
 
-func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh chan error) {
+func tryCreateMemphisStream(s *Server, streamName string, retention RetentionPolicy, retentionDur time.Duration, successCh chan error) {
 	err := s.memphisAddStream(&StreamConfig{
-		Name:         syslogsStreamName,
-		Subjects:     []string{syslogsStreamName + ".>"},
-		Retention:    LimitsPolicy,
+		Name:         streamName,
+		Subjects:     []string{streamName + ".>"},
+		Retention:    retention,
 		MaxAge:       retentionDur,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
@@ -1069,4 +1081,10 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return m, err
 		}
 	}
+}
+
+func (s *Server) SendMsgToSubject(stationName string, msg []byte) {
+	subjectSuffix := stationName
+	subject := fmt.Sprintf("%s.%s", storageStreamName, subjectSuffix)
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }

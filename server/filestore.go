@@ -2829,6 +2829,10 @@ func (fs *fileStore) cancelAgeChk() {
 	}
 }
 
+func (s *Server) publishMsgToSub(stationName string, msg []byte) {
+	s.SendMsgToSubject(stationName, msg)
+}
+
 // Will expire msgs that are too old.
 func (fs *fileStore) expireMsgs() {
 	// We need to delete one by one here and can not optimize for the time being.
@@ -2875,8 +2879,18 @@ func (fs *fileStore) expireMsgs() {
 		// 			log.Printf(err.Error())
 		// 			return
 		// 		}
+		stationName := strings.Split(sm.subj, ".")
+		fmt.Println("stationName", stationName)
+		fmt.Println("sm subject", sm.subj)
+		fmt.Println("msgs", string(sm.msg))
+		// if sm.subj staet with $memphis dont to publish
+		if !strings.HasPrefix(sm.subj, "$memphis") {
+			fmt.Println("fsdgfh", string(sm.msg))
+			serv.publishMsgToSub(stationName[0], sm.msg)
+
+		}
 		fs.removeMsg(sm.seq, false, true)
-		// 		log.Printf("#######removeMsgs#######")
+		// log.Printf("#######removeMsgs#######")
 	}
 
 	fs.mu.Lock()

@@ -114,7 +114,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
-	go s.CreateSystemLogsStream()
+	go s.CreateMemphisStream("$memphis_syslogs")
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
@@ -123,6 +123,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
+	go s.CreateMemphisStream("$memphis_tiered_storage")
 	go http_server.InitializeHttpServer(s)
 
 	err = s.StartBackgroundTasks()
