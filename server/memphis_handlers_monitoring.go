@@ -411,34 +411,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
-			// pod.Status.ContainerStatuses[0].rx
-			// data, err := clientset.RESTClient().Get().AbsPath("/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics").DoRaw(context.TODO())
-			// if err != nil {
-			// 	serv.Errorf("get proxy: " + err.Error())
-			// 	return components, err
-			// }
-			// flag := false
-			// var proxyDetails map[string]string
-			// var proxyDetails2 map[string]interface{}
-			// err = json.Unmarshal(data, &proxyDetails)
-			// if err != nil {
-			// 	serv.Errorf("json unmarhsal proxy: " + err.Error())
-			// 	err = json.Unmarshal(data, &proxyDetails2)
-			// 	if err != nil {
-			// 		serv.Errorf("json unmarhsal proxy: " + err.Error())
-			// 		return components, err
-			// 	}
-			// 	flag = true
-			// }
-			// if !flag {
-			// 	for x := range proxyDetails {
-			// 		serv.Noticef("from proxy details: " + proxyDetails[x])
-			// 	}
-			// } else {
-			// 	for x := range proxyDetails2 {
-			// 		fmt.Println(proxyDetails2[x])
-			// 	}
-			// }
 			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 			if err != nil {
 				serv.Errorf("nodes: " + err.Error())
@@ -450,10 +422,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("pvcList: " + err.Error())
 				return components, err
 			}
-			if len(pvcList.Items) == 0 {
-				serv.Noticef("pvc len is zero ")
-			}
-
 			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
 			if cpuLimit == float64(0) {
 				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
@@ -477,44 +445,19 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					if floatSize != float64(0) {
 						storageLimit = floatSize
 					}
-					serv.Noticef("PVC: " + pvc.Name + ": " + strconv.Itoa(int(storageLimit)) + " size")
 					break
 				}
 			}
-			// var mountPath string
 			for _, container := range pod.Spec.Containers {
-				// for _, volume := range container.VolumeMounts {
-				// 	if volume.Name == pvcName {
-				// 		mountPath = volume.MountPath
-				// 	}
-				// }
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
 				}
 			}
-			// memLimit := float64(0)
-			// storageLimit := pod.Spec.Containers[0].Resources.Limits.Storage().AsApproximateFloat64()
 
 			cpuUsage := float64(0)
-			// cpuUsage := pod.Status.Usage
 			memUsage := float64(0)
-			// pod.Spec.Volumes[0].Size()
-
-			// node.Status.VolumesInUse
-			storagePercentage := float64(0)
-			// for _, container := range nodeMetrics.
-			// restConfig, err := rest.InClusterConfig()
-			// if err != nil {
-			// 	serv.Errorf("restConfig: " + err.Error())
-			// 	return components, err
-			// }
+			storagePercentage := float64(0) // TODO: get storage stats of containers
 			for _, container := range podMetrics.Containers {
-				// if strings.Contains(container.Name, "mongo") || strings.Contains(container.Name, "proxy") || strings.Contains(container.Name, "broker") {
-				// 	storagePercentage, err = getContainerStorageUsage(restConfig, mountPath, container.Name, pod.Name)
-				// 	if err != nil {
-				// 		return components, err
-				// 	}
-				// }
 				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
 				memUsage += container.Usage.Memory().AsApproximateFloat64()
 			}
@@ -538,9 +481,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				},
 				Connected: true,
 			}
-			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil((cpuUsage/cpuLimit)*100)) + " percentage/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
-			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil((memUsage/memLimit)*100)) + " percentage/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
-			serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", storagePercentage) + "%/" + fmt.Sprintf("%f", (storagePercentage/100)*storageLimit) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
 			if strings.Contains(pod.Name, "mongo") {
 				dbComponents = append(dbComponents, comp)
 				dbPorts = ports
@@ -752,9 +692,6 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		serv.Errorf("GetMainOverviewData: GetBrokersThroughputs: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
-	}
-	for _, t := range brokersThroughputs {
-		serv.Noticef(t.Name + ": " + strconv.Itoa(int(t.Read)) + " read, " + strconv.Itoa(int(t.Write)) + " write")
 	}
 	response := models.MainOverviewData{
 		TotalStations:     len(stations),
@@ -1640,51 +1577,3 @@ func getUnixStorageSize() (float64, error) {
 	}
 	return storage_size, nil
 }
-
-// func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
-// 	command := []string{"df", "-h", mountPath}
-// 	usage := float64(0)
-
-// 	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
-// 	defer cancel()
-
-// 	execReq := clientset.CoreV1().RESTClient().Post().
-// 		Namespace(configuration.K8S_NAMESPACE).
-// 		Resource("pods").
-// 		Name(pod).
-// 		SubResource("exec").
-// 		VersionedParams(&v1.PodExecOptions{
-// 			Container: container,
-// 			Command:   command,
-// 			Stdout:    true,
-// 			Stderr:    true,
-// 		}, metav1.ParameterCodec)
-
-// 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	var stdout, stderr bytes.Buffer
-// 	err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
-// 		Stdout: &stdout,
-// 		Stderr: &stderr,
-// 		Tty:    false,
-// 	})
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	if stderr.String() != "" {
-// 		err = errors.New(stderr.String())
-// 		return 0, err
-// 	}
-// 	splitted_output := strings.Split(stdout.String(), "\n")
-// 	parsedline := strings.Fields(splitted_output[1])
-// 	if len(parsedline) > 0 {
-// 		stringUsage := strings.Split(parsedline[4], "%")
-// 		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
-// 	}
-
-// 	// print the err
-// 	serv.Noticef("stderr: %s\n", stderr.String())
-// 	return usage, nil
-// }
