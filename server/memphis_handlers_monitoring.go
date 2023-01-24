@@ -18,7 +18,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -44,7 +43,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
@@ -407,8 +405,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 
 		for _, pod := range pods.Items {
-			serv.Noticef("pod loop")
-			fmt.Println(pod.Name)
 			var ports []int
 			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{}) // TODO: try when not enabled and deal with error
 			if err != nil {
@@ -485,13 +481,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					break
 				}
 			}
-			var mountPath string
+			// var mountPath string
 			for _, container := range pod.Spec.Containers {
-				for _, volume := range container.VolumeMounts {
-					if volume.Name == pvcName {
-						mountPath = volume.MountPath
-					}
-				}
+				// for _, volume := range container.VolumeMounts {
+				// 	if volume.Name == pvcName {
+				// 		mountPath = volume.MountPath
+				// 	}
+				// }
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
 				}
@@ -507,18 +503,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			// node.Status.VolumesInUse
 			storagePercentage := float64(0)
 			// for _, container := range nodeMetrics.
-			restConfig, err := rest.InClusterConfig()
-			if err != nil {
-				serv.Errorf("restConfig: " + err.Error())
-				return components, err
-			}
+			// restConfig, err := rest.InClusterConfig()
+			// if err != nil {
+			// 	serv.Errorf("restConfig: " + err.Error())
+			// 	return components, err
+			// }
 			for _, container := range podMetrics.Containers {
-				if strings.Contains(container.Name, "mongo") || strings.Contains(container.Name, "proxy") || strings.Contains(container.Name, "broker") {
-					storagePercentage, err = getContainerStorageUsage(restConfig, mountPath, container.Name, pod.Name)
-					if err != nil {
-						return components, err
-					}
-				}
+				// if strings.Contains(container.Name, "mongo") || strings.Contains(container.Name, "proxy") || strings.Contains(container.Name, "broker") {
+				// 	storagePercentage, err = getContainerStorageUsage(restConfig, mountPath, container.Name, pod.Name)
+				// 	if err != nil {
+				// 		return components, err
+				// 	}
+				// }
 				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
 				memUsage += container.Usage.Memory().AsApproximateFloat64()
 			}
@@ -1645,50 +1641,50 @@ func getUnixStorageSize() (float64, error) {
 	return storage_size, nil
 }
 
-func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
-	command := []string{"df", "-h", mountPath}
-	usage := float64(0)
+// func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
+// 	command := []string{"df", "-h", mountPath}
+// 	usage := float64(0)
 
-	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	defer cancel()
+// 	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
+// 	defer cancel()
 
-	execReq := clientset.CoreV1().RESTClient().Post().
-		Namespace(configuration.K8S_NAMESPACE).
-		Resource("pods").
-		Name(pod).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: container,
-			Command:   command,
-			Stdout:    true,
-			Stderr:    true,
-		}, metav1.ParameterCodec)
+// 	execReq := clientset.CoreV1().RESTClient().Post().
+// 		Namespace(configuration.K8S_NAMESPACE).
+// 		Resource("pods").
+// 		Name(pod).
+// 		SubResource("exec").
+// 		VersionedParams(&v1.PodExecOptions{
+// 			Container: container,
+// 			Command:   command,
+// 			Stdout:    true,
+// 			Stderr:    true,
+// 		}, metav1.ParameterCodec)
 
-	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
-	if err != nil {
-		return 0, err
-	}
-	var stdout, stderr bytes.Buffer
-	err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: &stderr,
-		Tty:    false,
-	})
-	if err != nil {
-		return 0, err
-	}
-	if stderr.String() != "" {
-		err = errors.New(stderr.String())
-		return 0, err
-	}
-	splitted_output := strings.Split(stdout.String(), "\n")
-	parsedline := strings.Fields(splitted_output[1])
-	if len(parsedline) > 0 {
-		stringUsage := strings.Split(parsedline[4], "%")
-		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
-	}
+// 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	var stdout, stderr bytes.Buffer
+// 	err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
+// 		Stdout: &stdout,
+// 		Stderr: &stderr,
+// 		Tty:    false,
+// 	})
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	if stderr.String() != "" {
+// 		err = errors.New(stderr.String())
+// 		return 0, err
+// 	}
+// 	splitted_output := strings.Split(stdout.String(), "\n")
+// 	parsedline := strings.Fields(splitted_output[1])
+// 	if len(parsedline) > 0 {
+// 		stringUsage := strings.Split(parsedline[4], "%")
+// 		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
+// 	}
 
-	// print the err
-	serv.Noticef("stderr: %s\n", stderr.String())
-	return usage, nil
-}
+// 	// print the err
+// 	serv.Noticef("stderr: %s\n", stderr.String())
+// 	return usage, nil
+// }
