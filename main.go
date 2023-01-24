@@ -140,8 +140,6 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}
 
-	// go s.CreateThroughputStream()
-
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
