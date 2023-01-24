@@ -1,9 +1,12 @@
 .failed-stations-container {
-    // padding: 15px;
     position: relative;
     min-width: 400px;
-    min-height: 200px;
+    min-height: 300px;
+    height: 100%;
     overflow: hidden;
+    .failed-stations-header {
+        padding: 15px;
+    }
     .stations-err-message {
         display: flex;
         width: 100%;
@@ -29,13 +32,10 @@
         height: calc(100% - 20px);
         font-size: 12px;
         .coulmns-table {
-            // background-color: #00b292;
             border-top: 1px solid #e9e9e9;
             border-bottom: 1px solid #e9e9e9;
-            padding: 15px 0 15px 0;
+            padding: 15px;
             width: 100%;
-            // display: flex;
-            // background-color: aquamarine;
             display: grid;
             grid-template-columns: 20% 25% 20% 5% 5% 15%;
             justify-content: space-between;
@@ -52,11 +52,11 @@
             }
         }
         .rows-wrapper {
-            position: absolute;
             width: 100%;
-            height: calc(100% - 25px);
+            height: calc(100% - 100px);
             overflow: auto;
             cursor: pointer;
+            padding: 0 0 15px 15px;
             .stations-row {
                 display: grid;
                 grid-template-columns: 20% 25% 20% 5% 5% 15%;
@@ -87,6 +87,9 @@
                 .station-name {
                     padding-left: 20px;
                 }
+            }
+            .item-wrapper {
+                margin-right: 15px;
             }
             .item-wrapper:nth-child(even) .stations-row {
                 background-color: #f8f8f8;

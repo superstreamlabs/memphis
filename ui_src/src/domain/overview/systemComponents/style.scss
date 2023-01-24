@@ -15,23 +15,8 @@
     .open {
         transform: rotate(0deg);
     }
-    .overview-components-header {
-        p {
-            align-items: center;
-            font-size: 16px;
-            font-family: 'InterSemiBold';
-            margin-bottom: 0;
-        }
-        label {
-            font-weight: 400;
-            font-size: 12px;
-            color: #b4b4b4;
-            font-family: 'Inter';
-        }
-    }
     .component-list {
         overflow-y: scroll;
-        margin-top: 30px;
         height: calc(100% - 35px);
         position: relative;
         width: 100%;

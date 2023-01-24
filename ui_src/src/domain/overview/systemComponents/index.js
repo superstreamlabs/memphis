@@ -25,7 +25,7 @@ const SysComponents = () => {
     const [expandedNodes, setExpandedNodes] = useState(['0-0']);
 
     return (
-        <div className="overview-wrapper">
+        <div className="overview-components-wrapper system-components-wrapper">
             <div className="system-components-container">
                 <div className="overview-components-header">
                     <p>System components</p>

@@ -142,21 +142,20 @@ const data2 = [
 ];
 
 const Throughput = () => {
-    const [throughputType, setThroughputType] = useState('consumers');
+    const [throughputType, setThroughputType] = useState('Write');
     return (
-        <div className="overview-wrapper throughput-overview-container">
+        <div className="overview-components-wrapper throughput-overview-container">
             <div className="coming-soon-wrapper">
                 <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
                 <p>Coming soon</p>
             </div>
-            <div className="throughput-header">
+            <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
-                    <p className="overview-components-header">Throughput</p>
-                    <Segmented options={['Producers', 'Consumers']} onChange={(e) => setThroughputType(e)} />
+                    <p> Throughput</p>
+                    <Segmented options={['Write', 'Read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 {/* <ThroughputInterval /> */}
             </div>
-
             <div className="throughput-chart">
                 <ResponsiveContainer>
                     <AreaChart

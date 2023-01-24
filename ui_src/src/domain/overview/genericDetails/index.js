@@ -19,36 +19,30 @@ import TotalMsg from '../../../assets/images/total_msg.svg';
 import TotalPoison from '../../../assets/images/total_poison.svg';
 import TotalStations from '../../../assets/images/total_stations.svg';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
+import { Divider } from 'antd';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
 
     return (
-        <div className="generic-container">
-            <div className="overview-wrapper data-box">
-                <img src={TotalStations} width={50} height={50} alt="Total stations" className="icon-wrapper" />
-                <div className="data-wrapper">
-                    <span>Total stations</span>
-                    <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
+        <div className="overview-components-wrapper">
+            <div className="generic-details-container">
+                <div className="data-box">
+                    <img src={TotalStations} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Total stations</span>
+                        <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
+                    <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Total Messages</span>
+                        <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
+                    </div>
                 </div>
             </div>
-            <div className="overview-wrapper data-box">
-                <img src={TotalMsg} width={50} height={50} alt="Total Messages" className="icon-wrapper" />
-                <div className="data-wrapper">
-                    <span>Total Messages</span>
-                    <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
-                </div>
-            </div>
-            {/* <div className="overview-wrapper data-box">
-                <div className="coming-soon-wrapper">
-                    <img src={comingSoonBox} width={40} height={60} alt="comingSoonBox" />
-                </div>
-                <img src={TotalPoison} width={50} height={50} alt="Total Poison messages" className="icon-wrapper" />
-                <div className="data-wrapper">
-                    <span>Total Poison messages</span>
-                    <p></p>
-                </div>
-            </div> */}
         </div>
     );
 };

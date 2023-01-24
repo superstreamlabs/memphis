@@ -43,7 +43,7 @@ const Resources = () => {
     ]);
 
     return (
-        <div className="overview-wrapper resources-container">
+        <div className="overview-components-wrapper resources-container">
             <div className="coming-soon-wrapper">
                 <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
                 <p>Coming soon</p>

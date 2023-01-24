@@ -88,7 +88,6 @@
 
         .overview-components {
             display: flex;
-            flex-direction: row;
             justify-content: space-between;
             position: relative;
             width: 100%;
@@ -109,7 +108,7 @@
                 position: relative;
             }
 
-            .overview-wrapper {
+            .overview-components-wrapper {
                 width: 100%;
                 position: relative;
                 background: white;
@@ -117,13 +116,24 @@
                 box-sizing: border-box;
                 box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
                 border-radius: 8px;
+                .overview-components-header {
+                    p {
+                        align-items: center;
+                        font-size: 16px;
+                        font-family: 'InterSemiBold';
+                        margin-bottom: 0;
+                    }
+                    label {
+                        font-weight: 400;
+                        font-size: 12px;
+                        color: #b4b4b4;
+                        font-family: 'Inter';
+                    }
+                }
             }
-
-            .overview-components-header {
-                font-size: 16px;
-                font-family: 'InterSemiBold';
-                height: 25px;
-                margin-bottom: 0;
+            .system-components-wrapper {
+                height: 100%;
+                position: relative;
             }
 
             .coming-soon-wrapper {
@@ -140,13 +150,13 @@
                 flex-direction: column;
                 border-radius: 8px;
 
-                p {
-                    font-family: 'InterBold';
-                    font-size: 16px;
-                    color: #979797;
-                    margin-top: 10px;
-                    margin-bottom: 0;
-                }
+                // p {
+                //     font-family: 'InterBold';
+                //     font-size: 16px;
+                //     color: #979797;
+                //     margin-top: 10px;
+                //     margin-bottom: 0;
+                // }
             }
 
             .coming-soon-small {

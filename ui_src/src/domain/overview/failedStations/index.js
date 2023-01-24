@@ -40,72 +40,77 @@ const FailedStations = ({ createStationTrigger }) => {
         return <div className="item-wrapper" {...props} ref={ref} />;
     });
     return (
-        <div className="overview-wrapper failed-stations-container">
-            <p className="overview-components-header">Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
-            <div className="err-stations-list">
-                {state?.monitor_data?.stations?.length > 0 ? (
-                    <>
-                        <div className="coulmns-table">
-                            <span className="station-name">Name</span>
-                            <span>Creation date</span>
-                            <span>Total messages</span>
-                            <span>Health</span>
-                            <span>Activity</span>
-                            <span></span>
-                        </div>
-                        <div className="rows-wrapper">
-                            <Virtuoso
-                                data={state?.monitor_data?.stations}
-                                overscan={100}
-                                className="testt"
-                                components={{ Item }}
-                                itemContent={(index, station) => (
-                                    <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
-                                        <OverflowTip className="station-details station-name" text={station.name}>
-                                            {station.name}
-                                        </OverflowTip>
-                                        <OverflowTip className="station-creation" text={parsingDate(station.creation_date)}>
-                                            {parsingDate(station.creation_date)}
-                                        </OverflowTip>
-                                        <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)}>
-                                            <span className="centered">{numberWithCommas(station.total_messages)}</span>
-                                        </OverflowTip>
-                                        <span className="centered">
-                                            <img src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="health" />
-                                        </span>
-                                        <span className="centered">
-                                            <img className="activity" src={station?.has_dls_messages ? RedActivity : GreenActivity} alt="activity" />
-                                        </span>
-                                        <div className="centered">
-                                            <div className="staion-link">
-                                                <span>View Station</span>
-                                                <KeyboardArrowRightRounded />
+        <div className="overview-components-wrapper">
+            <div className="failed-stations-container">
+                <div className="overview-components-header failed-stations-header">
+                    <p> Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
+                    <label>Richard McClintock, a Latin professor </label>
+                </div>
+                <div className="err-stations-list">
+                    {state?.monitor_data?.stations?.length > 0 ? (
+                        <>
+                            <div className="coulmns-table">
+                                <span className="station-name">Name</span>
+                                <span>Creation date</span>
+                                <span>Total messages</span>
+                                <span>Health</span>
+                                <span>Activity</span>
+                                <span></span>
+                            </div>
+                            <div className="rows-wrapper">
+                                <Virtuoso
+                                    data={state?.monitor_data?.stations}
+                                    overscan={100}
+                                    className="testt"
+                                    components={{ Item }}
+                                    itemContent={(index, station) => (
+                                        <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
+                                            <OverflowTip className="station-details station-name" text={station.name}>
+                                                {station.name}
+                                            </OverflowTip>
+                                            <OverflowTip className="station-creation" text={parsingDate(station.creation_date)}>
+                                                {parsingDate(station.creation_date)}
+                                            </OverflowTip>
+                                            <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)}>
+                                                <span className="centered">{numberWithCommas(station.total_messages)}</span>
+                                            </OverflowTip>
+                                            <span className="centered">
+                                                <img src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="health" />
+                                            </span>
+                                            <span className="centered">
+                                                <img className="activity" src={station?.has_dls_messages ? RedActivity : GreenActivity} alt="activity" />
+                                            </span>
+                                            <div className="centered">
+                                                <div className="staion-link">
+                                                    <span>View Station</span>
+                                                    <KeyboardArrowRightRounded />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="empty-stations-container">
+                            <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
+                            <p>No station exist</p>
+                            <Button
+                                className="modal-btn"
+                                width="160px"
+                                height="34px"
+                                placeholder={'Create new station'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                aria-haspopup="true"
+                                onClick={() => createStationTrigger(true)}
                             />
                         </div>
-                    </>
-                ) : (
-                    <div className="empty-stations-container">
-                        <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
-                        <p>No station exist</p>
-                        <Button
-                            className="modal-btn"
-                            width="160px"
-                            height="34px"
-                            placeholder={'Create new station'}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="12px"
-                            fontWeight="600"
-                            aria-haspopup="true"
-                            onClick={() => createStationTrigger(true)}
-                        />
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
