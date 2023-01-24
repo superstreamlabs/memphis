@@ -800,6 +800,39 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	}
 }
 
+func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
+	type filteredUser struct {
+		ID           primitive.ObjectID `json:"id" bson:"_id"`
+		Username     string             `json:"username" bson:"username"`
+		CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
+	}
+	var users []filteredUser
+
+	cursor, err := usersCollection.Find(context.TODO(), bson.M{
+		"$or": []interface{}{
+			bson.M{"user_type": "application"},
+			bson.M{"user_type": "root"},
+		},
+	})
+	if err != nil {
+		serv.Errorf("GetApplicationUsers: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		serv.Errorf("GetApplicationUsers: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if len(users) == 0 {
+		c.IndentedJSON(200, []models.User{})
+	} else {
+		c.IndentedJSON(200, users)
+	}
+}
+
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return

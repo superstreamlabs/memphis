@@ -27,6 +27,7 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.POST("/addUserSignUp", userMgmtHandler.AddUserSignUp)
 	userMgmtRoutes.GET("/getSignUpFlag", userMgmtHandler.GetSignUpFlag)
 	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
+	userMgmtRoutes.GET("/getApplicationUsers", userMgmtHandler.GetApplicationUsers)
 	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)
 	userMgmtRoutes.DELETE("/removeMyUser", userMgmtHandler.RemoveMyUser)
 	userMgmtRoutes.PUT("/editAvatar", userMgmtHandler.EditAvatar)
