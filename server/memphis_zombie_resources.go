@@ -207,18 +207,21 @@ func killFunc(s *Server) {
 			}
 		}
 	}
+	
 	s.removeStaleStations()
 }
 
 func (s *Server) KillZombieResources() {
-	count := 0
-	for range time.Tick(time.Second * 20) {
-		if s.JetStreamIsLeader() {
-			break
-		} else if count > 3 {
-			return
+	if s.JetStreamIsClustered() {
+		count := 0
+		for range time.Tick(time.Second * 20) {
+			if s.JetStreamIsLeader() {
+				break
+			} else if count > 3 {
+				return
+			}
+			count++
 		}
-		count++
 	}
 
 	for range time.Tick(time.Second * 60) {

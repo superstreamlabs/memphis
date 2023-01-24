@@ -430,6 +430,10 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			}
 		}
 	}
+
+	sort.Slice(poisonedCgs, func(i, j int) bool {
+		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+	})
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,
 		StationName: dlsMsg.StationName,

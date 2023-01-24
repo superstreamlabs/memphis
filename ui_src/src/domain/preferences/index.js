@@ -75,7 +75,7 @@ function Preferences({ step }) {
                 <div className="side-menu">
                     <div className={selectedMenuItem === 'profile' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('profile')}>
                         <img src={selectedMenuItem === 'profile' ? EditProfileColor : EditProfileGray} alt="editProfile" />
-                        Edit Profile
+                        Profile
                     </div>
                     <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
                         <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />

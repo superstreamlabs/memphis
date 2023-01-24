@@ -64,10 +64,11 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         let codeEx = {};
         codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
         codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
-        let host =
-            localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                ? 'localhost'
-                : 'memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
+        let host = process.env.REACT_APP_SANDBOX_ENV
+            ? 'https://proxy.sandbox.memphis.dev'
+            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? 'http://localhost:4444'
+            : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
         codeEx.producer = codeEx.producer.replaceAll('localhost', host);
         codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);

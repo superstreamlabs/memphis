@@ -55,6 +55,7 @@ type Configuration struct {
 	SANDBOX_SLACK_BOT_TOKEN        string
 	SANDBOX_SLACK_CHANNEL_ID       string
 	SANDBOX_UI_URL                 string
+	EXTERNAL_MONGO                 bool
 }
 
 func GetConfig() Configuration {

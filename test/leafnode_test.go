@@ -1277,6 +1277,14 @@ func (c *captureLeafNodeErrLogger) Errorf(format string, v ...interface{}) {
 	}
 }
 
+func (c *captureLeafNodeErrLogger) Systemf(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	select {
+	case c.ch <- msg:
+	default:
+	}
+}
+
 func TestLeafNodeTLSMixIP(t *testing.T) {
 	content := `
 	listen: "127.0.0.1:-1"

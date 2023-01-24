@@ -159,7 +159,6 @@ const StationsList = () => {
                     </label>
                     <div className="right-side">
                         <Button
-                            width="131px"
                             height="34px"
                             placeholder={`Delete selected (${isCheck?.length})`}
                             colorType="black"

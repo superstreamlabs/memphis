@@ -589,6 +589,14 @@ func (c *captureErrLogger) Errorf(format string, v ...interface{}) {
 	}
 }
 
+func (c *captureErrLogger) Systemf(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	select {
+	case c.ch <- msg:
+	default:
+	}
+}
+
 func TestClusterNameConflictsDropRoutes(t *testing.T) {
 	ll := &captureErrLogger{ch: make(chan string, 4)}
 

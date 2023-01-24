@@ -108,3 +108,10 @@ func (l *SysLogger) Tracef(format string, v ...interface{}) {
 		l.writer.Info(4, formatMsg("TRACE", format, v...))
 	}
 }
+
+// Systemf logs a system statement
+func (l *SysLogger) Systemf(format string, v ...interface{}) {
+	if l.trace {
+		l.writer.Info(4, formatMsg("SYSTEM", format, v...))
+	}
+}

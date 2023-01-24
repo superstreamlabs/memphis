@@ -39,7 +39,7 @@ type memphisWSReqFiller func() (any, error)
 
 func (s *Server) initWS() {
 	ws := &s.memphis.ws
-	ws.subscriptions = make(map[string]memphisWSReqFiller)
+	ws.subscriptions = NewConcurrentMap[memphisWSReqFiller]()
 	handlers := Handlers{
 		Producers:  ProducersHandler{S: s},
 		Consumers:  ConsumersHandler{S: s},
@@ -57,16 +57,18 @@ func (s *Server) initWS() {
 	go memphisWSLoop(s, ws.subscriptions, ws.quitCh)
 }
 
-func memphisWSLoop(s *Server, subs map[string]memphisWSReqFiller, quitCh chan struct{}) {
+func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh chan struct{}) {
 	ticker := time.NewTicker(5 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			for k, updateFiller := range subs {
+			keys, values := subs.Array()
+			for i, updateFiller := range values {
+				k := keys[i]
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+configuration.SERVER_NAME)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
-					delete(subs, k)
+					subs.Delete(k)
 					continue
 				}
 				update, err := updateFiller()
@@ -114,13 +116,13 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		trimmedMsg := strings.TrimSuffix(string(msg), "\r\n")
 		switch trimmedMsg {
 		case memphisWS_SubscribeMsg:
-			if _, ok := subscriptions[filteredSubj]; !ok {
+			if _, ok := subscriptions.Load(filteredSubj); !ok {
 				reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj)
 				if err != nil {
 					s.Errorf("memphis websocket: " + err.Error())
 					return
 				}
-				subscriptions[filteredSubj] = reqFiller
+				subscriptions.Add(filteredSubj, reqFiller)
 			}
 
 		default:

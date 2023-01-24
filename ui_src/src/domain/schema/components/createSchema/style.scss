@@ -3,8 +3,12 @@
     position: absolute;
     min-width: 700px;
     height: 100%;
-    a:hover{
-        opacity: 0.8;
+    .learn-more {
+        color: #6557ff;
+        font-family: 'InterSemiBold';
+    }
+    a:hover {
+        text-decoration: underline;
     }
     
     .create-schema-form{
@@ -42,12 +46,6 @@
                 span{
                     font-size: 12px;
                     color: #979797;
-                    a{
-                        color: var(--purple);
-                        font-family: 'InterSemiBold';
-                        text-decoration-line: underline;
-                        margin-left: 5px;
-                    }
                 }
             }
             .ant-row{

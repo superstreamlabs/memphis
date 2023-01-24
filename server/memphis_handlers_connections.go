@@ -155,7 +155,8 @@ func handleConnectMessage(client *client) error {
 		updateNewClientWithConfig(client, objIdString)
 	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
+	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
+ 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
 		sdkName := splitted[len(splitted)-1]
@@ -171,7 +172,6 @@ func handleConnectMessage(client *client) error {
 		analytics.SendEventWithParams(username, analyticsParams, event)
 	}
 
-	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
 	return nil
 }
 

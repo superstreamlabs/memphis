@@ -35,10 +35,12 @@ type createStationRequest struct {
 	DedupWindowMillis int                     `json:"dedup_window_in_ms"` // TODO deprecated
 	IdempotencyWindow int64                   `json:"idempotency_window_in_ms"`
 	DlsConfiguration  models.DlsConfiguration `json:"dls_configuration"`
+	Username          string                  `json:"username"`
 }
 
 type destroyStationRequest struct {
 	StationName string `json:"station_name"`
+	Username    string `json:"username"`
 }
 
 type createProducerRequestV0 struct {
@@ -46,6 +48,7 @@ type createProducerRequestV0 struct {
 	StationName  string `json:"station_name"`
 	ConnectionId string `json:"connection_id"`
 	ProducerType string `json:"producer_type"`
+	Username     string `json:"username"`
 }
 
 type createProducerRequestV1 struct {
@@ -54,6 +57,11 @@ type createProducerRequestV1 struct {
 	ConnectionId   string `json:"connection_id"`
 	ProducerType   string `json:"producer_type"`
 	RequestVersion int    `json:"req_version"`
+	Username       string `json:"username"`
+}
+
+type createConsumerResponse struct {
+	Err string `json:"error"`
 }
 
 type createProducerResponse struct {
@@ -66,34 +74,57 @@ type createProducerResponse struct {
 type destroyProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
+	Username     string `json:"username"`
 }
 
-type createConsumerRequest struct {
-	Name             string `json:"name"`
-	StationName      string `json:"station_name"`
-	ConnectionId     string `json:"connection_id"`
-	ConsumerType     string `json:"consumer_type"`
-	ConsumerGroup    string `json:"consumers_group"`
-	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
-	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+type createConsumerRequestV0 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	Username                 string `json:"username"`
+}
+
+type createConsumerRequestV1 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	Username                 string `json:"username"`
+	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
+	LastMessages             int64  `json:"last_messages"`
+	RequestVersion           int    `json:"req_version"`
 }
 
 type attachSchemaRequest struct {
 	Name        string `json:"name"`
 	StationName string `json:"station_name"`
+	Username    string `json:"username"`
 }
 
 type detachSchemaRequest struct {
 	StationName string `json:"station_name"`
+	Username    string `json:"username"`
 }
 
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
+	Username     string `json:"username"`
 }
 
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
+}
+
+func (ccr *createConsumerResponse) SetError(err error) {
+	ccr.Err = err.Error()
 }
 
 func (s *Server) initializeSDKHandlers() {
