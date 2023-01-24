@@ -215,34 +215,34 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 		})
 }
 
-func (s *Server) CreateSystemLogsStream() {
+func (s *Server) CreateSystemStreams() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
 	successCh := make(chan error)
 
 	if ready { // stand alone
-		go tryCreateSystemLogsStream(s, retentionDur, successCh)
+		go tryCreateSystemStreams(s, retentionDur, successCh)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("CreateSystemLogsStream: logs-stream creation failed: " + err.Error())
+			s.Errorf("CreateSystemStreams: system streams creation failed: " + err.Error())
 		}
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateSystemLogsStream(s, retentionDur, successCh)
+			go tryCreateSystemStreams(s, retentionDur, successCh)
 			select {
 			case <-timeout.C:
-				s.Warnf("CreateSystemLogsStream: logs-stream creation takes more than a minute")
+				s.Warnf("CreateSystemStreams: system streams creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("CreateSystemLogsStream: " + err.Error())
+					s.Warnf("CreateSystemStreams: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("CreateSystemLogsStream: " + err.Error())
+					s.Warnf("CreateSystemStreams: " + err.Error())
 					<-timeout.C
 					continue
 				}
@@ -259,7 +259,8 @@ func (s *Server) CreateSystemLogsStream() {
 	s.popFallbackLogs()
 }
 
-func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh chan error) {
+func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error) {
+	// sytem logs stream
 	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
@@ -274,49 +275,8 @@ func tryCreateSystemLogsStream(s *Server, retentionDur time.Duration, successCh 
 		successCh <- err
 		return
 	}
-	successCh <- nil
-}
-
-func (s *Server) CreateThroughputStream() {
-	ready := !s.JetStreamIsClustered()
-	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
-
-	successCh := make(chan error)
-
-	if ready { // stand alone
-		go tryCreateThroughputStream(s, retentionDur, successCh)
-		err := <-successCh
-		if err != nil {
-			s.Errorf("CreateThroughputStream: logs-stream creation failed: " + err.Error())
-		}
-	} else {
-		for !ready { // wait for cluster to be ready if we are in cluster mode
-			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateThroughputStream(s, retentionDur, successCh)
-			select {
-			case <-timeout.C:
-				s.Warnf("CreateThroughputStream: throughput-stream creation takes more than a minute")
-				err := <-successCh
-				if err != nil {
-					s.Warnf("CreateThroughputStream: " + err.Error())
-					continue
-				}
-				ready = true
-			case err := <-successCh:
-				if err != nil {
-					s.Warnf("CreateThroughputStream: " + err.Error())
-					<-timeout.C
-					continue
-				}
-				timeout.Stop()
-				ready = true
-			}
-		}
-	}
-}
-
-func tryCreateThroughputStream(s *Server, retentionDur time.Duration, successCh chan error) {
-	err := s.memphisAddStream(&StreamConfig{
+	// throughput kv
+	err = s.memphisAddStream(&StreamConfig{
 		Name:         (throughputStreamName),
 		Subjects:     []string{throughputStreamName + ".>"},
 		Retention:    LimitsPolicy,
@@ -330,22 +290,72 @@ func tryCreateThroughputStream(s *Server, retentionDur time.Duration, successCh 
 		Replicas:     1,
 		NoAck:        false,
 	})
-	// err := s.memphisAddStream(&StreamConfig{
-	// 	Name:         syslogsStreamName,
-	// 	Subjects:     []string{syslogsStreamName + ".>"},
-	// 	Retention:    LimitsPolicy,
-	// 	MaxAge:       retentionDur,
-	// 	MaxConsumers: -1,
-	// 	Discard:      DiscardOld,
-	// 	Storage:      FileStorage,
-	// })
-
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
 		return
 	}
 	successCh <- nil
 }
+
+// func (s *Server) CreateThroughputStream() {
+// 	ready := !s.JetStreamIsClustered()
+// 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
+
+// 	successCh := make(chan error)
+
+// 	if ready { // stand alone
+// 		go tryCreateThroughputStream(s, retentionDur, successCh)
+// 		err := <-successCh
+// 		if err != nil {
+// 			s.Errorf("CreateThroughputStream: logs-stream creation failed: " + err.Error())
+// 		}
+// 	} else {
+// 		for !ready { // wait for cluster to be ready if we are in cluster mode
+// 			timeout := time.NewTimer(1 * time.Minute)
+// 			go tryCreateThroughputStream(s, retentionDur, successCh)
+// 			select {
+// 			case <-timeout.C:
+// 				s.Warnf("CreateThroughputStream: throughput-stream creation takes more than a minute")
+// 				err := <-successCh
+// 				if err != nil {
+// 					s.Warnf("CreateThroughputStream: " + err.Error())
+// 					continue
+// 				}
+// 				ready = true
+// 			case err := <-successCh:
+// 				if err != nil {
+// 					s.Warnf("CreateThroughputStream: " + err.Error())
+// 					<-timeout.C
+// 					continue
+// 				}
+// 				timeout.Stop()
+// 				ready = true
+// 			}
+// 		}
+// 	}
+// }
+
+// func tryCreateThroughputStream(s *Server, retentionDur time.Duration, successCh chan error) {
+// 	err := s.memphisAddStream(&StreamConfig{
+// 		Name:         (throughputStreamName),
+// 		Subjects:     []string{throughputStreamName + ".>"},
+// 		Retention:    LimitsPolicy,
+// 		MaxConsumers: -1,
+// 		MaxMsgs:      int64(-1),
+// 		MaxBytes:     int64(-1),
+// 		Discard:      DiscardOld,
+// 		MaxMsgsPer:   1,
+// 		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+// 		Storage:      MemoryStorage,
+// 		Replicas:     1,
+// 		NoAck:        false,
+// 	})
+// 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+// 		successCh <- err
+// 		return
+// 	}
+// 	successCh <- nil
+// }
 
 func (s *Server) popFallbackLogs() {
 	select {

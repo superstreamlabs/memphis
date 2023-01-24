@@ -114,7 +114,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
-	go s.CreateSystemLogsStream()
+	go s.CreateSystemStreams()
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
@@ -140,7 +140,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}
 
-	go s.CreateThroughputStream()
+	// go s.CreateThroughputStream()
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
