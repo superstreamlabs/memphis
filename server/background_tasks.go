@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
+
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +34,9 @@ const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
+
+var LastReadThroughput models.Throughput
+var LastWriteThroughput models.Throughput
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -73,13 +76,16 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
 				return
 			}
-			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
-				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
-			UI_url = integrationUpdate.UIUrl
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
+				systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
+					bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
+				UI_url = integrationUpdate.UIUrl
+				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
+			case "s3":
+				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
+				s.Warnf("ListenForIntegrationsUpdateEvents: %s %s", strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
 			}
 		}(copyBytes(msg))
@@ -126,7 +132,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if notification.Code != "" {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = notifications.SendNotification(notification.Title, notificationMsg, notification.Type)
+			err = SendNotification(notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				return
 			}
@@ -217,6 +223,63 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 	return nil
 }
 
+func getThroughputSubject(serverName string) string {
+	key := serverName
+	if key == _EMPTY_ {
+		key = "broker"
+	}
+	return throughputStreamName + tsep + key
+}
+
+func (s *Server) InitializeThroughputSampling() error {
+	v, err := serv.Varz(nil)
+	if err != nil {
+		return err
+	}
+
+	LastReadThroughput = models.Throughput{
+		Bytes:       v.InBytes,
+		BytesPerSec: 0,
+	}
+	LastWriteThroughput = models.Throughput{
+		Bytes:       v.OutBytes,
+		BytesPerSec: 0,
+	}
+
+	go s.CalculateSelfThroughput()
+
+	return nil
+}
+
+func (s *Server) CalculateSelfThroughput() error {
+	for range time.Tick(time.Second * 1) {
+		v, err := serv.Varz(nil)
+		if err != nil {
+			return err
+		}
+
+		currentWrite := v.OutBytes - LastWriteThroughput.Bytes
+		LastWriteThroughput = models.Throughput{
+			Bytes:       v.OutBytes,
+			BytesPerSec: currentWrite,
+		}
+		currentRead := v.InBytes - LastReadThroughput.Bytes
+		LastReadThroughput = models.Throughput{
+			Bytes:       v.InBytes,
+			BytesPerSec: currentRead,
+		}
+		subj := getThroughputSubject(configuration.SERVER_NAME)
+		tpMsg := models.BrokerThroughput{
+			Name:  configuration.SERVER_NAME,
+			Read:  currentRead,
+			Write: currentWrite,
+		}
+		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
+	}
+
+	return nil
+}
+
 func (s *Server) StartBackgroundTasks() error {
 	s.ListenForPoisonMessages()
 	err := s.ListenForZombieConnCheckRequests()
@@ -263,6 +326,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return err
 	} else {
 		UI_url = systemKey.Value
+	}
+
+	err = s.InitializeThroughputSampling()
+	if err != nil {
+		return err
 	}
 	return nil
 }

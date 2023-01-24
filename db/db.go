@@ -46,10 +46,13 @@ func InitializeDbConnection(l logger) (DbInstance, error) {
 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
 	} else {
 		auth := options.Credential{
-			AuthSource: configuration.DB_NAME,
-			Username:   configuration.MONGO_USER,
-			Password:   configuration.MONGO_PASS,
+			Username: configuration.MONGO_USER,
+			Password: configuration.MONGO_PASS,
 		}
+		if !configuration.EXTERNAL_MONGO {
+			auth.AuthSource = configuration.DB_NAME
+		}
+
 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
 	}
 
@@ -70,7 +73,11 @@ func InitializeDbConnection(l logger) (DbInstance, error) {
 }
 
 func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
-	var collection *mongo.Collection = dbClient.Database(configuration.DB_NAME).Collection(collectionName)
+	dbName := configuration.DB_NAME
+	if configuration.EXTERNAL_MONGO {
+		dbName = "memphis-db"
+	}
+	var collection *mongo.Collection = dbClient.Database(dbName).Collection(collectionName)
 	return collection
 }
 

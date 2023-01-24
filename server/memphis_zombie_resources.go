@@ -207,6 +207,7 @@ func killFunc(s *Server) {
 			}
 		}
 	}
+	
 	s.removeStaleStations()
 }
 

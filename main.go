@@ -114,7 +114,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
-	go s.CreateSystemLogsStream()
+	go s.CreateSystemStreams()
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
@@ -196,6 +196,5 @@ func main() {
 	dbConnection := runMemphis(s)
 	defer db.Close(dbConnection, s)
 	defer analytics.Close()
-
 	s.WaitForShutdown()
 }

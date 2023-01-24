@@ -37,7 +37,7 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
 </p>
 
-**[Memphis](https://memphis.dev)** is a next-generation alternative to traditional message brokers.<br>
+**[Memphis](https://memphis.dev)** is a next-generation alternative to traditional message brokers.<br><br>
 A simple, robust, and durable cloud-native message broker wrapped with<br>
 an entire ecosystem that enables cost-effective, fast, and reliable development of modern queue-based use cases.<br><br>
 Memphis enables the building of modern queue-based applications that require<br>
