@@ -30,6 +30,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.44.180
 	github.com/docker/docker v20.10.22+incompatible
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
@@ -37,6 +38,8 @@ require (
 	k8s.io/api v0.26.1
 	k8s.io/metrics v0.26.0
 )
+
+require github.com/jmespath/go-jmespath v0.4.0 // indirect
 
 require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect

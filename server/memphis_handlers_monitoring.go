@@ -1514,6 +1514,12 @@ func getUnixStorageSize() (int64, error) {
 }
 
 func defaultSystemComp(compName string, healthy bool) models.SysComponent {
+	defaultStat := models.CompStats{
+		Total:      0,
+		Current:    0,
+		Percentage: 0,
+	}
+
 	return models.SysComponent{
 		Name:    compName,
 		CPU:     defaultStat,

@@ -14,19 +14,14 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"memphis-broker/analytics"
-	"memphis-broker/db"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
 	"memphis-broker/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/slack-go/slack"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -48,58 +43,33 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
-		var authToken, channelID, uiUrl string
-		var pmAlert, svfAlert, disconnectAlert bool
-		authToken, ok := body.Keys["auth_token"]
-		if !ok {
-			serv.Warnf("CreateIntegration: Must provide auth token for slack integration")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide auth token for slack integration"})
-		}
-		channelID, ok = body.Keys["channel_id"]
-		if !ok {
-			if !ok {
-				serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
-			}
-		}
-		uiUrl = body.UIUrl
-		if uiUrl == "" {
-			serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
-			c.AbortWithStatusJSON(500, gin.H{"message": "Must provide UI url for slack integration"})
-		}
-
-		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
-		if !ok {
-			pmAlert = false
-		}
-		svfAlert, ok = body.Properties[notifications.SchemaVAlert]
-		if !ok {
-			svfAlert = false
-		}
-		disconnectAlert, ok = body.Properties[notifications.DisconEAlert]
-		if !ok {
-			disconnectAlert = false
-		}
-
-		slackIntegration, err := createSlackIntegration(authToken, channelID, pmAlert, svfAlert, disconnectAlert, body.UIUrl)
+		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(integrationType, body)
 		if err != nil {
-			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
-				serv.Warnf("CreateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-				return
-			} else {
+			if errorCode == 500 {
 				serv.Errorf("CreateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+			} else {
+				serv.Warnf("CreateSlackIntegration: " + err.Error())
 			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			return
 		}
 		integration = slackIntegration
-		if integration.Keys["auth_token"] != "" {
-			integration.Keys["auth_token"] = "xoxb-****"
+	case "s3":
+		s3Integration, errorCode, err := it.handleCreateS3Integration(body.Keys, "s3")
+		if err != nil {
+			if errorCode == 500 {
+				serv.Errorf("CreateS3Integration: " + err.Error())
+			} else {
+				serv.Warnf("CreateS3Integration: " + err.Error())
+			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			return
 		}
+		integration = s3Integration
 	default:
-		serv.Warnf("CreateIntegration: Unsupported integration type")
-		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
+		serv.Warnf("CreateIntegration: Unsupported integration type -  " + integrationType)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + integrationType})
+		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -123,201 +93,56 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	var integration models.Integration
 	switch strings.ToLower(body.Name) {
 	case "slack":
-		var authToken, channelID, uiUrl string
-		var pmAlert, svfAlert, disconnectAlert bool
-		authToken, ok := body.Keys["auth_token"]
-		if !ok {
-			serv.Warnf("CreateIntegration: Must provide auth token for slack integration")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide auth token for slack integration"})
-		}
-		channelID, ok = body.Keys["channel_id"]
-		if !ok {
-			if !ok {
-				serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
-			}
-		}
-		uiUrl = body.UIUrl
-		if uiUrl == "" {
-			serv.Warnf("CreateIntegration: Must provide channel ID for slack integration")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Must provide channel ID for slack integration"})
-		}
-		pmAlert, ok = body.Properties[notifications.PoisonMAlert]
-		if !ok {
-			pmAlert = false
-		}
-		svfAlert, ok = body.Properties[notifications.SchemaVAlert]
-		if !ok {
-			svfAlert = false
-		}
-		disconnectAlert, ok = body.Properties[notifications.DisconEAlert]
-		if !ok {
-			disconnectAlert = false
-		}
-
-		slackIntegration, err := updateSlackIntegration(authToken, channelID, pmAlert, svfAlert, disconnectAlert, body.UIUrl)
+		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration("slack", body)
 		if err != nil {
-			if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") {
-				serv.Warnf("UpdateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-				return
-			} else {
+			if errorCode == 500 {
 				serv.Errorf("UpdateSlackIntegration: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+			} else {
+				serv.Warnf("UpdateSlackIntegration: " + err.Error())
 			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			return
 		}
 		integration = slackIntegration
-		if integration.Keys["auth_token"] != "" {
-			integration.Keys["auth_token"] = "xoxb-****"
+	case "s3":
+		s3Integration, errorCode, err := it.handleUpdateS3Integration(body)
+		if err != nil {
+			if errorCode == 500 {
+				serv.Errorf("UpdateS3Integration: " + err.Error())
+			} else {
+				serv.Warnf("UpdateS3Integration: " + err.Error())
+			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			return
 		}
+		integration = s3Integration
+
 	default:
-		serv.Warnf("CreateIntegration: Unsupported integration type - " + body.Name)
-		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration: Unsupported integration type - " + body.Name})
+		serv.Warnf("UpdateIntegration: Unsupported integration type - " + body.Name)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + body.Name})
+		return
 	}
 
 	c.IndentedJSON(200, integration)
 }
 
-func createSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
-	var slackIntegration models.Integration
-	filter := bson.M{"name": "slack"}
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&slackIntegration)
-	if err == mongo.ErrNoDocuments {
-		err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was added successfully")
-		if err != nil {
-			return slackIntegration, err
-		}
-		keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
-		slackIntegration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "slack",
-			Keys:       keys,
-			Properties: properties,
-		}
-		_, insertErr := integrationsCollection.InsertOne(context.TODO(), slackIntegration)
-		if insertErr != nil {
-			return slackIntegration, insertErr
-		}
-
-		integrationToUpdate := models.CreateIntegrationSchema{
-			Name:       "slack",
-			Keys:       keys,
-			Properties: properties,
-			UIUrl:      uiUrl,
-		}
-		msg, err := json.Marshal(integrationToUpdate)
-		if err != nil {
-			return slackIntegration, err
-		}
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
-		if err != nil {
-			return slackIntegration, err
-		}
-		update := models.ConfigurationsUpdate{
-			Type:   sendNotificationType,
-			Update: svfAlert,
-		}
-		serv.SendUpdateToClients(update)
-
-		return slackIntegration, nil
-	} else if err != nil {
-		return slackIntegration, err
-	}
-	return slackIntegration, errors.New("Slack integration already exists")
-}
-
-func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
-	var slackIntegration models.Integration
-	if authToken == "" {
-		var integrationFromDb models.Integration
-		filter := bson.M{"name": "slack"}
-		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
-		if err != nil {
-			return slackIntegration, err
-		}
-		authToken = integrationFromDb.Keys["auth_token"]
-	}
-
-	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
-	if err != nil {
-		return slackIntegration, err
-	}
-	keys, properties := createSlackKeysAndProperties(authToken, channelID, pmAlert, svfAlert, disconnectAlert, uiUrl)
-	filter := bson.M{"name": "slack"}
-	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
-		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
-	if err == mongo.ErrNoDocuments {
-		slackIntegration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "slack",
-			Keys:       keys,
-			Properties: properties,
-		}
-		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
-	} else if err != nil {
-		return slackIntegration, err
-	}
-
-	integrationToUpdate := models.CreateIntegrationSchema{
-		Name:       "slack",
-		Keys:       keys,
-		Properties: properties,
-		UIUrl:      uiUrl,
-	}
-
-	msg, err := json.Marshal(integrationToUpdate)
-	if err != nil {
-		return slackIntegration, err
-	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		return slackIntegration, err
-	}
-
-	update := models.ConfigurationsUpdate{
-		Type:   sendNotificationType,
-		Update: svfAlert,
-	}
-	serv.SendUpdateToClients(update)
-
-	slackIntegration.Keys = keys
-	slackIntegration.Properties = properties
-	return slackIntegration, nil
-}
-
-func testSlackIntegration(authToken string, channelID string, message string) error {
-	slackClientTemp := slack.New(authToken)
-	_, err := slackClientTemp.AuthTest()
-	if err != nil {
-		return errors.New("Invalid auth token")
-	}
-	attachment := slack.Attachment{
-		AuthorName: "Memphis",
-		Text:       message,
-		Color:      "#6557FF",
-	}
-
-	_, _, err = slackClientTemp.PostMessage(
-		channelID,
-		slack.MsgOptionAttachments(attachment),
-	)
-	if err != nil {
-		return errors.New("Invalid channel ID")
-	}
-	return nil
-}
-
-func createSlackKeysAndProperties(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (map[string]string, map[string]bool) {
+func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region string) (map[string]string, map[string]bool) {
 	keys := make(map[string]string)
-	keys["auth_token"] = authToken
-	keys["channel_id"] = channelID
 	properties := make(map[string]bool)
-	properties[notifications.PoisonMAlert] = pmAlert
-	properties[notifications.SchemaVAlert] = svfAlert
-	properties[notifications.DisconEAlert] = disconnectAlert
+	switch integrationType {
+	case "slack":
+		keys["auth_token"] = authToken
+		keys["channel_id"] = channelID
+		properties[PoisonMAlert] = pmAlert
+		properties[SchemaVAlert] = svfAlert
+		properties[DisconEAlert] = disconnectAlert
+	case "s3":
+		keys["access_key"] = accessKey
+		keys["secret_key"] = secretKey
+		keys["bucket_name"] = bucketName
+		keys["region"] = region
+	}
+
 	return keys, properties
 }
 
@@ -343,6 +168,11 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	if integration.Name == "slack" && integration.Keys["auth_token"] != "" {
 		integration.Keys["auth_token"] = "xoxb-****"
 	}
+
+	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
+		lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
+		integration.Keys["secret_key"] = "****" + lastCharsSecretKey
+	}
 	c.IndentedJSON(200, integration)
 }
 
@@ -364,6 +194,10 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 	for i := 0; i < len(integrations); i++ {
 		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != "" {
 			integrations[i].Keys["auth_token"] = "xoxb-****"
+		}
+		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
+			lastCharsSecretKey := integrations[i].Keys["secret_key"][len(integrations[i].Keys["secret_key"])-4:]
+			integrations[i].Keys["secret_key"] = "****" + lastCharsSecretKey
 		}
 	}
 
@@ -430,22 +264,6 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-disconnect-integration-"+integrationType)
 	}
 	c.IndentedJSON(200, gin.H{})
-}
-
-func InitializeIntegrations(c *mongo.Client) error {
-	notifications.IntegrationsCollection = db.GetCollection("integrations", c)
-	notifications.NotificationIntegrationsMap = make(map[string]interface{})
-	notifications.NotificationFunctionsMap = make(map[string]interface{})
-	notifications.NotificationFunctionsMap["slack"] = notifications.SendMessageToSlackChannel
-	err := notifications.InitializeSlackConnection(c)
-	if err != nil {
-		return err
-	}
-
-	if configuration.SANDBOX_ENV == "true" {
-		createSlackIntegration(configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, configuration.SANDBOX_UI_URL)
-	}
-	return nil
 }
 
 func (it IntegrationsHandler) RequestIntegration(c *gin.Context) {

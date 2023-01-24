@@ -17,7 +17,6 @@ import (
 	"errors"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
 	"memphis-broker/utils"
 	"sort"
 	"strings"
@@ -195,7 +194,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-producer")
 		}
 	}
-	shouldSendNotifications, err := notifications.IsSlackEnabled()
+	shouldSendNotifications, err := IsSlackEnabled()
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 	}

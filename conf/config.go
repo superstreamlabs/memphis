@@ -66,6 +66,10 @@ func GetConfig() Configuration {
 		gonfig.GetConf("./conf/config.json", &configuration)
 	}
 
+	if configuration.EXTERNAL_MONGO {
+		configuration.DB_NAME = "memphis-db"
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	return configuration
 }

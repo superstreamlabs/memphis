@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
+
 	"strconv"
 	"strings"
 	"time"
@@ -76,13 +76,16 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
 				return
 			}
-			systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
-				bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
-			UI_url = integrationUpdate.UIUrl
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				notifications.CacheSlackDetails(integrationUpdate.Keys, integrationUpdate.Properties)
+				systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
+					bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
+				UI_url = integrationUpdate.UIUrl
+				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
+			case "s3":
+				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
+				s.Warnf("ListenForIntegrationsUpdateEvents: %s %s", strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
 			}
 		}(copyBytes(msg))
@@ -129,7 +132,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if notification.Code != "" {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = notifications.SendNotification(notification.Title, notificationMsg, notification.Type)
+			err = SendNotification(notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				return
 			}
