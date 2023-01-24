@@ -26,7 +26,6 @@ import (
 	"hash"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -49,6 +48,9 @@ import (
 	"golang.org/x/crypto/chacha20"
 	"golang.org/x/crypto/chacha20poly1305"
 )
+
+// type FsHandler struct{ S *Server }
+var server *Server
 
 type FileStoreConfig struct {
 	// Where the parent directory for all storage will be located.
@@ -2074,7 +2076,7 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 
 	var smv StoreMsg
 	sm, err := mb.cacheLookup(seq, &smv)
-	log.Println("msg to delete", string(smv.subj), string(smv.hdr), string(smv.msg), string(smv.buf), smv.seq, string(fs.cfg.StreamConfig.Name))
+	// log.Println("msg to delete", string(smv.subj), string(smv.hdr), string(smv.msg), string(smv.buf), smv.seq, string(fs.cfg.StreamConfig.Name))
 	if err != nil {
 		mb.mu.Unlock()
 		fsUnlock()
