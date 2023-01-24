@@ -35,6 +35,9 @@ const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 
+var LastReadThroughput models.Throughput
+var LastWriteThroughput models.Throughput
+
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -217,6 +220,66 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 	return nil
 }
 
+func getThroughputSubject(serverName string) string {
+	key := serverName
+	if key == _EMPTY_ {
+		key = "broker"
+	}
+	return throughputStreamName + tsep + key
+}
+
+func (s *Server) InitializeThroughput() error {
+	v, err := serv.Varz(nil)
+	if err != nil {
+		return err
+	}
+
+	LastReadThroughput = models.Throughput{
+		Bytes:         v.InBytes,
+		ThroughputSec: 0,
+	}
+	LastWriteThroughput = models.Throughput{
+		Bytes:         v.OutBytes,
+		ThroughputSec: 0,
+	}
+
+	// TODO: initialize kv stream for throughput + save in stream
+
+	go s.CalculateSelfThroughput()
+
+	return nil
+}
+
+func (s *Server) CalculateSelfThroughput() error {
+	for range time.Tick(time.Second * 1) {
+		v, err := serv.Varz(nil)
+		if err != nil {
+			return err
+		}
+
+		currentWrite := v.OutBytes - LastWriteThroughput.Bytes
+		LastWriteThroughput = models.Throughput{
+			Bytes:         v.OutBytes,
+			ThroughputSec: currentWrite,
+		}
+		currentRead := v.InBytes - LastReadThroughput.Bytes
+		LastReadThroughput = models.Throughput{
+			Bytes:         v.InBytes,
+			ThroughputSec: currentRead,
+		}
+		//TODO: publish read + write throughput to kv - key configuration.SERVER_NAME
+		subj := getThroughputSubject(configuration.SERVER_NAME)
+		tpMsg := models.BrokerThroughput{
+			Name:  configuration.SERVER_NAME,
+			Read:  currentRead,
+			Write: currentWrite,
+		}
+		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
+	}
+
+	return nil
+}
+
 func (s *Server) StartBackgroundTasks() error {
 	s.ListenForPoisonMessages()
 	err := s.ListenForZombieConnCheckRequests()
@@ -263,6 +326,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return err
 	} else {
 		UI_url = systemKey.Value
+	}
+
+	err = s.InitializeThroughput()
+	if err != nil {
+		return err
 	}
 	return nil
 }

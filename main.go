@@ -140,6 +140,8 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("LaunchDlsForOldStations: " + err.Error())
 	}
 
+	go s.CreateThroughputStream()
+
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
@@ -196,6 +198,7 @@ func main() {
 	dbConnection := runMemphis(s)
 	defer db.Close(dbConnection, s)
 	defer analytics.Close()
-
+	// fmt.Println(runtime.GOMAXPROCS(0))
+	// fmt.Println(runtime.NumCPU())
 	s.WaitForShutdown()
 }

@@ -45,11 +45,12 @@ type SystemComponents struct {
 }
 
 type MainOverviewData struct {
-	TotalStations    int                `json:"total_stations"`
-	TotalMessages    int                `json:"total_messages"`
-	SystemComponents []SystemComponents `json:"system_components"`
-	Stations         []ExtendedStation  `json:"stations"`
-	K8sEnv           bool               `json:"k8s_env"`
+	TotalStations     int                `json:"total_stations"`
+	TotalMessages     int                `json:"total_messages"`
+	SystemComponents  []SystemComponents `json:"system_components"`
+	Stations          []ExtendedStation  `json:"stations"`
+	K8sEnv            bool               `json:"k8s_env"`
+	BrokersThroughput []BrokerThroughput `json:"brokers_throughput"`
 }
 
 type GetStationOverviewDataSchema struct {
@@ -76,4 +77,15 @@ type SystemLogsResponse struct {
 type DevSystemInfoResponse struct {
 	CPU    float64 `json:"cpu"`
 	Memory float64 `json:"memory"`
+}
+
+type BrokerThroughput struct {
+	Name  string  `json:"name"`
+	Read  int64 `json:"read"`
+	Write int64 `json:"write"`
+}
+
+type Throughput struct {
+	Bytes         int64   `json:"bytes"`
+	ThroughputSec int64 `json:"throughput_sec"`
 }

@@ -137,22 +137,27 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		var rt runtime.MemStats
 		runtime.ReadMemStats(&rt)
 		if configuration.DEV_ENV == "true" {
-			var storage_size float64
+			maxCpu := runtime.GOMAXPROCS(0)
+			v, err := serv.Varz(nil)
+			if err != nil {
+				return components, err
+			}
+			var storageComp models.CompStats
 			os := runtime.GOOS
 			switch os {
 			case "windows":
-				storage_size = 500 // TODO: add support
+				storageComp = defaultStat // TODO: add support for windows
 			default:
 				size, err := getUnixStorageSize()
 				if err != nil {
 					return components, err
 				}
-				storage_size = size
-			}
-			maxCpu := runtime.GOMAXPROCS(0)
-			v, err := serv.Varz(nil)
-			if err != nil {
-				return components, err
+				storage_size := size * 1024 * 1024 * 1024
+				storageComp = models.CompStats{
+					Max:        storage_size,
+					Current:    float64(v.JetStream.Stats.Store),
+					Percentage: math.Ceil(float64(v.JetStream.Stats.Store)/storage_size) * 100,
+				}
 			}
 			brokerComponents = append(brokerComponents, models.SysComponent{
 				Name: "memphis-broker",
@@ -164,13 +169,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				Memory: models.CompStats{
 					Max:        float64(v.JetStream.Config.MaxMemory),
 					Current:    float64(v.JetStream.Stats.Memory),
-					Percentage: math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
+					Percentage: math.Ceil(float64(v.JetStream.Stats.Memory)/float64(v.JetStream.Config.MaxMemory)) * 100,
 				},
-				Storage: models.CompStats{
-					Max:        storage_size * 1024 * 1024 * 1024,
-					Current:    float64(v.JetStream.Stats.Store),
-					Percentage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
-				},
+				Storage:   storageComp,
 				Connected: true,
 			})
 			brokerPorts = []int{9000, 6666, 7770, 8222}
@@ -223,20 +224,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 
 		for _, container := range containers {
-			continerName := container.Names[0]
+			containerName := container.Names[0]
 			if container.State != "running" {
 				comp := models.SysComponent{
-					Name:      continerName,
+					Name:      containerName,
 					CPU:       defaultStat,
 					Memory:    defaultStat,
 					Storage:   defaultStat,
 					Connected: false,
 				}
-				if strings.Contains(continerName, "mongo") {
+				if strings.Contains(containerName, "mongo") {
 					dbComponents = append(dbComponents, comp)
-				} else if strings.Contains(continerName, "broker") {
+				} else if strings.Contains(containerName, "cluster") {
 					brokerComponents = append(brokerComponents, comp)
-				} else if strings.Contains(continerName, "proxy") {
+				} else if strings.Contains(containerName, "proxy") {
 					proxyComponents = append(proxyComponents, comp)
 				}
 				continue
@@ -267,13 +268,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 
-			if strings.Contains(continerName, "mongo") {
+			if strings.Contains(containerName, "mongo") {
 				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
 					return components, err
 				}
 				dbComponents = append(dbComponents, models.SysComponent{
-					Name: continerName,
+					Name: containerName,
 					CPU: models.CompStats{
 						Max:        cpuLimit,
 						Current:    totalCpuUsage,
@@ -294,13 +295,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				for _, port := range container.Ports {
 					dbPorts = append(dbPorts, int(port.PublicPort))
 				}
-			} else if strings.Contains(continerName, "broker") {
+			} else if strings.Contains(containerName, "cluster") {
 				v, err := serv.Varz(nil)
 				if err != nil {
 					return components, err
 				}
 				brokerComponents = append(brokerComponents, models.SysComponent{
-					Name: continerName,
+					Name: containerName,
 					CPU: models.CompStats{
 						Max:        cpuLimit,
 						Current:    totalCpuUsage,
@@ -321,13 +322,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				for _, port := range container.Ports {
 					brokerPorts = append(brokerPorts, int(port.PublicPort))
 				}
-			} else if strings.Contains(continerName, "proxy") {
+			} else if strings.Contains(containerName, "proxy") {
 				for _, port := range container.Ports {
 					proxyPorts = append(proxyPorts, int(port.PublicPort))
 				}
 				if err != nil {
 					proxyComponents = append(proxyComponents, models.SysComponent{
-						Name: continerName,
+						Name: containerName,
 						CPU: models.CompStats{
 							Max:        cpuLimit,
 							Current:    totalCpuUsage,
@@ -345,45 +346,48 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 			}
 		}
-
-		if dbComponents[0].Connected {
-			dbActual = 1
+		if len(dbComponents) > 0 {
+			if dbComponents[0].Connected {
+				dbActual = 1
+			}
+			components = append(components, models.SystemComponents{
+				Name:        dbComponents[0].Name,
+				Components:  dbComponents,
+				Status:      checkCompStatus(dbComponents),
+				Ports:       removeDuplicatePorts(dbPorts),
+				DesiredPods: 1,
+				ActualPods:  dbActual,
+				Address:     "http://localhost",
+			})
 		}
-		components = append(components, models.SystemComponents{
-			Name:        dbComponents[0].Name,
-			Components:  dbComponents,
-			Status:      checkCompStatus(dbComponents),
-			Ports:       removeDuplicatePorts(dbPorts),
-			DesiredPods: 1,
-			ActualPods:  dbActual,
-			Address:     "http://localhost",
-		})
-
-		if brokerComponents[0].Connected {
-			brokerActual = 1
+		if len(brokerComponents) > 0 {
+			if brokerComponents[0].Connected {
+				brokerActual = 1
+			}
+			components = append(components, models.SystemComponents{
+				Name:        brokerComponents[0].Name,
+				Components:  brokerComponents,
+				Status:      checkCompStatus(brokerComponents),
+				Ports:       removeDuplicatePorts(brokerPorts),
+				DesiredPods: 1,
+				ActualPods:  brokerActual,
+				Address:     "http://localhost",
+			})
 		}
-		components = append(components, models.SystemComponents{
-			Name:        brokerComponents[0].Name,
-			Components:  brokerComponents,
-			Status:      checkCompStatus(brokerComponents),
-			Ports:       removeDuplicatePorts(brokerPorts),
-			DesiredPods: 1,
-			ActualPods:  brokerActual,
-			Address:     "http://localhost",
-		})
-
-		if proxyComponents[0].Connected {
-			proxyActual = 1
+		if len(proxyComponents) > 0 {
+			if proxyComponents[0].Connected {
+				proxyActual = 1
+			}
+			components = append(components, models.SystemComponents{
+				Name:        proxyComponents[0].Name,
+				Components:  proxyComponents,
+				Status:      checkCompStatus(proxyComponents),
+				Ports:       removeDuplicatePorts(proxyPorts),
+				DesiredPods: 1,
+				ActualPods:  proxyActual,
+				Address:     "http://localhost",
+			})
 		}
-		components = append(components, models.SystemComponents{
-			Name:        proxyComponents[0].Name,
-			Components:  proxyComponents,
-			Status:      checkCompStatus(proxyComponents),
-			Ports:       removeDuplicatePorts(proxyPorts),
-			DesiredPods: 1,
-			ActualPods:  proxyActual,
-			Address:     "http://localhost",
-		})
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetClusterConfig()
@@ -411,6 +415,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
+			// pod.Status.ContainerStatuses[0].rx
 			// data, err := clientset.RESTClient().Get().AbsPath("/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics").DoRaw(context.TODO())
 			// if err != nil {
 			// 	serv.Errorf("get proxy: " + err.Error())
@@ -505,13 +510,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			restConfig, err := rest.InClusterConfig()
 			if err != nil {
 				serv.Errorf("restConfig: " + err.Error())
-				return nil, err
+				return components, err
 			}
 			for _, container := range podMetrics.Containers {
 				if strings.Contains(container.Name, "mongo") || strings.Contains(container.Name, "proxy") || strings.Contains(container.Name, "broker") {
 					storagePercentage, err = getContainerStorageUsage(restConfig, mountPath, container.Name, pod.Name)
 					if err != nil {
-						return nil, err
+						return components, err
 					}
 				}
 				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
@@ -633,6 +638,95 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
 }
 
+func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughput, error) {
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_throughput_consumer_" + uid
+	var msgs []StoredMsg
+	var throughputs []models.BrokerThroughput
+	streamInfo, err := serv.memphisStreamInfo(throughputStreamName)
+	if err != nil {
+		return throughputs, err
+	}
+
+	amount := streamInfo.State.Msgs
+	startSeq := uint64(1)
+	if streamInfo.State.FirstSeq > 0 {
+		startSeq = streamInfo.State.FirstSeq
+	}
+
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: DeliverByStartSequence,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+	}
+
+	err = serv.memphisAddConsumer(throughputStreamName, &cc)
+	if err != nil {
+		return throughputs, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+
+	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				serv.Errorf("GetBrokersThroughputs: " + err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return throughputs, err
+	}
+
+	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	timeout := 300 * time.Millisecond
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	serv.unsubscribeOnGlobalAcc(sub)
+	err = serv.memphisRemoveConsumer(throughputStreamName, durableName)
+	if err != nil {
+		return throughputs, err
+	}
+
+	for _, msg := range msgs {
+		var brokerThroughput models.BrokerThroughput
+		err = json.Unmarshal(msg.Data, &brokerThroughput)
+		if err != nil {
+			return throughputs, err
+		}
+		throughputs = append(throughputs, brokerThroughput)
+
+	}
+	return throughputs, nil
+}
+
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
 	stations, err := stationsHandler.GetAllStationsDetails()
@@ -657,12 +751,22 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	if configuration.DOCKER_ENV != "" {
 		k8sEnv = false
 	}
+	brokersThroughputs, err := mh.GetBrokersThroughputs()
+	if err != nil {
+		serv.Errorf("GetMainOverviewData: GetBrokersThroughputs: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	for _, t := range brokersThroughputs {
+		serv.Noticef(t.Name + ": " + strconv.Itoa(int(t.Read)) + " read, " + strconv.Itoa(int(t.Write)) + " write")
+	}
 	response := models.MainOverviewData{
-		TotalStations:    len(stations),
-		TotalMessages:    totalMessages,
-		SystemComponents: systemComponents,
-		Stations:         stations,
-		K8sEnv:           k8sEnv,
+		TotalStations:     len(stations),
+		TotalMessages:     totalMessages,
+		SystemComponents:  systemComponents,
+		Stations:          stations,
+		K8sEnv:            k8sEnv,
+		BrokersThroughput: brokersThroughputs,
 	}
 
 	c.IndentedJSON(200, response)

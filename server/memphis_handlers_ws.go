@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis-broker/models"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -208,12 +209,20 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 	if configuration.DOCKER_ENV != "" {
 		k8sEnv = false
 	}
+	brokersThroughputs, err := h.Monitoring.GetBrokersThroughputs()
+	if err != nil {
+		return models.MainOverviewData{}, err
+	}
+	for _, t := range brokersThroughputs {
+		serv.Noticef(t.Name + ": " + strconv.Itoa(int(t.Read)) + " read, " + strconv.Itoa(int(t.Write)) + " write")
+	}
 	return models.MainOverviewData{
-		TotalStations:    len(stations),
-		TotalMessages:    totalMessages,
-		SystemComponents: systemComponents,
-		Stations:         stations,
-		K8sEnv:           k8sEnv,
+		TotalStations:     len(stations),
+		TotalMessages:     totalMessages,
+		SystemComponents:  systemComponents,
+		Stations:          stations,
+		K8sEnv:            k8sEnv,
+		BrokersThroughput: brokersThroughputs,
 	}, nil
 }
 
