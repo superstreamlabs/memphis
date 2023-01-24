@@ -54,9 +54,6 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			return
 		}
 		integration = slackIntegration
-		if integration.Keys["auth_token"] != "" {
-			integration.Keys["auth_token"] = "xoxb-****"
-		}
 	case "s3":
 		s3Integration, err := it.handleCreateS3Integration(body.Keys, "s3")
 		if err != nil {
@@ -65,10 +62,6 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			return
 		}
 		integration = s3Integration
-		if integration.Keys["secret_key"] != "" {
-			lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
-			integration.Keys["secret_key"] = "****" + lastCharsSecretKey
-		}
 	default:
 		serv.Warnf("CreateIntegration: Unsupported integration type")
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
@@ -106,9 +99,6 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			return
 		}
 		integration = slackIntegration
-		if integration.Keys["auth_token"] != "" {
-			integration.Keys["auth_token"] = "xoxb-****"
-		}
 	case "s3":
 		s3Integration, err := it.handleUpdateS3Integration(body)
 		if err != nil {
@@ -117,10 +107,6 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			return
 		}
 		integration = s3Integration
-		if integration.Keys["secret_key"] != "" {
-			lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
-			integration.Keys["secret_key"] = "****" + lastCharsSecretKey
-		}
 
 	default:
 		serv.Warnf("UpdateIntegration: Unsupported integration type - " + body.Name)

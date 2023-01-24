@@ -220,6 +220,7 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 			Update: properties[SchemaVAlert],
 		}
 		serv.SendUpdateToClients(update)
+		slackIntegration.Keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
 		return slackIntegration, nil
 	} else if err != nil {
 		return slackIntegration, err
@@ -282,6 +283,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	}
 	serv.SendUpdateToClients(update)
 
+	keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
 	return slackIntegration, nil
@@ -307,4 +309,12 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 		return errors.New("Invalid channel ID")
 	}
 	return nil
+}
+
+func hideSlackAuthToken(authToken string) string {
+	if authToken != "" {
+		authToken = "xoxb-****"
+		return authToken
+	}
+	return authToken
 }

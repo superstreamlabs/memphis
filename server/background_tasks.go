@@ -82,7 +82,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
 			default:
-				s.Warnf("unkown integration")
+				s.Warnf("ListenForIntegrationsUpdateEvents: %s %s", strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
 			}
 		}(copyBytes(msg))

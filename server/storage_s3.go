@@ -104,39 +104,6 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) error
 	}
 
 	svc := s3.New(sess)
-	_, err = svc.HeadBucket(&s3.HeadBucketInput{
-		Bucket: aws.String(bucketName),
-	})
-	if err != nil {
-		if strings.Contains(err.Error(), "Forbidden") {
-			err = errors.New("Invalid access key or secret key")
-		}
-		if strings.Contains(err.Error(), "NotFound: Not Found") {
-			err = errors.New("Bucket name is not exists")
-		}
-		if strings.Contains(err.Error(), "send request failed") {
-			err = errors.New("Invalid region")
-		}
-		err = errors.New("create a S3 client with additional configuration failure: " + err.Error())
-		return err
-	}
-
-	acl, err := svc.GetBucketAcl(&s3.GetBucketAclInput{
-		Bucket: aws.String(bucketName),
-	})
-	if err != nil {
-		err = errors.New("GetBucketAcl error" + err.Error())
-		return err
-	}
-
-	permission := *acl.Grants[0].Permission
-	permissionValue := permission
-
-	if permissionValue != "FULL_CONTROL" {
-		err = errors.New("you should full control permission: read, write and delete " + err.Error())
-		return err
-	}
-
 	err = testS3Integration(sess, svc, bucketName)
 	if err != nil {
 		return err
@@ -174,6 +141,7 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		if err != nil {
 			return s3Integration, err
 		}
+		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
 
 	} else if err != nil {
@@ -216,12 +184,46 @@ func updateS3Integration(keys map[string]string, properties map[string]bool) (mo
 		return s3Integration, err
 	}
 
+	keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 	s3Integration.Keys = keys
 	s3Integration.Properties = properties
 	return s3Integration, nil
 }
 
 func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) error {
+	_, err := svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "Forbidden") {
+			err = errors.New("Invalid access key or secret key")
+		}
+		if strings.Contains(err.Error(), "NotFound: Not Found") {
+			err = errors.New("Bucket name is not exists")
+		}
+		if strings.Contains(err.Error(), "send request failed") {
+			err = errors.New("Invalid region")
+		}
+		err = errors.New("create a S3 client with additional configuration failure: " + err.Error())
+		return err
+	}
+
+	acl, err := svc.GetBucketAcl(&s3.GetBucketAclInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		err = errors.New("GetBucketAcl error" + err.Error())
+		return err
+	}
+
+	permission := *acl.Grants[0].Permission
+	permissionValue := permission
+
+	if permissionValue != "FULL_CONTROL" {
+		err = errors.New("you should full control permission: read, write and delete " + err.Error())
+		return err
+	}
+
 	uploader := s3manager.NewUploader(sess)
 	if configuration.SERVER_NAME == "" {
 		configuration.SERVER_NAME = "memphis"
@@ -229,7 +231,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) err
 
 	reader := strings.NewReader(string("test") + " " + configuration.SERVER_NAME)
 	// Upload the object to S3.
-	_, err := uploader.Upload(&s3manager.UploadInput{
+	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(configuration.SERVER_NAME),
 		Body:   reader,
@@ -238,8 +240,6 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) err
 		err = errors.New("failed to upload the obeject to S3 " + err.Error())
 		return err
 	}
-	serv.Noticef("Object " + *aws.String(configuration.SERVER_NAME) + " successfully uploaded to S3")
-
 	//delete the object
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
 	if err != nil {
@@ -254,6 +254,15 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) err
 		err = errors.New("Error occurred while waiting for object to be deleted from bucket " + bucketName + err.Error())
 		return err
 	}
-	serv.Noticef("Object " + *aws.String(configuration.SERVER_NAME) + " successfully deleted")
 	return nil
+}
+
+func hideS3SecretKey(secretKey string) string {
+	if secretKey != "" {
+		lastCharsSecretKey := secretKey[len(secretKey)-4:]
+		secretKey = "****" + lastCharsSecretKey
+		return secretKey
+	}
+	return secretKey
+
 }
