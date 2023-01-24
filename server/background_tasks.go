@@ -228,22 +228,20 @@ func getThroughputSubject(serverName string) string {
 	return throughputStreamName + tsep + key
 }
 
-func (s *Server) InitializeThroughput() error {
+func (s *Server) InitializeThroughputSampling() error {
 	v, err := serv.Varz(nil)
 	if err != nil {
 		return err
 	}
 
 	LastReadThroughput = models.Throughput{
-		Bytes:         v.InBytes,
-		ThroughputSec: 0,
+		Bytes:       v.InBytes,
+		BytesPerSec: 0,
 	}
 	LastWriteThroughput = models.Throughput{
-		Bytes:         v.OutBytes,
-		ThroughputSec: 0,
+		Bytes:       v.OutBytes,
+		BytesPerSec: 0,
 	}
-
-	// TODO: initialize kv stream for throughput + save in stream
 
 	go s.CalculateSelfThroughput()
 
@@ -259,15 +257,14 @@ func (s *Server) CalculateSelfThroughput() error {
 
 		currentWrite := v.OutBytes - LastWriteThroughput.Bytes
 		LastWriteThroughput = models.Throughput{
-			Bytes:         v.OutBytes,
-			ThroughputSec: currentWrite,
+			Bytes:       v.OutBytes,
+			BytesPerSec: currentWrite,
 		}
 		currentRead := v.InBytes - LastReadThroughput.Bytes
 		LastReadThroughput = models.Throughput{
-			Bytes:         v.InBytes,
-			ThroughputSec: currentRead,
+			Bytes:       v.InBytes,
+			BytesPerSec: currentRead,
 		}
-		//TODO: publish read + write throughput to kv - key configuration.SERVER_NAME
 		subj := getThroughputSubject(configuration.SERVER_NAME)
 		tpMsg := models.BrokerThroughput{
 			Name:  configuration.SERVER_NAME,
@@ -328,7 +325,7 @@ func (s *Server) StartBackgroundTasks() error {
 		UI_url = systemKey.Value
 	}
 
-	err = s.InitializeThroughput()
+	err = s.InitializeThroughputSampling()
 	if err != nil {
 		return err
 	}

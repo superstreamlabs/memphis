@@ -13,25 +13,18 @@ package models
 
 import "time"
 
-type SystemComponent struct {
-	Component   string `json:"component"`
-	DesiredPods int    `json:"desired_pods"`
-	ActualPods  int    `json:"actual_pods"`
-	Ports       []int  `json:"ports"`
-}
-
 type SysComponent struct {
-	Name      string    `json:"name"`
-	CPU       CompStats `json:"cpu"`
-	Memory    CompStats `json:"memory"`
-	Storage   CompStats `json:"storage"`
-	Connected bool      `json:"connected"`
+	Name    string    `json:"name"`
+	CPU     CompStats `json:"cpu"`
+	Memory  CompStats `json:"memory"`
+	Storage CompStats `json:"storage"`
+	Healthy bool      `json:"healthy"`
 }
 
 type CompStats struct {
-	Max        float64 `json:"max"`
-	Current    float64 `json:"current"`
-	Percentage float64 `json:"percentage"`
+	Total      int64 `json:"total"`
+	Current    int64 `json:"current"`
+	Percentage int   `json:"percentage"`
 }
 
 type SystemComponents struct {
@@ -41,7 +34,7 @@ type SystemComponents struct {
 	Ports       []int          `json:"ports"`
 	DesiredPods int            `json:"desired_pods"`
 	ActualPods  int            `json:"actual_pods"`
-	Address     string         `json:"address"`
+	Host        string         `json:"host"`
 }
 
 type MainOverviewData struct {
@@ -74,18 +67,19 @@ type SystemLogsResponse struct {
 	Logs []Log `json:"logs"`
 }
 
-type DevSystemInfoResponse struct {
-	CPU    float64 `json:"cpu"`
-	Memory float64 `json:"memory"`
+type ProxyMonitoringResponse struct {
+	CPU     float64 `json:"cpu"`
+	Memory  float64 `json:"memory"`
+	Storage float64 `json:"storage"`
 }
 
 type BrokerThroughput struct {
-	Name  string  `json:"name"`
-	Read  int64 `json:"read"`
-	Write int64 `json:"write"`
+	Name  string `json:"name"`
+	Read  int64  `json:"read"`
+	Write int64  `json:"write"`
 }
 
 type Throughput struct {
-	Bytes         int64   `json:"bytes"`
-	ThroughputSec int64 `json:"throughput_sec"`
+	Bytes       int64 `json:"bytes"`
+	BytesPerSec int64 `json:"bytes_per_sec"`
 }

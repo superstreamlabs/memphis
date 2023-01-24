@@ -196,7 +196,5 @@ func main() {
 	dbConnection := runMemphis(s)
 	defer db.Close(dbConnection, s)
 	defer analytics.Close()
-	// fmt.Println(runtime.GOMAXPROCS(0))
-	// fmt.Println(runtime.NumCPU())
 	s.WaitForShutdown()
 }

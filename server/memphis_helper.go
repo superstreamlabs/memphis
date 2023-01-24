@@ -286,7 +286,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		Discard:      DiscardOld,
 		MaxMsgsPer:   1,
 		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
-		Storage:      MemoryStorage,
+		Storage:      FileStorage,
 		Replicas:     1,
 		NoAck:        false,
 	})
