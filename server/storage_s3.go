@@ -57,7 +57,7 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 	s3Integration, err := createS3Integration(keys, properties)
 	if err != nil {
-		return models.Integration{}, statusCode, err
+		return models.Integration{}, 500, err
 	}
 	return s3Integration, statusCode, nil
 }
@@ -71,7 +71,7 @@ func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegr
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
 	s3Integration, err := updateS3Integration(keys, properties)
 	if err != nil {
-		return s3Integration, statusCode, err
+		return s3Integration, 500, err
 	}
 	return s3Integration, statusCode, nil
 }
