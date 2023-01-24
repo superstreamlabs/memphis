@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"memphis-broker/analytics"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
 
 	"context"
 	"errors"
@@ -42,7 +41,7 @@ const (
 func updateNewClientWithConfig(c *client, connId string) {
 	// TODO more configurations logic here
 
-	slackEnabled, err := notifications.IsSlackEnabled()
+	slackEnabled, err := IsSlackEnabled()
 	if err != nil {
 		c.Errorf("updateNewClientWithConfig: " + err.Error())
 	}
@@ -156,7 +155,7 @@ func handleConnectMessage(client *client) error {
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
- 	shouldSendAnalytics, _ := shouldSendAnalytics()
+	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")
 		sdkName := splitted[len(splitted)-1]
@@ -294,7 +293,7 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if len(consumerNames) > 0 {
 		msg = msg + consumerNames
 	}
-	err = notifications.SendNotification("Disconnection events", msg, notifications.DisconEAlert)
+	err = SendNotification("Disconnection events", msg, DisconEAlert)
 	if err != nil {
 		return err
 	}

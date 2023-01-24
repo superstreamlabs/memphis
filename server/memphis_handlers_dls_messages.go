@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"memphis-broker/models"
-	"memphis-broker/notifications"
 	"sort"
 	"strconv"
 	"strings"
@@ -166,7 +165,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	idForUrl := pmMessage.ID
 	var msgUrl = UI_url + "/stations/" + stationName.Ext() + "/" + idForUrl
-	err = notifications.SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, notifications.PoisonMAlert)
+	err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
 		serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
 		return
