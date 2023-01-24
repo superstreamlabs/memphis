@@ -65,6 +65,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	default:
 		serv.Warnf("CreateIntegration: Unsupported integration type")
 		c.AbortWithStatusJSON(400, gin.H{"message": "CreateIntegration error: Unsupported integration type"})
+		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
