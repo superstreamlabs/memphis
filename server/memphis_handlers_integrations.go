@@ -55,10 +55,14 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		}
 		integration = slackIntegration
 	case "s3":
-		s3Integration, err := it.handleCreateS3Integration(body.Keys, "s3")
+		s3Integration, errorCode, err := it.handleCreateS3Integration(body.Keys, "s3")
 		if err != nil {
-			serv.Errorf("CreateS3Integration: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			if errorCode == 500 {
+				serv.Errorf("CreateS3Integration: " + err.Error())
+			} else {
+				serv.Warnf("CreateS3Integration: " + err.Error())
+			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
 			return
 		}
 		integration = s3Integration
@@ -101,10 +105,14 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		}
 		integration = slackIntegration
 	case "s3":
-		s3Integration, err := it.handleUpdateS3Integration(body)
+		s3Integration, errorCode, err := it.handleUpdateS3Integration(body)
 		if err != nil {
-			serv.Errorf("updateS3Integration: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+			if errorCode == 500 {
+				serv.Errorf("UpdateS3Integration: " + err.Error())
+			} else {
+				serv.Warnf("UpdateS3Integration: " + err.Error())
+			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
 			return
 		}
 		integration = s3Integration

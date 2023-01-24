@@ -48,35 +48,35 @@ func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 	IntegrationsCache["s3"] = s3Integration
 }
 
-func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.Integration, error) {
-	err := it.handleS3Integrtation(keys)
+func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.Integration, int, error) {
+	statusCode, err := it.handleS3Integrtation(keys)
 	if err != nil {
-		return models.Integration{}, err
+		return models.Integration{}, statusCode, err
 	}
 
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 	s3Integration, err := createS3Integration(keys, properties)
 	if err != nil {
-		return models.Integration{}, err
+		return models.Integration{}, statusCode, err
 	}
-	return s3Integration, nil
+	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, error) {
-	err := it.handleS3Integrtation(body.Keys)
+func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
+	statusCode, err := it.handleS3Integrtation(body.Keys)
 	if err != nil {
-		return models.Integration{}, err
+		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
 	s3Integration, err := updateS3Integration(keys, properties)
 	if err != nil {
-		return s3Integration, err
+		return s3Integration, statusCode, err
 	}
-	return s3Integration, nil
+	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) error {
+func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int, error) {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
@@ -90,7 +90,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) error
 	_, err := provider.Retrieve()
 	if err != nil {
 		err = errors.New("Retrive failure " + err.Error())
-		return err
+		return 500, err
 	}
 
 	credentials := credentials.NewCredentials(provider)
@@ -100,15 +100,15 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) error
 	)
 	if err != nil {
 		err = errors.New("NewSession failure " + err.Error())
-		return err
+		return 500, err
 	}
 
 	svc := s3.New(sess)
-	err = testS3Integration(sess, svc, bucketName)
+	statusCode, err := testS3Integration(sess, svc, bucketName)
 	if err != nil {
-		return err
+		return statusCode, err
 	}
-	return nil
+	return statusCode, nil
 }
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -190,30 +190,34 @@ func updateS3Integration(keys map[string]string, properties map[string]bool) (mo
 	return s3Integration, nil
 }
 
-func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) error {
+func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (int, error) {
 	_, err := svc.HeadBucket(&s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	})
+	var statusCode int
 	if err != nil {
 		if strings.Contains(err.Error(), "Forbidden") {
 			err = errors.New("Invalid access key or secret key")
-		}
-		if strings.Contains(err.Error(), "NotFound: Not Found") {
+			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "NotFound: Not Found") {
 			err = errors.New("Bucket name is not exists")
-		}
-		if strings.Contains(err.Error(), "send request failed") {
+			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "send request failed") {
 			err = errors.New("Invalid region")
+			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+		} else {
+			statusCode = 500
 		}
 		err = errors.New("create a S3 client with additional configuration failure: " + err.Error())
-		return err
+		return statusCode, err
 	}
 
 	acl, err := svc.GetBucketAcl(&s3.GetBucketAclInput{
 		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		err = errors.New("GetBucketAcl error" + err.Error())
-		return err
+		err = errors.New("GetBucketAcl error: " + err.Error())
+		return 500, err
 	}
 
 	permission := *acl.Grants[0].Permission
@@ -221,7 +225,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) err
 
 	if permissionValue != "FULL_CONTROL" {
 		err = errors.New("you should full control permission: read, write and delete " + err.Error())
-		return err
+		return 500, err
 	}
 
 	uploader := s3manager.NewUploader(sess)
@@ -238,13 +242,13 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) err
 	})
 	if err != nil {
 		err = errors.New("failed to upload the obeject to S3 " + err.Error())
-		return err
+		return 500, err
 	}
 	//delete the object
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
 	if err != nil {
 		err = errors.New("Unable to delete object from bucket " + bucketName + err.Error())
-		return err
+		return 500, err
 	}
 	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
@@ -252,9 +256,9 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) err
 	})
 	if err != nil {
 		err = errors.New("Error occurred while waiting for object to be deleted from bucket " + bucketName + err.Error())
-		return err
+		return 500, err
 	}
-	return nil
+	return 0, nil
 }
 
 func hideS3SecretKey(secretKey string) string {
