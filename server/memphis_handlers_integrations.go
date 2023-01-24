@@ -113,7 +113,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		s3Integration, err := it.handleUpdateS3Integration(body)
 		if err != nil {
 			serv.Errorf("updateS3Integration: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 			return
 		}
 		integration = s3Integration

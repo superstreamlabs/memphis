@@ -108,7 +108,16 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) error
 		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		err = errors.New("create a S3 client with additional configuration failure " + err.Error())
+		if strings.Contains(err.Error(), "Forbidden") {
+			err = errors.New("Invalid access key or secret key")
+		}
+		if strings.Contains(err.Error(), "NotFound: Not Found") {
+			err = errors.New("Bucket name is not exists")
+		}
+		if strings.Contains(err.Error(), "send request failed") {
+			err = errors.New("Invalid region")
+		}
+		err = errors.New("create a S3 client with additional configuration failure: " + err.Error())
 		return err
 	}
 
