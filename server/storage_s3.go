@@ -57,6 +57,9 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 	s3Integration, err := createS3Integration(keys, properties)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			return models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		}
 		return models.Integration{}, 500, err
 	}
 	return s3Integration, statusCode, nil
