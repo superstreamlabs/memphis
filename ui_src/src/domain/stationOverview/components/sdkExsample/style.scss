@@ -37,6 +37,24 @@
         gap: 40px;
     }
     .installation {
+        .generate-wrapper{
+            display: flex;
+            justify-content: space-between;
+            .generate-action{
+                display: flex;
+                color: var(--purple);
+                font-family: 'InterMedium';
+                font-size: 14px;
+                cursor: pointer;
+                align-items: center;
+                img{
+                    margin-right: 4px;
+                }
+                :hover{
+                    text-decoration: underline;
+                }
+            }
+        }
         .install-copy {
             border: 1px solid var(--gray);
             box-sizing: border-box;
@@ -82,4 +100,7 @@
             height: 225px !important;
         }
     }
+}
+.generate-modal .ant-modal-body {
+    padding-top: 0 !important;
 }

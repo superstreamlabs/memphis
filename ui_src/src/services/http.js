@@ -19,14 +19,15 @@ import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_EXPIRED_TOKEN, LOCAL_STORAGE_SKIP_GE
 import pathDomains from '../router';
 import AuthService from './auth';
 
-export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0) {
+export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null) {
     let isSkipGetStarted;
     if (authNeeded) {
         const token = localStorage.getItem(LOCAL_STORAGE_TOKEN);
         headers['Authorization'] = 'Bearer ' + token;
     }
+
     const HTTP = axios.create({
-        withCredentials: true
+        withCredentials: serverUrl ? false : true
     });
     if (method !== 'GET' && method !== 'POST' && method !== 'PUT' && method !== 'DELETE')
         throw {
@@ -35,7 +36,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             data: { method, endPointUrl, data }
         };
     try {
-        const url = `${SERVER_URL}${endPointUrl}`;
+        const url = `${serverUrl || SERVER_URL}${endPointUrl}`;
         const res = await HTTP({
             method,
             url,

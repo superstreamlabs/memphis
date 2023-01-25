@@ -16,7 +16,7 @@ import React, { useEffect, useContext, useState } from 'react';
 
 import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
 import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
-import { INTEGRATION_LIST } from '../../../const/integrationList';
+import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
@@ -26,15 +26,30 @@ import Button from '../../../components/button';
 import Modal from '../../../components/modal';
 import Input from '../../../components/Input';
 import { message } from 'antd';
+import Tag from '../../../components/tag';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrationRequest, setIntegrationRequest] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('All');
+    const [filterList, setFilterList] = useState(INTEGRATION_LIST);
 
     useEffect(() => {
         getallIntegration();
     }, []);
+
+    useEffect(() => {
+        switch (categoryFilter) {
+            case 'All':
+                setFilterList(INTEGRATION_LIST);
+                break;
+            default:
+                let filteredList = INTEGRATION_LIST.filter((integration) => integration.category.name === categoryFilter);
+                setFilterList(filteredList);
+                break;
+        }
+    }, [categoryFilter]);
 
     const getallIntegration = async () => {
         try {
@@ -81,8 +96,13 @@ const Integrations = () => {
                     onClick={() => modalFlip(true)}
                 />
             </div>
+            <div className="categories-list">
+                {Object.keys(CATEGORY_LIST).map((key) => (
+                    <Tag tag={CATEGORY_LIST[key]} onClick={(e) => setCategoryFilter(e)} border={categoryFilter === CATEGORY_LIST[key].name} />
+                ))}
+            </div>
             <div className="integration-list">
-                {INTEGRATION_LIST?.map((integration) =>
+                {filterList?.map((integration) =>
                     integration.comingSoon ? (
                         <div key={integration.name} className="cloud-wrapper">
                             <div className="dark-background">

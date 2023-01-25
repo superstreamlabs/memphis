@@ -15,9 +15,14 @@ import { Close } from '@material-ui/icons';
 
 import React from 'react';
 
-const Tag = ({ tag, onDelete, editable }) => {
+const Tag = ({ tag, onDelete, editable, border = false, onClick }) => {
     return (
-        <div className="tag-wrapper" style={{ background: `rgba(${tag.color},0.2)` }}>
+        <div
+            className="tag-wrapper"
+            key={tag.name}
+            style={{ background: `rgba(${tag.color},0.2)`, border: border ? `2px solid rgb(${tag.color})` : 'unset' }}
+            onClick={() => onClick(tag.name)}
+        >
             <div className="tag-content" style={{ color: `rgb(${tag.color})` }}>
                 {tag.name}
             </div>
