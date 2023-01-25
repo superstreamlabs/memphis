@@ -29,9 +29,9 @@ const SysContainers = ({ component, k8sEnv, index }) => {
 
     const getTooltipData = (item, name) => {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span>current: {name === 'CPU' ? `${item?.current} CPU` : `${convertBytes(item?.current)}`}</span>
-                <span>total: {name === 'CPU' ? `${item?.total} CPU` : `${convertBytes(item?.total)}`}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textTransform: 'capitalize' }}>
+                <label>current: {name === 'CPU' ? `${item?.current} CPU` : `${convertBytes(item?.current)}`}</label>
+                <label>total: {name === 'CPU' ? `${item?.total} CPU` : `${convertBytes(item?.total)}`}</label>
             </div>
         );
     };

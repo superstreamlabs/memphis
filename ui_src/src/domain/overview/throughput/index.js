@@ -37,16 +37,28 @@ const Throughput = () => {
         if (active && payload && payload.length) {
             return (
                 <div className="custom-tooltip">
-                    <p className="throughput-type">{throughputType}</p>
+                    <p className="throughput-type">
+                        {selectedComponent} {throughputType}
+                    </p>
                     <p>{`Time: ${label}`}</p>
-                    <p style={{ textTransform: 'capitalize' }}>
-                        {payload[0].dataKey}: {payload[0].value}
+                    <p>
+                        {payload[0].dataKey}: {Number(payload[0].value).toLocaleString('en')}
                     </p>
                 </div>
             );
         }
-
         return null;
+    };
+
+    const formatYAxis = (tickItem) => {
+        let val = tickItem;
+        if (val > 1000000) {
+            val /= 10000000;
+            return `${Number(val).toLocaleString('en')}M`;
+        } else if (val > 1000) {
+            val /= 1000;
+            return `${Number(val).toLocaleString('en')}K`;
+        } else return `${Number(val).toLocaleString('en')}`;
     };
     useEffect(() => {
         const current = new Date();
@@ -104,7 +116,7 @@ const Throughput = () => {
                         </defs>
                         <CartesianGrid strokeDasharray="6 3" stroke="#f5f5f5" />
                         <XAxis style={axisStyle} dataKey="time" />
-                        <YAxis style={axisStyle} />
+                        <YAxis style={axisStyle} dataKey={selectedComponent} tickFormatter={formatYAxis} />
                         <Tooltip content={<CustomTooltip />} />
                         <Area type="monotone" dataKey={selectedComponent} stroke="#6557FF" fill="url(#colorThroughput)" />
                     </AreaChart>
