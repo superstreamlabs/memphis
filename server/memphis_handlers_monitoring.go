@@ -121,7 +121,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				storageComp = models.CompStats{
 					Total:      storage_size,
 					Current:    int64(v.JetStream.Stats.Store),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store)/float64(storage_size)) * 100),
+					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / float64(storage_size)) * 100)),
 				}
 			}
 			brokerComponents = append(brokerComponents, models.SysComponent{
@@ -1489,9 +1489,9 @@ func getDbStorageSize() (int64, int64, error) {
 		return 0, 0, err
 	}
 
-	dbStorageSize := sbStats.Lookup("dataSize").Int64() + sbStats.Lookup("indexSize").Int64()
-	totalSize := sbStats.Lookup("fsTotalSize").Int64()
-	return dbStorageSize, totalSize, nil
+	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
+	totalSize := sbStats.Lookup("fsTotalSize").Double()
+	return int64(dbStorageSize), int64(totalSize), nil
 }
 
 func getUnixStorageSize() (int64, error) {
