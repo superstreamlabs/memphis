@@ -121,7 +121,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				storageComp = models.CompStats{
 					Total:      storage_size,
 					Current:    int64(v.JetStream.Stats.Store),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store)/float64(storage_size)) * 100),
+					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / float64(storage_size)) * 100)),
 				}
 			}
 			brokerComponents = append(brokerComponents, models.SysComponent{
