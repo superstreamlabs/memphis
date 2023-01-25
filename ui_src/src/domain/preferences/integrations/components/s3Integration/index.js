@@ -15,36 +15,26 @@ import './style.scss';
 import React, { useState, useContext } from 'react';
 import { Form } from 'antd';
 
-import poisionAlertIcon from '../../../../../assets/images/poisionAlertIcon.svg';
-import disconAlertIcon from '../../../../../assets/images/disconAlertIcon.svg';
-import schemaAlertIcon from '../../../../../assets/images/schemaAlertIcon.svg';
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, REGIONS_OPTIONS } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
-import Switcher from '../../../../../components/switcher';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
-import { URL } from '../../../../../config';
+import SelectComponent from '../../../../../components/select';
 
-const urlSplit = URL.split('/', 3);
-
-const SlackIntegration = ({ close, value }) => {
+const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
-    const slackConfiguration = INTEGRATION_LIST[0];
+    const s3Configuration = INTEGRATION_LIST[1];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
-        name: 'slack',
-        ui_url: `${urlSplit[0]}//${urlSplit[2]}`,
+        name: 's3',
         keys: {
-            auth_token: value?.keys?.auth_token || '',
-            channel_id: value?.keys?.channel_id || ''
-        },
-        properties: {
-            poison_message_alert: value?.properties ? (value?.properties?.poison_message_alert ? true : false) : true,
-            schema_validation_fail_alert: value?.properties ? (value?.properties?.schema_validation_fail_alert ? true : false) : true,
-            disconnection_events_alert: value?.properties ? (value?.properties?.disconnection_events_alert ? true : false) : true
+            secret_key: value?.keys?.secret_key || '',
+            access_key: value?.keys?.access_key || '',
+            region: value?.keys?.region || REGIONS_OPTIONS[0].value,
+            bucket_name: value?.keys?.bucket_name || ''
         }
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -55,11 +45,6 @@ const SlackIntegration = ({ close, value }) => {
         updatedValue[field] = value;
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
     };
-    const updatePropertiesState = (field, value) => {
-        let updatedValue = { ...formFields.properties };
-        updatedValue[field] = value;
-        setFormFields((formFields) => ({ ...formFields, properties: updatedValue }));
-    };
 
     const handleSubmit = async () => {
         const values = await creationForm.validateFields();
@@ -68,10 +53,10 @@ const SlackIntegration = ({ close, value }) => {
         } else {
             setLoadingSubmit(true);
             if (isValue) {
-                if (values.auth_token === 'xoxb-****') {
-                    updateIntegration(false);
-                } else {
+                if (creationForm.isFieldTouched('secret_key')) {
                     updateIntegration();
+                } else {
+                    updateIntegration(false);
                 }
             } else {
                 createIntegration();
@@ -83,7 +68,7 @@ const SlackIntegration = ({ close, value }) => {
         let newFormFields = { ...formFields };
         if (!withToken) {
             let updatedKeys = { ...formFields.keys };
-            updatedKeys['auth_token'] = '';
+            updatedKeys['secret_key'] = '';
             newFormFields = { ...newFormFields, keys: updatedKeys };
         }
         try {
@@ -128,9 +113,9 @@ const SlackIntegration = ({ close, value }) => {
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
-            {slackConfiguration?.insideBanner}
+            {s3Configuration?.insideBanner}
             <div className="integrate-header">
-                {slackConfiguration.header}
+                {s3Configuration.header}
                 <div className={!isValue ? 'action-buttons flex-end' : 'action-buttons'}>
                     {isValue && (
                         <Button
@@ -158,29 +143,33 @@ const SlackIntegration = ({ close, value }) => {
                         border="none"
                         fontSize="12px"
                         fontFamily="InterSemiBold"
-                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-ui/integrations/notifications/slack', '_blank')}
+                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/storage/amazon-s3', '_blank')}
                     />
                 </div>
             </div>
-            {slackConfiguration.integrateDesc}
+            {s3Configuration.integrateDesc}
             <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                 <div className="api-details">
-                    <p className="title">API details</p>
+                    <p className="title">Integration details</p>
                     <div className="api-key">
-                        <p>API KEY</p>
-                        <span className="desc">Copy and paste your slack 'Bot User OAuth Token' here</span>
+                        <p>Secret access key</p>
+                        <span className="desc">
+                            When you use AWS programmatically, you provide your AWS access keys so that AWS can verify your identity in programmatic calls. Access keys
+                            can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user or the AWS account root user. <br />
+                            <b>Memphis encrypts all stored information using Triple DES algorithm</b>
+                        </span>
                         <Form.Item
-                            name="auth_token"
+                            name="secret_key"
                             rules={[
                                 {
                                     required: true,
                                     message: 'Please insert auth token.'
                                 }
                             ]}
-                            initialValue={formFields?.keys?.auth_token}
+                            initialValue={formFields?.keys?.secret_key}
                         >
                             <Input
-                                placeholder="xoxb-****"
+                                placeholder="****+crc"
                                 type="text"
                                 radiusType="semi-round"
                                 colorType="black"
@@ -188,27 +177,26 @@ const SlackIntegration = ({ close, value }) => {
                                 borderColorType="none"
                                 height="40px"
                                 fontSize="12px"
-                                onBlur={(e) => updateKeysState('auth_token', e.target.value)}
-                                onChange={(e) => updateKeysState('auth_token', e.target.value)}
-                                value={formFields?.keys?.auth_token}
+                                onBlur={(e) => updateKeysState('secret_key', e.target.value)}
+                                onChange={(e) => updateKeysState('secret_key', e.target.value)}
+                                value={formFields?.keys?.secret_key}
                             />
                         </Form.Item>
                     </div>
                     <div className="input-field">
-                        <p>Channel ID</p>
-                        <span className="desc">To which slack channel should Memphis push notifications?</span>
+                        <p>Access Key ID</p>
                         <Form.Item
-                            name="channel_id"
+                            name="access_key"
                             rules={[
                                 {
                                     required: true,
-                                    message: 'Please insert channel id'
+                                    message: 'Please insert access key id'
                                 }
                             ]}
-                            initialValue={formFields?.keys?.channel_id}
+                            initialValue={formFields?.keys?.access_key}
                         >
                             <Input
-                                placeholder="C0P4ISJH06K"
+                                placeholder="AKIOOJB9EKLP69O4RTHR"
                                 type="text"
                                 fontSize="12px"
                                 radiusType="semi-round"
@@ -216,65 +204,54 @@ const SlackIntegration = ({ close, value }) => {
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 height="40px"
-                                onBlur={(e) => updateKeysState('channel_id', e.target.value)}
-                                onChange={(e) => updateKeysState('channel_id', e.target.value)}
-                                value={formFields.keys?.channel_id}
+                                onBlur={(e) => updateKeysState('access_key', e.target.value)}
+                                onChange={(e) => updateKeysState('access_key', e.target.value)}
+                                value={formFields.keys?.access_key}
                             />
                         </Form.Item>
                     </div>
-                    <div className="notification-option">
-                        <p>Notify me when:</p>
-                        <span className="desc">Memphis will send only the selected triggers</span>
-                        <>
-                            <div className="option-wrapper">
-                                <div className="option-name">
-                                    <img src={poisionAlertIcon} />
-                                    <div className="name-des">
-                                        <p>New unacknowledged message</p>
-                                        <span>
-                                            Messages that cause a consumer group to repeatedly require a delivery (possibly due to a consumer failure) such that the
-                                            message is never processed completely and acknowledged
-                                        </span>
-                                    </div>
-                                </div>
-                                <Form.Item name="poison_message_alert">
-                                    <Switcher
-                                        onChange={() => updatePropertiesState('poison_message_alert', !formFields.properties.poison_message_alert)}
-                                        checked={formFields.properties?.poison_message_alert}
-                                    />
-                                </Form.Item>
-                            </div>
-                            <div className="option-wrapper">
-                                <div className="option-name">
-                                    <img src={schemaAlertIcon} />
-                                    <div className="name-des">
-                                        <p>Schema validation failure</p>
-                                        <span>Triggered once a client fails in schema validation</span>
-                                    </div>
-                                </div>
-                                <Form.Item name="schema_validation_fail_alert">
-                                    <Switcher
-                                        onChange={() => updatePropertiesState('schema_validation_fail_alert', !formFields.properties.schema_validation_fail_alert)}
-                                        checked={formFields.properties?.schema_validation_fail_alert}
-                                    />
-                                </Form.Item>
-                            </div>
-                            <div className="option-wrapper">
-                                <div className="option-name">
-                                    <img src={disconAlertIcon} />
-                                    <div className="name-des">
-                                        <p>Disconnected clients</p>
-                                        <span>Triggered once a producer/consumer get disconnected</span>
-                                    </div>
-                                </div>
-                                <Form.Item name="schema_validation_fail_alert">
-                                    <Switcher
-                                        onChange={() => updatePropertiesState('disconnection_events_alert', !formFields.properties.disconnection_events_alert)}
-                                        checked={formFields.properties?.disconnection_events_alert}
-                                    />
-                                </Form.Item>
-                            </div>
-                        </>
+                    <div className="select-field">
+                        <p>Region</p>
+                        <Form.Item name="region" initialValue={formFields?.keys?.region || REGIONS_OPTIONS[0].name}>
+                            <SelectComponent
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="40px"
+                                popupClassName="select-options"
+                                options={REGIONS_OPTIONS}
+                                value={formFields?.keys?.region || REGIONS_OPTIONS[0].name}
+                                onChange={(e) => updateKeysState('region', e.match(/\[(.*?)\]/)[1])}
+                            />
+                        </Form.Item>
+                    </div>
+                    <div className="input-field">
+                        <p>Bucket name</p>
+                        <Form.Item
+                            name="bucket_name"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: 'Please insert bucket name'
+                                }
+                            ]}
+                            initialValue={formFields?.keys?.bucket_name}
+                        >
+                            <Input
+                                placeholder="Insert your bucket name"
+                                type="text"
+                                fontSize="12px"
+                                radiusType="semi-round"
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                height="40px"
+                                onBlur={(e) => updateKeysState('bucket_name', e.target.value)}
+                                onChange={(e) => updateKeysState('bucket_name', e.target.value)}
+                                value={formFields.keys?.bucket_name}
+                            />
+                        </Form.Item>
                     </div>
                 </div>
                 <Form.Item className="button-container">
@@ -311,4 +288,4 @@ const SlackIntegration = ({ close, value }) => {
     );
 };
 
-export default SlackIntegration;
+export default S3Integration;

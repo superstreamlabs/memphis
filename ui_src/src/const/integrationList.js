@@ -13,16 +13,146 @@ import slackBannerPopup from '../assets/images/slackBannerPopup.svg';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.svg';
 import influxDBBanner from '../assets/images/influxDBBanner.svg';
 import newrelicBanner from '../assets/images/newrelicBanner.svg';
+import s3BannerPopup from '../assets/images/s3BannerPopup.svg';
 import datadogBanner from '../assets/images/datadogBanner.svg';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.svg';
 import datadogIcon from '../assets/images/datadogIcon.svg';
-import slackIogo from '../assets/images/slackIogo.svg';
+import slackLogo from '../assets/images/slackLogo.svg';
+import s3Banner from '../assets/images/s3Banner.svg';
+import s3Logo from '../assets/images/s3Logo.svg';
 
 import { FiberManualRecord } from '@material-ui/icons';
 import { diffDate } from '../services/valueConvertor';
+import { ColorPalette } from './globalConst';
+
+export const CATEGORY_LIST = {
+    All: {
+        name: 'All',
+        color: ColorPalette[13]
+    },
+    Notifications: {
+        name: 'Notifications',
+        color: ColorPalette[0]
+    },
+    Storage: {
+        name: 'Storage',
+        color: ColorPalette[4]
+    },
+    Monitoring: {
+        name: 'Monitoring',
+        color: ColorPalette[8]
+    }
+};
+
+export const REGIONS_OPTIONS = [
+    {
+        name: 'US East (N. Virginia) [us-east-1]',
+        value: 'us-east-1'
+    },
+    {
+        name: 'US East (Ohio) [us-east-2]',
+        value: 'us-east-2'
+    },
+    {
+        name: 'US West (N. California) [us-west-1]',
+        value: 'us-west-1'
+    },
+    {
+        name: 'US West (Oregon) [us-west-2]',
+        value: 'us-west-2'
+    },
+    {
+        name: 'Asia Pacific (Mumbai) [ap-south-1]',
+        value: 'ap-south-1'
+    },
+    {
+        name: 'Asia Pacific (Osaka) [ap-northeast-3]',
+        value: 'ap-northeast-3'
+    },
+    {
+        name: 'Asia Pacific (Seoul) [ap-northeast-2]',
+        value: 'ap-northeast-2'
+    },
+    {
+        name: 'Asia Pacific (Singapore) [ap-southeast-1]',
+        value: 'ap-southeast-1'
+    },
+    {
+        name: 'Asia Pacific (Sydney) [ap-southeast-2]',
+        value: 'ap-southeast-2'
+    },
+    {
+        name: 'Asia Pacific (Tokyo) [ap-northeast-1]',
+        value: 'ap-northeast-1'
+    },
+    {
+        name: 'Canada (Central) [ca-central-1]',
+        value: 'ca-central-1'
+    },
+    {
+        name: 'Africa (Cape Town) [af-south-1]',
+        value: 'af-south-1'
+    },
+    {
+        name: 'Asia Pacific (Hong Kong) [ap-east-1]',
+        value: 'ap-east-1'
+    },
+    {
+        name: 'Asia Pacific (Hyderabad) [ap-south-2]',
+        value: 'ap-south-2'
+    },
+    {
+        name: 'Asia Pacific (Jakarta) [ap-southeast-3]',
+        value: 'ap-southeast-3'
+    },
+    {
+        name: 'Europe (Frankfurt) [eu-central-1]',
+        value: 'eu-central-1'
+    },
+    {
+        name: 'Europe (Ireland) [eu-west-1]',
+        value: 'eu-west-1'
+    },
+    {
+        name: 'Europe (London) [eu-west-2]',
+        value: 'eu-west-2'
+    },
+    {
+        name: 'Europe (Paris) [eu-west-3]',
+        value: 'eu-west-3'
+    },
+    {
+        name: 'Europe (Stockholm) [eu-north-1]',
+        value: 'eu-north-1'
+    },
+    {
+        name: 'Europe (Milan) [eu-south-1]',
+        value: 'eu-south-1'
+    },
+    {
+        name: 'Europe (Spain) [eu-south-2]',
+        value: 'eu-south-2'
+    },
+    {
+        name: 'Europe (Zurich) [eu-central-2]',
+        value: 'eu-central-2'
+    },
+    {
+        name: 'Middle East (Bahrain) [me-south-1]',
+        value: 'me-south-1'
+    },
+    {
+        name: 'Middle East (UAE) [me-central-1]',
+        value: 'me-central-1'
+    },
+    {
+        name: 'South America (São Paulo) [sa-east-1]',
+        value: 'sa-east-1'
+    }
+];
 
 export const INTEGRATION_LIST = [
     {
@@ -30,12 +160,13 @@ export const INTEGRATION_LIST = [
         by: 'memphis',
         banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
         insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
-        icon: <img src={slackIogo} alt="slackIogo" />,
+        icon: <img src={slackLogo} alt="slackLogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Notifications'],
         header: (
             <div className="header-left-side">
-                <img src={slackIogo} alt="slackIogo" />
+                <img src={slackLogo} alt="slackLogo" />
                 <div className="details">
                     <p>Slack</p>
                     <>
@@ -56,6 +187,36 @@ export const INTEGRATION_LIST = [
         )
     },
     {
+        name: 'S3',
+        by: 'memphis',
+        banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
+        insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
+        icon: <img src={s3Logo} alt="s3Logo" />,
+        description: 'AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
+        date: 'Jan 1, 2023',
+        category: CATEGORY_LIST['Storage'],
+        comingSoon: true,
+        header: (
+            <div className="header-left-side">
+                <img src={s3Logo} alt="s3Logo" />
+                <div className="details">
+                    <p>S3</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Jan 1, 2023')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
+            </div>
+        )
+    },
+    {
         name: 'PagerDuty',
         by: 'memphis',
         banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
@@ -63,6 +224,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={pagerDutyIcon} alt="pagerDutyIcon" />,
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
         header: (
             <div className="header-left-side">
@@ -94,6 +256,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={newrelicIcon} alt="newrelicIcon" />,
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
             <div className="header-left-side">
@@ -125,6 +288,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={datadogIcon} alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
             <div className="header-left-side">
@@ -156,6 +320,7 @@ export const INTEGRATION_LIST = [
         icon: <img src={influxDBIcon} alt="influxDBIcon" />,
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
             <div className="header-left-side">

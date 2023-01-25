@@ -15,8 +15,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -26,7 +24,6 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"net/http"
-	"os"
 	"os/exec"
 	"runtime"
 	"sort"
@@ -50,9 +47,6 @@ type MonitoringHandler struct{ S *Server }
 
 var clientset *kubernetes.Clientset
 var metricsclientset *metricsv.Clientset
-var caCert string
-var k8sToken string
-var k8sHttpClient *http.Client
 
 func clientSetClusterConfig() error {
 	var config *rest.Config
@@ -62,19 +56,6 @@ func clientSetClusterConfig() error {
 	if err != nil {
 		serv.Errorf("clientSetClusterConfig: InClusterConfig: " + err.Error())
 		return err
-	}
-
-	clientset, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
-		return err
-	}
-	if metricsclientset == nil {
-		metricsclientset, err = metricsv.NewForConfig(config)
-		if err != nil {
-			serv.Errorf("clientSetClusterConfig: metricsclientset: " + err.Error())
-			return err
-		}
 	}
 
 	// caFile, err := os.Open("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
@@ -92,31 +73,15 @@ func clientSetClusterConfig() error {
 
 	caCert, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
-		serv.Errorf("clientSetClusterConfig: read cert file: " + err.Error())
+		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
 		return err
 	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-
-	k8sHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: caCertPool,
-			},
-		},
-	}
-
-	tokenFile, err := os.Open("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		serv.Errorf("clientSetClusterConfig: read cert file: " + err.Error())
-		return err
-	}
-	defer tokenFile.Close()
-
-	scanner := bufio.NewScanner(tokenFile)
-	k8sToken = ""
-	for scanner.Scan() {
-		k8sToken += scanner.Text()
+	if metricsclientset == nil {
+		metricsclientset, err = metricsv.NewForConfig(config)
+		if err != nil {
+			serv.Errorf("clientSetClusterConfig: metricsclientset: " + err.Error())
+			return err
+		}
 	}
 
 	return nil
@@ -136,88 +101,92 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 	brokerDesired := 0
 	proxyActual := 0
 	proxyDesired := 0
-	dbPodIp := ""
-	proxyPodIp := ""
-	brokerPodIp := ""
+	dbHost := ""
+	proxyHost := ""
+	brokerHost := ""
 	defaultStat := models.CompStats{
-		Max:        0,
+		Total:      0,
 		Current:    0,
 		Percentage: 0,
 	}
-	if configuration.DOCKER_ENV != "" { // docker env
+	if configuration.DOCKER_ENV == "true" { // docker env
 		var rt runtime.MemStats
 		runtime.ReadMemStats(&rt)
 		if configuration.DEV_ENV == "true" {
-			var storage_size float64
-			os := runtime.GOOS
-			switch os {
-			case "windows":
-				storage_size = 500 // TODO: add support
-			default:
-				size, err := getUnixStorageSize()
-				if err != nil {
-					return components, err
-				}
-				storage_size = size
-			}
-			maxCpu := runtime.GOMAXPROCS(0)
+			maxCpu := int64(runtime.GOMAXPROCS(0))
 			v, err := serv.Varz(nil)
 			if err != nil {
 				return components, err
 			}
+			var storageComp models.CompStats
+			os := runtime.GOOS
+			storage_size := int64(0)
+			isWindows := false
+			switch os {
+			case "windows":
+				isWindows = true
+				storageComp = defaultStat // TODO: add support for windows
+			default:
+				storage_size, err = getUnixStorageSize()
+				if err != nil {
+					return components, err
+				}
+				storageComp = models.CompStats{
+					Total:      storage_size,
+					Current:    int64(v.JetStream.Stats.Store),
+					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / float64(storage_size)) * 100)),
+				}
+			}
 			brokerComponents = append(brokerComponents, models.SysComponent{
 				Name: "memphis-broker",
 				CPU: models.CompStats{
-					Max:        float64(maxCpu),
-					Current:    float64(v.CPU/100) * float64(maxCpu),
-					Percentage: math.Ceil(v.CPU),
+					Total:      maxCpu,
+					Current:    int64((v.CPU / 100) * float64(maxCpu)),
+					Percentage: int(math.Ceil(v.CPU)),
 				},
 				Memory: models.CompStats{
-					Max:        float64(v.JetStream.Config.MaxMemory),
-					Current:    float64(v.JetStream.Stats.Memory),
-					Percentage: math.Ceil(float64(v.JetStream.Stats.Memory) / float64(v.JetStream.Config.MaxMemory)),
+					Total:      int64(v.JetStream.Config.MaxMemory),
+					Current:    int64(v.JetStream.Stats.Memory),
+					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Memory)/float64(v.JetStream.Config.MaxMemory)) * 100),
 				},
-				Storage: models.CompStats{
-					Max:        storage_size * 1024 * 1024 * 1024,
-					Current:    float64(v.JetStream.Stats.Store),
-					Percentage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
-				},
-				Connected: true,
+				Storage: storageComp,
+				Healthy: true,
 			})
 			brokerPorts = []int{9000, 6666, 7770, 8222}
 			httpProxy := "http://localhost:4444"
 			resp, err := http.Get(httpProxy + "/dev/getSystemInfo")
-			con := true
+			healthy := true
 			if err != nil {
-				con = false
-				proxyComponents = append(proxyComponents, models.SysComponent{
-					Name:      "memphis-http-proxy",
-					CPU:       defaultStat,
-					Memory:    defaultStat,
-					Storage:   defaultStat,
-					Connected: con,
-				})
+				healthy = false
+				proxyComponents = append(proxyComponents, defaultSystemComp("memphis-http-proxy", healthy))
 			} else {
-				var proxyDevInfo models.DevSystemInfoResponse
+				var proxyMonitorInfo models.ProxyMonitoringResponse
 				defer resp.Body.Close()
-				err = json.NewDecoder(resp.Body).Decode(&proxyDevInfo)
+				err = json.NewDecoder(resp.Body).Decode(&proxyMonitorInfo)
 				if err != nil {
 					return components, err
+				}
+				if !isWindows {
+					storageComp = models.CompStats{
+						Total:      storage_size,
+						Current:    int64((proxyMonitorInfo.Storage / 100) * float64(storage_size)),
+						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Storage))),
+					}
 				}
 				proxyComponents = append(proxyComponents, models.SysComponent{
 					Name: "memphis-http-proxy",
 					CPU: models.CompStats{
-						Max:        float64(maxCpu),
-						Current:    float64(proxyDevInfo.CPU/100) * float64(maxCpu),
-						Percentage: math.Ceil(proxyDevInfo.CPU),
+						Total:      maxCpu,
+						Current:    int64((proxyMonitorInfo.CPU / 100) * float64(maxCpu)),
+						Percentage: int(math.Ceil(proxyMonitorInfo.CPU)),
 					},
 					Memory: models.CompStats{
-						Max:        float64(v.JetStream.Config.MaxMemory),
-						Current:    float64(proxyDevInfo.Memory/100) * float64(v.JetStream.Config.MaxMemory),
-						Percentage: math.Ceil(float64(proxyDevInfo.Memory)),
+						Total:      v.JetStream.Config.MaxMemory,
+						Current:    int64((proxyMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
+						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Memory))),
 					},
-					Storage:   defaultStat,
-					Connected: con,
+					Storage: storageComp,
+					Healthy: healthy,
 				})
 			}
 			proxyPorts = []int{4444}
@@ -234,167 +203,126 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 
 		for _, container := range containers {
-			continerName := container.Names[0]
+			containerName := container.Names[0]
 			if container.State != "running" {
-				comp := models.SysComponent{
-					Name:      continerName,
-					CPU:       defaultStat,
-					Memory:    defaultStat,
-					Storage:   defaultStat,
-					Connected: false,
-				}
-				if strings.Contains(continerName, "mongo") {
+				comp := defaultSystemComp(containerName, false)
+				if strings.Contains(containerName, "mongo") {
 					dbComponents = append(dbComponents, comp)
-				} else if strings.Contains(continerName, "broker") {
+				} else if strings.Contains(containerName, "cluster") {
 					brokerComponents = append(brokerComponents, comp)
-				} else if strings.Contains(continerName, "proxy") {
+				} else if strings.Contains(containerName, "proxy") {
 					proxyComponents = append(proxyComponents, comp)
 				}
 				continue
 			}
-			stats, err := dockerCli.ContainerStats(ctx, container.ID, false)
+			containerStats, err := dockerCli.ContainerStats(ctx, container.ID, false)
 			if err != nil {
 				return components, err
 			}
-			defer stats.Body.Close()
+			defer containerStats.Body.Close()
 
-			body, err := ioutil.ReadAll(stats.Body)
+			body, err := ioutil.ReadAll(containerStats.Body)
 			if err != nil {
 				return components, err
 			}
-			var statsType types.Stats
-			err = json.Unmarshal(body, &statsType)
+			var dockerStats types.Stats
+			err = json.Unmarshal(body, &dockerStats)
 			if err != nil {
 				return components, err
 			}
-			cpuLimit := float64(runtime.GOMAXPROCS(0))
-			cpuPercentage := math.Ceil((float64(statsType.CPUStats.CPUUsage.TotalUsage) / float64(statsType.CPUStats.SystemUsage)) * 100)
-			totalCpuUsage := (float64(cpuPercentage) / 100) * cpuLimit
-			totalMemoryUsage := float64(statsType.MemoryStats.Usage)
-			memoryLimit := float64(statsType.MemoryStats.Limit)
-			memoryPercentage := math.Ceil((totalMemoryUsage / memoryLimit) * 100)
+			cpuLimit := int64(runtime.GOMAXPROCS(0))
+			cpuPercentage := math.Ceil((float64(dockerStats.CPUStats.CPUUsage.TotalUsage) / float64(dockerStats.CPUStats.SystemUsage)) * 100)
+			totalCpuUsage := int64((cpuPercentage / 100) * float64(cpuLimit))
+			totalMemoryUsage := int64(dockerStats.MemoryStats.Usage)
+			memoryLimit := int64(dockerStats.MemoryStats.Limit)
+			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
 			storage_size, err := getUnixStorageSize()
 			if err != nil {
 				return components, err
 			}
+			cpuStat := models.CompStats{
+				Total:      cpuLimit,
+				Current:    totalCpuUsage,
+				Percentage: int(cpuPercentage),
+			}
+			memoryStat := models.CompStats{
+				Total:      memoryLimit,
+				Current:    totalMemoryUsage,
+				Percentage: int(memoryPercentage),
+			}
 
-			if strings.Contains(continerName, "mongo") {
+			if strings.Contains(containerName, "mongo") {
 				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
 					return components, err
 				}
 				dbComponents = append(dbComponents, models.SysComponent{
-					Name: continerName,
-					CPU: models.CompStats{
-						Max:        cpuLimit,
-						Current:    totalCpuUsage,
-						Percentage: cpuPercentage,
-					},
-					Memory: models.CompStats{
-						Max:        memoryLimit,
-						Current:    totalMemoryUsage,
-						Percentage: memoryPercentage,
-					},
+					Name:   containerName,
+					CPU:    cpuStat,
+					Memory: memoryStat,
 					Storage: models.CompStats{
-						Max:        totalSize,
+						Total:      totalSize,
 						Current:    dbStorageSize,
-						Percentage: math.Ceil(dbStorageSize / totalSize),
+						Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
 					},
-					Connected: true,
+					Healthy: true,
 				})
 				for _, port := range container.Ports {
 					dbPorts = append(dbPorts, int(port.PublicPort))
 				}
-			} else if strings.Contains(continerName, "broker") {
+			} else if strings.Contains(containerName, "cluster") {
 				v, err := serv.Varz(nil)
 				if err != nil {
 					return components, err
 				}
 				brokerComponents = append(brokerComponents, models.SysComponent{
-					Name: continerName,
-					CPU: models.CompStats{
-						Max:        cpuLimit,
-						Current:    totalCpuUsage,
-						Percentage: cpuPercentage,
-					},
-					Memory: models.CompStats{
-						Max:        memoryLimit,
-						Current:    totalMemoryUsage,
-						Percentage: memoryPercentage,
-					},
+					Name:   containerName,
+					CPU:    cpuStat,
+					Memory: memoryStat,
 					Storage: models.CompStats{
-						Max:        storage_size * 1024 * 1024 * 1024,
-						Current:    float64(v.JetStream.Stats.Store),
-						Percentage: math.Ceil(float64(v.JetStream.Stats.Store/1024/1024/1024) / storage_size),
+						Total:      storage_size,
+						Current:    int64(v.JetStream.Stats.Store),
+						Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / float64(storage_size))),
 					},
-					Connected: true,
+					Healthy: true,
 				})
 				for _, port := range container.Ports {
 					brokerPorts = append(brokerPorts, int(port.PublicPort))
 				}
-			} else if strings.Contains(continerName, "proxy") {
+			} else if strings.Contains(containerName, "proxy") {
 				for _, port := range container.Ports {
 					proxyPorts = append(proxyPorts, int(port.PublicPort))
 				}
 				if err != nil {
 					proxyComponents = append(proxyComponents, models.SysComponent{
-						Name: continerName,
-						CPU: models.CompStats{
-							Max:        cpuLimit,
-							Current:    totalCpuUsage,
-							Percentage: cpuPercentage,
-						},
-						Memory: models.CompStats{
-							Max:        memoryLimit,
-							Current:    totalMemoryUsage,
-							Percentage: memoryPercentage,
-						},
-						Storage:   defaultStat,
-						Connected: false,
+						Name:    containerName,
+						CPU:     cpuStat,
+						Memory:  memoryStat,
+						Storage: defaultStat,
+						Healthy: false,
 					})
 					continue
 				}
 			}
 		}
-
-		if dbComponents[0].Connected {
-			dbActual = 1
+		dbHost = "http://localhost"
+		brokerHost = "http://localhost"
+		proxyHost = "http://localhost"
+		if len(dbComponents) > 0 {
+			if dbComponents[0].Healthy {
+				dbActual = 1
+			}
 		}
-		components = append(components, models.SystemComponents{
-			Name:        dbComponents[0].Name,
-			Components:  dbComponents,
-			Status:      checkCompStatus(dbComponents),
-			Ports:       removeDuplicatePorts(dbPorts),
-			DesiredPods: 1,
-			ActualPods:  dbActual,
-			Address:     "http://localhost",
-		})
-
-		if brokerComponents[0].Connected {
-			brokerActual = 1
+		if len(brokerComponents) > 0 {
+			if brokerComponents[0].Healthy {
+				brokerActual = 1
+			}
 		}
-		components = append(components, models.SystemComponents{
-			Name:        brokerComponents[0].Name,
-			Components:  brokerComponents,
-			Status:      checkCompStatus(brokerComponents),
-			Ports:       removeDuplicatePorts(brokerPorts),
-			DesiredPods: 1,
-			ActualPods:  brokerActual,
-			Address:     "http://localhost",
-		})
-
-		if proxyComponents[0].Connected {
-			proxyActual = 1
+		if len(proxyComponents) > 0 {
+			if proxyComponents[0].Healthy {
+				proxyActual = 1
+			}
 		}
-		components = append(components, models.SystemComponents{
-			Name:        proxyComponents[0].Name,
-			Components:  proxyComponents,
-			Status:      checkCompStatus(proxyComponents),
-			Ports:       removeDuplicatePorts(proxyPorts),
-			DesiredPods: 1,
-			ActualPods:  proxyActual,
-			Address:     "http://localhost",
-		})
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetClusterConfig()
@@ -409,192 +337,55 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 		// podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 
-		// for _, m := range podMetrics.Items{
-
-		// for _, container := range m.Containers{
-		// cpu := container.Usage.Cpu()
-		// memory := container.Usage.Memory()
-		// storage := container.Usage.Storage()
-		// storageEphermal := container.Usage.StorageEphemeral()
-
-		// }
-		// }
-
 		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return components, err
 		}
 
-		// nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
-		// if err != nil {
-		// 	return components, err
-		// }
-		// for _, node := range nodes.Items{
-		// 	node.Status.Addresses[0].
-		// }
 		for _, pod := range pods.Items {
-			serv.Noticef("pod loop")
-			fmt.Println(pod.Name)
-			// for _, d := range deploymentsList.Items {
 			var ports []int
-			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{}) // TODO: try when not enabled and deal with error
 			if err != nil {
 				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
-			}
-			// bearer := "Bearer " + k8sToken
-			// req, err := http.NewRequest("GET", "https://kubernetes.default.svc/api/v1/nodes/"+pod.Spec.NodeName+"/proxy/metrics/cadvisor", nil)
-			// if err != nil {
-			// 	serv.Errorf("http: " + err.Error())
-			// 	return components, err
-			// }
-
-			// req.Header.Add("Authorization", "Bearer "+k8sToken)
-			// resp, err := k8sHttpClient.Do(req)
-			// k8sHttpClient.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
-			// resp, err := http.Get("https://kubernetes.default.svc/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics/cadvisor")
-			// if err != nil {
-			// 	serv.Errorf("http: " + err.Error())
-			// 	return components, err
-			// }
-			// resBody, _ := ioutil.ReadAll(resp.Body)
-			// var jsonRes map[string]interface{}
-			// _ = json.Unmarshal(resBody, &jsonRes)
-			// serv.Noticef(fmt.Sprintf("%v", jsonRes["container_cpu_usage_seconds_total"]))
-			// for key := range jsonRes {
-			// 	serv.Noticef(key)
-			// }
-			// nodeMetrics, err := metricsclientset.MetricsV1beta1().NodeMetricses().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-			// if err != nil {
-			// 	serv.Errorf("nodeMetrics: " + err.Error())
-			// 	return components, err
-			// }
-
-			// pod1, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
-			// if err != nil {
-			// 	return components, err
-			// }
-			// pod1.Spec.Containers[0].Resources.Limits.Cpu().Value()
-			// re := regexp.MustCompile("[0-9]+")
-			// number := re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Cpu().String(), -1)
-			// numberFloat, _ := strconv.ParseFloat(number[0], 64)
-			// cpuLimit := numberFloat
-			// number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Memory().String(), -1)
-			// numberFloat, _ = strconv.ParseFloat(number[0], 64)
-			// memLimit := numberFloat
-			// number = re.FindAllString(pod1.Spec.Containers[0].Resources.Limits.Storage().String(), -1)
-			// numberFloat, _ = strconv.ParseFloat(number[0], 64)
-			// storageLimit := numberFloat
-			data, err := clientset.RESTClient().Get().AbsPath("/api/v1/nodes/" + pod.Spec.NodeName + "/proxy/metrics").DoRaw(context.TODO())
-			if err != nil {
-				serv.Errorf("get proxy: " + err.Error())
-				return components, err
-			}
-			flag := false
-			var proxyDetails map[string]string
-			var proxyDetails2 map[string]interface{}
-			err = json.Unmarshal(data, &proxyDetails)
-			if err != nil {
-				serv.Errorf("json unmarhsal proxy: " + err.Error())
-				err = json.Unmarshal(data, &proxyDetails2)
-				if err != nil {
-					serv.Errorf("json unmarhsal proxy: " + err.Error())
-					return components, err
-				}
-				flag = true
-			}
-			if !flag {
-				for x := range proxyDetails {
-					serv.Noticef("from proxy details: " + proxyDetails[x])
-				}
-			} else {
-				for x := range proxyDetails2 {
-					fmt.Println(proxyDetails2[x])
-				}
 			}
 			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 			if err != nil {
 				serv.Errorf("nodes: " + err.Error())
 				return components, err
 			}
-			// pod.
-			// pod.Spec.Persi
-			// for _,volume := range pod.Spec.Volumes {
-			// pvc := volume.PersistentVolumeClaim.
-			// pvc, _ := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE).Get(context.TODO(), volume.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
-			// pvc.
-			// }
 			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
 			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				serv.Errorf("pvcList: " + err.Error())
 				return components, err
 			}
-			if len(pvcList.Items) == 0 {
-				serv.Noticef("pvc len is zeroe ")
+			cpuLimit := int64(pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64())
+			if cpuLimit == 0 {
+				cpuLimit = int64(node.Status.Capacity.Cpu().AsApproximateFloat64())
 			}
+			memLimit := int64(pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64())
+			if memLimit == 0 {
+				memLimit = int64(node.Status.Capacity.Memory().AsApproximateFloat64())
+			}
+			var pvcName string
+			for _, volume := range pod.Spec.Volumes {
+				if strings.Contains(volume.Name, "memphis") {
+					pvcName = volume.Name
+					break
+				}
+			}
+			storageLimit := int64(0)
 			for _, pvc := range pvcList.Items {
-				size := pvc.Size()
-				// pvc.Status.
-				// size := pvc.Spec.Resources.Requests[v1.ResourceStorage]
-				// pvc.by
-				usage := pvc.Status.Capacity[v1.ResourceStorage]
-				serv.Noticef("PVC: " + pvc.Name + ", " + usage.String() + " usage, " + strconv.Itoa(size) + " size")
+				if pvc.Name == pvcName {
+					size := pvc.Status.Capacity[v1.ResourceStorage]
+					floatSize := size.AsApproximateFloat64()
+					if floatSize != float64(0) {
+						storageLimit = int64(floatSize)
+					}
+					break
+				}
 			}
-
-			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
-			if cpuLimit == float64(0) {
-				// node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-				// if err != nil {
-				// 	serv.Errorf("nodes: " + err.Error())
-				// 	return components, err
-				// }
-
-				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
-			}
-			// cpuLimit := float64(0)
-			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
-			// x := pod.Status.ContainerStatuses[0].c
-			if memLimit == float64(0) {
-				// node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-				// if err != nil {
-				// 	serv.Errorf("nodes: " + err.Error())
-				// 	return components, err
-				// }
-				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
-			}
-			// memLimit := float64(0)
-			// storageLimit := pod.Spec.Containers[0].Resources.Limits.Storage().AsApproximateFloat64()
-			// storageLimit := float64(0)
-			cpuUsage := float64(0)
-			// cpuUsage := pod.Status.Usage
-			memUsage := float64(0)
-			// pod.Spec.Volumes[0].Size()
-
-			// node.Status.VolumesInUse
-			// storageUsage := float64(0)
-			// for _, container := range nodeMetrics.
-			for _, container := range podMetrics.Containers {
-				// re := regexp.MustCompile("[0-9]+")
-				// numbers := re.FindAllString(container.Usage.Cpu().String(), -1)
-				// usage, _ := strconv.ParseFloat(numbers[0], 64)
-				// cpuUsage += usage
-				// cpuLimit += float64(pod.Spec.Containers[i].Resources.Limits.Cpu().Value())
-				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
-				// numbers = re.FindAllString(container.Usage.Memory().String(), -1)
-				// usage, _ = strconv.ParseFloat(numbers[0], 64)
-				// memUsage += usage
-				memUsage += container.Usage.Memory().AsApproximateFloat64()
-				// memLimit += float64(pod.Spec.Containers[i].Resources.Limits.Memory().Value())
-				// numbers = re.FindAllString(container.Usage.Storage().String(), -1)
-				// usage, _ = strconv.ParseFloat(numbers[0], 64)
-				// storageUsage += usage
-				// storageUsage += float64(container.Usage.Storage().Value())
-				// storageLimit += float64(pod.Spec.Containers[i].Resources.Limits.Storage().Value())
-			}
-			// for _, claim := range pod.Spec.ResourceClaims{
-			// 	claim.
-			// }
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
@@ -643,6 +434,48 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 		}
 
+			cpuUsage := int64(0)
+			memUsage := int64(0)
+			storagePercentage := float64(0) // TODO: get storage stats of containers
+			for _, container := range podMetrics.Containers {
+				cpuUsage += int64(container.Usage.Cpu().AsApproximateFloat64())
+				memUsage += int64(container.Usage.Memory().AsApproximateFloat64())
+			}
+
+			comp := models.SysComponent{
+				Name: pod.Name,
+				CPU: models.CompStats{
+					Total:      cpuLimit,
+					Current:    cpuUsage,
+					Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
+				},
+				Memory: models.CompStats{
+					Total:      memLimit,
+					Current:    memUsage,
+					Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
+				},
+				Storage: models.CompStats{
+					Total:      storageLimit,
+					Current:    int64((storagePercentage / 100) * float64(storageLimit)),
+					Percentage: int(storagePercentage),
+				},
+				Healthy: true,
+			}
+			if strings.Contains(pod.Name, "mongo") {
+				dbComponents = append(dbComponents, comp)
+				dbPorts = ports
+				dbHost = pod.Status.PodIP
+			} else if strings.Contains(pod.Name, "broker") {
+				brokerComponents = append(brokerComponents, comp)
+				brokerPorts = ports
+				brokerHost = pod.Status.PodIP
+			} else if strings.Contains(pod.Name, "proxy") {
+				proxyComponents = append(proxyComponents, comp)
+				proxyPorts = ports
+				proxyHost = pod.Status.PodIP
+			}
+		}
+
 		for _, d := range deploymentsList.Items {
 			if strings.Contains(d.Name, "mongo") {
 				dbDesired = int(*d.Spec.Replicas)
@@ -672,109 +505,40 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				proxyDesired = int(*s.Spec.Replicas)
 				proxyActual = int(s.Status.ReadyReplicas)
 			}
-
-			// var ports []int
-			// podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), s.Name, metav1.GetOptions{})
-			// if err != nil {
-			// 	return components, err
-			// }
-			// serv.Noticef("statefulsetsList: " + podMetrics.)
-			// pod, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).Get(context.TODO(), s.Name, metav1.GetOptions{})
-			// if err != nil {
-			// 	return components, err
-			// }
-
-			// cpuLimit := float64(pod.Spec.Containers[0].Resources.Limits.Cpu().Value())
-			// memLimit := float64(pod.Spec.Containers[0].Resources.Limits.Memory().Value())
-			// storageLimit := float64(pod.Spec.Containers[0].Resources.Limits.Storage().Value())
-			// cpuUsage := float64(0)
-			// memUsage := float64(0)
-			// storageUsage := float64(0)
-			// for _, container := range podMetrics.Containers {
-			// 	cpuUsage += float64(container.Usage.Cpu().Value())
-			// 	memUsage += float64(container.Usage.Memory().Value())
-			// 	storageUsage += float64(container.Usage.Storage().Value())
-			// }
-			// for _, container := range s.Spec.Template.Spec.Containers {
-			// 	for _, port := range container.Ports {
-			// 		ports = append(ports, int(port.ContainerPort))
-			// 	}
-			// }
-			// comp := models.SysComponent{
-			// 	Name: pod.Name,
-			// 	CPU: models.CompStats{
-			// 		Max:        cpuLimit,
-			// 		Current:    cpuUsage,
-			// 		Percentage: math.Ceil(cpuUsage / cpuLimit),
-			// 	},
-			// 	Memory: models.CompStats{
-			// 		Max:        memLimit,
-			// 		Current:    memUsage,
-			// 		Percentage: math.Ceil(memUsage / memLimit),
-			// 	},
-			// 	Storage: models.CompStats{
-			// 		Max:        storageLimit,
-			// 		Current:    storageUsage,
-			// 		Percentage: math.Ceil(storageUsage / storageLimit),
-			// 	},
-			// 	Connected: true,
-			// }
-			// serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil(cpuUsage/cpuLimit)) + "%/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
-			// serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil(memUsage/memLimit)) + "%/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
-			// serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil(storageUsage/storageLimit)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
-			// if strings.Contains(pod.Name, "mongo") {
-			// 	dbComponents = append(dbComponents, comp)
-			// 	dbPorts = ports
-			// 	dbDesired = int(*s.Spec.Replicas)
-			// 	dbActual = int(s.Status.ReadyReplicas)
-			// 	dbPodIp = pod.Status.PodIP
-			// } else if strings.Contains(pod.Name, "broker") {
-			// 	brokerComponents = append(brokerComponents, comp)
-			// 	brokerPorts = ports
-			// 	brokerDesired = int(*s.Spec.Replicas)
-			// 	brokerActual = int(s.Status.ReadyReplicas)
-			// 	brokerPodIp = pod.Status.PodIP
-			// } else if strings.Contains(pod.Name, "proxy") {
-			// 	proxyComponents = append(proxyComponents, comp)
-			// 	proxyPorts = ports
-			// 	proxyDesired = int(*s.Spec.Replicas)
-			// 	proxyActual = int(s.Status.ReadyReplicas)
-			// 	proxyPodIp = pod.Status.PodIP
-			// }
 		}
-		if len(proxyComponents) > 0 {
-			components = append(components, models.SystemComponents{
-				Name:        proxyComponents[0].Name,
-				Components:  proxyComponents,
-				Status:      checkCompStatus(proxyComponents),
-				Ports:       removeDuplicatePorts(proxyPorts),
-				DesiredPods: proxyDesired,
-				ActualPods:  proxyActual,
-				Address:     proxyPodIp,
-			})
-		}
-		if len(dbComponents) > 0 {
-			components = append(components, models.SystemComponents{
-				Name:        dbComponents[0].Name,
-				Components:  dbComponents,
-				Status:      checkCompStatus(dbComponents),
-				Ports:       removeDuplicatePorts(dbPorts),
-				DesiredPods: dbDesired,
-				ActualPods:  dbActual,
-				Address:     dbPodIp,
-			})
-		}
-		if len(brokerComponents) > 0 {
-			components = append(components, models.SystemComponents{
-				Name:        brokerComponents[0].Name,
-				Components:  brokerComponents,
-				Status:      checkCompStatus(brokerComponents),
-				Ports:       removeDuplicatePorts(brokerPorts),
-				DesiredPods: brokerDesired,
-				ActualPods:  brokerActual,
-				Address:     brokerPodIp,
-			})
-		}
+	}
+	if len(proxyComponents) > 0 {
+		components = append(components, models.SystemComponents{
+			Name:        proxyComponents[0].Name,
+			Components:  proxyComponents,
+			Status:      checkCompStatus(proxyComponents),
+			Ports:       removeDuplicatePorts(proxyPorts),
+			DesiredPods: proxyDesired,
+			ActualPods:  proxyActual,
+			Host:        proxyHost,
+		})
+	}
+	if len(dbComponents) > 0 {
+		components = append(components, models.SystemComponents{
+			Name:        dbComponents[0].Name,
+			Components:  dbComponents,
+			Status:      checkCompStatus(dbComponents),
+			Ports:       removeDuplicatePorts(dbPorts),
+			DesiredPods: dbDesired,
+			ActualPods:  dbActual,
+			Host:        dbHost,
+		})
+	}
+	if len(brokerComponents) > 0 {
+		components = append(components, models.SystemComponents{
+			Name:        brokerComponents[0].Name,
+			Components:  brokerComponents,
+			Status:      checkCompStatus(brokerComponents),
+			Ports:       removeDuplicatePorts(brokerPorts),
+			DesiredPods: brokerDesired,
+			ActualPods:  brokerActual,
+			Host:        brokerHost,
+		})
 	}
 
 	return components, nil
@@ -788,6 +552,103 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
+}
+
+func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughput, error) {
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_throughput_consumer_" + uid
+	var msgs []StoredMsg
+	var throughputs []models.BrokerThroughput
+	streamInfo, err := serv.memphisStreamInfo(throughputStreamName)
+	if err != nil {
+		return throughputs, err
+	}
+
+	amount := streamInfo.State.Msgs
+	startSeq := uint64(1)
+	if streamInfo.State.FirstSeq > 0 {
+		startSeq = streamInfo.State.FirstSeq
+	}
+
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: DeliverByStartSequence,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+	}
+
+	err = serv.memphisAddConsumer(throughputStreamName, &cc)
+	if err != nil {
+		return throughputs, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamName, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+
+	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				serv.Errorf("GetBrokersThroughputs: " + err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return throughputs, err
+	}
+
+	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	timeout := 300 * time.Millisecond
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	serv.unsubscribeOnGlobalAcc(sub)
+	err = serv.memphisRemoveConsumer(throughputStreamName, durableName)
+	if err != nil {
+		return throughputs, err
+	}
+	totalRead := int64(0)
+	totalWrite := int64(0)
+	for _, msg := range msgs {
+		var brokerThroughput models.BrokerThroughput
+		err = json.Unmarshal(msg.Data, &brokerThroughput)
+		if err != nil {
+			return throughputs, err
+		}
+		totalRead += brokerThroughput.Read
+		totalWrite += brokerThroughput.Write
+		throughputs = append(throughputs, brokerThroughput)
+	}
+	throughputs = append([]models.BrokerThroughput{{
+		Name:  "Total",
+		Read:  totalRead,
+		Write: totalWrite,
+	}}, throughputs...)
+
+	return throughputs, nil
 }
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
@@ -811,15 +672,22 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		return
 	}
 	k8sEnv := true
-	if configuration.DOCKER_ENV != "" {
+	if configuration.DOCKER_ENV == "true" {
 		k8sEnv = false
 	}
+	brokersThroughputs, err := mh.GetBrokersThroughputs()
+	if err != nil {
+		serv.Errorf("GetMainOverviewData: GetBrokersThroughputs: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	response := models.MainOverviewData{
-		TotalStations:    len(stations),
-		TotalMessages:    totalMessages,
-		SystemComponents: systemComponents,
-		Stations:         stations,
-		K8sEnv:           k8sEnv,
+		TotalStations:     len(stations),
+		TotalMessages:     totalMessages,
+		SystemComponents:  systemComponents,
+		Stations:          stations,
+		K8sEnv:            k8sEnv,
+		BrokersThroughput: brokersThroughputs,
 	}
 
 	c.IndentedJSON(200, response)
@@ -1629,7 +1497,7 @@ func checkCompStatus(components []models.SysComponent) string {
 	yellowCount := 0
 	redCount := 0
 	for _, component := range components {
-		if !component.Connected {
+		if !component.Healthy {
 			redCount++
 			continue
 		}
@@ -1668,7 +1536,7 @@ func checkCompStatus(components []models.SysComponent) string {
 	return status
 }
 
-func getDbStorageSize() (float64, float64, error) {
+func getDbStorageSize() (int64, int64, error) {
 	var configuration = conf.GetConfig()
 	sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
 		"dbStats": 1,
@@ -1679,21 +1547,40 @@ func getDbStorageSize() (float64, float64, error) {
 
 	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
 	totalSize := sbStats.Lookup("fsTotalSize").Double()
-	return dbStorageSize, totalSize, nil
+	return int64(dbStorageSize), int64(totalSize), nil
 }
 
-func getUnixStorageSize() (float64, error) {
+func getUnixStorageSize() (int64, error) {
 	out, err := exec.Command("df", "-h", "/").Output()
 	if err != nil {
 		return 0, err
 	}
-	var storage_size float64
+	var storage_size int64
 	output := string(out[:])
 	splitted_output := strings.Split(output, "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
 		stringSize := strings.Split(parsedline[1], "Gi")
-		storage_size, _ = strconv.ParseFloat(stringSize[0], 64)
+		storage_size, err = strconv.ParseInt(stringSize[0], 10, 64)
+		if err != nil {
+			return 0, err
+		}
 	}
-	return storage_size, nil
+	return storage_size * 1024 * 1024 * 1024, nil
+}
+
+func defaultSystemComp(compName string, healthy bool) models.SysComponent {
+	defaultStat := models.CompStats{
+		Total:      0,
+		Current:    0,
+		Percentage: 0,
+	}
+
+	return models.SysComponent{
+		Name:    compName,
+		CPU:     defaultStat,
+		Memory:  defaultStat,
+		Storage: defaultStat,
+		Healthy: healthy,
+	}
 }

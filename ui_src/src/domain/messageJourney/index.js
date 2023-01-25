@@ -67,7 +67,7 @@ const MessageJourney = () => {
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
-                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}.${brokerName}`);
             })();
         } catch (err) {

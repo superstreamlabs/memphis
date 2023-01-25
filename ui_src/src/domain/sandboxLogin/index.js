@@ -44,30 +44,6 @@ const SandboxLogin = (props) => {
     const referer = props?.location?.state?.referer || '/overview';
     const [loadingSubmit, setLoadingSubmit] = useState(false);
 
-    const signinWithGithub = async (code) => {
-        try {
-            setisLoading(true);
-            const data = await httpRequest(
-                'POST',
-                ApiEndpoints.SANDBOX_LOGIN,
-                {
-                    login_type: 'github',
-                    token: code
-                },
-                {},
-                {},
-                false
-            );
-            AuthService.saveToLocalStorage(data);
-            localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
-            history.push(referer);
-            setisLoading(false);
-        } catch (err) {
-            setisLoading(false);
-            setError(err);
-        }
-    };
-
     const handleGithubButtonClick = () => {
         window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=user&redirect_uri=${REDIRECT_URI}`;
     };
@@ -110,7 +86,7 @@ const SandboxLogin = (props) => {
         setFormFields({ ...formFields, password: e.target.value });
     };
 
-    function getGoogleAuthUri() {
+    const getGoogleAuthUri = () => {
         const rootUrl = `https://accounts.google.com/o/oauth2/v2/auth`;
         let base = window.location.href,
             state = '';
@@ -133,7 +109,7 @@ const SandboxLogin = (props) => {
         const qs = new URLSearchParams(options);
 
         return `${rootUrl}?${qs.toString()}`;
-    }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -178,10 +154,54 @@ const SandboxLogin = (props) => {
                 {},
                 false
             );
-            AuthService.saveToLocalStorage(data);
-            localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
-            history.push(referer);
+            if (data) {
+                AuthService.saveToLocalStorage(data);
+                localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
+                try {
+                    const conn = await connect({
+                        servers: [SOCKET_URL],
+                        token: '::memphis'
+                    });
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                } catch (error) {}
+                dispatch({ type: 'SET_USER_DATA', payload: data });
+                history.push(referer);
+                setisLoading(false);
+            }
+        } catch (err) {
             setisLoading(false);
+            setError(err);
+        }
+    };
+
+    const signinWithGithub = async (code) => {
+        try {
+            setisLoading(true);
+            const data = await httpRequest(
+                'POST',
+                ApiEndpoints.SANDBOX_LOGIN,
+                {
+                    login_type: 'github',
+                    token: code
+                },
+                {},
+                {},
+                false
+            );
+            if (data) {
+                AuthService.saveToLocalStorage(data);
+                localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
+                try {
+                    const conn = await connect({
+                        servers: [SOCKET_URL],
+                        token: '::memphis'
+                    });
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                } catch (error) {}
+                dispatch({ type: 'SET_USER_DATA', payload: data });
+                history.push(referer);
+                setisLoading(false);
+            }
         } catch (err) {
             setisLoading(false);
             setError(err);

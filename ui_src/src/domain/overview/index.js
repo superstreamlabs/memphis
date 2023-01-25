@@ -121,7 +121,7 @@ function OverView() {
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
-                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
             })();
         } catch (err) {

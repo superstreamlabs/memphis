@@ -55,6 +55,7 @@ type Configuration struct {
 	SANDBOX_SLACK_BOT_TOKEN        string
 	SANDBOX_SLACK_CHANNEL_ID       string
 	SANDBOX_UI_URL                 string
+	EXTERNAL_MONGO                 bool
 }
 
 func GetConfig() Configuration {
@@ -63,6 +64,10 @@ func GetConfig() Configuration {
 		gonfig.GetConf("./conf/docker-config.json", &configuration)
 	} else {
 		gonfig.GetConf("./conf/config.json", &configuration)
+	}
+
+	if configuration.EXTERNAL_MONGO {
+		configuration.DB_NAME = "memphis-db"
 	}
 
 	gin.SetMode(gin.ReleaseMode)
