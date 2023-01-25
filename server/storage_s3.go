@@ -49,7 +49,7 @@ func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 }
 
 func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.Integration, int, error) {
-	statusCode, err := it.handleS3Integrtation(keys)
+	statusCode, _, err := it.handleS3Integrtation(keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
@@ -63,12 +63,12 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 }
 
 func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
-	statusCode, err := it.handleS3Integrtation(body.Keys)
+	statusCode, keys, err := it.handleS3Integrtation(body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
-	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, body.Keys["access_key"], body.Keys["secret_key"], body.Keys["bucket_name"], body.Keys["region"])
+	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 	s3Integration, err := updateS3Integration(keys, properties)
 	if err != nil {
 		return s3Integration, 500, err
@@ -76,12 +76,25 @@ func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegr
 	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int, error) {
+func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int, map[string]string, error) {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
 	bucketName := keys["bucket_name"]
 
+	if keys["secret_key"] == "" {
+		var integrationFromDb models.Integration
+		filter := bson.M{"name": "s3"}
+		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
+			}
+			return 500, map[string]string{}, err
+		}
+		secretKey = integrationFromDb.Keys["secret_key"]
+		keys["secret_key"] = secretKey
+	}
 	provider := &credentials.StaticProvider{Value: credentials.Value{
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secretKey,
@@ -89,8 +102,11 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 
 	_, err := provider.Retrieve()
 	if err != nil {
-		err = errors.New("Retrive failure " + err.Error())
-		return 500, err
+		if strings.Contains(err.Error(), "static credentials are empty") {
+			return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("credentials are empty")
+		} else {
+			return 500, map[string]string{}, err
+		}
 	}
 
 	credentials := credentials.NewCredentials(provider)
@@ -100,15 +116,15 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 	)
 	if err != nil {
 		err = errors.New("NewSession failure " + err.Error())
-		return 500, err
+		return 500, map[string]string{}, err
 	}
 
 	svc := s3.New(sess)
 	statusCode, err := testS3Integration(sess, svc, bucketName)
 	if err != nil {
-		return statusCode, err
+		return statusCode, map[string]string{}, err
 	}
-	return statusCode, nil
+	return statusCode, keys, nil
 }
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -204,6 +220,12 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "send request failed") {
 			err = errors.New("Invalid region")
+			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "could not find region configuration") {
+			err = errors.New("Invalid region: region is empty")
+			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "validation error(s) found") || strings.Contains(err.Error(), "BadRequest: Bad Request") {
+			err = errors.New("Invalid bucket name")
 			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500
