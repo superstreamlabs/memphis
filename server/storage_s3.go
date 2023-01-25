@@ -59,8 +59,9 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		} else {
+			return models.Integration{}, 500, err
 		}
-		return models.Integration{}, 500, err
 	}
 	return s3Integration, statusCode, nil
 }
@@ -250,7 +251,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 
 	if permissionValue != "FULL_CONTROL" {
 		err = errors.New("you should full control permission: read, write and delete " + err.Error())
-		return 500, err
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
 	uploader := s3manager.NewUploader(sess)
@@ -267,13 +268,13 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	})
 	if err != nil {
 		err = errors.New("failed to upload the obeject to S3 " + err.Error())
-		return 500, err
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	//delete the object
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
 	if err != nil {
 		err = errors.New("Unable to delete object from bucket " + bucketName + err.Error())
-		return 500, err
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
@@ -281,7 +282,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	})
 	if err != nil {
 		err = errors.New("Error occurred while waiting for object to be deleted from bucket " + bucketName + err.Error())
-		return 500, err
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	return 0, nil
 }
