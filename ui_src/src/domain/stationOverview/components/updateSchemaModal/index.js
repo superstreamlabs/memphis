@@ -23,8 +23,12 @@ import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Copy from '../../../../components/copy';
 import SelectComponent from '../../../../components/select';
-import Editor, { DiffEditor } from '@monaco-editor/react';
+import Editor, { DiffEditor, loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import SegmentButton from '../../../../components/segmentButton';
+
+loader.init();
+loader.config({ monaco });
 
 const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => {
     const [schemaDetails, setSchemaDetails] = useState([]);

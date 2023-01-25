@@ -13,8 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { loader } from '@monaco-editor/react';
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
@@ -26,6 +25,7 @@ import CustomTabs from '../../../../components/Tabs';
 import Modal from '../../../../components/modal';
 import Copy from '../../../../components/copy';
 
+loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
