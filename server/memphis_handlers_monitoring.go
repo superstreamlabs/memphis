@@ -352,7 +352,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 			}
 			mountpath := pod.Spec.Containers[0].VolumeMounts[0].MountPath
-			storagePercentage, _ := getContainerStorageUsage(config, mountpath, pod.Spec.Containers[0].Name, pod.Name)
+			storagePercentage, err := getContainerStorageUsage(config, mountpath, pod.Spec.Containers[0].Name, pod.Name)
+			if err != nil {
+				serv.Errorf("getContainerStorageUsage: " + err.Error())
+				return components, err
+			}
 			cpuUsage := float64(0)
 			memUsage := float64(0)
 			for _, container := range podMetrics.Containers {
