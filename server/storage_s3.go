@@ -163,7 +163,6 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		}
 		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
-
 	} else if err != nil {
 		return s3Integration, err
 	}
@@ -250,7 +249,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	permissionValue := permission
 
 	if permissionValue != "FULL_CONTROL" {
-		err = errors.New("you should full control permission: read, write and delete " + err.Error())
+		err = errors.New("Creds should have full access on this bucket")
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
@@ -267,13 +266,14 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		Body:   reader,
 	})
 	if err != nil {
-		err = errors.New("failed to upload the obeject to S3 " + err.Error())
+
+		err = errors.New("Could not upload objects - " + err.Error())
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	//delete the object
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
 	if err != nil {
-		err = errors.New("Unable to delete object from bucket " + bucketName + err.Error())
+		err = errors.New("Could not upload objects - " + err.Error())
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
@@ -281,7 +281,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		Key:    aws.String(configuration.SERVER_NAME),
 	})
 	if err != nil {
-		err = errors.New("Error occurred while waiting for object to be deleted from bucket " + bucketName + err.Error())
+		err = errors.New("Error occurred while waiting for object to be deleted - " + err.Error())
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	return 0, nil
