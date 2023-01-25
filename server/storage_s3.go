@@ -57,7 +57,11 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 	s3Integration, err := createS3Integration(keys, properties)
 	if err != nil {
-		return models.Integration{}, 500, err
+		if strings.Contains(err.Error(), "already exists") {
+			return models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		} else {
+			return models.Integration{}, 500, err
+		}
 	}
 	return s3Integration, statusCode, nil
 }
@@ -159,7 +163,6 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		}
 		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
-
 	} else if err != nil {
 		return s3Integration, err
 	}
@@ -246,8 +249,8 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	permissionValue := permission
 
 	if permissionValue != "FULL_CONTROL" {
-		err = errors.New("you should full control permission: read, write and delete " + err.Error())
-		return 500, err
+		err = errors.New("Creds should have full access on this bucket")
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
 	uploader := s3manager.NewUploader(sess)
@@ -263,22 +266,23 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		Body:   reader,
 	})
 	if err != nil {
-		err = errors.New("failed to upload the obeject to S3 " + err.Error())
-		return 500, err
+
+		err = errors.New("Could not upload objects - " + err.Error())
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	//delete the object
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
 	if err != nil {
-		err = errors.New("Unable to delete object from bucket " + bucketName + err.Error())
-		return 500, err
+		err = errors.New("Could not upload objects - " + err.Error())
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(configuration.SERVER_NAME),
 	})
 	if err != nil {
-		err = errors.New("Error occurred while waiting for object to be deleted from bucket " + bucketName + err.Error())
-		return 500, err
+		err = errors.New("Error occurred while waiting for object to be deleted - " + err.Error())
+		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	return 0, nil
 }
