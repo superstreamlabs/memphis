@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -40,6 +41,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
@@ -47,9 +49,9 @@ type MonitoringHandler struct{ S *Server }
 
 var clientset *kubernetes.Clientset
 var metricsclientset *metricsv.Clientset
+var config *rest.Config
 
 func clientSetClusterConfig() error {
-	var config *rest.Config
 	var err error
 	// in cluster config
 	config, err = rest.InClusterConfig()
@@ -89,14 +91,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		runtime.ReadMemStats(&rt)
 		host = "http://localhost"
 		if configuration.DEV_ENV == "true" {
-			maxCpu := int64(runtime.GOMAXPROCS(0))
+			maxCpu := float64(runtime.GOMAXPROCS(0))
 			v, err := serv.Varz(nil)
 			if err != nil {
 				return components, err
 			}
 			var storageComp models.CompStats
 			os := runtime.GOOS
-			storage_size := int64(0)
+			storage_size := float64(0)
 			isWindows := false
 			switch os {
 			case "windows":
@@ -109,20 +111,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 				storageComp = models.CompStats{
 					Total:      storage_size,
-					Current:    int64(v.JetStream.Stats.Store),
-					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / float64(storage_size)) * 100)),
+					Current:    float64(v.JetStream.Stats.Store),
+					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
 				}
 			}
 			cpuComps := []models.SysComponent{{
 				Name: "memphis-broker",
 				CPU: models.CompStats{
 					Total:      maxCpu,
-					Current:    int64((v.CPU / 100) * float64(maxCpu)),
+					Current:    (v.CPU / 100) * maxCpu,
 					Percentage: int(math.Ceil(v.CPU)),
 				},
 				Memory: models.CompStats{
-					Total:      int64(v.JetStream.Config.MaxMemory),
-					Current:    int64(v.JetStream.Stats.Memory),
+					Total:      float64(v.JetStream.Config.MaxMemory),
+					Current:    float64(v.JetStream.Stats.Memory),
 					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Memory)/float64(v.JetStream.Config.MaxMemory)) * 100),
 				},
 				Storage: storageComp,
@@ -151,7 +153,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				if !isWindows {
 					storageComp = models.CompStats{
 						Total:      storage_size,
-						Current:    int64((proxyMonitorInfo.Storage / 100) * float64(storage_size)),
+						Current:    (proxyMonitorInfo.Storage / 100) * storage_size,
 						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Storage))),
 					}
 				}
@@ -159,12 +161,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					Name: "memphis-http-proxy",
 					CPU: models.CompStats{
 						Total:      maxCpu,
-						Current:    int64((proxyMonitorInfo.CPU / 100) * float64(maxCpu)),
+						Current:    (proxyMonitorInfo.CPU / 100) * maxCpu,
 						Percentage: int(math.Ceil(proxyMonitorInfo.CPU)),
 					},
 					Memory: models.CompStats{
-						Total:      v.JetStream.Config.MaxMemory,
-						Current:    int64((proxyMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
+						Total:      float64(v.JetStream.Config.MaxMemory),
+						Current:    (proxyMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory),
 						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Memory))),
 					},
 					Storage: storageComp,
@@ -218,11 +220,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if err != nil {
 				return components, err
 			}
-			cpuLimit := int64(runtime.GOMAXPROCS(0))
+			cpuLimit := float64(runtime.GOMAXPROCS(0))
 			cpuPercentage := math.Ceil((float64(dockerStats.CPUStats.CPUUsage.TotalUsage) / float64(dockerStats.CPUStats.SystemUsage)) * 100)
-			totalCpuUsage := int64((cpuPercentage / 100) * float64(cpuLimit))
-			totalMemoryUsage := int64(dockerStats.MemoryStats.Usage)
-			memoryLimit := int64(dockerStats.MemoryStats.Limit)
+			totalCpuUsage := (cpuPercentage / 100) * cpuLimit
+			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
+			memoryLimit := float64(dockerStats.MemoryStats.Limit)
 			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
 			storage_size, err := getUnixStorageSize()
 			if err != nil {
@@ -258,8 +260,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 				storageStat = models.CompStats{
 					Total:      storage_size,
-					Current:    int64(v.JetStream.Stats.Store),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / float64(storage_size))),
+					Current:    float64(v.JetStream.Stats.Store),
+					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
 				}
 			} // TODO: add storage stats from proxy
 			for _, port := range container.Ports {
@@ -318,13 +320,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				serv.Errorf("pvcList: " + err.Error())
 				return components, err
 			}
-			cpuLimit := int64(pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64())
-			if cpuLimit == 0 {
-				cpuLimit = int64(node.Status.Capacity.Cpu().AsApproximateFloat64())
+			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
+			if cpuLimit == float64(0) {
+				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
 			}
-			memLimit := int64(pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64())
-			if memLimit == 0 {
-				memLimit = int64(node.Status.Capacity.Memory().AsApproximateFloat64())
+			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
+			if memLimit == float64(0) {
+				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
 			var pvcName string
 			for _, volume := range pod.Spec.Volumes {
@@ -333,13 +335,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					break
 				}
 			}
-			storageLimit := int64(0)
+			storageLimit := float64(0)
 			for _, pvc := range pvcList.Items {
 				if pvc.Name == pvcName {
 					size := pvc.Status.Capacity[v1.ResourceStorage]
 					floatSize := size.AsApproximateFloat64()
 					if floatSize != float64(0) {
-						storageLimit = int64(floatSize)
+						storageLimit = floatSize
 					}
 					break
 				}
@@ -349,13 +351,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					ports = append(ports, int(port.ContainerPort))
 				}
 			}
-
-			cpuUsage := int64(0)
-			memUsage := int64(0)
-			storagePercentage := float64(0) // TODO: get storage stats of containers
+			mountpath := pod.Spec.Containers[0].VolumeMounts[0].MountPath
+			storagePercentage, _ := getContainerStorageUsage(config, mountpath, pod.Spec.Containers[0].Name, pod.Name)
+			cpuUsage := float64(0)
+			memUsage := float64(0)
 			for _, container := range podMetrics.Containers {
-				cpuUsage += int64(container.Usage.Cpu().AsApproximateFloat64())
-				memUsage += int64(container.Usage.Memory().AsApproximateFloat64())
+				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
+				memUsage += container.Usage.Memory().AsApproximateFloat64()
 			}
 
 			comp := models.SysComponent{
@@ -372,7 +374,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				},
 				Storage: models.CompStats{
 					Total:      storageLimit,
-					Current:    int64((storagePercentage / 100) * float64(storageLimit)),
+					Current:    (storagePercentage / 100) * storageLimit,
 					Percentage: int(storagePercentage),
 				},
 				Healthy: true,
@@ -1422,7 +1424,7 @@ func checkCompStatus(components []models.SysComponent) string {
 	return status
 }
 
-func getDbStorageSize() (int64, int64, error) {
+func getDbStorageSize() (float64, float64, error) {
 	var configuration = conf.GetConfig()
 	sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
 		"dbStats": 1,
@@ -1433,21 +1435,21 @@ func getDbStorageSize() (int64, int64, error) {
 
 	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
 	totalSize := sbStats.Lookup("fsTotalSize").Double()
-	return int64(dbStorageSize), int64(totalSize), nil
+	return dbStorageSize, totalSize, nil
 }
 
-func getUnixStorageSize() (int64, error) {
+func getUnixStorageSize() (float64, error) {
 	out, err := exec.Command("df", "-h", "/").Output()
 	if err != nil {
 		return 0, err
 	}
-	var storage_size int64
+	var storage_size float64
 	output := string(out[:])
 	splitted_output := strings.Split(output, "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
-		stringSize := strings.Split(parsedline[1], "Gi")
-		storage_size, err = strconv.ParseInt(stringSize[0], 10, 64)
+		stringSize := strings.Split(parsedline[1], "G")
+		storage_size, err = strconv.ParseFloat(stringSize[0], 64)
 		if err != nil {
 			return 0, err
 		}
@@ -1496,4 +1498,52 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	}
 
 	return res
+}
+
+func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
+	command := []string{"df", "-h", mountPath}
+	usage := float64(0)
+
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+
+	execReq := clientset.CoreV1().RESTClient().Post().
+		Namespace(configuration.K8S_NAMESPACE).
+		Resource("pods").
+		Name(pod).
+		SubResource("exec").
+		VersionedParams(&v1.PodExecOptions{
+			Container: container,
+			Command:   command,
+			Stdout:    true,
+			Stdin:     true,
+			Stderr:    true,
+			TTY:       false,
+		}, metav1.ParameterCodec)
+
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
+	if err != nil {
+		return 0, err
+	}
+	var stdout, stderr bytes.Buffer
+	err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Tty:    false,
+	})
+	if err != nil {
+		return 0, err
+	}
+	if stderr.String() != "" {
+		err = errors.New(stderr.String())
+		return 0, err
+	}
+	splitted_output := strings.Split(stdout.String(), "\n")
+	parsedline := strings.Fields(splitted_output[1])
+	if len(parsedline) > 0 {
+		stringUsage := strings.Split(parsedline[4], "%")
+		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
+	}
+	serv.Errorf("stderr: %s\n", stderr.String())
+	return usage, nil
 }
