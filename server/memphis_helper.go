@@ -46,6 +46,7 @@ const (
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
 	storageStreamName      = "$memphis_tiered_storage"
+	throughputStreamName   = "$memphis-throughput"
 )
 
 // JetStream API request kinds
@@ -215,43 +216,34 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 		})
 }
 
-func (s *Server) CreateMemphisStream(streamName string) {
+func (s *Server) CreateSystemStreams() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
 	successCh := make(chan error)
-	var retention RetentionPolicy
-	switch streamName {
-	case syslogsStreamName:
-		retention = LimitsPolicy
-	case storageStreamName:
-		retention = WorkQueuePolicy
-	default:
-		retention = LimitsPolicy
-	}
 
 	if ready { // stand alone
-		go tryCreateMemphisStream(s, streamName, retention, retentionDur, successCh)
+		go tryCreateSystemStreams(s, retentionDur, successCh)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("CreateMemphisStream: " + streamName + "creation failed: " + err.Error())
+			s.Errorf("CreateSystemStreams: system streams creation failed: " + err.Error())
 		}
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateMemphisStream(s, streamName, retention, retentionDur, successCh)
+			go tryCreateSystemStreams(s, retentionDur, successCh)
 			select {
 			case <-timeout.C:
-				s.Warnf("CreateMemphisStream: " + streamName + "creation takes more than a minute")
+				s.Warnf("CreateSystemStreams: system streams creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("CreateMemphisStream: " + err.Error())
+					s.Warnf("CreateSystemStreams: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("CreateMemphisStream: " + err.Error())
+					s.Warnf("CreateSystemStreams: " + err.Error())
 					<-timeout.C
 					continue
 				}
@@ -261,26 +253,58 @@ func (s *Server) CreateMemphisStream(streamName string) {
 		}
 	}
 
-	if streamName == "$memphis_syslogs" {
-		if s.memphis.activateSysLogsPubFunc == nil {
-			s.Fatalf("internal error: publish activation func is not initialised")
-		}
-		s.memphis.activateSysLogsPubFunc()
-		s.popFallbackLogs()
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: sys logs publish activation func is not initialized")
 	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
 }
 
-func tryCreateMemphisStream(s *Server, streamName string, retention RetentionPolicy, retentionDur time.Duration, successCh chan error) {
+func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error) {
+	// sytem logs stream
 	err := s.memphisAddStream(&StreamConfig{
-		Name:         streamName,
-		Subjects:     []string{streamName + ".>"},
-		Retention:    retention,
+		Name:         syslogsStreamName,
+		Subjects:     []string{syslogsStreamName + ".>"},
+		Retention:    LimitsPolicy,
 		MaxAge:       retentionDur,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 	})
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		successCh <- err
+		return
+	}
 
+	// system storage stream
+	err = s.memphisAddStream(&StreamConfig{
+		Name:         storageStreamName,
+		Subjects:     []string{storageStreamName + ".>"},
+		Retention:    WorkQueuePolicy,
+		MaxAge:       retentionDur,
+		MaxConsumers: -1,
+		Discard:      DiscardOld,
+		Storage:      FileStorage,
+	})
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		successCh <- err
+		return
+	}
+	// throughput kv
+	err = s.memphisAddStream(&StreamConfig{
+		Name:         (throughputStreamName),
+		Subjects:     []string{throughputStreamName + ".>"},
+		Retention:    LimitsPolicy,
+		MaxConsumers: -1,
+		MaxMsgs:      int64(-1),
+		MaxBytes:     int64(-1),
+		Discard:      DiscardOld,
+		MaxMsgsPer:   1,
+		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+		Storage:      FileStorage,
+		Replicas:     1,
+		NoAck:        false,
+	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
 		return
@@ -1022,7 +1046,6 @@ func DecodeHeader(buf []byte) (map[string]string, error) {
 
 	// tp.readMIMEHeader changes key cases
 	mh, err := readMIMEHeader(tp)
-	// mh, err := readMIMEHeader(tp)
 	if err != nil {
 		return nil, err
 	}
