@@ -2859,9 +2859,6 @@ func (fs *fileStore) expireMsgs() {
 		// 		}
 
 		// 		uploader := s3manager.NewUploader(sess)
-		// 		if configuration.SERVER_NAME == "" {
-		// 			configuration.SERVER_NAME = "memphis"
-		// 		}
 
 		// 		reader := strings.NewReader(string(sm.msg) + configuration.SERVER_NAME)
 		// 		// Upload the object to S3.
