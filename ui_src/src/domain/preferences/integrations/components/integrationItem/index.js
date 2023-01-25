@@ -53,7 +53,7 @@ const IntegrationItem = ({ value }) => {
                         value={ref.current}
                     />
                 );
-            case 'Amazon S3':
+            case 'S3':
                 return (
                     <S3Integration
                         close={(data) => {

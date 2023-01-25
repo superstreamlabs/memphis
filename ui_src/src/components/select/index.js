@@ -36,7 +36,8 @@ const SelectComponent = ({
     disabled,
     iconColor,
     fontSize,
-    fontFamily
+    fontFamily,
+    placeholder
 }) => {
     const handleChange = (e) => {
         onChange(e);
@@ -52,6 +53,7 @@ const SelectComponent = ({
     const fieldProps = {
         onChange: handleChange,
         disabled,
+        placeholder,
         style: {
             width,
             color,

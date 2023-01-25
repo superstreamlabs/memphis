@@ -169,7 +169,7 @@ const S3Integration = ({ close, value }) => {
                             initialValue={formFields?.keys?.secret_key}
                         >
                             <Input
-                                placeholder="***************3FUIjt"
+                                placeholder="****+crc"
                                 type="text"
                                 radiusType="semi-round"
                                 colorType="black"
@@ -222,7 +222,7 @@ const S3Integration = ({ close, value }) => {
                                 popupClassName="select-options"
                                 options={REGIONS_OPTIONS}
                                 value={formFields?.keys?.region || REGIONS_OPTIONS[0].name}
-                                onChange={(e) => updateKeysState('region', e)}
+                                onChange={(e) => updateKeysState('region', e.match(/\[(.*?)\]/)[1])}
                             />
                         </Form.Item>
                     </div>

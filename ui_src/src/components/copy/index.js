@@ -15,7 +15,7 @@ import React, { useState } from 'react';
 import copy from '../../assets/images/copy.svg';
 import copiedIcon from '../../assets/images/copied.svg';
 
-const Copy = ({ data, key }) => {
+const Copy = ({ data, key, width = '16' }) => {
     const [copied, setCopied] = useState(null);
 
     const handleCopyWithKey = (key, data) => {
@@ -34,8 +34,8 @@ const Copy = ({ data, key }) => {
     };
     return (
         <>
-            {key && <img alt="copy" style={{ cursor: 'pointer' }} src={copied === key ? copiedIcon : copy} onClick={() => handleCopyWithKey(key, data)} />}
-            {!key && <img alt="copy" style={{ cursor: 'pointer' }} src={copied ? copiedIcon : copy} onClick={() => handleCopy(data)} />}
+            {key && <img alt="copy" width={width} style={{ cursor: 'pointer' }} src={copied === key ? copiedIcon : copy} onClick={() => handleCopyWithKey(key, data)} />}
+            {!key && <img alt="copy" width={width} style={{ cursor: 'pointer' }} src={copied ? copiedIcon : copy} onClick={() => handleCopy(data)} />}
         </>
     );
 };

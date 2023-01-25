@@ -49,12 +49,12 @@ export const CATEGORY_LIST = {
 
 export const REGIONS_OPTIONS = [
     {
-        name: 'US East (Ohio) [us-east-2]',
-        value: 'us-east-2'
-    },
-    {
         name: 'US East (N. Virginia) [us-east-1]',
         value: 'us-east-1'
+    },
+    {
+        name: 'US East (Ohio) [us-east-2]',
+        value: 'us-east-2'
     },
     {
         name: 'US West (N. California) [us-west-1]',
@@ -63,22 +63,6 @@ export const REGIONS_OPTIONS = [
     {
         name: 'US West (Oregon) [us-west-2]',
         value: 'us-west-2'
-    },
-    {
-        name: 'Africa (Cape Town) [af-south-1]',
-        value: 'af-south-1'
-    },
-    {
-        name: 'Asia Pacific (Hong Kong) [ap-east-1]',
-        value: 'ap-east-1'
-    },
-    {
-        name: 'Asia Pacific (Hyderabad) [ap-south-2]',
-        value: 'ap-south-2'
-    },
-    {
-        name: 'Asia Pacific (Jakarta) [ap-southeast-3]',
-        value: 'ap-southeast-3'
     },
     {
         name: 'Asia Pacific (Mumbai) [ap-south-1]',
@@ -109,6 +93,22 @@ export const REGIONS_OPTIONS = [
         value: 'ca-central-1'
     },
     {
+        name: 'Africa (Cape Town) [af-south-1]',
+        value: 'af-south-1'
+    },
+    {
+        name: 'Asia Pacific (Hong Kong) [ap-east-1]',
+        value: 'ap-east-1'
+    },
+    {
+        name: 'Asia Pacific (Hyderabad) [ap-south-2]',
+        value: 'ap-south-2'
+    },
+    {
+        name: 'Asia Pacific (Jakarta) [ap-southeast-3]',
+        value: 'ap-southeast-3'
+    },
+    {
         name: 'Europe (Frankfurt) [eu-central-1]',
         value: 'eu-central-1'
     },
@@ -121,20 +121,20 @@ export const REGIONS_OPTIONS = [
         value: 'eu-west-2'
     },
     {
-        name: 'Europe (Milan) [eu-south-1]',
-        value: 'eu-south-1'
-    },
-    {
         name: 'Europe (Paris) [eu-west-3]',
         value: 'eu-west-3'
     },
     {
-        name: 'Europe (Spain) [eu-south-2]',
-        value: 'eu-south-2'
-    },
-    {
         name: 'Europe (Stockholm) [eu-north-1]',
         value: 'eu-north-1'
+    },
+    {
+        name: 'Europe (Milan) [eu-south-1]',
+        value: 'eu-south-1'
+    },
+    {
+        name: 'Europe (Spain) [eu-south-2]',
+        value: 'eu-south-2'
     },
     {
         name: 'Europe (Zurich) [eu-central-2]',
@@ -187,19 +187,20 @@ export const INTEGRATION_LIST = [
         )
     },
     {
-        name: 'Amazon S3',
+        name: 'S3',
         by: 'memphis',
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
         icon: <img src={s3Logo} alt="s3Logo" />,
-        description: 'Amazon S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
+        description: 'AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage'],
+        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={s3Logo} alt="s3Logo" />
                 <div className="details">
-                    <p>Amazon S3</p>
+                    <p>S3</p>
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
@@ -211,7 +212,7 @@ export const INTEGRATION_LIST = [
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">Amazon S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
+                <span className="content">AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
             </div>
         )
     },
