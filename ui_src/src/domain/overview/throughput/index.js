@@ -13,262 +13,82 @@
 import './style.scss';
 
 import { Segmented } from 'antd';
-import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Legend, Line } from 'recharts';
+import React, { useEffect, useState, useContext } from 'react';
+import { Context } from '../../../hooks/store';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import ThroughputInterval from './throughputInterval';
-import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
-import SysContainer from '../../../assets/images/sysContainer.svg';
-import SelectComponent from '../../../components/select';
 import SelectThroughput from '../../../components/selectThroughput';
-
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="custom-tooltip">
-                <p>{`Time: ${label}`}</p>
-                <p style={{ textTransform: 'capitalize' }}>
-                    {payload[0].dataKey}: {payload[0].value}
-                </p>
-            </div>
-        );
-    }
-
-    return null;
-};
 
 const axisStyle = {
     fontSize: '12px',
     fontFamily: 'InterSemiBold',
     margin: '0px'
 };
-const data = [
-    {
-        name: '00:00',
-        throughput1: 4000,
-        throughput2: 5000,
-        throughput3: 4000
-    },
-    {
-        name: '01:00',
-        throughput1: 3000,
-        throughput2: 5000,
-        throughput3: 4000
-    },
-    {
-        name: '02:00',
-        throughput1: 2000,
-        throughput2: 5000,
-        throughput3: 4000
-    },
-    {
-        name: '03:00',
-        throughput1: 2780,
-        throughput2: 1000,
-        throughput3: 4000
-    },
-    {
-        name: '04:00',
-        throughput1: 1890,
-        throughput2: 2000,
-        throughput3: 4000
-    },
-    {
-        name: '05:00',
-        throughput1: 2390,
-        throughput2: 3000,
-        throughput3: 4000
-    },
-    {
-        name: '06:00',
-        throughput1: 3490,
-        throughput2: 1000,
-        throughput3: 4000
-    },
-    {
-        name: '07:00',
-        throughput1: 4000,
-        throughput2: 2000,
-        throughput3: 4000
-    },
-    {
-        name: '08:00',
-        throughput1: 3000,
-        throughput2: 5000,
-        throughput3: 4000
-    },
-    {
-        name: '09:00',
-        throughput1: 2000,
-        throughput2: 2000,
-        throughput3: 4000
-    },
-    {
-        name: '10:00',
-        throughput1: 2780,
-        throughput2: 2000,
-        throughput3: 4000
-    },
-    {
-        name: '11:00',
-        throughput1: 1890,
-        throughput2: 4000,
-        throughput3: 4000
-    },
-    {
-        name: '12:00',
-        throughput1: 2390,
-        throughput2: 7000,
-        throughput3: 4000
-    },
-    {
-        name: '13:00',
-        throughput1: 4000,
-        throughput2: 6000,
-        throughput3: 4000
-    }
-];
-
-// let data = [
-//     {
-//         name: '00:00',
-//         throughput: 4000
-//     },
-//     {
-//         name: '01:00',
-//         throughput: 3000
-//     },
-//     {
-//         name: '02:00',
-//         throughput: 2000
-//     },
-//     {
-//         name: '03:00',
-//         throughput: 2780
-//     },
-//     {
-//         name: '04:00',
-//         throughput: 1890
-//     },
-//     {
-//         name: '05:00',
-//         throughput: 2390
-//     },
-//     {
-//         name: '06:00',
-//         throughput: 3490
-//     },
-//     {
-//         name: '07:00',
-//         throughput: 4000
-//     },
-//     {
-//         name: '08:00',
-//         throughput: 3000
-//     },
-//     {
-//         name: '09:00',
-//         throughput: 2000
-//     },
-//     {
-//         name: '10:00',
-//         throughput: 2780
-//     },
-//     {
-//         name: '11:00',
-//         throughput: 1890
-//     },
-//     {
-//         name: '12:00',
-//         throughput: 2390
-//     },
-//     {
-//         name: '13:00',
-//         throughput: 4000
-//     }
-// ];
-
-const data2 = [
-    {
-        name: '14:00',
-        throughput: 3000
-    },
-    {
-        name: '15:00',
-        throughput: 2000
-    },
-    {
-        name: '16:00',
-        throughput: 2780
-    },
-    {
-        name: '17:00',
-        throughput: 1890
-    },
-    {
-        name: '18:00',
-        throughput: 2390
-    },
-    {
-        name: '19:00',
-        throughput: 3490
-    },
-    {
-        name: '20:00',
-        throughput: 4000
-    },
-    {
-        name: '21:00',
-        throughput: 3000
-    },
-    {
-        name: '22:00',
-        throughput: 2000
-    },
-    {
-        name: '23:00',
-        throughput: 2780
-    }
-];
 
 const Throughput = () => {
+    const [state, dispatch] = useContext(Context);
     const [throughputType, setThroughputType] = useState('Write');
-    const [selectedComponent, setSelectedComponent] = useState('broker-1');
+    const [selectedComponent, setSelectedComponent] = useState('total');
+    const [selectOptions, setSelectOptions] = useState([]);
+    const [dataRead, setDataRead] = useState([]);
+    const [dataWrite, setDataWrite] = useState([]);
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="custom-tooltip">
+                    <p className="throughput-type">{throughputType}</p>
+                    <p>{`Time: ${label}`}</p>
+                    <p style={{ textTransform: 'capitalize' }}>
+                        {payload[0].dataKey}: {payload[0].value}
+                    </p>
+                </div>
+            );
+        }
+
+        return null;
+    };
+    useEffect(() => {
+        const current = new Date();
+        const time = current.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        let write = { time: time };
+        let read = { time: time };
+        let components = [];
+        state?.monitor_data?.brokers_throughput?.forEach((element) => {
+            const elementName = element.name;
+            components.push({ name: elementName });
+            write[elementName] = element.write;
+            read[elementName] = element.read;
+        });
+        setSelectOptions(components);
+        setDataRead([...dataRead, read]);
+        setDataWrite([...dataWrite, write]);
+    }, [state?.monitor_data?.brokers_throughput]);
+
     return (
         <div className="overview-components-wrapper throughput-overview-container">
-            {/* <div className="coming-soon-wrapper">
-                <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
-                <p>Coming soon</p>
-            </div> */}
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
                     <p> Throughput</p>
                     <Segmented options={['Write', 'Read']} onChange={(e) => setThroughputType(e)} />
                 </div>
-                <SelectThroughput value={selectedComponent} options={[{ name: 'broker-1' }, { name: 'broker-2' }]} onChange={(e) => setSelectedComponent(e)} />
+                <SelectThroughput
+                    value={selectedComponent || 'total'}
+                    placeholder={selectedComponent || 'total'}
+                    options={selectOptions}
+                    onChange={(e) => setSelectedComponent(e)}
+                />
                 {/* <ThroughputInterval /> */}
             </div>
             <div className="throughput-chart">
                 <ResponsiveContainer>
-                    {/* <LineChart
-                        data={data}
-                        margin={{
-                            top: 30,
-                            right: 0,
-                            left: 0,
-                            bottom: 20
-                        }}
-                    >
-                        <CartesianGrid strokeDasharray="6 3" stroke="#f5f5f5" />
-                        <XAxis style={axisStyle} dataKey="name" />
-                        <YAxis style={axisStyle} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Line type="monotone" dataKey="throughput1" stroke="#8884d8" activeDot={{ r: 8 }} />
-                        <Line type="monotone" dataKey="throughput2" stroke="#82ca9d" />
-                        <Line type="monotone" dataKey="throughput3" stroke="#61DFC6" />
-                        
-                    </LineChart> */}
                     <AreaChart
-                        data={data}
+                        data={throughputType === 'Write' ? dataWrite : dataRead}
                         margin={{
                             top: 30,
                             right: 0,
@@ -283,10 +103,10 @@ const Throughput = () => {
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="6 3" stroke="#f5f5f5" />
-                        <XAxis style={axisStyle} dataKey="name" />
+                        <XAxis style={axisStyle} dataKey="time" />
                         <YAxis style={axisStyle} />
                         <Tooltip content={<CustomTooltip />} />
-                        <Area type="monotone" dataKey="throughput1" stroke="#6557FF" fill="url(#colorThroughput)" />
+                        <Area type="monotone" dataKey={selectedComponent} stroke="#6557FF" fill="url(#colorThroughput)" />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>

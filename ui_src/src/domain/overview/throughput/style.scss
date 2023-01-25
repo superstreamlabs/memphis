@@ -23,7 +23,11 @@
         white-space: pre-line;
         border-radius: 6px;
         width: 150px;
-        height: 70px;
+        height: 110px;
+        .throughput-type {
+            font-size: 14px;
+            font-weight: 700;
+        }
     }
 }
 

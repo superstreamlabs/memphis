@@ -15,7 +15,7 @@ import './style.scss';
 import { ArrowDropDownRounded } from '@material-ui/icons';
 import React from 'react';
 import { Select } from 'antd';
-import SysContainer from '../../assets/images/sysContainer.svg';
+import ComponentIcon from '../../assets/images/componentIcon.svg';
 
 const { Option } = Select;
 
@@ -26,12 +26,13 @@ const selectThroughput = ({ options, onChange, value, placeholder }) => {
 
     return (
         <div className="select-throughput-container">
+            <img src={ComponentIcon} alt="ComponentIcon" height="20px" className="prefixImg" />
             <Select
                 width="180px"
                 height="28px"
                 className="select"
-                placeholder={placeholder}
                 value={value}
+                placeholder={placeholder}
                 bordered={false}
                 suffixIcon={<ArrowDropDownRounded className="drop-down-icon" />}
                 onChange={handleChange}
@@ -42,7 +43,7 @@ const selectThroughput = ({ options, onChange, value, placeholder }) => {
                     return (
                         <Option key={component?.id} value={component?.name}>
                             <div className="throughput-details">
-                                <img src={SysContainer} alt="SysContainer" height="20px" />
+                                <img src={ComponentIcon} alt="ComponentIcon" height="20px" />
                                 <p className="throughput-name">{component?.name}</p>
                             </div>
                         </Option>

@@ -92,7 +92,6 @@ function OverView() {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            console.log(data);
             data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
             dispatch({ type: 'SET_MONITOR_DATA', payload: data });
             setisLoading(false);
