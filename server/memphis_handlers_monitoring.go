@@ -57,21 +57,8 @@ func clientSetClusterConfig() error {
 		serv.Errorf("clientSetClusterConfig: InClusterConfig: " + err.Error())
 		return err
 	}
+	clientset, err = kubernetes.NewForConfig(config)
 
-	// caFile, err := os.Open("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-	// if err != nil {
-	// 	serv.Errorf("clientSetClusterConfig: read cert file: " + err.Error())
-	// 	return err
-	// }
-	// defer caFile.Close()
-
-	// scanner := bufio.NewScanner(caFile)
-	// caCert = ""
-	// for scanner.Scan() {
-	// 	caCert += scanner.Text()
-	// }
-
-	caCert, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
 		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
 		return err
@@ -335,7 +322,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		if err != nil {
 			return components, err
 		}
-		// podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 
 		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
@@ -391,49 +377,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					ports = append(ports, int(port.ContainerPort))
 				}
 			}
-			comp := models.SysComponent{
-				Name: pod.Name,
-				CPU: models.CompStats{
-					Max:        cpuLimit,
-					Current:    cpuUsage,
-					Percentage: math.Ceil((cpuUsage / cpuLimit) * 100),
-				},
-				Memory: models.CompStats{
-					Max:        memLimit,
-					Current:    memUsage,
-					Percentage: math.Ceil((memUsage / memLimit) * 100),
-				},
-				// Storage: models.CompStats{
-				// 	Max:        storageLimit,
-				// 	Current:    storageUsage,
-				// 	Percentage: math.Ceil((storageUsage / storageLimit) * 100),
-				// },
-				Connected: true,
-			}
-			serv.Noticef(pod.Name + " CPU: " + fmt.Sprintf("%f", math.Ceil((cpuUsage/cpuLimit)*100)) + " percentage/" + fmt.Sprintf("%f", cpuUsage) + " usage/" + fmt.Sprintf("%f", cpuLimit) + " limit")
-			serv.Noticef(pod.Name + " Memory: " + fmt.Sprintf("%f", math.Ceil((memUsage/memLimit)*100)) + " percentage/" + fmt.Sprintf("%f", memUsage) + " usage/" + fmt.Sprintf("%f", memLimit) + " limit")
-			// serv.Noticef(pod.Name + " Storage: " + fmt.Sprintf("%f", math.Ceil((storageUsage/storageLimit)*100)) + "%/" + fmt.Sprintf("%f", storageUsage) + " usage/" + fmt.Sprintf("%f", storageLimit) + " limit")
-			if strings.Contains(pod.Name, "mongo") {
-				dbComponents = append(dbComponents, comp)
-				dbPorts = ports
-				// dbDesired = int(*d.Spec.Replicas)
-				// dbActual = int(d.Status.ReadyReplicas)
-				dbPodIp = pod.Status.PodIP
-			} else if strings.Contains(pod.Name, "broker") {
-				brokerComponents = append(brokerComponents, comp)
-				brokerPorts = ports
-				// brokerDesired = int(*d.Spec.Replicas)
-				// brokerActual = int(d.Status.ReadyReplicas)
-				brokerPodIp = pod.Status.PodIP
-			} else if strings.Contains(pod.Name, "proxy") {
-				proxyComponents = append(proxyComponents, comp)
-				proxyPorts = ports
-				// proxyDesired = int(*d.Spec.Replicas)
-				// proxyActual = int(d.Status.ReadyReplicas)
-				proxyPodIp = pod.Status.PodIP
-			}
-		}
-
 			cpuUsage := int64(0)
 			memUsage := int64(0)
 			storagePercentage := float64(0) // TODO: get storage stats of containers

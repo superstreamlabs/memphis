@@ -37,30 +37,6 @@ type SystemComponents struct {
 	Host        string         `json:"host"`
 }
 
-type SysComponent struct {
-	Name      string    `json:"name"`
-	CPU       CompStats `json:"cpu"`
-	Memory    CompStats `json:"memory"`
-	Storage   CompStats `json:"storage"`
-	Connected bool      `json:"connected"`
-}
-
-type CompStats struct {
-	Max        float64 `json:"max"`
-	Current    float64 `json:"current"`
-	Percentage float64 `json:"percentage"`
-}
-
-type SystemComponents struct {
-	Name        string         `json:"name"`
-	Components  []SysComponent `json:"components"`
-	Status      string         `json:"status"`
-	Ports       []int          `json:"ports"`
-	DesiredPods int            `json:"desired_pods"`
-	ActualPods  int            `json:"actual_pods"`
-	Address     string         `json:"address"`
-}
-
 type MainOverviewData struct {
 	TotalStations     int                `json:"total_stations"`
 	TotalMessages     int                `json:"total_messages"`
