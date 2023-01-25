@@ -346,16 +346,24 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					break
 				}
 			}
+			mountpath := ""
+			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
 					ports = append(ports, int(port.ContainerPort))
 				}
+				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
+					mountpath = pod.Spec.Containers[0].VolumeMounts[0].MountPath
+					containerForExec = container.Name
+				}
 			}
-			mountpath := pod.Spec.Containers[0].VolumeMounts[0].MountPath
-			storagePercentage, err := getContainerStorageUsage(config, mountpath, pod.Spec.Containers[0].Name, pod.Name)
-			if err != nil {
-				serv.Errorf("getContainerStorageUsage: " + err.Error())
-				return components, err
+			storagePercentage := float64(0)
+			if containerForExec != "" {
+				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+				if err != nil {
+					serv.Errorf("getContainerStorageUsage: " + err.Error())
+					return components, err
+				}
 			}
 			cpuUsage := float64(0)
 			memUsage := float64(0)
