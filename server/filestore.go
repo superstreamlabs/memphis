@@ -2843,46 +2843,7 @@ func (fs *fileStore) expireMsgs() {
 	minAge := time.Now().UnixNano() - int64(fs.cfg.MaxAge)
 	fs.mu.RUnlock()
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
-		// 		log.Printf("#######expireMsgs#######")
-		// 		// get the cache details
-		// 		credentialsMap, _ := IntegrationsCache["s3"].(models.S3Integration)
-		// 		//put object to s3
-		// 		provider := &credentials.StaticProvider{Value: credentials.Value{
-		// 			AccessKeyID:     credentialsMap.Keys["access_key"],
-		// 			SecretAccessKey: credentialsMap.Keys["secret_key"],
-		// 		}}
-		// 		credentials := credentials.NewCredentials(provider)
-		// 		sess, err := session.NewSession(&aws.Config{
-		// 			Region:      aws.String(credentialsMap.Keys["region"]),
-		// 			Credentials: credentials},
-		// 		)
-		// 		if err != nil {
-		// 			err = errors.New("expireMsgs failure " + err.Error())
-		// 			log.Printf(err.Error())
-		// 			return
-		// 		}
-
-		// 		uploader := s3manager.NewUploader(sess)
-		// 		if configuration.SERVER_NAME == "" {
-		// 			configuration.SERVER_NAME = "memphis"
-		// 		}
-
-		// 		reader := strings.NewReader(string(sm.msg) + configuration.SERVER_NAME)
-		// 		// Upload the object to S3.
-		// 		_, err = uploader.Upload(&s3manager.UploadInput{
-		// 			Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
-		// 			Key:    aws.String(configuration.SERVER_NAME),
-		// 			Body:   reader,
-		// 		})
-		// 		if err != nil {
-		// 			err = errors.New("failed to upload the object to S3 " + err.Error())
-		// 			log.Printf(err.Error())
-		// 			return
-		// 		}
 		stationName := strings.Split(sm.subj, ".")
-		fmt.Println("stationName", stationName)
-		fmt.Println("sm subject", sm.subj)
-		fmt.Println("msgs", string(sm.msg))
 		// if sm.subj staet with $memphis dont to publish
 		if !strings.HasPrefix(sm.subj, "$memphis") {
 			fmt.Println("fsdgfh", string(sm.msg))
