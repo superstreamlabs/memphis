@@ -14,26 +14,26 @@
         p {
             margin-top: 2px;
             margin: 0;
-            line-height:13px;
+            line-height: 13px;
         }
     }
     .healthy {
-        background-color: rgba(97, 223, 155, 0.2);
-        color: rgba(97, 223, 155, 1);
+        background: rgba(46, 212, 122, 0.1);
+        color: #61df9b;
     }
     .unhealthy {
-        background-color: rgba(247, 104, 91, 0.2);
-        color: rgba(247, 104, 91, 1);
+        background-color: rgba(247, 104, 91, 0.1);
+        color: #f7685b;
     }
     .risky {
-        background-color: rgba(255, 198, 51, 0.2);
-        color: rgba(255, 198, 51, 1);
+        background-color: rgba(255, 198, 51, 0.1);
+        color: #ffc633;
     }
     .badge-icon {
         font-size: 16px;
         margin-right: 5px !important;
     }
-    .no-bg{
+    .no-bg {
         width: unset !important;
         background-color: unset !important;
     }

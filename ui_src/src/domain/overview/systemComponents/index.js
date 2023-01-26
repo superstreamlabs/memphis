@@ -45,8 +45,8 @@ const SysComponents = () => {
                                 )}
                                 rootClassName={!expandedNodes?.includes(`0-${i}`) && 'divided'}
                                 onSelect={(_, info) => {
-                                    if (info.node.expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
-                                    else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));
+                                    if (!expandedNodes?.includes(info.node.key)) setExpandedNodes([...expandedNodes, info.node.key]);
+                                    else setExpandedNodes(expandedNodes.filter((node) => node !== info.node.key));
                                 }}
                                 defaultExpandedKeys={['0-0']}
                                 onExpand={(_, { expanded }) => {
