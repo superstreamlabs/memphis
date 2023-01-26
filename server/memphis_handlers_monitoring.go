@@ -329,7 +329,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
 			var pvcName string
-			fmt.Printf("volumes: %v", len(pod.Spec.Volumes)) // TODO
+			fmt.Printf("volumes: %s, %s, %s, %s, %s", pod.Spec.Volumes[0].Name, pod.Spec.Volumes[1].Name, pod.Spec.Volumes[2].Name, pod.Spec.Volumes[3].Name, pod.Spec.Volumes[4].Name) // TODO
 			for _, volume := range pod.Spec.Volumes {
 				if strings.Contains(volume.Name, "memphis") {
 					pvcName = volume.Name
