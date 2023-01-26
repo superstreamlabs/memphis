@@ -44,7 +44,7 @@ const Throughput = () => {
                     </p>
                     <p>{`Time: ${label}`}</p>
                     <p>
-                        {payload[0].dataKey}: {Number(payload[0].value).toLocaleString('en')}B/s
+                        {payload[0].dataKey}: {convertBytes(payload[0].value)}/s
                     </p>
                 </div>
             );

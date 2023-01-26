@@ -17,6 +17,7 @@
     .custom-tooltip {
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
         background-color: #2b2e3f;
         opacity: 0.9;
         color: #f7f7f7;
@@ -27,9 +28,12 @@
         box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
         white-space: pre-line;
         border-radius: 6px;
-        width: 150px;
-        height: 90px;
+        width: 140px;
+        height: 70px;
         line-height: 14px;
+        p{
+            margin-bottom: 0px;
+        }
         .throughput-type {
             font-size: 14px;
             font-weight: 700;

@@ -33,7 +33,7 @@
             border-bottom: 1px solid #ececec;
         }
         .ant-tree-switcher-icon {
-            margin-top: 37px !important;
+            margin-top: 33px !important;
         }
         .sys-components-container {
             width: 100%;
@@ -47,15 +47,16 @@
             .component {
                 width: 100%;
                 padding-top: 10px;
-                padding-bottom: 10px;
                 .sys-components {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     width: 100%;
+                    
                     .component-name {
                         font-size: 15px;
                         font-family: 'InterSemiBold';
+                        cursor: pointer;
                     }
                     .pie-status-component {
                         display: flex;
@@ -77,6 +78,9 @@
                 .pods-container {
                     display: flex;
                     align-items: center;
+                    label{
+                        cursor: pointer;
+                    }
                     .host {
                         color: #737373;
                         font-family: 'InterMedium';
@@ -89,6 +93,23 @@
                     }
                 }
             }
+        }
+        .ant-tree-switcher-leaf-line::before{
+            border-right-width: 2px;
+            top: -16px;
+            right: 11px;
+        }
+        .ant-tree-switcher-leaf-line::after{
+            border-bottom-width: 2px;
+            width:16px;
+            height:28px;
+        }
+        .ant-tree-indent{
+            display: none;
+        }
+        .ant-tree-treenode-leaf-last .ant-tree-switcher-leaf-line::before{
+            top: -18px !important;
+            height: 46px !important;
         }
     }
 

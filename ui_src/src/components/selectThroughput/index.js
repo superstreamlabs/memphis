@@ -41,7 +41,7 @@ const selectThroughput = ({ options, onChange, value, placeholder }) => {
             >
                 {options?.map((component) => {
                     return (
-                        <Option key={component?.id} value={component?.name}>
+                        <Option key={component?.name} value={component?.name}>
                             <div className="throughput-details">
                                 <img src={ComponentIcon} alt="ComponentIcon" height="20px" />
                                 <p className="throughput-name">{component?.name}</p>
