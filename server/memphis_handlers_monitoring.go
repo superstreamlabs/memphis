@@ -1519,8 +1519,8 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 	usage := float64(0)
 	fmt.Println("container name for getting storage usage: " + container)
 
-	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	defer cancel()
+	// ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	// defer cancel()
 
 	execReq := clientset.CoreV1().RESTClient().Post().
 		Namespace(configuration.K8S_NAMESPACE).
@@ -1541,7 +1541,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		return 0, err
 	}
 	var stdout, stderr bytes.Buffer
-	err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
+	err = exec.Stream(remotecommand.StreamOptions{
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Tty:    false,
