@@ -254,15 +254,11 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	}
 
 	uploader := s3manager.NewUploader(sess)
-	if configuration.SERVER_NAME == "" {
-		configuration.SERVER_NAME = "memphis"
-	}
-
-	reader := strings.NewReader(string("test") + " " + configuration.SERVER_NAME)
+	reader := strings.NewReader(string("test"))
 	// Upload the object to S3.
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(configuration.SERVER_NAME),
+		Key:    aws.String("memphis"),
 		Body:   reader,
 	})
 	if err != nil {
@@ -271,14 +267,14 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	//delete the object
-	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String(configuration.SERVER_NAME)})
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String("memphis")})
 	if err != nil {
 		err = errors.New("Could not upload objects - " + err.Error())
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(configuration.SERVER_NAME),
+		Key:    aws.String("memphis"),
 	})
 	if err != nil {
 		err = errors.New("Error occurred while waiting for object to be deleted - " + err.Error())

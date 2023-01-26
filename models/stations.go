@@ -113,6 +113,9 @@ type ExtendedStation struct {
 	IsNative          bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 	HasDlsMsgs        bool               `json:"has_dls_messages"`
+	Activity          bool               `json:"activity"`
+	Producers         []Producer         `json:"producers"`
+	Consumers         []Consumer         `json:"consumers"`
 }
 
 type ExtendedStationDetails struct {
@@ -121,6 +124,7 @@ type ExtendedStationDetails struct {
 	PoisonMessages int         `json:"posion_messages"`
 	Tags           []CreateTag `json:"tags"`
 	HasDlsMsgs     bool        `json:"has_dls_messages"`
+	Activity       bool        `json:"activity"`
 }
 
 type GetStationSchema struct {
