@@ -56,19 +56,16 @@ func clientSetClusterConfig() error {
 	// in cluster config
 	config, err = rest.InClusterConfig()
 	if err != nil {
-		serv.Errorf("clientSetClusterConfig: InClusterConfig: " + err.Error())
 		return err
 	}
 
 	clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
 		return err
 	}
 	if metricsclientset == nil {
 		metricsclientset, err = metricsv.NewForConfig(config)
 		if err != nil {
-			serv.Errorf("clientSetClusterConfig: metricsclientset: " + err.Error())
 			return err
 		}
 	}
@@ -302,20 +299,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 
 		for _, pod := range pods.Items {
 			var ports []int
-			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{}) // TODO: try when not enabled and deal with error
+			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 			if err != nil {
-				serv.Errorf("podMetrics: " + err.Error())
 				return components, err
 			}
 			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 			if err != nil {
-				serv.Errorf("nodes: " + err.Error())
 				return components, err
 			}
 			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
 			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
-				serv.Errorf("pvcList: " + err.Error())
 				return components, err
 			}
 			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
@@ -355,7 +349,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						fmt.Println("mount name: " + mount.Name)
 						if strings.Contains(mount.Name, "memphis") {
-							mountpath = pod.Spec.Containers[0].VolumeMounts[0].MountPath
+							mountpath = mount.MountPath
 							break
 						}
 					}
@@ -367,7 +361,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if containerForExec != "" || mountpath != "" {
 				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
 				if err != nil {
-					serv.Errorf("getContainerStorageUsage: " + err.Error())
 					return components, err
 				}
 			}
