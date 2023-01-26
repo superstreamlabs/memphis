@@ -345,20 +345,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					ports = append(ports, int(port.ContainerPort))
 				}
 				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
-					fmt.Println("container: " + container.Name)
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
-						fmt.Println("mount name: " + mount.Name)
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
 							break
 						}
 					}
-					fmt.Println("mountpath: " + mountpath)
 					containerForExec = container.Name
 				}
 			}
 			storagePercentage := float64(0)
-			if containerForExec != "" || mountpath != "" {
+			if containerForExec != "" && mountpath != "" {
 				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
 				if err != nil {
 					return components, err
@@ -431,7 +428,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			})
 		}
 	}
-	fmt.Println(components)
 	return components, nil
 }
 
@@ -1493,7 +1489,6 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 
 func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
 	usage := float64(0)
-	fmt.Println("container name for getting storage usage: " + container)
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod).
@@ -1531,6 +1526,5 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
 	}
 	serv.Errorf("stderr: %s\n", stderr.String())
-	fmt.Println(usage)
 	return usage, nil
 }
