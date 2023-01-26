@@ -477,7 +477,25 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 				return []models.ExtendedStationDetails{}, err
 			}
 			msgsInfo := streamInfoToDls[fullStationName.Intern()]
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags})
+
+			activity := false
+			activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "is_active": true})
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			if activeCount > 0 {
+				activity = true
+			} else {
+				activeCount, err = consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "is_active": true})
+				if err != nil {
+					return []models.ExtendedStationDetails{}, err
+				}
+				if activeCount > 0 {
+					activity = true
+				}
+			}
+
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags, Activity: activity})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -493,7 +511,9 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}}}},
+		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
+		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}}}},
 	})
 	if err != nil {
 		return stations, err
@@ -549,6 +569,27 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			stations[i].TotalMessages = msgsInfo.TotalMessages
 			stations[i].HasDlsMsgs = msgsInfo.HasDlsMsgs
 			stations[i].Tags = tags
+
+			found := false
+			for _, p := range stations[i].Producers {
+				if p.IsActive {
+					stations[i].Activity = true
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				for _, c := range stations[i].Consumers {
+					if c.IsActive {
+						stations[i].Activity = true
+						break
+					}
+				}
+			}
+
+			stations[i].Producers = []models.Producer{}
+			stations[i].Consumers = []models.Consumer{}
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, nil

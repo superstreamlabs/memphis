@@ -1,9 +1,111 @@
 .throughput-overview-container {
-    height: 38%;
+    height: 100%;
+    width: 100%;
     padding: 15px;
     position: relative;
     min-width: 400px;
     min-height: 200px;
     overflow: hidden;
-    
+    .ant-segmented-item-label {
+        color: #12131a;
+    }
+}
+.throughput-chart {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    .custom-tooltip {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background-color: #2b2e3f;
+        opacity: 0.9;
+        color: #f7f7f7;
+        padding: 10px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: capitalize;
+        box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+        white-space: pre-line;
+        border-radius: 6px;
+        width: 140px;
+        height: 70px;
+        line-height: 14px;
+        p{
+            margin-bottom: 0px;
+        }
+        .throughput-type {
+            font-size: 14px;
+            font-weight: 700;
+        }
+    }
+}
+
+.throughput-header {
+    display: flex;
+    justify-content: space-between;
+    .throughput-header-side {
+        display: flex;
+        align-items: center;
+    }
+
+    .ant-segmented {
+        margin-left: 20px;
+        border-radius: 4px;
+    }
+}
+
+.throughput-interval-containter {
+    height: 350px;
+    display: flex;
+    .custom {
+        padding: 25px;
+        width: 300px;
+        background: #f7f7f7;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .custom-header {
+            font-size: 20px;
+            color: #1d1d1d;
+            font-family: 'InterMedium';
+            margin-bottom: 5px;
+        }
+        .custom-description {
+            color: #b4b4b4;
+            font-size: 12px;
+            margin-bottom: 0;
+        }
+        .date-container {
+            margin-bottom: 15px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    }
+    .fixed {
+        padding: 25px;
+        width: 300px;
+        .intervals-list {
+            margin-top: 5px;
+            p {
+                margin-bottom: 0;
+                color: #1d1d1d;
+                font-family: 'InterMedium';
+                padding: 5px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            p:hover {
+                background-color: #f9f9fa;
+            }
+            p.selected {
+                background-color: #f1f0ff;
+            }
+        }
+    }
+    .throughput-select {
+        width: 200px;
+    }
 }

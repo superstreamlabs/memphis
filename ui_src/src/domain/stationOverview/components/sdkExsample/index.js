@@ -13,19 +13,27 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { loader } from '@monaco-editor/react';
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
 import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
 import SelectComponent from '../../../../components/select';
+import refresh from '../../../../assets/images/refresh.svg';
+import GenerateTokenModal from '../generateTokenModal';
 import CustomTabs from '../../../../components/Tabs';
+import Modal from '../../../../components/modal';
 import Copy from '../../../../components/copy';
 
+loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
+let host = process.env.REACT_APP_SANDBOX_ENV
+    ? 'https://proxy.sandbox.memphis.dev'
+    : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+    ? 'http://localhost:4444'
+    : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
 
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -40,6 +48,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         consumer: ''
     });
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
+    const [generateModal, setGenerateModal] = useState(false);
 
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
@@ -64,11 +73,6 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         let codeEx = {};
         codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
         codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
-        let host = process.env.REACT_APP_SANDBOX_ENV
-            ? 'https://proxy.sandbox.memphis.dev'
-            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-            ? 'http://localhost:4444'
-            : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
         codeEx.producer = codeEx.producer.replaceAll('localhost', host);
         codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
@@ -186,7 +190,13 @@ const SdkExample = ({ consumer, showTabs = true }) => {
             {protocolSelected === 'REST (HTTP)' && (
                 <>
                     <div className="installation">
-                        <p className="field-title">Step 1: Generate a token</p>
+                        <div className="generate-wrapper">
+                            <p className="field-title">Step 1: Generate a token</p>
+                            <div className="generate-action" onClick={() => setGenerateModal(true)}>
+                                <img src={refresh} width="14" />
+                                <span>Generate JWT token</span>
+                            </div>
+                        </div>
                         <div className="code-example ce-protoco">
                             <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                         </div>
@@ -199,6 +209,17 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                     </div>
                 </>
             )}
+            <Modal
+                header="Generate JWT token"
+                displayButtons={false}
+                height="400px"
+                width="400px"
+                clickOutside={() => setGenerateModal(false)}
+                open={generateModal}
+                className="generate-modal"
+            >
+                <GenerateTokenModal host={host} close={() => setGenerateModal(false)} />
+            </Modal>
         </div>
     );
 };

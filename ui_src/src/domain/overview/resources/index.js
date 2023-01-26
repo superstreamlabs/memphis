@@ -13,33 +13,72 @@
 import './style.scss';
 
 import React, { useState } from 'react';
-import ApexChart from './apexChart';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
+import { PieChart, Pie, Label, ResponsiveContainer } from 'recharts';
+import { Divider } from '@material-ui/core';
+
+const getData = (resource) => {
+    return [
+        { name: `${resource.resource}total`, value: resource.total - resource.usage, fill: 'transparent' },
+        { name: `${resource.resource}used`, value: resource.usage, fill: getColor(resource) }
+    ];
+};
+
+const getPercentage = (resource) => {
+    return resource.total !== 0 ? (resource.usage / resource.total) * 100 : 0;
+};
+
+const getColor = (resource) => {
+    const percentage = getPercentage(resource);
+    if (percentage <= 35) return '#61DFC6';
+    else if (percentage < 70) return '#6557FF';
+    else return '#FF716E';
+};
 
 const Resources = () => {
     const [resourcesTotal, setResources] = useState([
         { resource: 'CPU', usage: 50, total: 100, units: 'Mb' },
-        { resource: 'Mem', usage: 75, total: 100, units: 'Mb' },
+        { resource: 'Memory', usage: 75, total: 100, units: 'Mb' },
         { resource: 'Storage', usage: 25, total: 100, units: 'Mb' }
     ]);
 
     return (
-        <div className="overview-wrapper resources-container">
+        <div className="overview-components-wrapper resources-container">
             <div className="coming-soon-wrapper">
                 <img src={comingSoonBox} width={40} height={70} alt="comingSoonBox" />
                 <p>Coming soon</p>
             </div>
             <p className="overview-components-header">Resources</p>
             <div className="charts-wrapper">
-                {resourcesTotal &&
-                    resourcesTotal.map((res) => {
-                        return (
-                            <div className="resource" key={res.resource}>
-                                <ApexChart data={res} className="chart" />
-                                <p className="chart-data">{`${res.usage}${res.units}/${res.total}${res.units}`}</p>
+                {resourcesTotal?.length > 0 &&
+                    resourcesTotal.map((resource, index) => (
+                        <>
+                            <div className="resource">
+                                <ResponsiveContainer height={'100%'} width={'40%'}>
+                                    <PieChart>
+                                        <Pie
+                                            dataKey="value"
+                                            startAngle={-270}
+                                            data={[{ name: `total`, value: resource.total, fill: '#F5F5F5' }]}
+                                            stroke=""
+                                            innerRadius={'60%'}
+                                        ></Pie>
+                                        <Pie cornerRadius={40} dataKey="value" stroke="" data={getData(resource)} startAngle={-270} innerRadius={'60%'}>
+                                            <Label value={`${getPercentage(resource)}%`} position="center" />
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="resource-data">
+                                    <p className="resource-name">{`${resource.resource} Usage`}</p>
+                                    <p className="resource-value">
+                                        <label className="value">{`${resource.usage}${resource.units} / `}</label>
+                                        <label>{`${resource.total}${resource.units}`}</label>
+                                    </p>
+                                </div>
                             </div>
-                        );
-                    })}
+                            {index < resourcesTotal.length - 1 && <Divider />}
+                        </>
+                    ))}
             </div>
         </div>
     );

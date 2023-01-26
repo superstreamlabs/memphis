@@ -127,7 +127,7 @@ const SlackIntegration = ({ close, value }) => {
     };
 
     return (
-        <slack-integration is="3xd" className="integration-modal-container">
+        <dynamic-integration is="3xd" className="integration-modal-container">
             {slackConfiguration?.insideBanner}
             <div className="integrate-header">
                 {slackConfiguration.header}
@@ -194,7 +194,7 @@ const SlackIntegration = ({ close, value }) => {
                             />
                         </Form.Item>
                     </div>
-                    <div className="channel-id">
+                    <div className="input-field">
                         <p>Channel ID</p>
                         <span className="desc">To which slack channel should Memphis push notifications?</span>
                         <Form.Item
@@ -307,7 +307,7 @@ const SlackIntegration = ({ close, value }) => {
                     </div>
                 </Form.Item>
             </Form>
-        </slack-integration>
+        </dynamic-integration>
     );
 };
 

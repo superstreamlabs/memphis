@@ -1,4 +1,4 @@
-slack-integration{
+dynamic-integration{
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -15,17 +15,18 @@ slack-integration{
         height: calc(100% - 455px);
    
         .api-details{
-            height: calc(100% - 83px);
+            height: calc(100% - 62px);
             overflow: scroll;
-            margin: 20px;
+            margin: 0 20px;
             margin-right: 2px;
             padding-right: 13px;
             .title{
                 font-family: 'InterMedium';
                 font-size: 15px;
+                margin-top: 5px;
             }
             .api-key{
-                margin-top: 10px;
+                margin-top: 5px;
                 padding: 10px;
                 padding-bottom:1px;
                 border-radius: 8px;
@@ -50,7 +51,7 @@ slack-integration{
                     }
                 }
             }
-            .channel-id{
+            .input-field{
                 margin: 10px 0px;
                 font-size: 13px;
                 p{
@@ -64,6 +65,9 @@ slack-integration{
                 .input-component-container{
                     margin-top: 10px;
                 }
+            }
+            .select-field{
+                
             }
             .notification-option{
                 p{

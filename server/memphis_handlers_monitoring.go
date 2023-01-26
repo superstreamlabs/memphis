@@ -58,8 +58,8 @@ func clientSetClusterConfig() error {
 	if err != nil {
 		return err
 	}
-
 	clientset, err = kubernetes.NewForConfig(config)
+
 	if err != nil {
 		return err
 	}

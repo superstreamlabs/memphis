@@ -6,32 +6,33 @@
         align-items: center;
         border-radius: 15px;
         justify-content: center;
-        width: 100px;
-        font-family: 'InterSemiBold';
-        font-size: 12px;
+        width: fit-content;
+        padding: 0 10px;
+        font-family: 'Inter';
+        font-size: 13px;
         height: 25px;
         p {
             margin-top: 2px;
             margin: 0;
+            line-height: 13px;
         }
     }
     .healthy {
-        background-color: rgba(32, 201, 172, 0.2);
-        color: rgb(32, 201, 172);
+        background: rgba(46, 212, 122, 0.1);
+        color: #61df9b;
     }
     .unhealthy {
-        background-color: rgba(252, 52, 0, 0.1);
-        color: rgb(252, 52, 0);
+        background-color: rgba(247, 104, 91, 0.1);
+        color: #f7685b;
     }
     .risky {
-        background-color: #fffbeb;
-        color: #ffb946;
+        background-color: rgba(255, 198, 51, 0.1);
+        color: #ffc633;
     }
     .badge-icon {
-        font-size: 13px;
-        margin-right: 5px;
+        margin-right: 5px !important;
     }
-    .no-bg{
+    .no-bg {
         width: unset !important;
         background-color: unset !important;
     }

@@ -13,7 +13,8 @@
 import './style.scss';
 
 import { AddRounded, CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
-import Editor, { DiffEditor } from '@monaco-editor/react';
+import Editor, { DiffEditor, loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
 import { message } from 'antd';
@@ -47,6 +48,9 @@ import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { validate, parse, buildASTSchema } from 'graphql';
 import SegmentButton from '../../../../components/segmentButton';
 import AttachStationModal from '../attachStationModal';
+
+loader.init();
+loader.config({ monaco });
 
 function SchemaDetails({ schemaName, closeDrawer }) {
     const ajv = new Ajv2019();
