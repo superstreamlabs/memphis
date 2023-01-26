@@ -433,15 +433,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			})
 		}
 	}
-	for _, component := range components {
-		serv.Noticef(component.Name + ", " + component.Status + ", " + strconv.Itoa(component.ActualPods) + ", " + strconv.Itoa(component.DesiredPods))
-		for _, comp := range component.Components {
-			serv.Noticef("Name: " + comp.Name + " CPU: " + strconv.Itoa(comp.CPU.Percentage) + " percentage/ " + strconv.Itoa(int(comp.CPU.Current)) + " current/ " + strconv.Itoa(int(comp.CPU.Total)) + " total")
-			serv.Noticef("Name: " + comp.Name + " Memory: " + strconv.Itoa(comp.Memory.Percentage) + " percentage/ " + strconv.Itoa(int(comp.Memory.Current)) + " current/ " + strconv.Itoa(int(comp.Memory.Total)) + " total")
-			serv.Noticef("Name: " + comp.Name + " Storage: " + strconv.Itoa(comp.Storage.Percentage) + " percentage/ " + strconv.Itoa(int(comp.Storage.Current)) + " current/ " + strconv.Itoa(int(comp.Storage.Total)) + " total")
-		}
-	}
-
+	// for _, component := range components {
+	// 	serv.Noticef(component.Name + ", " + component.Status + ", " + strconv.Itoa(component.ActualPods) + ", " + strconv.Itoa(component.DesiredPods))
+	// 	for _, comp := range component.Components {
+	// 		serv.Noticef("Name: " + comp.Name + " CPU: " + strconv.Itoa(comp.CPU.Percentage) + " percentage/ " + strconv.Itoa(int(comp.CPU.Current)) + " current/ " + strconv.Itoa(int(comp.CPU.Total)) + " total")
+	// 		serv.Noticef("Name: " + comp.Name + " Memory: " + strconv.Itoa(comp.Memory.Percentage) + " percentage/ " + strconv.Itoa(int(comp.Memory.Current)) + " current/ " + strconv.Itoa(int(comp.Memory.Total)) + " total")
+	// 		serv.Noticef("Name: " + comp.Name + " Storage: " + strconv.Itoa(comp.Storage.Percentage) + " percentage/ " + strconv.Itoa(int(comp.Storage.Current)) + " current/ " + strconv.Itoa(int(comp.Storage.Total)) + " total")
+	// 	}
+	// }
+	fmt.Println(components)
 	return components, nil
 }
 
@@ -1516,6 +1516,7 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
 	command := []string{"df", "-h", mountPath}
 	usage := float64(0)
+	fmt.Println(container)
 
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
