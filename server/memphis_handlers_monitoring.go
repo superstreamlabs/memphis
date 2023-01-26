@@ -1513,7 +1513,6 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 }
 
 func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
-	fmt.Println(mountPath, container, pod)
 	command := []string{"df", "-h", mountPath}
 	usage := float64(0)
 
@@ -1536,6 +1535,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
 	if err != nil {
+		fmt.Println("1111111111111111111111")
 		return 0, err
 	}
 	var stdout, stderr bytes.Buffer
@@ -1545,9 +1545,11 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		Tty:    false,
 	})
 	if err != nil {
+		fmt.Println("22222222222222222222222")
 		return 0, err
 	}
 	if stderr.String() != "" {
+		fmt.Println("3333333333333333333333")
 		err = errors.New(stderr.String())
 		return 0, err
 	}
