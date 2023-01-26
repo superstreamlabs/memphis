@@ -352,7 +352,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
 					fmt.Println("container: " + container.Name)
-					mountpath = pod.Spec.Containers[0].VolumeMounts[0].MountPath
+					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
+						if strings.Contains(mount.Name, "memphis") {
+							mountpath = pod.Spec.Containers[0].VolumeMounts[0].MountPath
+							break
+						}
+					}
 					fmt.Println("mounthpath: " + mountpath)
 					containerForExec = container.Name
 				}
@@ -432,7 +437,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			})
 		}
 	}
-	
+	fmt.Println(components)
 	return components, nil
 }
 
@@ -1372,18 +1377,6 @@ cleanup:
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }
 
-func removeDuplicatePorts(ports []int) []int {
-	res := []int{}
-	mPorts := make(map[int]bool)
-	for _, port := range ports {
-		if !mPorts[port] {
-			mPorts[port] = true
-			res = append(res, port)
-		}
-	}
-	return res
-}
-
 func checkCompStatus(components []models.SysComponent) string {
 	status := "healthy"
 	yellowCount := 0
@@ -1505,44 +1498,8 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 }
 
 func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
-	// command := []string{"df", "-h", mountPath}
 	usage := float64(0)
 	fmt.Println("container name for getting storage usage: " + container)
-
-	// ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	// defer cancel()
-
-	// execReq := clientset.CoreV1().RESTClient().Post().
-	// 	Namespace(configuration.K8S_NAMESPACE).
-	// 	Resource("pods").
-	// 	Name(pod).
-	// 	SubResource("exec").
-	// 	VersionedParams(&v1.PodExecOptions{
-	// 		Container: container,
-	// 		Command:   command,
-	// 		Stdout:    true,
-	// 		Stdin:     true,
-	// 		Stderr:    true,
-	// 		TTY:       true,
-	// 	}, metav1.ParameterCodec)
-	// fmt.Println("Url: " + execReq.Param("command", command2).Param("container", container).URL().String())
-	// exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.Param("command", command2).Param("container", container).URL())
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// var stdout, stderr bytes.Buffer
-	// err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
-	// 	Stdout: &stdout,
-	// 	Stderr: &stderr,
-	// 	Tty:    false,
-	// })
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// if stderr.String() != "" {
-	// 	err = errors.New(stderr.String())
-	// 	return 0, err
-	// }
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod).
