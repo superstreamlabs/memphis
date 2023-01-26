@@ -37,9 +37,12 @@
             padding: 15px;
             width: 100%;
             display: grid;
-            grid-template-columns: 20% 25% 20% 5% 5% 15%;
+            grid-template-columns: 25% 25% 14% 12% 12% 12%;
             justify-content: space-between;
             color: #737373;
+            .title-center{
+                justify-content: center;
+            }
             span {
                 font-family: 'InterSemiBold';
                 font-size: 14px;
@@ -59,7 +62,7 @@
             padding: 0 0 15px 15px;
             .stations-row {
                 display: grid;
-                grid-template-columns: 20% 25% 20% 5% 5% 15%;
+                grid-template-columns: 25% 25% 14% 12% 12% 12%;
                 color: #1d1d1d;
                 justify-content: space-between;
                 width: 100%;
@@ -70,9 +73,6 @@
                     font-family: 'InterSemiBold';
                     font-size: 14px;
                     cursor: pointer !important;
-                }
-                .total {
-                    width: 120px;
                 }
                 .status {
                     width: 45px;

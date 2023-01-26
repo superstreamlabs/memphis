@@ -44,7 +44,7 @@ const FailedStations = ({ createStationTrigger }) => {
             <div className="failed-stations-container">
                 <div className="overview-components-header failed-stations-header">
                     <p> Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
-                    <label>Richard McClintock, a Latin professor </label>
+                    <label>A station is a distributed unit that stores messages</label>
                 </div>
                 <div className="err-stations-list">
                     {state?.monitor_data?.stations?.length > 0 ? (
@@ -52,9 +52,9 @@ const FailedStations = ({ createStationTrigger }) => {
                             <div className="coulmns-table">
                                 <span className="station-name">Name</span>
                                 <span>Creation date</span>
-                                <span>Total messages</span>
-                                <span>Health</span>
-                                <span>Activity</span>
+                                <span className="title-center">Total messages</span>
+                                <span className="title-center">Health</span>
+                                <span className="title-center">Activity</span>
                                 <span></span>
                             </div>
                             <div className="rows-wrapper">

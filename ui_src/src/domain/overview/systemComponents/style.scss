@@ -87,7 +87,7 @@
     .system-container {
         line-height: 20px;
         width: 100%;
-        border: 1px solid #ececec;
+        border: 2px solid #ececec;
         border-radius: 8px;
         .system-container-header {
             padding: 10px;
@@ -113,8 +113,9 @@
             height: 100%;
             display: flex;
             justify-content: space-between;
-            border-radius: 8px;
-
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            border-top: 1px solid #ECECEC;
             .system-container-item {
                 padding: 10px;
                 height: 100%;

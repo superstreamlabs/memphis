@@ -12,11 +12,11 @@
 
 import './style.scss';
 
-import { Segmented } from 'antd';
-import React, { useEffect, useState, useContext } from 'react';
-import { Context } from '../../../hooks/store';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import ThroughputInterval from './throughputInterval';
+import React, { useEffect, useState, useContext } from 'react';
+import { Segmented } from 'antd';
+
+import { Context } from '../../../hooks/store';
 import SelectThroughput from '../../../components/selectThroughput';
 
 const axisStyle = {
@@ -28,7 +28,7 @@ const axisStyle = {
 const Throughput = () => {
     const [state, dispatch] = useContext(Context);
     const [throughputType, setThroughputType] = useState('Write');
-    const [selectedComponent, setSelectedComponent] = useState('total');
+    const [selectedComponent, setSelectedComponent] = useState('Total');
     const [selectOptions, setSelectOptions] = useState([]);
     const [dataRead, setDataRead] = useState([]);
     const [dataWrite, setDataWrite] = useState([]);
