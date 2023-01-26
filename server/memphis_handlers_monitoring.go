@@ -1536,7 +1536,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		}, metav1.ParameterCodec)
 
 	fmt.Println("Url: " + execReq.URL().String())
-	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.Param("container", container).URL())
 	if err != nil {
 		return 0, err
 	}
