@@ -87,8 +87,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		Percentage: 0,
 	}
 	if configuration.DOCKER_ENV == "true" { // docker env
-		var rt runtime.MemStats
-		runtime.ReadMemStats(&rt)
 		host = "http://localhost"
 		if configuration.DEV_ENV == "true" {
 			maxCpu := float64(runtime.GOMAXPROCS(0))
@@ -139,7 +137,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				ActualPods:  1,
 				Host:        host,
 			})
-			resp, err := http.Get("http://localhost:4444/dev/getSystemInfo")
+			resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
 			healthy := false
 			proxyComps := []models.SysComponent{defaultSystemComp("memphis-http-proxy", healthy)}
 			if err == nil {
@@ -211,7 +209,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 			defer containerStats.Body.Close()
 
-			body, err := ioutil.ReadAll(containerStats.Body)
+			body, err := ioutil.ReadAll(containerStats.Body) // TODO replace ioutil
 			if err != nil {
 				return components, err
 			}
@@ -263,7 +261,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					Current:    float64(v.JetStream.Stats.Store),
 					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
 				}
-			} // TODO: add storage stats from proxy
+			}
 			for _, port := range container.Ports {
 				dockerPorts = append(dockerPorts, int(port.PublicPort))
 			}
@@ -434,15 +432,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			})
 		}
 	}
-	// for _, component := range components {
-	// 	serv.Noticef(component.Name + ", " + component.Status + ", " + strconv.Itoa(component.ActualPods) + ", " + strconv.Itoa(component.DesiredPods))
-	// 	for _, comp := range component.Components {
-	// 		serv.Noticef("Name: " + comp.Name + " CPU: " + strconv.Itoa(comp.CPU.Percentage) + " percentage/ " + strconv.Itoa(int(comp.CPU.Current)) + " current/ " + strconv.Itoa(int(comp.CPU.Total)) + " total")
-	// 		serv.Noticef("Name: " + comp.Name + " Memory: " + strconv.Itoa(comp.Memory.Percentage) + " percentage/ " + strconv.Itoa(int(comp.Memory.Current)) + " current/ " + strconv.Itoa(int(comp.Memory.Total)) + " total")
-	// 		serv.Noticef("Name: " + comp.Name + " Storage: " + strconv.Itoa(comp.Storage.Percentage) + " percentage/ " + strconv.Itoa(int(comp.Storage.Current)) + " current/ " + strconv.Itoa(int(comp.Storage.Total)) + " total")
-	// 	}
-	// }
-	fmt.Println(components)
+	
 	return components, nil
 }
 
