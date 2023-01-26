@@ -19,9 +19,7 @@ import OverflowTip from '../../../components/tooltip/overflowtip';
 import { Add } from '@material-ui/icons';
 import { Popover, Divider } from 'antd';
 import ComponentIcon from '../../../assets/images/componentIcon.svg';
-import GreenShield from '../../../assets/images/greenShield.svg';
-import YellowShield from '../../../assets/images/yellowShield.svg';
-import RedShield from '../../../assets/images/redShield.svg';
+import HealthyBadge from '../../../components/healthyBadge';
 
 const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
 
@@ -37,16 +35,6 @@ const Component = ({ comp, i }) => {
         return data;
     };
 
-    const getStatus = (status) => {
-        switch (status) {
-            case 'red':
-                return RedShield;
-            case 'yellow':
-                return YellowShield;
-            case 'green':
-                return GreenShield;
-        }
-    };
     return (
         <div className="sys-components-container" key={`${comp.podName}${i}`}>
             <img src={ComponentIcon} className="component-img" alt="ComponentIcon" width="18" height="18" />
@@ -56,7 +44,7 @@ const Component = ({ comp, i }) => {
                         <p className="component-name">{comp.name}</p>
                     </OverflowTip>
                     <div className="pie-status-component">
-                        <img src={getStatus(comp.status)} className="component-status-shield" alt={`status: ${comp.status}`} />
+                        <HealthyBadge status={comp.status} />
                         <div className="pie-status">
                             <PieChart height={30} width={30}>
                                 <Pie

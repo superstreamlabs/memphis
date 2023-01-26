@@ -12,43 +12,46 @@
 
 import './style.scss';
 
-import CheckCircleSharpIcon from '@material-ui/icons/CheckCircleSharp';
-import ErrorSharpIcon from '@material-ui/icons/ErrorSharp';
-import Cancel from '@material-ui/icons/Cancel';
 import React from 'react';
 
-const HealthyBadge = ({ status, icon }) => {
-    const healthy = () => {
-        return (
-            <div className={icon ? 'healthy no-bg' : 'healthy'}>
-                <CheckCircleSharpIcon className="badge-icon" theme="outlined" />
-                {!icon && <p>Healthy</p>}
-            </div>
-        );
-    };
+import unhealthyIcon from '../../assets/images/unhealthyIcon.svg';
+import checkIcon from '../../assets/images/checkIcon.svg';
+import riskyIcon from '../../assets/images/riskyIcon.svg';
 
-    const unHealthy = () => {
-        return (
-            <div className={icon ? 'unhealthy no-bg' : 'unhealthy'}>
-                <Cancel className="badge-icon" theme="outlined" />
-                {!icon && <p>Unhealthy</p>}
-            </div>
-        );
+const HealthyBadge = ({ status, icon }) => {
+    const generateStatus = () => {
+        switch (status) {
+            case 'healthy':
+                return (
+                    <div className={icon ? 'healthy no-bg' : 'healthy'}>
+                        <img className="badge-icon" src={checkIcon} />
+                        {!icon && <p>Healthy</p>}
+                    </div>
+                );
+            case 'risky':
+                return (
+                    <div className="risky">
+                        <img className="badge-icon" src={riskyIcon} alt="riskyIcon" />
+                        <p>Risky</p>
+                    </div>
+                );
+            case 'unhealthy':
+                return (
+                    <div className={icon ? 'unhealthy no-bg' : 'unhealthy'}>
+                        <img className="badge-icon" src={unhealthyIcon} alt="unhealthyIcon" />
+                        {!icon && <p>Unhealthy</p>}
+                    </div>
+                );
+            default:
+                return (
+                    <div className={icon ? 'healthy no-bg' : 'healthy'}>
+                        <img className="badge-icon" src={checkIcon} />
+                        {!icon && <p>Healthy</p>}
+                    </div>
+                );
+        }
     };
-    return (
-        <div className="healthy-badge-container">
-            {status > 0.6 ? (
-                healthy()
-            ) : status > 0.3 && status <= 0.6 ? (
-                <div className="risky">
-                    <ErrorSharpIcon className="badge-icon" theme="outlined" />
-                    <p>Risky</p>
-                </div>
-            ) : status <= 0.3 ? (
-                unHealthy()
-            ) : null}
-        </div>
-    );
+    return <div className="healthy-badge-container">{generateStatus()}</div>;
 };
 
 export default HealthyBadge;

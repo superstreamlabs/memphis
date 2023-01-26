@@ -15,11 +15,16 @@
     .open {
         transform: rotate(0deg);
     }
+    .component-list::-webkit-scrollbar {
+        display: none !important;
+    }
     .component-list {
         overflow-y: scroll;
         height: calc(100% - 35px);
         position: relative;
         width: 100%;
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
         .divided {
             border-bottom: 1px solid #ececec;
         }

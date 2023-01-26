@@ -119,8 +119,8 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta poison">
                             <img src={poisonMsgIcon} alt="poison messages" />
-                            <label className="data-labels">Status</label>
-                            <HealthyBadge status={station?.has_dls_messages ? 0 : 1} />
+                            <label className="data-labels">Health</label>
+                            <HealthyBadge status={station?.has_dls_messages ? 'unhealthy' : 'healthy'} />
                         </div>
                         <div className="station-actions">
                             <div className="action">
