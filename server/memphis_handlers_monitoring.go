@@ -329,7 +329,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
 			var pvcName string
-			fmt.Printf("volumes: %s, %s, %s, %s, %s", pod.Spec.Volumes[0].Name, pod.Spec.Volumes[1].Name, pod.Spec.Volumes[2].Name, pod.Spec.Volumes[3].Name, pod.Spec.Volumes[4].Name) // TODO
 			for _, volume := range pod.Spec.Volumes {
 				if strings.Contains(volume.Name, "memphis") {
 					pvcName = volume.Name
@@ -1394,7 +1393,7 @@ func removeDuplicatePorts(ports []int) []int {
 }
 
 func checkCompStatus(components []models.SysComponent) string {
-	status := "green"
+	status := "healthy"
 	yellowCount := 0
 	redCount := 0
 	for _, component := range components {
@@ -1429,9 +1428,9 @@ func checkCompStatus(components []models.SysComponent) string {
 	}
 	redStatus := float64(redCount / len(components))
 	if redStatus >= 0.66 {
-		status = "red"
+		status = "unhealthy"
 	} else if redStatus >= 0.33 || yellowCount > 0 {
-		status = "yellow"
+		status = "risky"
 	}
 
 	return status
@@ -1547,7 +1546,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		Tty:    false,
 	})
 	if err != nil {
-		fmt.Println("22222222222222222222222")
 		return 0, err
 	}
 	if stderr.String() != "" {
