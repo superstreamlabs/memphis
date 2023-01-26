@@ -329,8 +329,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
 			var pvcName string
-			fmt.Println("volumes:") // TODO
-			fmt.Println(pod.Spec.Volumes)
+			fmt.Printf("volumes: %v", len(pod.Spec.Volumes)) // TODO
 			for _, volume := range pod.Spec.Volumes {
 				if strings.Contains(volume.Name, "memphis") {
 					pvcName = volume.Name
@@ -1535,6 +1534,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 			TTY:       false,
 		}, metav1.ParameterCodec)
 
+	fmt.Println("Url: " + execReq.URL().String())
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
 	if err != nil {
 		return 0, err
