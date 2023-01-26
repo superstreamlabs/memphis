@@ -329,6 +329,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
 			var pvcName string
+			fmt.Println("volumes:") // TODO
+			fmt.Println(pod.Spec.Volumes)
 			for _, volume := range pod.Spec.Volumes {
 				if strings.Contains(volume.Name, "memphis") {
 					pvcName = volume.Name
@@ -1535,7 +1537,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
 	if err != nil {
-		fmt.Println("1111111111111111111111")
 		return 0, err
 	}
 	var stdout, stderr bytes.Buffer
@@ -1549,7 +1550,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		return 0, err
 	}
 	if stderr.String() != "" {
-		fmt.Println("3333333333333333333333")
 		err = errors.New(stderr.String())
 		return 0, err
 	}
