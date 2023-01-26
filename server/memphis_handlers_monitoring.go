@@ -16,7 +16,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -40,6 +39,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -353,7 +353,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					ports = append(ports, int(port.ContainerPort))
 				}
 				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
+					fmt.Println("container: " + container.Name)
 					mountpath = pod.Spec.Containers[0].VolumeMounts[0].MountPath
+					fmt.Println("mounthpath: " + mountpath)
 					containerForExec = container.Name
 				}
 			}
@@ -1513,43 +1515,72 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 }
 
 func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
-	command := []string{"df", "-h", mountPath}
-	command2 := "df -h " + mountPath
+	// command := []string{"df", "-h", mountPath}
 	usage := float64(0)
 	fmt.Println("container name for getting storage usage: " + container)
 
-	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	defer cancel()
+	// ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	// defer cancel()
 
-	execReq := clientset.CoreV1().RESTClient().Post().
-		Namespace(configuration.K8S_NAMESPACE).
+	// execReq := clientset.CoreV1().RESTClient().Post().
+	// 	Namespace(configuration.K8S_NAMESPACE).
+	// 	Resource("pods").
+	// 	Name(pod).
+	// 	SubResource("exec").
+	// 	VersionedParams(&v1.PodExecOptions{
+	// 		Container: container,
+	// 		Command:   command,
+	// 		Stdout:    true,
+	// 		Stdin:     true,
+	// 		Stderr:    true,
+	// 		TTY:       true,
+	// 	}, metav1.ParameterCodec)
+	// fmt.Println("Url: " + execReq.Param("command", command2).Param("container", container).URL().String())
+	// exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.Param("command", command2).Param("container", container).URL())
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// var stdout, stderr bytes.Buffer
+	// err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
+	// 	Stdout: &stdout,
+	// 	Stderr: &stderr,
+	// 	Tty:    false,
+	// })
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// if stderr.String() != "" {
+	// 	err = errors.New(stderr.String())
+	// 	return 0, err
+	// }
+	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: container,
-			Command:   command,
-			Stdout:    true,
-			Stdin:     true,
-			Stderr:    true,
-			TTY:       true,
-		}, metav1.ParameterCodec)
-	fmt.Println("Url: " + execReq.Param("command", command2).Param("container", container).URL().String())
-	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.Param("command", command2).Param("container", container).URL())
+		Namespace(configuration.K8S_NAMESPACE).
+		SubResource("exec")
+	req.VersionedParams(&v1.PodExecOptions{
+		Container: container,
+		Command:   []string{"df", "-h", mountPath},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+	}, scheme.ParameterCodec)
+
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
+		serv.Errorf("Failed to exec:%v", err)
 		return 0, err
 	}
+
 	var stdout, stderr bytes.Buffer
-	err = exec.StreamWithContext(ctxTimeout, remotecommand.StreamOptions{
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
 		Stdout: &stdout,
 		Stderr: &stderr,
-		Tty:    false,
 	})
 	if err != nil {
-		return 0, err
-	}
-	if stderr.String() != "" {
-		err = errors.New(stderr.String())
+		serv.Errorf("Failed to get result:%v", err)
 		return 0, err
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
@@ -1559,5 +1590,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
 	}
 	serv.Errorf("stderr: %s\n", stderr.String())
+	fmt.Println(usage)
 	return usage, nil
 }
