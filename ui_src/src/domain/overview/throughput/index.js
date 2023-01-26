@@ -18,6 +18,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { Context } from '../../../hooks/store';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
+import { convertBytes } from '../../../services/valueConvertor';
 
 const axisStyle = {
     fontSize: '12px',
@@ -32,6 +33,7 @@ const Throughput = () => {
     const [selectOptions, setSelectOptions] = useState([]);
     const [dataRead, setDataRead] = useState([]);
     const [dataWrite, setDataWrite] = useState([]);
+    const [timeDiffIndicator, setTimeDiffIndicator] = useState(false);
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
@@ -42,7 +44,7 @@ const Throughput = () => {
                     </p>
                     <p>{`Time: ${label}`}</p>
                     <p>
-                        {payload[0].dataKey}: {Number(payload[0].value).toLocaleString('en')}
+                        {payload[0].dataKey}: {Number(payload[0].value).toLocaleString('en')}B/s
                     </p>
                 </div>
             );
@@ -50,16 +52,12 @@ const Throughput = () => {
         return null;
     };
 
-    const formatYAxis = (tickItem) => {
-        let val = tickItem;
-        if (val > 1000000) {
-            val /= 10000000;
-            return `${Number(val).toLocaleString('en')}M`;
-        } else if (val > 1000) {
-            val /= 1000;
-            return `${Number(val).toLocaleString('en')}K`;
-        } else return `${Number(val).toLocaleString('en')}`;
+    const getTimeDiff = (before, after) => {
+        const diff = Math.abs(after - before);
+        const minutes = Math.floor(diff / 1000 / 60);
+        return minutes;
     };
+
     useEffect(() => {
         const current = new Date();
         const time = current.toLocaleTimeString('en-US', {
@@ -68,8 +66,8 @@ const Throughput = () => {
             second: '2-digit',
             hour12: false
         });
-        let write = { time: time };
-        let read = { time: time };
+        let write = { time: time, date: current };
+        let read = { time: time, date: current };
         let components = [];
         state?.monitor_data?.brokers_throughput?.forEach((element) => {
             const elementName = element.name;
@@ -78,15 +76,25 @@ const Throughput = () => {
             read[elementName] = element.read;
         });
         setSelectOptions(components);
-        setDataRead([...dataRead, read]);
-        setDataWrite([...dataWrite, write]);
+        if (!timeDiffIndicator && dataWrite.length > 0) {
+            if (getTimeDiff(current, dataWrite[0].date) >= 10) {
+                setTimeDiffIndicator(true);
+            }
+        }
+        if (timeDiffIndicator) {
+            setDataRead([...dataRead.slice(1), read]);
+            setDataWrite([...dataWrite.slice(1), write]);
+        } else {
+            setDataRead([...dataRead, read]);
+            setDataWrite([...dataWrite, write]);
+        }
     }, [state?.monitor_data?.brokers_throughput]);
 
     return (
         <div className="overview-components-wrapper throughput-overview-container">
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
-                    <p> Throughput</p>
+                    <p>Throughput</p>
                     <SegmentButton options={['Write', 'Read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <SelectThroughput
@@ -115,8 +123,8 @@ const Throughput = () => {
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="6 3" stroke="#f5f5f5" />
-                        <XAxis style={axisStyle} dataKey="time" />
-                        <YAxis style={axisStyle} dataKey={selectedComponent} tickFormatter={formatYAxis} />
+                        <XAxis style={axisStyle} dataKey="time" minTickGap={200} />
+                        <YAxis width={75} style={axisStyle} dataKey={selectedComponent} tickFormatter={(tickItem) => `${convertBytes(tickItem, true)}/s`} />
                         <Tooltip content={<CustomTooltip />} />
                         <Area type="monotone" dataKey={selectedComponent} stroke="#6557FF" fill="url(#colorThroughput)" />
                     </AreaChart>
