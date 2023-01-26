@@ -29,7 +29,7 @@ const axisStyle = {
 const Throughput = () => {
     const [state, dispatch] = useContext(Context);
     const [throughputType, setThroughputType] = useState('Write');
-    const [selectedComponent, setSelectedComponent] = useState('Total');
+    const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
     const [dataRead, setDataRead] = useState([]);
     const [dataWrite, setDataWrite] = useState([]);
@@ -97,12 +97,7 @@ const Throughput = () => {
                     <p>Throughput</p>
                     <SegmentButton options={['Write', 'Read']} onChange={(e) => setThroughputType(e)} />
                 </div>
-                <SelectThroughput
-                    value={selectedComponent || 'total'}
-                    placeholder={selectedComponent || 'total'}
-                    options={selectOptions}
-                    onChange={(e) => setSelectedComponent(e)}
-                />
+                <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
                 {/* <ThroughputInterval /> */}
             </div>
             <div className="throughput-chart">
@@ -124,7 +119,7 @@ const Throughput = () => {
                         </defs>
                         <CartesianGrid strokeDasharray="6 3" stroke="#f5f5f5" />
                         <XAxis style={axisStyle} dataKey="time" minTickGap={200} />
-                        <YAxis width={75} style={axisStyle} dataKey={selectedComponent} tickFormatter={(tickItem) => `${convertBytes(tickItem, true)}/s`} />
+                        <YAxis width={85} style={axisStyle} dataKey={selectedComponent} tickFormatter={(tickItem) => `${convertBytes(tickItem, true)}/s`} />
                         <Tooltip content={<CustomTooltip />} />
                         <Area type="monotone" dataKey={selectedComponent} stroke="#6557FF" fill="url(#colorThroughput)" />
                     </AreaChart>
