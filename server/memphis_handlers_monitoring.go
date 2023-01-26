@@ -57,8 +57,8 @@ func clientSetClusterConfig() error {
 		serv.Errorf("clientSetClusterConfig: InClusterConfig: " + err.Error())
 		return err
 	}
-
 	clientset, err = kubernetes.NewForConfig(config)
+
 	if err != nil {
 		serv.Errorf("clientSetClusterConfig: NewForConfig: " + err.Error())
 		return err
@@ -377,7 +377,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					ports = append(ports, int(port.ContainerPort))
 				}
 			}
-
 			cpuUsage := int64(0)
 			memUsage := int64(0)
 			storagePercentage := float64(0) // TODO: get storage stats of containers

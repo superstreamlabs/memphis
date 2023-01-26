@@ -1,25 +1,34 @@
 .resources-container {
-    height: 47.5%;
+    // height: 47.5%;
     padding: 15px;
     min-width: 250px;
     min-height: 250px;
     p {
         margin-bottom: 0;
     }
-    .charts-wrapper{
+    .charts-wrapper {
         position: relative;
         height: 100%;
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        overflow: auto;
+        padding: 0 20px 0 20px;
         .resource {
+            height: 33%;
             display: flex;
-            height: 80px;
-            place-items: center;
-            .chart-pie {
-                width: 130px;
+            .resource-data {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                .resource-name {
+                    font-size: 14px;
+                    color: #979797;
+                }
+                .resource-value {
+                    font-size: 20px;
+                    color: #979797;
+                    .value {
+                        color: #1d1d1d;
+                        font-weight: 600;
+                    }
+                }
             }
         }
     }

@@ -38,7 +38,7 @@ import FailedStations from './failedStations';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
-import SysComponents from './sysComponents';
+import SystemComponents from './systemComponents';
 import Modal from '../../components/modal';
 import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
@@ -220,8 +220,7 @@ function OverView() {
                             <Throughput />
                         </div>
                         <div className="right-side">
-                            <Resources />
-                            <SysComponents />
+                            <SystemComponents />
                         </div>
                     </div>
                 </div>

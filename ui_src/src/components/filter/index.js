@@ -417,7 +417,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     value={searchInput}
                 />
             )}
-            <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
+            <Popover placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
                     width="110px"
