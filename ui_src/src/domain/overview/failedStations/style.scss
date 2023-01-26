@@ -138,14 +138,14 @@
         }
     }
     .empty-stations-container {
-        height: calc(100% - 60px);
+        height: calc(100% - 70px);
         width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         img {
-            width: 14vh;
+            width: 11vh;
             cursor: pointer;
         }
         p {
