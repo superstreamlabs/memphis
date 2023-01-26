@@ -38,11 +38,16 @@ const SysComponents = () => {
                                 key={`tree-node${i}`}
                                 blockNode
                                 showLine
-                                selectable={false}
+                                selectable={true}
+                                expandedKeys={expandedNodes}
                                 switcherIcon={({ expanded }) => (
                                     <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
                                 )}
                                 rootClassName={!expandedNodes?.includes(`0-${i}`) && 'divided'}
+                                onSelect={(_, info) => {
+                                    if (info.node.expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
+                                    else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));
+                                }}
                                 defaultExpandedKeys={['0-0', '0-1', '0-2']}
                                 onExpand={(_, { expanded }) => {
                                     if (expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);

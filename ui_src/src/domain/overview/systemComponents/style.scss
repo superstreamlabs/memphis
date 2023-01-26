@@ -5,6 +5,10 @@
     padding: 15px;
     min-width: 280px;
     min-height: 250px;
+    .ant-tree-node-content-wrapper:hover {
+        background-color: transparent;
+        cursor: pointer;
+    }
     p {
         margin-bottom: 0px;
     }
@@ -62,7 +66,7 @@
                             justify-content: center;
                             font-size: 12px;
                             margin-left: 5px;
-                        }                
+                        }
                     }
                 }
                 .pods-container {
@@ -74,7 +78,7 @@
                         font-size: 13px;
                         margin-right: 5px;
                     }
-                    .value{
+                    .value {
                         font-family: 'InterMedium';
                         font-size: 13px;
                     }
@@ -91,13 +95,13 @@
         .system-container-header {
             padding: 10px;
             display: flex;
-            .cont-tls{
+            .cont-tls {
                 p {
                     font-size: 14px;
                     font-family: 'InterMedium';
                     margin: 0;
                 }
-                label{
+                label {
                     font-size: 12px;
                     font-family: 'Inter';
                     color: #737278;
@@ -121,7 +125,7 @@
             justify-content: space-between;
             border-bottom-left-radius: 8px;
             border-bottom-right-radius: 8px;
-            border-top: 1px solid #ECECEC;
+            border-top: 1px solid #ececec;
             .system-container-item {
                 padding: 10px;
                 height: 100%;
