@@ -22,7 +22,7 @@ import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
-    const [expandedNodes, setExpandedNodes] = useState(['0-0', '0-1', '0-2']);
+    const [expandedNodes, setExpandedNodes] = useState(['0-0']);
 
     return (
         <div className="overview-components-wrapper system-components-wrapper">
@@ -48,7 +48,7 @@ const SysComponents = () => {
                                     if (info.node.expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
                                     else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));
                                 }}
-                                defaultExpandedKeys={['0-0', '0-1', '0-2']}
+                                defaultExpandedKeys={['0-0']}
                                 onExpand={(_, { expanded }) => {
                                     if (expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
                                     else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));
