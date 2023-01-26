@@ -31,12 +31,12 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.44.180
-	github.com/docker/docker v20.10.22+incompatible
+	github.com/docker/docker v20.10.23+incompatible
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
 	k8s.io/api v0.26.1
-	k8s.io/metrics v0.26.0
+	k8s.io/metrics v0.26.1
 )
 
 require github.com/jmespath/go-jmespath v0.4.0 // indirect
