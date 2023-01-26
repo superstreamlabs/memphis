@@ -50,7 +50,7 @@ const SysContainers = ({ component, k8sEnv, index }) => {
         <div className="system-container">
             <div className="system-container-header">
                 <img src={SysContainer} alt="SysContainer" width="15" height="15" />
-                <div>
+                <div className="cont-tls">
                     <p>{component?.name}</p>
                     <label>{k8sEnv ? `POD ${index + 1}` : `CONTAINER`}</label>
                 </div>

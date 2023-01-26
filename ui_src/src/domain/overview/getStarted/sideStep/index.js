@@ -23,7 +23,7 @@ import GrayAppUserIcon from '../../../../assets/images/grayAppUserIcon.svg';
 import GrayProduceDataImg from '../../../../assets/images/grayProduceDataImg.svg';
 import GrayConsumeDataImg from '../../../../assets/images/grayConsumeDataImg.svg';
 import GrayfinishStep from '../../../../assets/images/grayFinish.svg';
-import CompletedStep from '../../../../assets/images/completedStep.svg';
+import CompletedStep from '../../../../assets/images/checkIcon.svg';
 
 const SideStep = (props) => {
     const { stepNumber, stepName, currentStep, completedSteps, stepsDescription } = props;

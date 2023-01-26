@@ -22,7 +22,7 @@ import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
-    const [expandedNodes, setExpandedNodes] = useState(['0-0']);
+    const [expandedNodes, setExpandedNodes] = useState(['0-0', '0-1', '0-2']);
 
     return (
         <div className="overview-components-wrapper system-components-wrapper">
@@ -43,7 +43,7 @@ const SysComponents = () => {
                                     <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
                                 )}
                                 rootClassName={!expandedNodes?.includes(`0-${i}`) && 'divided'}
-                                defaultExpandedKeys={['0-0']}
+                                defaultExpandedKeys={['0-0', '0-1', '0-2']}
                                 onExpand={(_, { expanded }) => {
                                     if (expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
                                     else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));

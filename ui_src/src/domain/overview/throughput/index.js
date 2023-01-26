@@ -14,10 +14,10 @@ import './style.scss';
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import React, { useEffect, useState, useContext } from 'react';
-import { Segmented } from 'antd';
 
 import { Context } from '../../../hooks/store';
 import SelectThroughput from '../../../components/selectThroughput';
+import SegmentButton from '../../../components/segmentButton';
 
 const axisStyle = {
     fontSize: '12px',
@@ -87,7 +87,7 @@ const Throughput = () => {
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
                     <p> Throughput</p>
-                    <Segmented options={['Write', 'Read']} onChange={(e) => setThroughputType(e)} />
+                    <SegmentButton options={['Write', 'Read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <SelectThroughput
                     value={selectedComponent || 'total'}

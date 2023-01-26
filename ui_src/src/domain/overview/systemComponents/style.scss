@@ -62,13 +62,7 @@
                             justify-content: center;
                             font-size: 12px;
                             margin-left: 5px;
-                        }
-                        img {
-                            filter: drop-shadow(1px 2px 1px #ececec);
-                        }
-                    }
-                    .component-status-shield {
-                        height: 18px;
+                        }                
                     }
                 }
                 .pods-container {
@@ -76,8 +70,13 @@
                     align-items: center;
                     .host {
                         color: #737373;
-                        font-weight: 500;
+                        font-family: 'InterMedium';
+                        font-size: 13px;
                         margin-right: 5px;
+                    }
+                    .value{
+                        font-family: 'InterMedium';
+                        font-size: 13px;
                     }
                 }
             }
@@ -92,10 +91,17 @@
         .system-container-header {
             padding: 10px;
             display: flex;
-            p {
-                size: 14px;
-                font-weight: 500;
-                margin: 0;
+            .cont-tls{
+                p {
+                    font-size: 14px;
+                    font-family: 'InterMedium';
+                    margin: 0;
+                }
+                label{
+                    font-size: 12px;
+                    font-family: 'Inter';
+                    color: #737278;
+                }
             }
             img {
                 margin-top: 5px;
