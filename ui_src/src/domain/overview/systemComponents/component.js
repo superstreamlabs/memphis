@@ -25,7 +25,6 @@ const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '12px', bor
 
 const Component = ({ comp, i }) => {
     const getData = (comp) => {
-        console.log(comp);
         let data = [];
         if (comp?.actual_pods > 0) {
             for (let i = 0; i < comp?.actual_pods; i++) data.push({ name: `actual${i}`, value: 1, fill: '#6557FF' });
