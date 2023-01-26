@@ -353,17 +353,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
 					fmt.Println("container: " + container.Name)
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
+						fmt.Println("mount name: " + mount.Name)
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = pod.Spec.Containers[0].VolumeMounts[0].MountPath
 							break
 						}
 					}
-					fmt.Println("mounthpath: " + mountpath)
+					fmt.Println("mountpath: " + mountpath)
 					containerForExec = container.Name
 				}
 			}
 			storagePercentage := float64(0)
-			if containerForExec != "" {
+			if containerForExec != "" || mountpath != "" {
 				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
 				if err != nil {
 					serv.Errorf("getContainerStorageUsage: " + err.Error())
