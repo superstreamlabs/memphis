@@ -224,11 +224,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 }
 
 func getThroughputSubject(serverName string) string {
-	key := serverName
-	if key == _EMPTY_ {
-		key = "broker"
-	}
-	return throughputStreamName + tsep + key
+	return throughputStreamName + tsep + serverName
 }
 
 func (s *Server) InitializeThroughputSampling() error {
@@ -268,9 +264,13 @@ func (s *Server) CalculateSelfThroughput() error {
 			Bytes:       v.InBytes,
 			BytesPerSec: currentRead,
 		}
-		subj := getThroughputSubject(configuration.SERVER_NAME)
+		serverName := configuration.SERVER_NAME
+		if serverName == _EMPTY_ {
+			serverName = "memphis-broker"
+		}
+		subj := getThroughputSubject(serverName)
 		tpMsg := models.BrokerThroughput{
-			Name:  configuration.SERVER_NAME,
+			Name:  serverName,
 			Read:  currentRead,
 			Write: currentWrite,
 		}
