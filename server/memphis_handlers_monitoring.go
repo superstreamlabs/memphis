@@ -1513,6 +1513,7 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 }
 
 func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
+	fmt.Println(mountPath, container, pod)
 	command := []string{"df", "-h", mountPath}
 	usage := float64(0)
 
