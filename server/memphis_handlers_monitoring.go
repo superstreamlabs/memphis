@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -1505,7 +1506,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
-		serv.Errorf("Failed to exec:%v", err)
+		serv.Errorf("getContainerStorageUsage: %v", err)
 		return 0, err
 	}
 
@@ -1516,15 +1517,21 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		Stderr: &stderr,
 	})
 	if err != nil {
-		serv.Errorf("Failed to get result:%v", err)
+		serv.Errorf("getContainerStorageUsage: %v", err)
 		return 0, err
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
 		stringUsage := strings.Split(parsedline[4], "%")
-		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
+		usage, err = strconv.ParseFloat(stringUsage[0], 64)
+		if err != nil {
+			serv.Errorf("getContainerStorageUsage: %v", err)
+			return 0, err
+		}
 	}
-	serv.Errorf("stderr: %s\n", stderr.String())
+	if stderr.String() != "" {
+		return usage, errors.New(stderr.String())
+	}
 	return usage, nil
 }
