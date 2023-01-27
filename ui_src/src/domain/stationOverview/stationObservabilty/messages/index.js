@@ -362,7 +362,12 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox img={dlsEnableIcon} title={'Dead-Letter Station configuration'} desc="Triggers for storing messages in the dead-letter station.">
+                    <DetailBox
+                        img={dlsEnableIcon}
+                        title={'Dead-Letter Station configuration'}
+                        desc="Triggers for storing messages in the dead-letter station."
+                        rightSection={false}
+                    >
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
