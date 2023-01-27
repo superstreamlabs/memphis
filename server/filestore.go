@@ -2844,14 +2844,11 @@ func (fs *fileStore) expireMsgs() {
 	fs.mu.RUnlock()
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
 		stationName := strings.Split(sm.subj, ".")
-		// if sm.subj staet with $memphis dont to publish
 		if !strings.HasPrefix(sm.subj, "$memphis") {
-			fmt.Println("fsdgfh", string(sm.msg))
 			serv.publishMsgToSub(stationName[0], sm.msg)
 
 		}
 		fs.removeMsg(sm.seq, false, true)
-		// log.Printf("#######removeMsgs#######")
 	}
 
 	fs.mu.Lock()
