@@ -321,13 +321,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if memLimit == float64(0) {
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
-			// var pvcName string
-			// for _, volume := range pod.Spec.Volumes {
-			// 	if strings.Contains(volume.Name, "memphis") {
-			// 		pvcName = volume.Name
-			// 		break
-			// 	}
-			// }
 			storageLimit := float64(0)
 			if len(pvcList.Items) == 1 {
 				size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
@@ -1541,6 +1534,10 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 }
 
 func shortenFloat(f float64) float64 {
+	// round up very small number
+	if f < float64(1) && f > float64(0) {
+		return float64(1)
+	}
 	// shorten float to 2 decimal places
 	return math.Floor(f*100) / 100
 }
