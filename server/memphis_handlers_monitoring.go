@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -105,21 +106,21 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					return components, err
 				}
 				storageComp = models.CompStats{
-					Total:      storage_size,
-					Current:    float64(v.JetStream.Stats.Store),
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
 					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
 				}
 			}
 			cpuComps := []models.SysComponent{{
 				Name: "memphis-broker",
 				CPU: models.CompStats{
-					Total:      maxCpu,
-					Current:    (v.CPU / 100) * maxCpu,
+					Total:      shortenFloat(maxCpu),
+					Current:    shortenFloat((v.CPU / 100) * maxCpu),
 					Percentage: int(math.Ceil(v.CPU)),
 				},
 				Memory: models.CompStats{
-					Total:      float64(v.JetStream.Config.MaxMemory),
-					Current:    float64(v.JetStream.Stats.Memory),
+					Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
+					Current:    shortenFloat(float64(v.JetStream.Stats.Memory)),
 					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Memory)/float64(v.JetStream.Config.MaxMemory)) * 100),
 				},
 				Storage: storageComp,
@@ -147,21 +148,21 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				}
 				if !isWindows {
 					storageComp = models.CompStats{
-						Total:      storage_size,
-						Current:    (proxyMonitorInfo.Storage / 100) * storage_size,
+						Total:      shortenFloat(storage_size),
+						Current:    shortenFloat((proxyMonitorInfo.Storage / 100) * storage_size),
 						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Storage))),
 					}
 				}
 				proxyComps = []models.SysComponent{{
 					Name: "memphis-http-proxy",
 					CPU: models.CompStats{
-						Total:      maxCpu,
-						Current:    (proxyMonitorInfo.CPU / 100) * maxCpu,
+						Total:      shortenFloat(maxCpu),
+						Current:    shortenFloat((proxyMonitorInfo.CPU / 100) * maxCpu),
 						Percentage: int(math.Ceil(proxyMonitorInfo.CPU)),
 					},
 					Memory: models.CompStats{
-						Total:      float64(v.JetStream.Config.MaxMemory),
-						Current:    (proxyMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory),
+						Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
+						Current:    shortenFloat((proxyMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
 						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Memory))),
 					},
 					Storage: storageComp,
@@ -226,13 +227,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 			cpuStat := models.CompStats{
-				Total:      cpuLimit,
-				Current:    totalCpuUsage,
+				Total:      shortenFloat(cpuLimit),
+				Current:    shortenFloat(totalCpuUsage),
 				Percentage: int(cpuPercentage),
 			}
 			memoryStat := models.CompStats{
-				Total:      memoryLimit,
-				Current:    totalMemoryUsage,
+				Total:      shortenFloat(memoryLimit),
+				Current:    shortenFloat(totalMemoryUsage),
 				Percentage: int(memoryPercentage),
 			}
 			storageStat := defaultStat
@@ -243,8 +244,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					return components, err
 				}
 				storageStat = models.CompStats{
-					Total:      totalSize,
-					Current:    dbStorageSize,
+					Total:      shortenFloat(totalSize),
+					Current:    shortenFloat(dbStorageSize),
 					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
 				}
 
@@ -254,8 +255,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					return components, err
 				}
 				storageStat = models.CompStats{
-					Total:      storage_size,
-					Current:    float64(v.JetStream.Stats.Store),
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
 					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
 				}
 			}
@@ -320,22 +321,23 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if memLimit == float64(0) {
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
-			var pvcName string
-			for _, volume := range pod.Spec.Volumes {
-				if strings.Contains(volume.Name, "memphis") {
-					pvcName = volume.Name
-					break
-				}
-			}
 			storageLimit := float64(0)
-			for _, pvc := range pvcList.Items {
-				if pvc.Name == pvcName {
-					size := pvc.Status.Capacity[v1.ResourceStorage]
-					floatSize := size.AsApproximateFloat64()
-					if floatSize != float64(0) {
-						storageLimit = floatSize
+			if len(pvcList.Items) == 1 {
+				size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
+				floatSize := size.AsApproximateFloat64()
+				if floatSize != float64(0) {
+					storageLimit = floatSize
+				}
+			} else {
+				for _, pvc := range pvcList.Items {
+					if strings.Contains(pvc.Name, pod.Name) {
+						size := pvc.Status.Capacity[v1.ResourceStorage]
+						floatSize := size.AsApproximateFloat64()
+						if floatSize != float64(0) {
+							storageLimit = floatSize
+						}
+						break
 					}
-					break
 				}
 			}
 			mountpath := ""
@@ -371,18 +373,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			comp := models.SysComponent{
 				Name: pod.Name,
 				CPU: models.CompStats{
-					Total:      cpuLimit,
-					Current:    cpuUsage,
+					Total:      shortenFloat(cpuLimit),
+					Current:    shortenFloat(cpuUsage),
 					Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
 				},
 				Memory: models.CompStats{
-					Total:      memLimit,
-					Current:    memUsage,
+					Total:      shortenFloat(memLimit),
+					Current:    shortenFloat(memUsage),
 					Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
 				},
 				Storage: models.CompStats{
-					Total:      storageLimit,
-					Current:    (storagePercentage / 100) * storageLimit,
+					Total:      shortenFloat(storageLimit),
+					Current:    shortenFloat((storagePercentage / 100) * storageLimit),
 					Percentage: int(storagePercentage),
 				},
 				Healthy: true,
@@ -1483,7 +1485,6 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 			}
 		}
 	}
-
 	return res
 }
 
@@ -1505,7 +1506,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
-		serv.Errorf("Failed to exec:%v", err)
 		return 0, err
 	}
 
@@ -1516,15 +1516,28 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		Stderr: &stderr,
 	})
 	if err != nil {
-		serv.Errorf("Failed to get result:%v", err)
 		return 0, err
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
 		stringUsage := strings.Split(parsedline[4], "%")
-		usage, _ = strconv.ParseFloat(stringUsage[0], 64)
+		usage, err = strconv.ParseFloat(stringUsage[0], 64)
+		if err != nil {
+			return 0, err
+		}
 	}
-	serv.Errorf("stderr: %s\n", stderr.String())
+	if stderr.String() != "" {
+		return usage, errors.New(stderr.String())
+	}
 	return usage, nil
+}
+
+func shortenFloat(f float64) float64 {
+	// round up very small number
+	if f < float64(0.01) && f > float64(0) {
+		return float64(0.01)
+	}
+	// shorten float to 2 decimal places
+	return math.Floor(f*100) / 100
 }
