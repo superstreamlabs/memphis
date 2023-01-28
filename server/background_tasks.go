@@ -16,17 +16,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"memphis-broker/models"
 
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -312,7 +307,7 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed subscribing for confogurations update: " + err.Error())
 	}
-	_, err = s.ListenForTierStorageMessages()
+	err = s.ListenForTierStorageMessages()
 	if err != nil {
 		return errors.New("Failed subscribing for tiered storage update: " + err.Error())
 	}
@@ -345,94 +340,27 @@ func (s *Server) StartBackgroundTasks() error {
 	return nil
 }
 
-func (s *Server) uploadToS3Storage(msgs []StoredMsg) error {
-	msgsPerStation := map[string][]StoredMsg{}
-	for _, msg := range msgs {
-		stationName := strings.Split(msg.Subject, ".")
-		stationNameString := stationName[1]
-		if strings.Contains(stationNameString, "#") {
-			stationNameString = strings.Replace(stationNameString, "#", ".", -1)
-		}
-		_, ok := msgsPerStation[stationNameString]
-		if !ok {
-			msgsPerStation[stationNameString] = []StoredMsg{}
-		}
-		for k, _ := range msgsPerStation {
-			if stationNameString == k {
-				msgsPerStation[stationNameString] = append(msgsPerStation[stationNameString], msg)
-			}
-		}
-
-	}
-
-	if len(msgsPerStation) > 0 {
-		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
-		provider := &credentials.StaticProvider{Value: credentials.Value{
-			AccessKeyID:     credentialsMap.Keys["access_key"],
-			SecretAccessKey: credentialsMap.Keys["secret_key"],
-		}}
-		credentials := credentials.NewCredentials(provider)
-		sess, err := session.NewSession(&aws.Config{
-			Region:      aws.String(credentialsMap.Keys["region"]),
-			Credentials: credentials},
-		)
-		if err != nil {
-			err = errors.New("expireMsgs failure " + err.Error())
-			log.Printf(err.Error())
-			return err
-		}
-
-		uploader := s3manager.NewUploader(sess)
-		uid := serv.memphis.nuid.Next()
-		var objectName string
-		var reader *strings.Reader
-
-		for k, v := range msgsPerStation {
-			data := ""
-			for _, value := range v {
-				objectName = k + uid + "(" + strconv.Itoa(len(v)) + ")"
-				//TODO handle with headers
-				data = data + "data: " + string(value.Data) + " headers: " + string("") + " sequence: " + strconv.Itoa(int(value.Sequence)) + " subject: " + value.Subject + " time: " + value.Time.String() + "\n"
-
-			}
-			// Upload the object to S3.
-			reader = strings.NewReader(data)
-			_, err = uploader.Upload(&s3manager.UploadInput{
-				Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
-				Key:    aws.String(objectName),
-				Body:   reader,
-			})
-			if err != nil {
-				err = errors.New("failed to upload the object to S3 " + err.Error())
-				log.Printf(err.Error())
-				return err
-			}
-		}
-	}
-	return nil
-
-}
-
 func (s *Server) ConsumeStorageMsgs(durableName string) {
 	var msgs []StoredMsg
 	timeout := 8 * time.Second
-	timer := 1 * time.Second
+	ping := 5 * time.Second
 
 	for {
 		var quitCh chan struct{}
 
 		select {
-		case <-time.After(timer):
-			streamInfo, err := serv.memphisStreamInfo("$memphis_tiered_storage")
+		case <-time.After(ping):
+			streamInfo, err := serv.memphisStreamInfo(STORAGE_UPDATES_SUBJ)
 			if err != nil {
 				return
 			}
 
 			if streamInfo.State.Msgs == 0 {
-				timer = timer + (20 * time.Second)
+				ping = ping + (20 * time.Second)
+				continue
 			}
 			responseChan := make(chan StoredMsg)
-			subject := fmt.Sprintf(JSApiRequestNextT, "$memphis_tiered_storage", durableName)
+			subject := fmt.Sprintf(JSApiRequestNextT, STORAGE_UPDATES_SUBJ, durableName)
 			reply := durableName + "_reply"
 			amount := 1000
 			req := []byte(strconv.FormatUint(uint64(amount), 10))
@@ -446,12 +374,25 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 					intTs, err := strconv.Atoi(rawTs)
 					if err != nil {
 						serv.Errorf("ConsumeStorageMsgs: " + err.Error())
+						return
 					}
 
+					dataFirstIdx := 0
+					dataLen := len(msg)
+					dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
+					if dataFirstIdx > len(msg)-len(CR_LF) {
+						s.Errorf("ConsumeStorageMsgs: memphis error parsing in station get messages")
+					}
+
+					dataLen = len(msg) - dataFirstIdx
+					dataLen -= len(CR_LF)
+					header := msg[:dataFirstIdx]
+					data := msg[dataFirstIdx : dataFirstIdx+dataLen]
 					respCh <- StoredMsg{
 						Subject:  subject,
 						Sequence: uint64(seq),
-						Data:     msg,
+						Data:     data,
+						Header:   header,
 						Time:     time.Unix(0, int64(intTs)),
 					}
 				}(responseChan, subject, reply, copyBytes(msg))
@@ -477,8 +418,6 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 					case msg := <-responseChan:
 						msgs = append(msgs, msg)
 						break
-					case <-quitCh:
-						break
 					}
 				}
 			}()
@@ -490,7 +429,7 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 	}
 }
 
-func (s *Server) ListenForTierStorageMessages() ([]StoredMsg, error) {
+func (s *Server) ListenForTierStorageMessages() error {
 
 	durableName := "storage_consumer"
 	cc := ConsumerConfig{
@@ -499,11 +438,11 @@ func (s *Server) ListenForTierStorageMessages() ([]StoredMsg, error) {
 		Durable:       durableName,
 		FilterSubject: "$memphis_tiered_storage.>",
 	}
-	err := serv.memphisAddConsumer("$memphis_tiered_storage", &cc)
+	err := serv.memphisAddConsumer(STORAGE_UPDATES_SUBJ, &cc)
 	if err != nil {
-		return []StoredMsg{}, err
+		return err
 	}
 	go s.ConsumeStorageMsgs(durableName)
 
-	return []StoredMsg{}, nil
+	return nil
 }

@@ -1111,3 +1111,24 @@ func (s *Server) SendMsgToSubject(stationName string, msg []byte) {
 	subject := fmt.Sprintf("%s.%s", storageStreamName, subjectSuffix)
 	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }
+
+func (s *Server) filterMsgsByStationName(msgs []StoredMsg) (map[string][]StoredMsg, error) {
+	msgsPerStation := map[string][]StoredMsg{}
+	for _, msg := range msgs {
+		stationName := strings.Split(msg.Subject, ".")
+		stationNameString := stationName[1]
+		if strings.Contains(stationNameString, "#") {
+			stationNameString = strings.Replace(stationNameString, "#", ".", -1)
+		}
+		_, ok := msgsPerStation[stationNameString]
+		if !ok {
+			msgsPerStation[stationNameString] = []StoredMsg{}
+		}
+		for k := range msgsPerStation {
+			if stationNameString == k {
+				msgsPerStation[stationNameString] = append(msgsPerStation[stationNameString], msg)
+			}
+		}
+	}
+	return msgsPerStation, nil
+}

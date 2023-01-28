@@ -15,7 +15,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"memphis-broker/models"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -268,5 +270,65 @@ func hideS3SecretKey(secretKey string) string {
 		return secretKey
 	}
 	return secretKey
+
+}
+
+func (s *Server) uploadToS3Storage(msgs []StoredMsg) error {
+	msgsPerStation, err := s.filterMsgsByStationName(msgs)
+	if err != nil {
+		return err
+	}
+
+	if len(msgsPerStation) > 0 {
+		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
+		provider := &credentials.StaticProvider{Value: credentials.Value{
+			AccessKeyID:     credentialsMap.Keys["access_key"],
+			SecretAccessKey: credentialsMap.Keys["secret_key"],
+		}}
+		credentials := credentials.NewCredentials(provider)
+		sess, err := session.NewSession(&aws.Config{
+			Region:      aws.String(credentialsMap.Keys["region"]),
+			Credentials: credentials},
+		)
+		if err != nil {
+			err = errors.New("expireMsgs failure " + err.Error())
+			log.Printf(err.Error())
+			return err
+		}
+
+		uploader := s3manager.NewUploader(sess)
+		uid := serv.memphis.nuid.Next()
+		var objectName string
+		var reader *strings.Reader
+
+		for k, msgs := range msgsPerStation {
+			data := ""
+			for _, msg := range msgs {
+				objectName = k + uid + "(" + strconv.Itoa(len(msgs)) + ")"
+
+				var headers string
+				if len(msg.Header) > 0 {
+					headers = string(msg.Header)
+				} else {
+					headers = ""
+				}
+				data = data + "data: " + string(msg.Data) + " headers: " + headers + " sequence: " + strconv.Itoa(int(msg.Sequence)) + " subject: " + msg.Subject + " time: " + msg.Time.String() + "\n"
+
+			}
+			// Upload the object to S3.
+			reader = strings.NewReader(data)
+			_, err = uploader.Upload(&s3manager.UploadInput{
+				Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
+				Key:    aws.String(objectName),
+				Body:   reader,
+			})
+			if err != nil {
+				err = errors.New("failed to upload the object to S3 " + err.Error())
+				log.Printf(err.Error())
+				return err
+			}
+		}
+	}
+	return nil
 
 }
