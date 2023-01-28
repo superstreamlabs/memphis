@@ -1535,8 +1535,8 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 
 func shortenFloat(f float64) float64 {
 	// round up very small number
-	if f < float64(1) && f > float64(0) {
-		return float64(1)
+	if f < float64(0.01) && f > float64(0) {
+		return float64(0.01)
 	}
 	// shorten float to 2 decimal places
 	return math.Floor(f*100) / 100
