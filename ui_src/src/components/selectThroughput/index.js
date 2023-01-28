@@ -19,7 +19,7 @@ import ComponentIcon from '../../assets/images/componentIcon.svg';
 
 const { Option } = Select;
 
-const selectThroughput = ({ options, onChange, value, placeholder }) => {
+const selectThroughput = ({ options, onChange, value }) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -28,11 +28,8 @@ const selectThroughput = ({ options, onChange, value, placeholder }) => {
         <div className="select-throughput-container">
             <img src={ComponentIcon} alt="ComponentIcon" height="20px" className="prefixImg" />
             <Select
-                width="180px"
-                height="28px"
                 className="select"
                 value={value}
-                placeholder={placeholder}
                 bordered={false}
                 suffixIcon={<ArrowDropDownRounded className="drop-down-icon" />}
                 onChange={handleChange}

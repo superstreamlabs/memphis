@@ -12,7 +12,7 @@
 import './style.scss';
 import React from 'react';
 
-const DetailBox = ({ img, title, desc, data, children }) => {
+const DetailBox = ({ img, title, desc, data, children, rightSection = true }) => {
     return (
         <div className="detail-box-container">
             <div className="detail-box-wrapper">
@@ -24,15 +24,17 @@ const DetailBox = ({ img, title, desc, data, children }) => {
                     <div className="detail-description">{desc}</div>
                 </div>
                 {data && <div className="separator" />}
-                <div className="detail-data">
-                    {data?.map((row) => {
-                        return (
-                            <div key={row} className="detail-data-row">
-                                {row}
-                            </div>
-                        );
-                    })}
-                </div>
+                {rightSection && (
+                    <div className="detail-data">
+                        {data?.map((row) => {
+                            return (
+                                <div key={row} className="detail-data-row">
+                                    {row}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
             <div className="detail-box-body">{children}</div>
         </div>

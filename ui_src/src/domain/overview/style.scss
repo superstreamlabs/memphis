@@ -91,12 +91,13 @@
             justify-content: space-between;
             position: relative;
             width: 100%;
-            min-width: 920px;
+            min-width: 1250px;
             height: calc(100% - 110px);
             margin-top: 20px;
 
             .left-side {
                 width: 65%;
+                min-width: 820px;
                 display: flex;
                 flex-direction: column;
                 row-gap: 30px;
@@ -106,6 +107,8 @@
                 width: 32%;
                 height: 100%;
                 position: relative;
+                min-height: 650px;
+                min-width: 420px;
             }
 
             .overview-components-wrapper {

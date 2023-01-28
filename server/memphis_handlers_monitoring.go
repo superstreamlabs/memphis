@@ -347,7 +347,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 					}
 				}
 			}
-
 			mountpath := ""
 			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
@@ -1493,7 +1492,6 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 			}
 		}
 	}
-
 	return res
 }
 
@@ -1515,7 +1513,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
-		serv.Errorf("getContainerStorageUsage: %v", err)
 		return 0, err
 	}
 
@@ -1526,7 +1523,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		Stderr: &stderr,
 	})
 	if err != nil {
-		serv.Errorf("getContainerStorageUsage: %v", err)
 		return 0, err
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
@@ -1535,7 +1531,6 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		stringUsage := strings.Split(parsedline[4], "%")
 		usage, err = strconv.ParseFloat(stringUsage[0], 64)
 		if err != nil {
-			serv.Errorf("getContainerStorageUsage: %v", err)
 			return 0, err
 		}
 	}

@@ -4,7 +4,7 @@
     padding: 15px;
     position: relative;
     min-width: 400px;
-    min-height: 200px;
+    min-height: 250px;
     overflow: hidden;
     .ant-segmented-item-label {
         color: #12131a;
@@ -24,12 +24,10 @@
         padding: 10px;
         font-weight: 600;
         font-size: 12px;
-        text-transform: capitalize;
         box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
         white-space: pre-line;
         border-radius: 6px;
-        width: 140px;
-        height: 70px;
+        min-height: 70px;
         line-height: 14px;
         p{
             margin-bottom: 0px;
