@@ -291,7 +291,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     <span>
                                         Ensures producers will not produce the same message.&nbsp;
                                         <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
-                                            Learn More
+                                            Learn more
                                         </a>
                                     </span>
                                 }
@@ -383,7 +383,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <p className="description">
                                 The criteria for which messages will be expelled from the station.&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
-                                    Learn More
+                                    Learn more
                                 </a>
                             </p>
                         )}
@@ -530,7 +530,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
                                                 target="_blank"
                                             >
-                                                Learn More
+                                                Learn more
                                             </a>
                                         </span>
                                     ) : (
@@ -541,7 +541,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
                                                 target="_blank"
                                             >
-                                                Learn More
+                                                Learn more
                                             </a>
                                         </span>
                                     )

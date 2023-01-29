@@ -341,7 +341,7 @@ const Messages = () => {
                             <span>
                                 The current leader of this station.{' '}
                                 <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                    Learn More
+                                    Learn more
                                 </a>
                             </span>
                         }
@@ -355,7 +355,7 @@ const Messages = () => {
                                 <span>
                                     The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
                                     <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                        Learn More
+                                        Learn more
                                     </a>
                                 </span>
                             }
@@ -377,7 +377,7 @@ const Messages = () => {
                             <span>
                                 Ensures messages with the same "msgId" value will be produced only once for the configured time.{' '}
                                 <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
-                                    Learn More
+                                    Learn more
                                 </a>
                             </span>
                         }

@@ -15,17 +15,22 @@ import './style.scss';
 import React, { useState, useEffect } from 'react';
 import { MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
+import Lottie from 'lottie-react';
 
 import { convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
-import { parsingDate } from '../../../services/valueConvertor';
-import OverflowTip from '../../../components/tooltip/overflowtip';
+import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
+import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
+import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
+import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
 import retentionIcon from '../../../assets/images/retentionIcon.svg';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
 import YellowHealth from '../../../assets/images/yellowHealth.svg';
+import OverflowTip from '../../../components/tooltip/overflowtip';
 import GreenHealth from '../../../assets/images/greenHealth.svg';
+import { parsingDate } from '../../../services/valueConvertor';
 import CheckboxComponent from '../../../components/checkBox';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
@@ -68,9 +73,6 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <label className="data-labels date">
                             Created by {station?.station?.created_by_user} at {parsingDate(station?.station?.creation_date)}{' '}
                         </label>
-                    </div>
-                    <div>
-                        <img className="activity" src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="activity" />
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
@@ -125,12 +127,21 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <div className="station-meta poison">
                             <div>
                                 <img src={poisonMsgIcon} alt="poison messages" />
-                                <label className="data-labels">Health</label>
+                                <label className="data-labels">Status</label>
                             </div>
                             <div className="health-icon">
-                                <img className="activity" src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="activity" />
+                                {station?.has_dls_messages ? (
+                                    station?.activity ? (
+                                        <Lottie animationData={activeAndUnhealthy} loop={true} />
+                                    ) : (
+                                        <Lottie animationData={noActiveAndUnhealthy} loop={true} />
+                                    )
+                                ) : station?.activity ? (
+                                    <Lottie animationData={activeAndHealthy} loop={true} />
+                                ) : (
+                                    <Lottie animationData={noActiveAndHealthy} loop={true} />
+                                )}
                             </div>
-                            {/* <HealthyBadge status={station?.has_dls_messages ? 'unhealthy' : 'healthy'} /> */}
                         </div>
                         <div className="station-actions">
                             <div className="action">

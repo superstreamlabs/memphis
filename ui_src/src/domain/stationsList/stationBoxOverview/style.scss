@@ -18,7 +18,12 @@
         cursor: pointer;
     }
     .poison{
-        text-align:center;
+        text-align:-webkit-center;
+        text-align: -moz-center;
+        .health-icon{
+            width: 18px;
+            margin-top: 10px;
+        }
     }
     .attached{
         min-width: 110px;

@@ -60,7 +60,7 @@ const SysContainers = ({ component, k8sEnv, index }) => {
                             <p>
                                 No metrics server found.&nbsp;
                                 <a className="learn-more" href="https://kubernetes-sigs.github.io/metrics-server/" target="_blank">
-                                    Learn More
+                                    Learn more
                                 </a>
                             </p>
                         )}

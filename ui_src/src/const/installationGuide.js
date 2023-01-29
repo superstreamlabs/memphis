@@ -19,7 +19,7 @@ export const INSTALLATION_GUIDE = {
             <span>
                 Please choose your preferred environment to deploy memphis on{' '}
                 <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
-                    Learn More
+                    Learn more
                 </a>
             </span>
         )
