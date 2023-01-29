@@ -276,10 +276,6 @@ func publishLogToSubjectAndAnalytics(s *Server, label string, log []byte) {
 
 func (s *Server) createMemphisLoggerFunc() srvlog.HybridLogPublishFunc {
 	s.memphis.serverID = configuration.SERVER_NAME
-	if s.memphis.serverID == _EMPTY_ {
-		s.memphis.serverID = "broker"
-	}
-
 	return func(label string, log []byte) {
 		publishLogToSubjectAndAnalytics(s, label, log)
 	}

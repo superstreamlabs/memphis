@@ -128,10 +128,6 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
 
-		if configuration.SERVER_NAME == "" {
-			configuration.SERVER_NAME = "broker"
-		}
-
 		type brokerName struct {
 			Name string `json:"name"`
 		}
