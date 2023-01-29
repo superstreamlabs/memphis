@@ -121,6 +121,7 @@
         .system-container-header {
             padding: 10px;
             display: flex;
+            cursor: default;
             .cont-tls {
                 p {
                     font-size: 14px;
@@ -159,11 +160,43 @@
                 .item-name {
                     font-size: 12px;
                     color: rgba(74, 73, 92, 0.8);
+                    width: fit-content;
                 }
                 .item-usage {
                     font-weight: 600;
                     font-size: 14px;
                     color: #1d1d1d;
+                }
+            }
+        }
+        .warn-msg{
+            position: absolute;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            .msg-wrapper{
+                background: white;
+                height: 43px;
+                border: 1px solid #EFEFEF;
+                box-shadow: 0px 1px 1px rgb(0 0 0 / 6%);
+                border-radius: 4px;
+                padding: 0px 10px;
+                display: flex;
+                align-items: center;
+                font-size: 16px;
+                font-family: 'InterMedium';
+                z-index: 2;
+                color: #2E2C34;
+                font-style: italic;
+                a{
+                    font-size: 12px;
+                    color: var(--purple);
+                }
+                a:hover {
+                    text-decoration: underline;
                 }
             }
         }
