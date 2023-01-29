@@ -32,6 +32,11 @@
                     margin: 0;
                     font-size: 10px;
                     font-family: 'InterMedium';
+                    max-width: 220px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    display: inline-block;
                 }
             }
         }
@@ -180,11 +185,11 @@
         }
         .message-wrapper {
             width: 60%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
+            display: grid;
+            grid-template-rows: 90% 10% ;
             height: calc(100% - 5px);
             min-width: 310px;
+            align-items:center;
             .row-data {
                 overflow-wrap: anywhere;
                 overflow: auto;
@@ -229,6 +234,8 @@
                 display: flex;
                 flex-direction: column;
                 gap: 20px;
+                position: absolute;
+                justify-self: center;
                 p{
                     font-family: 'InterSemiBold';
                     font-size: 16px;

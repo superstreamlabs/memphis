@@ -156,7 +156,7 @@ const MessageJourney = () => {
                     cgMembers: row.cg_members,
                     details: [
                         {
-                            name: 'Unacknowledged messages',
+                            name: 'Unacked messages',
                             value: numberWithCommas(row?.total_poison_messages)
                         },
                         {
@@ -186,7 +186,7 @@ const MessageJourney = () => {
                         value: 'consumer',
                         cgData: [
                             {
-                                name: 'Unacknowledged messages',
+                                name: 'Unacked messages',
                                 value: numberWithCommas(row.total_poison_messages)
                             },
                             {

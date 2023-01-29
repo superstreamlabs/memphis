@@ -98,6 +98,7 @@
             .left-side {
                 width: 65%;
                 min-width: 820px;
+                min-height: 550px;
                 display: grid;
                 grid-template-rows: 12% 41% 41%;
                 align-content: space-between;
@@ -107,7 +108,7 @@
                 width: 32%;
                 height: 100%;
                 position: relative;
-                min-height: 650px;
+                min-height: 550px;
                 min-width: 420px;
             }
 

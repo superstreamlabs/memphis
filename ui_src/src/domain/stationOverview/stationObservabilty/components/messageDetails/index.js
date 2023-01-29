@@ -74,7 +74,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                     is_deleted: row.is_deleted,
                     details: [
                         {
-                            name: 'Unacknowledged messages',
+                            name: 'Unacked messages',
                             value: numberWithCommas(row?.total_poison_messages)
                         },
                         {

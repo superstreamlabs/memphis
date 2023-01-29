@@ -129,7 +129,7 @@ const ProduceConsumList = ({ producer }) => {
             let cgDetails = {
                 details: [
                     {
-                        name: 'Unacknowledged messages',
+                        name: 'Unacked messages',
                         value: numberWithCommas(cgsList[rowIndex]?.poison_messages)
                     },
                     {
@@ -183,7 +183,7 @@ const ProduceConsumList = ({ producer }) => {
                 {!producer && cgsList.length > 0 && (
                     <div className="coulmns-table">
                         <span style={{ width: '75px' }}>Name</span>
-                        <span style={{ width: '80px', textAlign: 'center' }}>Unacknowledged</span>
+                        <span style={{ width: '80px', textAlign: 'center' }}>Unacked</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
                         <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
                     </div>
