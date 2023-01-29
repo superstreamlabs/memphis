@@ -586,7 +586,7 @@ cleanup:
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
-	stations, totalMessages, err := stationsHandler.GetAllStationsDetails()
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
 		serv.Errorf("GetMainOverviewData: GetAllStationsDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -611,11 +611,18 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	response := models.MainOverviewData{
 		TotalStations:     len(stations),
 		TotalMessages:     totalMessages,
+		TotalDlsMessages:  totalDlsMsgs,
 		SystemComponents:  systemComponents,
 		Stations:          stations,
 		K8sEnv:            k8sEnv,
 		BrokersThroughput: brokersThroughputs,
 		MetricsEnabled:    metricsEnabled,
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-main-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -1223,6 +1230,12 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		serv.Errorf("GetSystemLogs: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-syslogs-page")
 	}
 
 	c.IndentedJSON(200, response)

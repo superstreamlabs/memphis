@@ -143,7 +143,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000\nBroker: localhost:6666 (client connections)\nHTTP Proxy: localhost: 4444 (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000\nBroker: localhost:6666 (client connections)\nHTTP Proxy: localhost: 4444 (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
 	} else {
 		env = "K8S"
 	}

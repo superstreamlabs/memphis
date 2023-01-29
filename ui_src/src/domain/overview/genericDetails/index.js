@@ -16,7 +16,7 @@ import React, { useContext } from 'react';
 import { Context } from '../../../hooks/store';
 import { numberWithCommas } from '../../../services/valueConvertor';
 import TotalMsg from '../../../assets/images/total_msg.svg';
-import TotalPoison from '../../../assets/images/total_poison.svg';
+import TotalPoison from '../../../assets/images/totalPoison.svg';
 import TotalStations from '../../../assets/images/total_stations.svg';
 import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
 import { Divider } from 'antd';
@@ -38,8 +38,16 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Total Messages</span>
+                        <span>Total messages</span>
                         <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
+                    <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Total dead-letter</span>
+                        <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
                     </div>
                 </div>
             </div>

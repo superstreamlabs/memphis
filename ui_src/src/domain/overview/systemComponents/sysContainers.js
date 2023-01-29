@@ -36,32 +36,53 @@ const SysContainers = ({ component, k8sEnv, index }) => {
         );
     };
     const getContainerItem = (item, name) => {
-        return (
-            <TooltipComponent text={() => getTooltipData(item, name)}>
-                <div className="system-container-item">
-                    <p className="item-name">{name}</p>
-                    <p className="item-usage">{item?.percentage}%</p>
-                    <Progress percent={item?.percentage} showInfo={false} strokeColor={getColor(item?.percentage)} trailColor="#D9D9D9" size="small" />
-                </div>
-            </TooltipComponent>
+        const details = (
+            <div className="system-container-item">
+                <p className="item-name">{name}</p>
+                <p className="item-usage">{item?.percentage}%</p>
+                <Progress percent={item?.percentage} showInfo={false} strokeColor={getColor(item?.percentage)} trailColor="#D9D9D9" size="small" />
+            </div>
         );
+        return component.healthy ? <TooltipComponent text={() => getTooltipData(item, name)}>{details}</TooltipComponent> : <>{details}</>;
     };
     return (
         <div className="system-container">
-            <div className="system-container-header">
-                <img src={SysContainer} alt="SysContainer" width="15" height="15" />
-                <div className="cont-tls">
-                    <p>{component?.name}</p>
-                    <label>{k8sEnv ? `POD ${index + 1}` : `CONTAINER`}</label>
+            {(!component.healthy || !component.metrics_enabled) && (
+                <div className="warn-msg">
+                    <div className="msg-wrapper">
+                        {!component.healthy ? (
+                            k8sEnv ? (
+                                <p>Pod {index + 1} is down</p>
+                            ) : (
+                                <p>Container is down</p>
+                            )
+                        ) : (
+                            <p>
+                                No metrics server found.&nbsp;
+                                <a className="learn-more" href="https://kubernetes-sigs.github.io/metrics-server/" target="_blank">
+                                    Learn More
+                                </a>
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
+            <div style={{ opacity: component.healthy ? 1 : 0.2 }}>
+                <div className="system-container-header">
+                    <img src={SysContainer} alt="SysContainer" width="15" height="15" />
+                    <div className="cont-tls">
+                        <p>{component?.name}</p>
+                        <label>{k8sEnv ? `POD ${index + 1}` : `CONTAINER`}</label>
+                    </div>
+                </div>
 
-            <div className="system-container-body">
-                {getContainerItem(component?.cpu, 'CPU')}
-                <Divider type="vertical" />
-                {getContainerItem(component?.memory, 'Memory')}
-                <Divider type="vertical" />
-                {getContainerItem(component?.storage, 'Storage')}
+                <div className="system-container-body">
+                    {getContainerItem(component?.cpu, 'CPU')}
+                    <Divider type="vertical" />
+                    {getContainerItem(component?.memory, 'Memory')}
+                    <Divider type="vertical" />
+                    {getContainerItem(component?.storage, 'Storage')}
+                </div>
             </div>
         </div>
     );
