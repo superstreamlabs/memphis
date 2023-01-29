@@ -195,7 +195,7 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 	if err != nil {
 		return models.MainOverviewData{}, nil
 	}
-	systemComponents, err := h.Monitoring.GetSystemComponents()
+	systemComponents, metricsEnabled, err := h.Monitoring.GetSystemComponents()
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
@@ -215,6 +215,7 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 		Stations:          stations,
 		K8sEnv:            k8sEnv,
 		BrokersThroughput: brokersThroughputs,
+		MetricsEnabled:    metricsEnabled,
 	}, nil
 }
 
