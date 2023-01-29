@@ -1407,13 +1407,10 @@ func checkCompStatus(components []models.SysComponent) string {
 			yellowCount++
 		}
 	}
-	fmt.Println("red count: ", redCount)
-	fmt.Println("num of components: ", len(components))
-	redStatus := float64(redCount / len(components))
-	fmt.Println("red status: ", redStatus)
-	if redStatus >= 0.6 {
+	redStatus := float64(redCount) / float64(len(components))
+	if redStatus >= 0.66 {
 		status = "unhealthy"
-	} else if redStatus >= 0.3 || yellowCount > 0 {
+	} else if redStatus >= 0.33 || yellowCount > 0 {
 		status = "risky"
 	}
 
@@ -1482,7 +1479,6 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 			res = append(res, defaultSystemComp(name, false))
 		}
 	}
-	fmt.Println(res)
 	return res
 }
 
