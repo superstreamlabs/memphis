@@ -98,9 +98,9 @@
             .left-side {
                 width: 65%;
                 min-width: 820px;
-                display: flex;
-                flex-direction: column;
-                row-gap: 30px;
+                display: grid;
+                grid-template-rows: 12% 41% 41%;
+                align-content: space-between;
             }
 
             .right-side {
