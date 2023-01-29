@@ -575,6 +575,12 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		BrokersThroughput: brokersThroughputs,
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-main-overview")
+	}
+
 	c.IndentedJSON(200, response)
 }
 
@@ -1180,6 +1186,12 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		serv.Errorf("GetSystemLogs: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-syslogs-page")
 	}
 
 	c.IndentedJSON(200, response)

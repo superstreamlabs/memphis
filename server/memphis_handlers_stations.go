@@ -607,6 +607,13 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-stations-page")
+	}
+
 	c.IndentedJSON(200, gin.H{
 		"stations": stations,
 	})
