@@ -15,16 +15,17 @@ import './style.scss';
 import React, { useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 import { KeyboardArrowRightRounded } from '@material-ui/icons';
+import Lottie from 'lottie-react';
 
+import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
+import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
+import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
+import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import OverflowTip from '../../../components/tooltip/overflowtip';
+import NoStations from '../../../assets/images/noStations.svg';
 import Button from '../../../components/button';
 import Filter from '../../../components/filter';
-import NoStations from '../../../assets/images/noStations.svg';
-import RedActivity from '../../../assets/images/redActivity.svg';
-import GreenActivity from '../../../assets/images/greenActivity.svg';
-import YellowHealth from '../../../assets/images/yellowHealth.svg';
-import GreenHealth from '../../../assets/images/greenHealth.svg';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 import { Virtuoso } from 'react-virtuoso';
@@ -53,8 +54,7 @@ const FailedStations = ({ createStationTrigger }) => {
                                 <span className="station-name">Name</span>
                                 <span>Creation date</span>
                                 <span className="title-center">Total messages</span>
-                                <span className="title-center">Health</span>
-                                <span className="title-center">Activity</span>
+                                <span className="title-center">Status</span>
                                 <span></span>
                             </div>
                             <div className="rows-wrapper">
@@ -74,12 +74,19 @@ const FailedStations = ({ createStationTrigger }) => {
                                             <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)}>
                                                 <span className="centered">{numberWithCommas(station.total_messages)}</span>
                                             </OverflowTip>
-                                            <span className="centered">
-                                                <img src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="health" />
-                                            </span>
-                                            <span className="centered">
-                                                <img className="activity" src={station?.has_dls_messages ? RedActivity : GreenActivity} alt="activity" />
-                                            </span>
+                                            <div className="centered lottie">
+                                                {station?.has_dls_messages ? (
+                                                    station?.activity ? (
+                                                        <Lottie animationData={activeAndUnhealthy} loop={true} />
+                                                    ) : (
+                                                        <Lottie animationData={noActiveAndUnhealthy} loop={true} />
+                                                    )
+                                                ) : station?.activity ? (
+                                                    <Lottie animationData={activeAndHealthy} loop={true} />
+                                                ) : (
+                                                    <Lottie animationData={noActiveAndHealthy} loop={true} />
+                                                )}
+                                            </div>
                                             <div className="centered">
                                                 <div className="staion-link">
                                                     <span>View Station</span>

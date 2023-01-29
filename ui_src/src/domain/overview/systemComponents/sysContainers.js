@@ -20,7 +20,7 @@ import SysContainer from '../../../assets/images/sysContainer.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import { convertBytes } from '../../../services/valueConvertor';
 
-const SysContainers = ({ component, k8sEnv, index }) => {
+const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
     const getColor = (percentage) => {
         if (percentage <= 33) return '#2ED47A';
         else if (percentage < 66) return '#4A3AFF';
@@ -47,7 +47,7 @@ const SysContainers = ({ component, k8sEnv, index }) => {
     };
     return (
         <div className="system-container">
-            {(!component.healthy || !component.metrics_enabled) && (
+            {(!component.healthy || !metricsEnabled) && (
                 <div className="warn-msg">
                     <div className="msg-wrapper">
                         {!component.healthy ? (
@@ -60,7 +60,7 @@ const SysContainers = ({ component, k8sEnv, index }) => {
                             <p>
                                 No metrics server found.&nbsp;
                                 <a className="learn-more" href="https://kubernetes-sigs.github.io/metrics-server/" target="_blank">
-                                    Learn More
+                                    Learn more
                                 </a>
                             </p>
                         )}
