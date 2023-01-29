@@ -504,7 +504,8 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	}
 }
 
-func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
+func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uint64, error) {
+	totalMessages := uint64(0)
 	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"$or", []interface{}{
@@ -516,20 +517,20 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}}}},
 	})
 	if err != nil {
-		return stations, err
+		return stations, totalMessages, err
 	}
 
 	if err = cursor.All(context.TODO(), &stations); err != nil {
-		return stations, err
+		return stations, totalMessages, err
 	}
-	streamInfoToDls := make(map[string]models.StationMsgsDetails)
 	if len(stations) == 0 {
-		return []models.ExtendedStation{}, nil
+		return []models.ExtendedStation{}, totalMessages, nil
 	} else {
+		streamInfoToDls := make(map[string]models.StationMsgsDetails)
 		tagsHandler := TagsHandler{S: sh.S}
 		allStreamInfo, err := serv.memphisAllStreamsInfo()
 		if err != nil {
-			return []models.ExtendedStation{}, err
+			return []models.ExtendedStation{}, totalMessages, err
 		}
 		for _, info := range allStreamInfo {
 			streamName := info.Config.Name
@@ -544,7 +545,8 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 				} else {
 					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
 				}
-			} else {
+			} else if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
 				_, ok := streamInfoToDls[streamName]
 				if ok {
 					infoToUpdate := streamInfoToDls[streamName]
@@ -559,11 +561,11 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		for i := 0; i < len(stations); i++ {
 			fullStationName, err := StationNameFromStr(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				return []models.ExtendedStation{}, totalMessages, err
 			}
 			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				return []models.ExtendedStation{}, totalMessages, err
 			}
 			msgsInfo := streamInfoToDls[fullStationName.Intern()]
 			stations[i].TotalMessages = msgsInfo.TotalMessages
@@ -592,7 +594,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 			stations[i].Consumers = []models.Consumer{}
 			extStations = append(extStations, stations[i])
 		}
-		return extStations, nil
+		return extStations, totalMessages, nil
 	}
 }
 
@@ -609,7 +611,7 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 }
 
 func (sh StationsHandler) GetAllStations(c *gin.Context) {
-	stations, err := sh.GetAllStationsDetails()
+	stations, _, err := sh.GetAllStationsDetails()
 	if err != nil {
 		serv.Errorf("GetAllStations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1083,11 +1085,6 @@ func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
 		return 0, err
 	}
 	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
-	return totalMessages, err
-}
-
-func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
-	totalMessages, err := sh.S.GetTotalMessagesAcrossAllStations()
 	return totalMessages, err
 }
 
