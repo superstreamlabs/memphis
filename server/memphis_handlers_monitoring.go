@@ -196,6 +196,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 
 		for _, container := range containers {
 			containerName := container.Names[0]
+			containerName = strings.TrimPrefix(containerName, "/")
 			if container.State != "running" {
 				comp := defaultSystemComp(containerName, false)
 				allComponents = append(allComponents, comp)
@@ -542,15 +543,9 @@ cleanup:
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
-	stations, err := stationsHandler.GetAllStationsDetails()
+	stations, totalMessages, err := stationsHandler.GetAllStationsDetails()
 	if err != nil {
 		serv.Errorf("GetMainOverviewData: GetAllStationsDetails: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	totalMessages, err := stationsHandler.GetTotalMessagesAcrossAllStations()
-	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetTotalMessagesAcrossAllStations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

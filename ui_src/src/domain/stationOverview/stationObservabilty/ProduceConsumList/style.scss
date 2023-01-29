@@ -51,7 +51,6 @@
         flex-direction: column;
         justify-content: space-between;
         .list-container{
-            height: calc(100% - 55px);
             overflow: auto;
             .pubSub-row {
                 height: 35px;
