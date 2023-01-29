@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.3ddc461f.css",
-    "main.js": "/static/js/main.01a0cc4b.js",
+    "main.css": "/static/css/main.5918db92.css",
+    "main.js": "/static/js/main.e9a3d904.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -147,6 +147,7 @@
     "static/media/logo.svg": "/static/media/logo.c92557f7d1d13ff8a4d5388a9fd6c672.svg",
     "static/media/usersIcon.svg": "/static/media/usersIcon.1baef6daf37cdcbab538da49077dc1bb.svg",
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
+    "static/media/totalPoison.svg": "/static/media/totalPoison.176a958f9ce4ddf7cafbadb2e88e75dc.svg",
     "static/media/total_msg.svg": "/static/media/total_msg.420f3b325d5339cd1c29e8243ecc3c55.svg",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
@@ -163,8 +164,8 @@
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
     "index.html": "/index.html",
     "static/media/sharps.svg": "/static/media/sharps.2972a151b1a17897c4e67e6ff24b414c.svg",
-    "static/media/deadLetterPlaceholder.svg": "/static/media/deadLetterPlaceholder.b169fdb3086458608c1465cc2a5a4bff.svg",
     "static/media/sourceIcon.svg": "/static/media/sourceIcon.861e550f98f7961a69d58df1977bae8d.svg",
+    "static/media/deadLetterPlaceholder.svg": "/static/media/deadLetterPlaceholder.e81a59abbe86b8b18fa9bb9c1475fd4f.svg",
     "static/media/confImg2.svg": "/static/media/confImg2.1c3268df21a546024aff034eb843c214.svg",
     "static/media/dls_enable_icon.svg": "/static/media/dls_enable_icon.03a3706804e0d1fc7b44336af88b1314.svg",
     "static/media/betaBadge.svg": "/static/media/betaBadge.a42129d258939b03d932ad47556cb31b.svg",
@@ -193,7 +194,6 @@
     "static/media/copy.svg": "/static/media/copy.739f1c8fdf5b5cdea5087f8f9565f203.svg",
     "static/media/clusterConfColor.svg": "/static/media/clusterConfColor.a76b9a325a5af536e03d7b1e458a2565.svg",
     "static/media/createdByIcon.svg": "/static/media/createdByIcon.fed5e9f39160ffeb36aa209e79e20933.svg",
-    "static/media/total_poison.svg": "/static/media/total_poison.f78134e81944da9bae8574cc8b2a457f.svg",
     "static/media/idempotencyIcon.svg": "/static/media/idempotencyIcon.2118e5c7e2a9ff3521e7e283db57de46.svg",
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/userCheck.svg": "/static/media/userCheck.877e388ce6d0f982a147a6bf3b4335b0.svg",
@@ -247,7 +247,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.3ddc461f.css",
-    "static/js/main.01a0cc4b.js"
+    "static/css/main.5918db92.css",
+    "static/js/main.e9a3d904.js"
   ]
 }

@@ -230,7 +230,7 @@ const SlackIntegration = ({ close, value }) => {
                                 <div className="option-name">
                                     <img src={poisionAlertIcon} />
                                     <div className="name-des">
-                                        <p>New unacknowledged message</p>
+                                        <p>New unacked message</p>
                                         <span>
                                             Messages that cause a consumer group to repeatedly require a delivery (possibly due to a consumer failure) such that the
                                             message is never processed completely and acknowledged

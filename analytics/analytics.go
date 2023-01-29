@@ -16,6 +16,7 @@ import (
 	"memphis-broker/conf"
 	"memphis-broker/db"
 	"memphis-broker/models"
+	"strings"
 
 	"github.com/posthog/posthog-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -118,6 +119,7 @@ func SendEvent(userId, eventName string) {
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
+	distinctId = strings.TrimSuffix(distinctId, "-")
 
 	p := posthog.NewProperties()
 	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
@@ -138,6 +140,7 @@ func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
+	distinctId = strings.TrimSuffix(distinctId, "-")
 
 	p := posthog.NewProperties()
 	for _, param := range params {
