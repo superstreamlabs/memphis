@@ -1403,9 +1403,10 @@ func checkCompStatus(components []models.SysComponent) string {
 		}
 	}
 	redStatus := float64(redCount / len(components))
-	if redStatus >= 0.66 {
+	fmt.Println("red status: ", redStatus)
+	if redStatus >= 0.6 {
 		status = "unhealthy"
-	} else if redStatus >= 0.33 || yellowCount > 0 {
+	} else if redStatus >= 0.3 || yellowCount > 0 {
 		status = "risky"
 	}
 
