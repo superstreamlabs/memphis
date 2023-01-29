@@ -24,6 +24,8 @@ import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
+import YellowHealth from '../../../assets/images/yellowHealth.svg';
+import GreenHealth from '../../../assets/images/greenHealth.svg';
 import CheckboxComponent from '../../../components/checkBox';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
@@ -66,6 +68,9 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <label className="data-labels date">
                             Created by {station?.station?.created_by_user} at {parsingDate(station?.station?.creation_date)}{' '}
                         </label>
+                    </div>
+                    <div>
+                        <img className="activity" src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="activity" />
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
@@ -118,9 +123,14 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </p>
                         </div>
                         <div className="station-meta poison">
-                            <img src={poisonMsgIcon} alt="poison messages" />
-                            <label className="data-labels">Health</label>
-                            <HealthyBadge status={station?.has_dls_messages ? 'unhealthy' : 'healthy'} />
+                            <div>
+                                <img src={poisonMsgIcon} alt="poison messages" />
+                                <label className="data-labels">Health</label>
+                            </div>
+                            <div className="health-icon">
+                                <img className="activity" src={station?.has_dls_messages ? YellowHealth : GreenHealth} alt="activity" />
+                            </div>
+                            {/* <HealthyBadge status={station?.has_dls_messages ? 'unhealthy' : 'healthy'} /> */}
                         </div>
                         <div className="station-actions">
                             <div className="action">
