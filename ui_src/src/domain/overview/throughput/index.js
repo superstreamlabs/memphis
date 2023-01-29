@@ -107,7 +107,7 @@ const Throughput = () => {
         <div className="overview-components-wrapper throughput-overview-container">
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
-                    <p>Throughput</p>
+                    <p>Live throughput</p>
                     <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />

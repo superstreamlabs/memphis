@@ -88,20 +88,19 @@
 
         .overview-components {
             display: flex;
-            justify-content: space-between;
             position: relative;
             width: 100%;
             min-width: 1250px;
             height: calc(100% - 110px);
             margin-top: 20px;
-
+            gap: 20px;
             .left-side {
                 width: 65%;
                 min-width: 820px;
                 min-height: 550px;
                 display: grid;
                 grid-template-rows: 12% 41% 41%;
-                align-content: space-between;
+                gap: 20px;
             }
 
             .right-side {
