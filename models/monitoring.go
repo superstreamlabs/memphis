@@ -24,7 +24,7 @@ type SysComponent struct {
 type CompStats struct {
 	Total      float64 `json:"total"`
 	Current    float64 `json:"current"`
-	Percentage int   `json:"percentage"`
+	Percentage int     `json:"percentage"`
 }
 
 type SystemComponents struct {
@@ -39,11 +39,12 @@ type SystemComponents struct {
 
 type MainOverviewData struct {
 	TotalStations     int                `json:"total_stations"`
-	TotalMessages     uint64                `json:"total_messages"`
+	TotalMessages     uint64             `json:"total_messages"`
 	SystemComponents  []SystemComponents `json:"system_components"`
 	Stations          []ExtendedStation  `json:"stations"`
 	K8sEnv            bool               `json:"k8s_env"`
 	BrokersThroughput []BrokerThroughput `json:"brokers_throughput"`
+	MetricsEnabled    bool               `json:"metrics_enabled"`
 }
 
 type GetStationOverviewDataSchema struct {

@@ -74,11 +74,12 @@ func clientSetClusterConfig() error {
 	return nil
 }
 
-func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, error) {
+func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bool, error) {
 	components := []models.SystemComponents{}
 	allComponents := []models.SysComponent{}
 	portsMap := map[string][]int{}
 	host := ""
+	metricsEnabled := true
 	defaultStat := models.CompStats{
 		Total:      0,
 		Current:    0,
@@ -90,7 +91,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			maxCpu := float64(runtime.GOMAXPROCS(0))
 			v, err := serv.Varz(nil)
 			if err != nil {
-				return components, err
+				return components, metricsEnabled, err
 			}
 			var storageComp models.CompStats
 			os := runtime.GOOS
@@ -103,7 +104,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			default:
 				storage_size, err = getUnixStorageSize()
 				if err != nil {
-					return components, err
+					return components, metricsEnabled, err
 				}
 				storageComp = models.CompStats{
 					Total:      shortenFloat(storage_size),
@@ -144,7 +145,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				defer resp.Body.Close()
 				err = json.NewDecoder(resp.Body).Decode(&proxyMonitorInfo)
 				if err != nil {
-					return components, err
+					return components, metricsEnabled, err
 				}
 				if !isWindows {
 					storageComp = models.CompStats{
@@ -187,11 +188,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		ctx := context.Background()
 		dockerCli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
 		if err != nil {
-			return components, err
+			return components, metricsEnabled, err
 		}
 		containers, err := dockerCli.ContainerList(ctx, types.ContainerListOptions{})
 		if err != nil {
-			return components, err
+			return components, metricsEnabled, err
 		}
 
 		for _, container := range containers {
@@ -204,18 +205,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			}
 			containerStats, err := dockerCli.ContainerStats(ctx, container.ID, false)
 			if err != nil {
-				return components, err
+				return components, metricsEnabled, err
 			}
 			defer containerStats.Body.Close()
 
 			body, err := ioutil.ReadAll(containerStats.Body) // TODO replace ioutil
 			if err != nil {
-				return components, err
+				return components, metricsEnabled, err
 			}
 			var dockerStats types.Stats
 			err = json.Unmarshal(body, &dockerStats)
 			if err != nil {
-				return components, err
+				return components, metricsEnabled, err
 			}
 			cpuLimit := float64(runtime.GOMAXPROCS(0))
 			cpuPercentage := math.Ceil((float64(dockerStats.CPUStats.CPUUsage.TotalUsage) / float64(dockerStats.CPUStats.SystemUsage)) * 100)
@@ -225,7 +226,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
 			storage_size, err := getUnixStorageSize()
 			if err != nil {
-				return components, err
+				return components, metricsEnabled, err
 			}
 			cpuStat := models.CompStats{
 				Total:      shortenFloat(cpuLimit),
@@ -242,7 +243,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			if strings.Contains(containerName, "mongo") {
 				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
-					return components, err
+					return components, metricsEnabled, err
 				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(totalSize),
@@ -253,7 +254,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			} else if strings.Contains(containerName, "cluster") {
 				v, err := serv.Varz(nil)
 				if err != nil {
-					return components, err
+					return components, metricsEnabled, err
 				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
@@ -285,124 +286,143 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		if clientset == nil {
 			err := clientSetClusterConfig()
 			if err != nil {
-				return components, err
+				return components, metricsEnabled, err
 			}
 		}
 		deploymentsClient := clientset.AppsV1().Deployments(configuration.K8S_NAMESPACE)
 		deploymentsList, err := deploymentsClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return components, err
+			return components, metricsEnabled, err
 		}
 
 		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return components, err
+			fmt.Println("failed on get pod list")
+			if strings.Contains(err.Error(), "is forbidden") {
+				metricsEnabled = false
+			}
+			return components, metricsEnabled, err
 		}
 
 		for _, pod := range pods.Items {
 			if pod.Status.Phase != v1.PodRunning {
 				allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
+				continue
+			}
+			var ports []int
+			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+			if err != nil {
+				fmt.Println("failed on get pod metrics")
+				if strings.Contains(err.Error(), "could not find the requested resource") {
+					metricsEnabled = false
+					allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
+					continue
+				}
+				return components, metricsEnabled, err
+			}
+			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
+			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
+			if cpuLimit == float64(0) {
+				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
+			}
+			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
+			if memLimit == float64(0) {
+				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
+			}
+			storageLimit := float64(0)
+			if len(pvcList.Items) == 1 {
+				size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
+				floatSize := size.AsApproximateFloat64()
+				if floatSize != float64(0) {
+					storageLimit = floatSize
+				}
 			} else {
-				var ports []int
-				podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
-				if err != nil {
-					return components, err
-				}
-				node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-				if err != nil {
-					return components, err
-				}
-				pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
-				pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
-				if err != nil {
-					return components, err
-				}
-				cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
-				if cpuLimit == float64(0) {
-					cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
-				}
-				memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
-				if memLimit == float64(0) {
-					memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
-				}
-				storageLimit := float64(0)
-				if len(pvcList.Items) == 1 {
-					size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
-					floatSize := size.AsApproximateFloat64()
-					if floatSize != float64(0) {
-						storageLimit = floatSize
+				for _, pvc := range pvcList.Items {
+					if strings.Contains(pvc.Name, pod.Name) {
+						size := pvc.Status.Capacity[v1.ResourceStorage]
+						floatSize := size.AsApproximateFloat64()
+						if floatSize != float64(0) {
+							storageLimit = floatSize
+						}
+						break
 					}
-				} else {
-					for _, pvc := range pvcList.Items {
-						if strings.Contains(pvc.Name, pod.Name) {
-							size := pvc.Status.Capacity[v1.ResourceStorage]
-							floatSize := size.AsApproximateFloat64()
-							if floatSize != float64(0) {
-								storageLimit = floatSize
-							}
+				}
+			}
+			mountpath := ""
+			containerForExec := ""
+			for _, container := range pod.Spec.Containers {
+				for _, port := range container.Ports {
+					ports = append(ports, int(port.ContainerPort))
+				}
+				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
+					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
+						if strings.Contains(mount.Name, "memphis") {
+							mountpath = mount.MountPath
 							break
 						}
 					}
+					containerForExec = container.Name
 				}
-				mountpath := ""
-				containerForExec := ""
-				for _, container := range pod.Spec.Containers {
-					for _, port := range container.Ports {
-						ports = append(ports, int(port.ContainerPort))
-					}
-					if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
-						for _, mount := range pod.Spec.Containers[0].VolumeMounts {
-							if strings.Contains(mount.Name, "memphis") {
-								mountpath = mount.MountPath
-								break
-							}
-						}
-						containerForExec = container.Name
-					}
-				}
-				storagePercentage := float64(0)
-				if containerForExec != "" && mountpath != "" {
-					storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
-					if err != nil {
-						return components, err
-					}
-				}
-				cpuUsage := float64(0)
-				memUsage := float64(0)
-				for _, container := range podMetrics.Containers {
-					cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
-					memUsage += container.Usage.Memory().AsApproximateFloat64()
-				}
-
-				comp := models.SysComponent{
-					Name: pod.Name,
-					CPU: models.CompStats{
-						Total:      shortenFloat(cpuLimit),
-						Current:    shortenFloat(cpuUsage),
-						Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
-					},
-					Memory: models.CompStats{
-						Total:      shortenFloat(memLimit),
-						Current:    shortenFloat(memUsage),
-						Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
-					},
-					Storage: models.CompStats{
-						Total:      shortenFloat(storageLimit),
-						Current:    shortenFloat((storagePercentage / 100) * storageLimit),
-						Percentage: int(storagePercentage),
-					},
-					Healthy: true,
-				}
-				allComponents = append(allComponents, comp)
-				portsMap[pod.Name] = ports
 			}
+			storagePercentage := float64(0)
+			if containerForExec != "" && mountpath != "" {
+				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+				if err != nil {
+					return components, metricsEnabled, err
+				}
+			}
+			cpuUsage := float64(0)
+			memUsage := float64(0)
+			for _, container := range podMetrics.Containers {
+				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
+				memUsage += container.Usage.Memory().AsApproximateFloat64()
+			}
+
+			comp := models.SysComponent{
+				Name: pod.Name,
+				CPU: models.CompStats{
+					Total:      shortenFloat(cpuLimit),
+					Current:    shortenFloat(cpuUsage),
+					Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
+				},
+				Memory: models.CompStats{
+					Total:      shortenFloat(memLimit),
+					Current:    shortenFloat(memUsage),
+					Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
+				},
+				Storage: models.CompStats{
+					Total:      shortenFloat(storageLimit),
+					Current:    shortenFloat((storagePercentage / 100) * storageLimit),
+					Percentage: int(storagePercentage),
+				},
+				Healthy: true,
+			}
+			allComponents = append(allComponents, comp)
+			portsMap[pod.Name] = ports
 		}
 
 		for _, d := range deploymentsList.Items {
 			desired := int(*d.Spec.Replicas)
 			actual := int(d.Status.ReadyReplicas)
 			relevantComponents := getRelevantComponents(d.Name, allComponents, desired)
-			relevantPorts := getRelevantPorts(d.Name, portsMap)
+			var relevantPorts []int
+			if metricsEnabled {
+				relevantPorts = getRelevantPorts(d.Name, portsMap)
+			} else {
+				for _, container := range d.Spec.Template.Spec.Containers {
+					for _, port := range container.Ports {
+						relevantPorts = append(relevantPorts, int(port.ContainerPort))
+					}
+				}
+			}
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
 				Components:  relevantComponents,
@@ -417,13 +437,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		statefulsetsClient := clientset.AppsV1().StatefulSets(configuration.K8S_NAMESPACE)
 		statefulsetsList, err := statefulsetsClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return components, err
+			return components, metricsEnabled, err
 		}
 		for _, s := range statefulsetsList.Items {
 			desired := int(*s.Spec.Replicas)
 			actual := int(s.Status.ReadyReplicas)
 			relevantComponents := getRelevantComponents(s.Name, allComponents, desired)
-			relevantPorts := getRelevantPorts(s.Name, portsMap)
+			var relevantPorts []int
+			if metricsEnabled {
+				relevantPorts = getRelevantPorts(s.Name, portsMap)
+			} else {
+				for _, container := range s.Spec.Template.Spec.Containers {
+					for _, port := range container.Ports {
+						relevantPorts = append(relevantPorts, int(port.ContainerPort))
+					}
+				}
+			}
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,
 				Components:  relevantComponents,
@@ -435,7 +464,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 			})
 		}
 	}
-	return components, nil
+	return components, metricsEnabled, nil
 }
 
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
@@ -553,7 +582,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	systemComponents, err := mh.GetSystemComponents()
+	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 	if err != nil {
 		serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -576,6 +605,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		Stations:          stations,
 		K8sEnv:            k8sEnv,
 		BrokersThroughput: brokersThroughputs,
+		MetricsEnabled:    metricsEnabled,
 	}
 
 	c.IndentedJSON(200, response)
@@ -1546,3 +1576,13 @@ func shortenFloat(f float64) float64 {
 	// shorten float to 2 decimal places
 	return math.Floor(f*100) / 100
 }
+
+// func getPortsFromStateOrDeployList(d v1.Deployment) []int {
+// 	var ports []int
+// 	for _, container := range d.Spec.Template.Spec.Containers {
+// 		for _, port := range container.Ports {
+// 			ports = append(ports, int(port.ContainerPort))
+// 		}
+// 	}
+// 	return ports
+// }
