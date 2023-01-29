@@ -67,7 +67,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
                     </div>
                 </div>
             )}
-            <div style={{ opacity: component.healthy ? 1 : 0.2 }}>
+            <div style={{ opacity: !component.healthy ? 0.2 : !metricsEnabled ? 0.2 : 1 }}>
                 <div className="system-container-header">
                     <img src={SysContainer} alt="SysContainer" width="15" height="15" />
                     <div className="cont-tls">
