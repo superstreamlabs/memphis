@@ -194,7 +194,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 					Value: stationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station")
+				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
@@ -309,7 +309,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				Value: newConsumer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-consumer")
+			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-consumer-sdk")
 		}
 	}
 	return nil
@@ -664,7 +664,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(username, "user-remove-consumer")
+		analytics.SendEvent(username, "user-remove-consumer-sdk")
 	}
 
 	respondWithErr(s, reply, nil)
