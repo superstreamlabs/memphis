@@ -297,10 +297,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 
 		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			fmt.Println("failed on get pod list")
-			if strings.Contains(err.Error(), "is forbidden") {
-				metricsEnabled = false
-			}
 			return components, metricsEnabled, err
 		}
 
@@ -312,8 +308,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			var ports []int
 			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 			if err != nil {
-				fmt.Println("failed on get pod metrics")
-				if strings.Contains(err.Error(), "could not find the requested resource") {
+				if strings.Contains(err.Error(), "could not find the requested resource") || strings.Contains(err.Error(), "is forbidden") {
 					metricsEnabled = false
 					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
 					continue
