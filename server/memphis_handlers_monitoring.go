@@ -1587,12 +1587,13 @@ func shortenFloat(f float64) float64 {
 	return math.Floor(f*100) / 100
 }
 
-// func getPortsFromStateOrDeployList(d v1.Deployment) []int {
-// 	var ports []int
-// 	for _, container := range d.Spec.Template.Spec.Containers {
-// 		for _, port := range container.Ports {
-// 			ports = append(ports, int(port.ContainerPort))
-// 		}
-// 	}
-// 	return ports
-// }
+func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
+	v, err := serv.Varz(nil)
+	if err != nil {
+		serv.Errorf("GetAvailableReplicas: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, gin.H{
+		"available_replicas": v.Routes + 1})
+}
