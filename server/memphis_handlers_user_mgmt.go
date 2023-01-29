@@ -793,6 +793,12 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		return
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-users-page")
+	}
+
 	if len(users) == 0 {
 		c.IndentedJSON(200, []models.User{})
 	} else {
