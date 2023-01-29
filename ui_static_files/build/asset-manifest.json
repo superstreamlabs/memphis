@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.9f31d972.css",
-    "main.js": "/static/js/main.982221df.js",
+    "main.css": "/static/css/main.325aa292.css",
+    "main.js": "/static/js/main.26dcb122.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -133,8 +133,6 @@
     "static/media/betaLogo.svg": "/static/media/betaLogo.1df8b56be93949d230ccd81a13124a5a.svg",
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
-    "static/media/greenActivity.svg": "/static/media/greenActivity.334af5174970941e8377896e690246e3.svg",
-    "static/media/redActivity.svg": "/static/media/redActivity.0092deddc9e043e2cd5f6622ee871327.svg",
     "static/media/confImg1.svg": "/static/media/confImg1.cf98f3c124b944df126f52a16d6acb5e.svg",
     "static/media/total_stations.svg": "/static/media/total_stations.60d082a7875784ef8ea81d70630338b0.svg",
     "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
@@ -247,7 +245,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.9f31d972.css",
-    "static/js/main.982221df.js"
+    "static/css/main.325aa292.css",
+    "static/js/main.26dcb122.js"
   ]
 }
