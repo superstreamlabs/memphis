@@ -67,7 +67,6 @@ func clientSetClusterConfig() error {
 	if metricsclientset == nil {
 		metricsclientset, err = metricsv.NewForConfig(config)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 	}
@@ -289,9 +288,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 				return components, err
 			}
 		}
-		if metricsclientset == nil {
-			fmt.Println("metrics client is nil")
-		}
 		deploymentsClient := clientset.AppsV1().Deployments(configuration.K8S_NAMESPACE)
 		deploymentsList, err := deploymentsClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
@@ -300,7 +296,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 
 		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			fmt.Println("pods list err: ", err)
 			return components, err
 		}
 
