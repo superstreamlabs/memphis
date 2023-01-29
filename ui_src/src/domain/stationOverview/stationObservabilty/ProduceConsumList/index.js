@@ -190,7 +190,16 @@ const ProduceConsumList = ({ producer }) => {
                 )}
                 {(producersList?.length > 0 || cgsList?.length > 0) && (
                     <div className="rows-wrapper">
-                        <div className="list-container">
+                        <div
+                            className="list-container"
+                            style={{
+                                height: `calc(100% - ${
+                                    producer
+                                        ? document.getElementById('producer-details')?.offsetHeight + 3 + 'px'
+                                        : document.getElementById('consumer-details')?.offsetHeight + 5 + 'px'
+                                })`
+                            }}
+                        >
                             {producer && producersList?.length > 0 && (
                                 <Virtuoso
                                     data={producersList}
@@ -238,7 +247,7 @@ const ProduceConsumList = ({ producer }) => {
                                 />
                             )}
                         </div>
-                        <div style={{ marginRight: '10px' }}>
+                        <div style={{ marginRight: '10px' }} id={producer ? 'producer-details' : 'consumer-details'}>
                             {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
                             {!producer && cgsList?.length > 0 && (
                                 <Space direction="vertical">
