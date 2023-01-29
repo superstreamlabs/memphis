@@ -75,6 +75,19 @@ const Throughput = () => {
             write[elementName] = element.write;
             read[elementName] = element.read;
         });
+        components.sort(function (a, b) {
+            if (a.name === 'total') return -1;
+            if (b.name === 'total') return 1;
+            let nameA = a.name.toUpperCase();
+            let nameB = b.name.toUpperCase();
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            return 0;
+        });
         setSelectOptions(components);
         if (!timeDiffIndicator && dataWrite.length > 0) {
             if (getTimeDiff(current, dataWrite[0].date) >= 10) {
