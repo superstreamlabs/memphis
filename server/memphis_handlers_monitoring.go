@@ -300,98 +300,102 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		}
 
 		for _, pod := range pods.Items {
-			var ports []int
-			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
-			if err != nil {
-				return components, err
-			}
-			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-			if err != nil {
-				return components, err
-			}
-			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
-			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
-			if err != nil {
-				return components, err
-			}
-			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
-			if cpuLimit == float64(0) {
-				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
-			}
-			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
-			if memLimit == float64(0) {
-				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
-			}
-			storageLimit := float64(0)
-			if len(pvcList.Items) == 1 {
-				size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
-				floatSize := size.AsApproximateFloat64()
-				if floatSize != float64(0) {
-					storageLimit = floatSize
-				}
+			if pod.Status.Phase != v1.PodRunning {
+				allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
 			} else {
-				for _, pvc := range pvcList.Items {
-					if strings.Contains(pvc.Name, pod.Name) {
-						size := pvc.Status.Capacity[v1.ResourceStorage]
-						floatSize := size.AsApproximateFloat64()
-						if floatSize != float64(0) {
-							storageLimit = floatSize
-						}
-						break
-					}
-				}
-			}
-			mountpath := ""
-			containerForExec := ""
-			for _, container := range pod.Spec.Containers {
-				for _, port := range container.Ports {
-					ports = append(ports, int(port.ContainerPort))
-				}
-				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
-					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
-						if strings.Contains(mount.Name, "memphis") {
-							mountpath = mount.MountPath
-							break
-						}
-					}
-					containerForExec = container.Name
-				}
-			}
-			storagePercentage := float64(0)
-			if containerForExec != "" && mountpath != "" {
-				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+				var ports []int
+				podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 				if err != nil {
 					return components, err
 				}
-			}
-			cpuUsage := float64(0)
-			memUsage := float64(0)
-			for _, container := range podMetrics.Containers {
-				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
-				memUsage += container.Usage.Memory().AsApproximateFloat64()
-			}
+				node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
+				if err != nil {
+					return components, err
+				}
+				pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
+				pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
+				if err != nil {
+					return components, err
+				}
+				cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
+				if cpuLimit == float64(0) {
+					cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
+				}
+				memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
+				if memLimit == float64(0) {
+					memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
+				}
+				storageLimit := float64(0)
+				if len(pvcList.Items) == 1 {
+					size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
+					floatSize := size.AsApproximateFloat64()
+					if floatSize != float64(0) {
+						storageLimit = floatSize
+					}
+				} else {
+					for _, pvc := range pvcList.Items {
+						if strings.Contains(pvc.Name, pod.Name) {
+							size := pvc.Status.Capacity[v1.ResourceStorage]
+							floatSize := size.AsApproximateFloat64()
+							if floatSize != float64(0) {
+								storageLimit = floatSize
+							}
+							break
+						}
+					}
+				}
+				mountpath := ""
+				containerForExec := ""
+				for _, container := range pod.Spec.Containers {
+					for _, port := range container.Ports {
+						ports = append(ports, int(port.ContainerPort))
+					}
+					if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
+						for _, mount := range pod.Spec.Containers[0].VolumeMounts {
+							if strings.Contains(mount.Name, "memphis") {
+								mountpath = mount.MountPath
+								break
+							}
+						}
+						containerForExec = container.Name
+					}
+				}
+				storagePercentage := float64(0)
+				if containerForExec != "" && mountpath != "" {
+					storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+					if err != nil {
+						return components, err
+					}
+				}
+				cpuUsage := float64(0)
+				memUsage := float64(0)
+				for _, container := range podMetrics.Containers {
+					cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
+					memUsage += container.Usage.Memory().AsApproximateFloat64()
+				}
 
-			comp := models.SysComponent{
-				Name: pod.Name,
-				CPU: models.CompStats{
-					Total:      shortenFloat(cpuLimit),
-					Current:    shortenFloat(cpuUsage),
-					Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
-				},
-				Memory: models.CompStats{
-					Total:      shortenFloat(memLimit),
-					Current:    shortenFloat(memUsage),
-					Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
-				},
-				Storage: models.CompStats{
-					Total:      shortenFloat(storageLimit),
-					Current:    shortenFloat((storagePercentage / 100) * storageLimit),
-					Percentage: int(storagePercentage),
-				},
-				Healthy: true,
+				comp := models.SysComponent{
+					Name: pod.Name,
+					CPU: models.CompStats{
+						Total:      shortenFloat(cpuLimit),
+						Current:    shortenFloat(cpuUsage),
+						Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
+					},
+					Memory: models.CompStats{
+						Total:      shortenFloat(memLimit),
+						Current:    shortenFloat(memUsage),
+						Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
+					},
+					Storage: models.CompStats{
+						Total:      shortenFloat(storageLimit),
+						Current:    shortenFloat((storagePercentage / 100) * storageLimit),
+						Percentage: int(storagePercentage),
+					},
+					Healthy: true,
+				}
+				allComponents = append(allComponents, comp)
+				portsMap[pod.Name] = ports
 			}
-			allComponents = append(allComponents, comp)
-			portsMap[pod.Name] = ports
 		}
 
 		for _, d := range deploymentsList.Items {
