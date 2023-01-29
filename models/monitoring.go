@@ -39,7 +39,7 @@ type SystemComponents struct {
 
 type MainOverviewData struct {
 	TotalStations     int                `json:"total_stations"`
-	TotalMessages     int                `json:"total_messages"`
+	TotalMessages     uint64                `json:"total_messages"`
 	SystemComponents  []SystemComponents `json:"system_components"`
 	Stations          []ExtendedStation  `json:"stations"`
 	K8sEnv            bool               `json:"k8s_env"`

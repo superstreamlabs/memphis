@@ -501,23 +501,6 @@ func (s *Server) GetTotalMessagesInStation(stationName StationName) (int, error)
 	return int(streamInfo.State.Msgs), nil
 }
 
-func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
-	messagesCounter := 0
-
-	streams, err := s.memphisAllStreamsInfo()
-	if err != nil {
-		return messagesCounter, err
-	}
-
-	for _, streamInfo := range streams {
-		if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
-			messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
-		}
-	}
-
-	return messagesCounter, nil
-}
-
 // low level call, call only with internal station name (i.e stream name)!
 func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
