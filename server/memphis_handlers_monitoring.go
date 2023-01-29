@@ -86,7 +86,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 		Percentage: 0,
 	}
 	if configuration.DOCKER_ENV == "true" { // docker env
-		metricsEnabled = false
+		metricsEnabled = true
 		host = "http://localhost"
 		if configuration.DEV_ENV == "true" {
 			maxCpu := float64(runtime.GOMAXPROCS(0))
