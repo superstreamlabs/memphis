@@ -342,7 +342,7 @@ func (s *Server) StartBackgroundTasks() error {
 
 func (s *Server) ConsumeStorageMsgs(durableName string) {
 	var msgs []StoredMsg
-	timeout := 8 * time.Second
+	timeout := time.Duration(configuration.MAX_ACK_TIME_SECONDS_STORAGE) * time.Second
 	ping := 5 * time.Second
 
 	for {
@@ -366,8 +366,7 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 			req := []byte(strconv.FormatUint(uint64(amount), 10))
 			sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-					// ack
-					// serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+					replySubjs := reply
 					rawTs := tokenAt(reply, 8)
 					seq, _, _ := ackReplyInfo(reply)
 
@@ -389,11 +388,12 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 					header := msg[:dataFirstIdx]
 					data := msg[dataFirstIdx : dataFirstIdx+dataLen]
 					respCh <- StoredMsg{
-						Subject:  subject,
-						Sequence: uint64(seq),
-						Data:     data,
-						Header:   header,
-						Time:     time.Unix(0, int64(intTs)),
+						Subject:       subject,
+						Sequence:      uint64(seq),
+						Data:          data,
+						Header:        header,
+						Time:          time.Unix(0, int64(intTs)),
+						ReplySubjects: replySubjs,
 					}
 				}(responseChan, subject, reply, copyBytes(msg))
 			})
@@ -402,7 +402,7 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 			}
 
 			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-			timer := time.NewTimer(timeout)
+			timer := time.NewTimer(time.Duration(timeout))
 
 			go func() {
 				for i := 0; i < amount; i++ {
@@ -413,6 +413,11 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 						err := s.uploadToS3Storage(msgs)
 						if err != nil {
 							return
+						}
+						// ack
+						for _, msg := range msgs {
+							reply := msg.ReplySubjects
+							serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
 						}
 						break
 					case msg := <-responseChan:
@@ -437,6 +442,7 @@ func (s *Server) ListenForTierStorageMessages() error {
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
 		FilterSubject: "$memphis_tiered_storage.>",
+		AckWait:       time.Duration(configuration.MAX_ACK_TIME_SECONDS_STORAGE) * time.Second,
 	}
 	err := serv.memphisAddConsumer(STORAGE_UPDATES_SUBJ, &cc)
 	if err != nil {

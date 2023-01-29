@@ -12,9 +12,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+
 	"log"
 	"memphis-broker/models"
 	"strconv"
@@ -25,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -273,6 +276,11 @@ func hideS3SecretKey(secretKey string) string {
 
 }
 
+type Msg struct {
+	Payload []byte            `json:"payload"`
+	Headers map[string]string `json:"headers"`
+}
+
 func (s *Server) uploadToS3Storage(msgs []StoredMsg) error {
 	msgsPerStation, err := s.filterMsgsByStationName(msgs)
 	if err != nil {
@@ -299,34 +307,49 @@ func (s *Server) uploadToS3Storage(msgs []StoredMsg) error {
 		uploader := s3manager.NewUploader(sess)
 		uid := serv.memphis.nuid.Next()
 		var objectName string
-		var reader *strings.Reader
 
 		for k, msgs := range msgsPerStation {
-			data := ""
+			var messages []Msg
 			for _, msg := range msgs {
-				objectName = k + uid + "(" + strconv.Itoa(len(msgs)) + ")"
+				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ")"
 
 				var headers string
+				hdrs := map[string]string{}
 				if len(msg.Header) > 0 {
 					headers = string(msg.Header)
+					headersSplit := strings.Split(headers, "\r\n")
+					for _, header := range headersSplit {
+						if header != "" && !strings.Contains(header, "NATS/1.0") {
+							keyVal := strings.Split(header, ":")
+							key := strings.TrimSpace(keyVal[0])
+							value := strings.TrimSpace(keyVal[1])
+							hdrs[key] = value
+						}
+					}
 				} else {
 					headers = ""
 				}
-				data = data + "data: " + string(msg.Data) + " headers: " + headers + " sequence: " + strconv.Itoa(int(msg.Sequence)) + " subject: " + msg.Subject + " time: " + msg.Time.String() + "\n"
 
+				message := Msg{Payload: msg.Data, Headers: hdrs}
+				messages = append(messages, message)
 			}
 			// Upload the object to S3.
-			reader = strings.NewReader(data)
+			var buf bytes.Buffer
+			err := json.NewEncoder(&buf).Encode(messages)
+			if err != nil {
+				return err
+			}
 			_, err = uploader.Upload(&s3manager.UploadInput{
 				Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
 				Key:    aws.String(objectName),
-				Body:   reader,
+				Body:   &buf,
 			})
 			if err != nil {
 				err = errors.New("failed to upload the object to S3 " + err.Error())
 				log.Printf(err.Error())
 				return err
 			}
+			delete(msgsPerStation, k)
 		}
 	}
 	return nil
