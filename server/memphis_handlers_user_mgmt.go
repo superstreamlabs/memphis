@@ -337,6 +337,10 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 			analyticsParams := []analytics.EventParam{param}
 			analytics.SendEventWithParams("", analyticsParams, "installation")
+
+			if configuration.EXPORTER {
+				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
+			}
 		}
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),

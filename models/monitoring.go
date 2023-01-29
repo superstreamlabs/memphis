@@ -45,6 +45,7 @@ type MainOverviewData struct {
 	Stations          []ExtendedStation  `json:"stations"`
 	K8sEnv            bool               `json:"k8s_env"`
 	BrokersThroughput []BrokerThroughput `json:"brokers_throughput"`
+	MetricsEnabled    bool               `json:"metrics_enabled"`
 }
 
 type GetStationOverviewDataSchema struct {

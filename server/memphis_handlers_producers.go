@@ -121,7 +121,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 					Value: pStationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station")
+				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
@@ -191,7 +191,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				Value: newProducer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-producer")
+			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-producer-sdk")
 		}
 	}
 	shouldSendNotifications, err := IsSlackEnabled()
@@ -466,7 +466,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(username, "user-remove-producer")
+		analytics.SendEvent(username, "user-remove-producer-sdk")
 	}
 
 	respondWithErr(s, reply, nil)

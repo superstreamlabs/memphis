@@ -364,12 +364,16 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param := analytics.EventParam{
+		param1 := analytics.EventParam{
 			Name:  "station-name",
 			Value: stationName.Ext(),
 		}
-		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(username, analyticsParams, "user-create-station")
+		param2 := analytics.EventParam{
+			Name:  "nats-comp",
+			Value: strconv.FormatBool(!isNative),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
+		analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -1084,6 +1088,12 @@ func (s *Server) removeStationDirectIntern(c *client,
 	if err != nil {
 		serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(dsr.Username, "user-delete-station-sdk")
+	}
+
 	respondWithErr(s, reply, nil)
 	return
 }
@@ -1721,7 +1731,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("sdk", "user-attach-schema-to-station")
+		analytics.SendEvent(username, "user-attach-schema-to-station-sdk")
 	}
 
 	updateContent, err := generateSchemaUpdateInit(schema)
@@ -1792,6 +1802,12 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 		respondWithErr(s, reply, err)
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(dsr.Username, "user-detach-schema-from-station-sdk")
+	}
+
 	respondWithErr(s, reply, nil)
 }
 

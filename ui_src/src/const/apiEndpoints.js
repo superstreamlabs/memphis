@@ -59,6 +59,7 @@ export const ApiEndpoints = {
     GET_STATION_DATA: '/monitoring/getStationOverviewData',
     GET_SYS_LOGS: '/monitoring/getSystemLogs',
     DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
+    GET_AVAILABLE_REPLICAS: '/monitoring/getAvailableReplicas',
 
     //Tags
     GET_TAGS: '/tags/getTags',

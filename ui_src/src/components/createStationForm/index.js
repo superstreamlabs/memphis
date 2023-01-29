@@ -94,7 +94,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [parserName, setParserName] = useState('');
 
     useEffect(() => {
-        getOverviewData();
+        getAvailableReplicas();
         getAllSchemas();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
         if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
@@ -146,13 +146,10 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         else finishUpdate();
     };
 
-    const getOverviewData = async () => {
+    const getAvailableReplicas = async () => {
         try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
-            indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
-            data?.system_components[indexOfBrokerComponent]?.actual_pods &&
-                setActualPods(Array.from({ length: data?.system_components[indexOfBrokerComponent]?.actual_pods }, (_, i) => i + 1));
+            const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
+            setActualPods(Array.from({ length: data?.available_replicas }, (_, i) => i + 1));
         } catch (error) {}
     };
 
