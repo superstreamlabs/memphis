@@ -397,7 +397,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		for _, d := range deploymentsList.Items {
 			desired := int(*d.Spec.Replicas)
 			actual := int(d.Status.ReadyReplicas)
-			relevantComponents := getRelevantComponents(d.Name, allComponents)
+			relevantComponents := getRelevantComponents(d.Name, allComponents, desired)
 			relevantPorts := getRelevantPorts(d.Name, portsMap)
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
@@ -418,7 +418,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, er
 		for _, s := range statefulsetsList.Items {
 			desired := int(*s.Spec.Replicas)
 			actual := int(s.Status.ReadyReplicas)
-			relevantComponents := getRelevantComponents(s.Name, allComponents)
+			relevantComponents := getRelevantComponents(s.Name, allComponents, desired)
 			relevantPorts := getRelevantPorts(s.Name, portsMap)
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,
@@ -1457,11 +1457,17 @@ func defaultSystemComp(compName string, healthy bool) models.SysComponent {
 	}
 }
 
-func getRelevantComponents(name string, components []models.SysComponent) []models.SysComponent {
+func getRelevantComponents(name string, components []models.SysComponent, desired int) []models.SysComponent {
 	res := []models.SysComponent{}
 	for _, comp := range components {
 		if strings.Contains(comp.Name, name) {
 			res = append(res, comp)
+		}
+	}
+	missingComps := desired - len(res)
+	if missingComps > 0 {
+		for i := 0; i < missingComps; i++ {
+			res = append(res, defaultSystemComp(name, false))
 		}
 	}
 	return res
