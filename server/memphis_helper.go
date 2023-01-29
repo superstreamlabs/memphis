@@ -222,7 +222,7 @@ func (s *Server) CreateSystemStreams() {
 	successCh := make(chan error)
 
 	if ready { // stand alone
-		go tryCreateSystemStreams(s, retentionDur, successCh)
+		go tryCreateSystemStreams(s, retentionDur, successCh, false)
 		err := <-successCh
 		if err != nil {
 			s.Errorf("CreateSystemStreams: system streams creation failed: " + err.Error())
@@ -230,7 +230,7 @@ func (s *Server) CreateSystemStreams() {
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateSystemStreams(s, retentionDur, successCh)
+			go tryCreateSystemStreams(s, retentionDur, successCh, true)
 			select {
 			case <-timeout.C:
 				s.Warnf("CreateSystemStreams: system streams creation takes more than a minute")
@@ -259,7 +259,11 @@ func (s *Server) CreateSystemStreams() {
 	s.popFallbackLogs()
 }
 
-func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error) {
+func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
+	replicas := 1
+	if isCluster {
+		replicas = 3
+	}
 	// sytem logs stream
 	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
@@ -269,6 +273,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
+		Replicas:     replicas,
 	})
 
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
@@ -287,7 +292,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		MaxMsgsPer:   1,
 		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:      FileStorage,
-		Replicas:     1,
+		Replicas:     replicas,
 		NoAck:        false,
 	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
