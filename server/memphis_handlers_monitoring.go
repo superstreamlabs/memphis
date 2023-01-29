@@ -315,7 +315,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				fmt.Println("failed on get pod metrics")
 				if strings.Contains(err.Error(), "could not find the requested resource") {
 					metricsEnabled = false
-					allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
+					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
 					continue
 				}
 				return components, metricsEnabled, err
@@ -414,19 +414,27 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			actual := int(d.Status.ReadyReplicas)
 			relevantComponents := getRelevantComponents(d.Name, allComponents, desired)
 			var relevantPorts []int
+			var status string
 			if metricsEnabled {
 				relevantPorts = getRelevantPorts(d.Name, portsMap)
+				status = checkCompStatus(relevantComponents)
 			} else {
 				for _, container := range d.Spec.Template.Spec.Containers {
 					for _, port := range container.Ports {
 						relevantPorts = append(relevantPorts, int(port.ContainerPort))
 					}
 				}
+				if desired == actual {
+					status = "healthy"
+				} else {
+					status = "unhealthy"
+				}
 			}
+
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
 				Components:  relevantComponents,
-				Status:      checkCompStatus(relevantComponents),
+				Status:      status,
 				Ports:       relevantPorts,
 				DesiredPods: desired,
 				ActualPods:  actual,
@@ -444,19 +452,26 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			actual := int(s.Status.ReadyReplicas)
 			relevantComponents := getRelevantComponents(s.Name, allComponents, desired)
 			var relevantPorts []int
+			var status string
 			if metricsEnabled {
 				relevantPorts = getRelevantPorts(s.Name, portsMap)
+				status = checkCompStatus(relevantComponents)
 			} else {
 				for _, container := range s.Spec.Template.Spec.Containers {
 					for _, port := range container.Ports {
 						relevantPorts = append(relevantPorts, int(port.ContainerPort))
 					}
 				}
+				if desired == actual {
+					status = "healthy"
+				} else {
+					status = "unhealthy"
+				}
 			}
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,
 				Components:  relevantComponents,
-				Status:      checkCompStatus(relevantComponents),
+				Status:      status,
 				Ports:       relevantPorts,
 				DesiredPods: desired,
 				ActualPods:  actual,
