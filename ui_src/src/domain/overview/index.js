@@ -88,23 +88,38 @@ function OverView() {
         setDataSentence(dataSentences[getRandomInt(5)]);
     };
 
-    const getOverviewData = async () => {
-        setisLoading(true);
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-            data.system_components.sort(function (a, b) {
-                let nameA = a.name.toUpperCase();
-                let nameB = b.name.toUpperCase();
-                if (nameA < nameB) {
+    const arrangeData = (data) => {
+        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+        data.system_components.sort(function (a, b) {
+            let nameA = a.name.toUpperCase();
+            let nameB = b.name.toUpperCase();
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            return 0;
+        });
+        data.system_components.map((a) => {
+            a.ports?.sort(function (a, b) {
+                if (a < b) {
                     return -1;
                 }
-                if (nameA > nameB) {
+                if (a > b) {
                     return 1;
                 }
                 return 0;
             });
-            dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+        });
+        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+    };
+
+    const getOverviewData = async () => {
+        setisLoading(true);
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
+            arrangeData(data);
             setisLoading(false);
             setIsDataLoaded(true);
         } catch (error) {
@@ -144,19 +159,7 @@ function OverView() {
                 (async () => {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
-                        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-                        data.system_components.sort(function (a, b) {
-                            let nameA = a.name.toUpperCase();
-                            let nameB = b.name.toUpperCase();
-                            if (nameA < nameB) {
-                                return -1;
-                            }
-                            if (nameA > nameB) {
-                                return 1;
-                            }
-                            return 0;
-                        });
-                        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+                        arrangeData(data);
                     }
                 })();
             }

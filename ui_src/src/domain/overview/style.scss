@@ -93,14 +93,14 @@
             min-width: 1250px;
             height: calc(100% - 110px);
             margin-top: 20px;
-            gap: 20px;
+            justify-content: space-between;
             .left-side {
-                width: 65%;
+                width: 66.5%;
                 min-width: 820px;
                 min-height: 550px;
                 display: grid;
                 grid-template-rows: 12% 41% 41%;
-                gap: 20px;
+                align-content: space-between;
             }
 
             .right-side {

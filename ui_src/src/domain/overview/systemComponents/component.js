@@ -68,7 +68,7 @@ const Component = ({ comp, i }) => {
                     </OverflowTip>
                     <Divider type="vertical" /> */}
                     <label className="host">Ports</label>
-                    <label className="value">{comp.ports[0]}</label>
+                    <label className="value">{comp.ports.length > 0 ? comp.ports[0] : 'None'}</label>
                     {comp.ports?.length > 1 && (
                         <Popover
                             overlayInnerStyle={remainingPorstPopInnerStyle}

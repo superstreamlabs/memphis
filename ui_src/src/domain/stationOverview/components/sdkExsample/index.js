@@ -32,7 +32,7 @@ const tabs = ['Producer', 'Consumer'];
 let host = process.env.REACT_APP_SANDBOX_ENV
     ? 'https://proxy.sandbox.memphis.dev'
     : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-    ? 'http://localhost:4444'
+    ? 'http://avid.udi:4444'
     : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
 
 const SdkExample = ({ consumer, showTabs = true }) => {
