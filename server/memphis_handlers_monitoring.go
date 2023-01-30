@@ -1448,10 +1448,8 @@ func checkCompStatus(components []models.SysComponent) string {
 		} else if component.Storage.Percentage > 33 {
 			compYellowCount++
 		}
-		if compRedCount >= 2 {
+		if compRedCount >= 1 {
 			redCount++
-		} else if compRedCount == 1 {
-			yellowCount++
 		} else if compYellowCount > 0 {
 			yellowCount++
 		}
