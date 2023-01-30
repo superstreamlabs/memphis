@@ -234,11 +234,11 @@ func (s *Server) InitializeThroughputSampling() error {
 	}
 
 	LastReadThroughput = models.Throughput{
-		Bytes:       v.InBytes,
+		Bytes:       v.OutBytes,
 		BytesPerSec: 0,
 	}
 	LastWriteThroughput = models.Throughput{
-		Bytes:       v.OutBytes,
+		Bytes:       v.InBytes,
 		BytesPerSec: 0,
 	}
 
@@ -254,14 +254,14 @@ func (s *Server) CalculateSelfThroughput() error {
 			return err
 		}
 
-		currentWrite := v.OutBytes - LastWriteThroughput.Bytes
+		currentWrite := v.InBytes - LastWriteThroughput.Bytes
 		LastWriteThroughput = models.Throughput{
-			Bytes:       v.OutBytes,
+			Bytes:       v.InBytes,
 			BytesPerSec: currentWrite,
 		}
-		currentRead := v.InBytes - LastReadThroughput.Bytes
+		currentRead := v.OutBytes - LastReadThroughput.Bytes
 		LastReadThroughput = models.Throughput{
-			Bytes:       v.InBytes,
+			Bytes:       v.OutBytes,
 			BytesPerSec: currentRead,
 		}
 		serverName := configuration.SERVER_NAME
