@@ -93,6 +93,17 @@ function OverView() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+            data.system_components.sort(function (a, b) {
+                let nameA = a.name.toUpperCase();
+                let nameB = b.name.toUpperCase();
+                if (nameA < nameB) {
+                    return -1;
+                }
+                if (nameA > nameB) {
+                    return 1;
+                }
+                return 0;
+            });
             dispatch({ type: 'SET_MONITOR_DATA', payload: data });
             setisLoading(false);
             setIsDataLoaded(true);
@@ -134,6 +145,17 @@ function OverView() {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+                        data.system_components.sort(function (a, b) {
+                            let nameA = a.name.toUpperCase();
+                            let nameB = b.name.toUpperCase();
+                            if (nameA < nameB) {
+                                return -1;
+                            }
+                            if (nameA > nameB) {
+                                return 1;
+                            }
+                            return 0;
+                        });
                         dispatch({ type: 'SET_MONITOR_DATA', payload: data });
                     }
                 })();
