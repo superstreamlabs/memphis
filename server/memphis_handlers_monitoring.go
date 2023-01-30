@@ -368,9 +368,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					containerForExec = container.Name
 				}
 			}
-			storagePercentage := float64(0)
+			storageUsage := float64(0)
 			if containerForExec != "" && mountpath != "" {
-				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
 				if err != nil {
 					return components, metricsEnabled, err
 				}
@@ -396,8 +396,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				},
 				Storage: models.CompStats{
 					Total:      shortenFloat(storageLimit),
-					Current:    shortenFloat((storagePercentage / 100) * storageLimit),
-					Percentage: int(storagePercentage),
+					Current:    shortenFloat(storageUsage),
+					Percentage: int(math.Ceil((storageUsage / storageLimit) * 100)),
 				},
 				Healthy: true,
 			}
@@ -1554,7 +1554,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		SubResource("exec")
 	req.VersionedParams(&v1.PodExecOptions{
 		Container: container,
-		Command:   []string{"df", "-h", mountPath},
+		Command:   []string{"df", mountPath},
 		Stdin:     false,
 		Stdout:    true,
 		Stderr:    true,
@@ -1578,8 +1578,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
-		stringUsage := strings.Split(parsedline[4], "%")
-		usage, err = strconv.ParseFloat(stringUsage[0], 64)
+		usage, err = strconv.ParseFloat(parsedline[2], 64)
 		if err != nil {
 			return 0, err
 		}
