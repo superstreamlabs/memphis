@@ -368,6 +368,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					containerForExec = container.Name
 				}
 			}
+
+			cpuUsage := float64(0)
+			memUsage := float64(0)
+			for _, container := range podMetrics.Containers {
+				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
+				memUsage += container.Usage.Memory().AsApproximateFloat64()
+			}
+
 			storageUsage := float64(0)
 			if containerForExec != "" && mountpath != "" {
 				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
@@ -375,11 +383,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					return components, metricsEnabled, err
 				}
 			}
-			cpuUsage := float64(0)
-			memUsage := float64(0)
-			for _, container := range podMetrics.Containers {
-				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
-				memUsage += container.Usage.Memory().AsApproximateFloat64()
+			storagePercentage := 0
+			if storageUsage > float64(0) && storageLimit > float64(0) {
+				storagePercentage = int(math.Ceil((storageUsage / storageLimit) * 100))
 			}
 
 			comp := models.SysComponent{
@@ -397,7 +403,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Storage: models.CompStats{
 					Total:      shortenFloat(storageLimit),
 					Current:    shortenFloat(storageUsage),
-					Percentage: int(math.Ceil((storageUsage / storageLimit) * 100)),
+					Percentage: storagePercentage,
 				},
 				Healthy: true,
 			}
