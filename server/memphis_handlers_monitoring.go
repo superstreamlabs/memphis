@@ -361,7 +361,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
-					ports = append(ports, int(port.ContainerPort))
+					if int(port.ContainerPort) != 0 {
+						ports = append(ports, int(port.ContainerPort))
+					}
 				}
 				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
@@ -428,7 +430,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			} else {
 				for _, container := range d.Spec.Template.Spec.Containers {
 					for _, port := range container.Ports {
-						relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						if int(port.ContainerPort) != 0 {
+							relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						}
 					}
 				}
 				if desired == actual {
@@ -466,7 +470,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			} else {
 				for _, container := range s.Spec.Template.Spec.Containers {
 					for _, port := range container.Ports {
-						relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						if int(port.ContainerPort) != 0 {
+							relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						}
 					}
 				}
 				if desired == actual {
