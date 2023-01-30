@@ -484,7 +484,6 @@ function CreateSchema({ createNew }) {
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
-                                        isLoading={validateLoading}
                                         disabled={
                                             formFields?.schema_content === '' ||
                                             formFields?.schema_content.includes('type') ||
