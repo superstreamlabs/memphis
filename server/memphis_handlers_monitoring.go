@@ -1588,6 +1588,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		if err != nil {
 			return 0, err
 		}
+		usage = usage * 1024
 	}
 	if stderr.String() != "" {
 		return usage, errors.New(stderr.String())
