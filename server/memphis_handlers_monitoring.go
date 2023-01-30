@@ -51,6 +51,8 @@ type MonitoringHandler struct{ S *Server }
 var clientset *kubernetes.Clientset
 var metricsclientset *metricsv.Clientset
 var config *rest.Config
+var noMetricsInstalledLog bool
+var noMetricsPermissionLog bool
 
 func clientSetClusterConfig() error {
 	var err error
@@ -70,6 +72,9 @@ func clientSetClusterConfig() error {
 			return err
 		}
 	}
+
+	noMetricsInstalledLog = false
+	noMetricsPermissionLog = false
 
 	return nil
 }
@@ -198,6 +203,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 
 		for _, container := range containers {
 			containerName := container.Names[0]
+			if !strings.Contains(containerName, "memphis") {
+				continue
+			}
 			containerName = strings.TrimPrefix(containerName, "/")
 			if container.State != "running" {
 				comp := defaultSystemComp(containerName, false)
@@ -264,7 +272,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			for _, port := range container.Ports {
-				dockerPorts = append(dockerPorts, int(port.PublicPort))
+				if int(port.PublicPort) != 0 {
+					dockerPorts = append(dockerPorts, int(port.PublicPort))
+				}
 			}
 			comps := []models.SysComponent{{
 				Name:    containerName,
@@ -309,9 +319,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			var ports []int
 			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 			if err != nil {
-				if strings.Contains(err.Error(), "could not find the requested resource") || strings.Contains(err.Error(), "is forbidden") {
+				if strings.Contains(err.Error(), "could not find the requested resource") {
 					metricsEnabled = false
 					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
+					serv.Warnf("GetSystemComponents: k8s metrics not installed: " + err.Error())
+					noMetricsInstalledLog = true
+					continue
+				} else if strings.Contains(err.Error(), "is forbidden") {
+					metricsEnabled = false
+					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
+					serv.Warnf("GetSystemComponents: No permissions for k8s metrics: " + err.Error())
+					noMetricsPermissionLog = true
 					continue
 				}
 				return components, metricsEnabled, err
@@ -356,7 +374,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
-					ports = append(ports, int(port.ContainerPort))
+					if int(port.ContainerPort) != 0 {
+						ports = append(ports, int(port.ContainerPort))
+					}
 				}
 				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
@@ -368,18 +388,24 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					containerForExec = container.Name
 				}
 			}
-			storagePercentage := float64(0)
-			if containerForExec != "" && mountpath != "" {
-				storagePercentage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-			}
+
 			cpuUsage := float64(0)
 			memUsage := float64(0)
 			for _, container := range podMetrics.Containers {
 				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
 				memUsage += container.Usage.Memory().AsApproximateFloat64()
+			}
+
+			storageUsage := float64(0)
+			if containerForExec != "" && mountpath != "" {
+				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+				if err != nil {
+					return components, metricsEnabled, err
+				}
+			}
+			storagePercentage := 0
+			if storageUsage > float64(0) && storageLimit > float64(0) {
+				storagePercentage = int(math.Ceil((storageUsage / storageLimit) * 100))
 			}
 
 			comp := models.SysComponent{
@@ -396,8 +422,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				},
 				Storage: models.CompStats{
 					Total:      shortenFloat(storageLimit),
-					Current:    shortenFloat((storagePercentage / 100) * storageLimit),
-					Percentage: int(storagePercentage),
+					Current:    shortenFloat(storageUsage),
+					Percentage: storagePercentage,
 				},
 				Healthy: true,
 			}
@@ -417,7 +443,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			} else {
 				for _, container := range d.Spec.Template.Spec.Containers {
 					for _, port := range container.Ports {
-						relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						if int(port.ContainerPort) != 0 {
+							relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						}
 					}
 				}
 				if desired == actual {
@@ -455,7 +483,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			} else {
 				for _, container := range s.Spec.Template.Spec.Containers {
 					for _, port := range container.Ports {
-						relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						if int(port.ContainerPort) != 0 {
+							relevantPorts = append(relevantPorts, int(port.ContainerPort))
+						}
 					}
 				}
 				if desired == actual {
@@ -1448,10 +1478,8 @@ func checkCompStatus(components []models.SysComponent) string {
 		} else if component.Storage.Percentage > 33 {
 			compYellowCount++
 		}
-		if compRedCount >= 2 {
+		if compRedCount >= 1 {
 			redCount++
-		} else if compRedCount == 1 {
-			yellowCount++
 		} else if compYellowCount > 0 {
 			yellowCount++
 		}
@@ -1556,7 +1584,7 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 		SubResource("exec")
 	req.VersionedParams(&v1.PodExecOptions{
 		Container: container,
-		Command:   []string{"df", "-h", mountPath},
+		Command:   []string{"df", mountPath},
 		Stdin:     false,
 		Stdout:    true,
 		Stderr:    true,
@@ -1580,11 +1608,11 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
-		stringUsage := strings.Split(parsedline[4], "%")
-		usage, err = strconv.ParseFloat(stringUsage[0], 64)
+		usage, err = strconv.ParseFloat(parsedline[2], 64)
 		if err != nil {
 			return 0, err
 		}
+		usage = usage * 1024
 	}
 	if stderr.String() != "" {
 		return usage, errors.New(stderr.String())

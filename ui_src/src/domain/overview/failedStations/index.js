@@ -37,9 +37,6 @@ const FailedStations = ({ createStationTrigger }) => {
     const goToStation = (stationName) => {
         history.push(`${pathDomains.stations}/${stationName}`);
     };
-    const Item = React.forwardRef((props, ref) => {
-        return <div className="item-wrapper" {...props} ref={ref} />;
-    });
     return (
         <div className="overview-components-wrapper">
             <div className="failed-stations-container">
@@ -62,7 +59,6 @@ const FailedStations = ({ createStationTrigger }) => {
                                     data={state?.monitor_data?.stations}
                                     overscan={100}
                                     className="testt"
-                                    components={{ Item }}
                                     itemContent={(index, station) => (
                                         <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
                                             <OverflowTip className="station-details station-name" text={station.name}>

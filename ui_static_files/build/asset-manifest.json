@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.325aa292.css",
-    "main.js": "/static/js/main.87294d7f.js",
+    "main.css": "/static/css/main.4dbe0fcc.css",
+    "main.js": "/static/js/main.2f5bbd4d.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -170,6 +170,7 @@
     "static/media/finishFlag.svg": "/static/media/finishFlag.cdd2d450a2a93dbfa465c9e00803394f.svg",
     "static/media/grayFinish.svg": "/static/media/grayFinish.5ebcc02830185386ebc7d136451079dd.svg",
     "static/media/installationIcon.svg": "/static/media/installationIcon.41169a79d4c6c64bd585e34d3c24e184.svg",
+    "static/media/errorindication.svg": "/static/media/errorindication.6f6e388f5a1f899e9d6c810addcaf2d9.svg",
     "static/media/totalMsgIcon.svg": "/static/media/totalMsgIcon.6915a97cf4f9c4b6b9113182f34576d2.svg",
     "static/media/logsIcon.svg": "/static/media/logsIcon.bb54b7c67fdffffb0f8759b862733302.svg",
     "static/media/rollBackIcon.svg": "/static/media/rollBackIcon.d27a828890f2a4e685738694d53dbfb5.svg",
@@ -245,7 +246,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.325aa292.css",
-    "static/js/main.87294d7f.js"
+    "static/css/main.4dbe0fcc.css",
+    "static/js/main.2f5bbd4d.js"
   ]
 }

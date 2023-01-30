@@ -17,13 +17,14 @@ import React from 'react';
 import { Divider } from 'antd';
 import { Progress } from 'antd';
 import SysContainer from '../../../assets/images/sysContainer.svg';
+import errorindication from '../../../assets/images/errorindication.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import { convertBytes } from '../../../services/valueConvertor';
 
 const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
     const getColor = (percentage) => {
         if (percentage <= 33) return '#2ED47A';
-        else if (percentage < 66) return '#4A3AFF';
+        else if (percentage < 66) return '#FFC633';
         else return '#FF716E';
     };
 
@@ -43,13 +44,20 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
                 <Progress percent={item?.percentage} showInfo={false} strokeColor={getColor(item?.percentage)} trailColor="#D9D9D9" size="small" />
             </div>
         );
-        return component.healthy ? <TooltipComponent text={() => getTooltipData(item, name)}>{details}</TooltipComponent> : <>{details}</>;
+        return !component.healthy ? (
+            <>{details}</>
+        ) : !metricsEnabled ? (
+            <>{details}</>
+        ) : (
+            <TooltipComponent text={() => getTooltipData(item, name)}>{details}</TooltipComponent>
+        );
     };
     return (
         <div className="system-container">
             {(!component.healthy || !metricsEnabled) && (
                 <div className="warn-msg">
                     <div className="msg-wrapper">
+                        <img src={errorindication} />
                         {!component.healthy ? (
                             k8sEnv ? (
                                 <p>Pod {index + 1} is down</p>
@@ -59,7 +67,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
                         ) : (
                             <p>
                                 No metrics server found.&nbsp;
-                                <a className="learn-more" href="https://kubernetes-sigs.github.io/metrics-server/" target="_blank">
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/dashboard-gui/overview#fix-no-metrics-server-found" target="_blank">
                                     Learn more
                                 </a>
                             </p>
@@ -67,7 +75,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
                     </div>
                 </div>
             )}
-            <div style={{ opacity: !component.healthy ? 0.2 : !metricsEnabled ? 0.2 : 1 }}>
+            <div className={!component.healthy ? 'blury' : !metricsEnabled ? 'blury' : null}>
                 <div className="system-container-header">
                     <img src={SysContainer} alt="SysContainer" width="15" height="15" />
                     <div className="cont-tls">

@@ -169,6 +169,11 @@
                 }
             }
         }
+        .blury{
+            background: rgba(255, 255, 255, 0.2);
+            filter: blur(2.5px);
+            -webkit-filter: blur(2.5px);
+        }
         .warn-msg{
             position: absolute;
             display: flex;
@@ -178,19 +183,18 @@
             justify-content: center;
             cursor: default;
             .msg-wrapper{
-                background: white;
                 height: 43px;
-                border: 1px solid #EFEFEF;
-                box-shadow: 0px 1px 1px rgb(0 0 0 / 6%);
-                border-radius: 4px;
-                padding: 0px 10px;
                 display: flex;
                 align-items: center;
                 font-size: 16px;
                 font-family: 'InterMedium';
                 z-index: 2;
-                color: #2E2C34;
+                color: rgba(27, 43, 65, 0.72);
                 font-style: italic;
+                img{
+                    width: 30px;
+                    margin-right: 10px;
+                }
                 a{
                     font-size: 12px;
                     color: var(--purple);

@@ -187,9 +187,7 @@ function CreateSchema({ createNew }) {
 
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
-        return () => {
-            goBack();
-        };
+        return () => {};
     }, []);
 
     useEffect(() => {
@@ -484,7 +482,6 @@ function CreateSchema({ createNew }) {
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
-                                        isLoading={validateLoading}
                                         disabled={
                                             formFields?.schema_content === '' ||
                                             formFields?.schema_content.includes('type') ||
