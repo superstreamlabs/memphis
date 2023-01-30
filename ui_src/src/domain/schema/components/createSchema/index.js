@@ -187,9 +187,7 @@ function CreateSchema({ createNew }) {
 
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
-        return () => {
-            goBack();
-        };
+        return () => {};
     }, []);
 
     useEffect(() => {

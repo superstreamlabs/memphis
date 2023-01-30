@@ -133,17 +133,10 @@
                     margin-bottom: 20px;
                     align-items: center;
                     .button-json{
-                        justify-content: space-between;
                         display: flex;  
                         place-content: end;
-                        :first-child{
-                            margin-left: 20px;
-                            margin-right: 20px;
-                        }
-                        :only-child{
-                            margin-left: 0px;
-                            margin-right: 0px;
-                        }
+                        width: 300px;
+                        justify-content: space-between;
                         .ant-form-item-control-input-content{
                             display: flex;
                         }
