@@ -88,7 +88,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         if (err?.message?.includes('Network Error') && serverUrl) {
             message.warning({
                 key: 'memphisWarningMessage',
-                content: `${serverUrl} cannot be reached`,
+                content: `${serverUrl} can not be reached`,
                 duration: 5,
                 style: { cursor: 'pointer' },
                 onClick: () => message.destroy('memphisWarningMessage')
