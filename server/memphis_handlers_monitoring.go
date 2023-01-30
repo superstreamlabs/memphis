@@ -198,6 +198,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 
 		for _, container := range containers {
 			containerName := container.Names[0]
+			if !strings.Contains(containerName, "memphis") {
+				continue
+			}
 			containerName = strings.TrimPrefix(containerName, "/")
 			if container.State != "running" {
 				comp := defaultSystemComp(containerName, false)
@@ -264,7 +267,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			for _, port := range container.Ports {
-				dockerPorts = append(dockerPorts, int(port.PublicPort))
+				if int(port.PublicPort) != 0 {
+					dockerPorts = append(dockerPorts, int(port.PublicPort))
+				}
 			}
 			comps := []models.SysComponent{{
 				Name:    containerName,
