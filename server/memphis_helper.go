@@ -252,11 +252,11 @@ func (s *Server) CreateSystemStreams() {
 		}
 	}
 
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: sys logs publish activation func is not initialized")
-	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
+	// if s.memphis.activateSysLogsPubFunc == nil {
+	// 	s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	// }
+	// s.memphis.activateSysLogsPubFunc()
+	// s.popFallbackLogs()
 }
 
 func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
@@ -275,11 +275,17 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		Storage:      FileStorage,
 		Replicas:     replicas,
 	})
-
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
 		return
 	}
+
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
+
 	// throughput kv
 	err = s.memphisAddStream(&StreamConfig{
 		Name:         (throughputStreamName),
