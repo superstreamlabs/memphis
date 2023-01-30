@@ -340,18 +340,19 @@ func (s *Server) StartBackgroundTasks() error {
 	return nil
 }
 
-func (s *Server) ConsumeStorageMsgs(durableName string) {
-	var msgs []StoredMsg
+func (s *Server) ConsumeStorageMsgs(durableName string, errs chan error) {
 	timeout := time.Duration(configuration.MAX_ACK_TIME_SECONDS_STORAGE) * time.Second
 	ping := 5 * time.Second
 
 	for {
-		var quitCh chan struct{}
+		var msgs []StoredMsg
 
 		select {
 		case <-time.After(ping):
 			streamInfo, err := serv.memphisStreamInfo(STORAGE_UPDATES_SUBJ)
 			if err != nil {
+				serv.Errorf("ConsumeStorageMsgs: " + err.Error())
+				errs <- err
 				return
 			}
 
@@ -369,10 +370,10 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 					replySubjs := reply
 					rawTs := tokenAt(reply, 8)
 					seq, _, _ := ackReplyInfo(reply)
-
 					intTs, err := strconv.Atoi(rawTs)
 					if err != nil {
 						serv.Errorf("ConsumeStorageMsgs: " + err.Error())
+						errs <- err
 						return
 					}
 
@@ -398,6 +399,8 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 				}(responseChan, subject, reply, copyBytes(msg))
 			})
 			if err != nil {
+				serv.Errorf("ConsumeStorageMsgs: " + err.Error())
+				errs <- err
 				return
 			}
 
@@ -412,23 +415,23 @@ func (s *Server) ConsumeStorageMsgs(durableName string) {
 						serv.unsubscribeOnGlobalAcc(sub)
 						err := s.uploadToS3Storage(msgs)
 						if err != nil {
-							return
+							serv.Errorf("ConsumeStorageMsgs: " + err.Error())
+							errs <- err
+							break
 						}
 						// ack
 						for _, msg := range msgs {
 							reply := msg.ReplySubjects
 							serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
 						}
-						break
 					case msg := <-responseChan:
 						msgs = append(msgs, msg)
 						break
 					}
 				}
 			}()
+			errs <- nil
 
-		case <-quitCh:
-			fmt.Println("quitCh")
 		}
 		time.Sleep(5 * time.Second)
 	}
@@ -448,7 +451,14 @@ func (s *Server) ListenForTierStorageMessages() error {
 	if err != nil {
 		return err
 	}
-	go s.ConsumeStorageMsgs(durableName)
+
+	chErrs := make(chan error, 1)
+	go s.ConsumeStorageMsgs(durableName, chErrs)
+	err = <-chErrs
+	if err != nil {
+		s.Errorf("ListenForTierStorageMessages" + err.Error())
+		return err
+	}
 
 	return nil
 }

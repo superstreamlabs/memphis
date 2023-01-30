@@ -293,6 +293,12 @@ func (s *Server) uploadToS3Storage(msgs []StoredMsg) error {
 			AccessKeyID:     credentialsMap.Keys["access_key"],
 			SecretAccessKey: credentialsMap.Keys["secret_key"],
 		}}
+
+		_, err := provider.Retrieve()
+		if err != nil {
+			err = errors.New("uploadToS3Storage: Invalid credentials")
+			return err
+		}
 		credentials := credentials.NewCredentials(provider)
 		sess, err := session.NewSession(&aws.Config{
 			Region:      aws.String(credentialsMap.Keys["region"]),

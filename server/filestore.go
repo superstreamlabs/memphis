@@ -2845,8 +2845,7 @@ func (fs *fileStore) expireMsgs() {
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
 		stationName := strings.Split(sm.subj, ".")
 		if !strings.HasPrefix(sm.subj, "$memphis") {
-			serv.publishMsgToSub(stationName[0], sm.msg)
-
+			serv.publishMsgToSub(stationName[0], smv.buf)
 		}
 		fs.removeMsg(sm.seq, false, true)
 	}
