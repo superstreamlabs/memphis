@@ -74,7 +74,6 @@ const getDataset = (dsName, readWrite, hidden) => {
 
 function Throughput() {
     const [state, dispatch] = useContext(Context);
-    const [isVisible, setIsVisible] = useState(false);
     const [throughputType, setThroughputType] = useState('write');
     const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
