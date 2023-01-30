@@ -96,7 +96,7 @@ function Throughput() {
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
         if (foundItemIndex === -1) return;
-        setLoading(true);
+        setLoader();
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
                 data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
@@ -106,7 +106,6 @@ function Throughput() {
                 data.datasets[2 * i + 1].hidden = true;
             }
         }
-        setLoading(false);
     }, [throughputType, selectedComponent]);
 
     useEffect(() => {
@@ -146,6 +145,13 @@ function Throughput() {
                 y: getValue('read', selectOptions[i].name)
             });
         }
+    };
+
+    const setLoader = () => {
+        setLoading(true);
+        setTimeout(function () {
+            setLoading(false);
+        }, 1000);
     };
 
     return (
