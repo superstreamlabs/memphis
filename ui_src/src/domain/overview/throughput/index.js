@@ -11,13 +11,13 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useEffect, useState, useContext } from 'react';
-import { Line, defaults } from 'react-chartjs-2';
-import { Chart } from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
 import { Context } from '../../../hooks/store';
 import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
+import Loader from '../../../components/loader';
 import SegmentButton from '../../../components/segmentButton';
 import './style.scss';
 
@@ -74,10 +74,12 @@ const getDataset = (dsName, readWrite, hidden) => {
 
 function Throughput() {
     const [state, dispatch] = useContext(Context);
+    const [isVisible, setIsVisible] = useState(false);
     const [throughputType, setThroughputType] = useState('write');
     const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
     const [data, setData] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -95,6 +97,7 @@ function Throughput() {
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
         if (foundItemIndex === -1) return;
+        setLoading(true);
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
                 data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
@@ -104,6 +107,7 @@ function Throughput() {
                 data.datasets[2 * i + 1].hidden = true;
             }
         }
+        setLoading(false);
     }, [throughputType, selectedComponent]);
 
     useEffect(() => {
@@ -155,6 +159,7 @@ function Throughput() {
                 <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
             </div>
             <div className="throughput-chart">
+                {loading && <Loader />}
                 <Line
                     data={data}
                     options={{
@@ -167,10 +172,13 @@ function Throughput() {
                             intersect: false,
                             displayColors: false,
                             callbacks: {
-                                title: (context) => {
-                                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)}: ${context[0].label}`;
+                                title: () => {
+                                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
                                 },
                                 label: (tooltipItem) => {
+                                    return `${tooltipItem.label}`;
+                                },
+                                afterLabel: (tooltipItem) => {
                                     return `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`;
                                 }
                             }
