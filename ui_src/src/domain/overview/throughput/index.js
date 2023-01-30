@@ -11,14 +11,15 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useEffect, useState, useContext } from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line, defaults } from 'react-chartjs-2';
+import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
-import './style.scss';
 import moment from 'moment';
 import { Context } from '../../../hooks/store';
 import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
+import './style.scss';
 
 const yAxesOptions = [
     {
@@ -47,16 +48,27 @@ const ticksOptions = {
     }
 };
 
+const gradient = (chartInstance) => {
+    const ctx = chartInstance.chart.ctx;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(101, 87, 255, 0.5)');
+    gradient.addColorStop(0.45, 'rgba(226, 223, 255, 0.5)');
+    gradient.addColorStop(0.75, 'rgba(241, 240, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.5)');
+    return gradient;
+};
+
 const getDataset = (dsName, readWrite, hidden) => {
     return {
         label: `${readWrite} ${dsName}`,
         borderColor: '#6557FF',
         borderWidth: 1,
-        backgroundColor: '#6557FF',
-        fill: false,
+        backgroundColor: gradient,
+        fill: true,
         lineTension: 0.2,
         data: [],
-        hidden: hidden
+        hidden: hidden,
+        pointRadius: 0
     };
 };
 
@@ -144,16 +156,22 @@ function Throughput() {
             </div>
             <div className="throughput-chart">
                 <Line
-                    height={'100%'}
                     data={data}
                     options={{
-                        // responsive: true,
-
                         legend: { display: false },
-                        tooltip: {
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        hover: { mode: 'nearest', intersect: true },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false,
+                            displayColors: false,
                             callbacks: {
-                                label: (tooltipItem, data) => {
-                                    return tooltipItem?.value + ' test';
+                                title: (context) => {
+                                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)}: ${context[0].label}`;
+                                },
+                                label: (tooltipItem) => {
+                                    return `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`;
                                 }
                             }
                         },
