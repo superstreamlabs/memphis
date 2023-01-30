@@ -251,12 +251,6 @@ func (s *Server) CreateSystemStreams() {
 			}
 		}
 	}
-
-	// if s.memphis.activateSysLogsPubFunc == nil {
-	// 	s.Fatalf("internal error: sys logs publish activation func is not initialized")
-	// }
-	// s.memphis.activateSysLogsPubFunc()
-	// s.popFallbackLogs()
 }
 
 func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
