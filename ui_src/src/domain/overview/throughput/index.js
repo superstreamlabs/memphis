@@ -12,96 +12,149 @@
 
 import './style.scss';
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import React, { useEffect, useState, useContext } from 'react';
+import { Line } from 'react-chartjs-2';
+import 'chartjs-plugin-streaming';
+import moment from 'moment';
 
-import { Context } from '../../../hooks/store';
+import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
-import { convertBytes } from '../../../services/valueConvertor';
+import Loader from '../../../components/loader';
+import { Context } from '../../../hooks/store';
 
-const axisStyle = {
-    fontSize: '12px',
-    fontFamily: 'InterSemiBold',
-    margin: '0px'
+const yAxesOptions = [
+    {
+        gridLines: {
+            display: true,
+            borderDash: [3, 3]
+        },
+        ticks: {
+            beginAtZero: true,
+            callback: function (value) {
+                return `${convertBytes(value, true)}/s`;
+            },
+            maxTicksLimit: 5
+        }
+    }
+];
+
+const ticksOptions = {
+    stepSize: 1,
+    maxTicksLimit: 10,
+    minUnit: 'second',
+    source: 'auto',
+    autoSkip: true,
+    callback: function (value, index) {
+        return index % 2 === 0 ? moment(value, 'HH:mm:ss').format('hh:mm:ss') : '';
+    }
 };
 
-const Throughput = () => {
+const gradient = (chartInstance) => {
+    const ctx = chartInstance.chart.ctx;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(101, 87, 255, 0.1)');
+    gradient.addColorStop(0.45, 'rgba(226, 223, 255, 0.1)');
+    gradient.addColorStop(0.75, 'rgba(241, 240, 255, 0.1)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+    return gradient;
+};
+
+const getDataset = (dsName, readWrite, hidden) => {
+    return {
+        label: `${readWrite} ${dsName}`,
+        borderColor: '#6557FF',
+        borderWidth: 1,
+        backgroundColor: gradient,
+        fill: true,
+        lineTension: 0.2,
+        data: [],
+        hidden: hidden,
+        pointRadius: 0
+    };
+};
+
+function Throughput() {
     const [state, dispatch] = useContext(Context);
     const [throughputType, setThroughputType] = useState('write');
     const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
-    const [dataRead, setDataRead] = useState([]);
-    const [dataWrite, setDataWrite] = useState([]);
-    const [timeDiffIndicator, setTimeDiffIndicator] = useState(false);
+    const [data, setData] = useState({});
+    const [loading, setLoading] = useState(false);
 
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="custom-tooltip">
-                    <p className="throughput-type">
-                        {selectedComponent} {throughputType}
-                    </p>
-                    <p>{`time: ${label}`}</p>
-                    <p>
-                        {payload[0].dataKey}: {convertBytes(payload[0].value)}/s
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
-
-    const getTimeDiff = (before, after) => {
-        const diff = Math.abs(after - before);
-        const minutes = Math.floor(diff / 1000 / 60);
-        return minutes;
+    const initiateDataState = () => {
+        let dataSets = [];
+        selectOptions.forEach((selectOption, i) => {
+            dataSets.push(getDataset(selectOption.name, 'write', i !== 0));
+            dataSets.push(getDataset(selectOption.name, 'read', true));
+        });
+        setData({ datasets: dataSets });
     };
 
     useEffect(() => {
-        const current = new Date();
-        const time = current.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
-        let write = { time: time, date: current };
-        let read = { time: time, date: current };
-        let components = [];
-        state?.monitor_data?.brokers_throughput?.forEach((element) => {
-            const elementName = element.name;
-            components.push({ name: elementName });
-            write[elementName] = element.write;
-            read[elementName] = element.read;
-        });
-        components.sort(function (a, b) {
-            if (a.name === 'total') return -1;
-            if (b.name === 'total') return 1;
-            let nameA = a.name.toUpperCase();
-            let nameB = b.name.toUpperCase();
-            if (nameA < nameB) {
-                return -1;
+        if (data?.datasets?.length === 0 && selectOptions.length > 0) initiateDataState();
+    }, [selectOptions]);
+
+    useEffect(() => {
+        const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
+        if (foundItemIndex === -1) return;
+        setLoader();
+        for (let i = 0; i < selectOptions?.length; i++) {
+            if (i === foundItemIndex) {
+                data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
+                data.datasets[2 * i + 1].hidden = throughputType !== 'write' ? false : true;
+            } else {
+                data.datasets[2 * i].hidden = true;
+                data.datasets[2 * i + 1].hidden = true;
             }
-            if (nameA > nameB) {
-                return 1;
-            }
-            return 0;
-        });
+        }
+    }, [throughputType, selectedComponent]);
+
+    useEffect(() => {
+        const components = state?.monitor_data?.brokers_throughput
+            ?.map((element) => {
+                return { name: element.name };
+            })
+            .sort(function (a, b) {
+                if (a.name === 'total') return -1;
+                if (b.name === 'total') return 1;
+                let nameA = a.name.toUpperCase();
+                let nameB = b.name.toUpperCase();
+                if (nameA < nameB) {
+                    return -1;
+                }
+                if (nameA > nameB) {
+                    return 1;
+                }
+                return 0;
+            });
         setSelectOptions(components);
-        if (!timeDiffIndicator && dataWrite.length > 0) {
-            if (getTimeDiff(current, dataWrite[0].date) >= 10) {
-                setTimeDiffIndicator(true);
-            }
-        }
-        if (timeDiffIndicator) {
-            setDataRead([...dataRead.slice(1), read]);
-            setDataWrite([...dataWrite.slice(1), write]);
-        } else {
-            setDataRead([...dataRead, read]);
-            setDataWrite([...dataWrite, write]);
-        }
     }, [state?.monitor_data?.brokers_throughput]);
+
+    const getValue = (type, select) => {
+        const foundItemIndex = state?.monitor_data?.brokers_throughput.findIndex((item) => item.name === select);
+        return type === 'write' ? state?.monitor_data?.brokers_throughput[foundItemIndex].write : state?.monitor_data?.brokers_throughput[foundItemIndex].read;
+    };
+
+    const updateData = (chart) => {
+        for (let i = 0; i < selectOptions?.length; i++) {
+            chart.data?.datasets[2 * i]?.data?.push({
+                x: moment(),
+                y: getValue('write', selectOptions[i].name)
+            });
+            chart.data?.datasets[2 * i + 1]?.data?.push({
+                x: moment(),
+                y: getValue('read', selectOptions[i].name)
+            });
+        }
+    };
+
+    const setLoader = () => {
+        setLoading(true);
+        setTimeout(function () {
+            setLoading(false);
+        }, 1000);
+    };
 
     return (
         <div className="overview-components-wrapper throughput-overview-container">
@@ -113,32 +166,60 @@ const Throughput = () => {
                 <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
             </div>
             <div className="throughput-chart">
-                <ResponsiveContainer>
-                    <AreaChart
-                        data={throughputType === 'write' ? dataWrite : dataRead}
-                        margin={{
-                            top: 30,
-                            right: 0,
-                            left: 0,
-                            bottom: 20
-                        }}
-                    >
-                        <defs>
-                            <linearGradient id="colorThroughput" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="2%" stopColor="#6557FF" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#6557FF" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="6 3" stroke="#f5f5f5" />
-                        <XAxis style={axisStyle} dataKey="time" minTickGap={200} />
-                        <YAxis width={85} style={axisStyle} dataKey={selectedComponent} tickFormatter={(tickItem) => `${convertBytes(tickItem, true)}/s`} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Area type="monotone" dataKey={selectedComponent} stroke="#6557FF" fill="url(#colorThroughput)" />
-                    </AreaChart>
-                </ResponsiveContainer>
+                {loading && <Loader />}
+                <Line
+                    data={data}
+                    options={{
+                        legend: { display: false },
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        hover: { mode: 'nearest', intersect: true },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false,
+                            displayColors: false,
+                            callbacks: {
+                                title: () => {
+                                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
+                                },
+                                label: (tooltipItem) => {
+                                    return `${tooltipItem.label}`;
+                                },
+                                afterLabel: (tooltipItem) => {
+                                    return `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`;
+                                }
+                            }
+                        },
+
+                        elements: { line: { tension: 0.5 }, point: { borderWidth: 1, radius: 1, backgroundColor: 'rgba(0,0,0,0)' } },
+                        scales: {
+                            xAxes: [
+                                {
+                                    type: 'realtime',
+                                    distribution: 'linear',
+                                    realtime: {
+                                        refresh: 5000,
+                                        onRefresh: function (chart) {
+                                            if (data?.datasets?.length !== 0) {
+                                                updateData(chart);
+                                            }
+                                        },
+                                        delay: 1000,
+                                        duration: 600000,
+                                        time: {
+                                            displayFormat: 'h:mm:ss'
+                                        }
+                                    },
+                                    ticks: ticksOptions
+                                }
+                            ],
+                            yAxes: yAxesOptions
+                        }
+                    }}
+                />
             </div>
         </div>
     );
-};
+}
 
 export default Throughput;

@@ -12,30 +12,29 @@
 }
 .throughput-chart {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 50px);
     position: relative;
-    .custom-tooltip {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        background-color: #2b2e3f;
-        opacity: 0.9;
-        color: #f7f7f7;
-        padding: 10px;
-        font-weight: 600;
-        font-size: 12px;
-        box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-        white-space: pre-line;
-        border-radius: 6px;
-        min-height: 70px;
-        line-height: 14px;
-        p{
-            margin-bottom: 0px;
+    margin-top: 20px;
+    .loader-container {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        .gif-wrapper {
+            position: relative;
+            height: 100%;
+            width: 100%;
         }
-        .throughput-type {
-            font-size: 14px;
-            font-weight: 700;
+        .memphis-gif {
+            position: absolute;
+            left: 0;
+            right: 0;
+            margin-left: auto;
+            margin-right: auto;
+            transform: translateY(-50%);
         }
+    }
+    canvas {
+        height: 100% !important;
     }
 }
 
@@ -48,7 +47,7 @@
     }
 
     .ant-segmented {
-        margin-left: 20px;
+        margin-left: 10px;
         border-radius: 4px;
     }
 }
