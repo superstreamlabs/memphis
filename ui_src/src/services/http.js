@@ -51,7 +51,8 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         if (
             window.location.pathname !== pathDomains.login &&
             window.location.pathname !== pathDomains.signup &&
-            err?.response?.status === AUTHENTICATION_ERROR_STATUS_CODE
+            err?.response?.status === AUTHENTICATION_ERROR_STATUS_CODE &&
+            !serverUrl
         ) {
             isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
             localStorage.clear();

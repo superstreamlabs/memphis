@@ -269,7 +269,7 @@ const Messages = () => {
                             />
                             {subTabValue === 'Unacked' && (
                                 <Button
-                                    width="100px"
+                                    width="80px"
                                     height="32px"
                                     placeholder="Resend"
                                     colorType="white"

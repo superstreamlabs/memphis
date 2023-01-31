@@ -45,8 +45,8 @@ const GenerateTokenModal = ({ host, close }) => {
         try {
             let data = await httpRequest('GET', ApiEndpoints.GET_APP_USERS);
             if (data) {
-                let newObjectArray = data.map(({ username: name, ...rest }) => ({ name, ...rest }));
-                updateState('username', newObjectArray[0]?.name);
+                let newObjectArray = data.map(({ username: name }) => name);
+                updateState('username', newObjectArray[0]);
                 setAppUsers(newObjectArray);
                 setIsLoading(false);
             }
@@ -104,7 +104,7 @@ const GenerateTokenModal = ({ host, close }) => {
                                     height="40px"
                                     popupClassName="select-options"
                                     options={appUsers}
-                                    value={formFields?.username || appUsers[0].name}
+                                    value={formFields?.username || appUsers[0]}
                                     onChange={(e) => updateState('username', e)}
                                 />
                             </div>

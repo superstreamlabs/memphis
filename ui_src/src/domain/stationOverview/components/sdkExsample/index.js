@@ -29,11 +29,6 @@ loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-let host = process.env.REACT_APP_SANDBOX_ENV
-    ? 'https://proxy.sandbox.memphis.dev'
-    : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-    ? 'http://localhost:4444'
-    : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
 
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -52,6 +47,11 @@ const SdkExample = ({ consumer, showTabs = true }) => {
 
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
+    const restHost = process.env.REACT_APP_SANDBOX_ENV
+        ? 'https://proxy.sandbox.memphis.dev'
+        : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+        ? 'http://localhost:4444'
+        : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
@@ -73,9 +73,9 @@ const SdkExample = ({ consumer, showTabs = true }) => {
         let codeEx = {};
         codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
         codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
-        codeEx.producer = codeEx.producer.replaceAll('localhost', host);
+        codeEx.producer = codeEx.producer.replaceAll('localhost', restHost);
         codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
-        codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', host);
+        codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', restHost);
         setCodeExample(codeEx);
     };
 
@@ -218,7 +218,7 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                 open={generateModal}
                 className="generate-modal"
             >
-                <GenerateTokenModal host={host} close={() => setGenerateModal(false)} />
+                <GenerateTokenModal host={restHost} close={() => setGenerateModal(false)} />
             </Modal>
         </div>
     );

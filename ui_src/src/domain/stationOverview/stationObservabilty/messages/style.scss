@@ -1,5 +1,5 @@
 .messages-container {
-    min-width: 500px;
+    min-width: 470px;
     width: 40vw;
     height: 73vh;
     min-height: 550px;
@@ -12,8 +12,12 @@
         display: flex;
         line-height: 40px;
         justify-content: space-between;
+        gap: 5px;
+        align-items:center;
         .left-side {
             display: flex;
+            max-width:410px;
+            align-items:center;
             .title {
                 font-family: 'InterSemiBold';
                 font-size: 14px;
@@ -21,8 +25,9 @@
             }
             .messages-amount {
                 display: flex;
-                margin-left: 16px;
+                margin-left: 5px;
                 color: #737373;
+                align-items:center;
                 svg {
                     width: 11px;
                     margin-right: 5px;
@@ -43,8 +48,7 @@
         .right-side {
             position: relative;
             display: flex;
-            top: 10px;
-            gap: 10px;
+            gap: 5px;
         }
         .add-functions-button {
             cursor: pointer;
