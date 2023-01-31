@@ -10,16 +10,18 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
+import './style.scss';
+
 import React, { useEffect, useState, useContext } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-import { Context } from '../../../hooks/store';
+
 import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
-import Loader from '../../../components/loader';
 import SegmentButton from '../../../components/segmentButton';
-import './style.scss';
+import Loader from '../../../components/loader';
+import { Context } from '../../../hooks/store';
 
 const yAxesOptions = [
     {
@@ -51,10 +53,10 @@ const ticksOptions = {
 const gradient = (chartInstance) => {
     const ctx = chartInstance.chart.ctx;
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(101, 87, 255, 0.5)');
-    gradient.addColorStop(0.45, 'rgba(226, 223, 255, 0.5)');
-    gradient.addColorStop(0.75, 'rgba(241, 240, 255, 0.5)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.5)');
+    gradient.addColorStop(0, 'rgba(101, 87, 255, 0.1)');
+    gradient.addColorStop(0.45, 'rgba(226, 223, 255, 0.1)');
+    gradient.addColorStop(0.75, 'rgba(241, 240, 255, 0.1)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
     return gradient;
 };
 
