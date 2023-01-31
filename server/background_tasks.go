@@ -426,11 +426,9 @@ func (s *Server) ConsumeStorageMsgs(durableName string, errs chan error) {
 						}
 					case msg := <-responseChan:
 						msgs = append(msgs, msg)
-						break
 					}
 				}
 			}()
-			errs <- nil
 
 		}
 		time.Sleep(5 * time.Second)
