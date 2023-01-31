@@ -182,7 +182,7 @@ const ProduceConsumList = ({ producer }) => {
                 )}
                 {!producer && cgsList.length > 0 && (
                     <div className="coulmns-table">
-                        <span style={{ width: '75px' }}>Name</span>
+                        <span style={{ width: '80px' }}>Name</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unacked</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
                         <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
@@ -225,21 +225,21 @@ const ProduceConsumList = ({ producer }) => {
                                     overscan={100}
                                     itemContent={(index, row) => (
                                         <div className={returnClassName(index, row.is_deleted)} key={index} onClick={() => onSelectedRow(index, 'consumer')}>
-                                            <OverflowTip text={row.name} width={'75px'}>
+                                            <OverflowTip text={row.name} width={'80px'}>
                                                 {row.name}
                                             </OverflowTip>
                                             <OverflowTip
                                                 text={row.poison_messages}
-                                                width={'60px'}
+                                                width={'80px'}
                                                 textAlign={'center'}
                                                 textColor={row.poison_messages > 0 ? '#F7685B' : null}
                                             >
                                                 {row.poison_messages}
                                             </OverflowTip>
-                                            <OverflowTip text={row.unprocessed_messages} width={'75px'} textAlign={'center'}>
+                                            <OverflowTip text={row.unprocessed_messages} width={'80px'} textAlign={'center'}>
                                                 {row.unprocessed_messages}
                                             </OverflowTip>
-                                            <span className="status-icon" style={{ width: '38px' }}>
+                                            <span className="status-icon" style={{ width: '35px' }}>
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
                                             </span>
                                         </div>
