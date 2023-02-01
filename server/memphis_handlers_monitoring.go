@@ -518,12 +518,12 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
 }
 
-func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughput, error) {
+func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputResponse, error) {
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
-	var throughputs []models.BrokerThroughput
-	streamInfo, err := serv.memphisStreamInfo(throughputStreamName)
+	var throughputs []models.BrokerThroughputResponse
+	streamInfo, err := serv.memphisStreamInfo(throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -541,13 +541,13 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughput, 
 		Durable:       durableName,
 	}
 
-	err = serv.memphisAddConsumer(throughputStreamName, &cc)
+	err = serv.memphisAddConsumer(throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
 
 	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamName, durableName)
+	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamNameV1, durableName)
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
@@ -590,23 +590,59 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughput, 
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnGlobalAcc(sub)
-	err = serv.memphisRemoveConsumer(throughputStreamName, durableName)
+	err = serv.memphisRemoveConsumer(throughputStreamNameV1, durableName)
 	if err != nil {
 		return throughputs, err
 	}
-	totalRead := int64(0)
-	totalWrite := int64(0)
+
+	sort.Slice(msgs, func(i, j int) bool { // old to new
+		return msgs[i].Time.Before(msgs[j].Time)
+	})
+
+	m := make(map[string]models.BrokerThroughputResponse)
 	for _, msg := range msgs {
 		var brokerThroughput models.BrokerThroughput
 		err = json.Unmarshal(msg.Data, &brokerThroughput)
 		if err != nil {
 			return throughputs, err
 		}
-		totalRead += brokerThroughput.Read
-		totalWrite += brokerThroughput.Write
-		throughputs = append(throughputs, brokerThroughput)
+
+		if _, ok := m[brokerThroughput.Name]; !ok {
+			m[brokerThroughput.Name] = models.BrokerThroughputResponse{
+				Name: brokerThroughput.Name,
+			}
+		}
+		if brokerThroughput.Read > 0 || brokerThroughput.Write > 0 {
+			fmt.Println()
+		}
+
+		mapEntry := m[brokerThroughput.Name]
+		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
+			Timestamp: msg.Time,
+			Read:      brokerThroughput.Read,
+		})
+		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
+			Timestamp: msg.Time,
+			Write:     brokerThroughput.Write,
+		})
+		m[brokerThroughput.Name] = mapEntry
 	}
-	throughputs = append([]models.BrokerThroughput{{
+
+	throughputs = make([]models.BrokerThroughputResponse, 0, len(m))
+	totalRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
+	totalWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
+	for _, t := range m {
+		throughputs = append(throughputs, t)
+		for i, r := range t.Read {
+			totalRead[i].Timestamp = r.Timestamp
+			totalRead[i].Read += r.Read
+		}
+		for i, w := range t.Write {
+			totalWrite[i].Timestamp = w.Timestamp
+			totalWrite[i].Write += w.Write
+		}
+	}
+	throughputs = append([]models.BrokerThroughputResponse{{
 		Name:  "total",
 		Read:  totalRead,
 		Write: totalWrite,

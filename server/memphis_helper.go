@@ -46,6 +46,7 @@ const (
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
 	throughputStreamName   = "$memphis-throughput"
+	throughputStreamNameV1 = "$memphis-throughput-v1"
 )
 
 // JetStream API request kinds
@@ -280,16 +281,22 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 	s.memphis.activateSysLogsPubFunc()
 	s.popFallbackLogs()
 
+	// delete the old version throughput stream
+	err = s.memphisDeleteStream(throughputStreamName)
+	if err != nil {
+		s.Warnf("Failed deleting old internal throughput stream - %s", err.Error())
+	}
+
 	// throughput kv
 	err = s.memphisAddStream(&StreamConfig{
-		Name:         (throughputStreamName),
-		Subjects:     []string{throughputStreamName + ".>"},
+		Name:         (throughputStreamNameV1),
+		Subjects:     []string{throughputStreamNameV1 + ".>"},
 		Retention:    LimitsPolicy,
 		MaxConsumers: -1,
 		MaxMsgs:      int64(-1),
 		MaxBytes:     int64(-1),
 		Discard:      DiscardOld,
-		MaxMsgsPer:   1,
+		MaxMsgsPer:   ws_updates_interval_sec,
 		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:      FileStorage,
 		Replicas:     replicas,
@@ -328,6 +335,18 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 
 	var resp JSApiStreamCreateResponse
 	err = jsApiRequest(s, requestSubject, kindCreateStream, request, &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) memphisDeleteStream(streamName string) error {
+	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
+
+	var resp JSApiStreamCreateResponse
+	err := jsApiRequest(s, requestSubject, kindCreateStream, nil, &resp)
 	if err != nil {
 		return err
 	}

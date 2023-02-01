@@ -32,6 +32,7 @@ const (
 	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
+	ws_updates_interval_sec             = 5
 )
 
 type memphisWSReqFiller func() (any, error)
@@ -57,7 +58,7 @@ func (s *Server) initWS() {
 }
 
 func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh chan struct{}) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(ws_updates_interval_sec * time.Second)
 	for {
 		select {
 		case <-ticker.C:

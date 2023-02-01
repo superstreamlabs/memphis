@@ -224,7 +224,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 }
 
 func getThroughputSubject(serverName string) string {
-	return throughputStreamName + tsep + serverName
+	return throughputStreamNameV1 + tsep + serverName
 }
 
 func (s *Server) InitializeThroughputSampling() error {
