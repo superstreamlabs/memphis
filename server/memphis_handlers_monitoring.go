@@ -612,9 +612,6 @@ cleanup:
 				Name: brokerThroughput.Name,
 			}
 		}
-		if brokerThroughput.Read > 0 || brokerThroughput.Write > 0 {
-			fmt.Println()
-		}
 
 		mapEntry := m[brokerThroughput.Name]
 		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
