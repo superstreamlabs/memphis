@@ -39,17 +39,6 @@ const yAxesOptions = [
     }
 ];
 
-const ticksOptions = {
-    stepSize: 1,
-    maxTicksLimit: 10,
-    minUnit: 'second',
-    source: 'auto',
-    autoSkip: true,
-    callback: function (value, index) {
-        return index % 2 === 0 ? moment(value, 'HH:mm:ss').format('hh:mm:ss') : '';
-    }
-};
-
 const gradient = (chartInstance) => {
     const ctx = chartInstance.chart.ctx;
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
@@ -67,7 +56,7 @@ const getDataset = (dsName, readWrite, hidden) => {
         borderWidth: 1,
         backgroundColor: gradient,
         fill: true,
-        lineTension: 0.2,
+        lineTension: 0,
         data: [],
         hidden: hidden,
         pointRadius: 0
@@ -79,6 +68,7 @@ function Throughput() {
     const [throughputType, setThroughputType] = useState('write');
     const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
+    const [dataSamples, setDataSamples] = useState({});
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(false);
 
@@ -111,6 +101,22 @@ function Throughput() {
     }, [throughputType, selectedComponent]);
 
     useEffect(() => {
+        if (Object.keys(dataSamples).length > 0) {
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                let updatedDataSamples = { ...dataSamples };
+                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name].read, ...component.read];
+                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name].write, ...component.write];
+                setDataSamples(updatedDataSamples);
+            });
+        } else {
+            let sampleObject = {};
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                const componentName = component.name;
+                sampleObject[componentName] = { read: component.read, write: component.write };
+            });
+            setDataSamples(sampleObject);
+        }
+
         const components = state?.monitor_data?.brokers_throughput
             ?.map((element) => {
                 return { name: element.name };
@@ -132,8 +138,17 @@ function Throughput() {
     }, [state?.monitor_data?.brokers_throughput]);
 
     const getValue = (type, select) => {
-        const foundItemIndex = state?.monitor_data?.brokers_throughput.findIndex((item) => item.name === select);
-        return type === 'write' ? state?.monitor_data?.brokers_throughput[foundItemIndex].write : state?.monitor_data?.brokers_throughput[foundItemIndex].read;
+        let updatedDataSamples = { ...dataSamples };
+        let value;
+        if (type === 'write') {
+            value = dataSamples[select].write[0].write;
+            updatedDataSamples[select].write.shift();
+        } else {
+            value = dataSamples[select].read[0].read;
+            updatedDataSamples[select].read.shift();
+        }
+        setDataSamples(updatedDataSamples);
+        return value;
     };
 
     const updateData = (chart) => {
@@ -198,19 +213,18 @@ function Throughput() {
                                     type: 'realtime',
                                     distribution: 'linear',
                                     realtime: {
-                                        refresh: 5000,
+                                        refresh: 1000,
                                         onRefresh: function (chart) {
                                             if (data?.datasets?.length !== 0) {
                                                 updateData(chart);
                                             }
                                         },
                                         delay: 1000,
-                                        duration: 600000,
-                                        time: {
-                                            displayFormat: 'h:mm:ss'
-                                        }
+                                        duration: 300000,
+                                        time: { displayFormat: 'h:mm:ss' }
                                     },
-                                    ticks: ticksOptions
+                                    gridLines: { display: true },
+                                    ticks: { stepSize: 4, autoSkip: false }
                                 }
                             ],
                             yAxes: yAxesOptions
