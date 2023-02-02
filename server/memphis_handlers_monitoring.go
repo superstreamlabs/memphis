@@ -25,6 +25,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"sort"
@@ -100,6 +101,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				return components, metricsEnabled, err
 			}
 			var storageComp models.CompStats
+			memUsage := float64(0)
 			os := runtime.GOOS
 			storage_size := float64(0)
 			isWindows := false
@@ -117,7 +119,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
 					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
 				}
+				memUsage, err = getUnixMemoryUsage()
+				if err != nil {
+					return components, metricsEnabled, err
+				}
 			}
+			memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
 			cpuComps := []models.SysComponent{{
 				Name: "memphis-broker",
 				CPU: models.CompStats{
@@ -127,8 +134,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				},
 				Memory: models.CompStats{
 					Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
-					Current:    shortenFloat(float64(v.JetStream.Stats.Memory)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Memory)/float64(v.JetStream.Config.MaxMemory)) * 100),
+					Current:    shortenFloat(memUsage),
+					Percentage: int(math.Ceil(memPerc)),
 				},
 				Storage: storageComp,
 				Healthy: true,
@@ -1558,6 +1565,26 @@ func getUnixStorageSize() (float64, error) {
 		}
 	}
 	return storage_size * 1024 * 1024 * 1024, nil
+}
+
+func getUnixMemoryUsage() (float64, error) {
+	pid := os.Getpid()
+	pidStr := strconv.Itoa(pid)
+	out, err := exec.Command("ps", "-o", "vsz", "-p", pidStr).Output()
+	if err != nil {
+		return 0, err
+	}
+	memUsage := float64(0)
+	output := string(out[:])
+	splitted_output := strings.Split(output, "\n")
+	parsedline := strings.Fields(splitted_output[1])
+	if len(parsedline) > 0 {
+		memUsage, err = strconv.ParseFloat(parsedline[0], 64)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return memUsage, nil
 }
 
 func defaultSystemComp(compName string, healthy bool) models.SysComponent {
