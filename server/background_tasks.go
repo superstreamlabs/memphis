@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis-broker/models"
+	"sync"
 
 	"strconv"
 	"strings"
@@ -34,10 +35,11 @@ const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
-const STORAGE_UPDATES_SUBJ = "$memphis_tiered_storage"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
+var msgsPerStation *concurrentMap[[]StoredMsg]
+var lock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -312,6 +314,9 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for tiered storage update: " + err.Error())
 	}
 
+	s.ListenSendMsgstoJetstream()
+	s.SendMsgsToTierStorage()
+
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
 	err = systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
@@ -340,16 +345,13 @@ func (s *Server) StartBackgroundTasks() error {
 	return nil
 }
 
-func (s *Server) ConsumeStorageMsgs(durableName string, errs chan error) {
-	timeout := time.Duration(configuration.MAX_ACK_TIME_SECONDS_STORAGE) * time.Second
-	ping := 5 * time.Second
+func (s *Server) ConsumeStorageMsgs(errs chan error) {
+	timer := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 
 	for {
-		var msgs []StoredMsg
-
 		select {
-		case <-time.After(ping):
-			streamInfo, err := serv.memphisStreamInfo(STORAGE_UPDATES_SUBJ)
+		case <-time.After(timer):
+			streamInfo, err := serv.memphisStreamInfo(tieredStorageStream)
 			if err != nil {
 				serv.Errorf("ConsumeStorageMsgs: " + err.Error())
 				errs <- err
@@ -357,104 +359,115 @@ func (s *Server) ConsumeStorageMsgs(durableName string, errs chan error) {
 			}
 
 			if streamInfo.State.Msgs == 0 {
-				ping = ping + (20 * time.Second)
+				timer = timer + (20 * time.Second)
 				continue
 			}
-			responseChan := make(chan StoredMsg)
-			subject := fmt.Sprintf(JSApiRequestNextT, STORAGE_UPDATES_SUBJ, durableName)
-			reply := durableName + "_reply"
-			amount := 1000
-			req := []byte(strconv.FormatUint(uint64(amount), 10))
-			sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-				go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-					replySubjs := reply
-					rawTs := tokenAt(reply, 8)
-					seq, _, _ := ackReplyInfo(reply)
-					intTs, err := strconv.Atoi(rawTs)
-					if err != nil {
-						serv.Errorf("ConsumeStorageMsgs: " + err.Error())
-						errs <- err
-						return
-					}
-
-					dataFirstIdx := 0
-					dataLen := len(msg)
-					dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
-					if dataFirstIdx > len(msg)-len(CR_LF) {
-						s.Errorf("ConsumeStorageMsgs: memphis error parsing in station get messages")
-					}
-
-					dataLen = len(msg) - dataFirstIdx
-					dataLen -= len(CR_LF)
-					header := msg[:dataFirstIdx]
-					data := msg[dataFirstIdx : dataFirstIdx+dataLen]
-					respCh <- StoredMsg{
-						Subject:       subject,
-						Sequence:      uint64(seq),
-						Data:          data,
-						Header:        header,
-						Time:          time.Unix(0, int64(intTs)),
-						ReplySubjects: replySubjs,
-					}
-				}(responseChan, subject, reply, copyBytes(msg))
-			})
-			if err != nil {
-				serv.Errorf("ConsumeStorageMsgs: " + err.Error())
-				errs <- err
-				return
+			if len(msgsPerStation.m) > 0 {
+				err = UploadToTier2Storage(msgsPerStation)
+				if err != nil {
+					serv.Errorf("ConsumeStorageMsgs: " + err.Error())
+					errs <- err
+					return
+				}
 			}
 
-			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-			timer := time.NewTimer(time.Duration(timeout))
-
-			go func() {
-				for i := 0; i < amount; i++ {
-					select {
-					case <-timer.C:
-						timer.Stop()
-						serv.unsubscribeOnGlobalAcc(sub)
-						err := s.uploadToS3Storage(msgs)
-						if err != nil {
-							serv.Errorf("ConsumeStorageMsgs: " + err.Error())
-							errs <- err
-							break
-						}
-						// ack
-						for _, msg := range msgs {
-							reply := msg.ReplySubjects
-							serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-						}
-					case msg := <-responseChan:
-						msgs = append(msgs, msg)
-					}
+			lock.Lock()
+			for kk, msgs := range msgsPerStation.m {
+				for _, msg := range msgs {
+					reply := msg.ReplySubject
+					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 				}
-			}()
+
+				msgsPerStation = NewConcurrentMap[[]StoredMsg]()
+				msgsPerStation.Delete(kk)
+			}
+			lock.Unlock()
 
 		}
 		time.Sleep(5 * time.Second)
 	}
 }
 
-func (s *Server) ListenForTierStorageMessages() error {
+func (s *Server) ListenSendMsgstoJetstream() {
+	go func() {
+		for {
+			durableName := "$memphis_storage_consumer"
+			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
+			reply := durableName + "_reply"
+			amount := 1000
+			req := []byte(strconv.FormatUint(uint64(amount), 10))
+			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+			time.Sleep(1 * time.Second)
+		}
+	}()
+}
 
-	durableName := "storage_consumer"
+func (s *Server) SendMsgsToTierStorage() error {
+	chErrs := make(chan error, 1)
+	go s.ConsumeStorageMsgs(chErrs)
+	err := <-chErrs
+	if err != nil {
+		s.Errorf("SendMsgsToTierStorage" + err.Error())
+		return err
+	}
+	return nil
+}
+
+func (s *Server) ListenForTierStorageMessages() error {
+	durableName := "$memphis_storage_consumer"
+	tieredStorageTimeFrameSec := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
-		FilterSubject: "$memphis_tiered_storage.>",
-		AckWait:       time.Duration(configuration.MAX_ACK_TIME_SECONDS_STORAGE) * time.Second,
+		FilterSubject: filterSubject,
+		AckWait:       2 * tieredStorageTimeFrameSec,
 	}
-	err := serv.memphisAddConsumer(STORAGE_UPDATES_SUBJ, &cc)
+	err := serv.memphisAddConsumer(tieredStorageStream, &cc)
 	if err != nil {
 		return err
 	}
+	msgsPerStation = NewConcurrentMap[[]StoredMsg]()
 
-	chErrs := make(chan error, 1)
-	go s.ConsumeStorageMsgs(durableName, chErrs)
-	err = <-chErrs
+	reply := durableName + "_reply"
+	_, err = serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(subject, reply string, msg []byte) {
+			fmt.Println("subscribe on global account")
+			replySubj := reply
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				serv.Errorf("ListenForTierStorageMessages: " + err.Error())
+				return
+			}
+
+			dataFirstIdx := 0
+			dataLen := len(msg)
+			dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
+			if dataFirstIdx > len(msg)-len(CR_LF) {
+				s.Errorf("ListenForTierStorageMessages: memphis error parsing in station get messages")
+			}
+
+			dataLen = len(msg) - dataFirstIdx
+			dataLen -= len(CR_LF)
+			header := msg[:dataFirstIdx]
+			data := msg[dataFirstIdx : dataFirstIdx+dataLen]
+			message := StoredMsg{
+				Subject:      subject,
+				Sequence:     uint64(seq),
+				Data:         data,
+				Header:       header,
+				Time:         time.Unix(0, int64(intTs)),
+				ReplySubject: replySubj,
+			}
+
+			s.filterMsgsByStationName(message)
+		}(subject, reply, copyBytes(msg))
+	})
 	if err != nil {
-		s.Errorf("ListenForTierStorageMessages" + err.Error())
+		serv.Errorf("ListenForTierStorageMessages: " + err.Error())
 		return err
 	}
 

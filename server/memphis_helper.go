@@ -45,7 +45,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
-	storageStreamName      = "$memphis_tiered_storage"
+	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 )
 
@@ -278,8 +278,8 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 
 	// system storage stream
 	err = s.memphisAddStream(&StreamConfig{
-		Name:         storageStreamName,
-		Subjects:     []string{storageStreamName + ".>"},
+		Name:         tieredStorageStream,
+		Subjects:     []string{tieredStorageStream + ".>"},
 		Retention:    WorkQueuePolicy,
 		MaxAge:       retentionDur,
 		MaxConsumers: -1,
@@ -1106,29 +1106,19 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func (s *Server) SendMsgToSubject(stationName string, msg []byte) {
-	subjectSuffix := stationName
-	subject := fmt.Sprintf("%s.%s", storageStreamName, subjectSuffix)
-	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
-}
-
-func (s *Server) filterMsgsByStationName(msgs []StoredMsg) (map[string][]StoredMsg, error) {
-	msgsPerStation := map[string][]StoredMsg{}
-	for _, msg := range msgs {
-		stationName := strings.Split(msg.Subject, ".")
-		stationNameString := stationName[1]
-		if strings.Contains(stationNameString, "#") {
-			stationNameString = strings.Replace(stationNameString, "#", ".", -1)
-		}
-		_, ok := msgsPerStation[stationNameString]
-		if !ok {
-			msgsPerStation[stationNameString] = []StoredMsg{}
-		}
-		for k := range msgsPerStation {
-			if stationNameString == k {
-				msgsPerStation[stationNameString] = append(msgsPerStation[stationNameString], msg)
-			}
-		}
+func (s *Server) filterMsgsByStationName(msg StoredMsg) {
+	stationName := strings.Split(msg.Subject, "$memphis_tiered_storage.")
+	stationNameString := stationName[1]
+	if strings.Contains(stationNameString, "#") {
+		stationNameString = strings.Replace(stationNameString, "#", ".", -1)
 	}
-	return msgsPerStation, nil
+	_, ok := msgsPerStation.Load(stationNameString)
+	if !ok {
+		msgsPerStation = NewConcurrentMap[[]StoredMsg]()
+		msgsPerStation.Add(stationNameString, []StoredMsg{})
+	}
+
+	lock.Lock()
+	msgsPerStation.m[stationNameString] = append(msgsPerStation.m[stationNameString], msg)
+	lock.Unlock()
 }

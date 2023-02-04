@@ -56,7 +56,7 @@ type Configuration struct {
 	SANDBOX_SLACK_CHANNEL_ID       string
 	SANDBOX_UI_URL                 string
 	EXTERNAL_MONGO                 bool
-	MAX_ACK_TIME_SECONDS_STORAGE   int
+	TIERED_STORAGE_TIME_FRAME_SEC  int
 }
 
 func GetConfig() Configuration {

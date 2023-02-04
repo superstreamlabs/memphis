@@ -3921,12 +3921,12 @@ func (q *jsOutQ) unregister() {
 
 // StoredMsg is for raw access to messages in a stream.
 type StoredMsg struct {
-	Subject       string    `json:"subject"`
-	Sequence      uint64    `json:"seq"`
-	Header        []byte    `json:"hdrs,omitempty"`
-	Data          []byte    `json:"data,omitempty"`
-	Time          time.Time `json:"time"`
-	ReplySubjects string    `json:"reply_subjects"`
+	Subject      string    `json:"subject"`
+	Sequence     uint64    `json:"seq"`
+	Header       []byte    `json:"hdrs,omitempty"`
+	Data         []byte    `json:"data,omitempty"`
+	Time         time.Time `json:"time"`
+	ReplySubject string    `json:"reply_subject"`
 }
 
 // This is similar to system semantics but did not want to overload the single system sendq,

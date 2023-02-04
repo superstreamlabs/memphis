@@ -2829,10 +2829,6 @@ func (fs *fileStore) cancelAgeChk() {
 	}
 }
 
-func (s *Server) publishMsgToSub(stationName string, msg []byte) {
-	s.SendMsgToSubject(stationName, msg)
-}
-
 // Will expire msgs that are too old.
 func (fs *fileStore) expireMsgs() {
 	// We need to delete one by one here and can not optimize for the time being.
@@ -2843,11 +2839,8 @@ func (fs *fileStore) expireMsgs() {
 	minAge := time.Now().UnixNano() - int64(fs.cfg.MaxAge)
 	fs.mu.RUnlock()
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
-		stationName := strings.Split(sm.subj, ".")
-		if !strings.HasPrefix(sm.subj, "$memphis") {
-			serv.publishMsgToSub(stationName[0], smv.buf)
-		}
 		fs.removeMsg(sm.seq, false, true)
+		serv.sendToTier2Storage(fs, sm, "s3")
 	}
 
 	fs.mu.Lock()
