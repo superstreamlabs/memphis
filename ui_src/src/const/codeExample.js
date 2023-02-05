@@ -81,7 +81,7 @@ export const SDK_CODE_EXAMPLE = {
     },
 
     NestJS: {
-        title: 'Use the guide to go next',
+        title: 'Please head over to the documentation',
         desc: "We'll provide you with snippets that you can easily connect your application with Memphis",
         link: 'https://github.com/memphisdev/memphis.js',
         installation: `npm i memphis-dev --save`
@@ -234,7 +234,7 @@ func main() {
     }
 
     ctx := context.Background()
-	ctx = context.WithValue(ctx, "key", "value)
+	ctx = context.WithValue(ctx, "key", "value")
 	consumer.SetContext(ctx)
     consumer.Consume(handler)
 

@@ -21,6 +21,7 @@ import Modal from '../../../../../components/modal';
 import SlackIntegration from '../slackIntegration';
 import S3Integration from '../s3Integration';
 import Tag from '../../../../../components/tag';
+import DataDogIntegration from '../dataDogIntegration';
 
 const IntegrationItem = ({ value }) => {
     const [state, dispatch] = useContext(Context);
@@ -61,6 +62,14 @@ const IntegrationItem = ({ value }) => {
                             setIntegrateValue(data);
                         }}
                         value={ref.current}
+                    />
+                );
+            case 'Datadog':
+                return (
+                    <DataDogIntegration
+                        close={() => {
+                            modalFlip(false);
+                        }}
                     />
                 );
             default:
