@@ -39,8 +39,11 @@ var (
 )
 
 const (
-	// VERSION is the current version for the server.
+	// VERSION is the current version for the memphis.
 	VERSION = "0.4.4-beta"
+
+	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
+	COMP_WITH_NATS_VERSION = "2.9.0"
 
 	// PROTO is the currently supported protocol.
 	// 0 was the original
