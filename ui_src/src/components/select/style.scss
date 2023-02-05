@@ -55,13 +55,13 @@
         background-color: #edebeb;
     }
     .ant-select-item-option {
-        margin: 0px 8px;
+        margin: 2px 8px;
         border-radius: 8px;
     }
     .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
         background: rgba(101, 87, 255, 0.1);
         border-radius: 8px;
-        margin: 0px 8px;
+        margin: 2px 8px;
         font-weight: unset !important;
         color: var(--purple) !important;
         font-family: 'InterBold' !important;

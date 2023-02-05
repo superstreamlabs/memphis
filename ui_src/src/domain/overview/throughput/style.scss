@@ -45,6 +45,37 @@
         display: flex;
         align-items: center;
     }
+    .throughput-actions{
+        display: flex;
+        align-items: center;
+        .play-pause-btn{
+            border: 1px solid #D0D0D0;
+            cursor: not-allowed;
+            background-color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            svg{
+                color: #D0D0D0;
+            }
+        }
+        .no-active{
+            cursor: pointer;
+            svg{
+                color: var(--purple);
+            }
+        }
+        .no-active:hover{
+            border-color: var(--purple) !important;
+            svg{
+                color: var(--purple);
+            }
+        }
+    }
 
     .ant-segmented {
         margin-left: 10px;

@@ -76,6 +76,7 @@ const SelectComponent = ({
                 value={value}
                 suffixIcon={<ArrowDropDownRounded style={{ color: dropIconColor }} />}
                 dropdownStyle={dropdownStyle}
+                listHeight={options.length > 10 ? options.length * 25 : 256}
             >
                 {options.map((option) => (
                     <Option key={option?.id || option?.name || option} disabled={option?.disabled || false}>
