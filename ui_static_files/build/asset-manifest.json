@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.918f3628.css",
-    "main.js": "/static/js/main.e30b811d.js",
+    "main.css": "/static/css/main.bba3bf67.css",
+    "main.js": "/static/js/main.1a27b643.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -105,6 +105,7 @@
     "static/media/slackBannerPopup.svg": "/static/media/slackBannerPopup.01283187b348f8f70d681f989490ce76.svg",
     "static/media/slackBanner.svg": "/static/media/slackBanner.ff9fcec507339e70dd2238dc92e99ec5.svg",
     "static/media/blackBall.svg": "/static/media/blackBall.b03a70b9cb3830f9ea4d42577e197b3f.svg",
+    "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/influxDBBanner.svg": "/static/media/influxDBBanner.5221023529417d13560c84cdd6e8ac11.svg",
     "static/media/pagerdutyBanner.svg": "/static/media/pagerdutyBanner.4ff06ffd09548788bc3fa8ab23b24cb2.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.7463b20d2ce1f3d754a6ccafe02f193d.svg",
@@ -114,6 +115,7 @@
     "static/media/datadogIcon.svg": "/static/media/datadogIcon.50af3f4d4c0af10fbedefe809eebd0e1.svg",
     "static/media/s3Logo.svg": "/static/media/s3Logo.0db7cb82ebc13828c6c8562ae6be02fc.svg",
     "static/media/awsIcon.svg": "/static/media/awsIcon.a4e553bff74454fa92870b4911644343.svg",
+    "static/media/datadogBannerPopup.svg": "/static/media/datadogBannerPopup.a3ce11a8b5045bc356c4df129d0c40f1.svg",
     "static/media/influxDBIcon.svg": "/static/media/influxDBIcon.2fce40a716f24b22b0cdf4e339e2461b.svg",
     "static/media/datadogBanner.svg": "/static/media/datadogBanner.426d70c8006e062169a9ef8949bbb581.svg",
     "static/media/comingSoonImg.svg": "/static/media/comingSoonImg.8bbfe92e227fd6fb9bf904e3725b2f1f.svg",
@@ -126,6 +128,7 @@
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
     "static/media/comingSoonBox.svg": "/static/media/comingSoonBox.81b20f9fe215e66de300b271d24bdcc0.svg",
     "static/media/cloudeBadge.svg": "/static/media/cloudeBadge.d15ea26e3e86a210f132963b3542feba.svg",
+    "static/media/noCodeExample.svg": "/static/media/noCodeExample.77cb25f7ecdbcdeffd5638876503d4d1.svg",
     "static/media/readyToRoll.svg": "/static/media/readyToRoll.9f39c1ec2593dd774eb30b5a3e3d7439.svg",
     "static/media/emptyTags.svg": "/static/media/emptyTags.cc3c010bc99b5579619b02885f447c9a.svg",
     "static/media/attachedPlaceholder.svg": "/static/media/attachedPlaceholder.b1f38ca10ba6cbd7af24f8b4dae01db8.svg",
@@ -242,11 +245,10 @@
     "static/media/scrollBackIcon.svg": "/static/media/scrollBackIcon.fcc21809fb5fef693d85034dbafe4f9d.svg",
     "static/media/createdDateIcon.svg": "/static/media/createdDateIcon.70a357bc6971cfb816442e264457fbbb.svg",
     "static/media/stationsIcon.svg": "/static/media/stationsIcon.7917a69caf1fcdac2dc4cd1a5769b9ca.svg",
-    "static/media/notificationGray.svg": "/static/media/notificationGray.f9e5e143dbc8efa7052cd1fc650aabef.svg",
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.918f3628.css",
-    "static/js/main.e30b811d.js"
+    "static/css/main.bba3bf67.css",
+    "static/js/main.1a27b643.js"
   ]
 }
