@@ -2,7 +2,10 @@
     background: #ffffff;
     border: 1px solid #E8E8E8;
     border-radius: 5px;
-    font-family: 'InterMedium';
+    .ant-segmented-item-label{
+        font-family: 'InterMedium';
+        font-size: 13px;
+    }
     .ant-segmented-item-selected .ant-segmented-item-label{
         color: var(--purple);
         background: rgba(101,87,255,0.1);

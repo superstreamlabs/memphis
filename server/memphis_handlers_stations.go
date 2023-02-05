@@ -364,12 +364,16 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param := analytics.EventParam{
+		param1 := analytics.EventParam{
 			Name:  "station-name",
 			Value: stationName.Ext(),
 		}
-		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(username, analyticsParams, "user-create-station")
+		param2 := analytics.EventParam{
+			Name:  "nats-comp",
+			Value: strconv.FormatBool(!isNative),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
+		analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -477,7 +481,25 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 				return []models.ExtendedStationDetails{}, err
 			}
 			msgsInfo := streamInfoToDls[fullStationName.Intern()]
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags})
+
+			activity := false
+			activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "is_active": true})
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+			if activeCount > 0 {
+				activity = true
+			} else {
+				activeCount, err = consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "is_active": true})
+				if err != nil {
+					return []models.ExtendedStationDetails{}, err
+				}
+				if activeCount > 0 {
+					activity = true
+				}
+			}
+
+			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags, Activity: activity})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil
@@ -486,34 +508,39 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	}
 }
 
-func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, error) {
+func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uint64, uint64, error) {
+	totalMessages := uint64(0)
+	totalDlsMessages := uint64(0)
 	var stations []models.ExtendedStation
 	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"$or", []interface{}{
 			bson.D{{"is_deleted", false}},
 			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
 		}}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}}}},
+		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
+		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}}}},
 	})
 	if err != nil {
-		return stations, err
+		return stations, totalMessages, totalDlsMessages, err
 	}
 
 	if err = cursor.All(context.TODO(), &stations); err != nil {
-		return stations, err
+		return stations, totalMessages, totalDlsMessages, err
 	}
-	streamInfoToDls := make(map[string]models.StationMsgsDetails)
 	if len(stations) == 0 {
-		return []models.ExtendedStation{}, nil
+		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, nil
 	} else {
+		streamInfoToDls := make(map[string]models.StationMsgsDetails)
 		tagsHandler := TagsHandler{S: sh.S}
 		allStreamInfo, err := serv.memphisAllStreamsInfo()
 		if err != nil {
-			return []models.ExtendedStation{}, err
+			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 		}
 		for _, info := range allStreamInfo {
 			streamName := info.Config.Name
 			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+				totalDlsMessages += info.State.Msgs
 				splitName := strings.Split(streamName, "-")
 				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
 				_, ok := streamInfoToDls[stationName]
@@ -524,7 +551,8 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 				} else {
 					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
 				}
-			} else {
+			} else if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
 				_, ok := streamInfoToDls[streamName]
 				if ok {
 					infoToUpdate := streamInfoToDls[streamName]
@@ -539,19 +567,40 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, err
 		for i := 0; i < len(stations); i++ {
 			fullStationName, err := StationNameFromStr(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
 			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
 			if err != nil {
-				return []models.ExtendedStation{}, err
+				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
 			msgsInfo := streamInfoToDls[fullStationName.Intern()]
 			stations[i].TotalMessages = msgsInfo.TotalMessages
 			stations[i].HasDlsMsgs = msgsInfo.HasDlsMsgs
 			stations[i].Tags = tags
+
+			found := false
+			for _, p := range stations[i].Producers {
+				if p.IsActive {
+					stations[i].Activity = true
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				for _, c := range stations[i].Consumers {
+					if c.IsActive {
+						stations[i].Activity = true
+						break
+					}
+				}
+			}
+
+			stations[i].Producers = []models.Producer{}
+			stations[i].Consumers = []models.Consumer{}
 			extStations = append(extStations, stations[i])
 		}
-		return extStations, nil
+		return extStations, totalMessages, totalDlsMessages, nil
 	}
 }
 
@@ -562,13 +611,20 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-stations-page")
+	}
+
 	c.IndentedJSON(200, gin.H{
 		"stations": stations,
 	})
 }
 
 func (sh StationsHandler) GetAllStations(c *gin.Context) {
-	stations, err := sh.GetAllStationsDetails()
+	stations, _, _, err := sh.GetAllStationsDetails()
 	if err != nil {
 		serv.Errorf("GetAllStations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1032,6 +1088,12 @@ func (s *Server) removeStationDirectIntern(c *client,
 	if err != nil {
 		serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(dsr.Username, "user-delete-station-sdk")
+	}
+
 	respondWithErr(s, reply, nil)
 	return
 }
@@ -1042,11 +1104,6 @@ func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
 		return 0, err
 	}
 	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
-	return totalMessages, err
-}
-
-func (sh StationsHandler) GetTotalMessagesAcrossAllStations() (int, error) {
-	totalMessages, err := sh.S.GetTotalMessagesAcrossAllStations()
 	return totalMessages, err
 }
 
@@ -1674,7 +1731,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("sdk", "user-attach-schema-to-station")
+		analytics.SendEvent(username, "user-attach-schema-to-station-sdk")
 	}
 
 	updateContent, err := generateSchemaUpdateInit(schema)
@@ -1745,6 +1802,12 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 		respondWithErr(s, reply, err)
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(dsr.Username, "user-detach-schema-from-station-sdk")
+	}
+
 	respondWithErr(s, reply, nil)
 }
 

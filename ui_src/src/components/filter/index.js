@@ -79,7 +79,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 try {
                     (async () => {
                         const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
                     })();
                 } catch (err) {
@@ -106,7 +106,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 try {
                     (async () => {
                         const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
                     })();
                 } catch (err) {
@@ -417,7 +417,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     value={searchInput}
                 />
             )}
-            <Popover className="filter-menu" placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
+            <Popover placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}>
                 <Button
                     className="modal-btn"
                     width="110px"

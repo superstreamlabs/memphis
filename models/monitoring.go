@@ -22,9 +22,9 @@ type SysComponent struct {
 }
 
 type CompStats struct {
-	Total      int64 `json:"total"`
-	Current    int64 `json:"current"`
-	Percentage int   `json:"percentage"`
+	Total      float64 `json:"total"`
+	Current    float64 `json:"current"`
+	Percentage int     `json:"percentage"`
 }
 
 type SystemComponents struct {
@@ -38,12 +38,14 @@ type SystemComponents struct {
 }
 
 type MainOverviewData struct {
-	TotalStations     int                `json:"total_stations"`
-	TotalMessages     int                `json:"total_messages"`
-	SystemComponents  []SystemComponents `json:"system_components"`
-	Stations          []ExtendedStation  `json:"stations"`
-	K8sEnv            bool               `json:"k8s_env"`
-	BrokersThroughput []BrokerThroughput `json:"brokers_throughput"`
+	TotalStations     int                        `json:"total_stations"`
+	TotalMessages     uint64                     `json:"total_messages"`
+	TotalDlsMessages  uint64                     `json:"total_dls_messages"`
+	SystemComponents  []SystemComponents         `json:"system_components"`
+	Stations          []ExtendedStation          `json:"stations"`
+	K8sEnv            bool                       `json:"k8s_env"`
+	BrokersThroughput []BrokerThroughputResponse `json:"brokers_throughput"`
+	MetricsEnabled    bool                       `json:"metrics_enabled"`
 }
 
 type GetStationOverviewDataSchema struct {
@@ -77,6 +79,22 @@ type BrokerThroughput struct {
 	Name  string `json:"name"`
 	Read  int64  `json:"read"`
 	Write int64  `json:"write"`
+}
+
+type BrokerThroughputResponse struct {
+	Name  string                    `json:"name"`
+	Read  []ThroughputReadResponse  `json:"read"`
+	Write []ThroughputWriteResponse `json:"write"`
+}
+
+type ThroughputReadResponse struct {
+	Timestamp time.Time `json:"timestamp"`
+	Read      int64     `json:"read"`
+}
+
+type ThroughputWriteResponse struct {
+	Timestamp time.Time `json:"timestamp"`
+	Write     int64     `json:"write"`
 }
 
 type Throughput struct {

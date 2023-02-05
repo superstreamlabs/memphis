@@ -644,7 +644,12 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-create-schema")
+		param := analytics.EventParam{
+			Name:  "schema-name",
+			Value: newSchema.Name,
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-schema")
 	}
 
 	c.IndentedJSON(200, newSchema)
@@ -661,7 +666,7 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-schema-page")
+		analytics.SendEvent(user.Username, "user-enter-schemas-page")
 	}
 
 	c.IndentedJSON(200, schemas)
@@ -697,7 +702,12 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-schema-details")
+		param := analytics.EventParam{
+			Name:  "schema-name",
+			Value: schemaName,
+		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-enter-schema-details")
 	}
 
 	c.IndentedJSON(200, schemaDetails)

@@ -194,20 +194,18 @@ func killFunc(s *Server) {
 			err := killRelevantConnections(zombieConnections)
 			if err != nil {
 				serv.Errorf("killFunc: killRelevantConnections: " + err.Error())
-			} else {
-				err = killProducersByConnections(zombieConnections)
-				if err != nil {
-					serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
-				}
-
-				err = killConsumersByConnections(zombieConnections)
-				if err != nil {
-					serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
-				}
+			}
+			err = killProducersByConnections(zombieConnections)
+			if err != nil {
+				serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
+			}
+			err = killConsumersByConnections(zombieConnections)
+			if err != nil {
+				serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
 			}
 		}
 	}
-	
+
 	s.removeStaleStations()
 }
 

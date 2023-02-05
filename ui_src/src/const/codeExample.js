@@ -34,7 +34,7 @@ export const SDK_CODE_EXAMPLE = {
         const headers = memphis.headers()
         headers.add('key', 'value')
         await producer.produce({
-            message: Buffer.from("Message: Hello world"),
+            message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
             headers: headers
         });
 
@@ -63,7 +63,8 @@ export const SDK_CODE_EXAMPLE = {
             consumerGroup: ''
         });
 
-        consumer.on('message', (message) => {
+        consumer.setContext({ key: "value" });
+        consumer.on('message', (message, context) => {
             console.log(message.getData().toString());
             message.ack();
             const headers = message.getHeaders()
@@ -102,7 +103,7 @@ import type { Memphis } from 'memphis-dev/types';
             const headers = memphis.headers()
             headers.add('key', 'value');
             await producer.produce({
-                message: Buffer.from("Message: Hello world"),
+                message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
                 headers: headers
             });
 
@@ -132,7 +133,8 @@ import { Memphis, Message } from 'memphis-dev/types';
             consumerGroup: ''
         });
 
-        consumer.on('message', (message: Message) => {
+        consumer.setContext({ key: "value" });
+        consumer.on('message', (message: Message, context: object) => {
             console.log(message.getData().toString());
             message.ack();
             const headers = message.getHeaders()
@@ -189,6 +191,7 @@ func main() {
 
 import (
     "fmt"
+    "context"
     "os"
     "time"
     "github.com/memphisdev/memphis.go"
@@ -208,7 +211,7 @@ func main() {
         os.Exit(1)
     }
 
-    handler := func(msgs []*memphis.Msg, err error) {
+    handler := func(msgs []*memphis.Msg, err error, ctx context.Context) {
         if err != nil {
             fmt.Printf("Fetch failed: %v", err)
             return
@@ -222,6 +225,9 @@ func main() {
         }
     }
 
+    ctx := context.Background()
+	ctx = context.WithValue(ctx, "key", "value)
+	consumer.SetContext(ctx)
     consumer.Consume(handler)
 
     // The program will close the connection after 30 seconds,
@@ -243,7 +249,7 @@ async def main():
         memphis = Memphis()
         await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
         
-        producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>")
+        producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>") # you can send the message parameter as dict as well
         headers = Headers()
         headers.add("key", "value") 
         for i in range(5):
@@ -261,7 +267,7 @@ if __name__ == '__main__':
 from memphis import Memphis, MemphisError, MemphisConnectError, MemphisHeaderError
         
 async def main():
-    async def msg_handler(msgs, error):
+    async def msg_handler(msgs, error, context):
         try:
             for msg in msgs:
                 print("message: ", msg.get_data())
@@ -278,6 +284,7 @@ async def main():
         await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
         
         consumer = await memphis.consumer(station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="")
+        consumer.set_context({"key": "value"})
         consumer.consume(msg_handler)
         # Keep your main thread alive so the consumer will keep receiving data
         await asyncio.Event().wait()

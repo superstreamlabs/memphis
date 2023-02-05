@@ -1,9 +1,13 @@
 .failed-stations-container {
-    padding: 15px;
     position: relative;
     min-width: 400px;
-    min-height: 200px;
+    min-height: 250px;
+    height: 100%;
     overflow: hidden;
+    .failed-stations-header {
+        padding: 15px;
+        padding-bottom: 5px;
+    }
     .stations-err-message {
         display: flex;
         width: 100%;
@@ -26,15 +30,20 @@
     }
     .err-stations-list {
         position: relative;
-        height: calc(100% - 20px);
+        height: calc(100%);
         font-size: 12px;
         .coulmns-table {
+            border-top: 1px solid #e9e9e9;
             border-bottom: 1px solid #e9e9e9;
+            padding: 15px 0 15px 15px;
             width: 100%;
-            display: flex;
+            display: grid;
+            grid-template-columns: 25% 25% 20% 15% 15%;
             justify-content: space-between;
             color: #737373;
-            padding: 10px;
+            .title-center{
+                justify-content: center;
+            }
             span {
                 font-family: 'InterSemiBold';
                 font-size: 14px;
@@ -42,34 +51,32 @@
                 align-items: center;
                 height: 10px;
             }
+            .station-name {
+                padding-left: 20px;
+            }
         }
         .rows-wrapper {
-            position: absolute;
             width: 100%;
-            height: calc(100% - 25px);
+            height: calc(100% - 135px);
             overflow: auto;
             cursor: pointer;
+            padding: 0 0 5px 15px;
             .stations-row {
-                display: flex;
+                display: grid;
+                grid-template-columns: 25% 25% 20% 15% 15%;
                 color: #1d1d1d;
                 justify-content: space-between;
                 width: 100%;
-                padding: 10px;
                 height: 35px;
                 align-items: center;
                 cursor: pointer;
-
                 .station-details {
                     font-family: 'InterSemiBold';
                     font-size: 14px;
                     cursor: pointer !important;
-
                 }
-                .total {
-                    width: 120px;
-                }
-                .status{
-                    width: 45px;
+                .status-indication {
+                    width: 20px;
                     justify-content: center;
                 }
                 .station-creation {
@@ -78,48 +85,12 @@
                     color: rgba(74, 73, 92, 0.8);
                     cursor: pointer !important;
                 }
-                .link-wrapper {
-                    width: 120px;
-                    .staion-link {
-                        cursor: pointer;
-                        width: 120px;
-                        background: #f1f0ff;
-                        border: 0.8px solid #e2dfff;
-                        border-radius: 32px;
-                        height: 23px;
-                        justify-content: center;
-                        display: none;
-                        align-items: center;
-                        span {
-                            font-family: 'InterSemiBold';
-                            font-size: 12px;
-                            color: var(--purple);
-                        }
-                        svg {
-                            color: var(--purple);
-                            width: 12px;
-                        }
-                    }
+                .station-name {
+                    padding-left: 20px;
                 }
-                .staion-link:hover {
-                    opacity: 0.8;
-                }
-                .dot {
-                    width: 5px;
-                    height: 5px;
-                    border-radius: 50%;
-                    display: inline-block;
-                    margin-right: 5px;
-                }
-                .green {
-                    background-color: #00b292;
-                }
-                .yellow {
-                    background-color: #ffd12f;
-                }
-                a {
-                    width: 100px;
-                }
+            }
+            .item-wrapper {
+                margin-right: 15px;
             }
             .item-wrapper:nth-child(even) .stations-row {
                 background-color: #f8f8f8;
@@ -133,19 +104,49 @@
                     display: flex !important;
                 }
             }
-
-            
+        }
+        .centered {
+            display: flex;
+            justify-content: center;
+            .staion-link {
+                cursor: pointer;
+                width: 120px;
+                background: #f1f0ff;
+                border: 0.8px solid #e2dfff;
+                border-radius: 32px;
+                height: 23px;
+                justify-content: center;
+                display: none;
+                align-items: center;
+                span {
+                    font-family: 'InterSemiBold';
+                    font-size: 12px;
+                    color: var(--purple);
+                }
+                svg {
+                    color: var(--purple);
+                    width: 12px;
+                }
+            }
+            .staion-link:hover {
+                opacity: 0.8;
+            }
+        }
+        .lottie{
+            svg{
+                width: 18px !important;
+            }
         }
     }
     .empty-stations-container {
+        height: calc(100% - 70px);
         width: 100%;
-        height: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         img {
-            width: 16vh;
+            width: 11vh;
             cursor: pointer;
         }
         p {

@@ -94,7 +94,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [parserName, setParserName] = useState('');
 
     useEffect(() => {
-        getOverviewData();
+        getAvailableReplicas();
         getAllSchemas();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
         if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
@@ -146,13 +146,10 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         else finishUpdate();
     };
 
-    const getOverviewData = async () => {
+    const getAvailableReplicas = async () => {
         try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component.includes('broker'));
-            indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
-            data?.system_components[indexOfBrokerComponent]?.actual_pods &&
-                setActualPods(Array.from({ length: data?.system_components[indexOfBrokerComponent]?.actual_pods }, (_, i) => i + 1));
+            const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
+            setActualPods(Array.from({ length: data?.available_replicas }, (_, i) => i + 1));
         } catch (error) {}
     };
 
@@ -291,7 +288,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     <span>
                                         Ensures producers will not produce the same message.&nbsp;
                                         <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
-                                            Learn More
+                                            Learn more
                                         </a>
                                     </span>
                                 }
@@ -383,7 +380,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <p className="description">
                                 The criteria for which messages will be expelled from the station.&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
-                                    Learn More
+                                    Learn more
                                 </a>
                             </p>
                         )}
@@ -530,7 +527,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
                                                 target="_blank"
                                             >
-                                                Learn More
+                                                Learn more
                                             </a>
                                         </span>
                                     ) : (
@@ -541,7 +538,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
                                                 target="_blank"
                                             >
-                                                Learn More
+                                                Learn more
                                             </a>
                                         </span>
                                     )

@@ -38,7 +38,7 @@ import FailedStations from './failedStations';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
-import SysComponents from './sysComponents';
+import SystemComponents from './systemComponents';
 import Modal from '../../components/modal';
 import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
@@ -88,12 +88,38 @@ function OverView() {
         setDataSentence(dataSentences[getRandomInt(5)]);
     };
 
+    const arrangeData = (data) => {
+        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+        data.system_components.sort(function (a, b) {
+            let nameA = a.name.toUpperCase();
+            let nameB = b.name.toUpperCase();
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            return 0;
+        });
+        data.system_components.map((a) => {
+            a.ports?.sort(function (a, b) {
+                if (a < b) {
+                    return -1;
+                }
+                if (a > b) {
+                    return 1;
+                }
+                return 0;
+            });
+        });
+        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+    };
+
     const getOverviewData = async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-            dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+            arrangeData(data);
             setisLoading(false);
             setIsDataLoaded(true);
         } catch (error) {
@@ -121,7 +147,7 @@ function OverView() {
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
-                const brokerName = JSON.parse(sc.decode(rawBrokerName._rdata))['name'];
+                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
             })();
         } catch (err) {
@@ -133,8 +159,7 @@ function OverView() {
                 (async () => {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
-                        data.stations?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-                        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+                        arrangeData(data);
                     }
                 })();
             }
@@ -220,8 +245,7 @@ function OverView() {
                             <Throughput />
                         </div>
                         <div className="right-side">
-                            <Resources />
-                            <SysComponents />
+                            <SystemComponents />
                         </div>
                     </div>
                 </div>

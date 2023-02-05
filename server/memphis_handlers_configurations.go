@@ -15,6 +15,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"memphis-broker/analytics"
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
@@ -97,6 +98,12 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-update-cluster-config")
 	}
 
 	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
@@ -195,6 +202,10 @@ func changeLogsRetention(logsRetention int) error {
 }
 
 func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
+	}
 	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
 }
-

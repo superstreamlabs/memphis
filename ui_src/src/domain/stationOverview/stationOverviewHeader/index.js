@@ -334,7 +334,7 @@ const StationOverviewHeader = () => {
                     header="Update schema"
                     displayButtons={false}
                     height="650px"
-                    width="550px"
+                    width="650px"
                     clickOutside={() => setUpdateSchemaModal(false)}
                     open={updateSchemaModal}
                     className="update-schema-modal"

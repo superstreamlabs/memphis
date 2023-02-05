@@ -1,53 +1,20 @@
-.generic-container {
+.generic-details-container {
+    padding: 15px;
+    position: relative;
+    height: 100%;
     display: flex;
-    justify-content: space-between;
-    column-gap: 40px;
-    min-height: 85px;
+    justify-content: space-evenly;
+    align-items: center;
+    .ant-divider-vertical {
+        height: 60%;
+        margin: 0;
+    }
     .data-box {
         display: flex;
-        // width: 32%;
-        width: 50%;
-        min-width: 180px;
-        min-height: 85px;
-        align-items: center;
         justify-content: center;
-        flex-direction: inherit;
-        .icon-wrapper{
-            width: 50px;
-            height: 50px;
+        .icon-wrapper {
             border-radius: 50%;
             margin-right: 20px;
-            position: relative;  
-        }
-        .lve-msg{
-            background: rgba(101, 87, 255, 0.1);
-            img{
-                position: absolute;
-                left: 10.28%;
-                right: 20%;
-                top: 30%;
-                bottom: 18%;
-            }
-        }
-        .sta-act{
-            background: rgba(79, 228, 198, 0.1);
-            img{
-                position: absolute;
-                left: 20%;
-                right: 10.11%;
-                top: 24%;
-                bottom: 21.54%;
-            }
-        }
-        .sta-idl{
-            background: rgba(255, 198, 51, 0.1);
-            img{
-                position: absolute;
-                left: 11%;
-                right: 10.11%;
-                top: 24%;
-                bottom: 21.54%;
-            }
         }
         .data-wrapper {
             span {
@@ -56,8 +23,9 @@
                 font-family: 'InterSemiBold';
             }
             p {
-                font-size: 24px;
+                font-size: 22px;
                 color: #1d1d1d;
+                font-family: 'InterBold';
                 margin: 0;
                 display: flex;
                 span {

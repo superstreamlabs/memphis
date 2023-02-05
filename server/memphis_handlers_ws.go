@@ -32,6 +32,7 @@ const (
 	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
+	ws_updates_interval_sec             = 5
 )
 
 type memphisWSReqFiller func() (any, error)
@@ -57,7 +58,7 @@ func (s *Server) initWS() {
 }
 
 func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh chan struct{}) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(ws_updates_interval_sec * time.Second)
 	for {
 		select {
 		case <-ticker.C:
@@ -127,9 +128,6 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		default:
 			s.Errorf("memphis websocket: invalid sub/unsub operation")
 		}
-		if configuration.SERVER_NAME == "" {
-			configuration.SERVER_NAME = "broker"
-		}
 
 		type brokerName struct {
 			Name string `json:"name"`
@@ -194,15 +192,11 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 }
 
 func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
-	stations, err := h.Stations.GetAllStationsDetails()
+	stations, totalMessages, totalDlsMsgs, err := h.Stations.GetAllStationsDetails()
 	if err != nil {
 		return models.MainOverviewData{}, nil
 	}
-	totalMessages, err := h.Stations.GetTotalMessagesAcrossAllStations()
-	if err != nil {
-		return models.MainOverviewData{}, err
-	}
-	systemComponents, err := h.Monitoring.GetSystemComponents()
+	systemComponents, metricsEnabled, err := h.Monitoring.GetSystemComponents()
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
@@ -217,10 +211,12 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 	return models.MainOverviewData{
 		TotalStations:     len(stations),
 		TotalMessages:     totalMessages,
+		TotalDlsMessages:  totalDlsMsgs,
 		SystemComponents:  systemComponents,
 		Stations:          stations,
 		K8sEnv:            k8sEnv,
 		BrokersThroughput: brokersThroughputs,
+		MetricsEnabled:    metricsEnabled,
 	}, nil
 }
 

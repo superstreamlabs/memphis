@@ -337,6 +337,10 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 			analyticsParams := []analytics.EventParam{param}
 			analytics.SendEventWithParams("", analyticsParams, "installation")
+
+			if configuration.EXPORTER {
+				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
+			}
 		}
 	} else {
 		_, err = usersCollection.UpdateOne(context.TODO(),
@@ -791,6 +795,12 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		serv.Errorf("GetAllUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-users-page")
 	}
 
 	if len(users) == 0 {

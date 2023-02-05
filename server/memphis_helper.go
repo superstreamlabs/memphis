@@ -47,6 +47,7 @@ const (
 	dlsStreamName          = "$memphis-%s-dls"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
+	throughputStreamNameV1 = "$memphis-throughput-v1"
 )
 
 // JetStream API request kinds
@@ -223,7 +224,7 @@ func (s *Server) CreateSystemStreams() {
 	successCh := make(chan error)
 
 	if ready { // stand alone
-		go tryCreateSystemStreams(s, retentionDur, successCh)
+		go tryCreateSystemStreams(s, retentionDur, successCh, false)
 		err := <-successCh
 		if err != nil {
 			s.Errorf("CreateSystemStreams: system streams creation failed: " + err.Error())
@@ -231,7 +232,7 @@ func (s *Server) CreateSystemStreams() {
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateSystemStreams(s, retentionDur, successCh)
+			go tryCreateSystemStreams(s, retentionDur, successCh, true)
 			select {
 			case <-timeout.C:
 				s.Warnf("CreateSystemStreams: system streams creation takes more than a minute")
@@ -252,15 +253,13 @@ func (s *Server) CreateSystemStreams() {
 			}
 		}
 	}
-
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: sys logs publish activation func is not initialized")
-	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 }
 
-func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error) {
+func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
+	replicas := 1
+	if isCluster {
+		replicas = 3
+	}
 	// sytem logs stream
 	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
@@ -270,6 +269,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
+		Replicas:     replicas,
 	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
@@ -290,19 +290,32 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		successCh <- err
 		return
 	}
+
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
+
+	// delete the old version throughput stream
+	err = s.memphisDeleteStream(throughputStreamName)
+	if err != nil {
+		s.Warnf("Failed deleting old internal throughput stream - %s", err.Error())
+	}
+
 	// throughput kv
 	err = s.memphisAddStream(&StreamConfig{
-		Name:         (throughputStreamName),
-		Subjects:     []string{throughputStreamName + ".>"},
+		Name:         (throughputStreamNameV1),
+		Subjects:     []string{throughputStreamNameV1 + ".>"},
 		Retention:    LimitsPolicy,
 		MaxConsumers: -1,
 		MaxMsgs:      int64(-1),
 		MaxBytes:     int64(-1),
 		Discard:      DiscardOld,
-		MaxMsgsPer:   1,
+		MaxMsgsPer:   ws_updates_interval_sec,
 		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:      FileStorage,
-		Replicas:     1,
+		Replicas:     replicas,
 		NoAck:        false,
 	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
@@ -338,6 +351,18 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 
 	var resp JSApiStreamCreateResponse
 	err = jsApiRequest(s, requestSubject, kindCreateStream, request, &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) memphisDeleteStream(streamName string) error {
+	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
+
+	var resp JSApiStreamCreateResponse
+	err := jsApiRequest(s, requestSubject, kindCreateStream, nil, &resp)
 	if err != nil {
 		return err
 	}
@@ -514,23 +539,6 @@ func (s *Server) GetTotalMessagesInStation(stationName StationName) (int, error)
 	}
 
 	return int(streamInfo.State.Msgs), nil
-}
-
-func (s *Server) GetTotalMessagesAcrossAllStations() (int, error) {
-	messagesCounter := 0
-
-	streams, err := s.memphisAllStreamsInfo()
-	if err != nil {
-		return messagesCounter, err
-	}
-
-	for _, streamInfo := range streams {
-		if !strings.HasPrefix(streamInfo.Config.Name, "$memphis") { // skip internal streams
-			messagesCounter = messagesCounter + int(streamInfo.State.Msgs)
-		}
-	}
-
-	return messagesCounter, nil
 }
 
 // low level call, call only with internal station name (i.e stream name)!

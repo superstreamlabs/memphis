@@ -12,10 +12,10 @@
 
 import './style.scss';
 
-import { Radio, Space } from 'antd';
+import { Radio } from 'antd';
 import React from 'react';
 
-const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, disabled, vertical, fontFamily, radioWrapper, labelType, height, radioStyle }) => {
+const RadioButton = ({ options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper, labelType, height, radioStyle }) => {
     const handleChange = (e) => {
         onChange(e);
     };
@@ -39,7 +39,6 @@ const RadioButton = ({ options = [], radioValue, onChange, onClick, optionType, 
                         key={option.value}
                         style={{ height: height }}
                         className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
-                        onClick={() => (labelType ? onClick(option.value) : '')}
                     >
                         <span
                             className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}

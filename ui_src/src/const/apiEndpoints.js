@@ -11,12 +11,13 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 export const ApiEndpoints = {
-    //Auth
+    //Management
     LOGIN: '/usermgmt/login',
     SIGNUP: '/usermgmt/addUserSignUp',
     REFRESH_TOKEN: '/usermgmt/refreshToken',
     ADD_USER: '/usermgmt/addUser',
     GET_ALL_USERS: '/usermgmt/getAllUsers',
+    GET_APP_USERS: '/usermgmt/getApplicationUsers',
     REMOVE_USER: '/usermgmt/removeUser',
     REMOVE_MY_UER: '/usermgmt/removeMyUser',
     EDIT_AVATAR: '/usermgmt/editAvatar',
@@ -58,6 +59,7 @@ export const ApiEndpoints = {
     GET_STATION_DATA: '/monitoring/getStationOverviewData',
     GET_SYS_LOGS: '/monitoring/getSystemLogs',
     DOWNLOAD_SYS_LOGS: '/monitoring/downloadSystemLogs',
+    GET_AVAILABLE_REPLICAS: '/monitoring/getAvailableReplicas',
 
     //Tags
     GET_TAGS: '/tags/getTags',
@@ -85,5 +87,8 @@ export const ApiEndpoints = {
 
     //Configuration
     GET_CLUSTER_CONFIGURATION: '/configurations/getClusterConfig',
-    EDIT_CLUSTER_CONFIGURATION: '/configurations/editClusterConfig'
+    EDIT_CLUSTER_CONFIGURATION: '/configurations/editClusterConfig',
+
+    //Auth
+    GENERATE_TOKEN: '/auth/authenticate'
 };

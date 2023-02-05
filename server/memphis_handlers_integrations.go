@@ -40,6 +40,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		return
 	}
 	var integration models.Integration
+	var message string
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
@@ -47,10 +48,12 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("CreateSlackIntegration: " + err.Error())
+				message = "Server error"
 			} else {
 				serv.Warnf("CreateSlackIntegration: " + err.Error())
+				message = err.Error()
 			}
-			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
 		}
 		integration = slackIntegration
@@ -59,10 +62,12 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("CreateS3Integration: " + err.Error())
+				message = "Server error"
 			} else {
 				serv.Warnf("CreateS3Integration: " + err.Error())
+				message = err.Error()
 			}
-			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
 		}
 		integration = s3Integration
@@ -91,16 +96,19 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		return
 	}
 	var integration models.Integration
+	var message string
 	switch strings.ToLower(body.Name) {
 	case "slack":
 		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration("slack", body)
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("UpdateSlackIntegration: " + err.Error())
+				message = "Server error"
 			} else {
 				serv.Warnf("UpdateSlackIntegration: " + err.Error())
+				message = err.Error()
 			}
-			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
 		}
 		integration = slackIntegration
@@ -109,10 +117,12 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("UpdateS3Integration: " + err.Error())
+				message = "Server error"
 			} else {
 				serv.Warnf("UpdateS3Integration: " + err.Error())
+				message = err.Error()
 			}
-			c.AbortWithStatusJSON(errorCode, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
 		}
 		integration = s3Integration

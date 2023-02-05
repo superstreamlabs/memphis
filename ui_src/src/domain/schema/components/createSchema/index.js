@@ -20,9 +20,8 @@ import React, { useContext, useEffect, useState } from 'react';
 import { validate, parse, buildASTSchema } from 'graphql';
 import Schema from 'protocol-buffers-schema';
 import GenerateSchema from 'generate-schema';
-import { loader } from '@monaco-editor/react';
 import jsonSchemaDraft04 from 'ajv-draft-04';
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
@@ -43,6 +42,7 @@ import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 
+loader.init();
 loader.config({ monaco });
 
 const schemaTypes = [
@@ -187,9 +187,7 @@ function CreateSchema({ createNew }) {
 
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
-        return () => {
-            goBack();
-        };
+        return () => {};
     }, []);
 
     useEffect(() => {
@@ -357,7 +355,8 @@ function CreateSchema({ createNew }) {
         <Editor
             options={{
                 minimap: { enabled: false },
-                scrollbar: { verticalScrollbarSize: 0 },
+                scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+
                 scrollBeyondLastLine: false,
                 roundedSelection: false,
                 formatOnPaste: true,
@@ -483,7 +482,6 @@ function CreateSchema({ createNew }) {
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
-                                        isLoading={validateLoading}
                                         disabled={
                                             formFields?.schema_content === '' ||
                                             formFields?.schema_content.includes('type') ||

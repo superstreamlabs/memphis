@@ -15,8 +15,8 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
-import { Checkbox, Divider, Upload, message } from 'antd';
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
+import { Checkbox, Divider } from 'antd';
 import RadioButton from '../../../components/radioButton';
 import Button from '../../../components/button';
 import Modal from '../../../components/modal';
@@ -120,7 +120,6 @@ function Profile() {
                         ]}
                         radioValue={allowAnalytics}
                         onChange={(e) => sendAnalytics(e.target.value)}
-                        onClick={(e) => sendAnalytics(e)}
                         labelType
                     />
                 </div>

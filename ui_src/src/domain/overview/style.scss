@@ -58,26 +58,26 @@
                     color: #2ed47a;
                 }
             }
-            
-            .overview-actions{
+
+            .overview-actions {
                 display: flex;
                 width: 300px;
-                justify-content: space-between;                
-                .title{
+                justify-content: space-between;
+                .title {
                     display: flex;
                     align-items: center;
                     width: 85px;
                     justify-content: space-between;
-                    p{
+                    p {
                         margin: 0;
                     }
-                    img{
+                    img {
                         width: 16px;
                     }
                 }
-                .download-icon{
+                .download-icon {
                     width: 18px;
-                    animation : pulse 3s infinite;
+                    animation: pulse 3s infinite;
                 }
             }
         }
@@ -88,40 +88,55 @@
 
         .overview-components {
             display: flex;
-            flex-direction: row;
-            justify-content: space-between;
+            position: relative;
             width: 100%;
-            min-width: 600px;
+            min-width: 1250px;
             height: calc(100% - 110px);
-            margin-top:20px;
-
+            margin-top: 20px;
+            justify-content: space-between;
             .left-side {
-                width: 65%;
-                display: flex;
-                flex-direction: column;
-                row-gap: 30px;
+                width: 66.5%;
+                min-width: 820px;
+                min-height: 550px;
+                display: grid;
+                grid-template-rows: 12% 41% 41%;
+                align-content: space-between;
             }
 
             .right-side {
                 width: 32%;
-                display: flex;
-                flex-direction: column;
-                row-gap: 30px;
+                height: 100%;
+                position: relative;
+                min-height: 550px;
+                min-width: 420px;
             }
 
-            .overview-wrapper {
+            .overview-components-wrapper {
+                width: 100%;
+                position: relative;
                 background: white;
                 border: 1px solid #e9e9e9;
                 box-sizing: border-box;
                 box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
                 border-radius: 8px;
+                .overview-components-header {
+                    p {
+                        align-items: center;
+                        font-size: 17px;
+                        font-family: 'InterSemiBold';
+                        margin-bottom: 0;
+                    }
+                    label {
+                        font-weight: 400;
+                        font-size: 12px;
+                        color: #b4b4b4;
+                        font-family: 'Inter';
+                    }
+                }
             }
-
-            .overview-components-header {
-                font-size: 16px;
-                font-family: 'InterSemiBold';
-                height: 25px;
-                margin-bottom: 0;
+            .system-components-wrapper {
+                height: 100%;
+                position: relative;
             }
 
             .coming-soon-wrapper {
@@ -138,13 +153,13 @@
                 flex-direction: column;
                 border-radius: 8px;
 
-                p {
-                    font-family: 'InterBold';
-                    font-size: 16px;
-                    color: #979797;
-                    margin-top: 10px;
-                    margin-bottom: 0;
-                }
+                // p {
+                //     font-family: 'InterBold';
+                //     font-size: 16px;
+                //     color: #979797;
+                //     margin-top: 10px;
+                //     margin-bottom: 0;
+                // }
             }
 
             .coming-soon-small {
@@ -206,15 +221,15 @@
 }
 @keyframes pulse {
     from {
-        transform : scale(1);
-        opacity   : 1;
+        transform: scale(1);
+        opacity: 1;
     }
     50% {
-        transform : scale(0.75);
-        opacity   : 0.8;
+        transform: scale(0.75);
+        opacity: 0.8;
     }
     to {
-        transform : scale(1);
-        opacity   : 1;
+        transform: scale(1);
+        opacity: 1;
     }
 }

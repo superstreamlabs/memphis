@@ -79,15 +79,15 @@ And the list continues...
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**[v0.4.3](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.3-beta)**
+**[v0.4.4](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.4-beta)**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
 - 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
-- ⛓  SDKs: Node.JS, Go, Python, TypeScript, NestJS
-- 🐳☸ Runs on your Docker or Kubernetes
+- ⛓ SDKs: Node.JS, Go, Python, TypeScript, NestJS, REST
+- 🐳☸ Kubernetes-native
 - 👨‍💻 Community driven
 
 ## 🚀 Getting Started

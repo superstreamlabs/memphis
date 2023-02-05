@@ -227,11 +227,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 }
 
 func getThroughputSubject(serverName string) string {
-	key := serverName
-	if key == _EMPTY_ {
-		key = "broker"
-	}
-	return throughputStreamName + tsep + key
+	return throughputStreamNameV1 + tsep + serverName
 }
 
 func (s *Server) InitializeThroughputSampling() error {
@@ -241,11 +237,11 @@ func (s *Server) InitializeThroughputSampling() error {
 	}
 
 	LastReadThroughput = models.Throughput{
-		Bytes:       v.InBytes,
+		Bytes:       v.OutBytes,
 		BytesPerSec: 0,
 	}
 	LastWriteThroughput = models.Throughput{
-		Bytes:       v.OutBytes,
+		Bytes:       v.InBytes,
 		BytesPerSec: 0,
 	}
 
@@ -261,19 +257,20 @@ func (s *Server) CalculateSelfThroughput() error {
 			return err
 		}
 
-		currentWrite := v.OutBytes - LastWriteThroughput.Bytes
+		currentWrite := v.InBytes - LastWriteThroughput.Bytes
 		LastWriteThroughput = models.Throughput{
-			Bytes:       v.OutBytes,
+			Bytes:       v.InBytes,
 			BytesPerSec: currentWrite,
 		}
-		currentRead := v.InBytes - LastReadThroughput.Bytes
+		currentRead := v.OutBytes - LastReadThroughput.Bytes
 		LastReadThroughput = models.Throughput{
-			Bytes:       v.InBytes,
+			Bytes:       v.OutBytes,
 			BytesPerSec: currentRead,
 		}
-		subj := getThroughputSubject(configuration.SERVER_NAME)
+		serverName := configuration.SERVER_NAME
+		subj := getThroughputSubject(serverName)
 		tpMsg := models.BrokerThroughput{
-			Name:  configuration.SERVER_NAME,
+			Name:  serverName,
 			Read:  currentRead,
 			Write: currentWrite,
 		}
@@ -433,7 +430,6 @@ func (s *Server) ListenForTierStorageMessages() error {
 	reply := durableName + "_reply"
 	_, err = serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
-			fmt.Println("subscribe on global account")
 			replySubj := reply
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
