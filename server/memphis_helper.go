@@ -1114,19 +1114,20 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func (s *Server) filterMsgsByStationName(msg StoredMsg) {
+func (s *Server) buildTierStorageMap(msg StoredMsg) {
+	lock.Lock()
 	stationName := strings.Split(msg.Subject, "$memphis_tiered_storage.")
 	stationNameString := stationName[1]
 	if strings.Contains(stationNameString, "#") {
 		stationNameString = strings.Replace(stationNameString, "#", ".", -1)
 	}
-	_, ok := msgsPerStation.Load(stationNameString)
+	lock.Unlock()
+	_, ok := tierStorageMsgsMap.Load(stationNameString)
 	if !ok {
-		msgsPerStation = NewConcurrentMap[[]StoredMsg]()
-		msgsPerStation.Add(stationNameString, []StoredMsg{})
+		tierStorageMsgsMap.Add(stationNameString, []StoredMsg{})
 	}
 
 	lock.Lock()
-	msgsPerStation.m[stationNameString] = append(msgsPerStation.m[stationNameString], msg)
+	tierStorageMsgsMap.m[stationNameString] = append(tierStorageMsgsMap.m[stationNameString], msg)
 	lock.Unlock()
 }

@@ -38,7 +38,7 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
-var msgsPerStation *concurrentMap[[]StoredMsg]
+var tierStorageMsgsMap *concurrentMap[[]StoredMsg]
 var lock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
@@ -312,7 +312,7 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	s.ListenSendMsgstoJetstream()
-	s.SendMsgsToTierStorage()
+	s.SaveMsgsInTierStorage()
 
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
@@ -342,25 +342,15 @@ func (s *Server) StartBackgroundTasks() error {
 	return nil
 }
 
-func (s *Server) ConsumeStorageMsgs(errs chan error) {
-	timer := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+func (s *Server) UploadMsgsToTierStorage(errs chan error) {
+	timeout := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 
 	for {
 		select {
-		case <-time.After(timer):
-			streamInfo, err := serv.memphisStreamInfo(tieredStorageStream)
-			if err != nil {
-				serv.Errorf("ConsumeStorageMsgs: " + err.Error())
-				errs <- err
-				return
-			}
+		case <-time.After(timeout):
 
-			if streamInfo.State.Msgs == 0 {
-				timer = timer + (20 * time.Second)
-				continue
-			}
-			if len(msgsPerStation.m) > 0 {
-				err = UploadToTier2Storage(msgsPerStation)
+			if len(tierStorageMsgsMap.m) > 0 {
+				err := UploadToTier2Storage(tierStorageMsgsMap)
 				if err != nil {
 					serv.Errorf("ConsumeStorageMsgs: " + err.Error())
 					errs <- err
@@ -369,17 +359,14 @@ func (s *Server) ConsumeStorageMsgs(errs chan error) {
 			}
 
 			lock.Lock()
-			for kk, msgs := range msgsPerStation.m {
+			for kk, msgs := range tierStorageMsgsMap.m {
 				for _, msg := range msgs {
 					reply := msg.ReplySubject
 					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 				}
-
-				msgsPerStation = NewConcurrentMap[[]StoredMsg]()
-				msgsPerStation.Delete(kk)
+				tierStorageMsgsMap.Delete(kk)
 			}
 			lock.Unlock()
-
 		}
 		time.Sleep(5 * time.Second)
 	}
@@ -387,24 +374,27 @@ func (s *Server) ConsumeStorageMsgs(errs chan error) {
 
 func (s *Server) ListenSendMsgstoJetstream() {
 	go func() {
+		ticker := time.NewTicker(1 * time.Second)
 		for {
-			durableName := "$memphis_storage_consumer"
-			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
-			reply := durableName + "_reply"
-			amount := 1000
-			req := []byte(strconv.FormatUint(uint64(amount), 10))
-			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-			time.Sleep(1 * time.Second)
+			select {
+			case <-ticker.C:
+				durableName := "$memphis_storage_consumer"
+				subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
+				reply := durableName + "_reply"
+				amount := 1000
+				req := []byte(strconv.FormatUint(uint64(amount), 10))
+				serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+			}
 		}
 	}()
 }
 
-func (s *Server) SendMsgsToTierStorage() error {
+func (s *Server) SaveMsgsInTierStorage() error {
 	chErrs := make(chan error, 1)
-	go s.ConsumeStorageMsgs(chErrs)
+	go s.UploadMsgsToTierStorage(chErrs)
 	err := <-chErrs
 	if err != nil {
-		s.Errorf("SendMsgsToTierStorage" + err.Error())
+		s.Errorf("SaveMsgsInTierStorage" + err.Error())
 		return err
 	}
 	return nil
@@ -419,13 +409,14 @@ func (s *Server) ListenForTierStorageMessages() error {
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
 		FilterSubject: filterSubject,
-		AckWait:       2 * tieredStorageTimeFrameSec,
+		AckWait:       time.Duration(2) * tieredStorageTimeFrameSec,
+		MaxAckPending: -1,
 	}
 	err := serv.memphisAddConsumer(tieredStorageStream, &cc)
 	if err != nil {
 		return err
 	}
-	msgsPerStation = NewConcurrentMap[[]StoredMsg]()
+	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
 
 	reply := durableName + "_reply"
 	_, err = serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -459,7 +450,7 @@ func (s *Server) ListenForTierStorageMessages() error {
 				ReplySubject: replySubj,
 			}
 
-			s.filterMsgsByStationName(message)
+			s.buildTierStorageMap(message)
 		}(subject, reply, copyBytes(msg))
 	})
 	if err != nil {

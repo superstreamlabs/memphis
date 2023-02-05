@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"log"
 	"memphis-broker/models"
@@ -305,9 +304,9 @@ type Msg struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func (s *Server) uploadToS3Storage(msgsPerStation *concurrentMap[[]StoredMsg]) error {
+func (s *Server) uploadToS3Storage(tierStorageMsgsMap *concurrentMap[[]StoredMsg]) error {
 	lock.Lock()
-	if len(msgsPerStation.m) > 0 {
+	if len(tierStorageMsgsMap.m) > 0 {
 		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
 		provider := &credentials.StaticProvider{Value: credentials.Value{
 			AccessKeyID:     credentialsMap.Keys["access_key"],
@@ -334,7 +333,7 @@ func (s *Server) uploadToS3Storage(msgsPerStation *concurrentMap[[]StoredMsg]) e
 		uid := serv.memphis.nuid.Next()
 		var objectName string
 
-		for k, msgs := range msgsPerStation.m {
+		for k, msgs := range tierStorageMsgsMap.m {
 			var messages []Msg
 			for _, msg := range msgs {
 				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ")"
@@ -383,14 +382,13 @@ func (s *Server) uploadToS3Storage(msgsPerStation *concurrentMap[[]StoredMsg]) e
 }
 
 func (s *Server) sendToTier2Storage(fs *fileStore, sm *StoreMsg, storageType string) {
-	stationName := fs.cfg.StreamConfig.Name
+	streamName := fs.cfg.StreamConfig.Name
 	_, ok := StorageFunctionsMap[storageType]
 	if ok {
-		if !strings.HasPrefix(sm.subj, "$memphis") {
-			subjectSuffix := stationName
+		if !strings.HasPrefix(streamName, "$memphis") {
+			subjectSuffix := streamName
 			subject := fmt.Sprintf("%s.%s", tieredStorageStream, subjectSuffix)
 			s.sendInternalAccountMsg(s.GlobalAccount(), subject, sm.buf)
-			time.Sleep(2 * time.Second)
 		}
 	}
 
