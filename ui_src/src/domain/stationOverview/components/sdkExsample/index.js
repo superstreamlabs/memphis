@@ -17,7 +17,8 @@ import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 
 import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../../../const/localStorageConsts';
-import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
+import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../../../const/codeExample';
+import noCodeExample from '../../../../assets/images/noCodeExample.svg';
 import SelectComponent from '../../../../components/select';
 import refresh from '../../../../assets/images/refresh.svg';
 import GenerateTokenModal from '../generateTokenModal';
@@ -33,8 +34,6 @@ const tabs = ['Producer', 'Consumer'];
 const SdkExample = ({ consumer, showTabs = true }) => {
     const [langSelected, setLangSelected] = useState('Go');
     const [protocolSelected, setProtocolSelected] = useState('SDK (TCP)');
-    const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'Python'];
-    const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
     const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
     const [codeExample, setCodeExample] = useState({
         import: '',
@@ -62,10 +61,10 @@ const SdkExample = ({ consumer, showTabs = true }) => {
             : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
             ? 'localhost'
             : 'memphis-cluster.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
-        codeEx.producer = codeEx.producer.replaceAll('<memphis-host>', host);
-        codeEx.consumer = codeEx.consumer.replaceAll('<memphis-host>', host);
-        codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
-        codeEx.consumer = codeEx.consumer.replaceAll('<station-name>', stationName);
+        codeEx.producer = codeEx.producer?.replaceAll('<memphis-host>', host);
+        codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
+        codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);
+        codeEx.consumer = codeEx.consumer?.replaceAll('<station-name>', stationName);
         setCodeExample(codeEx);
     };
 
@@ -173,16 +172,32 @@ const SdkExample = ({ consumer, showTabs = true }) => {
                     </div>
                     <div className="tabs">
                         {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>}
-                        {tabValue === 'Producer' && (
-                            <div className="code-example">
-                                <div className="code-content">{generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
-                            </div>
-                        )}
 
-                        {tabValue === 'Consumer' && (
-                            <div className="code-example">
-                                <div className="code-content">{generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, codeExample.consumer)}</div>
+                        {SDK_CODE_EXAMPLE[langSelected].link ? (
+                            <div className="guidline">
+                                <img src={noCodeExample} />
+                                <div className="content">
+                                    <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
+                                    <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
+                                    <a className="learn-more" href={SDK_CODE_EXAMPLE[langSelected].link} target="_blank">
+                                        View Documentation
+                                    </a>
+                                </div>
                             </div>
+                        ) : (
+                            <>
+                                {tabValue === 'Producer' && (
+                                    <div className="code-example">
+                                        <div className="code-content">{generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                    </div>
+                                )}
+
+                                {tabValue === 'Consumer' && (
+                                    <div className="code-example">
+                                        <div className="code-content">{generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, codeExample.consumer)}</div>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </>

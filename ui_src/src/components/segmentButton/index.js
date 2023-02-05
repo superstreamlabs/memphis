@@ -15,8 +15,8 @@ import './style.scss';
 import { Segmented } from 'antd';
 import React from 'react';
 
-const SegmentButton = ({ options, onChange }) => {
-    return <Segmented size="small" className="segment-button-wrapper" options={options} onChange={(e) => onChange(e)} />;
+const SegmentButton = ({ options, onChange, value }) => {
+    return <Segmented value={value} size="small" className="segment-button-wrapper" options={options} onChange={(e) => onChange(e)} />;
 };
 
 export default SegmentButton;

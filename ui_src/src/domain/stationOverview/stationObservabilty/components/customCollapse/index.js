@@ -22,12 +22,13 @@ import { decodeMessage } from '../../../../../services/decoder';
 import { hex_to_ascii } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
+import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
 
 const { Panel } = Collapse;
 
 const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
-    const [parser, setParser] = useState('string');
+    const [parser, setParser] = useState(localStorage.getItem(LOCAL_STORAGE_MSG_PARSER));
     const [payload, setPayload] = useState(data);
 
     useEffect(() => {
@@ -117,7 +118,14 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                             <>
                                 <Copy data={data} />
                                 <div className="second-row">
-                                    <SegmentButton options={['string', 'bytes', 'json', 'protobuf']} onChange={(e) => setParser(e)} />
+                                    <SegmentButton
+                                        value={parser || 'string'}
+                                        options={['string', 'bytes', 'json', 'protobuf']}
+                                        onChange={(e) => {
+                                            setParser(e);
+                                            localStorage.setItem(LOCAL_STORAGE_MSG_PARSER, e);
+                                        }}
+                                    />
                                 </div>
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
