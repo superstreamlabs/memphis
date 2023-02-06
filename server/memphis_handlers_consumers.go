@@ -409,13 +409,13 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	}
 
 	m := make(map[string]*models.Cg)
-	consumersNames := []string{}
+	consumersGroupNames := []string{}
 
 	for _, consumer := range consumers {
-		if slices.Contains(consumersNames, consumer.Name) {
+		if slices.Contains(consumersGroupNames, consumer.ConsumersGroup) {
 			continue
 		}
-		consumersNames = append(consumersNames, consumer.Name)
+		consumersGroupNames = append(consumersGroupNames, consumer.ConsumersGroup)
 
 		var cg *models.Cg
 		if m[consumer.ConsumersGroup] == nil {
