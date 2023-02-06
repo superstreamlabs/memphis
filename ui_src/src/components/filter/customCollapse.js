@@ -30,6 +30,13 @@ const { Panel } = Collapse;
 const CustomCollapse = ({ cancel, apply, clear }) => {
     const [filterState, filterDispatch] = useContext(FilterStoreContext);
     const [activeKey, setActiveKey] = useState(['0', '1', '2']);
+    const [filterLocalState, setFilterLocalState] = useState({});
+
+    useEffect(() => {
+        if (filterState.isOpen && filterState?.filterFields?.length > 0) {
+            setFilterLocalState({ ...filterState });
+        }
+    }, [filterState.filterFields, filterState.isOpen]);
 
     useEffect(() => {
         if (activeKey.length > 3) {
@@ -42,7 +49,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
         const keyDownHandler = (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                apply();
+                applyFilter();
             }
         };
         document.addEventListener('keydown', keyDownHandler);
@@ -55,35 +62,38 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
         setActiveKey(key);
     };
 
-    const updateChoice = (filterGroup, filterField, value) => {
-        let updatedCounter;
-        let filter;
-        updatedCounter = filterState.counter;
-        filter = filterState.filterFields;
-        switch (filterState.filterFields[filterGroup].filterType) {
+    const applyFilter = () => {
+        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterLocalState.filterFields });
+        filterDispatch({ type: 'SET_COUNTER', payload: filterLocalState.counter });
+        apply();
+    };
+
+    const updateChoice = (e, filterGroup, filterField) => {
+        let updatedCounter = filterLocalState.counter;
+        let filter = [...filterLocalState.filterFields];
+        switch (filterLocalState.filterFields[filterGroup].filterType) {
             case filterType.CHECKBOX:
-                if (filter[filterGroup].fields[filterField].checked) updatedCounter--;
-                else updatedCounter++;
-                filter[filterGroup].fields[filterField].checked = !filter[filterGroup].fields[filterField].checked;
+                if (e) updatedCounter++;
+                else updatedCounter--;
+                filter[filterGroup].fields[filterField].checked = e;
                 break;
             case filterType.RADIOBUTTON:
                 if (filter[filterGroup].radioValue === -1) updatedCounter++;
-                filter[filterGroup].radioValue = filterField;
+                filter[filterGroup].radioValue = e;
                 break;
             case filterType.DATE:
-                if (filter[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
-                else if (filter[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
-                filter[filterGroup].fields[filterField].value = value;
+                if (filter[filterGroup].fields[filterField].value === '' && e !== '') updatedCounter++;
+                else if (filter[filterGroup].fields[filterField].value !== '' && e === '') updatedCounter--;
+                filter[filterGroup].fields[filterField].value = e;
                 break;
         }
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
-        filterDispatch({ type: 'SET_COUNTER', payload: updatedCounter });
+        setFilterLocalState({ ...filterLocalState, counter: updatedCounter, filterFields: filter });
     };
 
     const showMoreLess = (index, showMoreFalg) => {
-        let filter = filterState.filterFields;
+        let filter = filterLocalState.filterFields;
         filter[index].showMore = showMoreFalg;
-        filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
+        setFilterLocalState({ ...filterLocalState, filterFields: filter });
     };
 
     const drawComponent = (filterGroup, filterGroupIndex) => {
@@ -93,8 +103,8 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             case filterType.DATE:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="date-container" key={filterField?.name}>
-                            <label>{filterField?.label}</label>
+                        <div className="date-container" key={filterField.name}>
+                            <label>{filterField.label}</label>
                             <DatePicker
                                 type="text"
                                 radiusType="semi-round"
@@ -103,7 +113,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                                 borderColorType="red"
                                 width="240px"
                                 minWidth="200px"
-                                onChange={(e) => updateChoice(filterGroupIndex, filterFieldIndex, e)}
+                                onChange={(e) => updateChoice(e, filterGroupIndex, filterFieldIndex)}
                             />
                         </div>
                     );
@@ -115,11 +125,11 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         height="25px"
                         fontFamily="InterSemiBold"
                         options={filterGroup.fields.map((item, id) => {
-                            return { id: id, value: id, label: item?.name };
+                            return { id: id, value: id, label: item.name };
                         })}
                         radioStyle="radiobtn-capitalize"
                         radioValue={filterGroup.radioValue}
-                        onChange={(e) => updateChoice(filterGroupIndex, e.target.value)}
+                        onChange={(e) => updateChoice(e.target.value, filterGroupIndex, e.target.value)}
                     />
                 );
         }
@@ -131,13 +141,13 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 return filterGroup?.fields?.map((filterField, filterFieldIndex = 0) => {
                     if (filterFieldIndex < 3)
                         return (
-                            <div className="label-container" key={filterField?.name}>
+                            <div className="label-container" key={filterField.name}>
                                 <Checkbox
                                     checked={filterField?.checked || false}
-                                    onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)}
-                                    name={filterGroup?.name}
+                                    onChange={(e) => updateChoice(e.target.checked, filterGroupIndex, filterFieldIndex)}
+                                    name={filterGroup.name}
                                 />
-                                <Tag tag={{ color: filterField.color, name: filterField?.name }}></Tag>
+                                <Tag tag={{ color: filterField.color, name: filterField.name }}></Tag>
                             </div>
                         );
                     else {
@@ -146,10 +156,10 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                                 <div className="label-container" key={filterField.name}>
                                     <Checkbox
                                         checked={filterField?.checked || false}
-                                        onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)}
-                                        name={filterGroup?.name}
+                                        onChange={(e) => updateChoice(e.target.checked, filterGroupIndex, filterFieldIndex)}
+                                        name={filterGroup.name}
                                     />
-                                    <Tag tag={{ color: filterField.color, name: filterField?.name }}></Tag>
+                                    <Tag tag={{ color: filterField.color, name: filterField.name }}></Tag>
                                 </div>
                                 {filterFieldIndex === filterGroup.fields.length - 1 && (
                                     <p className="show-more" onClick={() => showMoreLess(filterGroupIndex, false)}>
@@ -169,25 +179,29 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             case labelType.CIRCLEDLETTER:
                 return filterGroup?.fields?.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="circle-container" key={filterField?.name}>
+                        <div className="circle-container" key={filterField.name}>
                             <Checkbox
                                 checked={filterField?.checked || false}
-                                onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)}
-                                name={filterGroup?.name}
+                                onChange={(e) => updateChoice(e.target.checked, filterGroupIndex, filterFieldIndex)}
+                                name={filterGroup.name}
                             />
                             <p className="circle-letter" style={{ backgroundColor: filterField.color }}>
-                                {filterField?.name[0]?.toUpperCase()}
+                                {filterField.name[0]?.toUpperCase()}
                             </p>
-                            <label>{filterField?.name}</label>
+                            <label>{filterField.name}</label>
                         </div>
                     );
                 });
             default:
                 return filterGroup.fields.map((filterField, filterFieldIndex = 0) => {
                     return (
-                        <div className="default-checkbox" key={filterField?.name}>
-                            <Checkbox checked={filterField.checked} onChange={() => updateChoice(filterGroupIndex, filterFieldIndex)} name={filterGroup?.name} />
-                            <label>{filterField?.name}</label>
+                        <div className="default-checkbox" key={filterField.name}>
+                            <Checkbox
+                                checked={filterField.checked}
+                                onChange={(e) => updateChoice(e.target.checked, filterGroupIndex, filterFieldIndex)}
+                                name={filterGroup.name}
+                            />
+                            <label>{filterField.name}</label>
                         </div>
                     );
                 });
@@ -199,13 +213,13 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
             <div className="collapse-header">
                 <div className="header-name-counter">
                     <label>Filter</label>
-                    {filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
+                    {filterLocalState?.counter > 0 && <div className="filter-counter">{filterLocalState?.counter}</div>}
                 </div>
                 <label className="clear" onClick={clear}>
                     Clear All
                 </label>
             </div>
-            {filterState?.filterFields?.map((filterGroup, filterGroupIndex = 0) => (
+            {filterLocalState?.filterFields?.map((filterGroup, filterGroupIndex = 0) => (
                 <Panel
                     header={
                         filterGroup?.fields?.length > 0 && (
@@ -255,7 +269,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                     backgroundColorType={'purple'}
                     fontSize="12px"
                     fontWeight="bold"
-                    onClick={apply}
+                    onClick={applyFilter}
                 />
             </div>
         </Collapse>
