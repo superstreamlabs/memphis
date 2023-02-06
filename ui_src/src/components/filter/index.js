@@ -40,7 +40,6 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
-    let sub;
 
     useEffect(() => {
         if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: '' });
@@ -170,11 +169,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             labelType: labelType.CIRCLEDLETTER,
             filterType: filterType.CHECKBOX,
             fields: rawFilterDetails?.users?.map((user) => {
-                return {
-                    name: user,
-                    color: CircleLetterColor[user[0]?.toUpperCase()],
-                    checked: false
-                };
+                return { name: user, color: CircleLetterColor[user[0]?.toUpperCase()], checked: false };
             })
         };
         filteredFields.push(createdFilter);
@@ -185,7 +180,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             filterType: filterType.CHECKBOX,
             labelType: '',
             fields: rawFilterDetails?.storage?.map((s) => {
-                return { name: s, value: s };
+                return { name: s, value: s, checked: false };
             })
         };
         filteredFields.push(storageTypeFilter);
