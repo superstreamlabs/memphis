@@ -299,13 +299,13 @@ function OverView() {
                     <label className="welcome-message">and is under constant modifications.</label>
                     <label className="welcome-message">Downtimes might occur.</label>
                     <div>
-                        <Link to={{ pathname: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/memphis/overview' }} target="_blank">
+                        <Link to={{ pathname: 'https://docs.memphis.dev/memphis/getting-started/readme' }} target="_blank">
                             <img src={docsLogo} alt="slack" className="sandbox-icon"></img>
                         </Link>
                         <Link to={{ pathname: 'https://github.com/memphisdev/memphis-broker' }} target="_blank">
                             <img src={githubLogo} alt="github" className="sandbox-icon"></img>
                         </Link>
-                        <Link to={{ pathname: 'https://discord.com/invite/WZpysvAeTf' }} target="_blank">
+                        <Link to={{ pathname: 'https://discord.com/invite/3QcAwtrZZR' }} target="_blank">
                             <img src={discordLogo} alt="discord" className="sandbox-icon"></img>
                         </Link>
                     </div>

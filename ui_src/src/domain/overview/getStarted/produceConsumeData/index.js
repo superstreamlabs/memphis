@@ -79,7 +79,7 @@ const ProduceConsumeData = (props) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${getStartedState?.formFieldsCreateStation?.name}`);
             if (data) {
-                if (data?.messages?.length > 0) {
+                if ((props.produce && data?.messages?.length > 0) || (!props.produce && (data?.connected_cgs?.length > 0 || data?.disconnected_cgs?.length > 0))) {
                     setCurrentPhase(produceConsumeScreenEnum['DATA_RECIEVED']);
                     getStartedDispatch({ type: 'GET_STATION_DATA', payload: data });
                     clearInterval(intervalStationDetails);
@@ -95,7 +95,7 @@ const ProduceConsumeData = (props) => {
     useEffect(() => {
         changeDynamicCode(langSelected);
         if (displayScreen !== currentPhase) {
-            if (displayScreen === produceConsumeScreenEnum['DATA_SNIPPET'] || displayScreen === produceConsumeScreenEnum['DATA_WAITING']) {
+            if (displayScreen === produceConsumeScreenEnum['DATA_WAITING']) {
                 onCopyToClipBoard();
             }
             setCurrentPhase(displayScreen);
