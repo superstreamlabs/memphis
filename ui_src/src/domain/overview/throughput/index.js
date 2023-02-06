@@ -250,11 +250,8 @@ function Throughput() {
                     <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <div className="throughput-actions">
-                    <div className={stop ? 'play-pause-btn no-active' : 'play-pause-btn '} onClick={() => (stop ? setstop(false) : null)}>
-                        <PlayArrowRounded />
-                    </div>
-                    <div className={stop ? 'play-pause-btn' : 'play-pause-btn no-active'} onClick={() => (stop ? null : setstop(true))}>
-                        <PauseRounded />
+                    <div className="play-pause-btn" onClick={() => setstop(!stop)}>
+                        {stop ? <PlayArrowRounded /> : <PauseRounded />}
                     </div>
                     <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
                 </div>
