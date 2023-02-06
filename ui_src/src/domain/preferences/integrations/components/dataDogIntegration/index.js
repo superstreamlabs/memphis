@@ -29,7 +29,7 @@ const { Panel } = Collapse;
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
 const DataDogIntegration = ({ close }) => {
-    const dataDogConfiguration = INTEGRATION_LIST[2];
+    const dataDogConfiguration = INTEGRATION_LIST[1];
     const [currentStep, setCurrentStep] = useState(0);
     const [showModal, setShowModal] = useState(false);
 
@@ -37,8 +37,8 @@ const DataDogIntegration = ({ close }) => {
         setShowModal(!showModal);
     };
 
-    const getContent = () => {
-        switch (currentStep) {
+    const getContent = (key) => {
+        switch (key) {
             case 0:
                 return (
                     <div className="steps-content">
@@ -121,9 +121,9 @@ EOF`}
                 return (
                     <div className="steps-content">
                         <h3>{`Reach your Datadog account -> Metrics -> Summary, and check if "memphis" metrics arrives.`}</h3>
-                        <div className="img">
+                        <div className="img" onClick={handleToggleModal}>
                             <img src={datadogMetricsps} alt="datadogMetricsps" width={400} />
-                            <ZoomInRounded onClick={handleToggleModal} />
+                            <ZoomInRounded />
                         </div>
                     </div>
                 );
@@ -170,7 +170,7 @@ EOF`}
                         border="none"
                         fontSize="12px"
                         fontFamily="InterSemiBold"
-                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/storage/amazon-s3', '_blank')}
+                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/datadog', '_blank')}
                     />
                 </div>
             </div>
@@ -182,10 +182,10 @@ EOF`}
                     accordion={true}
                     expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
                 >
-                    {dataDogConfiguration.steps.map((step) => {
+                    {dataDogConfiguration?.steps?.map((step) => {
                         return (
                             <Panel header={step.title} key={step.key}>
-                                {getContent()}
+                                {getContent(step.key)}
                             </Panel>
                         );
                     })}

@@ -65,6 +65,8 @@
                 width: 400px;
                 display: flex;
                 position: relative;
+                cursor: pointer;
+
                 svg{
                     position: absolute;
                     right: 10px;
@@ -72,7 +74,11 @@
                     font-size: 25px;
                     color: #525556;
                     cursor: pointer;
+                    display: none;
                 }
+            }
+            .img:hover svg{
+                display: inline;
             }
             .editor{
                 display: flex;
