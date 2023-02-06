@@ -26,7 +26,6 @@ export const HANDLE_REFRESH_INTERVAL = 600000;
 export const SHOWABLE_ERROR_STATUS_CODE = 666;
 export const AUTHENTICATION_ERROR_STATUS_CODE = 401;
 export const DOC_URL = 'https://docs.memphis.dev/memphis/memphis/overview';
-export const PRIVACY_URL = 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/memphis/privacy';
 export const SOCKET_URL = environment === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:7770` : `${WS_PREFIX}://localhost:7770`;
 export const GOOGLE_CLIENT_ID = '916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com';
 export const REDIRECT_URI = environment === 'production' ? 'https://sandbox.memphis.dev/login' : 'http://localhost:9000/login';
