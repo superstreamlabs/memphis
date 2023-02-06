@@ -37,8 +37,8 @@ const DataDogIntegration = ({ close }) => {
         setShowModal(!showModal);
     };
 
-    const getContent = () => {
-        switch (currentStep) {
+    const getContent = (key) => {
+        switch (key) {
             case 0:
                 return (
                     <div className="steps-content">
@@ -185,7 +185,7 @@ EOF`}
                     {dataDogConfiguration?.steps?.map((step) => {
                         return (
                             <Panel header={step.title} key={step.key}>
-                                {getContent()}
+                                {getContent(step.key)}
                             </Panel>
                         );
                     })}
