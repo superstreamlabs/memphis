@@ -49,9 +49,6 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
-// type FsHandler struct{ S *Server }
-var server *Server
-
 type FileStoreConfig struct {
 	// Where the parent directory for all storage will be located.
 	StoreDir string
@@ -2076,12 +2073,18 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 
 	var smv StoreMsg
 	sm, err := mb.cacheLookup(seq, &smv)
-	// log.Println("msg to delete", string(smv.subj), string(smv.hdr), string(smv.msg), string(smv.buf), smv.seq, string(fs.cfg.StreamConfig.Name))
 	if err != nil {
 		mb.mu.Unlock()
 		fsUnlock()
 		return false, err
 	}
+
+	// send the message to tiere 2 storage if needed
+	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && serv != nil {
+		serv.Errorf(string(sm.buf))
+		serv.sendToTier2Storage(fs, copyBytes(sm.buf), "s3")
+	}
+
 	// Grab size
 	msz := fileStoreMsgSize(sm.subj, sm.hdr, sm.msg)
 
@@ -2840,7 +2843,6 @@ func (fs *fileStore) expireMsgs() {
 	fs.mu.RUnlock()
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
 		fs.removeMsg(sm.seq, false, true)
-		serv.sendToTier2Storage(fs, sm, "s3")
 	}
 
 	fs.mu.Lock()
@@ -3423,7 +3425,7 @@ func (mb *msgBlock) flushPendingMsgsLocked() (*LostStreamData, error) {
 	return fsLostData, mb.werr
 }
 
-//  Lock should be held.
+// Lock should be held.
 func (mb *msgBlock) clearLoading() {
 	mb.loading = false
 }

@@ -381,15 +381,12 @@ func (s *Server) uploadToS3Storage(tierStorageMsgsMap *concurrentMap[[]StoredMsg
 
 }
 
-func (s *Server) sendToTier2Storage(fs *fileStore, sm *StoreMsg, storageType string) {
+func (s *Server) sendToTier2Storage(fs *fileStore, buf []byte, storageType string) {
 	streamName := fs.cfg.StreamConfig.Name
 	_, ok := StorageFunctionsMap[storageType]
 	if ok {
-		if !strings.HasPrefix(streamName, "$memphis") {
-			subjectSuffix := streamName
-			subject := fmt.Sprintf("%s.%s", tieredStorageStream, subjectSuffix)
-			s.sendInternalAccountMsg(s.GlobalAccount(), subject, sm.buf)
-		}
+		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
+		s.sendInternalAccountMsg(s.GlobalAccount(), subject, buf)
 	}
 
 }

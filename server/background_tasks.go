@@ -306,11 +306,14 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed subscribing for confogurations update: " + err.Error())
 	}
+
+	// creating consumer + start listening
 	err = s.ListenForTierStorageMessages()
 	if err != nil {
 		return errors.New("Failed subscribing for tiered storage update: " + err.Error())
 	}
 
+	// send JS API request to get more messages
 	s.ListenSendMsgstoJetstream()
 	s.SaveMsgsInTierStorage()
 
@@ -375,16 +378,13 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 func (s *Server) ListenSendMsgstoJetstream() {
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)
-		for {
-			select {
-			case <-ticker.C:
-				durableName := "$memphis_storage_consumer"
-				subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
-				reply := durableName + "_reply"
-				amount := 1000
-				req := []byte(strconv.FormatUint(uint64(amount), 10))
-				serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-			}
+		for range ticker.C {
+			durableName := "$memphis_storage_consumer"
+			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
+			reply := durableName + "_reply"
+			amount := 1000
+			req := []byte(strconv.FormatUint(uint64(amount), 10))
+			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
 		}
 	}()
 }
@@ -402,14 +402,14 @@ func (s *Server) SaveMsgsInTierStorage() error {
 
 func (s *Server) ListenForTierStorageMessages() error {
 	durableName := "$memphis_storage_consumer"
-	tieredStorageTimeFrameSec := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+	tieredStorageTimeFrame := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
 		FilterSubject: filterSubject,
-		AckWait:       time.Duration(2) * tieredStorageTimeFrameSec,
+		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
 		MaxAckPending: -1,
 	}
 	err := serv.memphisAddConsumer(tieredStorageStream, &cc)

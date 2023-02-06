@@ -260,7 +260,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 	if isCluster {
 		replicas = 3
 	}
-	// sytem logs stream
+	// system logs stream
 	err := s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
@@ -276,7 +276,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		return
 	}
 
-	// system storage stream
+	// tiered storage stream
 	err = s.memphisAddStream(&StreamConfig{
 		Name:         tieredStorageStream,
 		Subjects:     []string{tieredStorageStream + ".>"},
