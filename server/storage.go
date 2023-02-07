@@ -16,13 +16,13 @@ import (
 	"memphis-broker/models"
 )
 
-func UploadToTier2Storage(msgs *concurrentMap[[]StoredMsg]) error {
+func UploadToTier2Storage() error {
 	for k, f := range StorageFunctionsMap {
 		switch k {
 		case "s3":
 			_, ok := IntegrationsCache["s3"].(models.Integration)
 			if ok {
-				err := f.(func(*concurrentMap[[]StoredMsg]) error)(msgs)
+				err := f.(func() error)()
 				if err != nil {
 					return err
 				}

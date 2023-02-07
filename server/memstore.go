@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -788,6 +789,11 @@ func (ms *memStore) removeMsg(seq uint64, secure bool) bool {
 	sm, ok := ms.msgs[seq]
 	if !ok {
 		return false
+	}
+
+	// send the message to tiere 2 storage if needed
+	if !secure && !strings.HasPrefix(ms.cfg.Name, "$memphis") && serv != nil {
+		serv.sendToTier2Storage(ms, copyBytes(sm.buf), "s3")
 	}
 
 	ss = memStoreMsgSize(sm.subj, sm.hdr, sm.msg)

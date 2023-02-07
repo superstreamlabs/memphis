@@ -314,7 +314,7 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	// send JS API request to get more messages
-	s.ListenSendMsgstoJetstream()
+	s.ApiRequestToJetstream()
 	s.SaveMsgsInTierStorage()
 
 	filter := bson.M{"key": "ui_url"}
@@ -351,9 +351,10 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 	for {
 		select {
 		case <-time.After(timeout):
+			lock.Lock()
 
 			if len(tierStorageMsgsMap.m) > 0 {
-				err := UploadToTier2Storage(tierStorageMsgsMap)
+				err := UploadToTier2Storage()
 				if err != nil {
 					serv.Errorf("ConsumeStorageMsgs: " + err.Error())
 					errs <- err
@@ -361,7 +362,6 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 				}
 			}
 
-			lock.Lock()
 			for kk, msgs := range tierStorageMsgsMap.m {
 				for _, msg := range msgs {
 					reply := msg.ReplySubject
@@ -375,7 +375,7 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 	}
 }
 
-func (s *Server) ListenSendMsgstoJetstream() {
+func (s *Server) ApiRequestToJetstream() {
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)
 		for range ticker.C {
@@ -421,36 +421,37 @@ func (s *Server) ListenForTierStorageMessages() error {
 	reply := durableName + "_reply"
 	_, err = serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
-			replySubj := reply
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("ListenForTierStorageMessages: " + err.Error())
-				return
-			}
+			//This if ignores case: 409 Exceeded MaxWaiting
+			if reply != "" {
+				replySubj := reply
+				rawTs := tokenAt(reply, 8)
+				seq, _, _ := ackReplyInfo(reply)
+				intTs, err := strconv.Atoi(rawTs)
+				if err != nil {
+					serv.Errorf("ListenForTierStorageMessages: " + err.Error())
+					return
+				}
 
-			dataFirstIdx := 0
-			dataLen := len(msg)
-			dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
-			if dataFirstIdx > len(msg)-len(CR_LF) {
-				s.Errorf("ListenForTierStorageMessages: memphis error parsing in station get messages")
-			}
+				dataFirstIdx := 0
+				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
+				if dataFirstIdx > len(msg)-len(CR_LF) {
+					s.Errorf("ListenForTierStorageMessages: memphis error parsing in station get messages")
+				}
+				dataLen := len(msg) - dataFirstIdx
+				dataLen -= len(CR_LF)
+				header := msg[:dataFirstIdx]
+				data := msg[dataFirstIdx : dataFirstIdx+dataLen]
+				message := StoredMsg{
+					Subject:      subject,
+					Sequence:     uint64(seq),
+					Data:         data,
+					Header:       header,
+					Time:         time.Unix(0, int64(intTs)),
+					ReplySubject: replySubj,
+				}
 
-			dataLen = len(msg) - dataFirstIdx
-			dataLen -= len(CR_LF)
-			header := msg[:dataFirstIdx]
-			data := msg[dataFirstIdx : dataFirstIdx+dataLen]
-			message := StoredMsg{
-				Subject:      subject,
-				Sequence:     uint64(seq),
-				Data:         data,
-				Header:       header,
-				Time:         time.Unix(0, int64(intTs)),
-				ReplySubject: replySubj,
+				s.buildTierStorageMap(message)
 			}
-
-			s.buildTierStorageMap(message)
 		}(subject, reply, copyBytes(msg))
 	})
 	if err != nil {

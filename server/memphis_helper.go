@@ -1121,13 +1121,11 @@ func (s *Server) buildTierStorageMap(msg StoredMsg) {
 	if strings.Contains(stationNameString, "#") {
 		stationNameString = strings.Replace(stationNameString, "#", ".", -1)
 	}
-	lock.Unlock()
 	_, ok := tierStorageMsgsMap.Load(stationNameString)
 	if !ok {
 		tierStorageMsgsMap.Add(stationNameString, []StoredMsg{})
 	}
 
-	lock.Lock()
 	tierStorageMsgsMap.m[stationNameString] = append(tierStorageMsgsMap.m[stationNameString], msg)
 	lock.Unlock()
 }

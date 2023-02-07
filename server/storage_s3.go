@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"log"
 	"memphis-broker/models"
@@ -304,8 +305,7 @@ type Msg struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func (s *Server) uploadToS3Storage(tierStorageMsgsMap *concurrentMap[[]StoredMsg]) error {
-	lock.Lock()
+func (s *Server) uploadToS3Storage() error {
 	if len(tierStorageMsgsMap.m) > 0 {
 		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
 		provider := &credentials.StaticProvider{Value: credentials.Value{
@@ -375,18 +375,25 @@ func (s *Server) uploadToS3Storage(tierStorageMsgsMap *concurrentMap[[]StoredMsg
 				return err
 			}
 		}
-		lock.Unlock()
 	}
 	return nil
 
 }
 
-func (s *Server) sendToTier2Storage(fs *fileStore, buf []byte, storageType string) {
-	streamName := fs.cfg.StreamConfig.Name
-	_, ok := StorageFunctionsMap[storageType]
+func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierStorageType string) {
+	storedType := reflect.TypeOf(storageType).Elem().Name()
+	var streamName string
+	switch storedType {
+	case "fileStore":
+		fileStore := storageType.(*fileStore)
+		streamName = fileStore.cfg.StreamConfig.Name
+	case "memStore":
+		memStore := storageType.(*memStore)
+		streamName = memStore.cfg.Name
+	}
+	_, ok := StorageFunctionsMap[tierStorageType]
 	if ok {
 		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
 		s.sendInternalAccountMsg(s.GlobalAccount(), subject, buf)
 	}
-
 }
