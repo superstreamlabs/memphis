@@ -455,7 +455,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 		} else { // not deleted
 			cgInfo, err := ch.S.GetCgInfo(stationName, cg.Name)
 			if err != nil {
-				return cgs, cgs, cgs, err
+				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
 
 			totalPoisonMsgs := 0
