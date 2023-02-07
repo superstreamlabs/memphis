@@ -107,7 +107,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                     },
                     {
                         name: 'Time sent',
-                        value: parsingDate(data.message?.time_sent)
+                        value: parsingDate(data.message?.time_sent, true)
                     }
                 ],
                 producer: {
