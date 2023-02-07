@@ -130,11 +130,11 @@ To access Memphis using UI/CLI/SDK from localhost, run the below commands:
 
 For interacting with the broker via HTTP:
 
-  - kubectl port-forward service/memphis-http-proxy 4444:4444 --namespace memphis > /dev/null &
+  - kubectl port-forward service/memphis-rest-gateway 4444:4444 --namespace memphis > /dev/null &
 
 Dashboard/CLI: http://localhost:9000
 Broker: localhost:6666 (Client Connections)
-HTTP proxy: localhost:4444 (Data + Mgmt)
+REST gateway: localhost:4444 (Data + Mgmt)
 ```
 
 **For Production Environments**

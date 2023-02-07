@@ -151,49 +151,49 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			})
 			resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
 			healthy := false
-			proxyComps := []models.SysComponent{defaultSystemComp("memphis-http-proxy", healthy)}
+			restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 			if err == nil {
 				healthy = true
-				var proxyMonitorInfo models.ProxyMonitoringResponse
+				var restGwMonitorInfo models.RestGwMonitoringResponse
 				defer resp.Body.Close()
-				err = json.NewDecoder(resp.Body).Decode(&proxyMonitorInfo)
+				err = json.NewDecoder(resp.Body).Decode(&restGwMonitorInfo)
 				if err != nil {
 					return components, metricsEnabled, err
 				}
 				if !isWindows {
 					storageComp = models.CompStats{
 						Total:      shortenFloat(storage_size),
-						Current:    shortenFloat((proxyMonitorInfo.Storage / 100) * storage_size),
-						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Storage))),
+						Current:    shortenFloat((restGwMonitorInfo.Storage / 100) * storage_size),
+						Percentage: int(math.Ceil(float64(restGwMonitorInfo.Storage))),
 					}
 				}
-				proxyComps = []models.SysComponent{{
-					Name: "memphis-http-proxy",
+				restGwComps = []models.SysComponent{{
+					Name: "memphis-rest-gateway",
 					CPU: models.CompStats{
 						Total:      shortenFloat(maxCpu),
-						Current:    shortenFloat((proxyMonitorInfo.CPU / 100) * maxCpu),
-						Percentage: int(math.Ceil(proxyMonitorInfo.CPU)),
+						Current:    shortenFloat((restGwMonitorInfo.CPU / 100) * maxCpu),
+						Percentage: int(math.Ceil(restGwMonitorInfo.CPU)),
 					},
 					Memory: models.CompStats{
 						Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
-						Current:    shortenFloat((proxyMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
-						Percentage: int(math.Ceil(float64(proxyMonitorInfo.Memory))),
+						Current:    shortenFloat((restGwMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
+						Percentage: int(math.Ceil(float64(restGwMonitorInfo.Memory))),
 					},
 					Storage: storageComp,
 					Healthy: healthy,
 				}}
 			}
-			actualProxy := 1
+			actualRestGw := 1
 			if !healthy {
-				actualProxy = 0
+				actualRestGw = 0
 			}
 			components = append(components, models.SystemComponents{
-				Name:        "memphis-http-proxy",
-				Components:  proxyComps,
-				Status:      checkCompStatus(proxyComps),
+				Name:        "memphis-rest-gateway",
+				Components:  restGwComps,
+				Status:      checkCompStatus(restGwComps),
 				Ports:       []int{4444},
 				DesiredPods: 1,
-				ActualPods:  actualProxy,
+				ActualPods:  actualRestGw,
 				Host:        host,
 			})
 		}
@@ -385,7 +385,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
-				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-http-proxy") || strings.Contains(container.Name, "mongo") {
+				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath

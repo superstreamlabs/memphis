@@ -47,10 +47,10 @@ const SdkExample = ({ consumer, showTabs = true }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
     const restHost = process.env.REACT_APP_SANDBOX_ENV
-        ? 'https://proxy.sandbox.memphis.dev'
+        ? 'https://restgw.sandbox.memphis.dev'
         : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
         ? 'http://localhost:4444'
-        : 'http://memphis-http-proxy.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
+        : 'http://memphis-rest-gateway.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
