@@ -22,9 +22,9 @@ import { numberWithCommas } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import unsupported from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
+import SdkExample from '../../../../components/sdkExsample';
 import CustomCollapse from '../components/customCollapse';
 import MultiCollapse from '../components/multiCollapse';
-import SdkExample from '../../components/sdkExsample';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
@@ -301,8 +301,8 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 )}
             </div>
-            <Modal header="SDK" width="710px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
-                <SdkExample showTabs={false} consumer={true} />
+            <Modal width="710px" height="700px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
+                <SdkExample withHeader={true} showTabs={false} consumer={true} stationName={stationState?.stationMetaData?.name} />
             </Modal>
             <Modal
                 width="710px"
@@ -313,7 +313,7 @@ const ProduceConsumList = ({ producer }) => {
                 open={openCreateProducer}
                 displayButtons={false}
             >
-                <SdkExample showTabs={false} />
+                <SdkExample withHeader={true} showTabs={false} stationName={stationState?.stationMetaData?.name} />
             </Modal>
         </div>
     );

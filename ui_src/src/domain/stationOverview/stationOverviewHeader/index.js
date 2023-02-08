@@ -15,7 +15,6 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-import { Segmented } from 'antd';
 
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
@@ -24,15 +23,15 @@ import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
+import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import UpdateSchemaModal from '../components/updateSchemaModal';
 import deleteIcon from '../../../assets/images/deleteIcon.svg';
-import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import VersionBadge from '../../../components/versionBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import BackIcon from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
+import SdkExample from '../../../components/sdkExsample';
 import { httpRequest } from '../../../services/http';
-import SdkExample from '../components/sdkExsample';
 import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
@@ -289,7 +288,7 @@ const StationOverviewHeader = () => {
                     open={sdkModal}
                     displayButtons={false}
                 >
-                    <SdkExample />
+                    <SdkExample stationName={stationState?.stationMetaData?.name} withHeader={true} />
                 </Modal>
                 <Modal
                     header={

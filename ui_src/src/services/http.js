@@ -13,9 +13,9 @@
 import { message } from 'antd';
 import axios from 'axios';
 
-import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE } from '../config';
-import { ApiEndpoints } from '../const/apiEndpoints';
+import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, SANDBOX_SHOWABLE_ERROR_STATUS_CODE } from '../config';
 import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_EXPIRED_TOKEN, LOCAL_STORAGE_SKIP_GET_STARTED } from '../const/localStorageConsts.js';
+import { ApiEndpoints } from '../const/apiEndpoints';
 import pathDomains from '../router';
 import AuthService from './auth';
 
@@ -60,6 +60,22 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
                 localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
             }
             window.location.assign('/login');
+        }
+        if (err?.response?.data?.message !== undefined && err?.response?.status === SANDBOX_SHOWABLE_ERROR_STATUS_CODE) {
+            message.warning({
+                key: 'memphisWarningMessage',
+                content: (
+                    <>
+                        You are in a sandbox environment; this operation is not allowed. <hr /> For a full Memphis experience, please
+                        <a className="a-link" href="https://docs.memphis.dev/memphis/getting-started/readme" target="_blank">
+                            install
+                        </a>
+                    </>
+                ),
+                duration: 5,
+                style: { cursor: 'pointer' },
+                onClick: () => message.destroy('memphisWarningMessage')
+            });
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
             message.warning({
