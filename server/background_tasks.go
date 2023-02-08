@@ -308,10 +308,10 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	// creating consumer + start listening
-	// err = s.ListenForTierStorageMessages()
-	// if err != nil {
-	// 	return errors.New("Failed subscribing for tiered storage update: " + err.Error())
-	// }
+	err = s.ListenForTierStorageMessages()
+	if err != nil {
+		return errors.New("Failed subscribing for tiered storage update: " + err.Error())
+	}
 
 	// // send JS API request to get more messages
 	// s.ApiRequestToJetstream()
