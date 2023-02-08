@@ -69,6 +69,8 @@ var (
 	ErrBadHeader                   = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS         int
 	POISON_MSGS_RETENTION_IN_HOURS int
+	isTierStorageConsumerCreated   bool
+	isTierStorageStreamCreated     bool
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -217,34 +219,34 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 		})
 }
 
-func (s *Server) CreateSystemStreams() {
+func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
 	successCh := make(chan error)
 
 	if ready { // stand alone
-		go tryCreateSystemStreams(s, retentionDur, successCh, false)
+		go tryCreateInternalJetStreamResources(s, retentionDur, successCh, false)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("CreateSystemStreams: system streams creation failed: " + err.Error())
+			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: " + err.Error())
 		}
 	} else {
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateSystemStreams(s, retentionDur, successCh, true)
+			go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
 			select {
 			case <-timeout.C:
-				s.Warnf("CreateSystemStreams: system streams creation takes more than a minute")
+				s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
 				err := <-successCh
 				if err != nil {
-					s.Warnf("CreateSystemStreams: " + err.Error())
+					s.Warnf("CreateInternalJetStreamResources: " + err.Error())
 					continue
 				}
 				ready = true
 			case err := <-successCh:
 				if err != nil {
-					s.Warnf("CreateSystemStreams: " + err.Error())
+					s.Warnf("CreateInternalJetStreamResources: " + err.Error())
 					<-timeout.C
 					continue
 				}
@@ -255,7 +257,7 @@ func (s *Server) CreateSystemStreams() {
 	}
 }
 
-func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
+func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
 	replicas := 1
 	if isCluster {
 		replicas = 3
@@ -291,6 +293,27 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		successCh <- err
 		return
 	}
+	isTierStorageStreamCreated = true
+
+	// create tiered storage consumer
+	durableName := TIER_STORAGE_CONSUMER
+	tieredStorageTimeFrame := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+	filterSubject := tieredStorageStream + ".>"
+	cc := ConsumerConfig{
+		DeliverPolicy: DeliverAll,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+		FilterSubject: filterSubject,
+		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
+		MaxAckPending: -1,
+	}
+	err = serv.memphisAddConsumer(tieredStorageStream, &cc)
+	if err != nil {
+		successCh <- err
+		serv.Errorf("err memphisAddConsumer" + err.Error())
+		return
+	}
+	isTierStorageConsumerCreated = true
 
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")

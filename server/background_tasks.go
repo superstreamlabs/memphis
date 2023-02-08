@@ -35,6 +35,7 @@ const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
+const TIER_STORAGE_CONSUMER = "$memphis_storage_consumer"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
@@ -313,9 +314,9 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for tiered storage update: " + err.Error())
 	}
 
-	// // send JS API request to get more messages
-	// s.ApiRequestToJetstream()
-	// s.SaveMsgsInTierStorage()
+	// send JS API request to get more messages
+	s.ApiRequestToJetstream()
+	s.SaveMsgsInTierStorage()
 
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
@@ -379,12 +380,14 @@ func (s *Server) ApiRequestToJetstream() {
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)
 		for range ticker.C {
-			durableName := "$memphis_storage_consumer"
-			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
-			reply := durableName + "_reply"
-			amount := 1000
-			req := []byte(strconv.FormatUint(uint64(amount), 10))
-			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+			if isTierStorageConsumerCreated && isTierStorageStreamCreated {
+				durableName := TIER_STORAGE_CONSUMER
+				subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
+				reply := durableName + "_reply"
+				amount := 1000
+				req := []byte(strconv.FormatUint(uint64(amount), 10))
+				serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+			}
 		}
 	}()
 }
@@ -401,36 +404,19 @@ func (s *Server) SaveMsgsInTierStorage() error {
 }
 
 func (s *Server) ListenForTierStorageMessages() error {
-	durableName := "$memphis_storage_consumer"
-	tieredStorageTimeFrame := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
-	filterSubject := tieredStorageStream + ".>"
-	cc := ConsumerConfig{
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		FilterSubject: filterSubject,
-		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
-		MaxAckPending: -1,
-	}
-	err := serv.memphisAddConsumer(tieredStorageStream, &cc)
-	if err != nil {
-		serv.Errorf("err memphisAddConsumer" + err.Error())
-		return err
-	}
 	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
 
-	reply := durableName + "_reply"
-	_, err = serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	reply := TIER_STORAGE_CONSUMER + "_reply"
+	_, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
-				serv.Errorf("subscribeOnGlobalAcc reply" + reply)
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)
 				seq, _, _ := ackReplyInfo(reply)
 				intTs, err := strconv.Atoi(rawTs)
 				if err != nil {
-					serv.Errorf("ListenForTierStorageMessages intTs: " + err.Error())
+					serv.Errorf("ListenForTierStorageMessages: " + err.Error())
 					return
 				}
 

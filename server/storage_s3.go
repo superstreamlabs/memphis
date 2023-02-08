@@ -394,6 +394,9 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierSto
 	_, ok := StorageFunctionsMap[tierStorageType]
 	if ok {
 		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
-		s.sendInternalAccountMsg(s.GlobalAccount(), subject, buf)
+		// TODO: if the stream is not exists save the buf in buffer
+		if isTierStorageStreamCreated {
+			s.sendInternalAccountMsg(s.GlobalAccount(), subject, buf)
+		}
 	}
 }
