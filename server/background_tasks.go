@@ -355,6 +355,7 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 			lock.Lock()
 
 			if len(tierStorageMsgsMap.m) > 0 {
+				serv.Warnf("UploadMsgsToTierStorage" + string(rune(len(tierStorageMsgsMap.m))))
 				err := UploadToTier2Storage()
 				if err != nil {
 					serv.Errorf("ConsumeStorageMsgs: " + err.Error())
@@ -381,7 +382,6 @@ func (s *Server) ApiRequestToJetstream() {
 		ticker := time.NewTicker(1 * time.Second)
 		for range ticker.C {
 			if isTierStorageConsumerCreated && isTierStorageStreamCreated {
-				serv.Warnf("ApiRequestToJetstream")
 				durableName := TIER_STORAGE_CONSUMER
 				subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
 				reply := durableName + "_reply"
@@ -395,7 +395,6 @@ func (s *Server) ApiRequestToJetstream() {
 
 func (s *Server) SaveMsgsInTierStorage() error {
 	chErrs := make(chan error, 1)
-	serv.Warnf("SaveMsgsInTierStorage")
 	go s.UploadMsgsToTierStorage(chErrs)
 	err := <-chErrs
 	if err != nil {
@@ -413,6 +412,7 @@ func (s *Server) ListenForTierStorageMessages() error {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
+				serv.Warnf("subscribeOnGlobalAcc")
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)
 				seq, _, _ := ackReplyInfo(reply)
