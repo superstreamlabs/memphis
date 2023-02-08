@@ -285,6 +285,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
+		Replicas:     replicas,
 	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
