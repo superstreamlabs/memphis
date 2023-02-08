@@ -277,20 +277,20 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 	}
 
 	// tiered storage stream
-	err = s.memphisAddStream(&StreamConfig{
-		Name:         tieredStorageStream,
-		Subjects:     []string{tieredStorageStream + ".>"},
-		Retention:    WorkQueuePolicy,
-		MaxAge:       retentionDur,
-		MaxConsumers: -1,
-		Discard:      DiscardOld,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
-	}
+	// err = s.memphisAddStream(&StreamConfig{
+	// 	Name:         tieredStorageStream,
+	// 	Subjects:     []string{tieredStorageStream + ".>"},
+	// 	Retention:    WorkQueuePolicy,
+	// 	MaxAge:       retentionDur,
+	// 	MaxConsumers: -1,
+	// 	Discard:      DiscardOld,
+	// 	Storage:      FileStorage,
+	// 	Replicas:     replicas,
+	// })
+	// if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+	// 	successCh <- err
+	// 	return
+	// }
 
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
