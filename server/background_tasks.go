@@ -408,7 +408,7 @@ func (s *Server) ListenForTierStorageMessages() error {
 	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
 
 	reply := TIER_STORAGE_CONSUMER + "_reply"
-	_, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	err := serv.queueSubscribe(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
