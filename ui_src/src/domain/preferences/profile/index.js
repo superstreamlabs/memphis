@@ -13,15 +13,16 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { Context } from '../../../hooks/store';
-import pathDomains from '../../../router';
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../../const/localStorageConsts';
 import { Checkbox, Divider } from 'antd';
+
+import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_PROFILE_PIC } from '../../../const/localStorageConsts';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
 import RadioButton from '../../../components/radioButton';
+import { httpRequest } from '../../../services/http';
+import { Context } from '../../../hooks/store';
 import Button from '../../../components/button';
 import Modal from '../../../components/modal';
-import { ApiEndpoints } from '../../../const/apiEndpoints';
-import { httpRequest } from '../../../services/http';
+import pathDomains from '../../../router';
 import ImgUploader from './imgUploader';
 
 function Profile() {
@@ -79,9 +80,9 @@ function Profile() {
             <div className="avatar-section">
                 <p className="title">Avatar</p>
                 <div className="avatar-images">
-                    {process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic') && (
+                    {process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) && (
                         <div className={'avatar-img selected'}>
-                            <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
+                            <img src={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC)} width={35} height={35} alt="avater" />
                         </div>
                     )}
                     {Array.from(Array(8).keys()).map((item, index) => {
@@ -89,7 +90,7 @@ function Profile() {
                             <div
                                 key={index}
                                 className={
-                                    process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic')
+                                    process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC)
                                         ? 'avatar-img avatar-disable'
                                         : avatar === item + 1
                                         ? 'avatar-img selected'

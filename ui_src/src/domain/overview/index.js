@@ -13,6 +13,10 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
+import { CloudDownloadRounded } from '@material-ui/icons';
+import { StringCodec, JSONCodec } from 'nats.ws';
+import { useMediaQuery } from 'react-responsive';
+import { Link } from 'react-router-dom';
 
 import {
     LOCAL_STORAGE_ALREADY_LOGGED_IN,
@@ -20,34 +24,33 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_WELCOME_MESSAGE,
-    LOCAL_STORAGE_SKIP_GET_STARTED
+    LOCAL_STORAGE_SKIP_GET_STARTED,
+    LOCAL_STORAGE_PROFILE_PIC,
+    LOCAL_STORAGE_OVERVIEW_VIEW
 } from '../../const/localStorageConsts';
+import installationIcon from '../../assets/images/installationIcon.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
-
+import dashboardView from '../../assets/images/dashboardView.svg';
+import { capitalizeFirst } from '../../services/valueConvertor';
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
-import stationImg from '../../assets/images/stationsIconActive.svg';
-import installationIcon from '../../assets/images/installationIcon.svg';
+import SegmentButton from '../../components/segmentButton';
+import graphView from '../../assets/images/graphView.svg';
+import Installation from '../../components/installation';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
 import { httpRequest } from '../../services/http';
-import { useMediaQuery } from 'react-responsive';
+import SystemComponents from './systemComponents';
 import GenericDetails from './genericDetails';
 import FailedStations from './failedStations';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
-import SystemComponents from './systemComponents';
 import Modal from '../../components/modal';
-import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
-import Resources from './resources';
-import Installation from '../../components/installation';
-import { CloudDownloadRounded } from '@material-ui/icons';
-import { capitalizeFirst } from '../../services/valueConvertor';
-import { StringCodec, JSONCodec } from 'nats.ws';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -66,6 +69,19 @@ const dataSentences = [
     `“Without big data, you are blind and deaf and in the middle of a freeway” — Geoffrey Moore`
 ];
 
+const segOptions = [
+    {
+        label: 'Dashboard',
+        value: 'Dashboard',
+        icon: <img src={dashboardView} alt="stationImg" style={{ fill: '#ff0000' }} />
+    },
+    {
+        label: 'Graph view',
+        value: 'Graph view',
+        icon: <img src={graphView} alt="graphView" style={{ fill: '#ff0000' }} />
+    }
+];
+
 function OverView() {
     const [state, dispatch] = useContext(Context);
     const [open, modalFlip] = useState(false);
@@ -75,8 +91,8 @@ function OverView() {
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [showInstallaion, setShowInstallaion] = useState(false);
-    const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
+    const [overviewView, setOverviewView] = useState(localStorage.getItem(LOCAL_STORAGE_OVERVIEW_VIEW) || 'Dashboard');
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
 
@@ -121,7 +137,6 @@ function OverView() {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             arrangeData(data);
             setisLoading(false);
-            setIsDataLoaded(true);
         } catch (error) {
             setisLoading(false);
         }
@@ -187,10 +202,10 @@ function OverView() {
                             <div className="bot-wrapper">
                                 <img
                                     className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || botUrl} // profile_pic is available only in sandbox env
+                                    src={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) || botUrl} // profile_pic is available only in sandbox env
                                     referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    height={localStorage.getItem('profile_pic') ? 60 : 40}
+                                    width={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) ? 60 : 40}
+                                    height={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) ? 60 : 40}
                                     alt="avatar"
                                 ></img>
                             </div>
@@ -200,6 +215,14 @@ function OverView() {
                             </div>
                         </div>
                         <div className={process.env.REACT_APP_SANDBOX_ENV ? 'overview-actions' : ''}>
+                            <SegmentButton
+                                value={overviewView}
+                                options={segOptions}
+                                onChange={(e) => {
+                                    setOverviewView(e);
+                                    localStorage.setItem(LOCAL_STORAGE_OVERVIEW_VIEW, e);
+                                }}
+                            />
                             {process.env.REACT_APP_SANDBOX_ENV && (
                                 <Button
                                     className="modal-btn"

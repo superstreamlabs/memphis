@@ -16,7 +16,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_PROFILE_PIC, LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
 import betaFullLogo from '../../assets/images/betaFullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import sharps from '../../assets/images/sharps.svg';
@@ -156,7 +156,7 @@ const SandboxLogin = (props) => {
             );
             if (data) {
                 AuthService.saveToLocalStorage(data);
-                localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
+                localStorage.setItem(LOCAL_STORAGE_PROFILE_PIC, data.profile_pic); // profile_pic is available only in sandbox env
                 try {
                     const conn = await connect({
                         servers: [SOCKET_URL],
@@ -190,7 +190,7 @@ const SandboxLogin = (props) => {
             );
             if (data) {
                 AuthService.saveToLocalStorage(data);
-                localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
+                localStorage.setItem(LOCAL_STORAGE_PROFILE_PIC, data.profile_pic); // profile_pic is available only in sandbox env
                 try {
                     const conn = await connect({
                         servers: [SOCKET_URL],

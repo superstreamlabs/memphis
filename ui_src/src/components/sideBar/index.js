@@ -17,7 +17,13 @@ import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Menu } from 'antd';
 
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import {
+    LOCAL_STORAGE_AVATAR_ID,
+    LOCAL_STORAGE_COMPANY_LOGO,
+    LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_PROFILE_PIC,
+    LOCAL_STORAGE_USER_NAME
+} from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
@@ -178,10 +184,10 @@ function SideBar() {
                             <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
                                 <img
                                     className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                                    src={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) || avatarUrl} // profile_pic is available only in sandbox env
                                     referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    height={localStorage.getItem('profile_pic') ? 35 : 25}
+                                    width={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) ? 35 : 25}
+                                    height={localStorage.getItem(LOCAL_STORAGE_PROFILE_PIC) ? 35 : 25}
                                     alt="avatar"
                                 ></img>
                             </div>
