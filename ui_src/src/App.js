@@ -43,7 +43,6 @@ const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
     const [authCheck, setAuthCheck] = useState(true);
-
     useEffect(() => {
         if (isMobile) {
             message.warn({

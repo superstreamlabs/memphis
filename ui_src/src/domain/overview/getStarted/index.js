@@ -13,27 +13,25 @@
 import './style.scss';
 
 import React, { createContext, useEffect, useReducer, useRef } from 'react';
+import { useHistory } from 'react-router-dom';
 
-import SideStep from './sideStep';
-import CreateAppUser from './createAppUser';
-import ConsumeData from './consumeData';
-import Reducer from './hooks/reducer';
-import ProduceData from './produceData';
-import CreateStation from './createStation';
-
+import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
 import ProduceDataImg from '../../../assets/images/emptyStation.svg';
 import ConsumeDataImg from '../../../assets/images/fullStation.svg';
 import finishStep from '../../../assets/images/readyToRoll.svg';
-import Finish from './finish';
-import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
+import ProduceConsumeData from './produceConsumeData';
+import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
-import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
+import CreateAppUser from './createAppUser';
+import CreateStation from './createStation';
 import pathDomains from '../../../router';
-import { useHistory } from 'react-router-dom';
+import Reducer from './hooks/reducer';
+import SideStep from './sideStep';
+import Finish from './finish';
 
 const steps = [{ stepName: 'Create Station' }, { stepName: 'Create App user' }, { stepName: 'Produce data' }, { stepName: 'Consume data' }, { stepName: 'Finish' }];
 
@@ -236,7 +234,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             onNext={onNext}
                             onBack={onBack}
                         >
-                            <ProduceData createStationFormRef={createStationFormRef} />
+                            <ProduceConsumeData createStationFormRef={createStationFormRef} />
                         </GetStartedItem>
                     )}
                     {getStartedState?.currentStep === 4 && (
@@ -247,7 +245,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             onNext={onNext}
                             onBack={onBack}
                         >
-                            <ConsumeData createStationFormRef={createStationFormRef} />
+                            <ProduceConsumeData consumer={true} createStationFormRef={createStationFormRef} />
                         </GetStartedItem>
                     )}
                     {getStartedState?.currentStep === 5 && (
