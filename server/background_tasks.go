@@ -414,6 +414,7 @@ func (s *Server) ListenForTierStorageMessages() error {
 	}
 	err := serv.memphisAddConsumer(tieredStorageStream, &cc)
 	if err != nil {
+		serv.Errorf("err memphisAddConsumer" + err.Error())
 		return err
 	}
 	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
@@ -423,12 +424,13 @@ func (s *Server) ListenForTierStorageMessages() error {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
+				serv.Errorf("subscribeOnGlobalAcc reply" + reply)
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)
 				seq, _, _ := ackReplyInfo(reply)
 				intTs, err := strconv.Atoi(rawTs)
 				if err != nil {
-					serv.Errorf("ListenForTierStorageMessages: " + err.Error())
+					serv.Errorf("ListenForTierStorageMessages intTs: " + err.Error())
 					return
 				}
 
