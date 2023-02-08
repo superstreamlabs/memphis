@@ -355,7 +355,7 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 			lock.Lock()
 
 			if len(tierStorageMsgsMap.m) > 0 {
-				serv.Warnf("UploadMsgsToTierStorage" + string(rune(len(tierStorageMsgsMap.m))))
+				serv.Warnf("UploadMsgsToTierStorage" + strconv.Itoa(len(tierStorageMsgsMap.m)))
 				err := UploadToTier2Storage()
 				if err != nil {
 					serv.Errorf("ConsumeStorageMsgs: " + err.Error())

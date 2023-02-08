@@ -1139,6 +1139,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 }
 
 func (s *Server) buildTierStorageMap(msg StoredMsg) {
+	serv.Warnf("buildTierStorageMap")
 	lock.Lock()
 	stationName := strings.Split(msg.Subject, "$memphis_tiered_storage.")
 	stationNameString := stationName[1]
