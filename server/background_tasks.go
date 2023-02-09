@@ -315,7 +315,7 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	// send JS API request to get more messages
-	s.ApiRequestToJetstream()
+	go s.ApiRequestToJetstream()
 	go s.UploadMsgsToTierStorage()
 
 	filter := bson.M{"key": "ui_url"}
@@ -347,47 +347,40 @@ func (s *Server) StartBackgroundTasks() error {
 }
 
 func (s *Server) UploadMsgsToTierStorage() {
-	timeout := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
-
-	for {
-		select {
-		case <-time.After(timeout):
-			lock.Lock()
-			if len(tierStorageMsgsMap.m) > 0 {
-				err := UploadToTier2Storage()
-				if err != nil {
-					serv.Errorf("UploadMsgsToTierStorage: " + err.Error())
-				}
+	ticker := time.NewTicker(time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+	for range ticker.C {
+		lock.Lock()
+		if len(tierStorageMsgsMap.m) > 0 {
+			err := UploadToTier2Storage()
+			if err != nil {
+				serv.Errorf("UploadMsgsToTierStorage: " + err.Error())
 			}
-
-			for kk, msgs := range tierStorageMsgsMap.m {
-				for _, msg := range msgs {
-					reply := msg.ReplySubject
-					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
-				}
-				tierStorageMsgsMap.Delete(kk)
-			}
-			lock.Unlock()
 		}
+
+		for kk, msgs := range tierStorageMsgsMap.m {
+			for _, msg := range msgs {
+				reply := msg.ReplySubject
+				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			}
+			tierStorageMsgsMap.Delete(kk)
+		}
+		lock.Unlock()
 	}
 }
 
 func (s *Server) ApiRequestToJetstream() {
-	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-		for range ticker.C {
-			if isTierStorageConsumerCreated && isTierStorageStreamCreated {
-				durableName := TIER_STORAGE_CONSUMER
-				subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
-				reply := durableName + "_reply"
-				amount := 1000
-				req := []byte(strconv.FormatUint(uint64(amount), 10))
-				serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-			}
+	ticker := time.NewTicker(1 * time.Second)
+	for range ticker.C {
+		if isTierStorageConsumerCreated && isTierStorageStreamCreated {
+			durableName := TIER_STORAGE_CONSUMER
+			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
+			reply := durableName + "_reply"
+			amount := 1000
+			req := []byte(strconv.FormatUint(uint64(amount), 10))
+			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
 		}
-	}()
+	}
 }
-
 
 func (s *Server) ListenForTierStorageMessages() error {
 	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
