@@ -22,6 +22,7 @@ import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
 import { Context } from '../../../hooks/store';
+import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
 
 const yAxesOptions = [
     {
@@ -34,7 +35,9 @@ const yAxesOptions = [
             callback: function (value) {
                 return `${convertBytes(value, true)}/s`;
             },
-            maxTicksLimit: 5
+            maxTicksLimit: 5,
+            min: 0,
+            suggestedMax: 45 * 1024
         }
     }
 ];
@@ -71,6 +74,7 @@ function Throughput() {
     const [dataSamples, setDataSamples] = useState({});
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(false);
+    const [stop, setstop] = useState(false);
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -171,6 +175,73 @@ function Throughput() {
         }, 1000);
     };
 
+    const options = {
+        plugins: {
+            streaming: {
+                pause: stop,
+                frameRate: 30000
+            }
+        },
+        animation: {
+            duration: 2000,
+            easing: 'easeOutQuart'
+        },
+        responsiveAnimationDuration: 2000,
+
+        legend: { display: false },
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        hover: { mode: 'nearest', intersect: true },
+        tooltips: {
+            mode: 'index',
+            intersect: false,
+            displayColors: false,
+            callbacks: {
+                title: () => {
+                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
+                },
+                label: (tooltipItem) => {
+                    return `${tooltipItem.label}`;
+                },
+                afterLabel: (tooltipItem) => {
+                    return `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`;
+                }
+            },
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            cornerRadius: 3,
+            titleFontSize: 14,
+            titleFontFamily: 'InterMedium',
+            titleFontStyle: 'normal',
+            bodyFontFamily: 'InterMedium',
+            bodyFontSize: 14,
+            bodySpacing: 6
+        },
+
+        elements: { line: { tension: 0.5 }, point: { borderWidth: 1, radius: 1, backgroundColor: 'rgba(0,0,0,0)' } },
+        scales: {
+            xAxes: [
+                {
+                    type: 'realtime',
+                    distribution: 'linear',
+                    realtime: {
+                        refresh: 1000,
+                        onRefresh: function (chart) {
+                            if (data?.datasets?.length !== 0) {
+                                updateData(chart);
+                            }
+                        },
+                        delay: 1000,
+                        duration: 300000,
+                        time: { displayFormat: 'h:mm:ss' }
+                    },
+                    gridLines: { display: true },
+                    ticks: { stepSize: 4, autoSkip: false }
+                }
+            ],
+            yAxes: yAxesOptions
+        }
+    };
+
     return (
         <div className="overview-components-wrapper throughput-overview-container">
             <div className="overview-components-header throughput-header">
@@ -178,59 +249,16 @@ function Throughput() {
                     <p>Live throughput</p>
                     <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
                 </div>
-                <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
+                <div className="throughput-actions">
+                    <div className="play-pause-btn" onClick={() => setstop(!stop)}>
+                        {stop ? <PlayArrowRounded /> : <PauseRounded />}
+                    </div>
+                    <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
+                </div>
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-                <Line
-                    data={data}
-                    options={{
-                        legend: { display: false },
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        hover: { mode: 'nearest', intersect: true },
-                        tooltips: {
-                            mode: 'index',
-                            intersect: false,
-                            displayColors: false,
-                            callbacks: {
-                                title: () => {
-                                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
-                                },
-                                label: (tooltipItem) => {
-                                    return `${tooltipItem.label}`;
-                                },
-                                afterLabel: (tooltipItem) => {
-                                    return `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`;
-                                }
-                            }
-                        },
-
-                        elements: { line: { tension: 0.5 }, point: { borderWidth: 1, radius: 1, backgroundColor: 'rgba(0,0,0,0)' } },
-                        scales: {
-                            xAxes: [
-                                {
-                                    type: 'realtime',
-                                    distribution: 'linear',
-                                    realtime: {
-                                        refresh: 1000,
-                                        onRefresh: function (chart) {
-                                            if (data?.datasets?.length !== 0) {
-                                                updateData(chart);
-                                            }
-                                        },
-                                        delay: 1000,
-                                        duration: 300000,
-                                        time: { displayFormat: 'h:mm:ss' }
-                                    },
-                                    gridLines: { display: true },
-                                    ticks: { stepSize: 4, autoSkip: false }
-                                }
-                            ],
-                            yAxes: yAxesOptions
-                        }
-                    }}
-                />
+                <Line id="test" data={data} options={options} />
             </div>
         </div>
     );

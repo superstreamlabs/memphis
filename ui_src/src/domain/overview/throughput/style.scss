@@ -45,12 +45,41 @@
         display: flex;
         align-items: center;
     }
+    .throughput-actions{
+        display: flex;
+        align-items: center;
+        .play-pause-btn{
+            border: 1px solid #D0D0D0;
+            cursor: pointer;
+            background-color: white;
+            border-radius: 4px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            svg{
+                color: var(--purple);
+                animation-name: example;
+                animation-duration: 3s;
+            }
+        }
+        .play-pause-btn:hover{
+            border-color: var(--purple) !important;
+        }
+    }
 
     .ant-segmented {
         margin-left: 10px;
         border-radius: 4px;
     }
 }
+
+@keyframes example {
+    from {opacity: 0.5;}
+    to {opacity: 1;}
+  }
 
 .throughput-interval-containter {
     height: 350px;

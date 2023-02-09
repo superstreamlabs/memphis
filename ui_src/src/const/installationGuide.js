@@ -96,12 +96,12 @@ export const INSTALLATION_GUIDE = {
             {
                 name: 'aws',
                 src: <img src={awsIcon} alt="awsIcon" />,
-                docsLink: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/deployment/cloud-deployment/deploy-on-aws'
+                docsLink: 'https://docs.memphis.dev/memphis/deployment/cloud-deployment/deploy-on-aws'
             },
             {
                 name: 'gcp',
                 src: <img src={gcpIcon} alt="gcpIcon" />,
-                docsLink: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/deployment/cloud-deployment/deploy-on-gcp'
+                docsLink: 'https://docs.memphis.dev/memphis/deployment/cloud-deployment/deploy-on-gcp'
             }
         ],
         aws: [

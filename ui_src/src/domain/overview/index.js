@@ -13,6 +13,10 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
+import { CloudDownloadRounded } from '@material-ui/icons';
+import { useMediaQuery } from 'react-responsive';
+import { StringCodec, JSONCodec } from 'nats.ws';
+import { Link } from 'react-router-dom';
 
 import {
     LOCAL_STORAGE_ALREADY_LOGGED_IN,
@@ -22,32 +26,26 @@ import {
     LOCAL_STORAGE_WELCOME_MESSAGE,
     LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
+import installationIcon from '../../assets/images/installationIcon.svg';
+import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
-
+import { capitalizeFirst } from '../../services/valueConvertor';
 import discordLogo from '../../assets/images/discordLogo.svg';
 import githubLogo from '../../assets/images/githubLogo.svg';
-import stationImg from '../../assets/images/stationsIconActive.svg';
-import installationIcon from '../../assets/images/installationIcon.svg';
+import Installation from '../../components/installation';
 import docsLogo from '../../assets/images/docsLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import welcome from '../../assets/images/welcome.svg';
 import { httpRequest } from '../../services/http';
-import { useMediaQuery } from 'react-responsive';
+import SystemComponents from './systemComponents';
 import GenericDetails from './genericDetails';
 import FailedStations from './failedStations';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
-import SystemComponents from './systemComponents';
 import Modal from '../../components/modal';
-import { Link } from 'react-router-dom';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
-import Resources from './resources';
-import Installation from '../../components/installation';
-import { CloudDownloadRounded } from '@material-ui/icons';
-import { capitalizeFirst } from '../../services/valueConvertor';
-import { StringCodec, JSONCodec } from 'nats.ws';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -299,13 +297,13 @@ function OverView() {
                     <label className="welcome-message">and is under constant modifications.</label>
                     <label className="welcome-message">Downtimes might occur.</label>
                     <div>
-                        <Link to={{ pathname: 'https://app.gitbook.com/o/-MSyW3CRw3knM-KGk6G6/s/t7NJvDh5VSGZnmEsyR9h/memphis/overview' }} target="_blank">
+                        <Link to={{ pathname: 'https://docs.memphis.dev/memphis/getting-started/readme' }} target="_blank">
                             <img src={docsLogo} alt="slack" className="sandbox-icon"></img>
                         </Link>
                         <Link to={{ pathname: 'https://github.com/memphisdev/memphis-broker' }} target="_blank">
                             <img src={githubLogo} alt="github" className="sandbox-icon"></img>
                         </Link>
-                        <Link to={{ pathname: 'https://discord.com/invite/WZpysvAeTf' }} target="_blank">
+                        <Link to={{ pathname: 'https://discord.com/invite/3QcAwtrZZR' }} target="_blank">
                             <img src={discordLogo} alt="discord" className="sandbox-icon"></img>
                         </Link>
                     </div>

@@ -9,6 +9,9 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
+import { FiberManualRecord } from '@material-ui/icons';
+
+import datadogBannerPopup from '../assets/images/datadogBannerPopup.svg';
 import slackBannerPopup from '../assets/images/slackBannerPopup.svg';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.svg';
 import influxDBBanner from '../assets/images/influxDBBanner.svg';
@@ -24,7 +27,6 @@ import slackLogo from '../assets/images/slackLogo.svg';
 import s3Banner from '../assets/images/s3Banner.svg';
 import s3Logo from '../assets/images/s3Logo.svg';
 
-import { FiberManualRecord } from '@material-ui/icons';
 import { diffDate } from '../services/valueConvertor';
 import { ColorPalette } from './globalConst';
 
@@ -187,6 +189,55 @@ export const INTEGRATION_LIST = [
         )
     },
     {
+        name: 'Datadog',
+        by: 'memphis',
+        banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
+        insideBanner: <img className="insideBanner" src={datadogBannerPopup} alt="datadogBannerPopup" />,
+        icon: <img src={datadogIcon} alt="datadogIcon" />,
+        description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
+        date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Monitoring'],
+        header: (
+            <div className="header-left-side">
+                <img src={datadogIcon} alt="datadogIcon" />
+                <div className="details">
+                    <p>Datadog</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog
+                </span>
+            </div>
+        ),
+        steps: [
+            {
+                title: 'Step 1: Make sure your Memphis Prometheus exporter is on',
+                key: 0
+            },
+            {
+                title: 'Step 2: Add Datadog annotation to Memphis statefulset',
+                key: 1
+            },
+            {
+                title: 'Step 3: Check Datadog for Memphis metrics',
+                key: 2
+            },
+            {
+                title: 'Step 4: Import the Memphis dashboard',
+                key: 3
+            }
+        ]
+    },
+    {
         name: 'S3',
         by: 'memphis',
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
@@ -216,6 +267,7 @@ export const INTEGRATION_LIST = [
             </div>
         )
     },
+
     {
         name: 'PagerDuty',
         by: 'memphis',
@@ -276,38 +328,6 @@ export const INTEGRATION_LIST = [
                 <p>Description</p>
                 <span className="content">
                     New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic
-                </span>
-            </div>
-        )
-    },
-    {
-        name: 'Datadog',
-        by: 'memphis',
-        banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
-        insideBanner: <img className="insideBanner" src={datadogBanner} alt="datadogBanner" />,
-        icon: <img src={datadogIcon} alt="datadogIcon" />,
-        description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
-        date: 'Nov 19, 2022',
-        category: CATEGORY_LIST['Monitoring'],
-        comingSoon: true,
-        header: (
-            <div className="header-left-side">
-                <img src={datadogIcon} alt="datadogIcon" />
-                <div className="details">
-                    <p>Datadog</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
-                    </>
-                </div>
-            </div>
-        ),
-        integrateDesc: (
-            <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">
-                    Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog
                 </span>
             </div>
         )

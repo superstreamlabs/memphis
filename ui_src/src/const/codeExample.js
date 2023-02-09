@@ -9,6 +9,7 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
+export const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'NestJS', 'Python'];
 
 export const SDK_CODE_EXAMPLE = {
     'Node.js': {
@@ -77,6 +78,13 @@ export const SDK_CODE_EXAMPLE = {
     }
 })();
         `
+    },
+
+    NestJS: {
+        title: 'Please head over to the documentation',
+        desc: "We'll provide you with snippets that you can easily connect your application with Memphis",
+        link: 'https://github.com/memphisdev/memphis.js',
+        installation: `npm i memphis-dev --save`
     },
 
     TypeScript: {
@@ -226,7 +234,7 @@ func main() {
     }
 
     ctx := context.Background()
-	ctx = context.WithValue(ctx, "key", "value)
+	ctx = context.WithValue(ctx, "key", "value")
 	consumer.SetContext(ctx)
     consumer.Consume(handler)
 
@@ -300,6 +308,7 @@ if __name__ == '__main__':
     }
 };
 
+export const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
 export const PROTOCOL_CODE_EXAMPLE = {
     cURL: {
         langCode: 'apex',

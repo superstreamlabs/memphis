@@ -30,7 +30,7 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalStations} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Total stations</span>
+                        <span>Stations</span>
                         <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
                     </div>
                 </div>
@@ -38,7 +38,7 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Total messages</span>
+                        <span>Messages</span>
                         <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
                     </div>
                 </div>
@@ -46,7 +46,7 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Total dead-letter</span>
+                        <span>Dead-lettered messages</span>
                         <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
                     </div>
                 </div>

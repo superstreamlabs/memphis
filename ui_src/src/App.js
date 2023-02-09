@@ -26,8 +26,9 @@ import MessageJourney from './domain/messageJourney';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SandboxLogin from './domain/sandboxLogin';
-import { useHistory } from 'react-router-dom';
+import Preferences from './domain/preferences';
 import SchemaManagment from './domain/schema';
+import { useHistory } from 'react-router-dom';
 import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
@@ -37,13 +38,11 @@ import Signup from './domain/signup';
 import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
-import Preferences from './domain/preferences';
 
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
     const [authCheck, setAuthCheck] = useState(true);
-
     useEffect(() => {
         if (isMobile) {
             message.warn({
