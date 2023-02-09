@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.61cab591.css",
-    "main.js": "/static/js/main.45e68b80.js",
+    "main.css": "/static/css/main.39f00972.css",
+    "main.js": "/static/js/main.4d8b805f.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -188,8 +188,6 @@
     "static/media/greenHealth.svg": "/static/media/greenHealth.123f637981da73d2619b741ef40c4fba.svg",
     "static/media/yellowHealth.svg": "/static/media/yellowHealth.d3a2389ed00bcc9081bb7607dcbefc87.svg",
     "static/media/journey.svg": "/static/media/journey.d33d5d460049fb64a1c3b972f2b5c965.svg",
-    "static/media/waitingForProducersvg.svg": "/static/media/waitingForProducersvg.aa1a3c97a29cfa19a92231271a9e5597.svg",
-    "static/media/waitingForConsumer.svg": "/static/media/waitingForConsumer.d387c4c75cfcd4a8938febc27a6f2122.svg",
     "static/media/awaitingIcon.svg": "/static/media/awaitingIcon.59904187bbec884701238d6235024deb.svg",
     "static/media/clusterConfGray.svg": "/static/media/clusterConfGray.d6689ce49c492c73ab1f86759fbfbdf1.svg",
     "static/media/copied.svg": "/static/media/copied.9d395f7b95bb22fc0a0ff05fe091b25b.svg",
@@ -248,7 +246,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.61cab591.css",
-    "static/js/main.45e68b80.js"
+    "static/css/main.39f00972.css",
+    "static/js/main.4d8b805f.js"
   ]
 }

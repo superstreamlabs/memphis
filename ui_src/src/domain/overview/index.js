@@ -14,8 +14,8 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { CloudDownloadRounded } from '@material-ui/icons';
-import { StringCodec, JSONCodec } from 'nats.ws';
 import { useMediaQuery } from 'react-responsive';
+import { StringCodec, JSONCodec } from 'nats.ws';
 import { Link } from 'react-router-dom';
 
 import {

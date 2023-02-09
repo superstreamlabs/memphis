@@ -402,7 +402,8 @@ func DenyForSandboxEnv(c *gin.Context) error {
 	}
 
 	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
+		sandboxErrCode := 665
+		c.AbortWithStatusJSON(sandboxErrCode, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
 		return errors.New("Sandbox environment")
 	}
 	return nil
