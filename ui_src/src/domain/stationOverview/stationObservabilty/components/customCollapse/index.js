@@ -28,7 +28,7 @@ const { Panel } = Collapse;
 
 const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
-    const [parser, setParser] = useState(localStorage.getItem(LOCAL_STORAGE_MSG_PARSER));
+    const [parser, setParser] = useState(localStorage.getItem(LOCAL_STORAGE_MSG_PARSER) || 'string');
     const [payload, setPayload] = useState(data);
 
     useEffect(() => {
@@ -52,7 +52,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                     setPayload(data);
                     break;
                 default:
-                    setPayload(data);
+                    setPayload(hex_to_ascii(data));
             }
         }
     }, [parser, data]);
