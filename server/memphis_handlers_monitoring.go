@@ -665,8 +665,13 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		if strings.Contains(err.Error(), "Cannot connect to the Docker daemon") {
+			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
+		} else {
+			serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		}
 		return
 	}
 	k8sEnv := true
