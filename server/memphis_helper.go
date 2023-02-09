@@ -1141,16 +1141,15 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 func (s *Server) buildTierStorageMap(msg StoredMsg) {
 	serv.Warnf("buildTierStorageMap")
 	lock.Lock()
-	stationName := strings.Split(msg.Subject, "$memphis_tiered_storage.")
-	stationNameString := stationName[1]
-	if strings.Contains(stationNameString, "#") {
-		stationNameString = strings.Replace(stationNameString, "#", ".", -1)
+	stationName := msg.Subject
+	if strings.Contains(msg.Subject, "#") {
+		stationName = strings.Replace(msg.Subject, "#", ".", -1)
 	}
-	_, ok := tierStorageMsgsMap.Load(stationNameString)
+	_, ok := tierStorageMsgsMap.Load(stationName)
 	if !ok {
-		tierStorageMsgsMap.Add(stationNameString, []StoredMsg{})
+		tierStorageMsgsMap.Add(stationName, []StoredMsg{})
 	}
 
-	tierStorageMsgsMap.m[stationNameString] = append(tierStorageMsgsMap.m[stationNameString], msg)
+	tierStorageMsgsMap.m[stationName] = append(tierStorageMsgsMap.m[stationName], msg)
 	lock.Unlock()
 }

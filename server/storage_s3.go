@@ -35,6 +35,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type TierStorageMsg struct {
+	Buf         []byte `json:"buf"`
+	StationName string `json:"stationName"`
+}
+
 func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 	s3Integration, ok := IntegrationsCache["s3"].(models.Integration)
 	if !ok {
@@ -382,7 +387,7 @@ func (s *Server) uploadToS3Storage() error {
 
 }
 
-func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierStorageType string) {
+func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierStorageType string) error {
 	storedType := reflect.TypeOf(storageType).Elem().Name()
 	var streamName string
 	switch storedType {
@@ -398,7 +403,17 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierSto
 		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
 		// TODO: if the stream is not exists save the buf in buffer
 		if isTierStorageStreamCreated {
-			s.sendInternalAccountMsg(s.GlobalAccount(), subject, buf)
+			tierStorageMsg := TierStorageMsg{
+				Buf:         buf,
+				StationName: streamName,
+			}
+
+			msg, err := json.Marshal(tierStorageMsg)
+			if err != nil {
+				return err
+			}
+			s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 		}
 	}
+	return nil
 }

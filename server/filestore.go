@@ -2081,7 +2081,10 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 
 	// send the message to tiere 2 storage if needed
 	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && serv != nil {
-		serv.sendToTier2Storage(fs, copyBytes(sm.buf), "s3")
+		err = serv.sendToTier2Storage(fs, copyBytes(sm.buf), "s3")
+		if err != nil {
+			return false, err
+		}
 	}
 
 	// Grab size

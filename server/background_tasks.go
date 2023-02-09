@@ -413,6 +413,12 @@ func (s *Server) ListenForTierStorageMessages() error {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
 				serv.Warnf("subscribeOnGlobalAcc")
+				var tierStorageMsg TierStorageMsg
+				err := json.Unmarshal(msg, &tierStorageMsg)
+				if err != nil {
+					return
+				}
+				payload := tierStorageMsg.Buf
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)
 				seq, _, _ := ackReplyInfo(reply)
@@ -423,16 +429,15 @@ func (s *Server) ListenForTierStorageMessages() error {
 				}
 
 				dataFirstIdx := 0
-				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
-				if dataFirstIdx > len(msg)-len(CR_LF) {
+				dataFirstIdx = getHdrLastIdxFromRaw(payload) + 1
+				if dataFirstIdx > len(payload)-len(CR_LF) {
 					s.Errorf("ListenForTierStorageMessages: memphis error parsing in station get messages")
 				}
-				dataLen := len(msg) - dataFirstIdx
-				dataLen -= len(CR_LF)
-				header := msg[:dataFirstIdx]
-				data := msg[dataFirstIdx : dataFirstIdx+dataLen]
+				dataLen := len(payload) - dataFirstIdx
+				header := payload[:dataFirstIdx]
+				data := payload[dataFirstIdx : dataFirstIdx+dataLen]
 				message := StoredMsg{
-					Subject:      subject,
+					Subject:      tierStorageMsg.StationName,
 					Sequence:     uint64(seq),
 					Data:         data,
 					Header:       header,
