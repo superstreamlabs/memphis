@@ -311,9 +311,7 @@ type Msg struct {
 }
 
 func (s *Server) uploadToS3Storage() error {
-	serv.Warnf("uploadToS3Storage", strconv.Itoa(len(tierStorageMsgsMap.m)))
 	if len(tierStorageMsgsMap.m) > 0 {
-		serv.Warnf("uploadToS3Storage if", strconv.Itoa(len(tierStorageMsgsMap.m)))
 		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
 		provider := &credentials.StaticProvider{Value: credentials.Value{
 			AccessKeyID:     credentialsMap.Keys["access_key"],

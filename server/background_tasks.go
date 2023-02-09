@@ -316,7 +316,7 @@ func (s *Server) StartBackgroundTasks() error {
 
 	// send JS API request to get more messages
 	s.ApiRequestToJetstream()
-	s.SaveMsgsInTierStorage()
+	go s.UploadMsgsToTierStorage()
 
 	filter := bson.M{"key": "ui_url"}
 	var systemKey models.SystemKey
@@ -346,21 +346,17 @@ func (s *Server) StartBackgroundTasks() error {
 	return nil
 }
 
-func (s *Server) UploadMsgsToTierStorage(errs chan error) {
+func (s *Server) UploadMsgsToTierStorage() {
 	timeout := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 
 	for {
 		select {
 		case <-time.After(timeout):
 			lock.Lock()
-
 			if len(tierStorageMsgsMap.m) > 0 {
-				serv.Warnf("UploadMsgsToTierStorage" + strconv.Itoa(len(tierStorageMsgsMap.m)))
 				err := UploadToTier2Storage()
 				if err != nil {
-					serv.Errorf("ConsumeStorageMsgs: " + err.Error())
-					errs <- err
-					return
+					serv.Errorf("UploadMsgsToTierStorage: " + err.Error())
 				}
 			}
 
@@ -373,7 +369,6 @@ func (s *Server) UploadMsgsToTierStorage(errs chan error) {
 			}
 			lock.Unlock()
 		}
-		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -393,16 +388,6 @@ func (s *Server) ApiRequestToJetstream() {
 	}()
 }
 
-func (s *Server) SaveMsgsInTierStorage() error {
-	chErrs := make(chan error, 1)
-	go s.UploadMsgsToTierStorage(chErrs)
-	err := <-chErrs
-	if err != nil {
-		s.Errorf("SaveMsgsInTierStorage" + err.Error())
-		return err
-	}
-	return nil
-}
 
 func (s *Server) ListenForTierStorageMessages() error {
 	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
@@ -412,7 +397,6 @@ func (s *Server) ListenForTierStorageMessages() error {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
-				serv.Warnf("subscribeOnGlobalAcc")
 				var tierStorageMsg TierStorageMsg
 				err := json.Unmarshal(msg, &tierStorageMsg)
 				if err != nil {
@@ -445,7 +429,6 @@ func (s *Server) ListenForTierStorageMessages() error {
 					ReplySubject: replySubj,
 				}
 
-				serv.Warnf("subscribeOnGlobalAcc" + string(message.Data))
 				s.buildTierStorageMap(message)
 			}
 		}(subject, reply, copyBytes(msg))

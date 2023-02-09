@@ -1139,7 +1139,6 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 }
 
 func (s *Server) buildTierStorageMap(msg StoredMsg) {
-	serv.Warnf("buildTierStorageMap")
 	lock.Lock()
 	stationName := msg.Subject
 	if strings.Contains(msg.Subject, "#") {
