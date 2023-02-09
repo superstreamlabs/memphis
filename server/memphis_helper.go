@@ -323,8 +323,8 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// delete the old version throughput stream
 	err = s.memphisDeleteStream(throughputStreamName)
-	if err != nil {
-		s.Warnf("Failed deleting old internal throughput stream - %s", err.Error())
+	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 	}
 
 	// throughput kv
