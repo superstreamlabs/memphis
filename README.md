@@ -74,6 +74,7 @@ And the list continues...
   - Event/Data Streaming (observability, analytics, ML/AI)
 - Queuing
 - N:N communication patterns
+- Ingest Grafana Loki logs at scale
 
 ## ✨ Features
 
