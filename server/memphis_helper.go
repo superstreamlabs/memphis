@@ -277,6 +277,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		successCh <- err
 		return
 	}
+	serv.Warnf("create log stream")
 
 	// tiered storage stream
 	err = s.memphisAddStream(&StreamConfig{
