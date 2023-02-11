@@ -289,7 +289,9 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		Storage:      FileStorage,
 		Replicas:     replicas,
 	})
+	serv.Warnf("create storage stream")
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		serv.Warnf("create storage stream err" + err.Error())
 		successCh <- err
 		return
 	}
