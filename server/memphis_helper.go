@@ -220,6 +220,7 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 }
 
 func (s *Server) CreateInternalJetStreamResources() {
+	s.Warnf("CreateInternalJetStreamResources")
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
@@ -258,6 +259,7 @@ func (s *Server) CreateInternalJetStreamResources() {
 }
 
 func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
+	serv.Warnf("tryCreateInternalJetStreamResources")
 	replicas := 1
 	if isCluster {
 		replicas = 3
