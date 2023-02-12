@@ -220,7 +220,6 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 }
 
 func (s *Server) CreateInternalJetStreamResources() {
-	s.Warnf("CreateInternalJetStreamResources")
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
 
@@ -233,7 +232,6 @@ func (s *Server) CreateInternalJetStreamResources() {
 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: " + err.Error())
 		}
 	} else {
-		s.Errorf("cluster mode")
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
 			go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
@@ -260,7 +258,6 @@ func (s *Server) CreateInternalJetStreamResources() {
 }
 
 func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
-	serv.Warnf("tryCreateInternalJetStreamResources")
 	replicas := 1
 	if isCluster {
 		replicas = 3
@@ -280,7 +277,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		successCh <- err
 		return
 	}
-	serv.Warnf("create log stream")
 
 	// tiered storage stream
 	err = s.memphisAddStream(&StreamConfig{
@@ -293,9 +289,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		Storage:      FileStorage,
 		Replicas:     replicas,
 	})
-	serv.Warnf("create storage stream")
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		serv.Warnf("create storage stream err" + err.Error())
 		successCh <- err
 		return
 	}
@@ -333,7 +327,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 	}
 
-	serv.Warnf("memphis delete stream")
 	// throughput kv
 	err = s.memphisAddStream(&StreamConfig{
 		Name:         (throughputStreamNameV1),
@@ -353,7 +346,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		successCh <- err
 		return
 	}
-	serv.Warnf("memphis throughput stream")
 	successCh <- nil
 }
 
