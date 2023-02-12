@@ -2840,6 +2840,7 @@ func (fs *fileStore) expireMsgs() {
 	fs.mu.RUnlock()
 	for sm, _ = fs.msgForSeq(0, &smv); sm != nil && sm.ts <= minAge; sm, _ = fs.msgForSeq(0, &smv) {
 		fs.removeMsg(sm.seq, false, true)
+		serv.Warnf("remove msg from stream")
 	}
 
 	fs.mu.Lock()
