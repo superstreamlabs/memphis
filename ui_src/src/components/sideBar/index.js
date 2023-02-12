@@ -17,7 +17,13 @@ import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Menu } from 'antd';
 
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import {
+    LOCAL_STORAGE_AVATAR_ID,
+    LOCAL_STORAGE_COMPANY_LOGO,
+    LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_USER_NAME,
+    LOCAL_STORAGE_SKIP_GET_STARTED
+} from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
@@ -41,7 +47,8 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
-
+import Modal from '../modal';
+import { capitalizeFirst } from '../../services/valueConvertor';
 const { SubMenu } = Menu;
 
 function SideBar() {
@@ -49,6 +56,8 @@ function SideBar() {
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
+    const [open, modalFlip] = useState(false);
+    const [goToRoute, setGoToRoute] = useState(null);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -83,6 +92,17 @@ function SideBar() {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
+    useEffect(() => {
+        if (goToRoute && state.route !== goToRoute) {
+            if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') modalFlip(true);
+            else typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
+        }
+    }, [goToRoute]);
+
+    const handleChangeRoute = () => {
+        history.push(goToRoute);
+    };
+
     const handleClick = async (e) => {
         switch (e.key) {
             case '1':
@@ -96,82 +116,98 @@ function SideBar() {
         }
     };
 
+    const skipGetStarted = async () => {
+        try {
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+            typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
+            modalFlip(false);
+        } catch (error) {}
+    };
+
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <Link to={pathDomains.overview}>
-                    <img src={betaLogo} width="62" className="logoimg" alt="logo" />
-                </Link>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.overview}>
-                        <div className="icon">
-                            {state.route === 'overview' ? (
-                                <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={overviewIcon} alt="overviewIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
-                    </Link>
+                <Modal
+                    header="Skip get-started?"
+                    height="100px"
+                    width="400px"
+                    rBtnText="Skip"
+                    lBtnText="Don't skip"
+                    lBtnClick={() => {
+                        typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
+                        modalFlip(false);
+                    }}
+                    rBtnClick={() => {
+                        skipGetStarted();
+                    }}
+                    clickOutside={() => {
+                        setGoToRoute(state.route);
+                        modalFlip(false);
+                    }}
+                    open={open}
+                >
+                    <p>After choosing "skip" you won't see get-started flow anymore.</p>
+                </Modal>
+                <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => setGoToRoute(pathDomains.overview)} />
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.overview)}>
+                    <div className="icon">
+                        {state.route === 'overview' ? (
+                            <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={overviewIcon} alt="overviewIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.stations}>
-                        <div className="icon">
-                            {state.route === 'stations' ? (
-                                <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.stations)}>
+                    <div className="icon">
+                        {state.route === 'stations' ? (
+                            <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.schemaverse}>
-                        <div className="icon">
-                            {state.route === 'schemaverse' ? (
-                                <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.schemaverse)}>
+                    <div className="icon">
+                        {state.route === 'schemaverse' ? (
+                            <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.users}>
-                        <div className="icon">
-                            {state.route === 'users' ? (
-                                <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.users)}>
+                    <div className="icon">
+                        {state.route === 'users' ? (
+                            <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.sysLogs}>
-                        <div className="icon">
-                            {state.route === 'logs' ? (
-                                <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.sysLogs)}>
+                    <div className="icon">
+                        {state.route === 'logs' ? (
+                            <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                 </div>
             </div>
             <div className="bottom-icons">
-                <Link to={`${pathDomains.preferences}/integrations`}>
-                    <TooltipComponent text="Integrations" placement="right">
-                        <div className="integration-icon-wrapper">
-                            <img src={integrationNavIcon} />
-                        </div>
-                    </TooltipComponent>
-                </Link>
-                <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click">
+                <TooltipComponent text="Integrations" placement="right">
+                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.preferences}/integrations`)}>
+                        <img src={integrationNavIcon} />
+                    </div>
+                </TooltipComponent>
+                <Menu onClick={(e) => setGoToRoute(e)} className="app-menu" mode="vertical" triggerSubMenuAction="click">
                     <SubMenu
                         key="subMenu"
                         icon={
