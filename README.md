@@ -74,6 +74,7 @@ And the list continues...
   - Event/Data Streaming (observability, analytics, ML/AI)
 - Queuing
 - N:N communication patterns
+- Ingest Grafana Loki logs at scale
 
 ## ✨ Features
 
@@ -86,7 +87,7 @@ And the list continues...
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
 - 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
-- ⛓ SDKs: Node.JS, Go, Python, TypeScript, NestJS, REST
+- ⛓ SDKs: Node.JS, Go, Python, Typescript, NestJS, REST, .NET, Kotlin
 - 🐳☸ Kubernetes-native
 - 👨‍💻 Community driven
 

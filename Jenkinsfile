@@ -139,7 +139,7 @@ node {
 	  """
 	  dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
-	    sh 'helm install my-memphis memphis --set analytics="false",cluster.enabled="true",websocket.tls.cert="memphis_local.pem",websocket.tls.key="memphis-key_local.pem",websocket.tls.secret.name="tls-secret" --create-namespace --namespace memphis --wait'
+	    sh 'helm install my-memphis memphis --set analytics="false",cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --create-namespace --namespace memphis --wait'
 	  }
           sh "rm -rf memphis-k8s"
 	}
