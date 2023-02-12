@@ -296,7 +296,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	isTierStorageStreamCreated = true
 
 	// create tiered storage consumer
-	durableName := TIER_STORAGE_CONSUMER
+	durableName := TIERED_STORAGE_CONSUMER
 	tieredStorageTimeFrame := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
@@ -310,7 +310,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	err = serv.memphisAddConsumer(tieredStorageStream, &cc)
 	if err != nil {
 		successCh <- err
-		serv.Errorf("err memphisAddConsumer" + err.Error())
 		return
 	}
 	isTierStorageConsumerCreated = true
@@ -1138,7 +1137,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func (s *Server) buildTierStorageMap(msg StoredMsg) {
+func (s *Server) buildTieredStorageMap(msg StoredMsg) {
 	lock.Lock()
 	stationName := msg.Subject
 	if strings.Contains(msg.Subject, "#") {

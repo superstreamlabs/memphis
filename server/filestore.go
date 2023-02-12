@@ -38,11 +38,6 @@ import (
 
 	mrand "math/rand"
 
-	// "github.com/aws/aws-sdk-go/aws"
-	// "github.com/aws/aws-sdk-go/aws/credentials"
-	// "github.com/aws/aws-sdk-go/aws/session"
-	// "github.com/aws/aws-sdk-go/service/s3/s3manager"
-
 	"github.com/klauspost/compress/s2"
 	"github.com/minio/highwayhash"
 	"golang.org/x/crypto/chacha20"
@@ -2079,7 +2074,7 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 		return false, err
 	}
 
-	// send the message to tiere 2 storage if needed
+	// send the message to tiered 2 storage if needed
 	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && serv != nil {
 		err = serv.sendToTier2Storage(fs, copyBytes(sm.buf), "s3")
 		if err != nil {

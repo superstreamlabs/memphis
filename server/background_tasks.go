@@ -35,7 +35,7 @@ const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
-const TIER_STORAGE_CONSUMER = "$memphis_storage_consumer"
+const TIERED_STORAGE_CONSUMER = "$memphis_storage_consumer"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
@@ -309,7 +309,7 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	// creating consumer + start listening
-	err = s.ListenForTierStorageMessages()
+	err = s.ListenForTieredStorageMessages()
 	if err != nil {
 		return errors.New("Failed subscribing for tiered storage update: " + err.Error())
 	}
@@ -372,7 +372,7 @@ func (s *Server) ApiRequestToJetstream() {
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 		if isTierStorageConsumerCreated && isTierStorageStreamCreated {
-			durableName := TIER_STORAGE_CONSUMER
+			durableName := TIERED_STORAGE_CONSUMER
 			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
 			reply := durableName + "_reply"
 			amount := 1000
@@ -382,39 +382,40 @@ func (s *Server) ApiRequestToJetstream() {
 	}
 }
 
-func (s *Server) ListenForTierStorageMessages() error {
+func (s *Server) ListenForTieredStorageMessages() error {
 	tierStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
 
-	reply := TIER_STORAGE_CONSUMER + "_reply"
+	reply := TIERED_STORAGE_CONSUMER + "_reply"
 	err := serv.queueSubscribe(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
-				var tierStorageMsg TierStorageMsg
-				err := json.Unmarshal(msg, &tierStorageMsg)
+				var tieredStorageMsg TieredStorageMsg
+				err := json.Unmarshal(msg, &tieredStorageMsg)
 				if err != nil {
+					serv.Errorf("ListenForTieredStorageMessages: " + err.Error())
 					return
 				}
-				payload := tierStorageMsg.Buf
+				payload := tieredStorageMsg.Buf
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)
 				seq, _, _ := ackReplyInfo(reply)
 				intTs, err := strconv.Atoi(rawTs)
 				if err != nil {
-					serv.Errorf("ListenForTierStorageMessages: " + err.Error())
+					serv.Errorf("ListenForTieredStorageMessages: " + err.Error())
 					return
 				}
 
 				dataFirstIdx := 0
 				dataFirstIdx = getHdrLastIdxFromRaw(payload) + 1
 				if dataFirstIdx > len(payload)-len(CR_LF) {
-					s.Errorf("ListenForTierStorageMessages: memphis error parsing in station get messages")
+					s.Errorf("ListenForTieredStorageMessages: memphis error parsing in station get messages")
 				}
 				dataLen := len(payload) - dataFirstIdx
 				header := payload[:dataFirstIdx]
 				data := payload[dataFirstIdx : dataFirstIdx+dataLen]
 				message := StoredMsg{
-					Subject:      tierStorageMsg.StationName,
+					Subject:      tieredStorageMsg.StationName,
 					Sequence:     uint64(seq),
 					Data:         data,
 					Header:       header,
@@ -422,12 +423,12 @@ func (s *Server) ListenForTierStorageMessages() error {
 					ReplySubject: replySubj,
 				}
 
-				s.buildTierStorageMap(message)
+				s.buildTieredStorageMap(message)
 			}
 		}(subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		serv.Errorf("ListenForTierStorageMessages: " + err.Error())
+		serv.Errorf("ListenForTieredStorageMessages: " + err.Error())
 		return err
 	}
 

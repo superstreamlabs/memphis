@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"log"
 	"memphis-broker/models"
 	"strconv"
 	"strings"
@@ -35,7 +34,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type TierStorageMsg struct {
+type TieredStorageMsg struct {
 	Buf         []byte `json:"buf"`
 	StationName string `json:"stationName"`
 }
@@ -329,8 +328,7 @@ func (s *Server) uploadToS3Storage() error {
 			Credentials: credentials},
 		)
 		if err != nil {
-			err = errors.New("expireMsgs failure " + err.Error())
-			log.Printf(err.Error())
+			err = errors.New("uploadToS3Storage failure " + err.Error())
 			return err
 		}
 
@@ -375,8 +373,7 @@ func (s *Server) uploadToS3Storage() error {
 				Body:   &buf,
 			})
 			if err != nil {
-				err = errors.New("failed to upload the object to S3 " + err.Error())
-				log.Printf(err.Error())
+				err = errors.New("uploadToS3Storage failure: failed to upload the object to S3 " + err.Error())
 				return err
 			}
 		}
@@ -399,9 +396,9 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierSto
 	_, ok := StorageFunctionsMap[tierStorageType]
 	if ok {
 		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
-		// TODO: if the stream is not exists save the buf in buffer
+		// TODO: if the stream is not exists save the messages in buffer
 		if isTierStorageStreamCreated {
-			tierStorageMsg := TierStorageMsg{
+			tierStorageMsg := TieredStorageMsg{
 				Buf:         buf,
 				StationName: streamName,
 			}
