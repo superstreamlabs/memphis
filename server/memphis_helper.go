@@ -233,6 +233,7 @@ func (s *Server) CreateInternalJetStreamResources() {
 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: " + err.Error())
 		}
 	} else {
+		s.Errorf("cluster mode")
 		for !ready { // wait for cluster to be ready if we are in cluster mode
 			timeout := time.NewTimer(1 * time.Minute)
 			go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
@@ -332,6 +333,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 	}
 
+	serv.Warnf("memphis delete stream")
 	// throughput kv
 	err = s.memphisAddStream(&StreamConfig{
 		Name:         (throughputStreamNameV1),
@@ -351,6 +353,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		successCh <- err
 		return
 	}
+	serv.Warnf("memphis throughput stream")
 	successCh <- nil
 }
 

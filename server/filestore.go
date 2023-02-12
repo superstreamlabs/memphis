@@ -26,7 +26,6 @@ import (
 	"hash"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -2083,7 +2082,6 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 	// send the message to tiere 2 storage if needed
 	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && serv != nil {
 		err = serv.sendToTier2Storage(fs, copyBytes(sm.buf), "s3")
-		log.Println("send to tier storage messages ", string(sm.buf))
 		if err != nil {
 			return false, err
 		}
