@@ -787,11 +787,17 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 
 func updateRawMsgHeaders(buf []byte, newHeaderMap map[string]string) ([]byte, error) {
 	dataFirstIdx := 0
+	dataFirstIdx = getHdrLastIdxFromRaw(buf) + 1
 	if dataFirstIdx > len(buf)-len(CR_LF) {
 		serv.Errorf("updateRawMsgHeaders: memphis error parsing in station get messages")
 	}
 	dataLen := len(buf) - dataFirstIdx
-	header := buf[:dataFirstIdx-len(CR_LF)]
+	if dataFirstIdx > 0 {
+		buf = buf[:dataFirstIdx-len(CR_LF)]
+	} else {
+		buf = buf[:dataFirstIdx]
+	}
+	header := buf
 	data := buf[dataFirstIdx : dataFirstIdx+dataLen]
 	newHeaderMapBytes, err := json.Marshal(newHeaderMap)
 	if err != nil {
