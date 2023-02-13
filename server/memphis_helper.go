@@ -278,6 +278,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		return
 	}
 
+	idempotencyWindow := time.Duration(5 * time.Minute)
 	// tiered storage stream
 	err = s.memphisAddStream(&StreamConfig{
 		Name:         tieredStorageStream,
@@ -288,6 +289,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
 		Replicas:     replicas,
+		Duplicates:   idempotencyWindow,
 	})
 	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 		successCh <- err
@@ -781,6 +783,26 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 		}
 	}
 	return -1
+}
+
+func updateRawMsgHeaders(buf []byte, newHeaderMap map[string]string) ([]byte, error) {
+	dataFirstIdx := 0
+	if dataFirstIdx > len(buf)-len(CR_LF) {
+		serv.Errorf("updateRawMsgHeaders: memphis error parsing in station get messages")
+	}
+	dataLen := len(buf) - dataFirstIdx
+	header := buf[:dataFirstIdx-len(CR_LF)]
+	data := buf[dataFirstIdx : dataFirstIdx+dataLen]
+	newHeaderMapBytes, err := json.Marshal(newHeaderMap)
+	if err != nil {
+		return []byte{}, err
+	}
+	rawNewHeaderMap := strings.Trim(string(newHeaderMapBytes), `\{}\"`)
+	rawNewHeaderMap = strings.Replace(rawNewHeaderMap, `"`, "", -1) + CR_LF + CR_LF
+
+	newHeader := append(header, rawNewHeaderMap...)
+	rawMsg := append(newHeader, data...)
+	return rawMsg, nil
 }
 
 func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {

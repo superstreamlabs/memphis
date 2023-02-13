@@ -100,13 +100,13 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	return nil
 }
 
-func (s *Server) ListenForConfogurationsUpdateEvents() error {
+func (s *Server) ListenForConfigurationsUpdateEvents() error {
 	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var configurationsUpdate models.ConfigurationsUpdate
 			err := json.Unmarshal(msg, &configurationsUpdate)
 			if err != nil {
-				s.Errorf("ListenForConfogurationsUpdateEvents: " + err.Error())
+				s.Errorf("ListenForConfigurationsUpdateEvents: " + err.Error())
 				return
 			}
 			switch strings.ToLower(configurationsUpdate.Type) {
@@ -303,9 +303,9 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
 
-	err = s.ListenForConfogurationsUpdateEvents()
+	err = s.ListenForConfigurationsUpdateEvents()
 	if err != nil {
-		return errors.New("Failed subscribing for confogurations update: " + err.Error())
+		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
 
 	// creating consumer + start listening
@@ -315,7 +315,7 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	// send JS API request to get more messages
-	go s.ApiRequestToJetstream()
+	go s.ApiRequestToJetstreamFetchTieredStorageMsgs()
 	go s.UploadMsgsToTierStorage()
 
 	filter := bson.M{"key": "ui_url"}
@@ -357,18 +357,18 @@ func (s *Server) UploadMsgsToTierStorage() {
 			}
 		}
 
-		for kk, msgs := range tierStorageMsgsMap.m {
+		for i, msgs := range tierStorageMsgsMap.m {
 			for _, msg := range msgs {
 				reply := msg.ReplySubject
 				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 			}
-			tierStorageMsgsMap.Delete(kk)
+			tierStorageMsgsMap.Delete(i)
 		}
 		lock.Unlock()
 	}
 }
 
-func (s *Server) ApiRequestToJetstream() {
+func (s *Server) ApiRequestToJetstreamFetchTieredStorageMsgs() {
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 		if isTierStorageConsumerCreated && isTierStorageStreamCreated {
@@ -396,6 +396,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 					serv.Errorf("ListenForTieredStorageMessages: " + err.Error())
 					return
 				}
+				fmt.Println("message", string(tieredStorageMsg.Buf))
 				payload := tieredStorageMsg.Buf
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)

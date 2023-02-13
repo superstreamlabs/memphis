@@ -344,10 +344,10 @@ func (s *Server) uploadToS3Storage() error {
 				var headers string
 				hdrs := map[string]string{}
 				if len(msg.Header) > 0 {
-					headers = string(msg.Header)
-					headersSplit := strings.Split(headers, "\r\n")
+					headers = strings.ToLower(string(msg.Header))
+					headersSplit := strings.Split(headers, CR_LF)
 					for _, header := range headersSplit {
-						if header != "" && !strings.Contains(header, "NATS/1.0") {
+						if header != "" && !strings.Contains(header, "nats") {
 							keyVal := strings.Split(header, ":")
 							key := strings.TrimSpace(keyVal[0])
 							value := strings.TrimSpace(keyVal[1])
@@ -373,7 +373,7 @@ func (s *Server) uploadToS3Storage() error {
 				Body:   &buf,
 			})
 			if err != nil {
-				err = errors.New("uploadToS3Storage failure: failed to upload the object to S3 " + err.Error())
+				err = errors.New("uploadToS3Storage: failed to upload the object to S3 " + err.Error())
 				return err
 			}
 		}
@@ -382,7 +382,7 @@ func (s *Server) uploadToS3Storage() error {
 
 }
 
-func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierStorageType string) error {
+func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uint64, tierStorageType string) error {
 	storedType := reflect.TypeOf(storageType).Elem().Name()
 	var streamName string
 	switch storedType {
@@ -393,13 +393,22 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, tierSto
 		memStore := storageType.(*memStore)
 		streamName = memStore.cfg.Name
 	}
+
+	msgId := map[string]string{}
+	seqNumber := strconv.Itoa(int(seq))
+	msgId["msg-id"] = streamName + seqNumber
+	rawMsg, err := updateRawMsgHeaders(buf, msgId)
+	if err != nil {
+		return err
+	}
+
 	_, ok := StorageFunctionsMap[tierStorageType]
 	if ok {
 		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
 		// TODO: if the stream is not exists save the messages in buffer
 		if isTierStorageStreamCreated {
 			tierStorageMsg := TieredStorageMsg{
-				Buf:         buf,
+				Buf:         rawMsg,
 				StationName: streamName,
 			}
 
