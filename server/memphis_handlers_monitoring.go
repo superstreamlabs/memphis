@@ -665,7 +665,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 	if err != nil {
-		if strings.Contains(err.Error(), "Cannot connect to the Docker daemon") {
+		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
 			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
 		} else {
