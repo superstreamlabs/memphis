@@ -3,9 +3,9 @@
     height: 100vh;
     position: relative;
     text-align: center;
-    background: #FCFCFC;
+    background: #fcfcfc;
     min-height: 410px;
-    border-right: 1px solid #F4F4F4;
+    border-right: 1px solid #f4f4f4;
     .upper-icons {
         .logoimg {
             margin-top: 1vh;
@@ -28,75 +28,79 @@
     }
 
     .bottom-icons {
+        .menu-style {
+            border-radius: 4px;
+            background-color: firebrick !important;
+        }
         position: absolute;
         bottom: 10px;
         width: 100%;
-        display: flex;
-        flex-direction: column;
-        place-items: center;
-        .integration-icon-wrapper{
-            display: flex;
-            justify-content: center;
-            width: 60px;
-            height: 30px;
-            cursor: pointer;
-            img{
-                width: 18px;
-            }
-        }
-        .integration-icon-wrapper:hover {
-            background-color: rgba(132, 129, 138, 0.1);
-            border-radius: 10px;
-        }
-        .sub-icon-wrapper {
-            width: 35px;
-            height: 35px;
-            background: #ffffff;
-            box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-        }
-        .sub-icon-wrapper:hover {
-            opacity: 0.8;
-        }
+        // display: flex;
+        // flex-direction: column;
+        // place-items: center;
+        // .integration-icon-wrapper {
+        //     display: flex;
+        //     justify-content: center;
+        //     width: 60px;
+        //     height: 30px;
+        //     cursor: pointer;
+        //     img {
+        //         width: 18px;
+        //     }
+        // }
+        // .integration-icon-wrapper:hover {
+        //     background-color: rgba(132, 129, 138, 0.1);
+        //     border-radius: 10px;
+        // }
+        // .sub-icon-wrapper {
+        //     width: 35px;
+        //     height: 35px;
+        //     background: #ffffff;
+        //     box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
+        //     border-radius: 50%;
+        //     display: flex;
+        //     align-items: center;
+        // }
+        // .sub-icon-wrapper:hover {
+        //     opacity: 0.8;
+        // }
 
-        .ant-menu-vertical {
-            background: transparent !important;
-            border: unset !important;
-            width: 100%;
-        }
-        .app-menu {
-            i {
-                display: none;
-            }
-            .ant-menu-submenu-title {
-                text-overflow: unset;
-                padding: 2px;
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                background: transparent;
-            }
-            .ant-menu-item-icon {
-                position: absolute;
-                display: flex;
-                place-content: center;
-                z-index: 1;
-            }
-            .menu-preference-selected::before {
-                content: "";
-                position: absolute;
-                z-index: -1;
-                top: 0px;
-                right: 0px;
-                bottom: 0px;
-                left: 0px;
-                border-radius: 50%;
-                background: linear-gradient(94.37deg, #61DFC6 3.3%, #776CFB 77.22%);
-                margin: 3px;
-            }
-        }
+        // .ant-menu-vertical {
+        //     background: transparent !important;
+        //     border: unset !important;
+        //     width: 100%;
+        // }
+        // .app-menu {
+        //     i {
+        //         display: none;
+        //     }
+        //     .ant-menu-submenu-title {
+        //         text-overflow: unset;
+        //         padding: 2px;
+        //         width: 100%;
+        //         display: flex;
+        //         justify-content: center;
+        //         background: transparent;
+        //     }
+        //     .ant-menu-item-icon {
+        //         position: absolute;
+        //         display: flex;
+        //         place-content: center;
+        //         z-index: 1;
+        //     }
+        //     .menu-preference-selected::before {
+        //         content: '';
+        //         position: absolute;
+        //         z-index: -1;
+        //         top: 0px;
+        //         right: 0px;
+        //         bottom: 0px;
+        //         left: 0px;
+        //         border-radius: 50%;
+        //         background: linear-gradient(94.37deg, #61dfc6 3.3%, #776cfb 77.22%);
+        //         margin: 3px;
+        //     }
+        // }
         version {
             background: rgba(132, 129, 138, 0.1);
             border-radius: 4px;
@@ -112,7 +116,6 @@
             }
         }
     }
-  
 }
 
 .header-menu {
@@ -140,7 +143,7 @@
         display: flex;
         justify-content: center;
         margin-right: 10px;
-        .logoimg{
+        .logoimg {
             border-radius: 25px;
             width: 26px;
             height: 26px;
@@ -148,7 +151,10 @@
     }
 }
 .item-wrapp {
+    padding: 5px;
+    height: 40px;
     display: flex;
+
     align-items: center;
     img {
         margin-right: 10px;
@@ -159,8 +165,9 @@
         color: #000000;
     }
 }
-.item-wrapp .item-title:hover {
-    opacity: 0.8;
+.item-wrapp:hover {
+    background: #e3e0ff;
+    border-radius: 4px;
 }
 .ant-menu-item a:hover {
     p {
