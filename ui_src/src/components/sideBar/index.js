@@ -16,6 +16,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Popover } from 'antd';
+import { SettingOutlined, QuestionCircleOutlined, LogoutOutlined } from '@ant-design/icons';
 
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
@@ -25,9 +26,6 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
-import supportIcon from '../../assets/images/supportIcon.svg';
-import accountIcon from '../../assets/images/accountIcon.svg';
-import logoutIcon from '../../assets/images/logoutIcon.svg';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
@@ -42,10 +40,9 @@ import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
 
-// const { SubMenu } = Menu;
 const overlayStyles = {
     borderRadius: '4px',
-    width: '200px',
+    width: '230px',
     padding: '5px'
 };
 
@@ -102,30 +99,35 @@ function SideBar() {
     };
     const content = (
         <div>
-            {/* <div className="header-menu"> */}
-            <div className="item-wrapp">
-                <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
+            <div className="item-wrapp" onClick={() => history.push(pathDomains.profile)}>
+                <span className="icons">
+                    <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
+                </span>
                 <p>
                     {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                         ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
                         : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
                 </p>
             </div>
-
-            {/* </div> */}
-            <div className="item-wrapp">
-                <img src={accountIcon} width="15" height="15" alt="accountIcon" />
+            <div className="item-wrapp" onClick={() => history.push(`${pathDomains.preferences}/integrations`)}>
+                <span className="icons">
+                    <SettingOutlined className="icons-sidebar" />
+                </span>
                 <p className="item-title">Preferences</p>
             </div>
 
             <Link to={{ pathname: DOC_URL }} target="_blank">
                 <div className="item-wrapp">
-                    <img src={supportIcon} width="15" height="15" alt="supportIcon" />
+                    <span className="icons">
+                        <QuestionCircleOutlined className="icons-sidebar" />
+                    </span>
                     <p className="item-title">Support</p>
                 </div>
             </Link>
             <div className="item-wrapp">
-                <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
+                <span className="icons">
+                    <LogoutOutlined className="icons-sidebar" />
+                </span>
                 <p className="item-title">Log out</p>
             </div>
         </div>
@@ -199,14 +201,12 @@ function SideBar() {
             </div>
             <div className="bottom-icons">
                 <Link to={`${pathDomains.preferences}/integrations`}>
-                    <TooltipComponent text="Integrations" placement="right">
-                        <div className="integration-icon-wrapper">
+                    <div className="integration-icon-wrapper">
+                        <TooltipComponent text="Integrations" placement="right">
                             <img src={integrationNavIcon} />
-                        </div>
-                    </TooltipComponent>
+                        </TooltipComponent>
+                    </div>
                 </Link>
-                {/* <Popover placement="bottomLeft" content={content} trigger="click" onOpenChange={handleOpenChange} open={filterState.isOpen}></Popover> */}
-
                 <Popover overlayInnerStyle={overlayStyles} placement="rightBottom" content={content} trigger="click">
                     <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
                         <img
@@ -219,60 +219,6 @@ function SideBar() {
                         ></img>
                     </div>
                 </Popover>
-                {/* <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click">
-                    <SubMenu
-                        key="subMenu"
-                        icon={
-                            <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
-                                <img
-                                    className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
-                                    referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    height={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    alt="avatar"
-                                ></img>
-                            </div>
-                        }
-                    >
-                        <Menu.ItemGroup
-                            id="setting-menu"
-                            title={
-                                <div className="header-menu">
-                                    <div className="company-logo">
-                                        <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
-                                    </div>
-                                    <p>
-                                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
-                                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
-                                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
-                                    </p>
-                                </div>
-                            }
-                        >
-                            <Menu.Item key={1} className="customclass">
-                                <div className="item-wrapp">
-                                    <img src={accountIcon} width="15" height="15" alt="accountIcon" />
-                                    <p className="item-title">Preferences</p>
-                                </div>
-                            </Menu.Item>
-                            <Menu.Item key={2}>
-                                <Link to={{ pathname: DOC_URL }} target="_blank">
-                                    <div className="item-wrapp">
-                                        <img src={supportIcon} width="15" height="15" alt="supportIcon" />
-                                        <p className="item-title">Support</p>
-                                    </div>
-                                </Link>
-                            </Menu.Item>
-                            <Menu.Item key={3}>
-                                <div className="item-wrapp">
-                                    <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
-                                    <p className="item-title">Log out</p>
-                                </div>
-                            </Menu.Item>
-                        </Menu.ItemGroup>
-                    </SubMenu>
-                </Menu> */}
                 <version is="x3d">
                     <p>v{systemVersion}</p>
                 </version>
