@@ -396,7 +396,7 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 
 	msgId := map[string]string{}
 	seqNumber := strconv.Itoa(int(seq))
-	msgId["msg-id"] = streamName + seqNumber
+	msgId["Nats-Msg-Id"] = streamName + seqNumber
 	rawMsg, err := updateRawMsgHeaders(buf, msgId)
 	if err != nil {
 		return err
