@@ -279,7 +279,7 @@ func shouldSendAnalytics() (bool, error) {
 
 func validateName(name, objectType string) error {
 	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
-	tooLongErrStr := fmt.Sprintf("%v should be under 32 characters", objectType)
+	tooLongErrStr := fmt.Sprintf("%v should be under 128 characters", objectType)
 	invalidCharErrStr := fmt.Sprintf("Only alphanumeric and the '_', '-', '.' characters are allowed in %v", objectType)
 	firstLetterErrStr := fmt.Sprintf("%v name can not start or end with non alphanumeric character", objectType)
 
@@ -292,7 +292,7 @@ func validateName(name, objectType string) error {
 		return emptyErr
 	}
 
-	if len(name) > 32 {
+	if len(name) > 128 {
 		return tooLongErr
 	}
 
