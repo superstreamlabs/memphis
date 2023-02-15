@@ -283,7 +283,7 @@ func tryCreateSystemStreams(s *Server, retentionDur time.Duration, successCh cha
 
 	// delete the old version throughput stream
 	err = s.memphisDeleteStream(throughputStreamName)
-	if err != nil {
+	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 		s.Warnf("Failed deleting old internal throughput stream - %s", err.Error())
 	}
 
