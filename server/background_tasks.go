@@ -109,6 +109,12 @@ func (s *Server) ListenForConfogurationsUpdateEvents() error {
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":
 				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
+			case "broker_host":
+				BROKER_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
+			case "ui_host":
+				UI_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
+			case "rest_host":
+				REST_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
 			default:
 				return
 			}

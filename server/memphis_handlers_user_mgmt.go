@@ -436,7 +436,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	brokerHost := BROKER_HOST
-	restHost := PROXY_HOST
+	restHost := REST_HOST
 	uiHost := UI_HOST
 	var env string
 	if configuration.DOCKER_ENV != "" {
@@ -449,7 +449,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		if UI_HOST == "" {
 			uiHost = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
-		if PROXY_HOST == "" {
+		if REST_HOST == "" {
 			restHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
 	}

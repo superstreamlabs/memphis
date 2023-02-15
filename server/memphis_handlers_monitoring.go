@@ -464,7 +464,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if strings.Contains(d.Name, "memphis-broker") {
 				host = BROKER_HOST
 			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				host = PROXY_HOST
+				host = REST_HOST
 			}
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
@@ -508,7 +508,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if strings.Contains(s.Name, "memphis-broker") {
 				host = BROKER_HOST
 			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				host = PROXY_HOST
+				host = REST_HOST
 			}
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,

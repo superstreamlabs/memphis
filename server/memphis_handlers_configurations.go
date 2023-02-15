@@ -120,18 +120,18 @@ func (s *Server) initializeConfigurations() {
 			if err != mongo.ErrNoDocuments {
 				s.Errorf("initializeConfigurations: " + err.Error())
 			}
-			PROXY_HOST = ""
+			REST_HOST = ""
 			proxyHost = models.ConfigurationsStringValue{
 				ID:    primitive.NewObjectID(),
 				Key:   "rest_host",
-				Value: PROXY_HOST,
+				Value: REST_HOST,
 			}
 			_, err = configurationsCollection.InsertOne(context.TODO(), proxyHost)
 			if err != nil {
 				s.Errorf("initializeConfigurations: " + err.Error())
 			}
 		} else {
-			PROXY_HOST = proxyHost.Value
+			REST_HOST = proxyHost.Value
 		}
 	}
 }
@@ -159,37 +159,37 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
-	if configuration.DOCKER_ENV == "" {
-		if BROKER_HOST != body.BrokerHost {
-			BROKER_HOST = body.BrokerHost
-			err := EditClusterCompUrl("broker_host", BROKER_HOST)
-			if err != nil {
-				serv.Errorf("EditConfigurations: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-		}
-
-		if UI_HOST != body.UiHost {
-			UI_HOST = body.UiHost
-			err := EditClusterCompUrl("ui_host", UI_HOST)
-			if err != nil {
-				serv.Errorf("EditConfigurations: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-		}
-
-		if PROXY_HOST != body.RestHost {
-			PROXY_HOST = body.RestHost
-			err := EditClusterCompUrl("rest_host", PROXY_HOST)
-			if err != nil {
-				serv.Errorf("EditConfigurations: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+	// if configuration.DOCKER_ENV == "" {
+	if BROKER_HOST != body.BrokerHost {
+		BROKER_HOST = body.BrokerHost
+		err := EditClusterCompHost("broker_host", BROKER_HOST)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
 		}
 	}
+
+	if UI_HOST != body.UiHost {
+		UI_HOST = body.UiHost
+		err := EditClusterCompHost("ui_host", UI_HOST)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	if REST_HOST != body.RestHost {
+		REST_HOST = body.RestHost
+		err := EditClusterCompHost("rest_host", REST_HOST)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+	// }
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
@@ -298,18 +298,35 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
 	}
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_host": PROXY_HOST})
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_host": REST_HOST})
 }
 
-func EditClusterCompUrl(key string, url string) error {
+func EditClusterCompHost(key string, host string) error {
+	switch key {
+	case "broker_host":
+		BROKER_HOST = host
+	case "ui_host":
+		UI_HOST = host
+	case "rest_host":
+		REST_HOST = host
+	}
+
+	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: key, Update: host})
+	if err != nil {
+		return err
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		return err
+	}
 	filter := bson.M{"key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"value": url,
+			"value": host,
 		},
 	}
 	opts := options.Update().SetUpsert(true)
-	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		return err
 	}
