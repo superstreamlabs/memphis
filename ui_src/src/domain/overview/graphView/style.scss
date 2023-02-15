@@ -1,0 +1,19 @@
+.graph-view-container{
+    position: relative;
+    width: 100%;
+    height: calc(100% - 100px);
+    .edge {
+        stroke-width: 4;
+        stroke-dasharray: 10;
+
+        stroke: #FF3B30;
+    }
+    .active{
+        stroke: #2ED47A;
+        // animation: dashdraw .5s linear infinite;
+    }
+
+    @keyframes dashdraw {
+        0% { stroke-dashoffset: 10; }
+    }
+}

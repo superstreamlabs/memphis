@@ -1,0 +1,29 @@
+.connection-graph-view-container{
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #FFFFFF;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    p{
+        margin: 0;
+    }
+    .connection-header{
+        display: flex;
+        justify-content:space-between;
+        margin: 8px;
+        font-size: 12px;
+        align-items:center;
+
+        .header-left{
+            display: flex;
+            align-items:center;
+            p{
+                font-family: 'InterMedium';
+            }
+        }
+        span{
+            color: #A6A6A6;
+        }
+    }
+}

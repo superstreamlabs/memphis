@@ -51,6 +51,7 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
+import GraphView from './graphView';
 
 const Desktop = ({ children }) => {
     const isDesktop = useMediaQuery({ minWidth: 850 });
@@ -195,6 +196,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
+
             {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
                 <div className="overview-wrapper">
                     <div className="header">
@@ -214,7 +216,7 @@ function OverView() {
                                 {/* <p className="ok-status">You’re a memphis superhero! All looks good!</p> */}
                             </div>
                         </div>
-                        <div className={process.env.REACT_APP_SANDBOX_ENV ? 'overview-actions' : ''}>
+                        <div className="overview-actions">
                             <SegmentButton
                                 value={overviewView}
                                 options={segOptions}
@@ -261,16 +263,20 @@ function OverView() {
                             />
                         </div>
                     </div>
-                    <div className="overview-components">
-                        <div className="left-side">
-                            <GenericDetails />
-                            <FailedStations createStationTrigger={(e) => modalFlip(e)} />
-                            <Throughput />
+                    {localStorage.getItem(LOCAL_STORAGE_OVERVIEW_VIEW) === 'Dashboard' ? (
+                        <div className="overview-components">
+                            <div className="left-side">
+                                <GenericDetails />
+                                <FailedStations createStationTrigger={(e) => modalFlip(e)} />
+                                <Throughput />
+                            </div>
+                            <div className="right-side">
+                                <SystemComponents />
+                            </div>
                         </div>
-                        <div className="right-side">
-                            <SystemComponents />
-                        </div>
-                    </div>
+                    ) : (
+                        <GraphView />
+                    )}
                 </div>
             )}
             {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && <GetStarted username={username} dataSentence={dataSentence} />}
