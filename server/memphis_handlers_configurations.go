@@ -75,6 +75,65 @@ func (s *Server) initializeConfigurations() {
 	} else {
 		LOGS_RETENTION_IN_DAYS = logsRetention.Value
 	}
+	if configuration.DOCKER_ENV == "" {
+		var brokerHost models.ConfigurationsStringValue
+		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "broker_host"}).Decode(&brokerHost)
+		if err != nil {
+			if err != mongo.ErrNoDocuments {
+				s.Errorf("initializeConfigurations: " + err.Error())
+			}
+			BROKER_HOST = ""
+			brokerHost = models.ConfigurationsStringValue{
+				ID:    primitive.NewObjectID(),
+				Key:   "broker_host",
+				Value: BROKER_HOST,
+			}
+			_, err = configurationsCollection.InsertOne(context.TODO(), brokerHost)
+			if err != nil {
+				s.Errorf("initializeConfigurations: " + err.Error())
+			}
+		} else {
+			BROKER_HOST = brokerHost.Value
+		}
+		var uiHost models.ConfigurationsStringValue
+		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "ui_host"}).Decode(&uiHost)
+		if err != nil {
+			if err != mongo.ErrNoDocuments {
+				s.Errorf("initializeConfigurations: " + err.Error())
+			}
+			UI_HOST = ""
+			uiHost = models.ConfigurationsStringValue{
+				ID:    primitive.NewObjectID(),
+				Key:   "ui_host",
+				Value: UI_HOST,
+			}
+			_, err = configurationsCollection.InsertOne(context.TODO(), uiHost)
+			if err != nil {
+				s.Errorf("initializeConfigurations: " + err.Error())
+			}
+		} else {
+			UI_HOST = uiHost.Value
+		}
+		var proxyHost models.ConfigurationsStringValue
+		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "rest_host"}).Decode(&proxyHost)
+		if err != nil {
+			if err != mongo.ErrNoDocuments {
+				s.Errorf("initializeConfigurations: " + err.Error())
+			}
+			PROXY_HOST = ""
+			proxyHost = models.ConfigurationsStringValue{
+				ID:    primitive.NewObjectID(),
+				Key:   "rest_host",
+				Value: PROXY_HOST,
+			}
+			_, err = configurationsCollection.InsertOne(context.TODO(), proxyHost)
+			if err != nil {
+				s.Errorf("initializeConfigurations: " + err.Error())
+			}
+		} else {
+			PROXY_HOST = proxyHost.Value
+		}
+	}
 }
 
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
@@ -97,6 +156,38 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
+		}
+	}
+
+	if configuration.DOCKER_ENV == "" {
+		if BROKER_HOST != body.BrokerHost {
+			BROKER_HOST = body.BrokerHost
+			err := EditClusterCompUrl("broker_host", BROKER_HOST)
+			if err != nil {
+				serv.Errorf("EditConfigurations: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+
+		if UI_HOST != body.UiHost {
+			UI_HOST = body.UiHost
+			err := EditClusterCompUrl("ui_host", UI_HOST)
+			if err != nil {
+				serv.Errorf("EditConfigurations: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+
+		if PROXY_HOST != body.RestHost {
+			PROXY_HOST = body.RestHost
+			err := EditClusterCompUrl("rest_host", PROXY_HOST)
+			if err != nil {
+				serv.Errorf("EditConfigurations: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 		}
 	}
 
@@ -207,5 +298,20 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
 	}
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_host": PROXY_HOST})
+}
+
+func EditClusterCompUrl(key string, url string) error {
+	filter := bson.M{"key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"value": url,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return err
+	}
+	return nil
 }

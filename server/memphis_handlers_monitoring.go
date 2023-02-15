@@ -461,7 +461,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-
+			if strings.Contains(d.Name, "memphis-broker") {
+				host = BROKER_HOST
+			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
+				host = PROXY_HOST
+			}
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
 				Components:  relevantComponents,
@@ -500,6 +504,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				} else {
 					status = "unhealthy"
 				}
+			}
+			if strings.Contains(s.Name, "memphis-broker") {
+				host = BROKER_HOST
+			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
+				host = PROXY_HOST
 			}
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,

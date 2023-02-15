@@ -17,7 +17,7 @@ import React, { useEffect, useState } from 'react';
 import * as monaco from 'monaco-editor';
 
 import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../const/codeExample';
-import { LOCAL_STORAGE_ENV, LOCAL_STORAGE_NAMESPACE } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_HOST } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
 import noCodeExample from '../../assets/images/noCodeExample.svg';
 import refresh from '../../assets/images/refresh.svg';
@@ -46,7 +46,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         ? 'https://restgw.sandbox.memphis.dev'
         : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
         ? 'http://localhost:4444'
-        : 'http://memphis-rest-gateway.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local:4444';
+        : localStorage.getItem(LOCAL_STORAGE_REST_HOST);
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
@@ -57,7 +57,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 ? 'broker.sandbox.memphis.dev'
                 : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
                 ? 'localhost'
-                : 'memphis-cluster.' + localStorage.getItem(LOCAL_STORAGE_NAMESPACE) + '.svc.cluster.local';
+                : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST);
             codeEx.producer = codeEx.producer?.replaceAll('<memphis-host>', host);
             codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
             codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);

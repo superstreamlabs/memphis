@@ -1,0 +1,37 @@
+.configuration-list-container {
+    height: 100px;
+    background: #ffffff;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 785px;
+    .name {
+        display: flex;
+        align-items: center;
+        width: 30%;
+        min-width: 415px;
+        img {
+            height: 40px;
+            width: 40px;
+            margin-right: 20px;
+        }
+        .conf-name {
+            font-family: 'InterSemiBold';
+            font-size: 15px;
+            margin-bottom: 0px;
+        }
+        .conf-description {
+            color: rgba(74, 73, 92, 0.8);
+            font-family: 'InterMedium';
+            font-size: 11px;
+        }
+    }
+    .input {
+        display: flex;
+        align-items: center;
+    }
+}

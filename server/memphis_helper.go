@@ -68,6 +68,9 @@ var (
 	ErrBadHeader                   = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS         int
 	POISON_MSGS_RETENTION_IN_HOURS int
+	BROKER_HOST                    string
+	UI_HOST                        string
+	PROXY_HOST                     string
 )
 
 func (s *Server) MemphisInitialized() bool {

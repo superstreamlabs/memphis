@@ -435,11 +435,23 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-login")
 	}
 
+	brokerHost := BROKER_HOST
+	restHost := PROXY_HOST
+	uiHost := UI_HOST
 	var env string
 	if configuration.DOCKER_ENV != "" {
 		env = "docker"
 	} else {
 		env = "K8S"
+		if BROKER_HOST == "" {
+			brokerHost = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		if UI_HOST == "" {
+			uiHost = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		if PROXY_HOST == "" {
+			restHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
 	}
 
 	domain := ""
@@ -456,9 +468,11 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"avatar_id":         user.AvatarId,
 		"send_analytics":    shouldSendAnalytics,
 		"env":               env,
-		"namespace":         configuration.K8S_NAMESPACE,
 		"full_name":         user.FullName,
 		"skip_get_started":  user.SkipGetStarted,
+		"broker_host":       brokerHost,
+		"rest_host":         restHost,
+		"ui_host":           uiHost,
 	})
 }
 
