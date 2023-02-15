@@ -785,32 +785,6 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func updateRawMsgHeaders(buf []byte, newHeaderMap map[string]string) ([]byte, error) {
-	dataFirstIdx := 0
-	dataFirstIdx = getHdrLastIdxFromRaw(buf) + 1
-	if dataFirstIdx > len(buf)-len(CR_LF) {
-		serv.Errorf("updateRawMsgHeaders: memphis error parsing in station get messages")
-	}
-	dataLen := len(buf) - dataFirstIdx
-	if dataFirstIdx > 0 {
-		buf = buf[:dataFirstIdx-len(CR_LF)]
-	} else {
-		buf = buf[:dataFirstIdx]
-	}
-	header := buf
-	data := buf[dataFirstIdx : dataFirstIdx+dataLen]
-	newHeaderMapBytes, err := json.Marshal(newHeaderMap)
-	if err != nil {
-		return []byte{}, err
-	}
-	rawNewHeaderMap := strings.Trim(string(newHeaderMapBytes), `\{}\"`)
-	rawNewHeaderMap = strings.Replace(rawNewHeaderMap, `"`, "", -1) + CR_LF + CR_LF
-
-	newHeader := append(header, rawNewHeaderMap...)
-	rawMsg := append(newHeader, data...)
-	return rawMsg, nil
-}
-
 func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
@@ -1163,19 +1137,4 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return m, err
 		}
 	}
-}
-
-func (s *Server) buildTieredStorageMap(msg StoredMsg) {
-	lock.Lock()
-	stationName := msg.Subject
-	if strings.Contains(msg.Subject, "#") {
-		stationName = strings.Replace(msg.Subject, "#", ".", -1)
-	}
-	_, ok := tierStorageMsgsMap.Load(stationName)
-	if !ok {
-		tierStorageMsgsMap.Add(stationName, []StoredMsg{})
-	}
-
-	tierStorageMsgsMap.m[stationName] = append(tierStorageMsgsMap.m[stationName], msg)
-	lock.Unlock()
 }

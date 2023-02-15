@@ -16,8 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"reflect"
 
 	"memphis-broker/models"
 	"strconv"
@@ -376,48 +374,9 @@ func (s *Server) uploadToS3Storage() error {
 				err = errors.New("uploadToS3Storage: failed to upload the object to S3 " + err.Error())
 				return err
 			}
+			serv.Noticef("file upload to S3 storage: %s", objectName)
 		}
 	}
 	return nil
 
-}
-
-func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uint64, tierStorageType string) error {
-	storedType := reflect.TypeOf(storageType).Elem().Name()
-	var streamName string
-	switch storedType {
-	case "fileStore":
-		fileStore := storageType.(*fileStore)
-		streamName = fileStore.cfg.StreamConfig.Name
-	case "memStore":
-		memStore := storageType.(*memStore)
-		streamName = memStore.cfg.Name
-	}
-
-	msgId := map[string]string{}
-	seqNumber := strconv.Itoa(int(seq))
-	msgId["msg-id"] = streamName + seqNumber
-	rawMsg, err := updateRawMsgHeaders(buf, msgId)
-	if err != nil {
-		return err
-	}
-
-	_, ok := StorageFunctionsMap[tierStorageType]
-	if ok {
-		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
-		// TODO: if the stream is not exists save the messages in buffer
-		if isTierStorageStreamCreated {
-			tierStorageMsg := TieredStorageMsg{
-				Buf:         rawMsg,
-				StationName: streamName,
-			}
-
-			msg, err := json.Marshal(tierStorageMsg)
-			if err != nil {
-				return err
-			}
-			s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
-		}
-	}
-	return nil
 }

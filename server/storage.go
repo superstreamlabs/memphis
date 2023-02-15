@@ -12,8 +12,13 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis-broker/models"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 func UploadToTier2Storage() error {
@@ -33,4 +38,55 @@ func UploadToTier2Storage() error {
 	}
 	return nil
 
+}
+
+func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uint64, tierStorageType string) error {
+	storedType := reflect.TypeOf(storageType).Elem().Name()
+	var streamName string
+	switch storedType {
+	case "fileStore":
+		fileStore := storageType.(*fileStore)
+		streamName = fileStore.cfg.StreamConfig.Name
+	case "memStore":
+		memStore := storageType.(*memStore)
+		streamName = memStore.cfg.Name
+	}
+
+	msgId := map[string]string{}
+	seqNumber := strconv.Itoa(int(seq))
+	msgId["msg-id"] = streamName + seqNumber
+
+	_, ok := StorageFunctionsMap[tierStorageType]
+	if ok {
+		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
+		// TODO: if the stream is not exists save the messages in buffer
+		if isTierStorageStreamCreated {
+			tierStorageMsg := TieredStorageMsg{
+				Buf:         buf,
+				StationName: streamName,
+			}
+
+			msg, err := json.Marshal(tierStorageMsg)
+			if err != nil {
+				return err
+			}
+			s.sendInternalAccountMsgWithHeaders(s.GlobalAccount(), subject, msg, msgId)
+		}
+	}
+	return nil
+}
+
+func (s *Server) buildTieredStorageMap(msg StoredMsg) {
+	lock.Lock()
+	stationName := msg.Subject
+	if strings.Contains(msg.Subject, "#") {
+		stationName = strings.Replace(msg.Subject, "#", ".", -1)
+	}
+	_, ok := tierStorageMsgsMap.Load(stationName)
+	if !ok {
+		tierStorageMsgsMap.Add(stationName, []StoredMsg{})
+	}
+
+	tierStorageMsgsMap.m[stationName] = append(tierStorageMsgsMap.m[stationName], msg)
+	lock.Unlock()
 }

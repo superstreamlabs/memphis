@@ -390,8 +390,9 @@ func (s *Server) ListenForTieredStorageMessages() error {
 		go func(subject, reply string, msg []byte) {
 			//This if ignores case: 409 Exceeded MaxWaiting
 			if reply != "" {
+				rawMsg := strings.Split(string(msg), CR_LF+CR_LF)
 				var tieredStorageMsg TieredStorageMsg
-				err := json.Unmarshal(msg, &tieredStorageMsg)
+				err := json.Unmarshal([]byte(rawMsg[1]), &tieredStorageMsg)
 				if err != nil {
 					serv.Errorf("ListenForTieredStorageMessages: " + err.Error())
 					return
@@ -410,7 +411,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 				dataFirstIdx := 0
 				dataFirstIdx = getHdrLastIdxFromRaw(payload) + 1
 				if dataFirstIdx > len(payload)-len(CR_LF) {
-					s.Errorf("ListenForTieredStorageMessages: memphis error parsing in station get messages")
+					s.Errorf("ListenForTieredStorageMessages: memphis error parsing")
 				}
 				dataLen := len(payload) - dataFirstIdx
 				header := payload[:dataFirstIdx]
