@@ -62,11 +62,16 @@ const Component = ({ comp, i }) => {
                     </div>
                 </div>
                 <div className="pods-container">
-                    <label className="host">Host</label>
-                    <OverflowTip text={comp?.host}>
-                        <label className="value">{comp?.host} </label>
-                    </OverflowTip>
-                    <Divider type="vertical" />
+                    {comp?.host !== '' && (
+                        <>
+                            <label className="host">Host</label>
+                            <OverflowTip text={comp?.host}>
+                                <label className="value">{comp?.host} </label>
+                            </OverflowTip>
+                            <Divider type="vertical" />
+                        </>
+                    )}
+
                     <label className="host">Ports</label>
                     <label className="value">{comp.ports.length > 0 ? comp.ports[0] : 'None'}</label>
                     {comp.ports?.length > 1 && (
