@@ -29,12 +29,16 @@
         border-radius: 50%;
         margin-top: 5px;
         margin-bottom: 10px;
-        height: 85%;
-        width: 85%;
+        height: 40px;
+        width: 40px;
         cursor: pointer;
+        padding: 3px;
     }
     .sandboxUserImg:hover {
         opacity: 0.9;
+    }
+    .sandboxUserImgSelected {
+        background: linear-gradient(94.37deg, #61dfc6 3.3%, #776cfb 77.22%);
     }
 
     .bottom-icons {
@@ -71,14 +75,33 @@
     }
 }
 
-.item-wrapp {
+.item-wrap {
     padding: 5px;
     height: 36px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    .MuiSvgIcon-root {
+        color: #776cfb !important;
+        height: 20px;
+        display: none;
+    }
+    cursor: pointer;
+    .item {
+        display: flex;
+        align-items: center;
+        .MuiSvgIcon-root {
+            color: #a9a9a9 !important;
+            display: block;
+        }
+    }
     .icons {
         width: 30px;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .logoimg {
         border-radius: 25px;
@@ -96,11 +119,10 @@
         font-size: 16px;
     }
 }
-.item-wrapp:hover {
+.item-wrap:hover {
     background: #e3e0ff;
     border-radius: 4px;
-    .icons-sidebar {
-        color: #6557ff;
-        font-size: 16px;
+    .MuiSvgIcon-root {
+        display: block;
     }
 }

@@ -33,6 +33,7 @@ function Profile() {
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
 
     useEffect(() => {
+        dispatch({ type: 'SET_ROUTE', payload: 'profile' });
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
         setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
         setAllowAnalytics(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) === 'false' ? false : true);

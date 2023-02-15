@@ -16,8 +16,10 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Popover } from 'antd';
-import { SettingOutlined, QuestionCircleOutlined, LogoutOutlined } from '@ant-design/icons';
-
+import { SettingOutlined } from '@ant-design/icons';
+import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
+import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
+import ChevronRightRoundedIcon from '@material-ui/icons/ChevronRightRounded';
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
@@ -99,36 +101,53 @@ function SideBar() {
     };
     const content = (
         <div>
-            <div className="item-wrapp" onClick={() => history.push(pathDomains.profile)}>
-                <span className="icons">
-                    <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
-                </span>
-                <p>
-                    {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
-                        ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
-                        : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
-                </p>
+            <div className="item-wrap" onClick={() => history.push(pathDomains.profile)}>
+                <div className="item">
+                    <span className="icons">
+                        <img
+                            className={`logoimg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
+                            src={state?.companyLogo || Logo}
+                            width="24"
+                            alt="companyLogo"
+                        />
+                    </span>
+                    <p>
+                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
+                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                    </p>
+                </div>
+                <ChevronRightRoundedIcon />
             </div>
-            <div className="item-wrapp" onClick={() => history.push(`${pathDomains.preferences}/integrations`)}>
-                <span className="icons">
-                    <SettingOutlined className="icons-sidebar" />
-                </span>
-                <p className="item-title">Preferences</p>
+            <div className="item-wrap" onClick={() => history.push(`${pathDomains.preferences}/integrations`)}>
+                <div className="item">
+                    <span className="icons">
+                        <SettingOutlined className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Preferences</p>
+                </div>
+                <ChevronRightRoundedIcon />
             </div>
 
             <Link to={{ pathname: DOC_URL }} target="_blank">
-                <div className="item-wrapp">
-                    <span className="icons">
-                        <QuestionCircleOutlined className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Support</p>
+                <div className="item-wrap">
+                    <div className="item">
+                        <span className="icons">
+                            <LiveHelpOutlinedIcon className="icons-sidebar" />
+                        </span>
+                        <p className="item-title">Support</p>
+                    </div>
+                    <ChevronRightRoundedIcon />
                 </div>
             </Link>
-            <div className="item-wrapp">
-                <span className="icons">
-                    <LogoutOutlined className="icons-sidebar" />
-                </span>
-                <p className="item-title">Log out</p>
+            <div className="item-wrap">
+                <div className="item">
+                    <span className="icons">
+                        <ExitToAppOutlined className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Log out</p>
+                </div>
+                <ChevronRightRoundedIcon co />
             </div>
         </div>
     );
@@ -208,9 +227,9 @@ function SideBar() {
                     </div>
                 </Link>
                 <Popover overlayInnerStyle={overlayStyles} placement="rightBottom" content={content} trigger="click">
-                    <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
+                    <div className="sub-icon-wrapper">
                         <img
-                            className="sandboxUserImg"
+                            className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
                             referrerPolicy="no-referrer"
                             width={localStorage.getItem('profile_pic') ? 35 : 25}
