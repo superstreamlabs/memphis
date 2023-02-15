@@ -27,7 +27,7 @@ const handleStyle = {
     marginTop: '-10px'
 };
 
-function InputRow({ title, desc, value, onChanges, img, disabled, placeholder }) {
+function InputRow({ title, desc, value, onChanges, img, placeholder }) {
     const [inputValue, setInputValue] = useState(value);
 
     const onChange = (newValue) => {
@@ -62,7 +62,6 @@ function InputRow({ title, desc, value, onChanges, img, disabled, placeholder })
                     height="42px"
                     iconComponent=""
                     onChange={onChange}
-                    disabled={disabled}
                 />
                 <Input style={{ width: '20vw' }} onChange={onChange} value={inputValue} trackStyle={trackStyle} handleStyle={handleStyle} />
             </div>

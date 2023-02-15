@@ -99,51 +99,34 @@ function ClusterConfiguration() {
                     unit={'d'}
                     onChanges={(e) => handleChange('logs_retention', e)}
                 />
-                <InputRow
-                    title="BROKER HOST"
-                    desc="BROKER HOSTBROKER HOSTBROKER HOSTBROKER HOST"
-                    img={ConfImg1}
-                    value={formFields?.broker_host}
-                    onChanges={(e) => handleChange('broker_host', e.target.value)}
-                    disabled={localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker' || process.env.REACT_APP_SANDBOX_ENV}
-                    placeholder={
-                        process.env.REACT_APP_SANDBOX_ENV
-                            ? 'broker.sandbox.memphis.dev'
-                            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                            ? 'localhost'
-                            : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                    }
-                />
-                <InputRow
-                    title="UI HOST"
-                    desc="UI HOSTUI HOSTUI HOSTUI HOSTUI HOSTUI HOST"
-                    img={ConfImg1}
-                    value={formFields?.ui_host}
-                    onChanges={(e) => handleChange('ui_host', e.target.value)}
-                    disabled={localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker' || process.env.REACT_APP_SANDBOX_ENV}
-                    placeholder={
-                        process.env.REACT_APP_SANDBOX_ENV
-                            ? 'https://sandbox.memphis.dev/'
-                            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                            ? 'http://localhost:9000'
-                            : localStorage.getItem(LOCAL_STORAGE_UI_HOST)
-                    }
-                />
-                <InputRow
-                    title="REST HOST"
-                    desc="REST HOSTREST HOSTREST HOSTREST HOSTREST HOST"
-                    img={ConfImg1}
-                    value={formFields?.rest_host}
-                    onChanges={(e) => handleChange('rest_host', e.target.value)}
-                    disabled={localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker' || process.env.REACT_APP_SANDBOX_ENV}
-                    placeholder={
-                        process.env.REACT_APP_SANDBOX_ENV
-                            ? 'https://restgw.sandbox.memphis.dev'
-                            : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                            ? 'http://localhost:4444'
-                            : localStorage.getItem(LOCAL_STORAGE_REST_HOST)
-                    }
-                />
+                {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !process.env.REACT_APP_SANDBOX_ENV && (
+                    <>
+                        <InputRow
+                            title="BROKER HOST"
+                            desc="BROKER HOSTBROKER HOSTBROKER HOSTBROKER HOST"
+                            img={ConfImg1}
+                            value={formFields?.broker_host}
+                            onChanges={(e) => handleChange('broker_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) : ''}
+                        />
+                        <InputRow
+                            title="UI HOST"
+                            desc="UI HOSTUI HOSTUI HOSTUI HOSTUI HOSTUI HOST"
+                            img={ConfImg1}
+                            value={formFields?.ui_host}
+                            onChanges={(e) => handleChange('ui_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_UI_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_UI_HOST) : ''}
+                        />
+                        <InputRow
+                            title="REST HOST"
+                            desc="REST HOSTREST HOSTREST HOSTREST HOSTREST HOST"
+                            img={ConfImg1}
+                            value={formFields?.rest_host}
+                            onChanges={(e) => handleChange('rest_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_REST_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_HOST) : ''}
+                        />
+                    </>
+                )}
             </div>
             <div className="configuration-footer">
                 <div className="btn-container">
