@@ -47,6 +47,9 @@ function ClusterConfiguration() {
     const updateConfiguration = async () => {
         try {
             const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
+            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
+            localStorage.setItem(LOCAL_STORAGE_REST_HOST, formFields.rest_host);
+            localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
             setIsChanged(false);
             setOldValues(data);
             message.success({
