@@ -17,6 +17,7 @@ import React, { useEffect, useState } from 'react';
 import { compareObjects } from '../../../services/valueConvertor';
 import ConfImg1 from '../../../assets/images/confImg1.svg';
 import ConfImg2 from '../../../assets/images/confImg2.svg';
+import ConfImg3 from '../../../assets/images/confImg3.svg';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
@@ -107,7 +108,7 @@ function ClusterConfiguration() {
                         <InputRow
                             title="BROKER HOST"
                             desc="BROKER HOSTBROKER HOSTBROKER HOSTBROKER HOST"
-                            img={ConfImg1}
+                            img={ConfImg3}
                             value={formFields?.broker_host}
                             onChanges={(e) => handleChange('broker_host', e.target.value)}
                             placeholder={localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) : ''}
@@ -115,7 +116,7 @@ function ClusterConfiguration() {
                         <InputRow
                             title="UI HOST"
                             desc="UI HOSTUI HOSTUI HOSTUI HOSTUI HOSTUI HOST"
-                            img={ConfImg1}
+                            img={ConfImg3}
                             value={formFields?.ui_host}
                             onChanges={(e) => handleChange('ui_host', e.target.value)}
                             placeholder={localStorage.getItem(LOCAL_STORAGE_UI_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_UI_HOST) : ''}
@@ -123,7 +124,7 @@ function ClusterConfiguration() {
                         <InputRow
                             title="REST HOST"
                             desc="REST HOSTREST HOSTREST HOSTREST HOSTREST HOST"
-                            img={ConfImg1}
+                            img={ConfImg3}
                             value={formFields?.rest_host}
                             onChanges={(e) => handleChange('rest_host', e.target.value)}
                             placeholder={localStorage.getItem(LOCAL_STORAGE_REST_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_HOST) : ''}

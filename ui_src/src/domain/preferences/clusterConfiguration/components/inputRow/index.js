@@ -13,19 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-// import { Input } from 'antd';
 import Input from '../../../../../components/Input';
-
-const trackStyle = { background: 'var(--purple)', height: '4px' };
-
-const handleStyle = {
-    border: '8px solid #FFFFFF',
-    background: 'var(--purple)',
-    boxShadow: '0px 8px 16px rgba(0, 82, 204, 0.16)',
-    width: '24px',
-    height: '24px',
-    marginTop: '-10px'
-};
 
 function InputRow({ title, desc, value, onChanges, img, placeholder }) {
     const [inputValue, setInputValue] = useState(value);
@@ -60,10 +48,8 @@ function InputRow({ title, desc, value, onChanges, img, placeholder }) {
                     width="30vw"
                     minWidth="200px"
                     height="42px"
-                    iconComponent=""
                     onChange={onChange}
                 />
-                <Input style={{ width: '20vw' }} onChange={onChange} value={inputValue} trackStyle={trackStyle} handleStyle={handleStyle} />
             </div>
         </div>
     );
