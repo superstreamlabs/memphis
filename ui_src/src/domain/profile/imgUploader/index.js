@@ -11,13 +11,13 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useContext, useState } from 'react';
-import { Context } from '../../../../hooks/store';
-import { LOCAL_STORAGE_COMPANY_LOGO } from '../../../../const/localStorageConsts';
+import { Context } from '../../../hooks/store';
+import { LOCAL_STORAGE_COMPANY_LOGO } from '../../../const/localStorageConsts';
 import { Upload, message } from 'antd';
-import Button from '../../../../components/button';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
-import Logo from '../../../../assets/images/logo.svg';
+import Button from '../../../components/button';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { httpRequest } from '../../../services/http';
+import Logo from '../../../assets/images/logo.svg';
 
 function ImgUploader() {
     const [state, dispatch] = useContext(Context);
