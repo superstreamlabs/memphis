@@ -308,6 +308,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		FilterSubject: filterSubject,
 		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
 		MaxAckPending: -1,
+		MaxDeliver:    1,
 	}
 	err = serv.memphisAddConsumer(tieredStorageStream, &cc)
 	if err != nil {

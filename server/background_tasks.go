@@ -349,20 +349,26 @@ func (s *Server) StartBackgroundTasks() error {
 func (s *Server) UploadMsgsToTierStorage() {
 	ticker := time.NewTicker(time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
 	for range ticker.C {
+		isSuccessUploadToS3 := false
 		lock.Lock()
 		if len(tierStorageMsgsMap.m) > 0 {
 			err := UploadToTier2Storage()
 			if err != nil {
+				isSuccessUploadToS3 = false
 				serv.Errorf("UploadMsgsToTierStorage: " + err.Error())
+			} else {
+				isSuccessUploadToS3 = true
 			}
 		}
 
-		for i, msgs := range tierStorageMsgsMap.m {
-			for _, msg := range msgs {
-				reply := msg.ReplySubject
-				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+		if isSuccessUploadToS3 {
+			for i, msgs := range tierStorageMsgsMap.m {
+				for _, msg := range msgs {
+					reply := msg.ReplySubject
+					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+				}
+				tierStorageMsgsMap.Delete(i)
 			}
-			tierStorageMsgsMap.Delete(i)
 		}
 		lock.Unlock()
 	}
@@ -397,7 +403,6 @@ func (s *Server) ListenForTieredStorageMessages() error {
 					serv.Errorf("ListenForTieredStorageMessages: " + err.Error())
 					return
 				}
-				fmt.Println("message", string(tieredStorageMsg.Buf))
 				payload := tieredStorageMsg.Buf
 				replySubj := reply
 				rawTs := tokenAt(reply, 8)
