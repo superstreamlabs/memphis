@@ -105,11 +105,15 @@ function SideBar() {
                 <div className="item">
                     <span className="icons">
                         <img
-                            className={`logoimg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
-                            src={state?.companyLogo || Logo}
-                            width="24"
-                            alt="companyLogo"
-                        />
+                            className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
+                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            referrerPolicy="no-referrer"
+                            width="34"
+                            alt="avatar"
+                        ></img>
+                        <span className="company-logo">
+                            <img src={state?.companyLogo || Logo} width="15" height="15" alt="companyLogo" />
+                        </span>
                     </span>
                     <p>
                         {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''

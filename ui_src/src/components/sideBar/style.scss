@@ -77,7 +77,7 @@
 
 .item-wrap {
     padding: 5px;
-    height: 36px;
+    height: 40px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -102,6 +102,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+        .company-logo {
+            img {
+                position: absolute;
+                background-color: #ffffff;
+                border-radius: 50%;
+                border: 1px solid transparent;
+                right: -6px;
+                bottom: -4px;
+            }
+        }
     }
     .logoimg {
         border-radius: 25px;
@@ -110,8 +121,8 @@
     }
     p {
         margin: 0;
-        padding-left: 5px;
-        font-size: 12px;
+        padding-left: 8px;
+        font-size: 13px;
         color: #000000;
     }
     .icons-sidebar {
@@ -124,5 +135,10 @@
     border-radius: 4px;
     .MuiSvgIcon-root {
         display: block;
+    }
+    .company-logo {
+        img {
+            border: 1px solid #e3e0ff;
+        }
     }
 }
