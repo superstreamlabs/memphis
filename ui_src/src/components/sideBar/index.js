@@ -15,8 +15,11 @@ import './style.scss';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { Menu } from 'antd';
-
+import { Popover } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
+import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
+import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
+import ChevronRightRoundedIcon from '@material-ui/icons/ChevronRightRounded';
 import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_COMPANY_LOGO,
@@ -31,9 +34,6 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
-import supportIcon from '../../assets/images/supportIcon.svg';
-import accountIcon from '../../assets/images/accountIcon.svg';
-import logoutIcon from '../../assets/images/logoutIcon.svg';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
@@ -47,17 +47,44 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
-import Modal from '../modal';
 import { capitalizeFirst } from '../../services/valueConvertor';
-const { SubMenu } = Menu;
+import Modal from '../modal';
+
+const overlayStyles = {
+    borderRadius: '4px',
+    width: '230px',
+    padding: '5px'
+};
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
+    const [popoverOpen, setPopoverOpen] = useState(false);
     const [open, modalFlip] = useState(false);
     const [goToRoute, setGoToRoute] = useState(null);
+
+    const handleChangeRoute = () => {
+        history.push(goToRoute);
+    };
+
+    const skipGetStarted = async () => {
+        try {
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+            typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
+            modalFlip(false);
+        } catch (error) {}
+    };
+
+    useEffect(() => {
+        console.log(goToRoute);
+        if (goToRoute && `/${state.route}` !== goToRoute) {
+            if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && goToRoute !== pathDomains.overview) modalFlip(true);
+            else handleChangeRoute(goToRoute);
+        }
+    }, [goToRoute]);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -92,17 +119,6 @@ function SideBar() {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
-    useEffect(() => {
-        if (goToRoute && state.route !== goToRoute) {
-            if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') modalFlip(true);
-            else typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
-        }
-    }, [goToRoute]);
-
-    const handleChangeRoute = () => {
-        history.push(goToRoute);
-    };
-
     const handleClick = async (e) => {
         switch (e.key) {
             case '1':
@@ -115,40 +131,99 @@ function SideBar() {
                 break;
         }
     };
+    const content = (
+        <div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setGoToRoute(pathDomains.profile);
+                    setPopoverOpen(false);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <img
+                            className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
+                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            referrerPolicy="no-referrer"
+                            width="34"
+                            alt="avatar"
+                        ></img>
+                        <span className="company-logo">
+                            <img src={state?.companyLogo || Logo} width="15" height="15" alt="companyLogo" />
+                        </span>
+                    </span>
+                    <p>
+                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
+                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                    </p>
+                </div>
+                <ChevronRightRoundedIcon />
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setGoToRoute(`${pathDomains.preferences}/integrations`);
+                    setPopoverOpen(false);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <SettingOutlined className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Preferences</p>
+                </div>
+                <ChevronRightRoundedIcon />
+            </div>
 
-    const skipGetStarted = async () => {
-        try {
-            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
-            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-            typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
-            modalFlip(false);
-        } catch (error) {}
-    };
-
+            <Link to={{ pathname: DOC_URL }} target="_blank">
+                <div className="item-wrap" onClick={() => setPopoverOpen(false)}>
+                    <div className="item">
+                        <span className="icons">
+                            <LiveHelpOutlinedIcon className="icons-sidebar" />
+                        </span>
+                        <p className="item-title">Support</p>
+                    </div>
+                    <ChevronRightRoundedIcon />
+                </div>
+            </Link>
+            <div className="item-wrap">
+                <div className="item" onClick={() => AuthService.logout()}>
+                    <span className="icons">
+                        <ExitToAppOutlined className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Log out</p>
+                </div>
+                <ChevronRightRoundedIcon co />
+            </div>
+        </div>
+    );
     return (
         <div className="sidebar-container">
+            <Modal
+                header="Skip the tutorial?"
+                height="100px"
+                width="400px"
+                rBtnText="Skip"
+                lBtnText="Don't skip"
+                lBtnClick={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                rBtnClick={() => {
+                    skipGetStarted();
+                    handleChangeRoute(goToRoute);
+                }}
+                clickOutside={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                open={open}
+            >
+                <p>The tutorial will not appear again.</p>
+            </Modal>
             <div className="upper-icons">
-                <Modal
-                    header="Skip get-started?"
-                    height="100px"
-                    width="400px"
-                    rBtnText="Skip"
-                    lBtnText="Don't skip"
-                    lBtnClick={() => {
-                        typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
-                        modalFlip(false);
-                    }}
-                    rBtnClick={() => {
-                        skipGetStarted();
-                    }}
-                    clickOutside={() => {
-                        setGoToRoute(state.route);
-                        modalFlip(false);
-                    }}
-                    open={open}
-                >
-                    <p>After choosing "skip" you won't see get-started flow anymore.</p>
-                </Modal>
                 <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => setGoToRoute(pathDomains.overview)} />
                 <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.overview)}>
                     <div className="icon">
@@ -207,60 +282,25 @@ function SideBar() {
                         <img src={integrationNavIcon} />
                     </div>
                 </TooltipComponent>
-                <Menu onClick={(e) => setGoToRoute(e)} className="app-menu" mode="vertical" triggerSubMenuAction="click">
-                    <SubMenu
-                        key="subMenu"
-                        icon={
-                            <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
-                                <img
-                                    className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
-                                    referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    height={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    alt="avatar"
-                                ></img>
-                            </div>
-                        }
-                    >
-                        <Menu.ItemGroup
-                            id="setting-menu"
-                            title={
-                                <div className="header-menu">
-                                    <div className="company-logo">
-                                        <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
-                                    </div>
-                                    <p>
-                                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
-                                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
-                                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
-                                    </p>
-                                </div>
-                            }
-                        >
-                            <Menu.Item key={1} className="customclass">
-                                <div className="item-wrapp">
-                                    <img src={accountIcon} width="15" height="15" alt="accountIcon" />
-                                    <p className="item-title">Preferences</p>
-                                </div>
-                            </Menu.Item>
-                            <Menu.Item key={2}>
-                                <Link to={{ pathname: DOC_URL }} target="_blank">
-                                    <div className="item-wrapp">
-                                        <img src={supportIcon} width="15" height="15" alt="supportIcon" />
-                                        <p className="item-title">Support</p>
-                                    </div>
-                                </Link>
-                            </Menu.Item>
-                            <Menu.Item key={3}>
-                                <div className="item-wrapp">
-                                    <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
-                                    <p className="item-title">Log out</p>
-                                </div>
-                            </Menu.Item>
-                        </Menu.ItemGroup>
-                    </SubMenu>
-                </Menu>
+                <Popover
+                    overlayInnerStyle={overlayStyles}
+                    placement="rightBottom"
+                    content={content}
+                    trigger="click"
+                    onOpenChange={() => setPopoverOpen(!popoverOpen)}
+                    visible={popoverOpen}
+                >
+                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
+                        <img
+                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'preferences') && 'sandboxUserImgSelected'}`}
+                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            referrerPolicy="no-referrer"
+                            width={localStorage.getItem('profile_pic') ? 35 : 25}
+                            height={localStorage.getItem('profile_pic') ? 35 : 25}
+                            alt="avatar"
+                        ></img>
+                    </div>
+                </Popover>
                 <version is="x3d">
                     <p>v{systemVersion}</p>
                 </version>
