@@ -66,17 +66,14 @@ const (
 
 // errors
 var (
-	ErrBadHeader                   = errors.New("could not decode header")
-	LOGS_RETENTION_IN_DAYS         int
-	POISON_MSGS_RETENTION_IN_HOURS int
-
-	isTierStorageConsumerCreated   bool
-	isTierStorageStreamCreated     bool
-
-	BROKER_HOST                    string
-	UI_HOST                        string
-	REST_GW_HOST                   string
-
+	ErrBadHeader                    = errors.New("could not decode header")
+	LOGS_RETENTION_IN_DAYS          int
+	POISON_MSGS_RETENTION_IN_HOURS  int
+	TIERED_STORAGE_CONSUMER_CREATED bool
+	TIERED_STORAGE_STREAM_CREATED   bool
+	BROKER_HOST                     string
+	UI_HOST                         string
+	REST_GW_HOST                    string
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -284,7 +281,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		return
 	}
 
-	idempotencyWindow := time.Duration(5 * time.Minute)
+	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	err = s.memphisAddStream(&StreamConfig{
 		Name:         tieredStorageStream,
@@ -301,7 +298,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		successCh <- err
 		return
 	}
-	isTierStorageStreamCreated = true
+	TIERED_STORAGE_STREAM_CREATED = true
 
 	// create tiered storage consumer
 	durableName := TIERED_STORAGE_CONSUMER
@@ -321,7 +318,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		successCh <- err
 		return
 	}
-	isTierStorageConsumerCreated = true
+	TIERED_STORAGE_CONSUMER_CREATED = true
 
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
@@ -826,6 +823,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
 				s.Errorf("memphisGetMsgs: " + err.Error())
+				return
 			}
 
 			dataFirstIdx := 0
@@ -834,6 +832,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 				dataFirstIdx = getHdrLastIdxFromRaw(msg) + 1
 				if dataFirstIdx > len(msg)-len(CR_LF) {
 					s.Errorf("memphisGetMsgs: memphis error parsing in station get messages")
+					return
 				}
 
 				dataLen = len(msg) - dataFirstIdx
