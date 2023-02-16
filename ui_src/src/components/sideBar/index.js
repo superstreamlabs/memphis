@@ -53,6 +53,7 @@ function SideBar() {
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
+    const [popoverOpen, setPopoverOpen] = useState(false);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -101,7 +102,13 @@ function SideBar() {
     };
     const content = (
         <div>
-            <div className="item-wrap" onClick={() => history.push(pathDomains.profile)}>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    history.push(pathDomains.profile);
+                    setPopoverOpen(false);
+                }}
+            >
                 <div className="item">
                     <span className="icons">
                         <img
@@ -123,7 +130,13 @@ function SideBar() {
                 </div>
                 <ChevronRightRoundedIcon />
             </div>
-            <div className="item-wrap" onClick={() => history.push(`${pathDomains.preferences}/integrations`)}>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    history.push(`${pathDomains.preferences}/integrations`);
+                    setPopoverOpen(false);
+                }}
+            >
                 <div className="item">
                     <span className="icons">
                         <SettingOutlined className="icons-sidebar" />
@@ -134,7 +147,7 @@ function SideBar() {
             </div>
 
             <Link to={{ pathname: DOC_URL }} target="_blank">
-                <div className="item-wrap">
+                <div className="item-wrap" onClick={() => setPopoverOpen(false)}>
                     <div className="item">
                         <span className="icons">
                             <LiveHelpOutlinedIcon className="icons-sidebar" />
@@ -145,7 +158,7 @@ function SideBar() {
                 </div>
             </Link>
             <div className="item-wrap">
-                <div className="item">
+                <div className="item" onClick={async () => await AuthService.logout()}>
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />
                     </span>
@@ -224,16 +237,23 @@ function SideBar() {
             </div>
             <div className="bottom-icons">
                 <Link to={`${pathDomains.preferences}/integrations`}>
-                    <div className="integration-icon-wrapper">
-                        <TooltipComponent text="Integrations" placement="right">
+                    <TooltipComponent text="Integrations" placement="right">
+                        <div className="integration-icon-wrapper" onClick={() => setPopoverOpen(false)}>
                             <img src={integrationNavIcon} />
-                        </TooltipComponent>
-                    </div>
+                        </div>
+                    </TooltipComponent>
                 </Link>
-                <Popover overlayInnerStyle={overlayStyles} placement="rightBottom" content={content} trigger="click">
-                    <div className="sub-icon-wrapper">
+                <Popover
+                    overlayInnerStyle={overlayStyles}
+                    placement="rightBottom"
+                    content={content}
+                    trigger="click"
+                    onOpenChange={() => setPopoverOpen(!popoverOpen)}
+                    visible={popoverOpen}
+                >
+                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
                         <img
-                            className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
+                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'preferences') && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
                             referrerPolicy="no-referrer"
                             width={localStorage.getItem('profile_pic') ? 35 : 25}

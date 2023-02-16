@@ -62,12 +62,26 @@ const Component = ({ comp, i }) => {
                     </div>
                 </div>
                 <div className="pods-container">
-                    {comp?.host !== '' && (
+                    {comp?.hosts?.length > 0 && (
                         <>
-                            <label className="host">Host</label>
-                            <OverflowTip text={comp?.host}>
-                                <label className="value">{comp?.host} </label>
+                            <label className="host">Hosts</label>
+                            <OverflowTip text={comp?.hosts[0]}>
+                                <label className="value">{comp.hosts[0]}</label>
                             </OverflowTip>
+                            {comp.hosts?.length > 1 && (
+                                <Popover
+                                    overlayInnerStyle={remainingPorstPopInnerStyle}
+                                    placement="bottomLeft"
+                                    content={comp.hosts?.slice(1)?.map((host) => {
+                                        return <p className="comp-plus-popover">{host}</p>;
+                                    })}
+                                >
+                                    <div className="plus-comp">
+                                        <Add className="add" />
+                                        <p>{comp.hosts?.length - 1}</p>
+                                    </div>
+                                </Popover>
+                            )}
                             <Divider type="vertical" />
                         </>
                     )}
@@ -79,10 +93,10 @@ const Component = ({ comp, i }) => {
                             overlayInnerStyle={remainingPorstPopInnerStyle}
                             placement="bottomLeft"
                             content={comp.ports?.slice(1)?.map((port) => {
-                                return <p className="port-popover">{port}</p>;
+                                return <p className="comp-plus-popover">{port}</p>;
                             })}
                         >
-                            <div className="plus-ports">
+                            <div className="plus-comp">
                                 <Add className="add" />
                                 <p>{comp.ports?.length - 1}</p>
                             </div>
