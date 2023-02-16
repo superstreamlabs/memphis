@@ -436,7 +436,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	brokerHost := BROKER_HOST
-	restHost := REST_HOST
+	restGWHost := REST_GW_HOST
 	uiHost := UI_HOST
 	var env string
 	if configuration.DOCKER_ENV != "" {
@@ -449,8 +449,8 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		if UI_HOST == "" {
 			uiHost = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
-		if REST_HOST == "" {
-			restHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		if REST_GW_HOST == "" {
+			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
 	}
 
@@ -471,7 +471,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"full_name":         user.FullName,
 		"skip_get_started":  user.SkipGetStarted,
 		"broker_host":       brokerHost,
-		"rest_host":         restHost,
+		"rest_gw_host":      restGWHost,
 		"ui_host":           uiHost,
 	})
 }

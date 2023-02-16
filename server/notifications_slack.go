@@ -155,7 +155,7 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(integrationType strin
 		return keys, properties, models.Integration{}, errorCode, err
 	}
 	if UI_HOST == "" {
-		UI_HOST = body.UIUrl
+		UI_HOST = strings.ToLower(body.UIUrl)
 	}
 	slackIntegration, err := createSlackIntegration(keys, properties, UI_HOST)
 	if err != nil {

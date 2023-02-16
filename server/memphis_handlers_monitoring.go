@@ -464,7 +464,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if strings.Contains(d.Name, "memphis-broker") {
 				host = BROKER_HOST
 			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				host = REST_HOST
+				host = REST_GW_HOST
 			} else if strings.Contains(d.Name, "mongo") {
 				host = ""
 			}
@@ -510,7 +510,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if strings.Contains(s.Name, "memphis-broker") {
 				host = BROKER_HOST
 			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				host = REST_HOST
+				host = REST_GW_HOST
 			} else if strings.Contains(s.Name, "mongo") {
 				host = ""
 			}

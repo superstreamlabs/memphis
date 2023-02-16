@@ -25,7 +25,7 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_SKIP_GET_STARTED,
     LOCAL_STORAGE_BROKER_HOST,
-    LOCAL_STORAGE_REST_HOST,
+    LOCAL_STORAGE_REST_GW_HOST,
     LOCAL_STORAGE_UI_HOST
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
@@ -48,7 +48,7 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_ENV, userData.env);
         localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, userData.skip_get_started);
         localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, userData.broker_host);
-        localStorage.setItem(LOCAL_STORAGE_REST_HOST, userData.rest_host);
+        localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, userData.rest_gw_host);
         localStorage.setItem(LOCAL_STORAGE_UI_HOST, userData.ui_host);
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);

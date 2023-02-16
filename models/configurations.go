@@ -18,7 +18,7 @@ type EditClusterConfigSchema struct {
 	LogsRetention int    `json:"logs_retention" binding:"required"`
 	BrokerHost    string `json:"broker_host"`
 	UiHost        string `json:"ui_host"`
-	RestHost      string `json:"rest_host"`
+	RestGWHost    string `json:"rest_gw_host"`
 }
 
 type GlobalConfigurationsUpdate struct {

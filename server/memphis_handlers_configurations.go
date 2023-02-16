@@ -19,6 +19,7 @@ import (
 	"memphis-broker/models"
 	"memphis-broker/utils"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -114,24 +115,24 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			UI_HOST = uiHost.Value
 		}
-		var proxyHost models.ConfigurationsStringValue
-		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "rest_host"}).Decode(&proxyHost)
+		var restGWHost models.ConfigurationsStringValue
+		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "rest_gw_host"}).Decode(&restGWHost)
 		if err != nil {
 			if err != mongo.ErrNoDocuments {
 				s.Errorf("initializeConfigurations: " + err.Error())
 			}
-			REST_HOST = ""
-			proxyHost = models.ConfigurationsStringValue{
+			REST_GW_HOST = ""
+			restGWHost = models.ConfigurationsStringValue{
 				ID:    primitive.NewObjectID(),
-				Key:   "rest_host",
-				Value: REST_HOST,
+				Key:   "rest_gw_host",
+				Value: REST_GW_HOST,
 			}
-			_, err = configurationsCollection.InsertOne(context.TODO(), proxyHost)
+			_, err = configurationsCollection.InsertOne(context.TODO(), restGWHost)
 			if err != nil {
 				s.Errorf("initializeConfigurations: " + err.Error())
 			}
 		} else {
-			REST_HOST = proxyHost.Value
+			REST_GW_HOST = restGWHost.Value
 		}
 	}
 }
@@ -159,10 +160,10 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
-	// if configuration.DOCKER_ENV == "" {
-	if BROKER_HOST != body.BrokerHost {
-		BROKER_HOST = body.BrokerHost
-		err := EditClusterCompHost("broker_host", BROKER_HOST)
+	brokerHost := strings.ToLower(body.BrokerHost)
+	if BROKER_HOST != brokerHost {
+		BROKER_HOST = brokerHost
+		err := editClusterCompHost("broker_host", BROKER_HOST)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -170,9 +171,10 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
-	if UI_HOST != body.UiHost {
-		UI_HOST = body.UiHost
-		err := EditClusterCompHost("ui_host", UI_HOST)
+	uiHost := strings.ToLower(body.UiHost)
+	if UI_HOST != uiHost {
+		UI_HOST = uiHost
+		err := editClusterCompHost("ui_host", UI_HOST)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -180,16 +182,16 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
-	if REST_HOST != body.RestHost {
-		REST_HOST = body.RestHost
-		err := EditClusterCompHost("rest_host", REST_HOST)
+	restGWHost := strings.ToLower(body.RestGWHost)
+	if REST_GW_HOST != restGWHost {
+		REST_GW_HOST = restGWHost
+		err := editClusterCompHost("rest_gw_host", REST_GW_HOST)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
-	// }
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
@@ -298,17 +300,17 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
 	}
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_host": REST_HOST})
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST})
 }
 
-func EditClusterCompHost(key string, host string) error {
+func editClusterCompHost(key string, host string) error {
 	switch key {
 	case "broker_host":
 		BROKER_HOST = host
 	case "ui_host":
 		UI_HOST = host
-	case "rest_host":
-		REST_HOST = host
+	case "rest_gw_host":
+		REST_GW_HOST = host
 	}
 
 	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: key, Update: host})

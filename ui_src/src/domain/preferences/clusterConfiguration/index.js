@@ -24,7 +24,7 @@ import Button from '../../../components/button';
 import SliderRow from './components/sliderRow';
 import InputRow from './components/inputRow';
 import { message } from 'antd';
-import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_HOST, LOCAL_STORAGE_UI_HOST } from '../../../const/localStorageConsts';
+import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_UI_HOST } from '../../../const/localStorageConsts';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});
@@ -49,7 +49,7 @@ function ClusterConfiguration() {
         try {
             const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
             localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
-            localStorage.setItem(LOCAL_STORAGE_REST_HOST, formFields.rest_host);
+            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, formFields.rest_gw_host);
             localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
             setIsChanged(false);
             setOldValues(data);
@@ -125,9 +125,9 @@ function ClusterConfiguration() {
                             title="REST HOST"
                             desc="REST HOSTREST HOSTREST HOSTREST HOSTREST HOST"
                             img={ConfImg3}
-                            value={formFields?.rest_host}
-                            onChanges={(e) => handleChange('rest_host', e.target.value)}
-                            placeholder={localStorage.getItem(LOCAL_STORAGE_REST_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_HOST) : ''}
+                            value={formFields?.rest_gw_host}
+                            onChanges={(e) => handleChange('rest_gw_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) : ''}
                         />
                     </>
                 )}

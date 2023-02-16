@@ -70,7 +70,7 @@ var (
 	POISON_MSGS_RETENTION_IN_HOURS int
 	BROKER_HOST                    string
 	UI_HOST                        string
-	REST_HOST                      string
+	REST_GW_HOST                   string
 )
 
 func (s *Server) MemphisInitialized() bool {

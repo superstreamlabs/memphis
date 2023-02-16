@@ -113,8 +113,8 @@ func (s *Server) ListenForConfogurationsUpdateEvents() error {
 				BROKER_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
 			case "ui_host":
 				UI_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
-			case "rest_host":
-				REST_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
+			case "rest_gw_host":
+				REST_GW_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
 			default:
 				return
 			}
