@@ -46,21 +46,16 @@ function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
                     <label className="conf-description">{desc}</label>
                 </div>
             </div>
-            <div className="current-value">
-                <p>
-                    {inputValue} {unit}
-                </p>
-            </div>
             <div className="slider">
-                <div className="min-max-box">
+                <div className="min-box">
                     <span>
                         {min} {unit}
                     </span>
                 </div>
-                <Slider style={{ width: '20vw' }} min={min} max={max} onChange={onChange} value={inputValue} trackStyle={trackStyle} handleStyle={handleStyle} />
-                <div className="min-max-box">
+                <Slider style={{ width: '25vw' }} min={min} max={max} onChange={onChange} value={inputValue} trackStyle={trackStyle} handleStyle={handleStyle} />
+                <div className="max-box">
                     <span>
-                        {max} {unit}
+                        {inputValue} {unit}
                     </span>
                 </div>
             </div>

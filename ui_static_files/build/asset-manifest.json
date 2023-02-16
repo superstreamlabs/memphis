@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.c952afdf.css",
-    "main.js": "/static/js/main.e5685b6f.js",
+    "main.css": "/static/css/main.584f1fa6.css",
+    "main.js": "/static/js/main.6dace165.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -150,6 +150,7 @@
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
     "static/media/totalPoison.svg": "/static/media/totalPoison.176a958f9ce4ddf7cafbadb2e88e75dc.svg",
     "static/media/total_msg.svg": "/static/media/total_msg.420f3b325d5339cd1c29e8243ecc3c55.svg",
+    "static/media/confImg3.svg": "/static/media/confImg3.93326f5351f7bb21a22812d11a769ab7.svg",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
     "static/media/waitingMessages.svg": "/static/media/waitingMessages.b6dc0edb44eea832a6bc4e9f8357b215.svg",
@@ -160,7 +161,6 @@
     "static/media/unsupported.svg": "/static/media/unsupported.4ad964333a77d4614aed147479badbc8.svg",
     "static/media/bgGetStarted.svg": "/static/media/bgGetStarted.1db75bcd048189e22af661908cfdd4e0.svg",
     "static/media/verifiedIcon.svg": "/static/media/verifiedIcon.0d8d050883148eadba2c89769a9a3d46.svg",
-    "static/media/supportIcon.svg": "/static/media/supportIcon.c75670ecf7e65f3cbec1080ebd2b868b.svg",
     "static/media/signupInfo.svg": "/static/media/signupInfo.b9c2b723742579de9fa69a8f6beb6614.svg",
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
     "index.html": "/index.html",
@@ -179,7 +179,6 @@
     "static/media/rollBackIcon.svg": "/static/media/rollBackIcon.d27a828890f2a4e685738694d53dbfb5.svg",
     "static/media/errorModal.svg": "/static/media/errorModal.56ec5d38d44a26bcd6582fe4a2df085f.svg",
     "static/media/typeIcon.svg": "/static/media/typeIcon.e663a2d8562816001bdd4feae921295d.svg",
-    "static/media/logoutIcon.svg": "/static/media/logoutIcon.8bef4832301d06661184dd79286c1913.svg",
     "static/media/backIcon.svg": "/static/media/backIcon.be12eb6ec289ed5a4dc8d64dd8adec0f.svg",
     "static/media/disconAlertIcon.svg": "/static/media/disconAlertIcon.264ca4be9b5847e8305d5526a988f29c.svg",
     "static/media/usersIconActive.svg": "/static/media/usersIconActive.b85b8f2e28394e7e41d2d5e18774ec50.svg",
@@ -223,9 +222,6 @@
     "static/media/schemaIconSelect.svg": "/static/media/schemaIconSelect.46ef9f95edf39914c6095556987024a4.svg",
     "static/media/schemaItemIcon.svg": "/static/media/schemaItemIcon.c6af0b5dadd1a92922cfec49255241fa.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.2d046e47b29166b55662a6b110c616bb.svg",
-    "static/media/editProfileGray.svg": "/static/media/editProfileGray.dd89a2b2e268c88d2a166ad70637539a.svg",
-    "static/media/editProfileColor.svg": "/static/media/editProfileColor.75c0501ad7b5e0d90b670e0576bc9d42.svg",
-    "static/media/accountIcon.svg": "/static/media/accountIcon.30f24a8d117059fa776baf9c1569f690.svg",
     "static/media/overviewIcon.svg": "/static/media/overviewIcon.f8e695b412f4a8a30052b7bd29044bc2.svg",
     "static/media/replicasIcon.svg": "/static/media/replicasIcon.8da6d8a33af6c5c9206c0e767efd1917.svg",
     "static/media/grayConsumeDataImg.svg": "/static/media/grayConsumeDataImg.122e0da3ac6c7851476ececc0a23449f.svg",
@@ -246,7 +242,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.c952afdf.css",
-    "static/js/main.e5685b6f.js"
+    "static/css/main.584f1fa6.css",
+    "static/js/main.6dace165.js"
   ]
 }

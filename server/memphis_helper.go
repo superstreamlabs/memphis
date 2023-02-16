@@ -69,8 +69,14 @@ var (
 	ErrBadHeader                   = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS         int
 	POISON_MSGS_RETENTION_IN_HOURS int
+
 	isTierStorageConsumerCreated   bool
 	isTierStorageStreamCreated     bool
+
+	BROKER_HOST                    string
+	UI_HOST                        string
+	REST_GW_HOST                   string
+
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -327,6 +333,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	err = s.memphisDeleteStream(throughputStreamName)
 	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
+
 	}
 
 	// throughput kv

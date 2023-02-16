@@ -17,11 +17,14 @@ import React, { useEffect, useState } from 'react';
 import { compareObjects } from '../../../services/valueConvertor';
 import ConfImg1 from '../../../assets/images/confImg1.svg';
 import ConfImg2 from '../../../assets/images/confImg2.svg';
+import ConfImg3 from '../../../assets/images/confImg3.svg';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
 import SliderRow from './components/sliderRow';
+import InputRow from './components/inputRow';
 import { message } from 'antd';
+import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_UI_HOST } from '../../../const/localStorageConsts';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});
@@ -45,6 +48,9 @@ function ClusterConfiguration() {
     const updateConfiguration = async () => {
         try {
             const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
+            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
+            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, formFields.rest_gw_host);
+            localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
             setIsChanged(false);
             setOldValues(data);
             message.success({
@@ -97,6 +103,34 @@ function ClusterConfiguration() {
                     unit={'d'}
                     onChanges={(e) => handleChange('logs_retention', e)}
                 />
+                {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !process.env.REACT_APP_SANDBOX_ENV && (
+                    <>
+                        <InputRow
+                            title="BROKER HOST"
+                            desc="BROKER HOSTBROKER HOSTBROKER HOSTBROKER HOST"
+                            img={ConfImg3}
+                            value={formFields?.broker_host}
+                            onChanges={(e) => handleChange('broker_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) : ''}
+                        />
+                        <InputRow
+                            title="UI HOST"
+                            desc="UI HOSTUI HOSTUI HOSTUI HOSTUI HOSTUI HOST"
+                            img={ConfImg3}
+                            value={formFields?.ui_host}
+                            onChanges={(e) => handleChange('ui_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_UI_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_UI_HOST) : ''}
+                        />
+                        <InputRow
+                            title="REST HOST"
+                            desc="REST HOSTREST HOSTREST HOSTREST HOSTREST HOST"
+                            img={ConfImg3}
+                            value={formFields?.rest_gw_host}
+                            onChanges={(e) => handleChange('rest_gw_host', e.target.value)}
+                            placeholder={localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) : ''}
+                        />
+                    </>
+                )}
             </div>
             <div className="configuration-footer">
                 <div className="btn-container">

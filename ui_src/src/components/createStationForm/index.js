@@ -235,7 +235,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         <Input
                             placeholder="Type station name"
                             type="text"
-                            maxLength="30"
+                            maxLength="128"
                             radiusType="semi-round"
                             colorType="black"
                             backgroundColorType="none"

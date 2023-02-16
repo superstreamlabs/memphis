@@ -32,6 +32,7 @@
 <p align="center">
 <a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis-broker/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> 
+  <img src="https://img.shields.io/npm/dw/memphis-dev?color=ffc633&label=installations">
 <a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> 
 <a href="https://docs.memphis.dev/memphis/release-notes/releases/v0.4.2-beta"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"></a>
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
@@ -74,6 +75,7 @@ And the list continues...
   - Event/Data Streaming (observability, analytics, ML/AI)
 - Queuing
 - N:N communication patterns
+- Ingest Grafana Loki logs at scale
 
 ## ✨ Features
 
@@ -86,7 +88,7 @@ And the list continues...
 - 📺 Data-level observability
 - ☠️ Dead-Letter Queue with automatic message retransmit
 - 🔤 Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)
-- ⛓ SDKs: Node.JS, Go, Python, TypeScript, NestJS, REST
+- ⛓ SDKs: Node.JS, Go, Python, Typescript, NestJS, REST, .NET, Kotlin
 - 🐳☸ Kubernetes-native
 - 👨‍💻 Community driven
 

@@ -15,8 +15,11 @@ import './style.scss';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { Menu } from 'antd';
-
+import { Popover } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
+import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
+import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
+import ChevronRightRoundedIcon from '@material-ui/icons/ChevronRightRounded';
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
@@ -25,9 +28,6 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
-import supportIcon from '../../assets/images/supportIcon.svg';
-import accountIcon from '../../assets/images/accountIcon.svg';
-import logoutIcon from '../../assets/images/logoutIcon.svg';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
@@ -42,13 +42,18 @@ import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
 
-const { SubMenu } = Menu;
+const overlayStyles = {
+    borderRadius: '4px',
+    width: '230px',
+    padding: '5px'
+};
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
+    const [popoverOpen, setPopoverOpen] = useState(false);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -95,7 +100,74 @@ function SideBar() {
                 break;
         }
     };
+    const content = (
+        <div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    history.push(pathDomains.profile);
+                    setPopoverOpen(false);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <img
+                            className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
+                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            referrerPolicy="no-referrer"
+                            width="34"
+                            alt="avatar"
+                        ></img>
+                        <span className="company-logo">
+                            <img src={state?.companyLogo || Logo} width="15" height="15" alt="companyLogo" />
+                        </span>
+                    </span>
+                    <p>
+                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
+                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                    </p>
+                </div>
+                <ChevronRightRoundedIcon />
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    history.push(`${pathDomains.preferences}/integrations`);
+                    setPopoverOpen(false);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <SettingOutlined className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Preferences</p>
+                </div>
+                <ChevronRightRoundedIcon />
+            </div>
 
+            <Link to={{ pathname: DOC_URL }} target="_blank">
+                <div className="item-wrap" onClick={() => setPopoverOpen(false)}>
+                    <div className="item">
+                        <span className="icons">
+                            <LiveHelpOutlinedIcon className="icons-sidebar" />
+                        </span>
+                        <p className="item-title">Support</p>
+                    </div>
+                    <ChevronRightRoundedIcon />
+                </div>
+            </Link>
+            <div className="item-wrap">
+                <div className="item" onClick={async () => await AuthService.logout()}>
+                    <span className="icons">
+                        <ExitToAppOutlined className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Log out</p>
+                </div>
+                <ChevronRightRoundedIcon co />
+            </div>
+        </div>
+    );
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
@@ -166,65 +238,30 @@ function SideBar() {
             <div className="bottom-icons">
                 <Link to={`${pathDomains.preferences}/integrations`}>
                     <TooltipComponent text="Integrations" placement="right">
-                        <div className="integration-icon-wrapper">
+                        <div className="integration-icon-wrapper" onClick={() => setPopoverOpen(false)}>
                             <img src={integrationNavIcon} />
                         </div>
                     </TooltipComponent>
                 </Link>
-                <Menu onClick={handleClick} className="app-menu" mode="vertical" triggerSubMenuAction="click">
-                    <SubMenu
-                        key="subMenu"
-                        icon={
-                            <div className={state.route === 'preferences' ? 'sub-icon-wrapper menu-preference-selected' : 'sub-icon-wrapper'}>
-                                <img
-                                    className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
-                                    referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    height={localStorage.getItem('profile_pic') ? 35 : 25}
-                                    alt="avatar"
-                                ></img>
-                            </div>
-                        }
-                    >
-                        <Menu.ItemGroup
-                            id="setting-menu"
-                            title={
-                                <div className="header-menu">
-                                    <div className="company-logo">
-                                        <img className="logoimg" src={state?.companyLogo || Logo} width="24" alt="companyLogo" />
-                                    </div>
-                                    <p>
-                                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
-                                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
-                                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
-                                    </p>
-                                </div>
-                            }
-                        >
-                            <Menu.Item key={1} className="customclass">
-                                <div className="item-wrapp">
-                                    <img src={accountIcon} width="15" height="15" alt="accountIcon" />
-                                    <p className="item-title">Preferences</p>
-                                </div>
-                            </Menu.Item>
-                            <Menu.Item key={2}>
-                                <Link to={{ pathname: DOC_URL }} target="_blank">
-                                    <div className="item-wrapp">
-                                        <img src={supportIcon} width="15" height="15" alt="supportIcon" />
-                                        <p className="item-title">Support</p>
-                                    </div>
-                                </Link>
-                            </Menu.Item>
-                            <Menu.Item key={3}>
-                                <div className="item-wrapp">
-                                    <img src={logoutIcon} width="15" height="15" alt="logoutIcon" />
-                                    <p className="item-title">Log out</p>
-                                </div>
-                            </Menu.Item>
-                        </Menu.ItemGroup>
-                    </SubMenu>
-                </Menu>
+                <Popover
+                    overlayInnerStyle={overlayStyles}
+                    placement="rightBottom"
+                    content={content}
+                    trigger="click"
+                    onOpenChange={() => setPopoverOpen(!popoverOpen)}
+                    visible={popoverOpen}
+                >
+                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
+                        <img
+                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'preferences') && 'sandboxUserImgSelected'}`}
+                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            referrerPolicy="no-referrer"
+                            width={localStorage.getItem('profile_pic') ? 35 : 25}
+                            height={localStorage.getItem('profile_pic') ? 35 : 25}
+                            alt="avatar"
+                        ></img>
+                    </div>
+                </Popover>
                 <version is="x3d">
                     <p>v{systemVersion}</p>
                 </version>

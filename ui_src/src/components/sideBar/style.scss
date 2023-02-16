@@ -3,9 +3,12 @@
     height: 100vh;
     position: relative;
     text-align: center;
-    background: #FCFCFC;
+    background: #fcfcfc;
     min-height: 410px;
-    border-right: 1px solid #F4F4F4;
+    border-right: 1px solid #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     .upper-icons {
         .logoimg {
             margin-top: 1vh;
@@ -22,25 +25,31 @@
             }
         }
     }
-
     .sandboxUserImg {
         border-radius: 50%;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        height: 40px;
+        width: 40px;
+        cursor: pointer;
+        padding: 3px;
+    }
+    .sandboxUserImg:hover {
+        opacity: 0.9;
+    }
+    .sandboxUserImgSelected {
+        background: linear-gradient(94.37deg, #61dfc6 3.3%, #776cfb 77.22%);
     }
 
     .bottom-icons {
-        position: absolute;
-        bottom: 10px;
-        width: 100%;
         display: flex;
         flex-direction: column;
-        place-items: center;
-        .integration-icon-wrapper{
-            display: flex;
-            justify-content: center;
-            width: 60px;
-            height: 30px;
+        align-items: center;
+        .integration-icon-wrapper {
+            width: 80px;
+            padding: 3px;
             cursor: pointer;
-            img{
+            img {
                 width: 18px;
             }
         }
@@ -48,56 +57,8 @@
             background-color: rgba(132, 129, 138, 0.1);
             border-radius: 10px;
         }
-        .sub-icon-wrapper {
-            width: 35px;
-            height: 35px;
-            background: #ffffff;
-            box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-        }
-        .sub-icon-wrapper:hover {
-            opacity: 0.8;
-        }
-
-        .ant-menu-vertical {
-            background: transparent !important;
-            border: unset !important;
-            width: 100%;
-        }
-        .app-menu {
-            i {
-                display: none;
-            }
-            .ant-menu-submenu-title {
-                text-overflow: unset;
-                padding: 2px;
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                background: transparent;
-            }
-            .ant-menu-item-icon {
-                position: absolute;
-                display: flex;
-                place-content: center;
-                z-index: 1;
-            }
-            .menu-preference-selected::before {
-                content: "";
-                position: absolute;
-                z-index: -1;
-                top: 0px;
-                right: 0px;
-                bottom: 0px;
-                left: 0px;
-                border-radius: 50%;
-                background: linear-gradient(94.37deg, #61DFC6 3.3%, #776CFB 77.22%);
-                margin: 3px;
-            }
-        }
         version {
+            margin-bottom: 10px;
             background: rgba(132, 129, 138, 0.1);
             border-radius: 4px;
             width: 80%;
@@ -112,95 +73,70 @@
             }
         }
     }
-  
 }
 
-.header-menu {
-    border-bottom: 0.5px solid #e9e9e9;
+.item-wrap {
+    padding: 5px;
+    height: 40px;
     display: flex;
-    height: 55px;
+    justify-content: space-between;
     align-items: center;
-    padding-left: 15px;
-    p {
-        margin: 0;
-        font-size: 12px;
-        color: #000000;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        display: inline-block;
+    .MuiSvgIcon-root {
+        color: #776cfb !important;
+        height: 20px;
+        display: none;
     }
-    .company-logo {
-        width: 30px;
-        height: 30px;
-        border: 1px solid var(--gray);
-        border-radius: 20px;
-        position: relative;
-        align-items: center;
+    cursor: pointer;
+    .item {
         display: flex;
-        justify-content: center;
-        margin-right: 10px;
-        .logoimg{
-            border-radius: 25px;
-            width: 26px;
-            height: 26px;
+        align-items: center;
+        .MuiSvgIcon-root {
+            color: #a9a9a9 !important;
+            display: block;
         }
     }
-}
-.item-wrapp {
-    display: flex;
-    align-items: center;
-    img {
-        margin-right: 10px;
+    .icons {
+        width: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        .company-logo {
+            img {
+                position: absolute;
+                background-color: #ffffff;
+                border-radius: 50%;
+                border: 1px solid transparent;
+                right: -6px;
+                bottom: -4px;
+            }
+        }
+    }
+    .logoimg {
+        border-radius: 25px;
+        width: 26px;
+        height: 26px;
     }
     p {
         margin: 0;
-        font-size: 12px;
+        padding-left: 8px;
+        font-size: 13px;
         color: #000000;
     }
-}
-.item-wrapp .item-title:hover {
-    opacity: 0.8;
-}
-.ant-menu-item a:hover {
-    p {
-        opacity: 0.8;
+    .icons-sidebar {
+        color: #a9a9a9;
+        font-size: 16px;
     }
 }
-
-.ant-menu-submenu > .ant-menu {
-    border-radius: 8px;
-    border: 1px solid var(--gray);
-    width: 12vw;
-    min-width: 220px;
-}
-
-.ant-menu-vertical .ant-menu-item {
-    line-height: unset !important;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    background: transparent;
-}
-
-.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
-    background-color: unset;
-}
-
-.ant-menu-item-group-list {
-    height: 120px;
-    padding-top: 10px !important;
-}
-
-.installation-icon-wrapper {
-    width: 40px;
-    height: 40px;
-    background: rgba(101, 87, 255, 0.1);
-    border-radius: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    img {
-        width: 20px;
+.item-wrap:hover {
+    background: #e3e0ff;
+    border-radius: 4px;
+    .MuiSvgIcon-root {
+        display: block;
+    }
+    .company-logo {
+        img {
+            border: 1px solid #e3e0ff;
+        }
     }
 }

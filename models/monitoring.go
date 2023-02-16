@@ -34,7 +34,7 @@ type SystemComponents struct {
 	Ports       []int          `json:"ports"`
 	DesiredPods int            `json:"desired_pods"`
 	ActualPods  int            `json:"actual_pods"`
-	Host        string         `json:"host"`
+	Hosts        []string         `json:"hosts"`
 }
 
 type MainOverviewData struct {
