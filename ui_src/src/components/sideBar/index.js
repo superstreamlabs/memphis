@@ -51,7 +51,7 @@ import { capitalizeFirst } from '../../services/valueConvertor';
 import Modal from '../modal';
 
 const overlayStyles = {
-    borderRadius: '4px',
+    borderRadius: '8px',
     width: '230px',
     padding: '5px'
 };
@@ -133,7 +133,7 @@ function SideBar() {
                             className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
                             referrerPolicy="no-referrer"
-                            width="34"
+                            width="30"
                             alt="avatar"
                         ></img>
                         <span className="company-logo">
@@ -182,7 +182,7 @@ function SideBar() {
                     </span>
                     <p className="item-title">Log out</p>
                 </div>
-                <ChevronRightRoundedIcon co />
+                <ChevronRightRoundedIcon />
             </div>
         </div>
     );
@@ -253,7 +253,7 @@ function SideBar() {
                     content={content}
                     trigger="click"
                     onOpenChange={() => setPopoverOpen(!popoverOpen)}
-                    visible={popoverOpen}
+                    open={popoverOpen}
                 >
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
                         <img
