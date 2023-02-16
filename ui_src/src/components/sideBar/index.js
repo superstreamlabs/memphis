@@ -73,7 +73,7 @@ function SideBar() {
         try {
             await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-            typeof goToRoute === 'object' && goToRoute !== null ? handleClick(goToRoute) : handleChangeRoute(goToRoute);
+            handleChangeRoute(goToRoute);
             modalFlip(false);
         } catch (error) {}
     };
@@ -118,18 +118,6 @@ function SideBar() {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
-    const handleClick = async (e) => {
-        switch (e.key) {
-            case '1':
-                history.push(`${pathDomains.preferences}/profile`);
-                break;
-            case '3':
-                await AuthService.logout();
-                break;
-            default:
-                break;
-        }
-    };
     const content = (
         <div>
             <div
