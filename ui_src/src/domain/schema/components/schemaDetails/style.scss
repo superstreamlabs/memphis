@@ -182,30 +182,32 @@ schema-details {
                     display: flex;
                     min-width: 100px;
                     height: 29px;
-                    padding: 0px 15px;
+                    padding: 0px 20px;
                     justify-content: center;
                     align-items:center;
-                    p{
+                    position: relative;
+                    .ovel-station{
                         font-size: 15px;
                         font-family: 'InterSemiBold';
+                        cursor: pointer;
+
                     }
-                    .redirect-img{
-                        img{
-                            display: none;
-                            margin-left: 5px;
-                        }
+                    img{
+                        position: absolute;
+                        top: 10px;
+                        right: 5px;
+                        display: none;
                     }
+                    
                 }
                 .station-wrapper:hover{
                     display: flex;
-                    padding: 0px 5px;
-                    p{
+                    .ovel-station{
                         color: var(--purple);
                         text-decoration-line: underline;
                     }
                     img{
-                        width: 10px;
-                        display: unset;
+                        display: block;
                     }
                 }
             }

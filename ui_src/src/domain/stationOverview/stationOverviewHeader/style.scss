@@ -16,18 +16,19 @@
                 img {
                     cursor: pointer;
                 }
-                h1 {
-                    font-size: 24px;
-                    font-family: 'InterSemiBold';
-                    line-height: 24px;
-                    margin: 0 10px;
-                }
+             
                 .tags-list {
                     justify-content: space-between;
                     margin-bottom: 0px;
                     margin-left: 10px;
                     margin-top: 4px;
                 }
+            }
+            .station-name-overlow {
+                font-size: 24px;
+                font-family: 'InterSemiBold';
+                line-height: 24px;
+                margin: 0 10px;
             }
             .created-by {
                 color: #979797;

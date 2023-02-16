@@ -27,8 +27,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var UI_url string
-
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
@@ -78,9 +76,12 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				systemKeysCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_url"},
-					bson.M{"$set": bson.M{"value": integrationUpdate.UIUrl}})
-				UI_url = integrationUpdate.UIUrl
+				if UI_HOST == "" {
+					UI_HOST = integrationUpdate.UIUrl
+				}
+				configurationsCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_host"},
+					bson.M{"$set": bson.M{"value": UI_HOST}})
+
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
@@ -108,6 +109,12 @@ func (s *Server) ListenForConfogurationsUpdateEvents() error {
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":
 				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
+			case "broker_host":
+				BROKER_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
+			case "ui_host":
+				UI_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
+			case "rest_gw_host":
+				REST_GW_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
 			default:
 				return
 			}
@@ -304,25 +311,25 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for confogurations update: " + err.Error())
 	}
 
-	filter := bson.M{"key": "ui_url"}
-	var systemKey models.SystemKey
-	err = systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	filter := bson.M{"key": "ui_host"}
+	var configurationsStringValue models.ConfigurationsStringValue
+	err = configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
 	if err == mongo.ErrNoDocuments {
-		UI_url = ""
+		UI_HOST = ""
 		uiUrlKey := models.SystemKey{
 			ID:    primitive.NewObjectID(),
-			Key:   "ui_url",
-			Value: "",
+			Key:   "ui_host",
+			Value: UI_HOST,
 		}
 
-		_, err = systemKeysCollection.InsertOne(context.TODO(), uiUrlKey)
+		_, err = configurationsCollection.InsertOne(context.TODO(), uiUrlKey)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	} else {
-		UI_url = systemKey.Value
+		UI_HOST = configurationsStringValue.Value
 	}
 
 	err = s.InitializeThroughputSampling()

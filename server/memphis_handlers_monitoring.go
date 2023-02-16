@@ -84,7 +84,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 	components := []models.SystemComponents{}
 	allComponents := []models.SysComponent{}
 	portsMap := map[string][]int{}
-	host := ""
+	hosts := []string{}
 	metricsEnabled := true
 	defaultStat := models.CompStats{
 		Total:      0,
@@ -93,7 +93,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 	}
 	if configuration.DOCKER_ENV == "true" { // docker env
 		metricsEnabled = true
-		host = "http://localhost"
+		hosts = []string{"localhost"}
 		if configuration.DEV_ENV == "true" {
 			maxCpu := float64(runtime.GOMAXPROCS(0))
 			v, err := serv.Varz(nil)
@@ -147,7 +147,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       []int{9000, 6666, 7770, 8222},
 				DesiredPods: 1,
 				ActualPods:  1,
-				Host:        host,
+				Hosts:       hosts,
 			})
 			resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
 			healthy := false
@@ -194,7 +194,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       []int{4444},
 				DesiredPods: 1,
 				ActualPods:  actualRestGw,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 
@@ -297,7 +297,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       dockerPorts,
 				DesiredPods: 1,
 				ActualPods:  1,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 	} else { // k8s env
@@ -461,7 +461,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-
+			if strings.Contains(d.Name, "memphis-broker") {
+				if BROKER_HOST == "" {
+					hosts = []string{}
+				} else {
+					hosts = []string{BROKER_HOST}
+				}
+				if UI_HOST != "" {
+					hosts = append(hosts, UI_HOST)
+				}
+			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
+				if REST_GW_HOST != "" {
+					hosts = []string{REST_GW_HOST}
+				}
+			} else if strings.Contains(d.Name, "mongo") {
+				hosts = []string{}
+			}
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
 				Components:  relevantComponents,
@@ -469,7 +484,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       relevantPorts,
 				DesiredPods: desired,
 				ActualPods:  actual,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 
@@ -501,6 +516,22 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
+			if strings.Contains(s.Name, "memphis-broker") {
+				if BROKER_HOST == "" {
+					hosts = []string{}
+				} else {
+					hosts = []string{BROKER_HOST}
+				}
+				if UI_HOST != "" {
+					hosts = append(hosts, UI_HOST)
+				}
+			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
+				if REST_GW_HOST != "" {
+					hosts = []string{REST_GW_HOST}
+				}
+			} else if strings.Contains(s.Name, "mongo") {
+				hosts = []string{}
+			}
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,
 				Components:  relevantComponents,
@@ -508,7 +539,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       relevantPorts,
 				DesiredPods: desired,
 				ActualPods:  actual,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 	}
@@ -665,8 +696,13 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
+			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
+			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
+		} else {
+			serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		}
 		return
 	}
 	k8sEnv := true

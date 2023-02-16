@@ -31,6 +31,7 @@ import Switcher from '../switcher';
 import CustomTabs from '../Tabs';
 import Button from '../button';
 import Input from '../Input';
+import OverflowTip from '../tooltip/overflowtip';
 
 const retanionOptions = [
     {
@@ -235,7 +236,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         <Input
                             placeholder="Type station name"
                             type="text"
-                            maxLength="30"
+                            maxLength="128"
                             radiusType="semi-round"
                             colorType="black"
                             backgroundColorType="none"
@@ -249,7 +250,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </Form.Item>
                     {parserName !== '' && (
                         <div className="name-and-hint">
-                            <p>station name: {parserName}</p>
+                            <OverflowTip text={`station name: ${parserName}`} maxWidth="400px">
+                                station name: {parserName}
+                            </OverflowTip>
                         </div>
                     )}
                 </div>

@@ -45,7 +45,7 @@ const Integrations = () => {
                 setFilterList(INTEGRATION_LIST);
                 break;
             default:
-                let filteredList = INTEGRATION_LIST.filter((integration) => integration.category.name === categoryFilter);
+                let filteredList = Object.values(INTEGRATION_LIST).filter((integration) => integration.category.name === categoryFilter);
                 setFilterList(filteredList);
                 break;
         }
@@ -102,19 +102,19 @@ const Integrations = () => {
                 ))}
             </div>
             <div className="integration-list">
-                {filterList?.map((integration) =>
-                    integration.comingSoon ? (
-                        <div key={integration.name} className="cloud-wrapper">
+                {Object.keys(filterList)?.map((integration) =>
+                    filterList[integration].comingSoon ? (
+                        <div key={filterList[integration].name} className="cloud-wrapper">
                             <div className="dark-background">
                                 <img src={cloudeBadge} />
                                 <div className="cloud-icon">
                                     <CloudQueueRounded />
                                 </div>
                             </div>
-                            <IntegrationItem key={integration.name} value={integration} />
+                            <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
                         </div>
                     ) : (
-                        <IntegrationItem key={integration.name} value={integration} />
+                        <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
                     )
                 )}
             </div>

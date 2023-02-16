@@ -38,7 +38,8 @@
             padding: 15px 0 15px 15px;
             width: 100%;
             display: grid;
-            grid-template-columns: 25% 25% 20% 15% 15%;
+            grid-template-columns: 25% 25% 20% 15% 13%;
+            gap:5px;
             justify-content: space-between;
             color: #737373;
             .title-center{
@@ -63,7 +64,8 @@
             padding: 0 0 5px 15px;
             .stations-row {
                 display: grid;
-                grid-template-columns: 25% 25% 20% 15% 15%;
+                grid-template-columns: 25% 25% 20% 15% 13%;
+                gap:5px;
                 color: #1d1d1d;
                 justify-content: space-between;
                 width: 100%;

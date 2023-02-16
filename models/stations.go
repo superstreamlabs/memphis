@@ -132,7 +132,7 @@ type GetStationSchema struct {
 }
 
 type CreateStationSchema struct {
-	Name              string           `json:"name" binding:"required,min=1,max=32"`
+	Name              string           `json:"name" binding:"required,min=1,max=128"`
 	RetentionType     string           `json:"retention_type"`
 	RetentionValue    int              `json:"retention_value"`
 	Replicas          int              `json:"replicas"`

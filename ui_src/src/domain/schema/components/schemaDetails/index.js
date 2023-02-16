@@ -515,10 +515,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             {schemaDetails.used_stations?.map((station, index) => {
                                 return (
                                     <div className="station-wrapper" key={index} onClick={() => goToStation(station)}>
-                                        <p>{station}</p>
-                                        <div className="redirect-img">
-                                            <img src={redirectIcon} />
-                                        </div>
+                                        <OverflowTip className="ovel-station" text={station} maxWidth="130px" cursor="pointer">
+                                            {station}
+                                        </OverflowTip>
+                                        <img src={redirectIcon} />
                                     </div>
                                 );
                             })}

@@ -25,7 +25,7 @@ import SelectComponent from '../../../../../components/select';
 
 const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
-    const s3Configuration = INTEGRATION_LIST[2];
+    const s3Configuration = INTEGRATION_LIST['S3'];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({

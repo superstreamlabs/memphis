@@ -14,25 +14,25 @@ import React, { useRef, useEffect, useState } from 'react';
 import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles } from '@material-ui/core/styles';
 
-const OverflowTip = (props) => {
+const OverflowTip = ({ color, center, width, maxWidth, cursor, textAlign, textColor, children, className, text }) => {
     const tooltipStyle = makeStyles((theme) => ({
         tooltip: {
-            color: props.color === 'white' ? '#2B2E3F' : '#f7f7f7',
-            backgroundColor: props.color === 'white' ? '#f7f7f7' : '#2B2E3F',
+            color: color === 'white' ? '#2B2E3F' : '#f7f7f7',
+            cursor: 'pointer',
+            backgroundColor: color === 'white' ? '#f7f7f7' : '#2B2E3F',
             fontSize: '14px',
             fontWeight: 800,
             margin: '5px',
             fontFamily: 'Inter',
             boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px',
             whiteSpace: 'pre-line',
-            textAlign: props.center ? 'center' : 'start'
+            textAlign: center ? 'center' : 'start'
         },
         arrow: {
-            color: props.color === 'white' ? '#f7f7f7' : '#2B2E3F'
+            color: color === 'white' ? '#f7f7f7' : '#2B2E3F'
         }
     }));
     const classes = tooltipStyle();
-    // Create Ref
     const textElementRef = useRef();
 
     const compareSize = () => {
@@ -40,7 +40,6 @@ const OverflowTip = (props) => {
         setHover(compare);
     };
 
-    // compare once and add resize listener on "componentDidMount"
     useEffect(() => {
         compareSize();
         window.addEventListener('resize', compareSize);
@@ -49,25 +48,24 @@ const OverflowTip = (props) => {
         };
     }, []);
 
-    // Define state and function to update the value
     const [hoverStatus, setHover] = useState(false);
 
     return (
-        <Tooltip className={props?.className} title={props?.text} interactive disableHoverListener={!hoverStatus} classes={classes} arrow>
+        <Tooltip className={className} title={text} interactive disableHoverListener={!hoverStatus} classes={classes} arrow>
             <div
                 ref={textElementRef}
                 style={{
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    width: props.width || null,
-                    maxWidth: props.maxWidth || null,
-                    cursor: props.cursor || 'default',
-                    textAlign: props.textAlign || null,
-                    color: props.textColor || null
+                    width: width || null,
+                    maxWidth: maxWidth || null,
+                    cursor: cursor || 'default',
+                    textAlign: textAlign || null,
+                    color: textColor || null
                 }}
             >
-                {props.children}
+                {children}
             </div>
         </Tooltip>
     );

@@ -375,7 +375,7 @@ const Messages = () => {
                         title={'Idempotency'}
                         desc={
                             <span>
-                                Ensures messages with the same "msgId" value will be produced only once for the configured time.{' '}
+                                Ensures messages with the same "msg-id" value will be produced only once for the configured time.{' '}
                                 <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
                                     Learn more
                                 </a>
