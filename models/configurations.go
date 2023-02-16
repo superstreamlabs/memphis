@@ -14,8 +14,11 @@ package models
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type EditClusterConfigSchema struct {
-	PMRetention   int `json:"pm_retention" binding:"required"`
-	LogsRetention int `json:"logs_retention" binding:"required"`
+	PMRetention   int    `json:"pm_retention" binding:"required"`
+	LogsRetention int    `json:"logs_retention" binding:"required"`
+	BrokerHost    string `json:"broker_host"`
+	UiHost        string `json:"ui_host"`
+	RestGWHost    string `json:"rest_gw_host"`
 }
 
 type GlobalConfigurationsUpdate struct {

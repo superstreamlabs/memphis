@@ -13,20 +13,9 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { Slider } from 'antd';
+import Input from '../../../../../components/Input';
 
-const trackStyle = { background: 'var(--purple)', height: '4px' };
-
-const handleStyle = {
-    border: '8px solid #FFFFFF',
-    background: 'var(--purple)',
-    boxShadow: '0px 8px 16px rgba(0, 82, 204, 0.16)',
-    width: '24px',
-    height: '24px',
-    marginTop: '-10px'
-};
-
-function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
+function InputRow({ title, desc, value, onChanges, img, placeholder }) {
     const [inputValue, setInputValue] = useState(value);
 
     const onChange = (newValue) => {
@@ -46,21 +35,24 @@ function SliderRow({ title, desc, value, onChanges, img, min, max, unit }) {
                     <label className="conf-description">{desc}</label>
                 </div>
             </div>
-            <div className="slider">
-                <div className="min-box">
-                    <span>
-                        {min} {unit}
-                    </span>
-                </div>
-                <Slider style={{ width: '25vw' }} min={min} max={max} onChange={onChange} value={inputValue} trackStyle={trackStyle} handleStyle={handleStyle} />
-                <div className="max-box">
-                    <span>
-                        {inputValue} {unit}
-                    </span>
-                </div>
+            <div className="input">
+                <Input
+                    value={inputValue}
+                    placeholder={placeholder}
+                    type="text"
+                    radiusType="semi-round"
+                    borderColorType="none"
+                    boxShadowsType="gray"
+                    colorType="black"
+                    backgroundColorType="none"
+                    width="30vw"
+                    minWidth="200px"
+                    height="42px"
+                    onChange={onChange}
+                />
             </div>
         </div>
     );
 }
 
-export default SliderRow;
+export default InputRow;
