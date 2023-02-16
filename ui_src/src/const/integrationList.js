@@ -170,10 +170,7 @@ export const INTEGRATION_LIST = {
                 <img src={datadogIcon} alt="datadogIcon" />
                 <div className="details">
                     <p>Datadog</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                    </>
+                    <span>by memphis</span>
                 </div>
             </div>
         ),
@@ -218,10 +215,7 @@ export const INTEGRATION_LIST = {
                 <img src={slackLogo} alt="slackLogo" />
                 <div className="details">
                     <p>Slack</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                    </>
+                    <span>by memphis</span>
                 </div>
             </div>
         ),
@@ -248,10 +242,7 @@ export const INTEGRATION_LIST = {
                 <img src={s3Logo} alt="s3Logo" />
                 <div className="details">
                     <p>S3</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                    </>
+                    <span>by memphis</span>
                 </div>
             </div>
         ),
@@ -277,10 +268,7 @@ export const INTEGRATION_LIST = {
                 <img src={pagerDutyIcon} alt="pagerDutyIcon" />
                 <div className="details">
                     <p>PagerDuty</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                    </>
+                    <span>by memphis</span>
                 </div>
             </div>
         ),
@@ -308,10 +296,7 @@ export const INTEGRATION_LIST = {
                 <img src={newrelicIcon} alt="newrelicIcon" />
                 <div className="details">
                     <p>New Relic</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                    </>
+                    <span>by memphis</span>
                 </div>
             </div>
         ),
@@ -339,10 +324,7 @@ export const INTEGRATION_LIST = {
                 <img src={influxDBIcon} alt="influxDBIcon" />
                 <div className="details">
                     <p>influxDB</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                    </>
+                    <span>by memphis</span>
                 </div>
             </div>
         ),
