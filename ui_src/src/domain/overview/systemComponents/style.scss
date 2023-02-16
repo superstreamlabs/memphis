@@ -27,8 +27,8 @@
         height: calc(100% - 35px);
         position: relative;
         width: 100%;
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
         .divided {
             border-bottom: 1px solid #ececec;
         }
@@ -52,7 +52,7 @@
                     justify-content: space-between;
                     align-items: center;
                     width: 100%;
-                    
+
                     .component-name {
                         font-size: 15px;
                         font-family: 'InterSemiBold';
@@ -78,7 +78,7 @@
                 .pods-container {
                     display: flex;
                     align-items: center;
-                    label{
+                    label {
                         cursor: pointer;
                     }
                     .host {
@@ -94,20 +94,20 @@
                 }
             }
         }
-        .ant-tree-switcher-leaf-line::before{
+        .ant-tree-switcher-leaf-line::before {
             border-right-width: 2px;
             top: -16px;
             right: 11px;
         }
-        .ant-tree-switcher-leaf-line::after{
+        .ant-tree-switcher-leaf-line::after {
             border-bottom-width: 2px;
-            width:16px;
-            height:28px;
+            width: 16px;
+            height: 28px;
         }
-        .ant-tree-indent{
+        .ant-tree-indent {
             display: none;
         }
-        .ant-tree-treenode-leaf-last .ant-tree-switcher-leaf-line::before{
+        .ant-tree-treenode-leaf-last .ant-tree-switcher-leaf-line::before {
             top: -18px !important;
             height: 46px !important;
         }
@@ -169,12 +169,12 @@
                 }
             }
         }
-        .blury{
+        .blury {
             background: rgba(255, 255, 255, 0.2);
             filter: blur(2.5px);
             -webkit-filter: blur(2.5px);
         }
-        .warn-msg{
+        .warn-msg {
             position: absolute;
             display: flex;
             width: 100%;
@@ -182,7 +182,7 @@
             align-items: center;
             justify-content: center;
             cursor: default;
-            .msg-wrapper{
+            .msg-wrapper {
                 height: 43px;
                 display: flex;
                 align-items: center;
@@ -191,11 +191,11 @@
                 z-index: 2;
                 color: rgba(27, 43, 65, 0.72);
                 font-style: italic;
-                img{
+                img {
                     width: 30px;
                     margin-right: 10px;
                 }
-                a{
+                a {
                     font-size: 12px;
                     color: var(--purple);
                 }
@@ -215,7 +215,7 @@
         height: 30px;
     }
 
-    .plus-ports {
+    .plus-comp {
         background-color: rgba(132, 129, 138, 0.1);
         width: 36px;
         border-radius: 4px;
@@ -246,6 +246,6 @@
         cursor: default;
     }
 }
-.port-popover {
+.comp-plus-popover {
     margin: 3px 0px 3px 0px;
 }

@@ -84,7 +84,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 	components := []models.SystemComponents{}
 	allComponents := []models.SysComponent{}
 	portsMap := map[string][]int{}
-	host := ""
+	hosts := []string{}
 	metricsEnabled := true
 	defaultStat := models.CompStats{
 		Total:      0,
@@ -93,7 +93,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 	}
 	if configuration.DOCKER_ENV == "true" { // docker env
 		metricsEnabled = true
-		host = "http://localhost"
+		hosts = []string{"localhost"}
 		if configuration.DEV_ENV == "true" {
 			maxCpu := float64(runtime.GOMAXPROCS(0))
 			v, err := serv.Varz(nil)
@@ -147,7 +147,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       []int{9000, 6666, 7770, 8222},
 				DesiredPods: 1,
 				ActualPods:  1,
-				Host:        host,
+				Hosts:       hosts,
 			})
 			resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
 			healthy := false
@@ -194,7 +194,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       []int{4444},
 				DesiredPods: 1,
 				ActualPods:  actualRestGw,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 
@@ -297,7 +297,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       dockerPorts,
 				DesiredPods: 1,
 				ActualPods:  1,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 	} else { // k8s env
@@ -462,11 +462,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			if strings.Contains(d.Name, "memphis-broker") {
-				host = BROKER_HOST
+				hosts = []string{BROKER_HOST, UI_HOST}
 			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				host = REST_GW_HOST
+				hosts = []string{REST_GW_HOST}
 			} else if strings.Contains(d.Name, "mongo") {
-				host = ""
+				hosts = []string{""}
 			}
 			components = append(components, models.SystemComponents{
 				Name:        d.Name,
@@ -475,7 +475,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       relevantPorts,
 				DesiredPods: desired,
 				ActualPods:  actual,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 
@@ -508,11 +508,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			if strings.Contains(s.Name, "memphis-broker") {
-				host = BROKER_HOST
+				hosts = []string{BROKER_HOST, UI_HOST}
 			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				host = REST_GW_HOST
+				hosts = []string{REST_GW_HOST}
 			} else if strings.Contains(s.Name, "mongo") {
-				host = ""
+				hosts = []string{""}
 			}
 			components = append(components, models.SystemComponents{
 				Name:        s.Name,
@@ -521,7 +521,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Ports:       relevantPorts,
 				DesiredPods: desired,
 				ActualPods:  actual,
-				Host:        host,
+				Hosts:       hosts,
 			})
 		}
 	}
