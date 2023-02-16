@@ -29,7 +29,7 @@ const { Panel } = Collapse;
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
 const DataDogIntegration = ({ close }) => {
-    const dataDogConfiguration = INTEGRATION_LIST[1];
+    const dataDogConfiguration = INTEGRATION_LIST['Datadog'];
     const [currentStep, setCurrentStep] = useState(0);
     const [showModal, setShowModal] = useState(false);
 

@@ -27,13 +27,16 @@ import slackLogo from '../assets/images/slackLogo.svg';
 import s3Banner from '../assets/images/s3Banner.svg';
 import s3Logo from '../assets/images/s3Logo.svg';
 
-import { diffDate } from '../services/valueConvertor';
 import { ColorPalette } from './globalConst';
 
 export const CATEGORY_LIST = {
     All: {
         name: 'All',
         color: ColorPalette[13]
+    },
+    Monitoring: {
+        name: 'Monitoring',
+        color: ColorPalette[8]
     },
     Notifications: {
         name: 'Notifications',
@@ -42,10 +45,6 @@ export const CATEGORY_LIST = {
     Storage: {
         name: 'Storage',
         color: ColorPalette[4]
-    },
-    Monitoring: {
-        name: 'Monitoring',
-        color: ColorPalette[8]
     }
 };
 
@@ -156,39 +155,8 @@ export const REGIONS_OPTIONS = [
     }
 ];
 
-export const INTEGRATION_LIST = [
-    {
-        name: 'Slack',
-        by: 'memphis',
-        banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
-        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
-        icon: <img src={slackLogo} alt="slackLogo" />,
-        description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
-        date: 'Nov 19, 2022',
-        category: CATEGORY_LIST['Notifications'],
-        header: (
-            <div className="header-left-side">
-                <img src={slackLogo} alt="slackLogo" />
-                <div className="details">
-                    <p>Slack</p>
-                    <>
-                        <span>by memphis</span>
-                        <FiberManualRecord />
-                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
-                    </>
-                </div>
-            </div>
-        ),
-        integrateDesc: (
-            <div className="integrate-description">
-                <p>Description</p>
-                <span className="content">
-                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability
-                </span>
-            </div>
-        )
-    },
-    {
+export const INTEGRATION_LIST = {
+    Datadog: {
         name: 'Datadog',
         by: 'memphis',
         banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
@@ -205,7 +173,6 @@ export const INTEGRATION_LIST = [
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
-                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
                     </>
                 </div>
             </div>
@@ -237,7 +204,37 @@ export const INTEGRATION_LIST = [
             }
         ]
     },
-    {
+    Slack: {
+        name: 'Slack',
+        by: 'memphis',
+        banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
+        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
+        icon: <img src={slackLogo} alt="slackLogo" />,
+        description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
+        date: 'Nov 19, 2022',
+        category: CATEGORY_LIST['Notifications'],
+        header: (
+            <div className="header-left-side">
+                <img src={slackLogo} alt="slackLogo" />
+                <div className="details">
+                    <p>Slack</p>
+                    <>
+                        <span>by memphis</span>
+                        <FiberManualRecord />
+                    </>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability
+                </span>
+            </div>
+        )
+    },
+    S3: {
         name: 'S3',
         by: 'memphis',
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
@@ -246,7 +243,6 @@ export const INTEGRATION_LIST = [
         description: 'AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage'],
-        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={s3Logo} alt="s3Logo" />
@@ -255,7 +251,6 @@ export const INTEGRATION_LIST = [
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
-                        <span>Last update: {diffDate('Jan 1, 2023')}</span>
                     </>
                 </div>
             </div>
@@ -267,8 +262,7 @@ export const INTEGRATION_LIST = [
             </div>
         )
     },
-
-    {
+    PagerDuty: {
         name: 'PagerDuty',
         by: 'memphis',
         banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
@@ -286,7 +280,6 @@ export const INTEGRATION_LIST = [
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
-                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
                     </>
                 </div>
             </div>
@@ -300,7 +293,7 @@ export const INTEGRATION_LIST = [
             </div>
         )
     },
-    {
+    'New Relic': {
         name: 'New Relic',
         by: 'memphis',
         banner: <img className="banner" src={newrelicBanner} alt="newrelicBanner" />,
@@ -318,7 +311,6 @@ export const INTEGRATION_LIST = [
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
-                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
                     </>
                 </div>
             </div>
@@ -332,7 +324,7 @@ export const INTEGRATION_LIST = [
             </div>
         )
     },
-    {
+    influxDB: {
         name: 'influxDB',
         by: 'memphis',
         banner: <img className="banner" src={influxDBBanner} alt="influxDBBanner" />,
@@ -350,7 +342,6 @@ export const INTEGRATION_LIST = [
                     <>
                         <span>by memphis</span>
                         <FiberManualRecord />
-                        <span>Last update: {diffDate('Nov 19, 2022')}</span>
                     </>
                 </div>
             </div>
@@ -362,4 +353,4 @@ export const INTEGRATION_LIST = [
             </div>
         )
     }
-];
+};

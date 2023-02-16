@@ -49,12 +49,12 @@
         display: flex;
         align-items: center;
         .play-pause-btn{
-            border: 1px solid #D0D0D0;
+            border: 1px solid #EFEFEF;
             cursor: pointer;
             background-color: white;
             border-radius: 4px;
-            width: 34px;
-            height: 34px;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -66,7 +66,8 @@
             }
         }
         .play-pause-btn:hover{
-            border-color: var(--purple) !important;
+            background: #DEDBFF;
+            border: 1px solid #A199FF;
         }
     }
 

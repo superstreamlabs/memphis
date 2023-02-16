@@ -63,9 +63,9 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                 <div className="station-box-container">
                     <div className="left-section">
                         <div className="check-box">
-                            <OverflowTip className="station-name" text={station?.station?.name}>
+                            <OverflowTip className="station-name" text={station?.station?.name} maxWidth="280px">
                                 {station?.station?.name}{' '}
-                                <label className="data-labels date" style={{ marginLeft: '5px' }}>
+                                <label className="non-native-label" style={{ marginLeft: '5px' }}>
                                     {!station?.station?.is_native && '(non-native)'}
                                 </label>
                             </OverflowTip>

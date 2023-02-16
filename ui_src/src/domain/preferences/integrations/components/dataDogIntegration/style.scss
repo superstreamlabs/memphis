@@ -99,6 +99,9 @@
             }
         }
     }
+    .ant-collapse::-webkit-scrollbar {
+        display: none;
+      }
     .close-btn{
         display: flex;
         justify-content: flex-end;

@@ -49,7 +49,7 @@
         }
     }
     .left-section {
-        max-width:300px;
+        width:300px;
         .check-box {
             display: flex;
             align-items: center;
@@ -61,8 +61,12 @@
                 margin-left: 25px;
                 color: #2e2c34;
                 cursor: pointer !important;
-                display: flex;
                 align-items: center;
+                .non-native-label{
+                    color: #84818a;
+                    font-size: 12px;
+                    font-family: 'InterSemiBold';
+                }
             }
         }
         .date{
