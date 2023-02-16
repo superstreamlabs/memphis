@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.f173e10e.css",
-    "main.js": "/static/js/main.8077e044.js",
+    "main.css": "/static/css/main.41d90bc8.css",
+    "main.js": "/static/js/main.05e41db5.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -104,10 +104,13 @@
     "static/media/purpleBall.svg": "/static/media/purpleBall.e5de07560c48607aa76568422d468d94.svg",
     "static/media/slackBannerPopup.svg": "/static/media/slackBannerPopup.01283187b348f8f70d681f989490ce76.svg",
     "static/media/slackBanner.svg": "/static/media/slackBanner.ff9fcec507339e70dd2238dc92e99ec5.svg",
+    "static/media/grafanaBannerPopup.svg": "/static/media/grafanaBannerPopup.ac150acd5f74594489f91de6ffadba60.svg",
     "static/media/blackBall.svg": "/static/media/blackBall.b03a70b9cb3830f9ea4d42577e197b3f.svg",
+    "static/media/grafanaBanner.svg": "/static/media/grafanaBanner.31f2c52e8e5466bf532db49b2ed14852.svg",
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/influxDBBanner.svg": "/static/media/influxDBBanner.5221023529417d13560c84cdd6e8ac11.svg",
     "static/media/pagerdutyBanner.svg": "/static/media/pagerdutyBanner.4ff06ffd09548788bc3fa8ab23b24cb2.svg",
+    "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.61a95369f360e2979a4fa91d1723e8bf.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.7463b20d2ce1f3d754a6ccafe02f193d.svg",
     "static/media/codicon.ttf": "/static/media/codicon.b797181c93b3755f4fa1.ttf",
     "static/media/s3BannerPopup.svg": "/static/media/s3BannerPopup.7e096a2af96304f81911eed17a0d59ed.svg",
@@ -242,7 +245,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.f173e10e.css",
-    "static/js/main.8077e044.js"
+    "static/css/main.41d90bc8.css",
+    "static/js/main.05e41db5.js"
   ]
 }
