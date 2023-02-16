@@ -27,6 +27,7 @@ import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SandboxLogin from './domain/sandboxLogin';
 import Preferences from './domain/preferences';
+import Profile from './domain/profile';
 import SchemaManagment from './domain/schema';
 import { useHistory } from 'react-router-dom';
 import { Redirect } from 'react-router-dom';
@@ -130,11 +131,7 @@ const App = withRouter(() => {
                                 ></AppWrapper>
                             }
                         />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.preferences}/profile`}
-                            component={<AppWrapper content={<Preferences step={'profile'} />}></AppWrapper>}
-                        />
+                        <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
                         <PrivateRoute
                             exact
                             path={`${pathDomains.preferences}/integrations`}

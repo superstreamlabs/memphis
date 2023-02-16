@@ -18,6 +18,7 @@ const pathDomains = {
     users: '/users',
     schemaverse: '/schemaverse',
     preferences: '/preferences',
+    profile: '/profile',
     sysLogs: '/logs'
 };
 
