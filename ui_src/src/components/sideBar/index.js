@@ -158,7 +158,7 @@ function SideBar() {
                 </div>
             </Link>
             <div className="item-wrap">
-                <div className="item">
+                <div className="item" onClick={async () => await AuthService.logout()}>
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />
                     </span>
@@ -243,7 +243,14 @@ function SideBar() {
                         </div>
                     </TooltipComponent>
                 </Link>
-                <Popover overlayInnerStyle={overlayStyles} placement="rightBottom" content={content} trigger="click" visible={popoverOpen}>
+                <Popover
+                    overlayInnerStyle={overlayStyles}
+                    placement="rightBottom"
+                    content={content}
+                    trigger="click"
+                    onOpenChange={() => setPopoverOpen(!popoverOpen)}
+                    visible={popoverOpen}
+                >
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
                         <img
                             className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'preferences') && 'sandboxUserImgSelected'}`}
