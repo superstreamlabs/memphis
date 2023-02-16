@@ -17,18 +17,15 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Context } from '../../hooks/store';
 import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
 import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
-import EditProfileColor from '../../assets/images/setting/editProfileColor.svg';
-import EditProfileGray from '../../assets/images/setting/editProfileGray.svg';
 import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
 import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
 import Integrations from './integrations';
-import Profile from './profile';
 import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 
 function Preferences({ step }) {
-    const [selectedMenuItem, selectMenuItem] = useState(step || 'profile');
+    const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
 
@@ -38,13 +35,6 @@ function Preferences({ step }) {
 
     const getComponent = () => {
         switch (selectedMenuItem) {
-            case 'profile':
-                if (window.location.href.split('/profile').length > 1) {
-                    return <Profile />;
-                } else {
-                    history.replace(`${pathDomains.preferences}/profile`);
-                    break;
-                }
             case 'cluster_configuration':
                 if (window.location.href.split('/cluster_configuration').length > 1) {
                     return <ClusterConfiguration />;
@@ -69,10 +59,6 @@ function Preferences({ step }) {
                 <p className="header">My account</p>
                 <p className="sub-header">Update and manage your account</p>
                 <div className="side-menu">
-                    <div className={selectedMenuItem === 'profile' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('profile')}>
-                        <img src={selectedMenuItem === 'profile' ? EditProfileColor : EditProfileGray} alt="editProfile" />
-                        Profile
-                    </div>
                     <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
                         <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                         Integrations
