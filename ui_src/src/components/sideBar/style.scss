@@ -12,9 +12,11 @@
     .upper-icons {
         .logoimg {
             margin-top: 1vh;
+            cursor: pointer;
             margin-bottom: 5vh;
         }
         .item-wrapper {
+            cursor: pointer;
             p {
                 font-size: 80%;
                 color: var(--gray);

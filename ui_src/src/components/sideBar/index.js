@@ -20,7 +20,13 @@ import { SettingOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
 import ChevronRightRoundedIcon from '@material-ui/icons/ChevronRightRounded';
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import {
+    LOCAL_STORAGE_AVATAR_ID,
+    LOCAL_STORAGE_COMPANY_LOGO,
+    LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_USER_NAME,
+    LOCAL_STORAGE_SKIP_GET_STARTED
+} from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
@@ -41,6 +47,8 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
+import { capitalizeFirst } from '../../services/valueConvertor';
+import Modal from '../modal';
 
 const overlayStyles = {
     borderRadius: '4px',
@@ -54,6 +62,28 @@ function SideBar() {
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
     const [popoverOpen, setPopoverOpen] = useState(false);
+    const [open, modalFlip] = useState(false);
+    const [goToRoute, setGoToRoute] = useState(null);
+
+    const handleChangeRoute = () => {
+        history.push(goToRoute);
+    };
+
+    const skipGetStarted = async () => {
+        try {
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+            handleChangeRoute(goToRoute);
+            modalFlip(false);
+        } catch (error) {}
+    };
+
+    useEffect(() => {
+        if (goToRoute && `/${state.route}` !== goToRoute) {
+            if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && goToRoute !== pathDomains.overview) modalFlip(true);
+            else handleChangeRoute(goToRoute);
+        }
+    }, [goToRoute]);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -88,24 +118,12 @@ function SideBar() {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
-    const handleClick = async (e) => {
-        switch (e.key) {
-            case '1':
-                history.push(`${pathDomains.preferences}/profile`);
-                break;
-            case '3':
-                await AuthService.logout();
-                break;
-            default:
-                break;
-        }
-    };
     const content = (
         <div>
             <div
                 className="item-wrap"
                 onClick={() => {
-                    history.push(pathDomains.profile);
+                    setGoToRoute(pathDomains.profile);
                     setPopoverOpen(false);
                 }}
             >
@@ -133,7 +151,7 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
-                    history.push(`${pathDomains.preferences}/integrations`);
+                    setGoToRoute(`${pathDomains.preferences}/integrations`);
                     setPopoverOpen(false);
                 }}
             >
@@ -158,7 +176,7 @@ function SideBar() {
                 </div>
             </Link>
             <div className="item-wrap">
-                <div className="item" onClick={async () => await AuthService.logout()}>
+                <div className="item" onClick={() => AuthService.logout()}>
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />
                     </span>
@@ -170,79 +188,87 @@ function SideBar() {
     );
     return (
         <div className="sidebar-container">
+            <Modal
+                header="Skip the tutorial?"
+                height="100px"
+                width="400px"
+                rBtnText="Skip"
+                lBtnText="Don't skip"
+                lBtnClick={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                rBtnClick={() => {
+                    skipGetStarted();
+                    handleChangeRoute(goToRoute);
+                }}
+                clickOutside={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                open={open}
+            >
+                <p>The tutorial will not appear again.</p>
+            </Modal>
             <div className="upper-icons">
-                <Link to={pathDomains.overview}>
-                    <img src={betaLogo} width="62" className="logoimg" alt="logo" />
-                </Link>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.overview}>
-                        <div className="icon">
-                            {state.route === 'overview' ? (
-                                <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={overviewIcon} alt="overviewIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
-                    </Link>
+                <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => setGoToRoute(pathDomains.overview)} />
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.overview)}>
+                    <div className="icon">
+                        {state.route === 'overview' ? (
+                            <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={overviewIcon} alt="overviewIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.stations}>
-                        <div className="icon">
-                            {state.route === 'stations' ? (
-                                <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.stations)}>
+                    <div className="icon">
+                        {state.route === 'stations' ? (
+                            <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={stationsIcon} alt="stationsIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.schemaverse}>
-                        <div className="icon">
-                            {state.route === 'schemaverse' ? (
-                                <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.schemaverse)}>
+                    <div className="icon">
+                        {state.route === 'schemaverse' ? (
+                            <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={schemaIcon} alt="schemaIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.users}>
-                        <div className="icon">
-                            {state.route === 'users' ? (
-                                <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.users)}>
+                    <div className="icon">
+                        {state.route === 'users' ? (
+                            <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={usersIcon} alt="usersIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
-                <div className="item-wrapper">
-                    <Link to={pathDomains.sysLogs}>
-                        <div className="icon">
-                            {state.route === 'logs' ? (
-                                <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
-                            ) : (
-                                <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
-                            )}
-                        </div>
-                        <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
-                    </Link>
+                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.sysLogs)}>
+                    <div className="icon">
+                        {state.route === 'logs' ? (
+                            <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                        ) : (
+                            <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
+                        )}
+                    </div>
+                    <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                 </div>
             </div>
             <div className="bottom-icons">
-                <Link to={`${pathDomains.preferences}/integrations`}>
-                    <TooltipComponent text="Integrations" placement="right">
-                        <div className="integration-icon-wrapper" onClick={() => setPopoverOpen(false)}>
-                            <img src={integrationNavIcon} />
-                        </div>
-                    </TooltipComponent>
-                </Link>
+                <TooltipComponent text="Integrations" placement="right">
+                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.preferences}/integrations`)}>
+                        <img src={integrationNavIcon} />
+                    </div>
+                </TooltipComponent>
                 <Popover
                     overlayInnerStyle={overlayStyles}
                     placement="rightBottom"
