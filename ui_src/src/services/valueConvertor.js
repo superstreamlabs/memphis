@@ -272,25 +272,25 @@ export const idempotencyValidator = (value, idempotencyType) => {
                         return reject('Has to be greater than 100ms');
                     }
                     if (value > 8.64e7) {
-                        return reject('Has to be lower than 24 houres');
+                        return reject('Has to be lower than 24 hours');
                     } else {
                         return resolve();
                     }
                 case idempotencyOptions[1]:
                     if (value > 86400) {
-                        return reject('Has to be lower than 24 houres');
+                        return reject('Has to be lower than 24 hours');
                     } else {
                         return resolve();
                     }
                 case idempotencyOptions[2]:
                     if (value > 1440) {
-                        return reject('Has to be lower than 24 houres');
+                        return reject('Has to be lower than 24 hours');
                     } else {
                         return resolve();
                     }
                 case idempotencyOptions[3]:
                     if (value > 24) {
-                        return reject('Has to be lower than 24 houres');
+                        return reject('Has to be lower than 24 hours');
                     } else {
                         return resolve();
                     }
