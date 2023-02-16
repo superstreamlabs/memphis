@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.abadfd02.css",
-    "main.js": "/static/js/main.f20cd207.js",
+    "main.css": "/static/css/main.f372e3ff.css",
+    "main.js": "/static/js/main.07906626.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -150,6 +150,7 @@
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
     "static/media/totalPoison.svg": "/static/media/totalPoison.176a958f9ce4ddf7cafbadb2e88e75dc.svg",
     "static/media/total_msg.svg": "/static/media/total_msg.420f3b325d5339cd1c29e8243ecc3c55.svg",
+    "static/media/confImg3.svg": "/static/media/confImg3.93326f5351f7bb21a22812d11a769ab7.svg",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
     "static/media/waitingMessages.svg": "/static/media/waitingMessages.b6dc0edb44eea832a6bc4e9f8357b215.svg",
@@ -246,7 +247,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.abadfd02.css",
-    "static/js/main.f20cd207.js"
+    "static/css/main.f372e3ff.css",
+    "static/js/main.07906626.js"
   ]
 }
