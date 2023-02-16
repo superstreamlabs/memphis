@@ -188,28 +188,6 @@ function SideBar() {
     );
     return (
         <div className="sidebar-container">
-            <Modal
-                header="Skip the tutorial?"
-                height="100px"
-                width="400px"
-                rBtnText="Skip"
-                lBtnText="Don't skip"
-                lBtnClick={() => {
-                    setGoToRoute(pathDomains.overview);
-                    modalFlip(false);
-                }}
-                rBtnClick={() => {
-                    skipGetStarted();
-                    handleChangeRoute(goToRoute);
-                }}
-                clickOutside={() => {
-                    setGoToRoute(pathDomains.overview);
-                    modalFlip(false);
-                }}
-                open={open}
-            >
-                <p>The tutorial will not appear again.</p>
-            </Modal>
             <div className="upper-icons">
                 <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => setGoToRoute(pathDomains.overview)} />
                 <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.overview)}>
@@ -292,6 +270,28 @@ function SideBar() {
                     <p>v{systemVersion}</p>
                 </version>
             </div>
+            <Modal
+                header="Skip the tutorial?"
+                height="100px"
+                width="400px"
+                rBtnText="Skip"
+                lBtnText="Don't skip"
+                lBtnClick={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                rBtnClick={() => {
+                    skipGetStarted();
+                    handleChangeRoute(goToRoute);
+                }}
+                clickOutside={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                open={open}
+            >
+                <p>The tutorial will not appear again.</p>
+            </Modal>
         </div>
     );
 }
