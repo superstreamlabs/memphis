@@ -19,6 +19,7 @@ import attachedPlaceholder from '../../../../assets/images/attachedPlaceholder.s
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 
 function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName }) {
     const [isCheck, setIsCheck] = useState([]);
@@ -107,7 +108,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                             onChange={onCheckedAll}
                             name={'selectAll'}
                         />
-                        <p>Station Name</p>
+                        <p className="ovel-label">Station Name</p>
                     </div>
                 ) : (
                     <div className="placeholder">
@@ -131,7 +132,9 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                                         onChange={(e) => handleCheckedClick(e.target.id, e.target.checked)}
                                         name={station.name}
                                     />
-                                    <p>{station.name}</p>
+                                    <OverflowTip className="ovel-label" text={station.name}>
+                                        {station.name}
+                                    </OverflowTip>
                                 </div>
                             );
                         })}

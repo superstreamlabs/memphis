@@ -67,7 +67,11 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
                 content: (
                     <>
                         You are in a sandbox environment; this operation is not allowed. <hr /> For a full Memphis experience, please
-                        <a className="a-link" href="https://docs.memphis.dev/memphis/getting-started/readme" target="_blank">
+                        <a
+                            className="a-link"
+                            href="https://docs.memphis.dev/memphis/getting-started/readme?utm_source=sandbox&utm_medium=banner&utm_campaign=sandbox+installation+banner#getting-started"
+                            target="_blank"
+                        >
                             install
                         </a>
                     </>

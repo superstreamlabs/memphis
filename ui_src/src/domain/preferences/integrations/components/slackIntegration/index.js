@@ -31,7 +31,7 @@ const urlSplit = URL.split('/', 3);
 
 const SlackIntegration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
-    const slackConfiguration = INTEGRATION_LIST[0];
+    const slackConfiguration = INTEGRATION_LIST['Slack'];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({

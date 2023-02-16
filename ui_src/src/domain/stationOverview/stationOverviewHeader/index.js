@@ -39,6 +39,7 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
+import OverflowTip from '../../../components/tooltip/overflowtip';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -110,7 +111,9 @@ const StationOverviewHeader = () => {
                 <div className="station-details">
                     <div className="station-name">
                         <img src={BackIcon} onClick={() => returnToStaionsList()} alt="backIcon" />
-                        <h1>{stationState?.stationMetaData?.name}</h1>
+                        <OverflowTip text={stationState?.stationMetaData?.name} className="station-name-overlow" maxWidth={'350px'} textAlign={'center'}>
+                            {stationState?.stationMetaData?.name}
+                        </OverflowTip>
                         <TagsList
                             tagsToShow={3}
                             className="tags-list"
