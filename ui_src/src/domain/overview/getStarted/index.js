@@ -181,7 +181,7 @@ const GetStarted = ({ username, dataSentence }) => {
                         <p className="getstarted-welcome">Welcome, {username}</p>
                         <p className="getstarted-description">{dataSentence}</p>
                     </div>
-                    <Divider>
+                    <Divider className="divider">
                         <Button
                             width="120px"
                             height="36px"
@@ -189,7 +189,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             placeholder="Skip for now"
                             radiusType="circle"
                             backgroundColorType="none"
-                            border="gray"
+                            border="purple"
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {

@@ -12,17 +12,20 @@
 import { FiberManualRecord } from '@material-ui/icons';
 
 import datadogBannerPopup from '../assets/images/datadogBannerPopup.svg';
+import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.svg';
 import slackBannerPopup from '../assets/images/slackBannerPopup.svg';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.svg';
 import influxDBBanner from '../assets/images/influxDBBanner.svg';
 import newrelicBanner from '../assets/images/newrelicBanner.svg';
 import s3BannerPopup from '../assets/images/s3BannerPopup.svg';
 import datadogBanner from '../assets/images/datadogBanner.svg';
+import grafanaBanner from '../assets/images/grafanaBanner.svg';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.svg';
 import datadogIcon from '../assets/images/datadogIcon.svg';
+import grafanaIcon from '../assets/images/grafanaIcon.svg';
 import slackLogo from '../assets/images/slackLogo.svg';
 import s3Banner from '../assets/images/s3Banner.svg';
 import s3Logo from '../assets/images/s3Logo.svg';
@@ -163,7 +166,6 @@ export const INTEGRATION_LIST = {
         insideBanner: <img className="insideBanner" src={datadogBannerPopup} alt="datadogBannerPopup" />,
         icon: <img src={datadogIcon} alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
-        date: 'Nov 19, 2022',
         category: CATEGORY_LIST['Monitoring'],
         header: (
             <div className="header-left-side">
@@ -208,7 +210,6 @@ export const INTEGRATION_LIST = {
         insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
         icon: <img src={slackLogo} alt="slackLogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
-        date: 'Nov 19, 2022',
         category: CATEGORY_LIST['Notifications'],
         header: (
             <div className="header-left-side">
@@ -253,6 +254,51 @@ export const INTEGRATION_LIST = {
             </div>
         )
     },
+    Grafana: {
+        name: 'Grafana',
+        by: 'memphis',
+        banner: <img className="banner" src={grafanaBanner} alt="grafanaBanner" />,
+        insideBanner: <img className="insideBanner" src={grafanaBannerPopup} alt="grafanaBannerPopup" />,
+        icon: <img src={grafanaIcon} alt="grafanaIcon" />,
+        description: 'Grafana is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in grafana',
+        category: CATEGORY_LIST['Monitoring'],
+        comingSoon: true,
+        header: (
+            <div className="header-left-side">
+                <img src={grafanaIcon} alt="grafanaIcon" />
+                <div className="details">
+                    <p>Grafana</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Grafana is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in Grafana
+                </span>
+            </div>
+        ),
+        steps: [
+            {
+                title: 'Step 1: Make sure your Memphis Prometheus exporter is on',
+                key: 0
+            },
+            {
+                title: 'Step 2: Add Datadog annotation to Memphis statefulset',
+                key: 1
+            },
+            {
+                title: 'Step 3: Check Datadog for Memphis metrics',
+                key: 2
+            },
+            {
+                title: 'Step 4: Import the Memphis dashboard',
+                key: 3
+            }
+        ]
+    },
     PagerDuty: {
         name: 'PagerDuty',
         by: 'memphis',
@@ -260,7 +306,6 @@ export const INTEGRATION_LIST = {
         insideBanner: <img className="insideBanner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
         icon: <img src={pagerDutyIcon} alt="pagerDutyIcon" />,
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
-        date: 'Nov 19, 2022',
         category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
         header: (
@@ -288,9 +333,8 @@ export const INTEGRATION_LIST = {
         insideBanner: <img className="insideBanner" src={newrelicBanner} alt="newrelicBanner" />,
         icon: <img src={newrelicIcon} alt="newrelicIcon" />,
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
-        date: 'Nov 19, 2022',
-        category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
+        category: CATEGORY_LIST['Monitoring'],
         header: (
             <div className="header-left-side">
                 <img src={newrelicIcon} alt="newrelicIcon" />
@@ -316,7 +360,6 @@ export const INTEGRATION_LIST = {
         insideBanner: <img className="insideBanner" src={influxDBBanner} alt="influxDBBanner" />,
         icon: <img src={influxDBIcon} alt="influxDBIcon" />,
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
-        date: 'Nov 19, 2022',
         category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         header: (
