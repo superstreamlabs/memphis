@@ -302,3 +302,16 @@ export const idempotencyValidator = (value, idempotencyType) => {
         }
     });
 };
+
+export const tieredStorageTimeValidator = (value) => {
+    if (value === 0) {
+        return 'Please input value';
+    }
+    if (value < 5) {
+        return 'Has to be higher than 5 seconds';
+    } else if (value > 3600) {
+        return 'Has to be 1 hour or lower';
+    } else {
+        return '';
+    }
+};

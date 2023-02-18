@@ -1,0 +1,26 @@
+.configuration-list-container {
+    .input {
+        display: grid;
+        grid-template-areas:
+            'item1 item2'
+            'item3 item3';
+        justify-content: space-between;
+        width: 30vw;
+        min-width: 100px;
+        grid-auto-rows: minmax(0, 1fr);
+        align-self: baseline;
+        margin-top: 10px;
+        .input-box {
+            grid-area: item1;
+        }
+        .select-box {
+            grid-area: item2;
+        }
+        .error {
+            grid-area: item3;
+            color: red;
+            margin-top: -25px;
+            font-family: 'Inter';
+        }
+    }
+}
