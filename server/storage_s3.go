@@ -34,7 +34,7 @@ import (
 
 type TieredStorageMsg struct {
 	Buf         []byte `json:"buf"`
-	StationName string `json:"stationName"`
+	StationName string `json:"station_name"`
 }
 
 func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
@@ -308,7 +308,7 @@ type Msg struct {
 }
 
 func (s *Server) uploadToS3Storage() error {
-	if len(tierStorageMsgsMap.m) > 0 {
+	if len(tieredStorageMsgsMap.m) > 0 {
 		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
 		provider := &credentials.StaticProvider{Value: credentials.Value{
 			AccessKeyID:     credentialsMap.Keys["access_key"],
@@ -334,7 +334,7 @@ func (s *Server) uploadToS3Storage() error {
 		uid := serv.memphis.nuid.Next()
 		var objectName string
 
-		for k, msgs := range tierStorageMsgsMap.m {
+		for k, msgs := range tieredStorageMsgsMap.m {
 			var messages []Msg
 			for _, msg := range msgs {
 				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ")"

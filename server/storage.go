@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-func UploadToTier2Storage() error {
+func flushMapToTire2Storage() error {
 	for k, f := range StorageFunctionsMap {
 		switch k {
 		case "s3":
@@ -60,7 +60,7 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 	if ok {
 		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
 		// TODO: if the stream is not exists save the messages in buffer
-		if isTierStorageStreamCreated {
+		if TIERED_STORAGE_STREAM_CREATED {
 			tierStorageMsg := TieredStorageMsg{
 				Buf:         buf,
 				StationName: streamName,
@@ -76,17 +76,17 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 	return nil
 }
 
-func (s *Server) buildTieredStorageMap(msg StoredMsg) {
-	lock.Lock()
+func (s *Server) storeInTieredStorageMap(msg StoredMsg) {
+	tieredStorageMapLock.Lock()
 	stationName := msg.Subject
 	if strings.Contains(msg.Subject, "#") {
 		stationName = strings.Replace(msg.Subject, "#", ".", -1)
 	}
-	_, ok := tierStorageMsgsMap.Load(stationName)
+	_, ok := tieredStorageMsgsMap.Load(stationName)
 	if !ok {
-		tierStorageMsgsMap.Add(stationName, []StoredMsg{})
+		tieredStorageMsgsMap.Add(stationName, []StoredMsg{})
 	}
 
-	tierStorageMsgsMap.m[stationName] = append(tierStorageMsgsMap.m[stationName], msg)
-	lock.Unlock()
+	tieredStorageMsgsMap.m[stationName] = append(tieredStorageMsgsMap.m[stationName], msg)
+	tieredStorageMapLock.Unlock()
 }
