@@ -1584,6 +1584,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
+	shouldSendAnalytics, _ := shouldSendAnalytics()
 	for _, stationName := range body.StationNames {
 		stationName, err := StationNameFromStr(stationName)
 		if err != nil {
@@ -1640,12 +1641,20 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			Init:       *updateContent,
 		}
 		sh.S.updateStationProducersOfSchemaChange(stationName, update)
-	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-attach-schema-to-station")
+		if shouldSendAnalytics {
+			user, _ := getUserDetailsFromMiddleware(c)
+			param1 := analytics.EventParam{
+				Name:  "station-name",
+				Value: stationName.Ext(),
+			}
+			param2 := analytics.EventParam{
+				Name:  "schema-name",
+				Value: schemaName,
+			}
+			analyticsParams := []analytics.EventParam{param1, param2}
+			analytics.SendEventWithParams(user.Username, analyticsParams, "user-attach-schema-to-station")
+		}
 	}
 
 	c.IndentedJSON(200, schemaDetailsResponse)
@@ -1731,7 +1740,16 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(username, "user-attach-schema-to-station-sdk")
+		param1 := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		param2 := analytics.EventParam{
+			Name:  "schema-name",
+			Value: schemaName,
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
+		analytics.SendEventWithParams(username, analyticsParams, "user-attach-schema-to-station")
 	}
 
 	updateContent, err := generateSchemaUpdateInit(schema)
