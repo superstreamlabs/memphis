@@ -69,14 +69,12 @@ var (
 	ErrBadHeader                   = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS         int
 	POISON_MSGS_RETENTION_IN_HOURS int
-
 	isTierStorageConsumerCreated   bool
 	isTierStorageStreamCreated     bool
-
 	BROKER_HOST                    string
 	UI_HOST                        string
 	REST_GW_HOST                   string
-
+	TIERED_STORAGE_TIME_FRAME_SEC  int
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -305,7 +303,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// create tiered storage consumer
 	durableName := TIERED_STORAGE_CONSUMER
-	tieredStorageTimeFrame := time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+	tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,

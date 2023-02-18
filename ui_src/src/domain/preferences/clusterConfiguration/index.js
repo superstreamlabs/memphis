@@ -23,13 +23,22 @@ import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
 import SliderRow from './components/sliderRow';
 import InputRow from './components/inputRow';
+import TieredInputRow from './components/tieredInputRow';
 import { message } from 'antd';
-import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_UI_HOST } from '../../../const/localStorageConsts';
+import {
+    LOCAL_STORAGE_BROKER_HOST,
+    LOCAL_STORAGE_ENV,
+    LOCAL_STORAGE_REST_GW_HOST,
+    LOCAL_STORAGE_UI_HOST,
+    LOCAL_STORAGE_TIERED_STORAGE_TIME
+} from '../../../const/localStorageConsts';
 
 function ClusterConfiguration() {
+    const tsTimeOptions = ['Seconds', 'Minutes'];
     const [formFields, setFormFields] = useState({});
     const [oldValues, setOldValues] = useState({});
     const [isChanged, setIsChanged] = useState(false);
+    const [tsTimeType, setTsTimeType] = useState(tsTimeOptions[0]);
 
     useEffect(() => {
         getConfigurationValue();
@@ -47,10 +56,20 @@ function ClusterConfiguration() {
 
     const updateConfiguration = async () => {
         try {
-            const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
+            let updatedValue = { ...formFields };
+            if (tsTimeType === tsTimeOptions[1]) {
+                let val = updatedValue['tiered_storage_time_sec'];
+                val = val * 60;
+                updatedValue['tiered_storage_time_sec'] = val;
+                setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+                setTsTimeType(tsTimeOptions[0]);
+            }
+            const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...updatedValue });
             localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
             localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, formFields.rest_gw_host);
             localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
+            localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, formFields.tiered_storage_time_sec);
+
             setIsChanged(false);
             setOldValues(data);
             message.success({
@@ -65,11 +84,22 @@ function ClusterConfiguration() {
         }
     };
 
-    const handleChange = (field, value) => {
-        let updatedValue = { ...formFields };
-        updatedValue[field] = value;
-        setIsChanged(!compareObjects(updatedValue, oldValues));
-        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+    const handleChange = (field, value, err, type) => {
+        if (err !== '') {
+            setIsChanged(false);
+        } else {
+            let updatedValue = { ...formFields };
+            if (field === 'tiered_storage_time_sec') {
+                if (type === tsTimeOptions[1]) {
+                    updatedValue[field] = value * 60;
+                } else {
+                    updatedValue[field] = value;
+                }
+            }
+            setIsChanged(!compareObjects(updatedValue, oldValues));
+            updatedValue[field] = value;
+            setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+        }
     };
     const discardChanges = () => {
         setIsChanged(false);
@@ -102,6 +132,17 @@ function ClusterConfiguration() {
                     max={100}
                     unit={'d'}
                     onChanges={(e) => handleChange('logs_retention', e)}
+                />
+                <TieredInputRow
+                    title="TIERED STORAGE UPLOAD INTERVAL"
+                    desc="Interval of uploading messages to TS after retention end"
+                    img={ConfImg1}
+                    value={formFields?.tiered_storage_time_sec}
+                    tsType={tsTimeType}
+                    onChanges={(e, t, err) => {
+                        setTsTimeType(t);
+                        handleChange('tiered_storage_time_sec', e, err, t);
+                    }}
                 />
                 {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !process.env.REACT_APP_SANDBOX_ENV && (
                     <>

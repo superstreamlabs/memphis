@@ -113,6 +113,8 @@ func (s *Server) ListenForConfigurationsUpdateEvents() error {
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":
 				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
+			case "tiered_storage_time_sec":
+				TIERED_STORAGE_TIME_FRAME_SEC = int(configurationsUpdate.Update.(float64))
 			case "broker_host":
 				BROKER_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
 			case "ui_host":
@@ -325,7 +327,6 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ApiRequestToJetstreamFetchTieredStorageMsgs()
 	go s.UploadMsgsToTierStorage()
 
-
 	filter := bson.M{"key": "ui_host"}
 	var configurationsStringValue models.ConfigurationsStringValue
 	err = configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
@@ -355,8 +356,13 @@ func (s *Server) StartBackgroundTasks() error {
 }
 
 func (s *Server) UploadMsgsToTierStorage() {
-	ticker := time.NewTicker(time.Duration(configuration.TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+	currentTimeFrame := TIERED_STORAGE_TIME_FRAME_SEC
+	ticker := time.NewTicker(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
 	for range ticker.C {
+		if TIERED_STORAGE_TIME_FRAME_SEC != currentTimeFrame {
+			currentTimeFrame = TIERED_STORAGE_TIME_FRAME_SEC
+			ticker.Reset(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+		}
 		isSuccessUploadToS3 := false
 		lock.Lock()
 		if len(tierStorageMsgsMap.m) > 0 {
