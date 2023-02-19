@@ -52,6 +52,9 @@
             width: 60px;
             padding: 3px;
             cursor: pointer;
+            height: 30px;
+            display: flex;
+            justify-content: center;
             img {
                 width: 18px;
             }
@@ -144,4 +147,12 @@
             border: 1px solid #e3e0ff;
         }
     }
+}
+.ant-modal-body .skip-tutorial-modal{
+    font-family: 'Inter';
+    font-size: 14px;
+    color: #475467;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }

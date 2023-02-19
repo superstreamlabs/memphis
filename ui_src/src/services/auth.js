@@ -19,7 +19,6 @@ import {
     LOCAL_STORAGE_USER_ID,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_USER_TYPE,
-    LOCAL_STORAGE_ALLOW_ANALYTICS,
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_WELCOME_MESSAGE,
     LOCAL_STORAGE_FULL_NAME,
@@ -45,7 +44,6 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_FULL_NAME, userData.full_name);
         localStorage.setItem(LOCAL_STORAGE_USER_TYPE, userData.user_type);
         localStorage.setItem(LOCAL_STORAGE_EXPIRED_TOKEN, expiryToken);
-        localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, userData.send_analytics);
         localStorage.setItem(LOCAL_STORAGE_ENV, userData.env);
         localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, userData.skip_get_started);
         localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, userData.broker_host);

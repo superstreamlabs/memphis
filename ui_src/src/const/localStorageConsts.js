@@ -12,7 +12,6 @@
 
 export const LOCAL_STORAGE_SKIP_GET_STARTED = 'local_storage_skip_get_started';
 export const LOCAL_STORAGE_ALREADY_LOGGED_IN = 'already_logged_in';
-export const LOCAL_STORAGE_ALLOW_ANALYTICS = 'allow_analytics';
 export const LOCAL_STORAGE_WELCOME_MESSAGE = 'welcome_message';
 export const LOCAL_STORAGE_CREATION_DATE = 'creation_date';
 export const LOCAL_STORAGE_COMPANY_LOGO = 'company_logo';

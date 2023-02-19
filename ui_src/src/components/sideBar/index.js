@@ -271,7 +271,7 @@ function SideBar() {
                 </version>
             </div>
             <Modal
-                header="Skip the tutorial?"
+                header="Are we skipping the tutorial?"
                 height="100px"
                 width="400px"
                 rBtnText="Skip"
@@ -290,7 +290,11 @@ function SideBar() {
                 }}
                 open={open}
             >
-                <p>The tutorial will not appear again.</p>
+                <div className="skip-tutorial-modal">
+                    <span>The tutorial will be closed.</span>
+                    <br />
+                    <span>You can always head to Memphis documentation for guides and tutorials.</span>
+                </div>
             </Modal>
         </div>
     );
