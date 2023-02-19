@@ -260,7 +260,7 @@ export const INTEGRATION_LIST = {
         banner: <img className="banner" src={grafanaBanner} alt="grafanaBanner" />,
         insideBanner: <img className="insideBanner" src={grafanaBannerPopup} alt="grafanaBannerPopup" />,
         icon: <img src={grafanaIcon} alt="grafanaIcon" />,
-        description: 'Grafana is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in grafana',
+        description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
         header: (
             <div className="header-left-side">
@@ -274,9 +274,7 @@ export const INTEGRATION_LIST = {
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">
-                    Grafana is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in Grafana
-                </span>
+                <span className="content">Visualize Memphis metrics using Grafana and prometheus</span>
             </div>
         ),
         steps: [

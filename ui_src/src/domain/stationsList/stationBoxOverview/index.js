@@ -115,7 +115,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <div className="station-meta">
                             <img src={storageIcon} alt="storage" />
                             <label className="data-labels storage">Remote storage</label>
-                            <p className="data-info">{station?.station?.storage_type}</p>
+                            <p className="data-info">{station?.station?.tiered_storage_enabled ? 'S3' : 'None'}</p>
                         </div>
                         <div className="station-meta">
                             <img src={replicasIcon} alt="replicas" />

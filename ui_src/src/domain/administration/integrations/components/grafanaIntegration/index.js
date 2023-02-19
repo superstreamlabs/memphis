@@ -55,9 +55,9 @@ honor_labels: true
         - role: pod
         relabel_configs:
         - action: keep
-        regex: true
-        source_labels:
-        - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+            regex: true
+            source_labels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scrape
 ...`}
                             </pre>
                             <Copy
@@ -68,9 +68,9 @@ honor_labels: true
         - role: pod
         relabel_configs:
         - action: keep
-        regex: true
-        source_labels:
-        - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+            regex: true
+            source_labels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scrape
 ...`}
                             />
                         </div>
@@ -85,22 +85,16 @@ honor_labels: true
                         </h3>
                         <div className="editor">
                             <pre>{`helm install memphis memphis 
---create-namespace --namespace memphis --wait 
+--create-namespace --namespace memphis --wait   
 --set 
 cluster.enabled="true",
-exporter.enabled="true", 
-websocket.tls.secret.name="tls-secret",
-websocket.tls.cert="memphis_local.pem",
-websocket.tls.key="memphis-key_local.pem",`}</pre>
+exporter.enabled="true"`}</pre>
                             <Copy
                                 data={`helm install memphis memphis \
 --create-namespace --namespace memphis --wait \
 --set \
 cluster.enabled="true",\
-exporter.enabled="true", \
-websocket.tls.secret.name="tls-secret",\
-websocket.tls.cert="memphis_local.pem",\
-websocket.tls.key="memphis-key_local.pem",`}
+exporter.enabled="true"`}
                             />
                         </div>
 

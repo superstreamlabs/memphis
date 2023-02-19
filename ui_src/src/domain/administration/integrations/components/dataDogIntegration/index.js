@@ -43,28 +43,28 @@ const DataDogIntegration = ({ close }) => {
                 return (
                     <div className="steps-content">
                         <h3>
-                            If you haven't installed Memphis with the <label>exporter.enabled</label> yet - (* <label>websocket.tls</label> are optional for a superior
-                            GUI experience)
+                            If you haven't installed Memphis with the <label>exporter.enabled</label> yet
                         </h3>
                         <div className="editor">
                             <pre>
-                                helm install memphis memphis --create-namespace --namespace memphis --wait --set cluster.enabled="true", exporter.enabled="true",
-                                websocket.tls.secret.name="tls-secret", websocket.tls.cert="memphis_local.pem", websocket.tls.key="memphis-key_local.pem"
+                                {`helm install memphis memphis
+--create-namespace --namespace memphis --wait 
+--set 
+cluster.enabled="true", 
+exporter.enabled="true"`}
                             </pre>
                             <Copy
-                                data={`helm install memphis memphis --create-namespace --namespace memphis --wait --set cluster.enabled="true", exporter.enabled="true", websocket.tls.secret.name="tls-secret", websocket.tls.cert="memphis_local.pem", websocket.tls.key="memphis-key_local.pem"`}
+                                data={`helm install memphis memphis
+--create-namespace --namespace memphis --wait 
+--set 
+cluster.enabled="true", 
+exporter.enabled="true"`}
                             />
                         </div>
                         <p>If Memphis is already installed -</p>
-                        <span>Get current deployment values.</span>
                         <div className="editor">
-                            <pre>helm get values memphis --namespace memphis</pre>
-                            <Copy data={`helm get values memphis --namespace memphis`} />
-                        </div>
-                        <span>Run the following command.</span>
-                        <div className="editor">
-                            <pre>helm upgrade --set cluster.enabled=true --set exporter.enabled=true memphis --namespace memphis</pre>
-                            <Copy data={`helm upgrade --set cluster.enabled=true --set exporter.enabled=true memphis --namespace memphis`} />
+                            <pre>helm upgrade --set exporter.enabled=true memphis --namespace memphis --reuse-values</pre>
+                            <Copy data={`helm upgrade --set exporter.enabled=true memphis --namespace memphis --reuse-values`} />
                         </div>
                     </div>
                 );
