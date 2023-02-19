@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { createContext, useEffect, useReducer, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
-
+import { Divider } from 'antd';
 import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
@@ -181,12 +181,7 @@ const GetStarted = ({ username, dataSentence }) => {
                         <p className="getstarted-welcome">Welcome, {username}</p>
                         <p className="getstarted-description">{dataSentence}</p>
                     </div>
-                    <div className="getstarted-message-container">
-                        <p className="getstarted-message">Let’s get you started</p>
-                        <p className="getstarted-message-description">Your streaming journey with Memphis starts here</p>
-                    </div>
-                    <SideStepList />
-                    <div className="skip-btn">
+                    <Divider className="divider">
                         <Button
                             width="120px"
                             height="36px"
@@ -194,14 +189,21 @@ const GetStarted = ({ username, dataSentence }) => {
                             placeholder="Skip for now"
                             radiusType="circle"
                             backgroundColorType="none"
-                            border="gray"
+                            border="purple"
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
                                 skipGetStarted({ username });
                             }}
                         />
+                    </Divider>
+
+                    <div className="getstarted-message-container">
+                        <p className="getstarted-message">Let’s get you started</p>
+                        <p className="getstarted-message-description">Your streaming journey with Memphis starts here</p>
                     </div>
+
+                    <SideStepList />
                 </div>
                 <div className="steps-section">
                     {getStartedState?.currentStep === 1 && (

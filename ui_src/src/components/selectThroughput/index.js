@@ -26,7 +26,7 @@ const selectThroughput = ({ options, onChange, value }) => {
 
     return (
         <div className="select-throughput-container">
-            <img src={ComponentIcon} alt="ComponentIcon" height="20px" className="prefixImg" />
+            <img src={ComponentIcon} alt="ComponentIcon" height="18px" className="prefixImg" />
             <Select
                 className="select"
                 value={value}
@@ -40,7 +40,7 @@ const selectThroughput = ({ options, onChange, value }) => {
                     return (
                         <Option key={component?.name} value={component?.name}>
                             <div className="throughput-details">
-                                <img src={ComponentIcon} alt="ComponentIcon" height="20px" />
+                                <img src={ComponentIcon} alt="ComponentIcon" height="18px" />
                                 <p className="throughput-name">{component?.name}</p>
                             </div>
                         </Option>

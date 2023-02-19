@@ -12,9 +12,11 @@
     .upper-icons {
         .logoimg {
             margin-top: 1vh;
+            cursor: pointer;
             margin-bottom: 5vh;
         }
         .item-wrapper {
+            cursor: pointer;
             p {
                 font-size: 80%;
                 color: var(--gray);
@@ -45,8 +47,9 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        gap: 10px;
         .integration-icon-wrapper {
-            width: 80px;
+            width: 60px;
             padding: 3px;
             cursor: pointer;
             img {
@@ -77,12 +80,11 @@
 
 .item-wrap {
     padding: 5px;
-    height: 40px;
+    height: 45px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     .MuiSvgIcon-root {
-        color: #776cfb !important;
         height: 20px;
         display: none;
     }
@@ -91,7 +93,7 @@
         display: flex;
         align-items: center;
         .MuiSvgIcon-root {
-            color: #a9a9a9 !important;
+            color: #a9a9a9;
             display: block;
         }
     }
@@ -133,6 +135,9 @@
     border-radius: 4px;
     .MuiSvgIcon-root {
         display: block;
+    }
+    svg, MuiSvgIcon-root{
+        color: var(--purple) !important; 
     }
     .company-logo {
         img {

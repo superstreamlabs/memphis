@@ -297,7 +297,13 @@ function OverView() {
                     <label className="welcome-message">and is under constant modifications.</label>
                     <label className="welcome-message">Downtimes might occur.</label>
                     <div>
-                        <Link to={{ pathname: 'https://docs.memphis.dev/memphis/getting-started/readme' }} target="_blank">
+                        <Link
+                            to={{
+                                pathname:
+                                    'https://docs.memphis.dev/memphis/getting-started/readme?utm_source=sandbox&utm_medium=banner&utm_campaign=sandbox+installation+banner#getting-started'
+                            }}
+                            target="_blank"
+                        >
                             <img src={docsLogo} alt="slack" className="sandbox-icon"></img>
                         </Link>
                         <Link to={{ pathname: 'https://github.com/memphisdev/memphis-broker' }} target="_blank">

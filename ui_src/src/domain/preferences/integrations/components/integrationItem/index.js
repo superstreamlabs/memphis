@@ -38,12 +38,12 @@ const IntegrationItem = ({ value }) => {
     }, [state?.integrationsList]);
 
     const checkIfUsed = () => {
-        let index = state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === value.name);
+        let index = state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === value?.name);
         setIntegrateValue(state.integrationsList[index]);
     };
 
     const modalContent = () => {
-        switch (value.name) {
+        switch (value?.name) {
             case 'Slack':
                 return (
                     <SlackIntegration
@@ -79,23 +79,23 @@ const IntegrationItem = ({ value }) => {
 
     return (
         <>
-            <integ-item is="3xd" onClick={() => (value.comingSoon ? null : modalFlip(true))}>
-                {value.banner}
+            <integ-item is="3xd" onClick={() => (value?.comingSoon ? null : modalFlip(true))}>
+                {value?.banner}
                 {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
                     <div className="integrate-icon">
                         <img src={integrateIcon} />
                     </div>
                 )}
                 <div className="integration-name">
-                    {value.icon}
+                    {value?.icon}
                     <div className="details">
-                        <p>{value.name}</p>
-                        <span>by {value.by}</span>
+                        <p>{value?.name}</p>
+                        <span>by {value?.by}</span>
                     </div>
                 </div>
-                <p className="integration-description">{value.description} </p>
+                <p className="integration-description">{value?.description} </p>
                 <div className="category">
-                    <Tag tag={value.category} />
+                    <Tag tag={value?.category} />
                 </div>
             </integ-item>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
