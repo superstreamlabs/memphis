@@ -55,8 +55,6 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 		tieredStorageEnabled = memStore.cfg.TieredStorageEnabled
 	}
 
-	fmt.Println("tieredStorageEnabled", tieredStorageEnabled)
-
 	if tieredStorageEnabled {
 		msgId := map[string]string{}
 		seqNumber := strconv.Itoa(int(seq))
