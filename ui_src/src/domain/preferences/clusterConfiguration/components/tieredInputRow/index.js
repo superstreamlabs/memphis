@@ -31,7 +31,7 @@ function TieredInputRow({ title, desc, value, onChanges, img }) {
         let status = tieredStorageTimeValidator(val, tsTimeType);
         setError(status);
         onChanges(val, status);
-        setInputValue(Number(newValue));
+        setInputValue(newValue);
     };
     const onChangeType = (type) => {
         let val = Number(inputValue);

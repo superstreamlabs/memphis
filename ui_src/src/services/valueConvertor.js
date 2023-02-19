@@ -305,7 +305,7 @@ export const idempotencyValidator = (value, idempotencyType) => {
 
 export const tieredStorageTimeValidator = (value) => {
     if (value === 0) {
-        return 'Please input value';
+        return 'Please input tiered storage value';
     }
     if (value < 5) {
         return 'Has to be higher than 5 seconds';
