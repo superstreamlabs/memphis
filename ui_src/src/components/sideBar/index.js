@@ -53,7 +53,8 @@ import Modal from '../modal';
 const overlayStyles = {
     borderRadius: '8px',
     width: '230px',
-    padding: '5px'
+    paddingTop: '5px',
+    paddingBottom: '5px'
 };
 
 function SideBar() {

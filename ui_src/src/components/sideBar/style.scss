@@ -88,6 +88,7 @@
 }
 .item-wrap-header {
     padding: 5px;
+    margin: 0 5px 0 5px;
     height: 42px;
     display: flex;
     width: 100%;
@@ -119,10 +120,11 @@
 }
 .item-wrap {
     padding: 5px;
+    margin: 0 5px 0 5px;
     height: 34px;
     display: flex;
     align-items: center;
-    width: 100%;
+    width: 220px;
     .MuiSvgIcon-root {
         height: 20px;
         display: none;
