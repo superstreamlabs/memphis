@@ -54,68 +54,71 @@ type MessageDetails struct {
 }
 
 type Station struct {
-	ID                primitive.ObjectID `json:"id" bson:"_id"`
-	Name              string             `json:"name" bson:"name"`
-	RetentionType     string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue    int                `json:"retention_value" bson:"retention_value"`
-	StorageType       string             `json:"storage_type" bson:"storage_type"`
-	Replicas          int                `json:"replicas" bson:"replicas"`
-	DedupEnabled      bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
-	DedupWindowInMs   int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
-	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate        time.Time          `json:"last_update" bson:"last_update"`
-	Functions         []Function         `json:"functions" bson:"functions"`
-	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
-	Schema            SchemaDetails      `json:"schema" bson:"schema"`
-	IdempotencyWindow int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative          bool               `json:"is_native" bson:"is_native"`
-	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	ID                   primitive.ObjectID `json:"id" bson:"_id"`
+	Name                 string             `json:"name" bson:"name"`
+	RetentionType        string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
+	StorageType          string             `json:"storage_type" bson:"storage_type"`
+	Replicas             int                `json:"replicas" bson:"replicas"`
+	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
+	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
+	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
+	Functions            []Function         `json:"functions" bson:"functions"`
+	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
+	Schema               SchemaDetails      `json:"schema" bson:"schema"`
+	IdempotencyWindow    int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative             bool               `json:"is_native" bson:"is_native"`
+	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
 }
 
 type GetStationResponseSchema struct {
-	ID                primitive.ObjectID `json:"id" bson:"_id"`
-	Name              string             `json:"name" bson:"name"`
-	RetentionType     string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue    int                `json:"retention_value" bson:"retention_value"`
-	StorageType       string             `json:"storage_type" bson:"storage_type"`
-	Replicas          int                `json:"replicas" bson:"replicas"`
-	DedupEnabled      bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
-	DedupWindowInMs   int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
-	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate        time.Time          `json:"last_update" bson:"last_update"`
-	Functions         []Function         `json:"functions" bson:"functions"`
-	IsDeleted         bool               `json:"is_deleted" bson:"is_deleted"`
-	Tags              []CreateTag        `json:"tags"`
-	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative          bool               `json:"is_native" bson:"is_native"`
-	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	ID                   primitive.ObjectID `json:"id" bson:"_id"`
+	Name                 string             `json:"name" bson:"name"`
+	RetentionType        string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
+	StorageType          string             `json:"storage_type" bson:"storage_type"`
+	Replicas             int                `json:"replicas" bson:"replicas"`
+	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
+	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
+	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
+	Functions            []Function         `json:"functions" bson:"functions"`
+	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
+	Tags                 []CreateTag        `json:"tags"`
+	IdempotencyWindow    int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative             bool               `json:"is_native" bson:"is_native"`
+	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
 }
 
 type ExtendedStation struct {
-	ID                primitive.ObjectID `json:"id" bson:"_id"`
-	Name              string             `json:"name" bson:"name"`
-	RetentionType     string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue    int                `json:"retention_value" bson:"retention_value"`
-	StorageType       string             `json:"storage_type" bson:"storage_type"`
-	Replicas          int                `json:"replicas" bson:"replicas"`
-	DedupEnabled      bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
-	DedupWindowInMs   int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
-	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate        time.Time          `json:"last_update" bson:"last_update"`
-	Functions         []Function         `json:"functions" bson:"functions"`
-	TotalMessages     int                `json:"total_messages"`
-	PoisonMessages    int                `json:"posion_messages"`
-	Tags              []CreateTag        `json:"tags"`
-	IdempotencyWindow int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative          bool               `json:"is_native" bson:"is_native"`
-	DlsConfiguration  DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
-	HasDlsMsgs        bool               `json:"has_dls_messages"`
-	Activity          bool               `json:"activity"`
-	Producers         []Producer         `json:"producers"`
-	Consumers         []Consumer         `json:"consumers"`
+	ID                   primitive.ObjectID `json:"id" bson:"_id"`
+	Name                 string             `json:"name" bson:"name"`
+	RetentionType        string             `json:"retention_type" bson:"retention_type"`
+	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
+	StorageType          string             `json:"storage_type" bson:"storage_type"`
+	Replicas             int                `json:"replicas" bson:"replicas"`
+	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
+	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
+	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
+	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
+	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
+	Functions            []Function         `json:"functions" bson:"functions"`
+	TotalMessages        int                `json:"total_messages"`
+	PoisonMessages       int                `json:"posion_messages"`
+	Tags                 []CreateTag        `json:"tags"`
+	IdempotencyWindow    int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative             bool               `json:"is_native" bson:"is_native"`
+	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
+	HasDlsMsgs           bool               `json:"has_dls_messages"`
+	Activity             bool               `json:"activity"`
+	Producers            []Producer         `json:"producers"`
+	Consumers            []Consumer         `json:"consumers"`
+	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
 }
 
 type ExtendedStationDetails struct {
@@ -132,17 +135,18 @@ type GetStationSchema struct {
 }
 
 type CreateStationSchema struct {
-	Name              string           `json:"name" binding:"required,min=1,max=128"`
-	RetentionType     string           `json:"retention_type"`
-	RetentionValue    int              `json:"retention_value"`
-	Replicas          int              `json:"replicas"`
-	StorageType       string           `json:"storage_type"`
-	DedupEnabled      bool             `json:"dedup_enabled"`                      // TODO deprecated
-	DedupWindowInMs   int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
-	Tags              []CreateTag      `json:"tags"`
-	SchemaName        string           `json:"schema_name"`
-	IdempotencyWindow int64            `json:"idempotency_window_in_ms"`
-	DlsConfiguration  DlsConfiguration `json:"dls_configuration"`
+	Name                 string           `json:"name" binding:"required,min=1,max=128"`
+	RetentionType        string           `json:"retention_type"`
+	RetentionValue       int              `json:"retention_value"`
+	Replicas             int              `json:"replicas"`
+	StorageType          string           `json:"storage_type"`
+	DedupEnabled         bool             `json:"dedup_enabled"`                      // TODO deprecated
+	DedupWindowInMs      int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
+	Tags                 []CreateTag      `json:"tags"`
+	SchemaName           string           `json:"schema_name"`
+	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
+	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
+	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 }
 
 type DlsConfiguration struct {

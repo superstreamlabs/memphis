@@ -1239,6 +1239,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"idempotency_window_in_ms": station.IdempotencyWindow,
 			"dls_configuration":        station.DlsConfiguration,
 			"total_dls_messages":       totalDlsAmount,
+			"tiered_storage_enabled":   station.TieredStorageEnabled,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -1264,6 +1265,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"idempotency_window_in_ms": station.IdempotencyWindow,
 				"dls_configuration":        station.DlsConfiguration,
 				"total_dls_messages":       totalDlsAmount,
+				"tiered_storage_enabled":   station.TieredStorageEnabled,
 			}
 		} else {
 			response = gin.H{
@@ -1286,6 +1288,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"idempotency_window_in_ms": station.IdempotencyWindow,
 				"dls_configuration":        station.DlsConfiguration,
 				"total_dls_messages":       totalDlsAmount,
+				"tiered_storage_enabled":   station.TieredStorageEnabled,
 			}
 		}
 	}
