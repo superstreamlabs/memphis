@@ -26,7 +26,7 @@ import MessageJourney from './domain/messageJourney';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SandboxLogin from './domain/sandboxLogin';
-import Preferences from './domain/preferences';
+import Administration from './domain/administration';
 import Profile from './domain/profile';
 import SchemaManagment from './domain/schema';
 import { useHistory } from 'react-router-dom';
@@ -134,13 +134,13 @@ const App = withRouter(() => {
                         <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
                         <PrivateRoute
                             exact
-                            path={`${pathDomains.preferences}/integrations`}
-                            component={<AppWrapper content={<Preferences step={'integrations'} />}></AppWrapper>}
+                            path={`${pathDomains.administration}/integrations`}
+                            component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
                         />
                         <PrivateRoute
                             exact
-                            path={`${pathDomains.preferences}/cluster_configuration`}
-                            component={<AppWrapper content={<Preferences step={'cluster_configuration'} />}></AppWrapper>}
+                            path={`${pathDomains.administration}/cluster_configuration`}
+                            component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
                         />
                         <PrivateRoute
                             exact

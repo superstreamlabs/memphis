@@ -158,7 +158,7 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
-                    setGoToRoute(`${pathDomains.preferences}/integrations`);
+                    setGoToRoute(`${pathDomains.administration}/integrations`);
                     setPopoverOpen(false);
                 }}
             >
@@ -166,7 +166,7 @@ function SideBar() {
                     <span className="icons">
                         <SettingOutlined className="icons-sidebar" />
                     </span>
-                    <p className="item-title">Preferences</p>
+                    <p className="item-title">Administration</p>
                 </div>
             </div>
 
@@ -247,7 +247,7 @@ function SideBar() {
             </div>
             <div className="bottom-icons">
                 <TooltipComponent text="Integrations" placement="right">
-                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.preferences}/integrations`)}>
+                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.administration}/integrations`)}>
                         <img src={integrationNavIcon} />
                     </div>
                 </TooltipComponent>
@@ -261,7 +261,7 @@ function SideBar() {
                 >
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
                         <img
-                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'preferences') && 'sandboxUserImgSelected'}`}
+                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
                             referrerPolicy="no-referrer"
                             width={localStorage.getItem('profile_pic') ? 35 : 25}
