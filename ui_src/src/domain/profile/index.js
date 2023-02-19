@@ -15,9 +15,8 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../const/localStorageConsts';
 import { Checkbox, Divider } from 'antd';
-import RadioButton from '../../components/radioButton';
 import Button from '../../components/button';
 import Modal from '../../components/modal';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -29,14 +28,12 @@ function Profile() {
     const [state, dispatch] = useContext(Context);
     const [avatar, setAvatar] = useState(1);
     const [open, modalFlip] = useState(false);
-    const [allowAnalytics, setAllowAnalytics] = useState();
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
         setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
-        setAllowAnalytics(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) === 'false' ? false : true);
     }, []);
 
     const removeMyUser = async () => {
@@ -45,16 +42,6 @@ function Profile() {
             modalFlip(false);
             localStorage.clear();
             window.location.assign(pathDomains.login);
-        } catch (err) {
-            return;
-        }
-    };
-
-    const sendAnalytics = async (analyticsFlag) => {
-        try {
-            await httpRequest('PUT', `${ApiEndpoints.EDIT_ANALYTICS}`, { send_analytics: analyticsFlag });
-            setAllowAnalytics(analyticsFlag);
-            localStorage.setItem(LOCAL_STORAGE_ALLOW_ANALYTICS, analyticsFlag);
         } catch (err) {
             return;
         }
@@ -106,26 +93,6 @@ function Profile() {
                     </div>
                 </div>
                 <ImgUploader />
-                <Divider />
-                <div className="analytics-section">
-                    <p className="title">Analytics</p>
-                    <label className="analytics-description">
-                        Memphis only collects bugs, events, and anonymous metadata to become better and more stable for you.
-                        <br />
-                        No sensitive or personal data gets collected.
-                    </label>
-                    <div className="radioButton-section">
-                        <RadioButton
-                            options={[
-                                { id: 0, value: true, label: 'Allow Analytics' },
-                                { id: 1, value: false, label: 'Don’t allow any analytics' }
-                            ]}
-                            radioValue={allowAnalytics}
-                            onChange={(e) => sendAnalytics(e.target.value)}
-                            labelType
-                        />
-                    </div>
-                </div>
                 <Divider />
                 <div className="delete-account-section">
                     <p className="title">Delete your account</p>

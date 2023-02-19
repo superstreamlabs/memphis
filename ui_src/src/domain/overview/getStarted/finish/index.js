@@ -15,14 +15,13 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 
-import { LOCAL_STORAGE_ALLOW_ANALYTICS, LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../../const/localStorageConsts';
+import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../../const/localStorageConsts';
 import slackColors from '../../../../assets/images/slackColors.svg';
 import discordLogo from '../../../../assets/images/discordLogo.svg';
 import GithubLogo from '../../../../assets/images/githubLogo.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import docsLogo from '../../../../assets/images/docsLogo.svg';
 import { httpRequest } from '../../../../services/http';
-import Switcher from '../../../../components/switcher';
 import Button from '../../../../components/button';
 import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
@@ -32,7 +31,6 @@ import SlackIntegration from '../../../preferences/integrations/components/slack
 const Finish = ({ createStationFormRef }) => {
     const history = useHistory();
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
-    const [allowAnalytics, setAllowAnalytics] = useState(localStorage.getItem(LOCAL_STORAGE_ALLOW_ANALYTICS) || false);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrateValue, setIntegrateValue] = useState({});
 
