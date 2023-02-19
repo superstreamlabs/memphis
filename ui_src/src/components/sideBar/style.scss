@@ -81,12 +81,50 @@
     }
 }
 
+.menu-content {
+    .ant-divider-horizontal {
+        margin: 0;
+    }
+}
+.item-wrap-header {
+    padding: 5px;
+    margin: 0 5px 0 5px;
+    height: 42px;
+    display: flex;
+    width: 100%;
+    position: relative;
+    align-items: center;
+    .img-section {
+        width: 30px;
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+    p {
+        padding-left: 8px;
+        margin: 0;
+    }
+    .company-logo {
+        img {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            right: -6px;
+            bottom: -4px;
+        }
+    }
+}
+.item-wrap-header:hover {
+    background-color: transparent;
+}
 .item-wrap {
     padding: 5px;
-    height: 45px;
+    margin: 0 5px 0 5px;
+    height: 34px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    width: 220px;
     .MuiSvgIcon-root {
         height: 20px;
         display: none;
@@ -106,22 +144,8 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        .company-logo {
-            img {
-                position: absolute;
-                background-color: #ffffff;
-                border-radius: 50%;
-                border: 1px solid transparent;
-                right: -6px;
-                bottom: -4px;
-            }
-        }
     }
-    .logoimg {
-        border-radius: 25px;
-        width: 26px;
-        height: 26px;
-    }
+
     p {
         margin: 0;
         padding-left: 8px;
@@ -139,8 +163,9 @@
     .MuiSvgIcon-root {
         display: block;
     }
-    svg, MuiSvgIcon-root{
-        color: var(--purple) !important; 
+    svg,
+    MuiSvgIcon-root {
+        color: var(--purple) !important;
     }
     .company-logo {
         img {
@@ -148,7 +173,7 @@
         }
     }
 }
-.ant-modal-body .skip-tutorial-modal{
+.ant-modal-body .skip-tutorial-modal {
     font-family: 'Inter';
     font-size: 14px;
     color: #475467;

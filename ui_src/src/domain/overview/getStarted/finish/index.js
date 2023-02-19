@@ -26,7 +26,7 @@ import Button from '../../../../components/button';
 import { GetStartedStoreContext } from '..';
 import pathDomains from '../../../../router';
 import Modal from '../../../../components/modal';
-import SlackIntegration from '../../../preferences/integrations/components/slackIntegration';
+import SlackIntegration from '../../../administration/integrations/components/slackIntegration';
 
 const Finish = ({ createStationFormRef }) => {
     const history = useHistory();

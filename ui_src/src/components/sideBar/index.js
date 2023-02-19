@@ -15,11 +15,11 @@ import './style.scss';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { Popover } from 'antd';
+import { Divider, Popover } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
-import ChevronRightRoundedIcon from '@material-ui/icons/ChevronRightRounded';
+import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_COMPANY_LOGO,
@@ -53,7 +53,8 @@ import Modal from '../modal';
 const overlayStyles = {
     borderRadius: '8px',
     width: '230px',
-    padding: '5px'
+    paddingTop: '5px',
+    paddingBottom: '5px'
 };
 
 function SideBar() {
@@ -119,7 +120,27 @@ function SideBar() {
     };
 
     const content = (
-        <div>
+        <div className="menu-content">
+            <div className="item-wrap-header">
+                <span className="img-section">
+                    <img
+                        className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
+                        src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                        referrerPolicy="no-referrer"
+                        width="30"
+                        alt="avatar"
+                    ></img>
+                    <span className="company-logo">
+                        <img src={state?.companyLogo || Logo} width="15" height="15" alt="companyLogo" />
+                    </span>
+                </span>
+                <p>
+                    {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+                        ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
+                        : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                </p>
+            </div>
+            <Divider />
             <div
                 className="item-wrap"
                 onClick={() => {
@@ -129,29 +150,15 @@ function SideBar() {
             >
                 <div className="item">
                     <span className="icons">
-                        <img
-                            className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
-                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
-                            referrerPolicy="no-referrer"
-                            width="30"
-                            alt="avatar"
-                        ></img>
-                        <span className="company-logo">
-                            <img src={state?.companyLogo || Logo} width="15" height="15" alt="companyLogo" />
-                        </span>
+                        <PersonOutlinedIcon className="icons-sidebar" />
                     </span>
-                    <p>
-                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
-                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
-                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
-                    </p>
+                    <p className="item-title">Profile</p>
                 </div>
-                <ChevronRightRoundedIcon />
             </div>
             <div
                 className="item-wrap"
                 onClick={() => {
-                    setGoToRoute(`${pathDomains.preferences}/integrations`);
+                    setGoToRoute(`${pathDomains.administration}/integrations`);
                     setPopoverOpen(false);
                 }}
             >
@@ -161,7 +168,6 @@ function SideBar() {
                     </span>
                     <p className="item-title">Administration</p>
                 </div>
-                <ChevronRightRoundedIcon />
             </div>
 
             <Link to={{ pathname: DOC_URL }} target="_blank">
@@ -172,7 +178,6 @@ function SideBar() {
                         </span>
                         <p className="item-title">Support</p>
                     </div>
-                    <ChevronRightRoundedIcon />
                 </div>
             </Link>
             <div className="item-wrap">
@@ -182,7 +187,6 @@ function SideBar() {
                     </span>
                     <p className="item-title">Log out</p>
                 </div>
-                <ChevronRightRoundedIcon />
             </div>
         </div>
     );
@@ -243,7 +247,7 @@ function SideBar() {
             </div>
             <div className="bottom-icons">
                 <TooltipComponent text="Integrations" placement="right">
-                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.preferences}/integrations`)}>
+                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.administration}/integrations`)}>
                         <img src={integrationNavIcon} />
                     </div>
                 </TooltipComponent>
@@ -257,7 +261,7 @@ function SideBar() {
                 >
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
                         <img
-                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'preferences') && 'sandboxUserImgSelected'}`}
+                            className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
                             referrerPolicy="no-referrer"
                             width={localStorage.getItem('profile_pic') ? 35 : 25}

@@ -24,13 +24,13 @@ import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 
-function Preferences({ step }) {
+function Administration({ step }) {
     const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
 
     useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'preferences' });
+        dispatch({ type: 'SET_ROUTE', payload: 'administration' });
     }, []);
 
     const getComponent = () => {
@@ -39,14 +39,14 @@ function Preferences({ step }) {
                 if (window.location.href.split('/cluster_configuration').length > 1) {
                     return <ClusterConfiguration />;
                 } else {
-                    history.replace(`${pathDomains.preferences}/cluster_configuration`);
+                    history.replace(`${pathDomains.administration}/cluster_configuration`);
                     break;
                 }
             case 'integrations':
                 if (window.location.href.split('/integrations').length > 1) {
                     return <Integrations />;
                 } else {
-                    history.replace(`${pathDomains.preferences}/integrations`);
+                    history.replace(`${pathDomains.administration}/integrations`);
                     break;
                 }
             default:
@@ -76,4 +76,4 @@ function Preferences({ step }) {
         </div>
     );
 }
-export default Preferences;
+export default Administration;
