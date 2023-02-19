@@ -43,34 +43,39 @@ func flushMapToTire2Storage() error {
 func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uint64, tierStorageType string) error {
 	storedType := reflect.TypeOf(storageType).Elem().Name()
 	var streamName string
+	var tieredStorageEnabled bool
 	switch storedType {
 	case "fileStore":
 		fileStore := storageType.(*fileStore)
 		streamName = fileStore.cfg.StreamConfig.Name
+		tieredStorageEnabled = fileStore.cfg.StreamConfig.TieredStorageEnabled
 	case "memStore":
 		memStore := storageType.(*memStore)
 		streamName = memStore.cfg.Name
+		tieredStorageEnabled = memStore.cfg.TieredStorageEnabled
 	}
 
-	msgId := map[string]string{}
-	seqNumber := strconv.Itoa(int(seq))
-	msgId["msg-id"] = streamName + seqNumber
+	if tieredStorageEnabled {
+		msgId := map[string]string{}
+		seqNumber := strconv.Itoa(int(seq))
+		msgId["msg-id"] = streamName + seqNumber
 
-	_, ok := StorageFunctionsMap[tierStorageType]
-	if ok {
-		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
-		// TODO: if the stream is not exists save the messages in buffer
-		if TIERED_STORAGE_STREAM_CREATED {
-			tierStorageMsg := TieredStorageMsg{
-				Buf:         buf,
-				StationName: streamName,
-			}
+		_, ok := StorageFunctionsMap[tierStorageType]
+		if ok {
+			subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
+			// TODO: if the stream is not exists save the messages in buffer
+			if TIERED_STORAGE_STREAM_CREATED {
+				tierStorageMsg := TieredStorageMsg{
+					Buf:         buf,
+					StationName: streamName,
+				}
 
-			msg, err := json.Marshal(tierStorageMsg)
-			if err != nil {
-				return err
+				msg, err := json.Marshal(tierStorageMsg)
+				if err != nil {
+					return err
+				}
+				s.sendInternalAccountMsgWithHeaders(s.GlobalAccount(), subject, msg, msgId)
 			}
-			s.sendInternalAccountMsgWithHeaders(s.GlobalAccount(), subject, msg, msgId)
 		}
 	}
 	return nil
