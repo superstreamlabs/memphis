@@ -47,7 +47,7 @@ function InputRow({ title, desc, value, onChanges, img, placeholder }) {
                     backgroundColorType="none"
                     width="30vw"
                     minWidth="200px"
-                    height="42px"
+                    height="38px"
                     onChange={onChange}
                 />
             </div>

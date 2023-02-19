@@ -159,7 +159,7 @@ function SideBar() {
                     <span className="icons">
                         <SettingOutlined className="icons-sidebar" />
                     </span>
-                    <p className="item-title">Preferences</p>
+                    <p className="item-title">Administration</p>
                 </div>
                 <ChevronRightRoundedIcon />
             </div>

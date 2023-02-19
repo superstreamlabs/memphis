@@ -137,7 +137,7 @@ function ClusterConfiguration() {
                             <>
                                 <InputRow
                                     title="BROKER HOSTNAME"
-                                    desc='For the code snippets only: Which URL should be seen as the "broker hostname" '
+                                    desc={`**For the code snippets only\nWhich URL should be seen as the "broker hostname"`}
                                     img={ConfImg3}
                                     value={formFields?.broker_host}
                                     onChanges={(e) => handleChange('broker_host', e.target.value)}
@@ -145,15 +145,15 @@ function ClusterConfiguration() {
                                 />
                                 <InputRow
                                     title="UI HOSTNAME"
-                                    desc='For the code snippets only: Which URL should be seen as the "UI hostname" '
+                                    desc={`**For the code snippets only\nWhich URL should be seen as the "UI hostname"`}
                                     img={ConfImg3}
                                     value={formFields?.ui_host}
                                     onChanges={(e) => handleChange('ui_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_UI_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_UI_HOST) : ''}
                                 />
                                 <InputRow
-                                    title="REST HOSTNAME"
-                                    desc='For the code snippets only: Which URL should be seen as the "REST Gateway hostname" '
+                                    title="REST GATEWAY HOSTNAME"
+                                    desc={`**For the code snippets only\nWhich URL should be seen as the "REST Gateway hostname"`}
                                     img={ConfImg3}
                                     value={formFields?.rest_gw_host}
                                     onChanges={(e) => handleChange('rest_gw_host', e.target.value)}
