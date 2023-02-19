@@ -362,6 +362,26 @@ func (s *Server) uploadMsgsToTier2Storage() {
 		if TIERED_STORAGE_TIME_FRAME_SEC != currentTimeFrame {
 			currentTimeFrame = TIERED_STORAGE_TIME_FRAME_SEC
 			ticker.Reset(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+			//update consumer when TIERED_STORAGE_TIME_FRAME_SEC configuration was changed
+			durableName := TIERED_STORAGE_CONSUMER
+			tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+			filterSubject := tieredStorageStream + ".>"
+			cc := ConsumerConfig{
+				DeliverPolicy: DeliverAll,
+				AckPolicy:     AckExplicit,
+				Durable:       durableName,
+				FilterSubject: filterSubject,
+				AckWait:       time.Duration(2) * tieredStorageTimeFrame,
+				MaxAckPending: -1,
+				MaxDeliver:    1,
+			}
+			err := serv.memphisAddConsumer(tieredStorageStream, &cc)
+			if err != nil {
+				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
+				return
+			}
+			TIERED_STORAGE_CONSUMER_CREATED = true
+
 		}
 		tieredStorageMapLock.Lock()
 		if len(tieredStorageMsgsMap.m) > 0 {
