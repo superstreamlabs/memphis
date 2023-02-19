@@ -12,12 +12,10 @@
 
 import './style.scss';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
-import { ErrorRounded } from '@material-ui/icons';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import comingSoonImg from '../../assets/images/comingSoonImg.svg';
 import { convertDateToSeconds, generateName, idempotencyValidator } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
@@ -32,7 +30,8 @@ import CustomTabs from '../Tabs';
 import Button from '../button';
 import Input from '../Input';
 import OverflowTip from '../tooltip/overflowtip';
-
+import Modal from '../modal';
+import S3Integration from '../../domain/administration/integrations/components/s3Integration';
 const retanionOptions = [
     {
         id: 1,
@@ -50,7 +49,6 @@ const retanionOptions = [
         label: 'Messages'
     }
 ];
-
 const storageTierOneOptions = [
     {
         id: 1,
@@ -74,7 +72,7 @@ const storageTierTwoOptions = [
     }
 ];
 
-const tabs = ['Storage tier 1 (Hot)', 'Storage tier 2 (Cold)'];
+const tabs = ['Local storage tier', 'Remote storage tier'];
 const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
 const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
@@ -84,19 +82,20 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [actualPods, setActualPods] = useState(['1']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
-
-    const [comingSoon, setComingSoon] = useState(false);
     const [schemas, setSchemas] = useState([]);
     const [useSchema, setUseSchema] = useState(false);
     const [dlsConfiguration, setDlsConfiguration] = useState(true);
-    const [tabValue, setTabValue] = useState('Storage tier 1 (Hot)');
+    const [tabValue, setTabValue] = useState('Local storage tier');
     const [selectedOption, setSelectedOption] = useState('file');
-    const [selectedTier2Option, setSelectedTier2Option] = useState(1);
+    const [selectedTier2Option, setSelectedTier2Option] = useState('');
     const [parserName, setParserName] = useState('');
+    const [integrateValue, setIntegrateValue] = useState(null);
+    const [modalIsOpen, modalFlip] = useState(false);
 
     useEffect(() => {
         getAvailableReplicas();
         getAllSchemas();
+        getIntegration();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
         if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
         createStationFormRef.current = onFinish;
@@ -161,6 +160,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         } catch (error) {}
     };
 
+    const getIntegration = async () => {
+        try {
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=s3`);
+            setIntegrateValue(data);
+        } catch (error) {}
+    };
+
     const createStation = async (bodyRequest) => {
         try {
             getStarted && setLoading(true);
@@ -175,15 +181,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
     };
 
-    const connectToS3 = async () => {
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.TIERD_STORAGE_CLICKED);
-            if (data) {
-                setComingSoon(true);
-            }
-        } catch (error) {}
-    };
-
     const stationNameChange = (e) => {
         let generatedName = generateName(e.target.value);
         getStarted && updateFormState('name', generatedName);
@@ -196,10 +193,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
     };
 
-    const SelectedStorageOption = (value) => {
+    const SelectedLocalStorageOption = (value) => {
         if (allowEdit) {
             setSelectedOption(value);
             creationForm.setFieldValue('storage_type', value);
+        }
+    };
+    const SelectedRemoteStorageOption = (value, enabled) => {
+        if (allowEdit) {
+            setSelectedTier2Option(value);
+            creationForm.setFieldValue('tiered_storage_enabled', enabled);
         }
     };
 
@@ -554,7 +557,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                               <div
                                                   key={value.id}
                                                   className={selectedOption === value.value ? 'option-wrapper selected' : 'option-wrapper'}
-                                                  onClick={() => SelectedStorageOption(value.value)}
+                                                  onClick={() => SelectedLocalStorageOption(value.value)}
                                               >
                                                   {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
                                                   {selectedOption !== value.value && <div className="uncheck-icon" />}
@@ -567,13 +570,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                       })
                                     : storageTierTwoOptions.map((value) => {
                                           return (
-                                              <div
-                                                  key={value.id}
-                                                  className={selectedTier2Option === value.id ? 'option-wrapper selected' : 'option-wrapper'}
-                                                  onClick={() => setSelectedTier2Option(value.id)}
-                                              >
-                                                  {selectedTier2Option === value.id && <CheckCircleIcon className="check-icon" />}
-                                                  {selectedTier2Option !== value.id && <div className="uncheck-icon" />}
+                                              <div key={value.id} className={selectedTier2Option === value.value ? 'option-wrapper selected' : 'option-wrapper'}>
+                                                  {selectedTier2Option === value.value && <CheckCircleIcon className="check-icon" />}
+                                                  {selectedTier2Option !== value.value && <div className="uncheck-icon" />}
                                                   <div className="option-content">
                                                       <p>{value.label}</p>
                                                       <span>{value.desc}</span>
@@ -581,7 +580,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                   <Button
                                                       width="90px"
                                                       height="30px"
-                                                      placeholder="Connect"
+                                                      placeholder={integrateValue ? (selectedTier2Option === value.value ? 'Disable' : 'Enable') : 'Connect'}
                                                       colorType="white"
                                                       border="none"
                                                       radiusType="circle"
@@ -589,31 +588,31 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                       fontSize="12px"
                                                       fontWeight="bold"
                                                       boxShadowStyle="none"
-                                                      disabled={comingSoon}
-                                                      onClick={() => connectToS3()}
+                                                      onClick={() =>
+                                                          integrateValue
+                                                              ? selectedTier2Option === value.value
+                                                                  ? SelectedRemoteStorageOption('', false)
+                                                                  : SelectedRemoteStorageOption(value.value, true)
+                                                              : modalFlip(true)
+                                                      }
                                                   />
                                               </div>
                                           );
                                       })}
-                                {tabValue === tabs[1] && comingSoon && (
-                                    <div className="comings-soon-message">
-                                        <img src={comingSoonImg} />
-                                        <div className="content">
-                                            <p className="title">Coming Soon</p>
-                                            <p className="description">
-                                                Until its ready, would be great to get your&nbsp;
-                                                <a className="learn-more" href="https://github.com/memphisdev/memphis-broker/issues/496" target="_blank">
-                                                    upvote
-                                                </a>
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
                             </Form.Item>
                         </div>
                     </div>
                 </div>
             </div>
+            <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+                <S3Integration
+                    close={(data) => {
+                        modalFlip(false);
+                        setIntegrateValue(data);
+                    }}
+                    value={integrateValue}
+                />
+            </Modal>
         </Form>
     );
 };

@@ -175,7 +175,7 @@ EOF`}
                 </div>
             </div>
             {dataDogConfiguration.integrateDesc}
-            <div className="datadog-stepper">
+            <div className="integration-guid-stepper">
                 <Collapse
                     activeKey={currentStep}
                     onChange={(key) => setCurrentStep(Number(key))}

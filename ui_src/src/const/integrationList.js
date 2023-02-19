@@ -262,7 +262,6 @@ export const INTEGRATION_LIST = {
         icon: <img src={grafanaIcon} alt="grafanaIcon" />,
         description: 'Grafana is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in grafana',
         category: CATEGORY_LIST['Monitoring'],
-        comingSoon: true,
         header: (
             <div className="header-left-side">
                 <img src={grafanaIcon} alt="grafanaIcon" />
@@ -282,20 +281,16 @@ export const INTEGRATION_LIST = {
         ),
         steps: [
             {
-                title: 'Step 1: Make sure your Memphis Prometheus exporter is on',
+                title: `Step 0: Configuring Prometheus to collect pods' logs`,
                 key: 0
             },
             {
-                title: 'Step 2: Add Datadog annotation to Memphis statefulset',
+                title: 'Step 1: Enabling Memphis Prometheus exporter',
                 key: 1
             },
             {
-                title: 'Step 3: Check Datadog for Memphis metrics',
+                title: 'Step 2: Import Memphis dashboard',
                 key: 2
-            },
-            {
-                title: 'Step 4: Import the Memphis dashboard',
-                key: 3
             }
         ]
     },

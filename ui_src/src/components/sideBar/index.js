@@ -296,7 +296,6 @@ function SideBar() {
             >
                 <div className="skip-tutorial-modal">
                     <span>The tutorial will be closed.</span>
-                    <br />
                     <span>You can always head to Memphis documentation for guides and tutorials.</span>
                 </div>
             </Modal>

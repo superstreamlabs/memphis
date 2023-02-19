@@ -19,6 +19,7 @@
         display: flex;
         position: relative;
         flex-direction: column;
+        min-width: 330px;
         .welcome-section {
             height: 150px;
             display: flex;
@@ -64,6 +65,7 @@
     .steps-section {
         background-color: #ffffff;
         width: 70%;
+        min-width: 600px;
     }
     .congratulations-section {
         display: flex;

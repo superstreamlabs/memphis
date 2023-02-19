@@ -94,7 +94,7 @@ const GenerateTokenModal = ({ host, close }) => {
                     {Object.keys(userToken).length === 0 ? (
                         <>
                             <div className="app-username">
-                                <p className="field-title">User</p>
+                                <p className="field-title">Application-type user</p>
                                 <SelectComponent
                                     placeholder="choose your app user"
                                     colorType="black"
@@ -111,7 +111,7 @@ const GenerateTokenModal = ({ host, close }) => {
                             <div className="app-token">
                                 <p className="field-title">Connection token</p>
                                 <Input
-                                    placeholder="Insert connection token"
+                                    placeholder="Generated during user creation"
                                     type="text"
                                     fontSize="12px"
                                     radiusType="semi-round"

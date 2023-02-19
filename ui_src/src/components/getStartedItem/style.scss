@@ -108,7 +108,9 @@
             padding-left: 3px;
             overflow-y: auto;
             position: relative;
-            width: calc(100% - 120px);
+            width: calc(100% - 60px);
+        }.get-started-body::-webkit-scrollbar{
+            display: none;
         }
         .get-started-body-finish {
             height: calc(100% - 450px);
