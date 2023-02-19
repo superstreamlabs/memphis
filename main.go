@@ -114,7 +114,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
-	go s.CreateSystemStreams()
+	go s.CreateInternalJetStreamResources()
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {

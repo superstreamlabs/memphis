@@ -23,6 +23,7 @@ import (
 
 var IntegrationsCache map[string]interface{}
 var NotificationFunctionsMap map[string]interface{}
+var StorageFunctionsMap map[string]interface{}
 var IntegrationsCollection *mongo.Collection
 
 const PoisonMAlert = "poison_message_alert"
@@ -33,7 +34,9 @@ func InitializeIntegrations(c *mongo.Client) error {
 	IntegrationsCollection = db.GetCollection("integrations", c)
 	IntegrationsCache = make(map[string]interface{})
 	NotificationFunctionsMap = make(map[string]interface{})
+	StorageFunctionsMap = make(map[string]interface{})
 	NotificationFunctionsMap["slack"] = sendMessageToSlackChannel
+	StorageFunctionsMap["s3"] = serv.uploadToS3Storage
 
 	err := InitializeConnection(c, "slack")
 	if err != nil {

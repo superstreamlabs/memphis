@@ -19,6 +19,7 @@ type EditClusterConfigSchema struct {
 	BrokerHost    string `json:"broker_host"`
 	UiHost        string `json:"ui_host"`
 	RestGWHost    string `json:"rest_gw_host"`
+	TSTimeSec     int    `json:"tiered_storage_time_sec" binding:"min=5,max=3600"`
 }
 
 type GlobalConfigurationsUpdate struct {

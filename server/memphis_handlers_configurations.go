@@ -76,6 +76,32 @@ func (s *Server) initializeConfigurations() {
 	} else {
 		LOGS_RETENTION_IN_DAYS = logsRetention.Value
 	}
+
+	var tsTime models.ConfigurationsIntValue
+	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "tiered_storage_time_sec"}).Decode(&tsTime)
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+		if configuration.TIERED_STORAGE_TIME_FRAME_SEC > 3600 || configuration.TIERED_STORAGE_TIME_FRAME_SEC < 5 {
+			s.Warnf("initializeConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes - using default 8 seconds")
+			TIERED_STORAGE_TIME_FRAME_SEC = 8
+		} else {
+			TIERED_STORAGE_TIME_FRAME_SEC = configuration.TIERED_STORAGE_TIME_FRAME_SEC
+		}
+		tsTime = models.ConfigurationsIntValue{
+			ID:    primitive.NewObjectID(),
+			Key:   "tiered_storage_time_sec",
+			Value: TIERED_STORAGE_TIME_FRAME_SEC,
+		}
+		_, err = configurationsCollection.InsertOne(context.TODO(), tsTime)
+		if err != nil {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+	} else {
+		TIERED_STORAGE_TIME_FRAME_SEC = tsTime.Value
+	}
+
 	if configuration.DOCKER_ENV == "" {
 		var brokerHost models.ConfigurationsStringValue
 		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "broker_host"}).Decode(&brokerHost)
@@ -160,6 +186,18 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
+	if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
+		serv.Errorf("EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes")
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
+	} else {
+		err := changeTSTime(body.TSTimeSec)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	brokerHost := strings.ToLower(body.BrokerHost)
 	if BROKER_HOST != brokerHost {
 		BROKER_HOST = brokerHost
@@ -199,7 +237,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-update-cluster-config")
 	}
 
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS})
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
 }
 
 func changePMRetention(pmRetention int) error {
@@ -300,7 +338,32 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
 	}
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST})
+	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
+}
+
+func changeTSTime(tsTime int) error {
+	TIERED_STORAGE_TIME_FRAME_SEC = tsTime
+	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: "tiered_storage_time_sec", Update: TIERED_STORAGE_TIME_FRAME_SEC})
+	if err != nil {
+		return err
+	}
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{"key": "tiered_storage_time_sec"}
+	update := bson.M{
+		"$set": bson.M{
+			"value": TIERED_STORAGE_TIME_FRAME_SEC,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func editClusterCompHost(key string, host string) error {

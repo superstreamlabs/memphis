@@ -56,6 +56,7 @@ type Configuration struct {
 	SANDBOX_SLACK_CHANNEL_ID       string
 	SANDBOX_UI_URL                 string
 	EXTERNAL_MONGO                 bool
+	TIERED_STORAGE_TIME_FRAME_SEC  int
 	EXPORTER                       bool
 }
 

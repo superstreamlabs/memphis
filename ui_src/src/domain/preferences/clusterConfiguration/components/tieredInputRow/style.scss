@@ -1,0 +1,20 @@
+.configuration-list-container {
+    .input {
+        display: flex;
+        justify-content: space-between;
+        width: 30vw;
+        min-width: 100px;
+        .input-and-error {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            .error {
+                position: absolute;
+                font-size: 14px;
+                color: #ff4d4f;
+                font-family: 'Inter';
+                margin-top: 40px;
+            }
+        }
+    }
+}

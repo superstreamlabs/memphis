@@ -12,10 +12,13 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+
 	"memphis-broker/models"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,10 +26,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type TieredStorageMsg struct {
+	Buf         []byte `json:"buf"`
+	StationName string `json:"station_name"`
+}
 
 func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 	s3Integration, ok := IntegrationsCache["s3"].(models.Integration)
@@ -290,5 +299,84 @@ func hideS3SecretKey(secretKey string) string {
 		return secretKey
 	}
 	return secretKey
+
+}
+
+type Msg struct {
+	Payload []byte            `json:"payload"`
+	Headers map[string]string `json:"headers"`
+}
+
+func (s *Server) uploadToS3Storage() error {
+	if len(tieredStorageMsgsMap.m) > 0 {
+		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
+		provider := &credentials.StaticProvider{Value: credentials.Value{
+			AccessKeyID:     credentialsMap.Keys["access_key"],
+			SecretAccessKey: credentialsMap.Keys["secret_key"],
+		}}
+
+		_, err := provider.Retrieve()
+		if err != nil {
+			err = errors.New("uploadToS3Storage: Invalid credentials")
+			return err
+		}
+		credentials := credentials.NewCredentials(provider)
+		sess, err := session.NewSession(&aws.Config{
+			Region:      aws.String(credentialsMap.Keys["region"]),
+			Credentials: credentials},
+		)
+		if err != nil {
+			err = errors.New("uploadToS3Storage failure " + err.Error())
+			return err
+		}
+
+		uploader := s3manager.NewUploader(sess)
+		uid := serv.memphis.nuid.Next()
+		var objectName string
+
+		for k, msgs := range tieredStorageMsgsMap.m {
+			var messages []Msg
+			for _, msg := range msgs {
+				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ")"
+
+				var headers string
+				hdrs := map[string]string{}
+				if len(msg.Header) > 0 {
+					headers = strings.ToLower(string(msg.Header))
+					headersSplit := strings.Split(headers, CR_LF)
+					for _, header := range headersSplit {
+						if header != "" && !strings.Contains(header, "nats") {
+							keyVal := strings.Split(header, ":")
+							key := strings.TrimSpace(keyVal[0])
+							value := strings.TrimSpace(keyVal[1])
+							hdrs[key] = value
+						}
+					}
+				} else {
+					headers = ""
+				}
+
+				message := Msg{Payload: msg.Data, Headers: hdrs}
+				messages = append(messages, message)
+			}
+			// Upload the object to S3.
+			var buf bytes.Buffer
+			err := json.NewEncoder(&buf).Encode(messages)
+			if err != nil {
+				return err
+			}
+			_, err = uploader.Upload(&s3manager.UploadInput{
+				Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
+				Key:    aws.String(objectName),
+				Body:   &buf,
+			})
+			if err != nil {
+				err = errors.New("uploadToS3Storage: failed to upload the object to S3 " + err.Error())
+				return err
+			}
+			serv.Noticef("file upload to S3 storage: %s", objectName)
+		}
+	}
+	return nil
 
 }

@@ -474,6 +474,11 @@ func (s *Server) sendShutdownEvent() {
 	s.mu.Unlock()
 }
 
+// Used to send an internal message with headers to an arbitrary account.
+func (s *Server) sendInternalAccountMsgWithHeaders(a *Account, subject string, msg interface{}, hdrs map[string]string) error {
+	return s.sendInternalAccountMsgWithReply(a, subject, _EMPTY_, hdrs, msg, false)
+}
+
 // Used to send an internal message to an arbitrary account.
 func (s *Server) sendInternalAccountMsg(a *Account, subject string, msg interface{}) error {
 	return s.sendInternalAccountMsgWithReply(a, subject, _EMPTY_, nil, msg, false)
