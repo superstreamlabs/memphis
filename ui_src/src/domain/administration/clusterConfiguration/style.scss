@@ -27,9 +27,9 @@
     }
     .configuration-body {
         height: calc(100% - 170px);
-        overflow-y: scroll;
+        overflow-y: auto;
         .configuration-list-container {
-            height: 100px;
+            height: 85px;
             background: #ffffff;
             border: 1px solid #e1e1e1;
             border-radius: 8px;
@@ -57,11 +57,15 @@
                 .conf-description {
                     color: rgba(74, 73, 92, 0.8);
                     font-family: 'InterMedium';
-                    font-size: 11px;
+                    font-size: 12px;
+                    white-space:pre;
                 }
             }
         }
     }
+    .configuration-body::-webkit-scrollbar {
+        display: none;
+      }
     .configuration-footer {
         height: 70px;
         display: flex;

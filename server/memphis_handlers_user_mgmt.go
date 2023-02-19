@@ -439,7 +439,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	restGWHost := REST_GW_HOST
 	uiHost := UI_HOST
 	var env string
-	if configuration.DOCKER_ENV != "" {
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	} else {
 		env = "K8S"
@@ -544,7 +544,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	}
 
 	var env string
-	if configuration.DOCKER_ENV != "" {
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	} else {
 		env = "K8S"
@@ -642,7 +642,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		return
 	}
 	var env string
-	if configuration.DOCKER_ENV != "" {
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	} else {
 		env = "K8S"

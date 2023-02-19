@@ -62,7 +62,7 @@ function TieredInputRow({ title, desc, value, onChanges, img }) {
                         colorType="black"
                         backgroundColorType="none"
                         borderColorType="gray"
-                        height="40px"
+                        height="38px"
                         onChange={(e) => {
                             onChange(e.target.value);
                         }}
@@ -77,7 +77,7 @@ function TieredInputRow({ title, desc, value, onChanges, img }) {
                     fontFamily="Inter"
                     borderColorType="gray"
                     radiusType="semi-round"
-                    height="40px"
+                    height="38px"
                     popupClassName="select-options"
                     options={tsTimeOptions}
                     value={tsTimeType}

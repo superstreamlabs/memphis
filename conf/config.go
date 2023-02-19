@@ -21,6 +21,7 @@ import (
 type Configuration struct {
 	MEMPHIS_VERSION                string
 	DEV_ENV                        string
+	LOCAL_CLUSTER_ENV              bool
 	HTTP_PORT                      string
 	WS_PORT                        int
 	WS_TLS                         bool
@@ -62,7 +63,7 @@ type Configuration struct {
 
 func GetConfig() Configuration {
 	configuration := Configuration{}
-	if os.Getenv("DOCKER_ENV") != "" {
+	if os.Getenv("DOCKER_ENV") != "" || os.Getenv("LOCAL_CLUSTER_ENV") != "" {
 		gonfig.GetConf("./conf/docker-config.json", &configuration)
 	} else {
 		gonfig.GetConf("./conf/config.json", &configuration)
