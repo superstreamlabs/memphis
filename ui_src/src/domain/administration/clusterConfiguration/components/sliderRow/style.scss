@@ -1,0 +1,43 @@
+.configuration-list-container {
+    .current-value {
+        width: 100px;
+        height: 42px;
+        border: 1px solid #d8d8d8;
+        border-radius: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        p {
+            margin: 0;
+        }
+    }
+    .slider {
+        display: flex;
+        align-items: center;
+        width: 31vw;
+        .min-box {
+            padding: 0 5px;
+            display: flex;
+            height: 20px;
+            width: 50px;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter';
+            font-size: 14px;
+            line-height: 16px;
+            color: rgba(206, 206, 206, 0.8);
+        }
+        .max-box {
+            padding: 0 5px;
+            display: flex;
+            height: 20px;
+            width: 50px;
+            align-items: center;
+            justify-content: center;
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+            line-height: 17px;
+            color: rgba(29, 29, 29, 1);
+        }
+    }
+}

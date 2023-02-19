@@ -201,7 +201,7 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 		return models.MainOverviewData{}, err
 	}
 	k8sEnv := true
-	if configuration.DOCKER_ENV == "true" {
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
 		k8sEnv = false
 	}
 	brokersThroughputs, err := h.Monitoring.GetBrokersThroughputs()

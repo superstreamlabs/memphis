@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Package",
+            "name": "Stand-alone",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -32,10 +32,113 @@
                 "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
                 "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
-                "MAILCHIMP_KEY": "c6664ea9d772de0747890e277bb18f88-us9",
-                "MAILCHIMP_LIST_ID": "506751f7f5",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false"
+            }
+        },
+        {
+            "name": "cluster-0",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "--websocket_no_tls",
+                "-c",
+                "debug/memphis-0.conf"
+            ],
+            "env": {
+                "DEV_ENV": "true",
+                "LOCAL_CLUSTER_ENV": "true",
+                "HTTP_PORT": "9000",
+                "WS_PORT": "7770",
+                "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
+                "ROOT_PASSWORD": "memphis",
+                "CONNECTION_TOKEN": "memphis",
+                "ANALYTICS": "false",
+                "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
+                "K8S_NAMESPACE": "memphis",
+                "LOGS_RETENTION_IN_DAYS": "30",
+                "JWT_SECRET": "JWT_TEST_PURPOSE",
+                "REFRESH_JWT_SECRET": "REFRESH_JWT_TEST_PURPOSE",
+                "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
+                "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
+                "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
+                "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
+                "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
+                "SANDBOX_ENV": "false",
+                "EXPORTER": "false",
+                "SERVER_NAME": "broker-0"
+            }
+        },
+        {
+            "name": "cluster-1",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "--websocket_no_tls",
+                "-c",
+                "debug/memphis-1.conf"
+            ],
+            "env": {
+                "DEV_ENV": "true",
+                "LOCAL_CLUSTER_ENV": "true",
+                "HTTP_PORT": "9001",
+                "WS_PORT": "7771",
+                "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
+                "ROOT_PASSWORD": "memphis",
+                "CONNECTION_TOKEN": "memphis",
+                "ANALYTICS": "false",
+                "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
+                "K8S_NAMESPACE": "memphis",
+                "LOGS_RETENTION_IN_DAYS": "30",
+                "JWT_SECRET": "JWT_TEST_PURPOSE",
+                "REFRESH_JWT_SECRET": "REFRESH_JWT_TEST_PURPOSE",
+                "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
+                "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
+                "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
+                "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
+                "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
+                "SANDBOX_ENV": "false",
+                "EXPORTER": "false",
+                "SERVER_NAME": "broker-1"
+            }
+        },
+        {
+            "name": "cluster-2",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "--websocket_no_tls",
+                "-c",
+                "debug/memphis-2.conf"
+            ],
+            "env": {
+                "DEV_ENV": "true",
+                "LOCAL_CLUSTER_ENV": "true",
+                "HTTP_PORT": "9002",
+                "WS_PORT": "7772",
+                "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
+                "ROOT_PASSWORD": "memphis",
+                "CONNECTION_TOKEN": "memphis",
+                "ANALYTICS": "false",
+                "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
+                "K8S_NAMESPACE": "memphis",
+                "LOGS_RETENTION_IN_DAYS": "30",
+                "JWT_SECRET": "JWT_TEST_PURPOSE",
+                "REFRESH_JWT_SECRET": "REFRESH_JWT_TEST_PURPOSE",
+                "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
+                "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
+                "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
+                "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
+                "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
+                "SANDBOX_ENV": "false",
+                "EXPORTER": "false",
+                "SERVER_NAME": "broker-2"
             }
         }
     ]

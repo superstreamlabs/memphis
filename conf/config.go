@@ -21,6 +21,7 @@ import (
 type Configuration struct {
 	MEMPHIS_VERSION                string
 	DEV_ENV                        string
+	LOCAL_CLUSTER_ENV              bool
 	HTTP_PORT                      string
 	WS_PORT                        int
 	WS_TLS                         bool
@@ -49,8 +50,6 @@ type Configuration struct {
 	GITHUB_CLIENT_SECRET           string
 	SANDBOX_REDIRECT_URI           string
 	POISON_MSGS_RETENTION_IN_HOURS int
-	MAILCHIMP_KEY                  string
-	MAILCHIMP_LIST_ID              string
 	SERVER_NAME                    string
 	SANDBOX_SLACK_BOT_TOKEN        string
 	SANDBOX_SLACK_CHANNEL_ID       string
@@ -62,7 +61,7 @@ type Configuration struct {
 
 func GetConfig() Configuration {
 	configuration := Configuration{}
-	if os.Getenv("DOCKER_ENV") != "" {
+	if os.Getenv("DOCKER_ENV") != "" || os.Getenv("LOCAL_CLUSTER_ENV") != "" {
 		gonfig.GetConf("./conf/docker-config.json", &configuration)
 	} else {
 		gonfig.GetConf("./conf/config.json", &configuration)

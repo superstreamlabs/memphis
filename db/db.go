@@ -42,7 +42,7 @@ func InitializeDbConnection(l logger) (DbInstance, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
 	var clientOptions *options.ClientOptions
-	if configuration.DOCKER_ENV != "" {
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
 	} else {
 		auth := options.Credential{

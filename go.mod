@@ -9,7 +9,6 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/gofrs/uuid v4.2.0+incompatible
-	github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147
 	github.com/jhump/protoreflect v1.13.0
 	github.com/klauspost/compress v1.14.4
 	github.com/minio/highwayhash v1.0.2

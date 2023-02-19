@@ -29,7 +29,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/hanzoai/gochimp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -146,29 +145,17 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			ProfilePic:      profilePic,
 		}
 
-		mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
-
-		mailchimpListID := configuration.MAILCHIMP_LIST_ID
-
-		mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
-		if err != nil {
-			serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
+		if !strings.Contains(email, "@") {
+			email = email + "@github.memphis"
 		}
 
-		mailchimpReq := &gochimp3.MemberRequest{
-			EmailAddress: email,
-			Status:       "subscribed",
-			Tags:         []string{"Sandbox"},
+		param := analytics.EventParam{
+			Name:  "email",
+			Value: email,
 		}
+		analyticsParams := []analytics.EventParam{param}
+		analytics.SendEventWithParams("", analyticsParams, "new-sandbox-user")
 
-		if _, err := mailchimpList.CreateMember(mailchimpReq); err != nil {
-			if strings.Contains(err.Error(), "valid email address") {
-				mailchimpReq.EmailAddress = mailchimpReq.EmailAddress + "@github.memphis" // in order to get users without emails signed in mailchimp
-				mailchimpList.CreateMember(mailchimpReq)
-			} else {
-				serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
-			}
-		}
 		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
 		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
 		if err != nil {
@@ -177,7 +164,6 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			return
 		}
 		serv.Noticef("New sandbox user was created: " + username)
-
 	}
 
 	token, refreshToken, err := CreateTokens(user)
