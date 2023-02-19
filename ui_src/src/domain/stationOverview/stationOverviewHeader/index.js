@@ -155,7 +155,7 @@ const StationOverviewHeader = () => {
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
                             </p>
                             <p>
-                                <b>Remote Storage:</b> {stationState?.stationMetaData?.storage_type}
+                                <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : 'None'}
                             </p>
                         </div>
                     </div>

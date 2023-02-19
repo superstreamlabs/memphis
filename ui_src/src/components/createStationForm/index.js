@@ -87,7 +87,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [dlsConfiguration, setDlsConfiguration] = useState(true);
     const [tabValue, setTabValue] = useState('Local storage tier');
     const [selectedOption, setSelectedOption] = useState('file');
-    const [selectedTier2Option, setSelectedTier2Option] = useState('');
+    const [selectedTier2Option, setSelectedTier2Option] = useState(false);
     const [parserName, setParserName] = useState('');
     const [integrateValue, setIntegrateValue] = useState(null);
     const [modalIsOpen, modalFlip] = useState(false);
@@ -136,6 +136,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             storage_type: formFields.storage_type,
             replicas: Number(formFields.replicas),
             schema_name: formFields.schemaValue,
+            tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
             dls_configuration: {
                 poison: dlsConfiguration,
@@ -551,55 +552,61 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 }
                             />
                             <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
-                                {tabValue === tabs[0]
-                                    ? storageTierOneOptions.map((value) => {
-                                          return (
-                                              <div
-                                                  key={value.id}
-                                                  className={selectedOption === value.value ? 'option-wrapper selected' : 'option-wrapper'}
-                                                  onClick={() => SelectedLocalStorageOption(value.value)}
-                                              >
-                                                  {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
-                                                  {selectedOption !== value.value && <div className="uncheck-icon" />}
-                                                  <div className="option-content">
-                                                      <p>{value.label}</p>
-                                                      <span>{value.desc}</span>
-                                                  </div>
-                                              </div>
-                                          );
-                                      })
-                                    : storageTierTwoOptions.map((value) => {
-                                          return (
-                                              <div key={value.id} className={selectedTier2Option === value.value ? 'option-wrapper selected' : 'option-wrapper'}>
-                                                  {selectedTier2Option === value.value && <CheckCircleIcon className="check-icon" />}
-                                                  {selectedTier2Option !== value.value && <div className="uncheck-icon" />}
-                                                  <div className="option-content">
-                                                      <p>{value.label}</p>
-                                                      <span>{value.desc}</span>
-                                                  </div>
-                                                  <Button
-                                                      width="90px"
-                                                      height="30px"
-                                                      placeholder={integrateValue ? (selectedTier2Option === value.value ? 'Disable' : 'Enable') : 'Connect'}
-                                                      colorType="white"
-                                                      border="none"
-                                                      radiusType="circle"
-                                                      backgroundColorType="purple"
-                                                      fontSize="12px"
-                                                      fontWeight="bold"
-                                                      boxShadowStyle="none"
-                                                      onClick={() =>
-                                                          integrateValue
-                                                              ? selectedTier2Option === value.value
-                                                                  ? SelectedRemoteStorageOption('', false)
-                                                                  : SelectedRemoteStorageOption(value.value, true)
-                                                              : modalFlip(true)
-                                                      }
-                                                  />
-                                              </div>
-                                          );
-                                      })}
+                                {tabValue === tabs[0] &&
+                                    storageTierOneOptions.map((value) => {
+                                        return (
+                                            <div
+                                                key={value.id}
+                                                className={selectedOption === value.value ? 'option-wrapper selected' : 'option-wrapper'}
+                                                onClick={() => SelectedLocalStorageOption(value.value)}
+                                            >
+                                                {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
+                                                {selectedOption !== value.value && <div className="uncheck-icon" />}
+                                                <div className="option-content">
+                                                    <p>{value.label}</p>
+                                                    <span>{value.desc}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                             </Form.Item>
+                            {tabValue === tabs[1] && (
+                                <Form.Item
+                                    name="tiered_storage_enabled"
+                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : ''}
+                                >
+                                    {storageTierTwoOptions.map((value) => {
+                                        return (
+                                            <div key={value.id} className={selectedTier2Option ? 'option-wrapper selected' : 'option-wrapper'}>
+                                                {selectedTier2Option ? <CheckCircleIcon className="check-icon" /> : <div className="uncheck-icon" />}
+                                                <div className="option-content">
+                                                    <p>{value.label}</p>
+                                                    <span>{value.desc}</span>
+                                                </div>
+                                                <Button
+                                                    width="90px"
+                                                    height="30px"
+                                                    placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
+                                                    colorType="white"
+                                                    border="none"
+                                                    radiusType="circle"
+                                                    backgroundColorType="purple"
+                                                    fontSize="12px"
+                                                    fontWeight="bold"
+                                                    boxShadowStyle="none"
+                                                    onClick={() =>
+                                                        integrateValue
+                                                            ? selectedTier2Option
+                                                                ? SelectedRemoteStorageOption(false, false)
+                                                                : SelectedRemoteStorageOption(true, true)
+                                                            : modalFlip(true)
+                                                    }
+                                                />
+                                            </div>
+                                        );
+                                    })}
+                                </Form.Item>
+                            )}
                         </div>
                     </div>
                 </div>
