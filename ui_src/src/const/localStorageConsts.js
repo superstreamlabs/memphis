@@ -27,3 +27,4 @@ export const LOCAL_STORAGE_ENV = 'env';
 export const LOCAL_STORAGE_BROKER_HOST = 'broker_host';
 export const LOCAL_STORAGE_REST_GW_HOST = 'rest_gw_host';
 export const LOCAL_STORAGE_UI_HOST = 'ui_host';
+export const LOCAL_STORAGE_TIERED_STORAGE_TIME = 'tiered_storage_time_sec';

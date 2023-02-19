@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis-broker/models"
+	"sync"
 
 	"strconv"
 	"strings"
@@ -32,9 +33,12 @@ const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
 const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
+const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
+var tieredStorageMsgsMap *concurrentMap[[]StoredMsg]
+var tieredStorageMapLock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
@@ -97,18 +101,20 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	return nil
 }
 
-func (s *Server) ListenForConfogurationsUpdateEvents() error {
+func (s *Server) ListenForConfigurationsUpdateEvents() error {
 	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var configurationsUpdate models.ConfigurationsUpdate
 			err := json.Unmarshal(msg, &configurationsUpdate)
 			if err != nil {
-				s.Errorf("ListenForConfogurationsUpdateEvents: " + err.Error())
+				s.Errorf("ListenForConfigurationsUpdateEvents: " + err.Error())
 				return
 			}
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":
 				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
+			case "tiered_storage_time_sec":
+				TIERED_STORAGE_TIME_FRAME_SEC = int(configurationsUpdate.Update.(float64))
 			case "broker_host":
 				BROKER_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
 			case "ui_host":
@@ -306,10 +312,20 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
 
-	err = s.ListenForConfogurationsUpdateEvents()
+	err = s.ListenForConfigurationsUpdateEvents()
 	if err != nil {
-		return errors.New("Failed subscribing for confogurations update: " + err.Error())
+		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
+
+	// creating consumer + start listening
+	err = s.ListenForTieredStorageMessages()
+	if err != nil {
+		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
+	}
+
+	// send JS API request to get more messages
+	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
+	go s.uploadMsgsToTier2Storage()
 
 	filter := bson.M{"key": "ui_host"}
 	var configurationsStringValue models.ConfigurationsStringValue
@@ -336,5 +352,128 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *Server) uploadMsgsToTier2Storage() {
+	currentTimeFrame := TIERED_STORAGE_TIME_FRAME_SEC
+	ticker := time.NewTicker(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+	for range ticker.C {
+		if TIERED_STORAGE_TIME_FRAME_SEC != currentTimeFrame {
+			currentTimeFrame = TIERED_STORAGE_TIME_FRAME_SEC
+			ticker.Reset(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+			//update consumer when TIERED_STORAGE_TIME_FRAME_SEC configuration was changed
+			durableName := TIERED_STORAGE_CONSUMER
+			tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+			filterSubject := tieredStorageStream + ".>"
+			cc := ConsumerConfig{
+				DeliverPolicy: DeliverAll,
+				AckPolicy:     AckExplicit,
+				Durable:       durableName,
+				FilterSubject: filterSubject,
+				AckWait:       time.Duration(2) * tieredStorageTimeFrame,
+				MaxAckPending: -1,
+				MaxDeliver:    1,
+			}
+			err := serv.memphisAddConsumer(tieredStorageStream, &cc)
+			if err != nil {
+				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
+				return
+			}
+			TIERED_STORAGE_CONSUMER_CREATED = true
+
+		}
+		tieredStorageMapLock.Lock()
+		if len(tieredStorageMsgsMap.m) > 0 {
+			err := flushMapToTire2Storage()
+			if err != nil {
+				serv.Errorf("Failed upload messages to tiered 2 storage: " + err.Error())
+				tieredStorageMapLock.Unlock()
+				continue
+			}
+		}
+
+		for i, msgs := range tieredStorageMsgsMap.m {
+			for _, msg := range msgs {
+				reply := msg.ReplySubject
+				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			}
+			tieredStorageMsgsMap.Delete(i)
+		}
+		tieredStorageMapLock.Unlock()
+	}
+}
+
+func (s *Server) sendPeriodicJsApiFetchTieredStorageMsgs() {
+	ticker := time.NewTicker(2 * time.Second)
+	for range ticker.C {
+		if TIERED_STORAGE_CONSUMER_CREATED && TIERED_STORAGE_STREAM_CREATED {
+			durableName := TIERED_STORAGE_CONSUMER
+			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
+			reply := durableName + "_reply"
+			amount := 1000
+			req := []byte(strconv.FormatUint(uint64(amount), 10))
+			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+		}
+	}
+}
+
+func (s *Server) ListenForTieredStorageMessages() error {
+	tieredStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
+
+	subject := TIERED_STORAGE_CONSUMER + "_reply"
+	err := serv.queueSubscribe(subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(subject, reply string, msg []byte) {
+			//Ignore 409 Exceeded MaxWaiting cases
+			if reply != "" {
+				rawMsg := strings.Split(string(msg), CR_LF+CR_LF)
+				var tieredStorageMsg TieredStorageMsg
+				if len(rawMsg) == 2 {
+					err := json.Unmarshal([]byte(rawMsg[1]), &tieredStorageMsg)
+					if err != nil {
+						serv.Errorf("Failed unmarshalling tiered storage message: " + err.Error())
+						return
+					}
+				} else {
+					serv.Errorf("Invalid tiered storage message structure: message must contains msg-id header")
+					return
+				}
+				payload := tieredStorageMsg.Buf
+				replySubj := reply
+				rawTs := tokenAt(reply, 8)
+				seq, _, _ := ackReplyInfo(reply)
+				intTs, err := strconv.Atoi(rawTs)
+				if err != nil {
+					serv.Errorf("Failed convert rawTs from string to int")
+					return
+				}
+
+				dataFirstIdx := 0
+				dataFirstIdx = getHdrLastIdxFromRaw(payload) + 1
+				if dataFirstIdx > len(payload)-len(CR_LF) {
+					s.Errorf("memphis error parsing")
+					return
+				}
+				dataLen := len(payload) - dataFirstIdx
+				header := payload[:dataFirstIdx]
+				data := payload[dataFirstIdx : dataFirstIdx+dataLen]
+				message := StoredMsg{
+					Subject:      tieredStorageMsg.StationName,
+					Sequence:     uint64(seq),
+					Data:         data,
+					Header:       header,
+					Time:         time.Unix(0, int64(intTs)),
+					ReplySubject: replySubj,
+				}
+
+				s.storeInTieredStorageMap(message)
+			}
+		}(subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		serv.Errorf("Failed queueSubscribe tiered storage: " + err.Error())
+		return err
+	}
+
 	return nil
 }
