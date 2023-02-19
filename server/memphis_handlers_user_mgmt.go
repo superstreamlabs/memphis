@@ -200,10 +200,6 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 	}
 
 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
-	// atClaims["broker_host"] = BROKER_HOST
-	// atClaims["rest_gw_host"] = REST_GW_HOST
-	// atClaims["ui_host"] = UI_HOST
-	// atClaims["tiered_storage_time_sec"] = TIERED_STORAGE_TIME_FRAME_SEC
 
 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	refreshToken, err := at.SignedString([]byte(configuration.REFRESH_JWT_SECRET))

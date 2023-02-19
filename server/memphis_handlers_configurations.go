@@ -106,7 +106,7 @@ func (s *Server) initializeConfigurations() {
 		if err != mongo.ErrNoDocuments {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		if configuration.DOCKER_ENV != "" {
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 			BROKER_HOST = "localhost"
 		} else {
 			BROKER_HOST = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
@@ -148,7 +148,7 @@ func (s *Server) initializeConfigurations() {
 		if err != mongo.ErrNoDocuments {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		if configuration.DOCKER_ENV != "" {
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 			REST_GW_HOST = "localhost"
 		} else {
 			REST_GW_HOST = "memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
