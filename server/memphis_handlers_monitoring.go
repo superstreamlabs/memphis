@@ -326,13 +326,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			var ports []int
 			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 			if err != nil {
-				if strings.Contains(err.Error(), "could not find the requested resource") {
+				if strings.Contains(err.Error(), "could not find the requested resource") && !noMetricsInstalledLog {
 					metricsEnabled = false
 					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
 					serv.Warnf("GetSystemComponents: k8s metrics not installed: " + err.Error())
 					noMetricsInstalledLog = true
 					continue
-				} else if strings.Contains(err.Error(), "is forbidden") {
+				} else if strings.Contains(err.Error(), "is forbidden") && noMetricsPermissionLog {
 					metricsEnabled = false
 					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
 					serv.Warnf("GetSystemComponents: No permissions for k8s metrics: " + err.Error())
