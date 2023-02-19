@@ -257,6 +257,11 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 	}
 
 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
+	// atClaims["broker_host"] = BROKER_HOST
+	// atClaims["rest_gw_host"] = REST_GW_HOST
+	// atClaims["ui_host"] = UI_HOST
+	// atClaims["tiered_storage_time_sec"] = TIERED_STORAGE_TIME_FRAME_SEC
+
 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	refreshToken, err := at.SignedString([]byte(configuration.REFRESH_JWT_SECRET))
 	if err != nil {
@@ -458,21 +463,22 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
-		"jwt":               token,
-		"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-		"user_id":           user.ID,
-		"username":          user.Username,
-		"user_type":         user.UserType,
-		"creation_date":     user.CreationDate,
-		"already_logged_in": user.AlreadyLoggedIn,
-		"avatar_id":         user.AvatarId,
-		"send_analytics":    shouldSendAnalytics,
-		"env":               env,
-		"full_name":         user.FullName,
-		"skip_get_started":  user.SkipGetStarted,
-		"broker_host":       brokerHost,
-		"rest_gw_host":      restGWHost,
-		"ui_host":           uiHost,
+		"jwt":                     token,
+		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"user_id":                 user.ID,
+		"username":                user.Username,
+		"user_type":               user.UserType,
+		"creation_date":           user.CreationDate,
+		"already_logged_in":       user.AlreadyLoggedIn,
+		"avatar_id":               user.AvatarId,
+		"send_analytics":          shouldSendAnalytics,
+		"env":                     env,
+		"full_name":               user.FullName,
+		"skip_get_started":        user.SkipGetStarted,
+		"broker_host":             brokerHost,
+		"rest_gw_host":            restGWHost,
+		"ui_host":                 uiHost,
+		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
 	})
 }
 
@@ -510,18 +516,22 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 			secure := true
 			c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 			c.IndentedJSON(200, gin.H{
-				"jwt":               token,
-				"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-				"user_id":           sandboxUser.ID,
-				"username":          sandboxUser.Username,
-				"user_type":         sandboxUser.UserType,
-				"creation_date":     sandboxUser.CreationDate,
-				"already_logged_in": sandboxUser.AlreadyLoggedIn,
-				"avatar_id":         sandboxUser.AvatarId,
-				"send_analytics":    true,
-				"env":               "K8S",
-				"namespace":         configuration.K8S_NAMESPACE,
-				"skip_get_started":  sandboxUser.SkipGetStarted,
+				"jwt":                     token,
+				"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+				"user_id":                 sandboxUser.ID,
+				"username":                sandboxUser.Username,
+				"user_type":               sandboxUser.UserType,
+				"creation_date":           sandboxUser.CreationDate,
+				"already_logged_in":       sandboxUser.AlreadyLoggedIn,
+				"avatar_id":               sandboxUser.AvatarId,
+				"send_analytics":          true,
+				"env":                     "K8S",
+				"namespace":               configuration.K8S_NAMESPACE,
+				"skip_get_started":        sandboxUser.SkipGetStarted,
+				"broker_host":             BROKER_HOST,
+				"rest_gw_host":            REST_GW_HOST,
+				"ui_host":                 UI_HOST,
+				"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
 			})
 			return
 		}
@@ -554,19 +564,23 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	secure := true
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
-		"jwt":               token,
-		"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-		"user_id":           user.ID,
-		"username":          user.Username,
-		"user_type":         user.UserType,
-		"creation_date":     user.CreationDate,
-		"already_logged_in": user.AlreadyLoggedIn,
-		"avatar_id":         user.AvatarId,
-		"send_analytics":    sendAnalytics,
-		"env":               env,
-		"namespace":         configuration.K8S_NAMESPACE,
-		"full_name":         user.FullName,
-		"skip_get_started":  user.SkipGetStarted,
+		"jwt":                     token,
+		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"user_id":                 user.ID,
+		"username":                user.Username,
+		"user_type":               user.UserType,
+		"creation_date":           user.CreationDate,
+		"already_logged_in":       user.AlreadyLoggedIn,
+		"avatar_id":               user.AvatarId,
+		"send_analytics":          sendAnalytics,
+		"env":                     env,
+		"namespace":               configuration.K8S_NAMESPACE,
+		"full_name":               user.FullName,
+		"skip_get_started":        user.SkipGetStarted,
+		"broker_host":             BROKER_HOST,
+		"rest_gw_host":            REST_GW_HOST,
+		"ui_host":                 UI_HOST,
+		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
 	})
 }
 

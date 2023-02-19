@@ -109,7 +109,7 @@ func (s *Server) initializeConfigurations() {
 		if configuration.DOCKER_ENV != "" {
 			BROKER_HOST = "localhost"
 		} else {
-			BROKER_HOST = "memphis-cluster.memphis.svc.cluster.local"
+			BROKER_HOST = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
 		brokerHost = models.ConfigurationsStringValue{
 			ID:    primitive.NewObjectID(),
@@ -151,7 +151,7 @@ func (s *Server) initializeConfigurations() {
 		if configuration.DOCKER_ENV != "" {
 			REST_GW_HOST = "localhost"
 		} else {
-			REST_GW_HOST = "memphis-rest-gateway.memphis.svc.cluster.local"
+			REST_GW_HOST = "memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
 		restGWHost = models.ConfigurationsStringValue{
 			ID:    primitive.NewObjectID(),
