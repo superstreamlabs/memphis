@@ -5,6 +5,7 @@
         width: 30vw;
         min-width: 100px;
         .input-and-error {
+            position: relative;
             display: flex;
             flex-direction: column;
             .error {
