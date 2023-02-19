@@ -1703,16 +1703,17 @@ func getContainerStorageUsage(config *rest.Config, mountPath string, container s
 	}
 	splitted_output := strings.Split(stdout.String(), "\n")
 	parsedline := strings.Fields(splitted_output[1])
-	if len(parsedline) > 0 {
-		usage, err = strconv.ParseFloat(parsedline[2], 64)
-		if err != nil {
-			return 0, err
-		}
-		usage = usage * 1024
-	}
 	if stderr.String() != "" {
 		return usage, errors.New(stderr.String())
 	}
+	if len(parsedline) > 1 {
+		usage, err = strconv.ParseFloat(parsedline[2], 64)
+		if err != nil {
+			return usage, err
+		}
+		usage = usage * 1024
+	}
+
 	return usage, nil
 }
 
