@@ -36,7 +36,7 @@ const VideoPlayer = ({ url, bgImg }) => {
                 </div>
             }
             height="250px"
-            width="445px"
+            width="24vw"
             url={url}
             onError={() => setIsOffline(true)}
             style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundSize: 'cover' }}

@@ -22,6 +22,7 @@ import SlackIntegration from '../slackIntegration';
 import S3Integration from '../s3Integration';
 import Tag from '../../../../../components/tag';
 import DataDogIntegration from '../dataDogIntegration';
+import GrafanaIntegration from '../grafanaIntegration';
 
 const IntegrationItem = ({ value }) => {
     const [state, dispatch] = useContext(Context);
@@ -72,6 +73,15 @@ const IntegrationItem = ({ value }) => {
                         }}
                     />
                 );
+            case 'Grafana':
+                return (
+                    <GrafanaIntegration
+                        close={() => {
+                            modalFlip(false);
+                        }}
+                    />
+                );
+
             default:
                 break;
         }

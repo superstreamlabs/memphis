@@ -17,19 +17,18 @@ import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
-import datadogMetricsps from '../../../../../assets/images/datadogMetricsps.png';
+import grafanaps from '../../../../../assets/images/grafanaps.png';
 
 import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
 import Modal from '../../../../../components/modal';
 import { ZoomInRounded } from '@material-ui/icons';
-
 const { Panel } = Collapse;
 
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
-const DataDogIntegration = ({ close }) => {
-    const dataDogConfiguration = INTEGRATION_LIST['Datadog'];
+const GrafanaIntegration = ({ close }) => {
+    const grafanaConfiguration = INTEGRATION_LIST['Grafana'];
     const [currentStep, setCurrentStep] = useState(0);
     const [showModal, setShowModal] = useState(false);
 
@@ -43,28 +42,37 @@ const DataDogIntegration = ({ close }) => {
                 return (
                     <div className="steps-content">
                         <h3>
-                            If you haven't installed Memphis with the <label>exporter.enabled</label> yet - (* <label>websocket.tls</label> are optional for a superior
-                            GUI experience)
+                            Validate that <label>Prometheus.yml</label> configfile contains "kubernetes-pods" job.
+                            <br />
+                            Its mandatory to scrape Memphis exporter metrics automatically.
                         </h3>
                         <div className="editor">
                             <pre>
-                                helm install memphis memphis --create-namespace --namespace memphis --wait --set cluster.enabled="true", exporter.enabled="true",
-                                websocket.tls.secret.name="tls-secret", websocket.tls.cert="memphis_local.pem", websocket.tls.key="memphis-key_local.pem"
+                                {`...
+honor_labels: true
+        job_name: kubernetes-pods
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - action: keep
+        regex: true
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+...`}
                             </pre>
                             <Copy
-                                data={`helm install memphis memphis --create-namespace --namespace memphis --wait --set cluster.enabled="true", exporter.enabled="true", websocket.tls.secret.name="tls-secret", websocket.tls.cert="memphis_local.pem", websocket.tls.key="memphis-key_local.pem"`}
+                                data={`...
+honor_labels: true
+        job_name: kubernetes-pods
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - action: keep
+        regex: true
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+...`}
                             />
-                        </div>
-                        <p>If Memphis is already installed -</p>
-                        <span>Get current deployment values.</span>
-                        <div className="editor">
-                            <pre>helm get values memphis --namespace memphis</pre>
-                            <Copy data={`helm get values memphis --namespace memphis`} />
-                        </div>
-                        <span>Run the following command.</span>
-                        <div className="editor">
-                            <pre>helm upgrade --set cluster.enabled=true --set exporter.enabled=true memphis --namespace memphis</pre>
-                            <Copy data={`helm upgrade --set cluster.enabled=true --set exporter.enabled=true memphis --namespace memphis`} />
                         </div>
                     </div>
                 );
@@ -72,83 +80,53 @@ const DataDogIntegration = ({ close }) => {
                 return (
                     <div className="steps-content">
                         <h3>
-                            Add Datadog annotation to the <label>memphis-broker</label> statefulset to expose Prometheus metrics to datadog agent:
+                            <b>If you haven't</b> installed Memphis with the <label>exporter.enabled</label> yet - (* <label>websocket.tls</label> are optional for a
+                            superior GUI experience)
                         </h3>
-                        <span>A one-liner command -</span>
                         <div className="editor">
-                            <pre>{`cat <<EOF | kubectl -n memphis patch sts memphis-broker --patch '
-spec:
-  template:
-    metadata:
-      annotations:
-        ad.datadoghq.com/metrics.checks: |
-           {
-             "openmetrics": {
-               "instances": [
-                 {
-                   "openmetrics_endpoint": "http://%%host%%:%%port%%/metrics",
-                   "namespace": "memphis",
-                   "metrics": [".*"]
-                 }
-               ]
-             }
-           }'
-EOF`}</pre>
+                            <pre>{`helm install memphis memphis 
+--create-namespace --namespace memphis --wait 
+--set 
+cluster.enabled="true",
+exporter.enabled="true", 
+websocket.tls.secret.name="tls-secret",
+websocket.tls.cert="memphis_local.pem",
+websocket.tls.key="memphis-key_local.pem",`}</pre>
                             <Copy
-                                data={`cat <<EOF | kubectl -n memphis patch sts memphis-broker --patch '
-spec:
-  template:
-    metadata:
-      annotations:
-        ad.datadoghq.com/metrics.checks: |
-           {
-             "openmetrics": {
-               "instances": [
-                 {
-                   "openmetrics_endpoint": "http://%%host%%:%%port%%/metrics",
-                   "namespace": "memphis",
-                   "metrics": [".*"]
-                 }
-               ]
-             }
-           }'
-EOF`}
+                                data={`helm install memphis memphis \
+--create-namespace --namespace memphis --wait \
+--set \
+cluster.enabled="true",\
+exporter.enabled="true", \
+websocket.tls.secret.name="tls-secret",\
+websocket.tls.cert="memphis_local.pem",\
+websocket.tls.key="memphis-key_local.pem",`}
                             />
+                        </div>
+
+                        <p>If Memphis is already installed -</p>
+                        <div className="editor">
+                            <pre>helm upgrade --set exporter.enabled=true memphis --namespace memphis --reuse-values</pre>
+                            <Copy data={`helm upgrade --set exporter.enabled=true memphis --namespace memphis --reuse-values`} />
                         </div>
                     </div>
                 );
             case 2:
                 return (
                     <div className="steps-content">
-                        <h3>{`Reach your Datadog account -> Metrics -> Summary, and check if "memphis" metrics arrives.`}</h3>
+                        <h3>
+                            <a href="https://grafana.com/grafana/dashboards/18050-memphis-dev/" target="_blank">
+                                Import
+                            </a>{' '}
+                            Memphis dashboard using Memphis dashboard ID: 18050
+                        </h3>
+
                         <div className="img" onClick={handleToggleModal}>
-                            <img src={datadogMetricsps} alt="datadogMetricsps" width={400} />
-                            <ZoomInRounded />
+                            <img src={grafanaps} alt="grafanaps" width={360} />
+                            <ZoomInRounded style={{ color: '#ffffff', right: '45px' }} />
                         </div>
                     </div>
                 );
-            case 3:
-                return (
-                    <div className="steps-content">
-                        <h3>
-                            A Datadog{' '}
-                            <a href="https://docs.datadoghq.com/dashboards/#copy-import-or-export-dashboard-json" target="_blank">
-                                tutorial
-                            </a>{' '}
-                            on how to import a dashboard
-                        </h3>
-                        <h3>
-                            Memphis dashboard .json file to{' '}
-                            <a
-                                href="https://raw.githubusercontent.com/memphisdev/gitbook-backup/master/dashboard-gui/integrations/monitoring/MemphisDashboard.json"
-                                target="_blank"
-                            >
-                                download
-                            </a>
-                        </h3>
-                    </div>
-                );
-
             default:
                 break;
         }
@@ -156,9 +134,9 @@ EOF`}
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
-            {dataDogConfiguration?.insideBanner}
+            {grafanaConfiguration?.insideBanner}
             <div className="integrate-header">
-                {dataDogConfiguration.header}
+                {grafanaConfiguration.header}
                 <div className="action-buttons flex-end">
                     <Button
                         width="140px"
@@ -170,11 +148,11 @@ EOF`}
                         border="none"
                         fontSize="12px"
                         fontFamily="InterSemiBold"
-                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/datadog', '_blank')}
+                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/grafana', '_blank')}
                     />
                 </div>
             </div>
-            {dataDogConfiguration.integrateDesc}
+            {grafanaConfiguration.integrateDesc}
             <div className="integration-guid-stepper">
                 <Collapse
                     activeKey={currentStep}
@@ -182,7 +160,7 @@ EOF`}
                     accordion={true}
                     expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
                 >
-                    {dataDogConfiguration?.steps?.map((step) => {
+                    {grafanaConfiguration?.steps?.map((step) => {
                         return (
                             <Panel header={step.title} key={step.key}>
                                 {getContent(step.key)}
@@ -206,11 +184,11 @@ EOF`}
             </div>
             {showModal && (
                 <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>
-                    <img width={'100%'} src={datadogMetricsps} alt="zoomable" />
+                    <img width={'100%'} src={grafanaps} alt="zoomable" />
                 </Modal>
             )}
         </dynamic-integration>
     );
 };
 
-export default DataDogIntegration;
+export default GrafanaIntegration;
