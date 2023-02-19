@@ -12,11 +12,12 @@
 
 import './style.scss';
 
-import React, { createContext, useEffect, useReducer, useRef } from 'react';
+import React, { createContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
 import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
 import GetStartedItem from '../../../components/getStartedItem';
+import Modal from '../../../components/modal';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
 import ProduceDataImg from '../../../assets/images/emptyStation.svg';
@@ -90,6 +91,7 @@ const GetStarted = ({ username, dataSentence }) => {
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
     const history = useHistory();
     const createStationFormRef = useRef(null);
+    const [open, modalFlip] = useState(false);
 
     const getStepsDescription = (stepNumber) => {
         switch (stepNumber) {
@@ -176,6 +178,29 @@ const GetStarted = ({ username, dataSentence }) => {
     return (
         <GetStartedStoreContext.Provider value={[getStartedState, getStartedDispatch]}>
             <div className="getstarted-container">
+                <Modal
+                    header="Are we skipping the tutorial?"
+                    height="100px"
+                    width="400px"
+                    rBtnText="Skip"
+                    lBtnText="Don't skip"
+                    lBtnClick={() => {
+                        modalFlip(false);
+                    }}
+                    rBtnClick={() => {
+                        skipGetStarted({ username });
+                        modalFlip(false);
+                    }}
+                    clickOutside={() => {
+                        modalFlip(false);
+                    }}
+                    open={open}
+                >
+                    <div className="skip-tutorial-modal">
+                        <span>The tutorial will be closed.</span>
+                        <span>You can always head to Memphis documentation for guides and tutorials.</span>
+                    </div>
+                </Modal>
                 <div className="sidebar-section">
                     <div className="welcome-section">
                         <p className="getstarted-welcome">Welcome, {username}</p>
@@ -193,7 +218,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
-                                skipGetStarted({ username });
+                                modalFlip(true);
                             }}
                         />
                     </Divider>
