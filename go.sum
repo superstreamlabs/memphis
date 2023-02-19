@@ -179,8 +179,6 @@ github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0U
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/graph-gophers/graphql-go v1.4.0 h1:JE9wveRTSXwJyjdRd6bOQ7Ob5bewTUQ58Jv4OiVdpdE=
 github.com/graph-gophers/graphql-go v1.4.0/go.mod h1:YtmJZDLbF1YYNrlNAuiO5zAStUWc3XZT07iGsVqe1Os=
-github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147 h1:gfRXBgmkTMt7yuwW/ugBjbd+c0eoP++0otxdAePhY2U=
-github.com/hanzoai/gochimp3 v0.0.0-20210305004051-da66ea724147/go.mod h1:zJr4NZygb2gyqkQpZ2Yf/UzbOhIhVfLCj8ST925KPrI=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
@@ -656,8 +654,6 @@ k8s.io/klog/v2 v2.80.1 h1:atnLQ121W371wYYFawwYx1aEY2eUfs4l3J72wtgAwV4=
 k8s.io/klog/v2 v2.80.1/go.mod h1:y1WjHnz7Dj687irZUWR/WLkLc5N1YHtjLdmgWjndZn0=
 k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 h1:+70TFaan3hfJzs+7VK2o+OGxg8HsuBr/5f6tVAjDu6E=
 k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280/go.mod h1:+Axhij7bCpeqhklhUTe3xmOn6bWxolyZEeyaFpjGtl4=
-k8s.io/metrics v0.26.0 h1:U/NzZHKDrIVGL93AUMRkqqXjOah3wGvjSnKmG/5NVCs=
-k8s.io/metrics v0.26.0/go.mod h1:cf5MlG4ZgWaEFZrR9+sOImhZ2ICMpIdNurA+D8snIs8=
 k8s.io/metrics v0.26.1 h1:iB+QdMLa2V70a7zb0XYEcaUpPM0y+p4fZN0UtxcPHLk=
 k8s.io/metrics v0.26.1/go.mod h1:fMeLXmK/xgvckFG63GJ0kDjFiQH7P0Dpi5Lvhlo5DXE=
 k8s.io/utils v0.0.0-20221107191617-1a15be271d1d h1:0Smp/HP1OH4Rvhe+4B8nWGERtlqAGSftbSbbmm45oFs=

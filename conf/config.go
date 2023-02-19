@@ -50,8 +50,6 @@ type Configuration struct {
 	GITHUB_CLIENT_SECRET           string
 	SANDBOX_REDIRECT_URI           string
 	POISON_MSGS_RETENTION_IN_HOURS int
-	MAILCHIMP_KEY                  string
-	MAILCHIMP_LIST_ID              string
 	SERVER_NAME                    string
 	SANDBOX_SLACK_BOT_TOKEN        string
 	SANDBOX_SLACK_CHANNEL_ID       string

@@ -14,7 +14,6 @@ package server
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"memphis-broker/analytics"
@@ -30,7 +29,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/hanzoai/gochimp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,12 +36,6 @@ import (
 )
 
 type UserMgmtHandler struct{}
-type MailChimpErr struct {
-	Title    string `json:"title"`
-	Status   int    `json:"status"`
-	Detail   string `json:"detail"`
-	Instance string `json:"instance"`
-}
 
 func isRootUserExist() (bool, error) {
 	filter := bson.M{"user_type": "root"}
@@ -173,55 +165,6 @@ func validateEmail(email string) error {
 		return errors.New("email is not valid")
 	}
 	return nil
-}
-
-func createMemberMailChimp(subscription bool, username string) {
-	var tag []string
-	if subscription {
-		tag = []string{"installation", "newsletter"}
-	} else {
-		tag = []string{"installation"}
-	}
-	mailchimpClient := gochimp3.New(configuration.MAILCHIMP_KEY)
-	mailchimpListID := configuration.MAILCHIMP_LIST_ID
-	mailchimpList, err := mailchimpClient.GetList(mailchimpListID, nil)
-	if err != nil {
-		serv.Debugf("getList in mailchimp error: " + err.Error())
-	} else {
-		mailchimpReq := &gochimp3.MemberRequest{
-			EmailAddress: username,
-			Status:       "subscribed",
-			Tags:         tag,
-		}
-		_, err = mailchimpList.CreateMember(mailchimpReq)
-		if err != nil {
-			data, err := json.Marshal(err)
-			if err != nil {
-				serv.Debugf("Error: " + err.Error())
-			}
-			var mailChimpErr MailChimpErr
-			if err = json.Unmarshal([]byte(data), &mailChimpErr); err != nil {
-				serv.Debugf("createMemberMailChimp: " + err.Error())
-			}
-			mailChimpReqSearch := &gochimp3.SearchMembersQueryParams{
-				Query: username,
-			}
-			if data != nil {
-				if mailChimpErr.Title == "Member Exists" && mailChimpErr.Status == 400 {
-					res, err := mailchimpList.SearchMembers(mailChimpReqSearch)
-					if err != nil {
-						serv.Debugf("Failed to search member in mailChimp: " + err.Error())
-					}
-					_, err = mailchimpList.UpdateMember(res.ExactMatches.Members[0].ID, mailchimpReq)
-					if err != nil {
-						serv.Debugf("Failed to update member in mailChimp: " + err.Error())
-					}
-				} else {
-					serv.Debugf("Failed to subscribe in mailChimp")
-				}
-			}
-		}
-	}
 }
 
 type userToTokens interface {
@@ -613,7 +556,6 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
-	createMemberMailChimp(subscription, username)
 
 	newUser := models.User{
 		ID:              primitive.NewObjectID(),
@@ -650,7 +592,16 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(newUser.Username, "user-signup")
+		param1 := analytics.EventParam{
+			Name:  "email",
+			Value: newUser.Username,
+		}
+		param2 := analytics.EventParam{
+			Name:  "newsletter",
+			Value: strconv.FormatBool(subscription),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
+		analytics.SendEventWithParams(newUser.Username, analyticsParams, "user-signup")
 	}
 
 	domain := ""
