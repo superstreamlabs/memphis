@@ -792,7 +792,8 @@ func (ms *memStore) removeMsg(seq uint64, secure bool) bool {
 	}
 
 	// send the message to tiered 2 storage if needed
-	if !secure && !strings.HasPrefix(ms.cfg.Name, "$memphis") && serv != nil {
+	tieredStorageEnabled := ms.cfg.TieredStorageEnabled
+	if !secure && !strings.HasPrefix(ms.cfg.Name, "$memphis") && tieredStorageEnabled && serv != nil {
 		serv.sendToTier2Storage(ms, copyBytes(sm.buf), sm.seq, "s3")
 	}
 

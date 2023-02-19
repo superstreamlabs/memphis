@@ -2075,7 +2075,8 @@ func (fs *fileStore) removeMsg(seq uint64, secure, needFSLock bool) (bool, error
 	}
 
 	// send the message to tiered 2 storage if needed
-	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && serv != nil {
+	tieredStorageEnabled := fs.cfg.StreamConfig.TieredStorageEnabled
+	if !secure && !strings.HasPrefix(fs.cfg.StreamConfig.Name, "$memphis") && tieredStorageEnabled && serv != nil {
 		err = serv.sendToTier2Storage(fs, copyBytes(sm.buf), sm.seq, "s3")
 		if err != nil {
 			return false, err
