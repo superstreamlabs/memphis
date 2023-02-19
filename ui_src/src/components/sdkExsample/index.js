@@ -57,7 +57,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 ? 'broker.sandbox.memphis.dev'
                 : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
                 ? 'localhost'
-                : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST);
+                : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                : 'memphis-cluster.memphis.svc.cluster.local';
             codeEx.producer = codeEx.producer?.replaceAll('<memphis-host>', host);
             codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
             codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);

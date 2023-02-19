@@ -64,44 +64,47 @@ const Component = ({ comp, i }) => {
                 <div className="pods-container">
                     {comp?.hosts?.length > 0 && (
                         <>
-                            <label className="host">Hosts</label>
-                            <OverflowTip text={comp?.hosts[0]}>
-                                <label className="value">{comp.hosts[0]}</label>
-                            </OverflowTip>
-                            {comp.hosts?.length > 1 && (
-                                <Popover
-                                    overlayInnerStyle={remainingPorstPopInnerStyle}
-                                    placement="bottomLeft"
-                                    content={comp.hosts?.slice(1)?.map((host) => {
-                                        return <p className="comp-plus-popover">{host}</p>;
-                                    })}
-                                >
-                                    <div className="plus-comp">
-                                        <Add className="add" />
-                                        <p>{comp.hosts?.length - 1}</p>
-                                    </div>
-                                </Popover>
-                            )}
+                            <div className="hosts">
+                                <label className="comp-label">Hosts</label>
+                                <OverflowTip text={comp?.hosts[0]}>
+                                    <label className="value">{comp.hosts[0]}</label>
+                                </OverflowTip>
+                                {comp.hosts?.length > 1 && (
+                                    <Popover
+                                        overlayInnerStyle={remainingPorstPopInnerStyle}
+                                        placement="bottomLeft"
+                                        content={comp.hosts?.slice(1)?.map((host) => {
+                                            return <p className="comp-plus-popover">{host}</p>;
+                                        })}
+                                    >
+                                        <div className="plus-comp">
+                                            <Add className="add" />
+                                            <p>{comp.hosts?.length - 1}</p>
+                                        </div>
+                                    </Popover>
+                                )}
+                            </div>
                             <Divider type="vertical" />
                         </>
                     )}
-
-                    <label className="host">Ports</label>
-                    <label className="value">{comp.ports.length > 0 ? comp.ports[0] : 'None'}</label>
-                    {comp.ports?.length > 1 && (
-                        <Popover
-                            overlayInnerStyle={remainingPorstPopInnerStyle}
-                            placement="bottomLeft"
-                            content={comp.ports?.slice(1)?.map((port) => {
-                                return <p className="comp-plus-popover">{port}</p>;
-                            })}
-                        >
-                            <div className="plus-comp">
-                                <Add className="add" />
-                                <p>{comp.ports?.length - 1}</p>
-                            </div>
-                        </Popover>
-                    )}
+                    <div className="ports">
+                        <label className="comp-label">Ports</label>
+                        <label className="value">{comp.ports.length > 0 ? comp.ports[0] : 'None'}</label>
+                        {comp.ports?.length > 1 && (
+                            <Popover
+                                overlayInnerStyle={remainingPorstPopInnerStyle}
+                                placement="bottomLeft"
+                                content={comp.ports?.slice(1)?.map((port) => {
+                                    return <p className="comp-plus-popover">{port}</p>;
+                                })}
+                            >
+                                <div className="plus-comp">
+                                    <Add className="add" />
+                                    <p>{comp.ports?.length - 1}</p>
+                                </div>
+                            </Popover>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

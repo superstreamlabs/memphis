@@ -31,8 +31,6 @@ import (
 
 type ConfigurationsHandler struct{}
 
-var userMgmtHandler UserMgmtHandler
-
 func (s *Server) initializeConfigurations() {
 	var pmRetention models.ConfigurationsIntValue
 	err := configurationsCollection.FindOne(context.TODO(), bson.M{"key": "pm_retention"}).Decode(&pmRetention)
@@ -102,64 +100,70 @@ func (s *Server) initializeConfigurations() {
 		TIERED_STORAGE_TIME_FRAME_SEC = tsTime.Value
 	}
 
-	if configuration.DOCKER_ENV == "" {
-		var brokerHost models.ConfigurationsStringValue
-		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "broker_host"}).Decode(&brokerHost)
-		if err != nil {
-			if err != mongo.ErrNoDocuments {
-				s.Errorf("initializeConfigurations: " + err.Error())
-			}
-			BROKER_HOST = ""
-			brokerHost = models.ConfigurationsStringValue{
-				ID:    primitive.NewObjectID(),
-				Key:   "broker_host",
-				Value: BROKER_HOST,
-			}
-			_, err = configurationsCollection.InsertOne(context.TODO(), brokerHost)
-			if err != nil {
-				s.Errorf("initializeConfigurations: " + err.Error())
-			}
-		} else {
-			BROKER_HOST = brokerHost.Value
+	var brokerHost models.ConfigurationsStringValue
+	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "broker_host"}).Decode(&brokerHost)
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		var uiHost models.ConfigurationsStringValue
-		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "ui_host"}).Decode(&uiHost)
-		if err != nil {
-			if err != mongo.ErrNoDocuments {
-				s.Errorf("initializeConfigurations: " + err.Error())
-			}
-			UI_HOST = ""
-			uiHost = models.ConfigurationsStringValue{
-				ID:    primitive.NewObjectID(),
-				Key:   "ui_host",
-				Value: UI_HOST,
-			}
-			_, err = configurationsCollection.InsertOne(context.TODO(), uiHost)
-			if err != nil {
-				s.Errorf("initializeConfigurations: " + err.Error())
-			}
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+			BROKER_HOST = "localhost"
 		} else {
-			UI_HOST = uiHost.Value
+			BROKER_HOST = "memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
-		var restGWHost models.ConfigurationsStringValue
-		err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "rest_gw_host"}).Decode(&restGWHost)
+		brokerHost = models.ConfigurationsStringValue{
+			ID:    primitive.NewObjectID(),
+			Key:   "broker_host",
+			Value: BROKER_HOST,
+		}
+		_, err = configurationsCollection.InsertOne(context.TODO(), brokerHost)
 		if err != nil {
-			if err != mongo.ErrNoDocuments {
-				s.Errorf("initializeConfigurations: " + err.Error())
-			}
-			REST_GW_HOST = ""
-			restGWHost = models.ConfigurationsStringValue{
-				ID:    primitive.NewObjectID(),
-				Key:   "rest_gw_host",
-				Value: REST_GW_HOST,
-			}
-			_, err = configurationsCollection.InsertOne(context.TODO(), restGWHost)
-			if err != nil {
-				s.Errorf("initializeConfigurations: " + err.Error())
-			}
-		} else {
-			REST_GW_HOST = restGWHost.Value
+			s.Errorf("initializeConfigurations: " + err.Error())
 		}
+	} else {
+		BROKER_HOST = brokerHost.Value
+	}
+	var uiHost models.ConfigurationsStringValue
+	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "ui_host"}).Decode(&uiHost)
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+		UI_HOST = ""
+		uiHost = models.ConfigurationsStringValue{
+			ID:    primitive.NewObjectID(),
+			Key:   "ui_host",
+			Value: UI_HOST,
+		}
+		_, err = configurationsCollection.InsertOne(context.TODO(), uiHost)
+		if err != nil {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+	} else {
+		UI_HOST = uiHost.Value
+	}
+	var restGWHost models.ConfigurationsStringValue
+	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "rest_gw_host"}).Decode(&restGWHost)
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+			REST_GW_HOST = "localhost"
+		} else {
+			REST_GW_HOST = "memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		restGWHost = models.ConfigurationsStringValue{
+			ID:    primitive.NewObjectID(),
+			Key:   "rest_gw_host",
+			Value: REST_GW_HOST,
+		}
+		_, err = configurationsCollection.InsertOne(context.TODO(), restGWHost)
+		if err != nil {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+	} else {
+		REST_GW_HOST = restGWHost.Value
 	}
 }
 
@@ -204,8 +208,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 	brokerHost := strings.ToLower(body.BrokerHost)
 	if BROKER_HOST != brokerHost {
-		BROKER_HOST = brokerHost
-		err := editClusterCompHost("broker_host", BROKER_HOST)
+		err := editClusterCompHost("broker_host", brokerHost)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -215,8 +218,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 	uiHost := strings.ToLower(body.UiHost)
 	if UI_HOST != uiHost {
-		UI_HOST = uiHost
-		err := editClusterCompHost("ui_host", UI_HOST)
+		err := editClusterCompHost("ui_host", uiHost)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -226,8 +228,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 	restGWHost := strings.ToLower(body.RestGWHost)
 	if REST_GW_HOST != restGWHost {
-		REST_GW_HOST = restGWHost
-		err := editClusterCompHost("rest_gw_host", REST_GW_HOST)
+		err := editClusterCompHost("rest_gw_host", restGWHost)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

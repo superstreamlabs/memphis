@@ -81,15 +81,30 @@
                     label {
                         cursor: pointer;
                     }
-                    .host {
+                    .hosts {
+                        overflow: hidden;
+                        max-width: 300px;
+                        display: flex;
+                        align-items: center;
+                        .value {
+                            font-family: 'InterMedium';
+                            font-size: 13px;
+                        }
+                    }
+                    .ports {
+                        width: 115px;
+                        display: flex;
+                        align-items: center;
+                        .value {
+                            font-family: 'InterMedium';
+                            font-size: 13px;
+                        }
+                    }
+                    .comp-label {
                         color: #737373;
                         font-family: 'InterMedium';
                         font-size: 13px;
                         margin-right: 5px;
-                    }
-                    .value {
-                        font-family: 'InterMedium';
-                        font-size: 13px;
                     }
                 }
             }

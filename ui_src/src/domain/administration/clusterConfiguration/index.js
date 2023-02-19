@@ -47,6 +47,10 @@ function ClusterConfiguration() {
     const getConfigurationValue = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_CONFIGURATION);
+            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
+            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
+            localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
+            localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
             setOldValues(data);
             setFormFields(data);
             setIsLoading(false);
