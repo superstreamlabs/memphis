@@ -12,15 +12,15 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Input from '../../../../../components/Input';
 import SelectComponent from '../../../../../components/select';
 import { tieredStorageTimeValidator } from '../../../../../services/valueConvertor';
 
-function TieredInputRow({ title, desc, value, tsType, onChanges, img }) {
+function TieredInputRow({ title, desc, value, onChanges, img }) {
     const [inputValue, setInputValue] = useState(value);
     const tsTimeOptions = ['Seconds', 'Minutes'];
-    const [tsTimeType, setTsTimeType] = useState(tsType);
+    const [tsTimeType, setTsTimeType] = useState(tsTimeOptions[0]);
     const [error, setError] = useState('');
 
     const onChange = (newValue) => {
@@ -30,7 +30,7 @@ function TieredInputRow({ title, desc, value, tsType, onChanges, img }) {
         }
         let status = tieredStorageTimeValidator(val, tsTimeType);
         setError(status);
-        onChanges(Number(newValue), tsTimeType, status);
+        onChanges(val, status);
         setInputValue(Number(newValue));
     };
     const onChangeType = (type) => {
@@ -41,14 +41,8 @@ function TieredInputRow({ title, desc, value, tsType, onChanges, img }) {
         }
         let status = tieredStorageTimeValidator(val);
         setError(status);
-        onChanges(Number(inputValue), type, status);
+        onChanges(val, status);
     };
-    useEffect(() => {
-        setInputValue(value);
-    }, [value]);
-    useEffect(() => {
-        setTsTimeType(tsType);
-    }, [tsType]);
 
     return (
         <div className="configuration-list-container">
@@ -60,23 +54,24 @@ function TieredInputRow({ title, desc, value, tsType, onChanges, img }) {
                 </div>
             </div>
             <div className="input">
-                <Input
-                    className="input-box"
-                    value={inputValue}
-                    type="number"
-                    radiusType="semi-round"
-                    colorType="black"
-                    backgroundColorType="none"
-                    borderColorType="gray"
-                    height="40px"
-                    onChange={(e) => {
-                        onChange(e.target.value);
-                    }}
-                    width="14vw"
-                    minWidth="20px"
-                />
+                <div className="input-and-error">
+                    <Input
+                        value={inputValue}
+                        type="number"
+                        radiusType="semi-round"
+                        colorType="black"
+                        backgroundColorType="none"
+                        borderColorType="gray"
+                        height="40px"
+                        onChange={(e) => {
+                            onChange(e.target.value);
+                        }}
+                        width="14vw"
+                        minWidth="20px"
+                    />
+                    <div className="error">{error}</div>
+                </div>
                 <SelectComponent
-                    className="select-box"
                     colorType="black"
                     backgroundColorType="none"
                     fontFamily="Inter"
@@ -87,13 +82,11 @@ function TieredInputRow({ title, desc, value, tsType, onChanges, img }) {
                     options={tsTimeOptions}
                     value={tsTimeType}
                     onChange={(e) => {
-                        setTsTimeType(e);
                         onChangeType(e);
                     }}
                     width="14vw"
                     minWidth="20px"
                 />
-                <div className="error">{error}</div>
             </div>
         </div>
     );
