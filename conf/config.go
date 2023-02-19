@@ -21,6 +21,7 @@ import (
 type Configuration struct {
 	MEMPHIS_VERSION                string
 	DEV_ENV                        string
+	LOCAL_CLUSTER_ENV              bool
 	HTTP_PORT                      string
 	WS_PORT                        int
 	WS_TLS                         bool

@@ -300,6 +300,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Hosts:       hosts,
 			})
 		}
+	} else if configuration.LOCAL_CLUSTER_ENV {
+
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetClusterConfig()
