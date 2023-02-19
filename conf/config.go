@@ -63,7 +63,7 @@ type Configuration struct {
 
 func GetConfig() Configuration {
 	configuration := Configuration{}
-	if os.Getenv("DOCKER_ENV") != "" {
+	if os.Getenv("DOCKER_ENV") != "" || os.Getenv("LOCAL_CLUSTER_ENV") != "" {
 		gonfig.GetConf("./conf/docker-config.json", &configuration)
 	} else {
 		gonfig.GetConf("./conf/config.json", &configuration)

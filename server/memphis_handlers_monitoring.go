@@ -300,8 +300,213 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Hosts:       hosts,
 			})
 		}
-	} else if configuration.LOCAL_CLUSTER_ENV {
+	} else if configuration.LOCAL_CLUSTER_ENV { // TODO not fully supported - currently shows the current broker stats only
+		metricsEnabled = true
+		hosts = []string{"localhost"}
+		maxCpu := float64(runtime.GOMAXPROCS(0))
+		v, err := serv.Varz(nil)
+		if err != nil {
+			return components, metricsEnabled, err
+		}
+		var storageComp models.CompStats
+		memUsage := float64(0)
+		os := runtime.GOOS
+		storage_size := float64(0)
+		isWindows := false
+		switch os {
+		case "windows":
+			isWindows = true
+			storageComp = defaultStat // TODO: add support for windows
+		default:
+			storage_size, err = getUnixStorageSize()
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			storageComp = models.CompStats{
+				Total:      shortenFloat(storage_size),
+				Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
+				Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
+			}
+			memUsage, err = getUnixMemoryUsage()
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+		}
+		memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
+		cpuComps := []models.SysComponent{{
+			Name: "broker-0",
+			CPU: models.CompStats{
+				Total:      shortenFloat(maxCpu),
+				Current:    shortenFloat((v.CPU / 100) * maxCpu),
+				Percentage: int(math.Ceil(v.CPU)),
+			},
+			Memory: models.CompStats{
+				Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
+				Current:    shortenFloat(memUsage),
+				Percentage: int(math.Ceil(memPerc)),
+			},
+			Storage: storageComp,
+			Healthy: true,
+		}}
+		components = append(components, models.SystemComponents{
+			Name:        "memphis-cluster",
+			Components:  cpuComps,
+			Status:      checkCompStatus(cpuComps),
+			Ports:       []int{9000, 6666, 7770, 8222},
+			DesiredPods: 1,
+			ActualPods:  1,
+			Hosts:       hosts,
+		})
+		resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
+		healthy := false
+		restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
+		if err == nil {
+			healthy = true
+			var restGwMonitorInfo models.RestGwMonitoringResponse
+			defer resp.Body.Close()
+			err = json.NewDecoder(resp.Body).Decode(&restGwMonitorInfo)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			if !isWindows {
+				storageComp = models.CompStats{
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat((restGwMonitorInfo.Storage / 100) * storage_size),
+					Percentage: int(math.Ceil(float64(restGwMonitorInfo.Storage))),
+				}
+			}
+			restGwComps = []models.SysComponent{{
+				Name: "memphis-rest-gateway",
+				CPU: models.CompStats{
+					Total:      shortenFloat(maxCpu),
+					Current:    shortenFloat((restGwMonitorInfo.CPU / 100) * maxCpu),
+					Percentage: int(math.Ceil(restGwMonitorInfo.CPU)),
+				},
+				Memory: models.CompStats{
+					Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
+					Current:    shortenFloat((restGwMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
+					Percentage: int(math.Ceil(float64(restGwMonitorInfo.Memory))),
+				},
+				Storage: storageComp,
+				Healthy: healthy,
+			}}
+		}
+		actualRestGw := 1
+		if !healthy {
+			actualRestGw = 0
+		}
+		components = append(components, models.SystemComponents{
+			Name:        "memphis-rest-gateway",
+			Components:  restGwComps,
+			Status:      checkCompStatus(restGwComps),
+			Ports:       []int{4444},
+			DesiredPods: 1,
+			ActualPods:  actualRestGw,
+			Hosts:       hosts,
+		})
 
+		ctx := context.Background()
+		dockerCli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
+		if err != nil {
+			return components, metricsEnabled, err
+		}
+		containers, err := dockerCli.ContainerList(ctx, types.ContainerListOptions{})
+		if err != nil {
+			return components, metricsEnabled, err
+		}
+
+		for _, container := range containers {
+			containerName := container.Names[0]
+			if !strings.Contains(containerName, "memphis") {
+				continue
+			}
+			containerName = strings.TrimPrefix(containerName, "/")
+			if container.State != "running" {
+				comp := defaultSystemComp(containerName, false)
+				allComponents = append(allComponents, comp)
+				continue
+			}
+			containerStats, err := dockerCli.ContainerStats(ctx, container.ID, false)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			defer containerStats.Body.Close()
+
+			body, err := ioutil.ReadAll(containerStats.Body) // TODO replace ioutil
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			var dockerStats types.Stats
+			err = json.Unmarshal(body, &dockerStats)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			cpuLimit := float64(runtime.GOMAXPROCS(0))
+			cpuPercentage := math.Ceil((float64(dockerStats.CPUStats.CPUUsage.TotalUsage) / float64(dockerStats.CPUStats.SystemUsage)) * 100)
+			totalCpuUsage := (cpuPercentage / 100) * cpuLimit
+			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
+			memoryLimit := float64(dockerStats.MemoryStats.Limit)
+			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
+			storage_size, err := getUnixStorageSize()
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			cpuStat := models.CompStats{
+				Total:      shortenFloat(cpuLimit),
+				Current:    shortenFloat(totalCpuUsage),
+				Percentage: int(cpuPercentage),
+			}
+			memoryStat := models.CompStats{
+				Total:      shortenFloat(memoryLimit),
+				Current:    shortenFloat(totalMemoryUsage),
+				Percentage: int(memoryPercentage),
+			}
+			storageStat := defaultStat
+			dockerPorts := []int{}
+			if strings.Contains(containerName, "mongo") {
+				dbStorageSize, totalSize, err := getDbStorageSize()
+				if err != nil {
+					return components, metricsEnabled, err
+				}
+				storageStat = models.CompStats{
+					Total:      shortenFloat(totalSize),
+					Current:    shortenFloat(dbStorageSize),
+					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
+				}
+
+			} else if strings.Contains(containerName, "cluster") {
+				v, err := serv.Varz(nil)
+				if err != nil {
+					return components, metricsEnabled, err
+				}
+				storageStat = models.CompStats{
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
+					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
+				}
+			}
+			for _, port := range container.Ports {
+				if int(port.PublicPort) != 0 {
+					dockerPorts = append(dockerPorts, int(port.PublicPort))
+				}
+			}
+			comps := []models.SysComponent{{
+				Name:    containerName,
+				CPU:     cpuStat,
+				Memory:  memoryStat,
+				Storage: storageStat,
+				Healthy: true,
+			}}
+			components = append(components, models.SystemComponents{
+				Name:        containerName,
+				Components:  comps,
+				Status:      checkCompStatus(comps),
+				Ports:       dockerPorts,
+				DesiredPods: 1,
+				ActualPods:  1,
+				Hosts:       hosts,
+			})
+		}
 	} else { // k8s env
 		if clientset == nil {
 			err := clientSetClusterConfig()
@@ -708,7 +913,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		return
 	}
 	k8sEnv := true
-	if configuration.DOCKER_ENV == "true" {
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
 		k8sEnv = false
 	}
 	brokersThroughputs, err := mh.GetBrokersThroughputs()
