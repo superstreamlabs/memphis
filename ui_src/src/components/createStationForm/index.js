@@ -31,8 +31,7 @@ import Button from '../button';
 import Input from '../Input';
 import OverflowTip from '../tooltip/overflowtip';
 import Modal from '../modal';
-import S3Integration from '../../domain/preferences/integrations/components/s3Integration';
-
+import S3Integration from '../../domain/administration/integrations/components/s3Integration';
 const retanionOptions = [
     {
         id: 1,
