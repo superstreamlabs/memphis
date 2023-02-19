@@ -173,20 +173,21 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 
 	return s.
 		memphisAddStream(&StreamConfig{
-			Name:         sn.Intern(),
-			Subjects:     []string{sn.Intern() + ".>"},
-			Retention:    LimitsPolicy,
-			MaxConsumers: -1,
-			MaxMsgs:      int64(maxMsgs),
-			MaxBytes:     int64(maxBytes),
-			Discard:      DiscardOld,
-			MaxAge:       maxAge,
-			MaxMsgsPer:   -1,
-			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
-			Storage:      storage,
-			Replicas:     station.Replicas,
-			NoAck:        false,
-			Duplicates:   idempotencyWindow,
+			Name:                 sn.Intern(),
+			Subjects:             []string{sn.Intern() + ".>"},
+			Retention:            LimitsPolicy,
+			MaxConsumers:         -1,
+			MaxMsgs:              int64(maxMsgs),
+			MaxBytes:             int64(maxBytes),
+			Discard:              DiscardOld,
+			MaxAge:               maxAge,
+			MaxMsgsPer:           -1,
+			MaxMsgSize:           int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:              storage,
+			Replicas:             station.Replicas,
+			NoAck:                false,
+			Duplicates:           idempotencyWindow,
+			TieredStorageEnabled: station.TieredStorageEnabled,
 		})
 }
 
