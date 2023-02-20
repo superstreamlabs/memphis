@@ -65,7 +65,6 @@ const LogsWrapper = () => {
                     setSeqNum(message_seq);
                     setLogs((users) => [...users, ...data.logs]);
                 }
-                setLoader(false);
             }
             if (changed && data.logs) {
                 setLastMgsSeq(data.logs[0].message_seq);
@@ -76,15 +75,16 @@ const LogsWrapper = () => {
                 setLogs(data.logs);
                 setStopLoad(false);
                 startListen();
-                setLoader(false);
             }
             if (changed && data.logs === null) {
                 setLogs([]);
                 setDisplayedLog({});
                 await Sleep(1);
-                setLoader(false);
             }
-        } catch (error) {}
+            setLoader(false);
+        } catch (error) {
+            setLoader(false);
+        }
     };
 
     const loadMore = useCallback(() => {

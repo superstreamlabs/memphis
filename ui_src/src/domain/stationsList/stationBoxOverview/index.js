@@ -27,15 +27,13 @@ import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
-import YellowHealth from '../../../assets/images/yellowHealth.svg';
+import remoteStorage from '../../../assets/images/remoteStorage.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
-import GreenHealth from '../../../assets/images/greenHealth.svg';
 import { parsingDate } from '../../../services/valueConvertor';
 import CheckboxComponent from '../../../components/checkBox';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
 import pathDomains from '../../../router';
-import HealthyBadge from '../../../components/healthyBadge';
 
 const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     const [retentionValue, setRetentionValue] = useState('');
@@ -101,36 +99,50 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                     </div>
                     <div className="right-section">
                         <div className="station-meta">
-                            <img src={retentionIcon} alt="retention" />
-                            <label className="data-labels retention">Retention</label>
+                            <div className="header">
+                                <img src={retentionIcon} alt="retention" />
+                                <label className="data-labels retention">Retention</label>
+                            </div>
                             <OverflowTip className="data-info" text={retentionValue} width={'90px'}>
                                 {retentionValue}
                             </OverflowTip>
                         </div>
                         <div className="station-meta">
-                            <img src={storageIcon} alt="storage" />
-                            <label className="data-labels storage">Local storage</label>
+                            <div className="header">
+                                <img src={storageIcon} alt="storage" />
+                                <label className="data-labels storage">Local storage</label>
+                            </div>
+
                             <p className="data-info">{station?.station?.storage_type}</p>
                         </div>
                         <div className="station-meta">
-                            <img src={storageIcon} alt="storage" />
-                            <label className="data-labels storage">Remote storage</label>
-                            <p className="data-info">{station?.station?.tiered_storage_enabled ? 'S3' : 'None'}</p>
+                            <div className="header">
+                                <img src={remoteStorage} alt="remoteStorage" />
+                                <label className="data-labels storage">Remote storage</label>
+                            </div>
+
+                            <p className="data-info">{station?.station?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}</p>
                         </div>
                         <div className="station-meta">
-                            <img src={replicasIcon} alt="replicas" />
-                            <label className="data-labels replicas">Replicas</label>
+                            <div className="header">
+                                <img src={replicasIcon} alt="replicas" />
+                                <label className="data-labels replicas">Replicas</label>
+                            </div>
+
                             <p className="data-info">{station?.station?.replicas}</p>
                         </div>
                         <div className="station-meta">
-                            <img src={totalMsgIcon} alt="total messages" />
-                            <label className="data-labels total">Total messages</label>
+                            <div className="header">
+                                <img src={totalMsgIcon} alt="total messages" />
+                                <label className="data-labels total">Total messages</label>
+                            </div>
+
                             <p className="data-info">
                                 {station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : numberWithCommas(station?.total_messages)}
                             </p>
                         </div>
                         <div className="station-meta poison">
-                            <div>
+                            <div className="header">
                                 <img src={poisonMsgIcon} alt="poison messages" />
                                 <label className="data-labels">Status</label>
                             </div>
