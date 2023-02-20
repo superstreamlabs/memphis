@@ -44,7 +44,17 @@
             min-width: 80%;
             align-self: center;
             color: #EFEEF2;
-        
+            display: flex;
+            position: relative;
+            align-items: center;
+            justify-content: center;
+            .ant-divider-inner-text{
+                position: absolute;
+                button{
+                   background-color: #f5f6f8 !important;
+                   z-index: 2;
+                }
+            }
         }
         .getstarted-message-container {
             height: 80px;
