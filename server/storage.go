@@ -52,25 +52,31 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 		streamName = memStore.cfg.Name
 	}
 
-	msgId := map[string]string{}
-	seqNumber := strconv.Itoa(int(seq))
-	msgId["msg-id"] = streamName + seqNumber
+	for k := range StorageFunctionsMap {
+		switch k {
+		case "s3":
+			_, ok := IntegrationsCache["s3"].(models.Integration)
+			if ok {
+				msgId := map[string]string{}
+				seqNumber := strconv.Itoa(int(seq))
+				msgId["msg-id"] = streamName + seqNumber
+				subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
+				// TODO: if the stream is not exists save the messages in buffer
+				if TIERED_STORAGE_STREAM_CREATED {
+					tierStorageMsg := TieredStorageMsg{
+						Buf:         buf,
+						StationName: streamName,
+					}
 
-	_, ok := StorageFunctionsMap[tierStorageType]
-	if ok {
-		subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
-		// TODO: if the stream is not exists save the messages in buffer
-		if TIERED_STORAGE_STREAM_CREATED {
-			tierStorageMsg := TieredStorageMsg{
-				Buf:         buf,
-				StationName: streamName,
+					msg, err := json.Marshal(tierStorageMsg)
+					if err != nil {
+						return err
+					}
+					s.sendInternalAccountMsgWithHeaders(s.GlobalAccount(), subject, msg, msgId)
+				}
 			}
-
-			msg, err := json.Marshal(tierStorageMsg)
-			if err != nil {
-				return err
-			}
-			s.sendInternalAccountMsgWithHeaders(s.GlobalAccount(), subject, msg, msgId)
+		default:
+			return errors.New("Failed send to tiered storage : unsupported integration")
 		}
 	}
 	return nil
