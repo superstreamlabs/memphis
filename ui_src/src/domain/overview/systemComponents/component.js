@@ -61,7 +61,7 @@ const Component = ({ comp, i }) => {
                         <>
                             <div className="hosts">
                                 <label className="comp-label">Hosts</label>
-                                <OverflowTip maxWidth="165px" text={comp?.hosts[0]}>
+                                <OverflowTip maxWidth="9vw" text={comp?.hosts[0]}>
                                     <label className="value">{comp?.hosts[0]}</label>
                                 </OverflowTip>
                                 {comp?.hosts?.length > 1 && (
