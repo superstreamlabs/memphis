@@ -129,7 +129,11 @@ func (s *Server) initializeConfigurations() {
 		if err != mongo.ErrNoDocuments {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		UI_HOST = ""
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+			UI_HOST = "http://localhost:9000"
+		} else {
+			UI_HOST = "http://memphis-cluster." + configuration.K8S_NAMESPACE + ".svc.cluster.local:9000"
+		}
 		uiHost = models.ConfigurationsStringValue{
 			ID:    primitive.NewObjectID(),
 			Key:   "ui_host",
@@ -149,9 +153,9 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			REST_GW_HOST = "localhost"
+			REST_GW_HOST = "http://localhost:4444"
 		} else {
-			REST_GW_HOST = "memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local:4444"
 		}
 		restGWHost = models.ConfigurationsStringValue{
 			ID:    primitive.NewObjectID(),
@@ -171,7 +175,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return
 	}
-	
+
 	var body models.EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
