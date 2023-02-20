@@ -45,8 +45,8 @@ Memphis enables the building of modern queue-based applications that require<br>
 large volumes of streamed and enriched data, modern protocols, zero ops, rapid development,<br>
 extreme cost reduction, and a significantly lower amount of dev time for data-oriented developers and data engineers.
 
-## ⭐️ Why
-When your application requires a message broker or a queue for various reasons,<br>
+## 🫣 A world without Memphis
+When your application requires a message broker or a queue,<br>
 Implementing one will require you to -
 - Build a dead-letter queue
 - Create observability
@@ -60,28 +60,14 @@ Implementing one will require you to -
 - Create config alignment between production to a dev environment
 - Spent weeks and months learning the internals through archival documentation, ebooks, and courses
 - Onboard your developers<br>
-And the list continues...
+And the list continues...<br>
+
+**Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-**Or, you can just use [Memphis](https://memphis.dev)** broker and focus your resources on tasks that matter
-
-
-## 👉 Use-cases
-- Async task management
-- Real-time streaming pipelines
-- Data ingestion
-- Cloud Messaging
-  - Services (microservices, service mesh)
-  - Event/Data Streaming (observability, analytics, ML/AI)
-- Queuing
-- N:N communication patterns
-- Ingest Grafana Loki logs at scale
-
-## ✨ Features
+## ✨ Features [v0.4.5](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.5-beta)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
-
-**[v0.4.5](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.5-beta)**
 
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Production-ready message broker in under 3 minutes<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Easy-to-use UI, CLI, and SDKs<br>
@@ -94,8 +80,6 @@ And the list continues...
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Community driven<br>
 
 ## 🚀 Getting Started
-[Sandbox](https://sandbox.memphis.dev)<br>
-[Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 Helm for Kubernetes☸
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ --force-update && \
@@ -111,10 +95,9 @@ docker compose -f docker-compose.yml -p memphis up
 <a href="https://youtu.be/-5YmxYRQsdw"><img align="center" alt="connect your first app" src="https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg"></a>
 </p>
 
-<p align="center">
-<a href="https://medium.com/memphis-dev/how-to-build-your-own-wolt-app-b220d738bb71"> Build an event-driven food delivery app </a>
-
-</p>
+[Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials)<br>
+[Sandbox](https://sandbox.memphis.dev)<br>
+[Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 
 ## High-Level Architecture
 
@@ -148,14 +131,17 @@ Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer
 Dashboard/CLI: http://localhost:9000
 Broker: localhost:6666
 ```
-## Beta
-Memphis{dev} is currently in Beta version. This means that we are still working on essential features like real-time messages tracing, schema registry and inline processing as well as making more SDKs and supporting materials.
 
-How does it affect you? Well... mostly it doesn't.<br>
-(a) The core of memphis broker is highly stable<br>
-(b) We learn and fix fast<br><br>
-But we need your love, and any help we can get by stars, PR, feedback, issues, and enhancements.<br>
-Read more on [Memphis{dev} Documentation 📃](https://memphis.dev/docs).
+## 👉 Use-cases
+- Async task management
+- Real-time streaming pipelines
+- Data ingestion
+- Cloud Messaging
+  - Services (microservices, service mesh)
+  - Event/Data Streaming (observability, analytics, ML/AI)
+- Queuing
+- N:N communication patterns
+- Ingest Grafana Loki logs at scale
 
 ## Support 🙋‍♂️🤝
 
