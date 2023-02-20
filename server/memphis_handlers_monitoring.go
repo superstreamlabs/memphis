@@ -1404,6 +1404,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	_, ok = IntegrationsCache["s3"].(models.Integration)
+	if !ok {
+		station.TieredStorageEnabled = false
+	}
 	var emptySchemaDetailsObj models.SchemaDetails
 	var response gin.H
 
