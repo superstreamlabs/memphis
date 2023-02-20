@@ -297,23 +297,24 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	newStation := models.Station{
-		ID:                primitive.NewObjectID(),
-		Name:              stationName.Ext(),
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
-		IsDeleted:         false,
-		RetentionType:     retentionType,
-		RetentionValue:    retentionValue,
-		StorageType:       storageType,
-		Replicas:          replicas,
-		DedupEnabled:      csr.DedupEnabled,      // TODO deprecated
-		DedupWindowInMs:   csr.DedupWindowMillis, // TODO deprecated
-		LastUpdate:        time.Now(),
-		Schema:            schemaDetails,
-		Functions:         []models.Function{},
-		IdempotencyWindow: csr.IdempotencyWindow,
-		IsNative:          isNative,
-		DlsConfiguration:  csr.DlsConfiguration,
+		ID:                   primitive.NewObjectID(),
+		Name:                 stationName.Ext(),
+		CreatedByUser:        username,
+		CreationDate:         time.Now(),
+		IsDeleted:            false,
+		RetentionType:        retentionType,
+		RetentionValue:       retentionValue,
+		StorageType:          storageType,
+		Replicas:             replicas,
+		DedupEnabled:         csr.DedupEnabled,      // TODO deprecated
+		DedupWindowInMs:      csr.DedupWindowMillis, // TODO deprecated
+		LastUpdate:           time.Now(),
+		Schema:               schemaDetails,
+		Functions:            []models.Function{},
+		IdempotencyWindow:    csr.IdempotencyWindow,
+		IsNative:             isNative,
+		DlsConfiguration:     csr.DlsConfiguration,
+		TieredStorageEnabled: csr.TieredStorageEnabled,
 	}
 
 	if shouldCreateStream {
@@ -519,7 +520,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 		}}}}},
 		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
 		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
 	})
 	if err != nil {
 		return stations, totalMessages, totalDlsMessages, err
@@ -752,23 +753,24 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	newStation := models.Station{
-		ID:                primitive.NewObjectID(),
-		Name:              stationName.Ext(),
-		RetentionType:     retentionType,
-		RetentionValue:    body.RetentionValue,
-		StorageType:       body.StorageType,
-		Replicas:          body.Replicas,
-		DedupEnabled:      body.DedupEnabled,    // TODO deprecated
-		DedupWindowInMs:   body.DedupWindowInMs, // TODO deprecated
-		CreatedByUser:     user.Username,
-		CreationDate:      time.Now(),
-		LastUpdate:        time.Now(),
-		Functions:         []models.Function{},
-		IsDeleted:         false,
-		Schema:            schemaDetails,
-		IdempotencyWindow: body.IdempotencyWindow,
-		DlsConfiguration:  body.DlsConfiguration,
-		IsNative:          true,
+		ID:                   primitive.NewObjectID(),
+		Name:                 stationName.Ext(),
+		RetentionType:        retentionType,
+		RetentionValue:       body.RetentionValue,
+		StorageType:          body.StorageType,
+		Replicas:             body.Replicas,
+		DedupEnabled:         body.DedupEnabled,    // TODO deprecated
+		DedupWindowInMs:      body.DedupWindowInMs, // TODO deprecated
+		CreatedByUser:        user.Username,
+		CreationDate:         time.Now(),
+		LastUpdate:           time.Now(),
+		Functions:            []models.Function{},
+		IsDeleted:            false,
+		Schema:               schemaDetails,
+		IdempotencyWindow:    body.IdempotencyWindow,
+		DlsConfiguration:     body.DlsConfiguration,
+		IsNative:             true,
+		TieredStorageEnabled: body.TieredStorageEnabled,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -812,6 +814,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
 				"is_native":                newStation.IsNative,
+				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 			},
 		}
 	} else {
@@ -832,6 +835,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
 				"is_native":                newStation.IsNative,
+				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 			},
 		}
 	}
@@ -903,6 +907,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"schema":                   schemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			"dls_configuration":        newStation.DlsConfiguration,
+			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
@@ -922,6 +927,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"schema":                   emptySchemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
 			"dls_configuration":        newStation.DlsConfiguration,
+			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})
 	}
 }

@@ -43,6 +43,9 @@
         }
         .content {
             padding: 10px;
+            background: white;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
             .description {
                 font-size: 13px;
                 color: #A9A9A9;
@@ -75,7 +78,6 @@
             font-family: 'InterMedium';
             font-size: 16px;
             margin-bottom: 12px;
-            cursor: pointer;
 
             svg {
                 width: 18px;
@@ -91,6 +93,7 @@
             .option-content {
                 display: flex;
                 flex-direction: column;
+                width: 320px;
                 p {
                     color: #101828;
                     line-height: 14px;
@@ -103,8 +106,12 @@
                 }
             }
         }
-        .option-wrapper:hover {
+        .allowed:hover {
+            cursor: pointer;
             border-color: var(--purple) !important;
+        }
+        .not-allowed{
+            cursor: not-allowed !important;
         }
         .selected {
             background: rgba(101, 87, 255, 0.1);

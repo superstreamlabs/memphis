@@ -37,25 +37,26 @@ import (
 // StreamConfig will determine the name, subjects and retention policy
 // for a given stream. If subjects is empty the name will be used.
 type StreamConfig struct {
-	Name         string          `json:"name"`
-	Description  string          `json:"description,omitempty"`
-	Subjects     []string        `json:"subjects,omitempty"`
-	Retention    RetentionPolicy `json:"retention"`
-	MaxConsumers int             `json:"max_consumers"`
-	MaxMsgs      int64           `json:"max_msgs"`
-	MaxBytes     int64           `json:"max_bytes"`
-	MaxAge       time.Duration   `json:"max_age"`
-	MaxMsgsPer   int64           `json:"max_msgs_per_subject"`
-	MaxMsgSize   int32           `json:"max_msg_size,omitempty"`
-	Discard      DiscardPolicy   `json:"discard"`
-	Storage      StorageType     `json:"storage"`
-	Replicas     int             `json:"num_replicas"`
-	NoAck        bool            `json:"no_ack,omitempty"`
-	Template     string          `json:"template_owner,omitempty"`
-	Duplicates   time.Duration   `json:"duplicate_window,omitempty"`
-	Placement    *Placement      `json:"placement,omitempty"`
-	Mirror       *StreamSource   `json:"mirror,omitempty"`
-	Sources      []*StreamSource `json:"sources,omitempty"`
+	Name                 string          `json:"name"`
+	Description          string          `json:"description,omitempty"`
+	Subjects             []string        `json:"subjects,omitempty"`
+	Retention            RetentionPolicy `json:"retention"`
+	MaxConsumers         int             `json:"max_consumers"`
+	MaxMsgs              int64           `json:"max_msgs"`
+	MaxBytes             int64           `json:"max_bytes"`
+	MaxAge               time.Duration   `json:"max_age"`
+	MaxMsgsPer           int64           `json:"max_msgs_per_subject"`
+	MaxMsgSize           int32           `json:"max_msg_size,omitempty"`
+	Discard              DiscardPolicy   `json:"discard"`
+	Storage              StorageType     `json:"storage"`
+	Replicas             int             `json:"num_replicas"`
+	NoAck                bool            `json:"no_ack,omitempty"`
+	Template             string          `json:"template_owner,omitempty"`
+	Duplicates           time.Duration   `json:"duplicate_window,omitempty"`
+	Placement            *Placement      `json:"placement,omitempty"`
+	Mirror               *StreamSource   `json:"mirror,omitempty"`
+	Sources              []*StreamSource `json:"sources,omitempty"`
+	TieredStorageEnabled bool            `json:"tiered_storage_enabled"`
 
 	// Allow republish of the message after being sequenced and stored.
 	RePublish *RePublish `json:"republish,omitempty"`

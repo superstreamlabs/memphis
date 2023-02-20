@@ -337,7 +337,7 @@ func (s *Server) uploadToS3Storage() error {
 		for k, msgs := range tieredStorageMsgsMap.m {
 			var messages []Msg
 			for _, msg := range msgs {
-				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ")"
+				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
 
 				var headers string
 				hdrs := map[string]string{}

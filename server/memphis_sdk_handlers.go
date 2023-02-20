@@ -25,17 +25,18 @@ type memphisResponse interface {
 }
 
 type createStationRequest struct {
-	StationName       string                  `json:"name"`
-	SchemaName        string                  `json:"schema_name"`
-	RetentionType     string                  `json:"retention_type"`
-	RetentionValue    int                     `json:"retention_value"`
-	StorageType       string                  `json:"storage_type"`
-	Replicas          int                     `json:"replicas"`
-	DedupEnabled      bool                    `json:"dedup_enabled"`      // TODO deprecated
-	DedupWindowMillis int                     `json:"dedup_window_in_ms"` // TODO deprecated
-	IdempotencyWindow int64                   `json:"idempotency_window_in_ms"`
-	DlsConfiguration  models.DlsConfiguration `json:"dls_configuration"`
-	Username          string                  `json:"username"`
+	StationName          string                  `json:"name"`
+	SchemaName           string                  `json:"schema_name"`
+	RetentionType        string                  `json:"retention_type"`
+	RetentionValue       int                     `json:"retention_value"`
+	StorageType          string                  `json:"storage_type"`
+	Replicas             int                     `json:"replicas"`
+	DedupEnabled         bool                    `json:"dedup_enabled"`      // TODO deprecated
+	DedupWindowMillis    int                     `json:"dedup_window_in_ms"` // TODO deprecated
+	IdempotencyWindow    int64                   `json:"idempotency_window_in_ms"`
+	DlsConfiguration     models.DlsConfiguration `json:"dls_configuration"`
+	Username             string                  `json:"username"`
+	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
 }
 
 type destroyStationRequest struct {
@@ -78,14 +79,14 @@ type destroyProducerRequest struct {
 }
 
 type createConsumerRequestV0 struct {
-	Name                     string `json:"name"`
-	StationName              string `json:"station_name"`
-	ConnectionId             string `json:"connection_id"`
-	ConsumerType             string `json:"consumer_type"`
-	ConsumerGroup            string `json:"consumers_group"`
-	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
-	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
-	Username                 string `json:"username"`
+	Name             string `json:"name"`
+	StationName      string `json:"station_name"`
+	ConnectionId     string `json:"connection_id"`
+	ConsumerType     string `json:"consumer_type"`
+	ConsumerGroup    string `json:"consumers_group"`
+	MaxAckTimeMillis int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+	Username         string `json:"username"`
 }
 
 type createConsumerRequestV1 struct {

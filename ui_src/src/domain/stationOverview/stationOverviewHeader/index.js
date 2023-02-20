@@ -150,9 +150,14 @@ const StationOverviewHeader = () => {
                         <p>
                             <b>Replicas:</b> {stationState?.stationMetaData?.replicas}
                         </p>
-                        <p>
-                            <b>Storage Type:</b> {stationState?.stationMetaData?.storage_type}
-                        </p>
+                        <div className="storage-section">
+                            <p>
+                                <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
+                            </p>
+                            <p>
+                                <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : 'None'}
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <div className="icons-wrapper">
