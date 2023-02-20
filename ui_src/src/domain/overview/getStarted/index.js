@@ -91,6 +91,34 @@ const GetStarted = ({ username, dataSentence }) => {
     const [open, modalFlip] = useState(false);
     const history = useHistory();
     const createStationFormRef = useRef(null);
+    const [targetLocation, setTargetLocation] = useState(null);
+    const [displayGetStarted, setDisplayGetStarted] = useState(true);
+
+    useEffect(() => {
+        if (!displayGetStarted && targetLocation !== null) {
+            history.push(targetLocation);
+            setTargetLocation(null);
+        }
+    }, [displayGetStarted, targetLocation, history]);
+
+    useEffect(() => {
+        const unblock = history.block((location) => {
+            if (displayGetStarted) {
+                modalFlip(true);
+                setTargetLocation(location.pathname);
+                return false;
+            }
+        });
+        return () => {
+            unblock();
+        };
+    }, [displayGetStarted, history]);
+
+    const handleConfirm = () => {
+        modalFlip(false);
+        setDisplayGetStarted(false);
+        history.push(targetLocation);
+    };
 
     const getStepsDescription = (stepNumber) => {
         switch (stepNumber) {
@@ -263,9 +291,7 @@ const GetStarted = ({ username, dataSentence }) => {
                 cancel={() => {
                     modalFlip(false);
                 }}
-                skip={() => {
-                    modalFlip(false);
-                }}
+                skip={handleConfirm}
             />
         </GetStartedStoreContext.Provider>
     );
