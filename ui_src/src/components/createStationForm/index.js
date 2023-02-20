@@ -32,6 +32,7 @@ import Input from '../Input';
 import OverflowTip from '../tooltip/overflowtip';
 import Modal from '../modal';
 import S3Integration from '../../domain/administration/integrations/components/s3Integration';
+
 const retanionOptions = [
     {
         id: 1,
@@ -102,7 +103,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     }, []);
 
     const getRetentionValue = (formFields) => {
-        switch (formFields.retention_type) {
+        switch (formFields.retention_type || retentionType) {
             case 'message_age_sec':
                 return convertDateToSeconds(formFields.days, formFields.hours, formFields.minutes, formFields.seconds);
             case 'messages':
@@ -131,7 +132,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
             name: generateName(formFields.station_name),
-            retention_type: formFields.retention_type,
+            retention_type: formFields.retention_type || retentionType,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
             replicas: Number(formFields.replicas),
@@ -376,7 +377,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
                 </div>
             </div>
-            <div className={'right-side'}>
+            <div className="right-side">
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />
                 <div className="retention-storage-box">
                     <div className="header">
@@ -397,130 +398,124 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 Once a message passes the 1st storage tier, it will automatically be migrated to the 2nd storage tier, if defined.&nbsp;
                             </p>
                         )}
-
-                        {tabValue === tabs[0] && (
-                            <div className="retention-type-section">
-                                <Form.Item
-                                    name="retention_type"
-                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : 'message_age_sec'}
-                                >
-                                    <RadioButton
-                                        className="radio-button"
-                                        options={retanionOptions}
-                                        radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}
-                                        optionType="button"
-                                        fontFamily="InterSemiBold"
-                                        style={{ marginRight: '20px', content: '' }}
-                                        onChange={(e) => {
-                                            setRetentionType(e.target.value);
-                                            if (getStarted) updateFormState('retention_type', e.target.value);
-                                        }}
-                                        disabled={!allowEdit}
-                                    />
-                                </Form.Item>
-                                {retentionType === 'message_age_sec' && (
-                                    <div className="time-value">
-                                        <div className="days-section">
-                                            <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
-                                                <InputNumberComponent
-                                                    min={0}
-                                                    max={1000}
-                                                    onChange={(e) => getStarted && updateFormState('days', e)}
-                                                    value={getStartedStateRef?.formFieldsCreateStation?.days}
-                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
-                                                    disabled={!allowEdit}
-                                                />
-                                            </Form.Item>
-                                            <p>days</p>
-                                        </div>
-                                        <p className="separator">:</p>
-                                        <div className="hours-section">
-                                            <Form.Item name="hours" initialValue={getStartedStateRef?.formFieldsCreateStation?.hours || 0}>
-                                                <InputNumberComponent
-                                                    min={0}
-                                                    max={24}
-                                                    onChange={(e) => getStarted && updateFormState('hours', e)}
-                                                    value={getStartedStateRef?.formFieldsCreateStation?.hours}
-                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.hours || 0}
-                                                    disabled={!allowEdit}
-                                                />
-                                            </Form.Item>
-                                            <p>hours</p>
-                                        </div>
-                                        <p className="separator">:</p>
-                                        <div className="minutes-section">
-                                            <Form.Item name="minutes" initialValue={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}>
-                                                <InputNumberComponent
-                                                    min={0}
-                                                    max={60}
-                                                    onChange={(e) => getStarted && updateFormState('minutes', e)}
-                                                    value={getStartedStateRef?.formFieldsCreateStation?.minutes}
-                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}
-                                                    disabled={!allowEdit}
-                                                />
-                                            </Form.Item>
-                                            <p>minutes</p>
-                                        </div>
-                                        <p className="separator">:</p>
-                                        <div className="seconds-section">
-                                            <Form.Item name="seconds" initialValue={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}>
-                                                <InputNumberComponent
-                                                    min={0}
-                                                    max={60}
-                                                    onChange={(e) => getStarted && updateFormState('seconds', e)}
-                                                    placeholder={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}
-                                                    value={getStartedStateRef?.formFieldsCreateStation?.seconds}
-                                                    disabled={!allowEdit}
-                                                />
-                                            </Form.Item>
-                                            <p>seconds</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {retentionType === 'bytes' && (
-                                    <div className="retention-type">
-                                        <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
-                                            <Input
-                                                placeholder="Type"
-                                                type="number"
-                                                radiusType="semi-round"
-                                                colorType="black"
-                                                backgroundColorType="none"
-                                                borderColorType="gray"
-                                                width="90px"
-                                                height="38px"
-                                                onBlur={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
-                                                onChange={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
-                                                value={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue}
+                        <div className="retention-type-section" style={{ display: tabValue === tabs[0] ? 'block' : 'none' }}>
+                            <Form.Item name="retention_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}>
+                                <RadioButton
+                                    className="radio-button"
+                                    options={retanionOptions}
+                                    radioValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}
+                                    optionType="button"
+                                    fontFamily="InterSemiBold"
+                                    style={{ marginRight: '20px', content: '' }}
+                                    onChange={(e) => {
+                                        setRetentionType(e.target.value);
+                                        if (getStarted) updateFormState('retention_type', e.target.value);
+                                    }}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                            {retentionType === 'message_age_sec' && (
+                                <div className="time-value">
+                                    <div className="days-section">
+                                        <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
+                                            <InputNumberComponent
+                                                min={0}
+                                                max={1000}
+                                                onChange={(e) => getStarted && updateFormState('days', e)}
+                                                value={getStartedStateRef?.formFieldsCreateStation?.days}
+                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
                                                 disabled={!allowEdit}
                                             />
                                         </Form.Item>
-                                        <p>bytes</p>
+                                        <p>days</p>
                                     </div>
-                                )}
-                                {retentionType === 'messages' && (
-                                    <div className="retention-type">
-                                        <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
-                                            <Input
-                                                placeholder="Type"
-                                                type="number"
-                                                radiusType="semi-round"
-                                                colorType="black"
-                                                backgroundColorType="none"
-                                                borderColorType="gray"
-                                                width="90px"
-                                                height="38px"
-                                                onBlur={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
-                                                onChange={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
-                                                value={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue}
+                                    <p className="separator">:</p>
+                                    <div className="hours-section">
+                                        <Form.Item name="hours" initialValue={getStartedStateRef?.formFieldsCreateStation?.hours || 0}>
+                                            <InputNumberComponent
+                                                min={0}
+                                                max={24}
+                                                onChange={(e) => getStarted && updateFormState('hours', e)}
+                                                value={getStartedStateRef?.formFieldsCreateStation?.hours}
+                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.hours || 0}
                                                 disabled={!allowEdit}
                                             />
                                         </Form.Item>
-                                        <p>messages</p>
+                                        <p>hours</p>
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                    <p className="separator">:</p>
+                                    <div className="minutes-section">
+                                        <Form.Item name="minutes" initialValue={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}>
+                                            <InputNumberComponent
+                                                min={0}
+                                                max={60}
+                                                onChange={(e) => getStarted && updateFormState('minutes', e)}
+                                                value={getStartedStateRef?.formFieldsCreateStation?.minutes}
+                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.minutes || 0}
+                                                disabled={!allowEdit}
+                                            />
+                                        </Form.Item>
+                                        <p>minutes</p>
+                                    </div>
+                                    <p className="separator">:</p>
+                                    <div className="seconds-section">
+                                        <Form.Item name="seconds" initialValue={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}>
+                                            <InputNumberComponent
+                                                min={0}
+                                                max={60}
+                                                onChange={(e) => getStarted && updateFormState('seconds', e)}
+                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.seconds || 0}
+                                                value={getStartedStateRef?.formFieldsCreateStation?.seconds}
+                                                disabled={!allowEdit}
+                                            />
+                                        </Form.Item>
+                                        <p>seconds</p>
+                                    </div>
+                                </div>
+                            )}
+                            {retentionType === 'bytes' && (
+                                <div className="retention-type">
+                                    <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
+                                        <Input
+                                            placeholder="Type"
+                                            type="number"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            width="90px"
+                                            height="38px"
+                                            onBlur={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
+                                            onChange={(e) => getStarted && updateFormState('retentionSizeValue', e.target.value)}
+                                            value={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue}
+                                            disabled={!allowEdit}
+                                        />
+                                    </Form.Item>
+                                    <p>bytes</p>
+                                </div>
+                            )}
+                            {retentionType === 'messages' && (
+                                <div className="retention-type">
+                                    <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
+                                        <Input
+                                            placeholder="Type"
+                                            type="number"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            width="90px"
+                                            height="38px"
+                                            onBlur={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
+                                            onChange={(e) => getStarted && updateFormState('retentionMessagesValue', e.target.value)}
+                                            value={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue}
+                                            disabled={!allowEdit}
+                                        />
+                                    </Form.Item>
+                                    <p>messages</p>
+                                </div>
+                            )}
+                        </div>
                         <div className="storage-container">
                             <TitleComponent
                                 headerTitle="Storage type"
@@ -570,14 +565,24 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         );
                                     })}
                             </Form.Item>
-                            {tabValue === tabs[1] && (
-                                <Form.Item
-                                    name="tiered_storage_enabled"
-                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : ''}
-                                >
-                                    {storageTierTwoOptions.map((value) => {
+                            <Form.Item
+                                name="tiered_storage_enabled"
+                                initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : false}
+                            >
+                                {tabValue === tabs[1] &&
+                                    storageTierTwoOptions.map((value) => {
                                         return (
-                                            <div key={value.id} className={selectedTier2Option ? 'option-wrapper selected' : 'option-wrapper'}>
+                                            <div
+                                                key={value.id}
+                                                className={selectedTier2Option ? 'option-wrapper selected' : 'option-wrapper'}
+                                                onClick={() =>
+                                                    integrateValue
+                                                        ? selectedTier2Option
+                                                            ? SelectedRemoteStorageOption(false, false)
+                                                            : SelectedRemoteStorageOption(true, true)
+                                                        : modalFlip(true)
+                                                }
+                                            >
                                                 {selectedTier2Option ? <CheckCircleIcon className="check-icon" /> : <div className="uncheck-icon" />}
                                                 <div className="option-content">
                                                     <p>{value.label}</p>
@@ -594,19 +599,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                     fontSize="12px"
                                                     fontWeight="bold"
                                                     boxShadowStyle="none"
-                                                    onClick={() =>
-                                                        integrateValue
-                                                            ? selectedTier2Option
-                                                                ? SelectedRemoteStorageOption(false, false)
-                                                                : SelectedRemoteStorageOption(true, true)
-                                                            : modalFlip(true)
-                                                    }
                                                 />
                                             </div>
                                         );
                                     })}
-                                </Form.Item>
-                            )}
+                            </Form.Item>
                         </div>
                     </div>
                 </div>
