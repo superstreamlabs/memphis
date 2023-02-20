@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.78fd8748.css",
-    "main.js": "/static/js/main.f4163037.js",
+    "main.css": "/static/css/main.e1145df0.css",
+    "main.js": "/static/js/main.8e26748b.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -107,13 +107,13 @@
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/influxDBBanner.svg": "/static/media/influxDBBanner.5221023529417d13560c84cdd6e8ac11.svg",
     "static/media/pagerdutyBanner.svg": "/static/media/pagerdutyBanner.4ff06ffd09548788bc3fa8ab23b24cb2.svg",
-    "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.61a95369f360e2979a4fa91d1723e8bf.svg",
+    "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.fab6c489e404c8b49be8da7181a654bb.svg",
     "static/media/slackLogo.svg": "/static/media/slackLogo.7463b20d2ce1f3d754a6ccafe02f193d.svg",
     "static/media/codicon.ttf": "/static/media/codicon.b797181c93b3755f4fa1.ttf",
     "static/media/s3BannerPopup.svg": "/static/media/s3BannerPopup.7e096a2af96304f81911eed17a0d59ed.svg",
     "static/media/s3Banner.svg": "/static/media/s3Banner.8d15408bcb168acf5735d714a8c11904.svg",
     "static/media/datadogIcon.svg": "/static/media/datadogIcon.50af3f4d4c0af10fbedefe809eebd0e1.svg",
-    "static/media/s3Logo.svg": "/static/media/s3Logo.0db7cb82ebc13828c6c8562ae6be02fc.svg",
+    "static/media/s3Logo.svg": "/static/media/s3Logo.56765c4f0593d7f9e721a2261801b3bd.svg",
     "static/media/awsIcon.svg": "/static/media/awsIcon.a4e553bff74454fa92870b4911644343.svg",
     "static/media/datadogBannerPopup.svg": "/static/media/datadogBannerPopup.a3ce11a8b5045bc356c4df129d0c40f1.svg",
     "static/media/influxDBIcon.svg": "/static/media/influxDBIcon.2fce40a716f24b22b0cdf4e339e2461b.svg",
@@ -183,8 +183,6 @@
     "static/media/usersIconActive.svg": "/static/media/usersIconActive.b85b8f2e28394e7e41d2d5e18774ec50.svg",
     "static/media/logsActive.svg": "/static/media/logsActive.dd10b6ca576cba4444205502394b8456.svg",
     "static/media/grayAppUserIcon.svg": "/static/media/grayAppUserIcon.9401d63d3a38a3310942a1db6bb09bf1.svg",
-    "static/media/greenHealth.svg": "/static/media/greenHealth.123f637981da73d2619b741ef40c4fba.svg",
-    "static/media/yellowHealth.svg": "/static/media/yellowHealth.d3a2389ed00bcc9081bb7607dcbefc87.svg",
     "static/media/journey.svg": "/static/media/journey.d33d5d460049fb64a1c3b972f2b5c965.svg",
     "static/media/awaitingIcon.svg": "/static/media/awaitingIcon.59904187bbec884701238d6235024deb.svg",
     "static/media/clusterConfGray.svg": "/static/media/clusterConfGray.d6689ce49c492c73ab1f86759fbfbdf1.svg",
@@ -200,6 +198,7 @@
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
     "static/media/strIcon.svg": "/static/media/strIcon.cb9e929312f19af88af31d0e16a65580.svg",
     "static/media/retentionIcon.svg": "/static/media/retentionIcon.1bad53366a0bc248fa647412a9b3a732.svg",
+    "static/media/remoteStorage.svg": "/static/media/remoteStorage.db23172541bec67ae83be84924574645.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
     "static/media/unhealthyIcon.svg": "/static/media/unhealthyIcon.d443aacb28f3e91990c9b4f9e004cec5.svg",
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
@@ -241,7 +240,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.78fd8748.css",
-    "static/js/main.f4163037.js"
+    "static/css/main.e1145df0.css",
+    "static/js/main.8e26748b.js"
   ]
 }
