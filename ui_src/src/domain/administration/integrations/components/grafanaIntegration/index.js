@@ -80,8 +80,7 @@ honor_labels: true
                 return (
                     <div className="steps-content">
                         <h3>
-                            <b>If you haven't</b> installed Memphis with the <label>exporter.enabled</label> yet - (* <label>websocket.tls</label> are optional for a
-                            superior GUI experience)
+                            <b>If you haven't</b> installed Memphis with the <label>exporter.enabled</label> yet
                         </h3>
                         <div className="editor">
                             <pre>{`helm install memphis memphis 
