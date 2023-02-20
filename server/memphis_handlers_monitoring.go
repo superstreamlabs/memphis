@@ -537,12 +537,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					metricsEnabled = false
 					serv.Warnf("GetSystemComponents: k8s metrics not installed: " + err.Error())
 					noMetricsInstalledLog = true
-					err = errors.New("k8s metrics not installed: " + err.Error())
+					err = nil
 				} else if strings.Contains(err.Error(), "is forbidden") && !noMetricsPermissionLog {
 					metricsEnabled = false
 					serv.Warnf("GetSystemComponents: No permissions for k8s metrics: " + err.Error())
 					noMetricsPermissionLog = true
-					err = errors.New("No permissions for k8s metrics: " + err.Error())
+					err = nil
 				}
 				return components, metricsEnabled, err
 			}
@@ -901,7 +901,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") || strings.Contains(strings.ToLower(err.Error()), "not installed") || strings.Contains(strings.ToLower(err.Error()), "No permissions") {
+		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
 			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
 			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
 		} else {
