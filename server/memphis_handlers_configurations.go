@@ -155,7 +155,7 @@ func (s *Server) initializeConfigurations() {
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 			REST_GW_HOST = "http://localhost:4444"
 		} else {
-			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local:4444"
 		}
 		restGWHost = models.ConfigurationsStringValue{
 			ID:    primitive.NewObjectID(),
