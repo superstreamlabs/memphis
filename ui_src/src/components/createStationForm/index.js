@@ -550,7 +550,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     )
                                 }
                             />
-                            <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
+                            <Form.Item
+                                name="storage_type"
+                                initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}
+                                style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}
+                            >
                                 {tabValue === tabs[0].name &&
                                     storageTierOneOptions.map((value) => {
                                         return (
