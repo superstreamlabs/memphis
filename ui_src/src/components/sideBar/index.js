@@ -70,6 +70,11 @@ function SideBar() {
     };
 
     useEffect(() => {
+        if (`${state.route}` !== goToRoute && state.route === 'stations') setGoToRoute(pathDomains.stations);
+        else if (`${state.route}` !== goToRoute && state.route === 'schemaverse') setGoToRoute(pathDomains.schemaverse);
+    }, [state.route]);
+
+    useEffect(() => {
         if (goToRoute && `/${state.route}` !== goToRoute) {
             if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && goToRoute !== pathDomains.overview) modalFlip(true);
             else handleChangeRoute(goToRoute);

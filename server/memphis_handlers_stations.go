@@ -417,6 +417,11 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		station.StorageType = "disk"
 	}
 
+	_, ok = IntegrationsCache["s3"].(models.Integration)
+	if !ok {
+		station.TieredStorageEnabled = false
+	}
+
 	c.IndentedJSON(200, station)
 }
 
@@ -498,6 +503,10 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 				if activeCount > 0 {
 					activity = true
 				}
+			}
+			_, ok := IntegrationsCache["s3"].(models.Integration)
+			if !ok {
+				station.TieredStorageEnabled = false
 			}
 
 			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags, Activity: activity})
@@ -595,6 +604,11 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 						break
 					}
 				}
+			}
+
+			_, ok := IntegrationsCache["s3"].(models.Integration)
+			if !ok {
+				stations[i].TieredStorageEnabled = false
 			}
 
 			stations[i].Producers = []models.Producer{}
