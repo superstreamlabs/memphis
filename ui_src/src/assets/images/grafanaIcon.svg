@@ -1,6 +1,6 @@
 <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<rect width="33" height="33" rx="2.57812" fill="url(#pattern0)"/>
-<rect width="33" height="33" rx="2.57812" fill="#202020"/>
+<rect width="33" height="33" rx="8" fill="url(#pattern0)"/>
+<rect width="33" height="33" rx="8" fill="#202020"/>
 <rect x="5" y="5" width="23" height="23" fill="url(#pattern1)"/>
 <defs>
 <pattern id="pattern0" patternContentUnits="objectBoundingBox" width="1" height="1">
