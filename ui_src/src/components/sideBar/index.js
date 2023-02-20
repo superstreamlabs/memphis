@@ -71,6 +71,7 @@ function SideBar() {
 
     useEffect(() => {
         if (`${state.route}` !== goToRoute && state.route === 'stations') setGoToRoute(pathDomains.stations);
+        else if (`${state.route}` !== goToRoute && state.route === 'schemaverse') setGoToRoute(pathDomains.schemaverse);
     }, [state.route]);
 
     useEffect(() => {
