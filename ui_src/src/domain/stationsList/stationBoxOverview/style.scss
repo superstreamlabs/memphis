@@ -28,6 +28,16 @@
     .attached{
         min-width: 110px;
     }
+    .station-meta{
+        display: flex;
+        flex-direction: column;
+        .header{
+            display: flex;
+        }
+        .data-info{
+            margin-left:17px;
+        }
+    }
     .data-info {
         color: #2e2c34;
         font-size: 14px;
@@ -100,6 +110,7 @@
         justify-content: space-between;
         .station-meta {
             img {
+                width: 14px;
                 margin-right: 3px;
             }
         }
