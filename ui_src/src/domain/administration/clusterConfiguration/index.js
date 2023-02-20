@@ -130,7 +130,7 @@ function ClusterConfiguration() {
                         />
                         <TieredInputRow
                             title="TIERED STORAGE UPLOAD INTERVAL"
-                            desc="Interval of uploading messages to TS after retention end"
+                            desc="Interval of uploading messages to remote storage after retention end"
                             img={ConfImg1}
                             value={formFields?.tiered_storage_time_sec}
                             onChanges={(e, err) => {
@@ -141,7 +141,7 @@ function ClusterConfiguration() {
                             <>
                                 <InputRow
                                     title="BROKER HOSTNAME"
-                                    desc={`**For the code snippets only\nWhich URL should be seen as the "broker hostname"`}
+                                    desc={`**For display purpose only\nWhich URL should be seen as the "broker hostname"`}
                                     img={ConfImg3}
                                     value={formFields?.broker_host}
                                     onChanges={(e) => handleChange('broker_host', e.target.value)}
@@ -149,7 +149,7 @@ function ClusterConfiguration() {
                                 />
                                 <InputRow
                                     title="UI HOSTNAME"
-                                    desc={`**For the code snippets only\nWhich URL should be seen as the "UI hostname"`}
+                                    desc={`**For display purpose only\nWhich URL should be seen as the "UI hostname"`}
                                     img={ConfImg3}
                                     value={formFields?.ui_host}
                                     onChanges={(e) => handleChange('ui_host', e.target.value)}
@@ -157,7 +157,7 @@ function ClusterConfiguration() {
                                 />
                                 <InputRow
                                     title="REST GATEWAY HOSTNAME"
-                                    desc={`**For the code snippets only\nWhich URL should be seen as the "REST Gateway hostname"`}
+                                    desc={`**For display purpose only\nWhich URL should be seen as the "REST Gateway hostname"`}
                                     img={ConfImg3}
                                     value={formFields?.rest_gw_host}
                                     onChanges={(e) => handleChange('rest_gw_host', e.target.value)}

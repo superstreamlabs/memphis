@@ -182,7 +182,7 @@ const StationOverviewHeader = () => {
                                         width={15}
                                         height={15}
                                         alt="redirectIcon"
-                                        onClick={() => history.push(`${pathDomains.schemaverse}/${stationState?.stationSocketData?.schema?.name}`)}
+                                        onClick={() => history.push(`${pathDomains.schemaverse}/list/${stationState?.stationSocketData?.schema?.name}`)}
                                     />
                                 )}
                             </div>

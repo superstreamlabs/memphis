@@ -136,10 +136,13 @@
                         display: flex;  
                         place-content: end;
                         width: 300px;
-                        justify-content: space-between;
                         .ant-form-item-control-input-content{
                             display: flex;
                         }
+                    }
+                    .space-between{
+                        justify-content: space-between;
+
                     }
                     .field-title{
                         font-family: 'InterSemiBold';

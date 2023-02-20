@@ -91,6 +91,10 @@
                     padding-left: 20px;
                 }
             }
+            .even{
+                background-color: #f8f8f8;
+                border-radius: 5px;
+            }
             .item-wrapper {
                 margin-right: 15px;
             }
@@ -117,7 +121,7 @@
                 background: #f1f0ff;
                 border: 0.8px solid #e2dfff;
                 border-radius: 32px;
-                height: 23px;
+                height: 28px;
                 justify-content: center;
                 display: none;
                 align-items: center;

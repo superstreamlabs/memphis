@@ -30,11 +30,11 @@ function SchemaManagment() {
     }, []);
 
     const createNew = (e) => {
-        if (e) setSchemaAction('$new');
+        if (e) setSchemaAction('create');
         else setSchemaAction('');
     };
 
-    return <div>{schemaAction === '$new' ? <CreateSchema createNew={(e) => createNew(e)} /> : <SchemaList createNew={(e) => createNew(e)} />}</div>;
+    return <div>{schemaAction === 'create' ? <CreateSchema createNew={(e) => createNew(e)} /> : <SchemaList createNew={(e) => createNew(e)} />}</div>;
 }
 
 export default SchemaManagment;

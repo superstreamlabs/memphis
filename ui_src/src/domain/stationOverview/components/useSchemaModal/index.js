@@ -99,7 +99,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
     };
 
     const createNew = () => {
-        history.push(`${pathDomains.schemaverse}/$new`);
+        history.push(`${pathDomains.schemaverse}/create`);
     };
     return (
         <div className="use-schema-modal-container">

@@ -39,8 +39,8 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
     }, []);
     const handleDrawer = (flag) => {
         setOpen(flag);
-        if (flag) history.push(`${pathDomains.schemaverse}/${schema?.name}`);
-        else history.push(pathDomains.schemaverse);
+        if (flag) history.push(`${pathDomains.schemaverse}/list/${schema?.name}`);
+        else history.push(`${pathDomains.schemaverse}/list`);
     };
 
     return (

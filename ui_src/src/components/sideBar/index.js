@@ -204,7 +204,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.schemaverse)}>
+                <div className="item-wrapper" onClick={() => setGoToRoute(`${pathDomains.schemaverse}/list`)}>
                     <div className="icon">
                         {state.route === 'schemaverse' ? (
                             <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>

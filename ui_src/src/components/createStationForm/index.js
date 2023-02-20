@@ -73,7 +73,6 @@ const storageTierTwoOptions = [
     }
 ];
 
-const tabs = ['Local storage tier', 'Remote storage tier'];
 const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
 const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
@@ -92,7 +91,10 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [parserName, setParserName] = useState('');
     const [integrateValue, setIntegrateValue] = useState(null);
     const [modalIsOpen, modalFlip] = useState(false);
-
+    const tabs = [
+        { name: 'Local storage tier', checked: true },
+        { name: 'Remote storage tier', checked: selectedTier2Option || false }
+    ];
     useEffect(() => {
         getAvailableReplicas();
         getAllSchemas();
@@ -383,10 +385,10 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 <TitleComponent headerTitle="Retention policy" typeTitle="sub-header" />
                 <div className="retention-storage-box">
                     <div className="header">
-                        <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>
+                        <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} checkbox={true} />
                     </div>
                     <div className="content">
-                        {tabValue === tabs[0] && (
+                        {tabValue === tabs[0].name && (
                             <p className="description">
                                 The criteria for which messages will be expelled from the station.&nbsp;
                                 <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
@@ -394,13 +396,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 </a>
                             </p>
                         )}
-                        {tabValue === tabs[1] && (
+                        {tabValue === tabs[1].name && (
                             <p className="description">
                                 For archiving and higher retention of ingested data. <br />
                                 Once a message passes the 1st storage tier, it will automatically be migrated to the 2nd storage tier, if defined.&nbsp;
                             </p>
                         )}
-                        <div className="retention-type-section" style={{ display: tabValue === tabs[0] ? 'block' : 'none' }}>
+                        <div className="retention-type-section" style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}>
                             <Form.Item name="retention_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.retention_type : retentionType}>
                                 <RadioButton
                                     className="radio-button"
@@ -523,7 +525,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 headerTitle="Storage type"
                                 typeTitle="sub-header"
                                 headerDescription={
-                                    tabValue === tabs[0] ? (
+                                    tabValue === tabs[0].name ? (
                                         <span>
                                             Type of storage for short retention.&nbsp;
                                             <a
@@ -549,7 +551,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 }
                             />
                             <Form.Item name="storage_type" initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}>
-                                {tabValue === tabs[0] &&
+                                {tabValue === tabs[0].name &&
                                     storageTierOneOptions.map((value) => {
                                         return (
                                             <div
@@ -563,11 +565,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 }
                                                 onClick={() => SelectedLocalStorageOption(value.value)}
                                             >
-                                                {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
-                                                {selectedOption !== value.value && <div className="uncheck-icon" />}
-                                                <div className="option-content">
-                                                    <p>{value.label}</p>
-                                                    <span>{value.desc}</span>
+                                                <div className="check-and-content">
+                                                    {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
+                                                    {selectedOption !== value.value && <div className="uncheck-icon" />}
+                                                    <div className="option-content">
+                                                        <p>{value.label}</p>
+                                                        <span>{value.desc}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -577,7 +581,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 name="tiered_storage_enabled"
                                 initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : false}
                             >
-                                {tabValue === tabs[1] &&
+                                {tabValue === tabs[1].name &&
                                     storageTierTwoOptions.map((value) => {
                                         return (
                                             <div
@@ -593,10 +597,12 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                         : modalFlip(true)
                                                 }
                                             >
-                                                {selectedTier2Option ? <CheckCircleIcon className="check-icon" /> : <div className="uncheck-icon" />}
-                                                <div className="option-content">
-                                                    <p>{value.label}</p>
-                                                    <span>{value.desc}</span>
+                                                <div className="check-and-content">
+                                                    {selectedTier2Option ? <CheckCircleIcon className="check-icon" /> : <div className="uncheck-icon" />}
+                                                    <div className="option-content">
+                                                        <p>{value.label}</p>
+                                                        <span>{value.desc}</span>
+                                                    </div>
                                                 </div>
                                                 <Button
                                                     width="90px"

@@ -195,7 +195,7 @@ function CreateSchema({ createNew }) {
     }, [formFields?.type]);
 
     const goBack = () => {
-        history.push(pathDomains.schemaverse);
+        history.push(`${pathDomains.schemaverse}/list`);
         createNew(false);
     };
 
@@ -471,7 +471,7 @@ function CreateSchema({ createNew }) {
                     <div className="schema-field schema">
                         <div className="title-wrapper">
                             <p className="field-title">Schema structure</p>
-                            <div className="button-json">
+                            <div className={formFields.type === 'Json' ? 'button-json space-between' : 'button-json'}>
                                 {formFields.type === 'Json' && (
                                     <Button
                                         width="170px"

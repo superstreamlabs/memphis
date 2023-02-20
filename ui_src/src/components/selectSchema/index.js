@@ -35,7 +35,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
     };
 
     const createNew = () => {
-        history.push(pathDomains.schemaverse);
+        history.push(`${pathDomains.schemaverse}/create`);
     };
 
     return (
