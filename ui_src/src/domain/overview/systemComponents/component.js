@@ -37,26 +37,21 @@ const Component = ({ comp, i }) => {
     };
 
     return (
-        <div className="sys-components-container" key={`${comp.podName}${i}`}>
+        <div className="sys-components-container" key={`${comp?.podName}${i}`}>
             <img src={ComponentIcon} className="component-img" alt="ComponentIcon" width="18" height="18" />
             <div className="component">
                 <div className="sys-components">
-                    <OverflowTip text={comp.name}>
-                        <p className="component-name">{comp.name}</p>
+                    <OverflowTip text={comp?.name}>
+                        <p className="component-name">{comp?.name}</p>
                     </OverflowTip>
                     <div className="pie-status-component">
-                        <HealthyBadge status={comp.status} />
+                        <HealthyBadge status={comp?.status} />
                         <div className="pie-status">
                             <PieChart height={30} width={30}>
-                                <Pie
-                                    dataKey="value"
-                                    data={getData(comp)}
-                                    startAngle={-270}
-                                    //  stroke="none"
-                                ></Pie>
+                                <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>
                             </PieChart>
                             <p>
-                                {comp.actual_pods}/{comp.desired_pods}
+                                {comp?.actual_pods}/{comp?.desired_pods}
                             </p>
                         </div>
                     </div>
@@ -67,19 +62,19 @@ const Component = ({ comp, i }) => {
                             <div className="hosts">
                                 <label className="comp-label">Hosts</label>
                                 <OverflowTip maxWidth="165px" text={comp?.hosts[0]}>
-                                    <label className="value">{comp.hosts[0]}</label>
+                                    <label className="value">{comp?.hosts[0]}</label>
                                 </OverflowTip>
-                                {comp.hosts?.length > 1 && (
+                                {comp?.hosts?.length > 1 && (
                                     <Popover
                                         overlayInnerStyle={remainingPorstPopInnerStyle}
                                         placement="bottomLeft"
-                                        content={comp.hosts?.slice(1)?.map((host) => {
+                                        content={comp?.hosts?.slice(1)?.map((host) => {
                                             return <p className="comp-plus-popover">{host}</p>;
                                         })}
                                     >
                                         <div className="plus-comp">
                                             <Add className="add" />
-                                            <p>{comp.hosts?.length - 1}</p>
+                                            <p>{comp?.hosts?.length - 1}</p>
                                         </div>
                                     </Popover>
                                 )}
@@ -89,18 +84,18 @@ const Component = ({ comp, i }) => {
                     )}
                     <div className="ports">
                         <label className="comp-label">Ports</label>
-                        <label className="value">{comp.ports.length > 0 ? comp.ports[0] : 'None'}</label>
-                        {comp.ports?.length > 1 && (
+                        <label className="value">{comp?.ports.length > 0 ? comp?.ports[0] : 'None'}</label>
+                        {comp?.ports?.length > 1 && (
                             <Popover
                                 overlayInnerStyle={remainingPorstPopInnerStyle}
                                 placement="bottomLeft"
-                                content={comp.ports?.slice(1)?.map((port) => {
+                                content={comp?.ports?.slice(1)?.map((port) => {
                                     return <p className="comp-plus-popover">{port}</p>;
                                 })}
                             >
                                 <div className="plus-comp">
                                     <Add className="add" />
-                                    <p>{comp.ports?.length - 1}</p>
+                                    <p>{comp?.ports?.length - 1}</p>
                                 </div>
                             </Popover>
                         )}

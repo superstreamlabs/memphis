@@ -86,7 +86,7 @@ function Throughput() {
     };
 
     useEffect(() => {
-        if (data?.datasets?.length === 0 && selectOptions.length > 0) initiateDataState();
+        if (data?.datasets?.length === 0 && selectOptions?.length > 0) initiateDataState();
     }, [selectOptions]);
 
     useEffect(() => {
