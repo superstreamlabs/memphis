@@ -47,8 +47,7 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
-import { capitalizeFirst } from '../../services/valueConvertor';
-import Modal from '../modal';
+import SkipGetStrtedModal from '../skipGetStartedModal';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -70,14 +69,14 @@ function SideBar() {
         history.push(goToRoute);
     };
 
-    const skipGetStarted = async () => {
-        try {
-            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
-            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-            handleChangeRoute(goToRoute);
-            modalFlip(false);
-        } catch (error) {}
-    };
+    // const skipGetStarted = async () => {
+    //     try {
+    //         await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
+    //         localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+    //         handleChangeRoute(goToRoute);
+    //         modalFlip(false);
+    //     } catch (error) {}
+    // };
 
     useEffect(() => {
         if (goToRoute && `/${state.route}` !== goToRoute) {
@@ -274,31 +273,17 @@ function SideBar() {
                     <p>v{systemVersion}</p>
                 </version>
             </div>
-            <Modal
-                header="Are we skipping the tutorial?"
-                height="100px"
-                width="400px"
-                rBtnText="Skip"
-                lBtnText="Don't skip"
-                lBtnClick={() => {
-                    setGoToRoute(pathDomains.overview);
-                    modalFlip(false);
-                }}
-                rBtnClick={() => {
-                    skipGetStarted();
-                    handleChangeRoute(goToRoute);
-                }}
-                clickOutside={() => {
-                    setGoToRoute(pathDomains.overview);
-                    modalFlip(false);
-                }}
+            <SkipGetStrtedModal
                 open={open}
-            >
-                <div className="skip-tutorial-modal">
-                    <span>The tutorial will be closed.</span>
-                    <span>You can always head to Memphis documentation for guides and tutorials.</span>
-                </div>
-            </Modal>
+                cancel={() => {
+                    setGoToRoute(pathDomains.overview);
+                    modalFlip(false);
+                }}
+                skip={() => {
+                    handleChangeRoute(goToRoute);
+                    modalFlip(false);
+                }}
+            />
         </div>
     );
 }
