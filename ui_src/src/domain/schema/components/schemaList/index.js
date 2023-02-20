@@ -99,7 +99,7 @@ function SchemaList({ createNew }) {
     };
 
     const createNewSchema = () => {
-        history.push(`${pathDomains.schemaverse}/$new`);
+        history.push(`${pathDomains.schemaverse}/create`);
         createNew(true);
     };
 

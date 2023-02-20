@@ -69,7 +69,6 @@
         .option-wrapper {
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
             padding: 16px;
             gap: 4px;
             background: #ffffff;
@@ -78,7 +77,7 @@
             font-family: 'InterMedium';
             font-size: 16px;
             margin-bottom: 12px;
-
+            justify-content:space-between;
             svg {
                 width: 18px;
                 height: 18px;
@@ -93,7 +92,7 @@
             .option-content {
                 display: flex;
                 flex-direction: column;
-                width: 320px;
+                max-width: 85%;
                 p {
                     color: #101828;
                     line-height: 14px;
@@ -105,6 +104,10 @@
                     color: rgba(74, 73, 92, 0.8);
                 }
             }
+        }
+        .check-and-content{
+            display: flex;
+            gap: 5px;
         }
         .allowed:hover {
             cursor: pointer;

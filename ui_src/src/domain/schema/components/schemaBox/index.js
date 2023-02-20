@@ -34,13 +34,14 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
 
     useEffect(() => {
         const url = window.location.href;
-        const schemaName = url.split('schemaverse/')[1];
+        const schemaName = url.split('schemaverse/list/')[1];
         if (schemaName === schema?.name) setOpen(true);
     }, []);
+
     const handleDrawer = (flag) => {
         setOpen(flag);
-        if (flag) history.push(`${pathDomains.schemaverse}/${schema?.name}`);
-        else history.push(pathDomains.schemaverse);
+        if (flag) history.push(`${pathDomains.schemaverse}/list/${schema?.name}`);
+        else history.push(`${pathDomains.schemaverse}/list`);
     };
 
     return (

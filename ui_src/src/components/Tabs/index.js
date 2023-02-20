@@ -21,8 +21,9 @@ import React from 'react';
 
 import { PriorityHighRounded } from '@material-ui/icons';
 import TooltipComponent from '../tooltip/tooltip';
+import CheckboxComponent from '../checkBox';
 
-const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip }) => {
+const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, checkbox = false }) => {
     return (
         <div className={!disabled ? 'tabs-container hover' : 'tabs-container'}>
             <Tabs
@@ -34,6 +35,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip }) => {
                         disabled: tab?.disabled || disabled,
                         label: (
                             <label className="tabs-name" style={{ width: length && length[index] && '95px' }}>
+                                {checkbox && <CheckboxComponent checked={tab.checked} />}
                                 <TooltipComponent text={tooltip && tooltip[index]}>{tab?.name || tab} </TooltipComponent>
                                 {length && length[index] && (
                                     <div className="error-icon">

@@ -58,9 +58,8 @@ const FailedStations = ({ createStationTrigger }) => {
                                 <Virtuoso
                                     data={state?.monitor_data?.stations}
                                     overscan={100}
-                                    className="testt"
                                     itemContent={(index, station) => (
-                                        <div className="stations-row" key={index} onClick={() => goToStation(station.name)}>
+                                        <div className={index % 2 === 0 ? 'stations-row' : 'stations-row even'} key={index} onClick={() => goToStation(station.name)}>
                                             <OverflowTip className="station-details station-name" text={station.name}>
                                                 {station.name}
                                             </OverflowTip>

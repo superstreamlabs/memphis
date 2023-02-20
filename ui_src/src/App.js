@@ -183,7 +183,7 @@ const App = withRouter(() => {
                         />
                         <PrivateRoute
                             exact
-                            path={pathDomains.schemaverse}
+                            path={`${pathDomains.schemaverse}/create`}
                             component={
                                 <AppWrapper
                                     content={
@@ -196,7 +196,20 @@ const App = withRouter(() => {
                         />
                         <PrivateRoute
                             exact
-                            path={`${pathDomains.schemaverse}/:name`}
+                            path={`${pathDomains.schemaverse}/list`}
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <SchemaManagment />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.schemaverse}/list/:name`}
                             component={
                                 <AppWrapper
                                     content={
