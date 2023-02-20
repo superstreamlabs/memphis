@@ -199,7 +199,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
                 </div>
-                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.stations)}>
+                <div className="item-wrapper" onClick={() => (goToRoute === pathDomains.stations ? handleChangeRoute(goToRoute) : setGoToRoute(pathDomains.stations))}>
                     <div className="icon">
                         {state.route === 'stations' ? (
                             <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
@@ -209,7 +209,10 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                <div className="item-wrapper" onClick={() => setGoToRoute(`${pathDomains.schemaverse}/list`)}>
+                <div
+                    className="item-wrapper"
+                    onClick={() => (goToRoute === `${pathDomains.schemaverse}/list` ? handleChangeRoute(goToRoute) : setGoToRoute(`${pathDomains.schemaverse}/list`))}
+                >
                     <div className="icon">
                         {state.route === 'schemaverse' ? (
                             <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
@@ -219,7 +222,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.users)}>
+                <div className="item-wrapper" onClick={() => (goToRoute === pathDomains.users ? handleChangeRoute(goToRoute) : setGoToRoute(pathDomains.users))}>
                     <div className="icon">
                         {state.route === 'users' ? (
                             <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
@@ -229,7 +232,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
-                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.sysLogs)}>
+                <div className="item-wrapper" onClick={() => (goToRoute === pathDomains.sysLogs ? handleChangeRoute(goToRoute) : setGoToRoute(pathDomains.sysLogs))}>
                     <div className="icon">
                         {state.route === 'logs' ? (
                             <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
