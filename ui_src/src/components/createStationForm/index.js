@@ -87,8 +87,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [useSchema, setUseSchema] = useState(false);
     const [dlsConfiguration, setDlsConfiguration] = useState(true);
     const [tabValue, setTabValue] = useState('Local storage tier');
-    const [selectedOption, setSelectedOption] = useState('file');
-    const [selectedTier2Option, setSelectedTier2Option] = useState(false);
+    const [selectedOption, setSelectedOption] = useState(getStartedStateRef?.formFieldsCreateStation?.storage_type || 'file');
+    const [selectedTier2Option, setSelectedTier2Option] = useState(getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled || false);
     const [parserName, setParserName] = useState('');
     const [integrateValue, setIntegrateValue] = useState(null);
     const [modalIsOpen, modalFlip] = useState(false);
@@ -199,12 +199,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         if (allowEdit) {
             setSelectedOption(value);
             creationForm.setFieldValue('storage_type', value);
+            if (getStarted) updateFormState('storage_type', value);
         }
     };
     const SelectedRemoteStorageOption = (value, enabled) => {
         if (allowEdit) {
             setSelectedTier2Option(value);
             creationForm.setFieldValue('tiered_storage_enabled', enabled);
+            if (getStarted) updateFormState('tiered_storage_enabled', enabled);
         }
     };
 
@@ -552,7 +554,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         return (
                                             <div
                                                 key={value.id}
-                                                className={selectedOption === value.value ? 'option-wrapper selected' : 'option-wrapper'}
+                                                className={
+                                                    selectedOption === value.value
+                                                        ? 'option-wrapper selected'
+                                                        : allowEdit
+                                                        ? 'option-wrapper allowed'
+                                                        : 'option-wrapper not-allowed'
+                                                }
                                                 onClick={() => SelectedLocalStorageOption(value.value)}
                                             >
                                                 {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
@@ -574,9 +582,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         return (
                                             <div
                                                 key={value.id}
-                                                className={selectedTier2Option ? 'option-wrapper selected' : 'option-wrapper'}
+                                                className={
+                                                    selectedTier2Option ? 'option-wrapper selected' : allowEdit ? 'option-wrapper allowed' : 'option-wrapper not-allowed'
+                                                }
                                                 onClick={() =>
-                                                    integrateValue
+                                                    integrateValue && allowEdit
                                                         ? selectedTier2Option
                                                             ? SelectedRemoteStorageOption(false, false)
                                                             : SelectedRemoteStorageOption(true, true)
@@ -599,6 +609,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                     fontSize="12px"
                                                     fontWeight="bold"
                                                     boxShadowStyle="none"
+                                                    disabled={!allowEdit}
+                                                    onClick={() => null}
                                                 />
                                             </div>
                                         );

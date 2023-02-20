@@ -77,7 +77,8 @@ const initialState = {
         minutes: 0,
         seconds: 0,
         retentionSizeValue: '1000',
-        retentionMessagesValue: '10'
+        retentionMessagesValue: '10',
+        tiered_storage_enabled: false
     },
     nextDisable: false,
     isLoading: false,
