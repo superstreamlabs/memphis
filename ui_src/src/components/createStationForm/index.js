@@ -398,7 +398,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         )}
                         {tabValue === tabs[1].name && (
                             <p className="description">
-                                For archiving and higher retention of ingested data. <br />
+                                *Optional* For archiving and higher retention of ingested data. <br />
                                 Once a message passes the 1st storage tier, it will automatically be migrated to the 2nd storage tier, if defined.&nbsp;
                             </p>
                         )}

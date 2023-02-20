@@ -13,7 +13,7 @@
 import './style.scss';
 
 import { CloseRounded } from '@material-ui/icons';
-import { Drawer, Button, Space } from 'antd';
+import { Drawer } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
@@ -24,7 +24,6 @@ import CheckboxComponent from '../../../../components/checkBox';
 import usedIcond from '../../../../assets/images/usedIcon.svg';
 import TagsList from '../../../../components/tagList';
 import SchemaDetails from '../schemaDetails';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import pathDomains from '../../../../router';
 
