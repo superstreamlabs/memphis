@@ -12,10 +12,9 @@
 
 import './style.scss';
 
-import React, { createContext, useEffect, useReducer, useRef } from 'react';
+import React, { createContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
-import { LOCAL_STORAGE_SKIP_GET_STARTED } from '../../../const/localStorageConsts';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
@@ -26,9 +25,9 @@ import { ApiEndpoints } from '../../../const/apiEndpoints';
 import ProduceConsumeData from './produceConsumeData';
 import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
+import SkipGetStrtedModal from '../../../components/skipGetStartedModal';
 import CreateAppUser from './createAppUser';
 import CreateStation from './createStation';
-import pathDomains from '../../../router';
 import Reducer from './hooks/reducer';
 import SideStep from './sideStep';
 import Finish from './finish';
@@ -88,6 +87,7 @@ const initialState = {
 
 const GetStarted = ({ username, dataSentence }) => {
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
+    const [open, modalFlip] = useState(false);
     const history = useHistory();
     const createStationFormRef = useRef(null);
 
@@ -149,14 +149,6 @@ const GetStarted = ({ username, dataSentence }) => {
         } catch (error) {}
     };
 
-    const skipGetStarted = async (bodyRequest) => {
-        try {
-            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, bodyRequest);
-            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-            history.push(pathDomains.overview);
-        } catch (error) {}
-    };
-
     useEffect(() => {
         getOverviewData();
         return () => {
@@ -193,7 +185,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
-                                skipGetStarted({ username });
+                                modalFlip(true);
                             }}
                         />
                     </Divider>
@@ -265,6 +257,15 @@ const GetStarted = ({ username, dataSentence }) => {
                     )}
                 </div>
             </div>
+            <SkipGetStrtedModal
+                open={open}
+                cancel={() => {
+                    modalFlip(false);
+                }}
+                skip={() => {
+                    modalFlip(false);
+                }}
+            />
         </GetStartedStoreContext.Provider>
     );
 };
