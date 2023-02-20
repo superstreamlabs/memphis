@@ -69,15 +69,6 @@ function SideBar() {
         history.push(goToRoute);
     };
 
-    // const skipGetStarted = async () => {
-    //     try {
-    //         await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
-    //         localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-    //         handleChangeRoute(goToRoute);
-    //         modalFlip(false);
-    //     } catch (error) {}
-    // };
-
     useEffect(() => {
         if (goToRoute && `/${state.route}` !== goToRoute) {
             if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && goToRoute !== pathDomains.overview) modalFlip(true);
