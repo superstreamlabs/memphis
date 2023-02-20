@@ -72,6 +72,7 @@ type Station struct {
 	IsNative             bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	DedupConfiguration   bool               `json:"dedup_configuration" bson:"dedup_configuration"`
 }
 
 type GetStationResponseSchema struct {
@@ -93,6 +94,7 @@ type GetStationResponseSchema struct {
 	IsNative             bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	DedupConfiguration   bool               `json:"dedup_configuration" bson:"dedup_configuration"`
 }
 
 type ExtendedStation struct {
@@ -119,6 +121,7 @@ type ExtendedStation struct {
 	Producers            []Producer         `json:"producers"`
 	Consumers            []Consumer         `json:"consumers"`
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	DedupConfiguration   bool               `json:"dedup_configuration" bson:"dedup_configuration"`
 }
 
 type ExtendedStationDetails struct {
@@ -147,6 +150,7 @@ type CreateStationSchema struct {
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
+	DedupConfiguration   bool             `json:"dedup_configuration"`
 }
 
 type DlsConfiguration struct {

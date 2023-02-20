@@ -200,19 +200,20 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 	var newStation models.Station
 	stationName := sn.Ext()
 	newStation = models.Station{
-		ID:                primitive.NewObjectID(),
-		Name:              stationName,
-		RetentionType:     "message_age_sec",
-		RetentionValue:    604800,
-		StorageType:       "file",
-		Replicas:          1,
-		DedupEnabled:      false, // TODO deprecated
-		DedupWindowInMs:   0,     // TODO deprecated
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
-		LastUpdate:        time.Now(),
-		Functions:         []models.Function{},
-		IdempotencyWindow: 120000,
+		ID:                 primitive.NewObjectID(),
+		Name:               stationName,
+		RetentionType:      "message_age_sec",
+		RetentionValue:     604800,
+		StorageType:        "file",
+		Replicas:           1,
+		DedupEnabled:       false, // TODO deprecated
+		DedupWindowInMs:    0,     // TODO deprecated
+		CreatedByUser:      username,
+		CreationDate:       time.Now(),
+		LastUpdate:         time.Now(),
+		Functions:          []models.Function{},
+		IdempotencyWindow:  120000,
+		DedupConfiguration: true,
 		DlsConfiguration: models.DlsConfiguration{
 			Poison:      true,
 			Schemaverse: true,
@@ -245,6 +246,7 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 			"last_update":              newStation.LastUpdate,
 			"functions":                newStation.Functions,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"dedup_configuration":      newStation.DedupConfiguration,
 			"is_native":                newStation.IsNative,
 			"dls_configuration":        newStation.DlsConfiguration,
 		},

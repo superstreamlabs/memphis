@@ -42,6 +42,8 @@ require github.com/jmespath/go-jmespath v0.4.0 // indirect
 
 require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/bits-and-blooms/bloom/v3 v3.3.1 // indirect
+	github.com/bits-and-blooms/bitset v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect

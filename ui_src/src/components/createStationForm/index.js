@@ -91,6 +91,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [parserName, setParserName] = useState('');
     const [integrateValue, setIntegrateValue] = useState(null);
     const [modalIsOpen, modalFlip] = useState(false);
+    const [dedupConfiguration, setDedupConfiguration] = useState(true);
     const tabs = [
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
@@ -128,10 +129,15 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
     };
 
+    const getDedupConfigurationValue = (formFields) => {
+        return formFields.dedup_configuration;
+    };
+
     const onFinish = async () => {
         const formFields = await creationForm.validateFields();
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
+        const dedupConfigurationValue = getDedupConfigurationValue(formFields);
         const bodyRequest = {
             name: generateName(formFields.station_name),
             retention_type: formFields.retention_type || retentionType,
@@ -141,6 +147,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
+            dedup_configuration: dedupConfigurationValue,
             dls_configuration: {
                 poison: dlsConfiguration,
                 schemaverse: dlsConfiguration
@@ -379,6 +386,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         headerDescription="Dead-letter stations are useful for debugging your application"
                     />
                     <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
+                </div>
+                <div className="toggle-add-schema">
+                    <TitleComponent
+                        headerTitle="Deduplication"
+                        typeTitle="sub-header"
+                        headerDescription="Deduplication drops redundant messages with same message payload and header"
+                    />
+                    <Form.Item name="dedup_configuration" initialValue={true}>
+                        <Switcher onChange={() => setDedupConfiguration(!dedupConfiguration)} checked={dedupConfiguration} />
+                    </Form.Item>
                 </div>
             </div>
             <div className="right-side">

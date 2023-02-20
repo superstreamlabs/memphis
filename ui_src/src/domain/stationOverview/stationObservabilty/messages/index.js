@@ -383,6 +383,12 @@ const Messages = () => {
                         }
                         data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
+                    <DetailBox
+                        img={idempotencyIcon}
+                        title={'Deduplication'}
+                        desc={<span>Ensures messages with the same message-payload and header will be produced only once for the configured time.</span>}
+                        data={[stationState?.stationSocketData?.dedup_configuration.toString()]}
+                    />
                 </div>
             )}
         </div>

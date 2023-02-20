@@ -404,6 +404,9 @@ const (
 
 	// JSTemplateNameNotMatchSubjectErr template name in subject does not match request
 	JSTemplateNameNotMatchSubjectErr ErrorIdentifier = 10073
+
+	// JSStreamWrongLastMsgIDErrF wrong last msg Hash: {hash}
+	JSStreamWrongLastMsgHashErrF ErrorIdentifier = 10131
 )
 
 var (
@@ -534,6 +537,7 @@ var (
 		JSStreamTemplateNotFoundErr:                {Code: 404, ErrCode: 10068, Description: "template not found"},
 		JSStreamUpdateErrF:                         {Code: 500, ErrCode: 10069, Description: "{err}"},
 		JSStreamWrongLastMsgIDErrF:                 {Code: 400, ErrCode: 10070, Description: "wrong last msg ID: {id}"},
+		JSStreamWrongLastMsgHashErrF:               {Code: 400, ErrCode: 10131, Description: "wrong last msg Hash: {hash}"},
 		JSStreamWrongLastSequenceErrF:              {Code: 400, ErrCode: 10071, Description: "wrong last sequence: {seq}"},
 		JSTempStorageFailedErr:                     {Code: 500, ErrCode: 10072, Description: "JetStream unable to open temp storage for restore"},
 		JSTemplateNameNotMatchSubjectErr:           {Code: 400, ErrCode: 10073, Description: "template name in subject does not match request"},
@@ -2007,6 +2011,22 @@ func NewJSStreamWrongLastMsgIDError(id interface{}, opts ...ErrorOption) *ApiErr
 
 	e := ApiErrors[JSStreamWrongLastMsgIDErrF]
 	args := e.toReplacerArgs([]interface{}{"{id}", id})
+	return &ApiError{
+		Code:        e.Code,
+		ErrCode:     e.ErrCode,
+		Description: strings.NewReplacer(args...).Replace(e.Description),
+	}
+}
+
+// NewJSStreamWrongLastMsgHashError creates a new JSStreamWrongLastMsgHashErrF error: "wrong last msg Hash: {hash}"
+func NewJSStreamWrongLastMsgHashError(hash interface{}, opts ...ErrorOption) *ApiError {
+	eopts := parseOpts(opts)
+	if ae, ok := eopts.err.(*ApiError); ok {
+		return ae
+	}
+
+	e := ApiErrors[JSStreamWrongLastMsgHashErrF]
+	args := e.toReplacerArgs([]interface{}{"{hash}", hash})
 	return &ApiError{
 		Code:        e.Code,
 		ErrCode:     e.ErrCode,

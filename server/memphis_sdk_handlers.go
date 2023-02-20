@@ -37,6 +37,7 @@ type createStationRequest struct {
 	DlsConfiguration     models.DlsConfiguration `json:"dls_configuration"`
 	Username             string                  `json:"username"`
 	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
+	DedupConfiguration   bool                    `json:"dedup_configuration"`
 }
 
 type destroyStationRequest struct {

@@ -30,6 +30,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/klauspost/compress/s2"
 	"github.com/nats-io/nuid"
 )
@@ -57,6 +58,7 @@ type StreamConfig struct {
 	Mirror               *StreamSource   `json:"mirror,omitempty"`
 	Sources              []*StreamSource `json:"sources,omitempty"`
 	TieredStorageEnabled bool            `json:"tiered_storage_enabled"`
+	DedupConfiguration   bool            `json:"dedup_configuration,omitempty"`
 
 	// Allow republish of the message after being sequenced and stored.
 	RePublish *RePublish `json:"republish,omitempty"`
@@ -194,6 +196,7 @@ type stream struct {
 	ackq      *ipQueue // of uint64
 	lseq      uint64
 	lmsgId    string
+	lmsgHash  string
 	consumers map[string]*consumer
 	numFilter int
 	cfg       StreamConfig
@@ -237,6 +240,41 @@ type stream struct {
 
 	// Direct get subscription.
 	directSub *subscription
+
+	// dedup filter
+	msgDedupFilter msgDedupFilter
+}
+
+type msgDedupFilter struct {
+	msgDedupMap    map[string]*ddentry
+	msgDedupArr    []*ddentry
+	msgDedupTimer  *time.Timer
+	msgDedupIndex  int
+	msgDedupLoaded bool
+}
+
+const (
+	NoOfHashesForMsgDedup        = 20
+	NoOfBitsUsed          uint64 = 5000000000
+)
+
+func (dedupFilter *msgDedupFilter) getHash(hdr, msg []byte) string {
+	dedupData := append([]byte{}, hdr...)
+	dedupData = append(dedupData, byte(':'))
+	dedupData = append(dedupData, msg...)
+	locations := bloom.Locations(dedupData, NoOfHashesForMsgDedup)
+	// to optimize space
+	for index := range locations {
+		locations[index] = locations[index] % NoOfBitsUsed
+	}
+	hash := ""
+	for _, location := range locations {
+		hash += strconv.FormatUint(location, 10) + ":"
+	}
+	if len(hash) > 0 {
+		hash = hash[:len(hash)-1]
+	}
+	return hash
 }
 
 type sourceInfo struct {
@@ -271,6 +309,7 @@ const (
 	JSExpectedLastSeq     = "Nats-Expected-Last-Sequence"
 	JSExpectedLastSubjSeq = "Nats-Expected-Last-Subject-Sequence"
 	JSExpectedLastMsgId   = "Nats-Expected-Last-Msg-Id"
+	JSExpectedLastMsgHash = "Nats-Expected-Last-Msg-Hash"
 	JSStreamSource        = "Nats-Stream-Source"
 	JSLastConsumerSeq     = "Nats-Last-Consumer"
 	JSLastStreamSeq       = "Nats-Last-Stream"
@@ -743,7 +782,7 @@ func (mset *stream) autoTuneFileStorageBlockSize(fsCfg *FileStoreConfig) {
 	fsCfg.BlockSize = uint64(blkSize)
 }
 
-// rebuildDedupe will rebuild any dedupe structures needed after recovery of a stream.
+// rebuildDedupe will rebuild msgId based dedupe structures needed after recovery of a stream.
 // Will be called lazily to avoid penalizing startup times.
 // TODO(dlc) - Might be good to know if this should be checked at all for streams with no
 // headers and msgId in them. Would need signaling from the storage layer.
@@ -776,6 +815,39 @@ func (mset *stream) rebuildDedupe() {
 		}
 		if seq == state.LastSeq {
 			mset.lmsgId = msgId
+		}
+	}
+}
+
+// rebuildMsgDedupe will rebuild msg dedupe structures needed after recovery of a stream.
+// Will be called lazily to avoid penalizing startup times.
+// TODO(dlc) - Might be good to know if this should be checked at all for streams with no
+// headers and msg in them. Would need signaling from the storage layer.
+// Lock should be held.
+func (mset *stream) rebuildMsgDedupe() {
+	if mset.msgDedupFilter.msgDedupLoaded {
+		return
+	}
+
+	mset.msgDedupFilter.msgDedupLoaded = true
+
+	// We have some messages. Lookup starting sequence by duplicate time window.
+	sseq := mset.store.GetSeqFromTime(time.Now().Add(-mset.cfg.Duplicates))
+	if sseq == 0 {
+		return
+	}
+
+	var smv StoreMsg
+	state := mset.store.State()
+	for seq := sseq; seq <= state.LastSeq; seq++ {
+		sm, err := mset.store.LoadMsg(seq, &smv)
+		if err != nil {
+			continue
+		}
+		msgHash := mset.msgDedupFilter.getHash(sm.hdr, sm.msg)
+		mset.storeMsgLocked(&ddentry{msgHash, sm.seq, sm.ts})
+		if seq == state.LastSeq {
+			mset.lmsgHash = msgHash
 		}
 	}
 }
@@ -1365,9 +1437,14 @@ func (mset *stream) updateWithAdvisory(config *StreamConfig, sendAdvisory bool) 
 		}
 
 		// Check for the Duplicates
-		if cfg.Duplicates != ocfg.Duplicates && mset.ddtmr != nil {
-			// Let it fire right away, it will adjust properly on purge.
-			mset.ddtmr.Reset(time.Microsecond)
+		if cfg.Duplicates != ocfg.Duplicates {
+			if mset.ddtmr != nil {
+				// Let it fire right away, it will adjust properly on purge.
+				mset.ddtmr.Reset(time.Microsecond)
+			}
+			if cfg.DedupConfiguration && mset.msgDedupFilter.msgDedupTimer != nil {
+				mset.msgDedupFilter.msgDedupTimer.Reset(time.Microsecond)
+			}
 		}
 
 		// Check for Sources.
@@ -3138,6 +3215,18 @@ func (mset *stream) checkMsgId(id string) *ddentry {
 	return mset.ddmap[id]
 }
 
+// checkMsg will process and check for duplicate messages(payload + header).
+// Lock should be held.
+func (mset *stream) checkMsg(hdr, msg []byte) *ddentry {
+	if !mset.msgDedupFilter.msgDedupLoaded {
+		mset.rebuildMsgDedupe()
+	}
+	if len(mset.msgDedupFilter.msgDedupMap) == 0 {
+		return nil
+	}
+	return mset.msgDedupFilter.msgDedupMap[mset.msgDedupFilter.getHash(hdr, msg)]
+}
+
 // Will purge the entries that are past the window.
 // Should be called from a timer.
 func (mset *stream) purgeMsgIds() {
@@ -3184,6 +3273,50 @@ func (mset *stream) purgeMsgIds() {
 	}
 }
 
+func (mset *stream) purgeMsgs() {
+	mset.mu.Lock()
+	defer mset.mu.Unlock()
+
+	now := time.Now().UnixNano()
+	tmrNext := mset.cfg.Duplicates
+	window := int64(tmrNext)
+
+	for i, dde := range mset.msgDedupFilter.msgDedupArr[mset.msgDedupFilter.msgDedupIndex:] {
+		if now-dde.ts >= window {
+			delete(mset.msgDedupFilter.msgDedupMap, dde.id)
+		} else {
+			mset.msgDedupFilter.msgDedupIndex += i
+			// Check if we should garbage collect here if we are 1/3 total size.
+			if cap(mset.msgDedupFilter.msgDedupArr) > 3*(len(mset.msgDedupFilter.msgDedupArr)-mset.msgDedupFilter.msgDedupIndex) {
+				mset.msgDedupFilter.msgDedupArr = append([]*ddentry(nil), mset.msgDedupFilter.msgDedupArr[mset.msgDedupFilter.msgDedupIndex:]...)
+				mset.msgDedupFilter.msgDedupIndex = 0
+			}
+			tmrNext = time.Duration(window - (now - dde.ts))
+			break
+		}
+	}
+	if len(mset.msgDedupFilter.msgDedupMap) > 0 {
+		// Make sure to not fire too quick
+		const minFire = 50 * time.Millisecond
+		if tmrNext < minFire {
+			tmrNext = minFire
+		}
+		if mset.msgDedupFilter.msgDedupTimer != nil {
+			mset.msgDedupFilter.msgDedupTimer.Reset(tmrNext)
+		} else {
+			mset.msgDedupFilter.msgDedupTimer = time.AfterFunc(tmrNext, mset.purgeMsgs)
+		}
+	} else {
+		if mset.msgDedupFilter.msgDedupTimer != nil {
+			mset.msgDedupFilter.msgDedupTimer.Stop()
+			mset.msgDedupFilter.msgDedupTimer = nil
+		}
+		mset.msgDedupFilter.msgDedupMap = nil
+		mset.msgDedupFilter.msgDedupArr = nil
+		mset.msgDedupFilter.msgDedupIndex = 0
+	}
+}
+
 // storeMsgId will store the message id for duplicate detection.
 func (mset *stream) storeMsgId(dde *ddentry) {
 	mset.mu.Lock()
@@ -3204,6 +3337,26 @@ func (mset *stream) storeMsgIdLocked(dde *ddentry) {
 	}
 }
 
+// storeMsgId will store the {message + header} for duplicate detection.
+func (mset *stream) storeMsg(dde *ddentry) {
+	mset.mu.Lock()
+	defer mset.mu.Unlock()
+	mset.storeMsgLocked(dde)
+}
+
+// storeMsgLocked will store the {message + header} for duplicate detection.
+// Lock should he held.
+func (mset *stream) storeMsgLocked(dde *ddentry) {
+	if mset.msgDedupFilter.msgDedupMap == nil {
+		mset.msgDedupFilter.msgDedupMap = make(map[string]*ddentry)
+	}
+	mset.msgDedupFilter.msgDedupMap[dde.id] = dde
+	mset.msgDedupFilter.msgDedupArr = append(mset.msgDedupFilter.msgDedupArr, dde)
+	if mset.msgDedupFilter.msgDedupTimer == nil {
+		mset.msgDedupFilter.msgDedupTimer = time.AfterFunc(mset.cfg.Duplicates, mset.purgeMsgs)
+	}
+}
+
 // Fast lookup of msgId.
 func getMsgId(hdr []byte) string {
 	return string(getHeader(JSMsgId, hdr))
@@ -3212,6 +3365,11 @@ func getMsgId(hdr []byte) string {
 // Fast lookup of expected last msgId.
 func getExpectedLastMsgId(hdr []byte) string {
 	return string(getHeader(JSExpectedLastMsgId, hdr))
+}
+
+// Fast lookup of expected last msgHash.
+func getExpectedLastMsgHash(hdr []byte) string {
+	return string(getHeader(JSExpectedLastMsgHash, hdr))
 }
 
 // Fast lookup of expected stream.
@@ -3413,6 +3571,7 @@ func (mset *stream) processInboundJetStreamMsg(_ *subscription, c *client, _ *Ac
 var (
 	errLastSeqMismatch = errors.New("last sequence mismatch")
 	errMsgIdDuplicate  = errors.New("msgid is duplicate")
+	errMsgDuplicate    = errors.New("msg is duplicate")
 )
 
 // processJetStreamMsg is where we try to actually process the stream msg.
@@ -3486,6 +3645,7 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 
 	// Process additional msg headers if still present.
 	var msgId string
+	msgHash := mset.msgDedupFilter.getHash(hdr, msg)
 	var rollupSub, rollupAll bool
 
 	if len(hdr) > 0 {
@@ -3548,6 +3708,24 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 				return fmt.Errorf("last msgid mismatch: %q vs %q", lmsgId, last)
 			}
 		}
+		// Expected last msgHash.
+		if lmsgHash := getExpectedLastMsgHash(hdr); lmsgHash != _EMPTY_ {
+			if mset.lmsgHash == _EMPTY_ && !mset.msgDedupFilter.msgDedupLoaded {
+				mset.rebuildDedupe()
+			}
+			if lmsgHash != mset.lmsgHash {
+				last := mset.lmsgHash
+				mset.clfs++
+				mset.mu.Unlock()
+				if canRespond {
+					resp.PubAck = &PubAck{Stream: name}
+					resp.Error = NewJSStreamWrongLastMsgHashError(last)
+					b, _ := json.Marshal(resp)
+					outq.sendMsg(reply, b)
+				}
+				return fmt.Errorf("last msg-hash mismatch: %q vs %q", lmsgHash, last)
+			}
+		}
 		// Expected last sequence per subject.
 		if seq, exists := getExpectedLastSeqPerSubject(hdr); exists {
 			// TODO(dlc) - We could make a new store func that does this all in one.
@@ -3595,6 +3773,20 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 				mset.mu.Unlock()
 				return fmt.Errorf("rollup value invalid: %q", rollup)
 			}
+		}
+	}
+
+	// Msg Dedup Detection
+	if mset.cfg.DedupConfiguration {
+		if dde := mset.checkMsg(hdr, msg); dde != nil {
+			mset.clfs++
+			mset.mu.Unlock()
+			if canRespond {
+				response := append(pubAck, strconv.FormatUint(dde.seq, 10)...)
+				response = append(response, ",\"duplicate\": true}"...)
+				mset.outq.sendMsg(reply, response)
+			}
+			return errMsgDuplicate
 		}
 	}
 
@@ -3675,6 +3867,7 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 	if noInterest {
 		mset.lseq = store.SkipMsg()
 		mset.lmsgId = msgId
+		mset.lmsgHash = msgHash
 		mset.mu.Unlock()
 
 		if canRespond {
@@ -3692,7 +3885,9 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 	// If here we will attempt to store the message.
 	// Assume this will succeed.
 	olmsgId := mset.lmsgId
+	olmsgHash := mset.lmsgHash
 	mset.lmsgId = msgId
+	mset.lmsgHash = msgHash
 	clfs := mset.clfs
 	mset.lseq++
 	tierName := mset.tier
@@ -3738,6 +3933,7 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 		mset.store.FastState(&state)
 		mset.lseq = state.LastSeq
 		mset.lmsgId = olmsgId
+		mset.lmsgHash = olmsgHash
 		mset.clfs++
 		mset.mu.Unlock()
 
@@ -3771,6 +3967,7 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 		mset.store.FastState(&state)
 		mset.lseq = state.LastSeq
 		mset.lmsgId = olmsgId
+		mset.lmsgHash = olmsgHash
 		mset.mu.Unlock()
 		store.RemoveMsg(seq)
 		seq = 0
@@ -3779,6 +3976,9 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 		// If we have a msgId make sure to save.
 		if msgId != _EMPTY_ {
 			mset.storeMsgId(&ddentry{msgId, seq, ts})
+		}
+		if mset.config().DedupConfiguration {
+			mset.storeMsg(&ddentry{mset.msgDedupFilter.getHash(hdr, msg), seq, ts})
 		}
 		if rollupSub {
 			mset.purge(&JSApiStreamPurgeRequest{Subject: subject, Keep: 1})
@@ -4167,6 +4367,14 @@ func (mset *stream) stop(deleteFlag, advisory bool) error {
 		mset.ddmap = nil
 		mset.ddarr = nil
 		mset.ddindex = 0
+	}
+
+	if mset.cfg.DedupConfiguration && mset.msgDedupFilter.msgDedupTimer != nil {
+		mset.msgDedupFilter.msgDedupTimer.Stop()
+		mset.msgDedupFilter.msgDedupTimer = nil
+		mset.msgDedupFilter.msgDedupMap = nil
+		mset.msgDedupFilter.msgDedupArr = nil
+		mset.msgDedupFilter.msgDedupIndex = 0
 	}
 
 	sysc := mset.sysc

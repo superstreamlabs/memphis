@@ -87,15 +87,16 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			}
 
 			csr := createStationRequest{
-				StationName:       cfg.Name,
-				SchemaName:        "",
-				RetentionType:     retentionType,
-				RetentionValue:    retentionValue,
-				StorageType:       storageType,
-				Replicas:          cfg.Replicas,
-				DedupEnabled:      true,
-				DedupWindowMillis: 0,
-				IdempotencyWindow: int64(cfg.Duplicates.Milliseconds()),
+				StationName:        cfg.Name,
+				SchemaName:         "",
+				RetentionType:      retentionType,
+				RetentionValue:     retentionValue,
+				StorageType:        storageType,
+				Replicas:           cfg.Replicas,
+				DedupEnabled:       true,
+				DedupWindowMillis:  0,
+				IdempotencyWindow:  int64(cfg.Duplicates.Milliseconds()),
+				DedupConfiguration: cfg.DedupConfiguration,
 				DlsConfiguration: models.DlsConfiguration{
 					Poison:      true,
 					Schemaverse: false,

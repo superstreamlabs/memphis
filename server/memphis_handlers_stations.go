@@ -315,6 +315,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		IsNative:             isNative,
 		DlsConfiguration:     csr.DlsConfiguration,
 		TieredStorageEnabled: csr.TieredStorageEnabled,
+		DedupConfiguration:   csr.DedupConfiguration,
 	}
 
 	if shouldCreateStream {
@@ -785,6 +786,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		DlsConfiguration:     body.DlsConfiguration,
 		IsNative:             true,
 		TieredStorageEnabled: body.TieredStorageEnabled,
+		DedupConfiguration:   body.DedupConfiguration,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -826,6 +828,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"functions":                newStation.Functions,
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
+				"dedup_configuration":      newStation.DedupConfiguration,
 				"dls_configuration":        newStation.DlsConfiguration,
 				"is_native":                newStation.IsNative,
 				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
@@ -847,6 +850,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"functions":                newStation.Functions,
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
+				"dedup_configuration":      newStation.DedupConfiguration,
 				"dls_configuration":        newStation.DlsConfiguration,
 				"is_native":                newStation.IsNative,
 				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
@@ -920,6 +924,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"is_deleted":               false,
 			"schema":                   schemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"dedup_configuration":      newStation.DedupConfiguration,
 			"dls_configuration":        newStation.DlsConfiguration,
 			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})
@@ -940,6 +945,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"is_deleted":               false,
 			"schema":                   emptySchemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"dedup_configuration":      newStation.DedupConfiguration,
 			"dls_configuration":        newStation.DlsConfiguration,
 			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})
