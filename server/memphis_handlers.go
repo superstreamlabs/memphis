@@ -75,7 +75,6 @@ type srvMemphis struct {
 
 type memphisWS struct {
 	subscriptions *concurrentMap[memphisWSReqFiller]
-	webSocketMu   sync.Mutex
 	quitCh        chan struct{}
 }
 
@@ -111,7 +110,7 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	user, _ := c.Get("user")
 	userModel := user.(models.User)
 	if len(userModel.Username) == 0 {
-		return userModel, errors.New("Username is empty")
+		return userModel, errors.New("username is empty")
 	}
 	return userModel, nil
 }

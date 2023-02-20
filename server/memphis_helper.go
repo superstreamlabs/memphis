@@ -283,6 +283,12 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		return
 	}
 
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
+
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	err = s.memphisAddStream(&StreamConfig{
@@ -321,12 +327,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		return
 	}
 	TIERED_STORAGE_CONSUMER_CREATED = true
-
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: sys logs publish activation func is not initialized")
-	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 
 	// delete the old version throughput stream
 	err = s.memphisDeleteStream(throughputStreamName)

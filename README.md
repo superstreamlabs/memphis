@@ -81,7 +81,7 @@ And the list continues...
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
-**[v0.4.4](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.4-beta)**
+**[v0.4.5](https://docs.memphis.dev/memphis/release-notes/releases/v0.4.5-beta)**
 
 - 🚀 Fully optimized message broker in under 3 minutes
 - 💻 Easy-to-use UI, CLI, and SDKs
