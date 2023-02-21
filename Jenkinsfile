@@ -45,7 +45,7 @@ node {
 	kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done
       """
    }
-	  
+	/*  
     stage('Create memphis namespace in Kubernetes'){
       sh """
         kubectl create namespace memphis --dry-run=client -o yaml | kubectl apply -f -
@@ -60,7 +60,7 @@ node {
         sh "kubectl create secret generic tls-secret --from-file=$cert --from-file=$key -n memphis"
       }
     }
-	  
+	  */
       stage('Push to sandbox'){
         sh "rm -rf memphis-sbox-k8s"
       	dir ('memphis-sbox-k8s'){
