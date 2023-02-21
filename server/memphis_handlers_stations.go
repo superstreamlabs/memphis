@@ -322,7 +322,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			if IsNatsErr(err, JSInsufficientResourcesErr) {
 				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
-				respondWithErr(s, reply, errors.New("Station can not be created, probably since replicas count is larger than the cluster size"))
+				respondWithErr(s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
 			}
 
@@ -370,10 +370,14 @@ func (s *Server) createStationDirectIntern(c *client,
 			Value: stationName.Ext(),
 		}
 		param2 := analytics.EventParam{
+			Name:  "tiered-storage",
+			Value: strconv.FormatBool(csr.TieredStorageEnabled),
+		}
+		param3 := analytics.EventParam{
 			Name:  "nats-comp",
 			Value: strconv.FormatBool(!isNative),
 		}
-		analyticsParams := []analytics.EventParam{param1, param2}
+		analyticsParams := []analytics.EventParam{param1, param2, param3}
 		analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 	}
 
@@ -895,11 +899,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param := analytics.EventParam{
+		param1 := analytics.EventParam{
 			Name:  "station-name",
 			Value: stationName.Ext(),
 		}
-		analyticsParams := []analytics.EventParam{param}
+		param2 := analytics.EventParam{
+			Name:  "tiered-storage",
+			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
 		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
 	}
 
@@ -1245,7 +1253,7 @@ func dropPoisonDlsMessages(poisonMessageIds []string) error {
 	return nil
 }
 
-func dropSchemaDlsMsg(schemaMessageIds []string) error {
+func dropSchemaDlsMsgs(schemaMessageIds []string) error {
 	timeout := 500 * time.Millisecond
 	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
 	stationName := splitId[0]
@@ -1272,7 +1280,6 @@ func dropSchemaDlsMsg(schemaMessageIds []string) error {
 			if err != nil {
 				return errors.New("dropSchemaDlsMsg: " + err.Error())
 			}
-			break
 		}
 	}
 
@@ -1293,7 +1300,7 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 			return
 		}
 	} else if body.DlsMsgType == "schema" {
-		err := dropSchemaDlsMsg(body.DlsMessageIds)
+		err := dropSchemaDlsMsgs(body.DlsMessageIds)
 		if err != nil {
 			serv.Errorf("DropDlsMessages: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
