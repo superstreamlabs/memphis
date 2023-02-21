@@ -42,7 +42,7 @@ node {
       sh """
         aws eks --region eu-central-1 update-kubeconfig --name sandbox-cluster
         helm uninstall my-memphis -n memphis
-        kubectl delete ns memphis
+	kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done
       """
    }
 	  
@@ -84,7 +84,7 @@ node {
 
 	//proxy url section      
 	sh "aws s3 cp s3://memphis-jenkins-backup-bucket/sandbox_files/update_restgw_record.json ."  //restgw.sandbox.memphis.dev redirect to new LB record
-	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(kubectl get svc -n memphis | grep "memphis-rest-gateway" | awk '{print \"dualstack.\"\$4}')\\"/g"  update_proxy_record.json > record3.json""",  returnStdout: true)
+	sh(script: """sed "s/\\"DNSName\\": \\"\\"/\\"DNSName\\": \\"\$(kubectl get svc -n memphis | grep "memphis-rest-gateway" | awk '{print \"dualstack.\"\$4}')\\"/g"  update_restgw_record.json > record3.json""",  returnStdout: true)
 	sh(script: """aws route53 change-resource-record-sets --hosted-zone-id Z05132833CK9UXS6W3I0E --change-batch file://record3.json > status3.txt""",    returnStdout: true)       
 	sh "rm -rf record1.json record2.json record3.json update_sandbox_record.json update_broker_record.json update_restgw_record.json"
       }
