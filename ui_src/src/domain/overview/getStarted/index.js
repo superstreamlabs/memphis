@@ -15,6 +15,7 @@ import './style.scss';
 import React, { createContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
+import pathDomains from '../../../router';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
@@ -86,11 +87,39 @@ const initialState = {
     actualPods: null
 };
 
-const GetStarted = ({ username, dataSentence }) => {
+const GetStarted = ({ username, dataSentence, skip }) => {
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
     const [open, modalFlip] = useState(false);
     const history = useHistory();
     const createStationFormRef = useRef(null);
+    const [targetLocation, setTargetLocation] = useState(null);
+    const [displayGetStarted, setDisplayGetStarted] = useState(true);
+
+    useEffect(() => {
+        if (!displayGetStarted && targetLocation !== null) {
+            history.push(targetLocation);
+            setTargetLocation(null);
+        }
+    }, [displayGetStarted, targetLocation, history]);
+
+    useEffect(() => {
+        const unblock = history.block((location) => {
+            if (displayGetStarted) {
+                modalFlip(true);
+                setTargetLocation(location.pathname);
+                return false;
+            }
+        });
+        return () => {
+            unblock();
+        };
+    }, [displayGetStarted, history]);
+
+    const handleConfirm = () => {
+        setDisplayGetStarted(false);
+        targetLocation ? history.push(targetLocation) : skip();
+        modalFlip(false);
+    };
 
     const getStepsDescription = (stepNumber) => {
         switch (stepNumber) {
@@ -263,9 +292,7 @@ const GetStarted = ({ username, dataSentence }) => {
                 cancel={() => {
                     modalFlip(false);
                 }}
-                skip={() => {
-                    modalFlip(false);
-                }}
+                skip={handleConfirm}
             />
         </GetStartedStoreContext.Provider>
     );

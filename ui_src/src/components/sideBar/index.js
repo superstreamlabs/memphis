@@ -20,13 +20,7 @@ import { SettingOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
-import {
-    LOCAL_STORAGE_AVATAR_ID,
-    LOCAL_STORAGE_COMPANY_LOGO,
-    LOCAL_STORAGE_FULL_NAME,
-    LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_SKIP_GET_STARTED
-} from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 import integrationNavIcon from '../../assets/images/integrationNavIcon.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
@@ -47,7 +41,6 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
 import TooltipComponent from '../tooltip/tooltip';
-import SkipGetStrtedModal from '../skipGetStartedModal';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -62,24 +55,6 @@ function SideBar() {
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [systemVersion, setSystemVersion] = useState('');
     const [popoverOpen, setPopoverOpen] = useState(false);
-    const [open, modalFlip] = useState(false);
-    const [goToRoute, setGoToRoute] = useState(null);
-
-    const handleChangeRoute = () => {
-        history.push(goToRoute);
-    };
-
-    useEffect(() => {
-        if (`${state.route}` !== goToRoute && state.route === 'stations') setGoToRoute(pathDomains.stations);
-        else if (`${state.route}` !== goToRoute && state.route === 'schemaverse') setGoToRoute(pathDomains.schemaverse);
-    }, [state.route]);
-
-    useEffect(() => {
-        if (goToRoute && `/${state.route}` !== goToRoute) {
-            if (state?.route === 'overview' && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && goToRoute !== pathDomains.overview) modalFlip(true);
-            else handleChangeRoute(goToRoute);
-        }
-    }, [goToRoute]);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -139,8 +114,7 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
-                    setGoToRoute(pathDomains.profile);
-                    setPopoverOpen(false);
+                    history.push(pathDomains.profile);
                 }}
             >
                 <div className="item">
@@ -153,8 +127,7 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
-                    setGoToRoute(`${pathDomains.administration}/integrations`);
-                    setPopoverOpen(false);
+                    history.push(`${pathDomains.administration}/integrations`);
                 }}
             >
                 <div className="item">
@@ -188,8 +161,8 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => setGoToRoute(pathDomains.overview)} />
-                <div className="item-wrapper" onClick={() => setGoToRoute(pathDomains.overview)}>
+                <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                <div className="item-wrapper" onClick={() => history.push(pathDomains.overview)}>
                     <div className="icon">
                         {state.route === 'overview' ? (
                             <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
@@ -199,7 +172,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
                 </div>
-                <div className="item-wrapper" onClick={() => (goToRoute === pathDomains.stations ? handleChangeRoute(goToRoute) : setGoToRoute(pathDomains.stations))}>
+                <div className="item-wrapper" onClick={() => history.push(pathDomains.stations)}>
                     <div className="icon">
                         {state.route === 'stations' ? (
                             <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
@@ -209,10 +182,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                <div
-                    className="item-wrapper"
-                    onClick={() => (goToRoute === `${pathDomains.schemaverse}/list` ? handleChangeRoute(goToRoute) : setGoToRoute(`${pathDomains.schemaverse}/list`))}
-                >
+                <div className="item-wrapper" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
                     <div className="icon">
                         {state.route === 'schemaverse' ? (
                             <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
@@ -222,7 +192,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                <div className="item-wrapper" onClick={() => (goToRoute === pathDomains.users ? handleChangeRoute(goToRoute) : setGoToRoute(pathDomains.users))}>
+                <div className="item-wrapper" onClick={() => history.push(pathDomains.users)}>
                     <div className="icon">
                         {state.route === 'users' ? (
                             <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
@@ -232,7 +202,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
-                <div className="item-wrapper" onClick={() => (goToRoute === pathDomains.sysLogs ? handleChangeRoute(goToRoute) : setGoToRoute(pathDomains.sysLogs))}>
+                <div className="item-wrapper" onClick={() => history.push(pathDomains.sysLogs)}>
                     <div className="icon">
                         {state.route === 'logs' ? (
                             <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
@@ -245,7 +215,7 @@ function SideBar() {
             </div>
             <div className="bottom-icons">
                 <TooltipComponent text="Integrations" placement="right">
-                    <div className="integration-icon-wrapper" onClick={() => setGoToRoute(`${pathDomains.administration}/integrations`)}>
+                    <div className="integration-icon-wrapper" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
                         <img src={integrationNavIcon} />
                     </div>
                 </TooltipComponent>
@@ -272,17 +242,6 @@ function SideBar() {
                     <p>v{systemVersion}</p>
                 </version>
             </div>
-            <SkipGetStrtedModal
-                open={open}
-                cancel={() => {
-                    setGoToRoute(pathDomains.overview);
-                    modalFlip(false);
-                }}
-                skip={() => {
-                    handleChangeRoute(goToRoute);
-                    modalFlip(false);
-                }}
-            />
         </div>
     );
 }
