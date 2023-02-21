@@ -248,7 +248,9 @@ function OverView() {
                     </div>
                 </div>
             )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && <GetStarted username={username} dataSentence={dataSentence} />}
+            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && (
+                <GetStarted username={username} dataSentence={dataSentence} skip={() => getOverviewData()} />
+            )}
             <Modal
                 header={
                     <div className="modal-header">

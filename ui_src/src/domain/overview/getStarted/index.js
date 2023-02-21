@@ -15,6 +15,7 @@ import './style.scss';
 import React, { createContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
+import pathDomains from '../../../router';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
@@ -86,7 +87,7 @@ const initialState = {
     actualPods: null
 };
 
-const GetStarted = ({ username, dataSentence }) => {
+const GetStarted = ({ username, dataSentence, skip }) => {
     const [getStartedState, getStartedDispatch] = useReducer(Reducer, initialState);
     const [open, modalFlip] = useState(false);
     const history = useHistory();
@@ -115,9 +116,9 @@ const GetStarted = ({ username, dataSentence }) => {
     }, [displayGetStarted, history]);
 
     const handleConfirm = () => {
-        modalFlip(false);
         setDisplayGetStarted(false);
-        history.push(targetLocation);
+        targetLocation === '/overview' ? skip() : history.push(targetLocation);
+        modalFlip(false);
     };
 
     const getStepsDescription = (stepNumber) => {
@@ -214,7 +215,7 @@ const GetStarted = ({ username, dataSentence }) => {
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
-                                modalFlip(true);
+                                history.push(pathDomains.overview);
                             }}
                         />
                     </Divider>
