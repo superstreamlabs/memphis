@@ -117,7 +117,7 @@ const GetStarted = ({ username, dataSentence, skip }) => {
 
     const handleConfirm = () => {
         setDisplayGetStarted(false);
-        targetLocation === '/overview' ? skip() : history.push(targetLocation);
+        targetLocation ? history.push(targetLocation) : skip();
         modalFlip(false);
     };
 
@@ -215,7 +215,7 @@ const GetStarted = ({ username, dataSentence, skip }) => {
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {
-                                history.push(pathDomains.overview);
+                                modalFlip(true);
                             }}
                         />
                     </Divider>
