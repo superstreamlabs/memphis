@@ -47,18 +47,23 @@
             .component {
                 width: 100%;
                 padding-top: 10px;
+                position: relative;
                 .sys-components {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    width: 100%;
-
+                    // display: flex;
+                    // justify-content: space-between;
+                    // align-items: center;
+                    // width: 100%;
+                    // position: relative;
+                    // width: 100%;
+                    height: 30px;
                     .component-name {
                         font-size: 15px;
                         font-family: 'InterSemiBold';
                         cursor: pointer;
                     }
                     .pie-status-component {
+                        right: 0;
+                        position: absolute;
                         display: flex;
                         align-items: center;
                         filter: drop-shadow(1px 1px 1px #ececec);

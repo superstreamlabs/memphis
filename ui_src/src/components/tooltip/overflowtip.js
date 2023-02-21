@@ -14,7 +14,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles } from '@material-ui/core/styles';
 
-const OverflowTip = ({ color, center, width, maxWidth, cursor, textAlign, textColor, children, className, text }) => {
+const OverflowTip = ({ color, center, width, maxWidth, cursor, textAlign, textColor, children, className, text, position }) => {
     const tooltipStyle = makeStyles((theme) => ({
         tooltip: {
             color: color === 'white' ? '#2B2E3F' : '#f7f7f7',
@@ -55,6 +55,7 @@ const OverflowTip = ({ color, center, width, maxWidth, cursor, textAlign, textCo
             <div
                 ref={textElementRef}
                 style={{
+                    position: position,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',

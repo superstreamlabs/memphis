@@ -83,7 +83,7 @@
                 height: 18px;
             }
             .uncheck-icon {
-                width: 16px;
+                min-width: 16px;
                 height: 16px;
                 border: 1px solid #d0d5dd;
                 border-radius: 8px;
@@ -92,7 +92,7 @@
             .option-content {
                 display: flex;
                 flex-direction: column;
-                max-width: 85%;
+                max-width: 95%;
                 p {
                     color: #101828;
                     line-height: 14px;
@@ -259,7 +259,6 @@
     .toggle-add-schema {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 10px;
         .switch-button {
             margin-left: 10px;
         }
