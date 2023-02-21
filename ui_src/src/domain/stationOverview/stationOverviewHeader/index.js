@@ -15,6 +15,7 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import { MinusOutlined } from '@ant-design/icons';
 
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
@@ -24,6 +25,7 @@ import DeleteItemsModal from '../../../components/deleteItemsModal';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
+import OverflowTip from '../../../components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
 import deleteIcon from '../../../assets/images/deleteIcon.svg';
 import VersionBadge from '../../../components/versionBadge';
@@ -39,7 +41,6 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import OverflowTip from '../../../components/tooltip/overflowtip';
 
 const StationOverviewHeader = () => {
     const [state, dispatch] = useContext(Context);
@@ -155,7 +156,7 @@ const StationOverviewHeader = () => {
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
                             </p>
                             <p>
-                                <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : 'None'}
+                                <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}
                             </p>
                         </div>
                     </div>
