@@ -41,8 +41,8 @@ const Component = ({ comp, i }) => {
             <img src={ComponentIcon} className="component-img" alt="ComponentIcon" width="18" height="18" />
             <div className="component">
                 <div className="sys-components">
-                    <OverflowTip text={comp?.name}>
-                        <p className="component-name">{comp?.name}</p>
+                    <OverflowTip maxWidth="calc(100% - 170px)" position="absolute" text={comp?.name}>
+                        <label className="component-name">{comp?.name}</label>
                     </OverflowTip>
                     <div className="pie-status-component">
                         <HealthyBadge status={comp?.status} />
