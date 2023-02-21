@@ -32,6 +32,7 @@
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.5",
     "react-google-login": "^5.2.2",
+    "react-hotjar": "^5.3.0",
     "react-player": "2.11.0",
     "react-responsive": "^9.0.0-beta.6",
     "react-router-dom": "^5.2.0",
