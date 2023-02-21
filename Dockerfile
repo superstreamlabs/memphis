@@ -1,9 +1,12 @@
-FROM golang:1.19-alpine3.17 as build
+# syntax=docker/dockerfile:1
+
+FROM --platform=$BUILDPLATFORM golang:1.19-alpine3.17 as build
 
 WORKDIR $GOPATH/src/memphis-broker
 COPY . .
 
-RUN CGO_ENABLED=0 go build -ldflags="-w" -a -o  .
+ARG TARGETOS TARGETARCH
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-w" -a -o  .
 
 FROM alpine:3.17
 ENV GOPATH="/go/src"
