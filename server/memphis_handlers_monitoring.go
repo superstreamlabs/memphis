@@ -1973,7 +1973,6 @@ func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 }
 
 func checkIsMinikube(labels map[string]string) bool {
-	fmt.Print(labels)
 	for key := range labels {
 		if strings.Contains(strings.ToLower(key), "minikube") {
 			return true
