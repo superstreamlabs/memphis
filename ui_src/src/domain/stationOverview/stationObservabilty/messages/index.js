@@ -44,9 +44,9 @@ const Messages = () => {
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [isCheckAll, setIsCheckAll] = useState(false);
-    const [tabValue, setTabValue] = useState('All');
+    const [tabValue, setTabValue] = useState('Messages');
     const [isCheck, setIsCheck] = useState([]);
-    const tabs = ['All', 'Dead-letter', 'Details'];
+    const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
         { name: 'Unacked', disabled: false },
         { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
@@ -167,33 +167,33 @@ const Messages = () => {
     };
 
     const listGenerator = (index, message) => {
-        const id = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
+        const id = tabValue === tabs[1] ? message?._id : message?.message_seq;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                {tabValue === 'Dead-letter' && (
+                {tabValue === tabs[1] && (
                     <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
                 )}
                 <div
                     className={selectedRowIndex === id ? 'row-message selected' : 'row-message'}
-                    style={{ paddingLeft: tabValue === 'Dead-letter' && '35px' }}
+                    style={{ paddingLeft: tabValue === tabs[1] && '35px' }}
                     key={id}
                     id={id}
                     onClick={() => onSelectedRow(id)}
                 >
                     {selectedRowIndex === id && <div className="hr-selected"></div>}
-                    <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
+                    <span className="preview-message">{tabValue === tabs[1] ? message?.message?.data : message?.data}</span>
                 </div>
             </div>
         );
     };
 
     const listGeneratorWrapper = () => {
-        let isDls = tabValue === 'Dead-letter';
+        let isDls = tabValue === tabs[1];
         return (
             <div className={isDls ? 'list-wrapper dls-list' : 'list-wrapper msg-list'}>
                 <div className="coulmns-table">
                     <div className={isDls ? 'left-coulmn' : 'left-coulmn all'}>
-                        {tabValue === 'Dead-letter' && (
+                        {tabValue === tabs[1] && (
                             <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
                         )}
                         <p>Messages (In hexa)</p>
@@ -223,10 +223,10 @@ const Messages = () => {
 
     const showLastMsg = () => {
         let amount = 0;
-        if (tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0)
+        if (tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
+        else if (tabValue === tabs[1] && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === 'Dead-letter' && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
         return (
             amount > 0 && (
@@ -234,7 +234,7 @@ const Messages = () => {
                     <InfoOutlined />
                     <p>
                         Showing last {numberWithCommas(amount)} out of{' '}
-                        {tabValue === 'All'
+                        {tabValue === tabs[0]
                             ? numberWithCommas(stationState?.stationSocketData?.total_messages)
                             : numberWithCommas(stationState?.stationSocketData?.total_dls_messages)}{' '}
                         messages
@@ -251,7 +251,7 @@ const Messages = () => {
                     <p className="title">Station</p>
                     {showLastMsg()}
                 </div>
-                {tabValue === 'Dead-letter' &&
+                {tabValue === tabs[1] &&
                     (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && (
                         <div className="right-side">
                             <Button
@@ -294,7 +294,7 @@ const Messages = () => {
                     length={[null, stationState?.stationSocketData?.total_dls_messages || null, null]}
                 />
             </div>
-            {tabValue === 'Dead-letter' && (
+            {tabValue === tabs[1] && (
                 <div className="tabs">
                     <CustomTabs
                         defaultValue
@@ -305,14 +305,11 @@ const Messages = () => {
                     />
                 </div>
             )}
-            {tabValue === 'All' && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === 'Dead-letter' &&
-                subTabValue === 'Schema violation' &&
-                stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
-                listGeneratorWrapper()}
+            {tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === tabs[1] && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === tabs[1] && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
 
-            {tabValue === 'All' && stationState?.stationSocketData?.messages === null && (
+            {tabValue === tabs[0] && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
@@ -324,7 +321,7 @@ const Messages = () => {
                     )}
                 </div>
             )}
-            {tabValue === 'Dead-letter' &&
+            {tabValue === tabs[1] &&
                 ((subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
                     (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
@@ -332,7 +329,7 @@ const Messages = () => {
                         <p>Hooray! No messages</p>
                     </div>
                 )}
-            {tabValue === 'Details' && (
+            {tabValue === tabs[2] && (
                 <div className="details">
                     <DetailBox
                         img={leaderImg}

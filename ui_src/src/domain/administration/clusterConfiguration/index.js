@@ -101,7 +101,7 @@ function ClusterConfiguration() {
     return (
         <div className="configuration-container">
             <div className="header">
-                <p className="main-header">Cluster configuration</p>
+                <p className="main-header">Memphis configuration</p>
                 <p className="sub-header">In this section, you can tune 'Memphis' internal configuration to suit your requirements</p>
             </div>
             {isLoading && <Loader className="loader-container" />}
