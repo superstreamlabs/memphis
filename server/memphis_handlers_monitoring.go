@@ -524,7 +524,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 		if err != nil {
 			return components, metricsEnabled, err
 		}
-
+		minikubeCheck := false
+		isMinikube := false
 		for _, pod := range pods.Items {
 			if pod.Status.Phase != v1.PodRunning {
 				allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
@@ -555,6 +556,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 			if err != nil {
 				return components, metricsEnabled, err
+			}
+			if !minikubeCheck {
+				isMinikube = checkIsMinikube(node.Labels)
 			}
 			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
 			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
@@ -615,7 +619,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 
 			storageUsage := float64(0)
-			if containerForExec != "" && mountpath != "" {
+			if isMinikube {
+				if strings.Contains(strings.ToLower(pod.Name), "mongo") {
+					storageUsage, _, err = getDbStorageSize()
+					if err != nil {
+						return components, metricsEnabled, err
+					}
+				} else if strings.Contains(strings.ToLower(pod.Name), "cluster") {
+					v, err := serv.Varz(nil)
+					if err != nil {
+						return components, metricsEnabled, err
+					}
+					storageUsage = shortenFloat(float64(v.JetStream.Stats.Store))
+				}
+			} else if containerForExec != "" && mountpath != "" {
 				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
 				if err != nil {
 					return components, metricsEnabled, err
@@ -1953,4 +1970,13 @@ func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 	}
 	c.IndentedJSON(200, gin.H{
 		"available_replicas": v.Routes + 1})
+}
+
+func checkIsMinikube(labels map[string]string) bool {
+	for key := range labels {
+		if strings.Contains(strings.ToLower(key), "minikube") {
+			return true
+		}
+	}
+	return false
 }
