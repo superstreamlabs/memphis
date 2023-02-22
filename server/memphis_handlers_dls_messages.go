@@ -348,7 +348,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	}
 
 	if len(msgs) < 1 {
-		serv.Errorf("getMessagesByDlsId: no dls message with id: %s", dlsMsgId)
+		serv.Warnf("getMessagesByDlsId: no dls message with id: %s", dlsMsgId)
 		return models.DlsMessageResponse{}, err
 	}
 

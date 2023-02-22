@@ -601,6 +601,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <Form.Item
                                 name="tiered_storage_enabled"
                                 initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : false}
+                                style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}
                             >
                                 {tabValue === tabs[1].name &&
                                     storageTierTwoOptions.map((value) => {

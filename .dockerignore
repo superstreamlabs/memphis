@@ -2,3 +2,7 @@ memphis-broker
 *.md
 logos
 logo*
+ui_src
+debug
+Dockerfile
+Jenkinsfile

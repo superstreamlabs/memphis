@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import Input from '../../../../../components/Input';
 
-function InputRow({ title, desc, value, onChanges, img, placeholder }) {
+function InputRow({ title, desc, value, onChanges, img, placeholder, disabled }) {
     const [inputValue, setInputValue] = useState(value);
 
     const onChange = (newValue) => {
@@ -49,6 +49,7 @@ function InputRow({ title, desc, value, onChanges, img, placeholder }) {
                     minWidth="200px"
                     height="38px"
                     onChange={onChange}
+                    disabled={disabled}
                 />
             </div>
         </div>

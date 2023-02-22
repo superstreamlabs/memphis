@@ -15,7 +15,7 @@ node {
       sh 'docker login -u $DOCKER_HUB_CREDS_USR -p $DOCKER_HUB_CREDS_PSW'
       }
     }
-
+/* 
     stage('UI build'){
       dir ('ui_src'){
 	sh """
@@ -24,7 +24,7 @@ node {
 	"""
       }
     }
-	  
+*/	  
     stage('Create memphis namespace in Kubernetes'){
       sh """
         kubectl config use-context minikube
