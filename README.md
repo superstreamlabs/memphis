@@ -51,7 +51,7 @@ Implementing one will require you to -
 - Build a dead-letter queue, create observability, and a retry mechanism
 - Build a scalable environment
 - Create client wrappers
-- Tag events for "fake" multi-tenancy
+- Tag events to achieve multi-tenancy
 - Enforce schemas and handle transformations
 - Handle back pressure. Client or queue side
 - Configure monitoring and real-time alerts
