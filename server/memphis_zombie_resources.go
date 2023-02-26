@@ -239,14 +239,17 @@ func (s *Server) KillZombieResources() {
 	}
 
 	count := 0
+	firstIteration := true
 	for range time.Tick(time.Minute * 1) {
 		s.Debugf("Killing Zombie resources iteration")
 		killFunc(s)
 
-		count++
-		if count == 1*60 { // once in 1 hours
+		if firstIteration || count == 1*60 { // once in 1 hour
 			updateSystemLiveness()
 			count = 0
+
 		}
+		firstIteration = false
+		count++
 	}
 }
