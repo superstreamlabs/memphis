@@ -90,8 +90,7 @@ export const SDK_CODE_EXAMPLE = {
     TypeScript: {
         langCode: 'typescript',
         installation: `npm i memphis-dev --save`,
-        producer: `import memphis from 'memphis-dev';
-import type { Memphis } from 'memphis-dev/types';
+        producer: `import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
     let memphisConnection: Memphis;
@@ -122,8 +121,7 @@ import type { Memphis } from 'memphis-dev/types';
     }
 })();
         `,
-        consumer: `import memphis from 'memphis-dev';
-import { Memphis, Message } from 'memphis-dev/types';
+        consumer: `import { memphis, Memphis, Message } from 'memphis-dev';
 
 (async function () {
     let memphisConnection: Memphis;
