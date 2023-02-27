@@ -57,7 +57,7 @@ func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate, connId 
 	s := c.srv
 	rawMsg, err := json.Marshal(ccu)
 	if err != nil {
-		s.Errorf(err.Error())
+		s.Errorf("sendConnectUpdate: " + err.Error())
 		return
 	}
 	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate, connId)
@@ -299,5 +299,5 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	}
 
 	serv.Noticef("Client has been disconnected from Memphis")
-	return err
+	return nil
 }

@@ -99,16 +99,22 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		email, _ = claims["email"].(string)
-		if email == "" {
+		email, ok = claims["email"].(string)
+		if email == "" || !ok {
 			temp, _ := claims["repos_url"].(string)
 			temp2 := strings.Split(temp, "https://api.github.com/users/")
 			temp3 := strings.Split(temp2[1], "/")
 			email = temp3[0]
 		}
-		fullName := strings.Split(claims["name"].(string), " ")
-		firstName = fullName[0]
-		lastName = fullName[1]
+		name, ok := claims["name"].(string)
+		if name == "" || !ok {
+			firstName = ""
+			lastName = ""
+		} else {
+			fullName := strings.Split(name, " ")
+			firstName = fullName[0]
+			lastName = fullName[1]
+		}
 		profilePic = claims["avatar_url"].(string)
 	} else {
 		serv.Errorf("Login(Sandbox): Wrong login type")

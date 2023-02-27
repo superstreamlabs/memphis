@@ -263,7 +263,7 @@ func getSchemaByStationName(sn StationName) (models.Schema, error) {
 
 	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
 	if err == mongo.ErrNoDocuments {
-		serv.Errorf("getSchemaByStation: Schema " + station.Schema.SchemaName + " does not exist")
+		serv.Warnf("getSchemaByStation: Schema " + station.Schema.SchemaName + " does not exist")
 		return schema, ErrNoSchema
 	}
 	if err != nil {

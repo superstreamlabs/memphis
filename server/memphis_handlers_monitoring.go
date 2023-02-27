@@ -37,6 +37,7 @@ import (
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1435,22 +1436,26 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	// Check when the schema object in station is not empty, not optional for non native stations
 	if station.Schema != emptySchemaDetailsObj {
 		var schema models.Schema
+		var schemaDetails models.StationOverviewSchemaDetails
 		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
-		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+		if err == mongo.ErrNoDocuments {
+			schemaDetails = models.StationOverviewSchemaDetails{}
+		} else {
+			if err != nil {
+				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 
-		schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
-		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+			schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+			if err != nil {
+				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			updatesAvailable := !schemaVersion.Active
+			schemaDetails = models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
 		}
-		updatesAvailable := !schemaVersion.Active
-		schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
-
 		response = gin.H{
 			"connected_producers":      connectedProducers,
 			"disconnected_producers":   disconnectedProducers,

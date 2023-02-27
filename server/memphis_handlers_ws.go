@@ -73,12 +73,12 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh ch
 				}
 				update, err := updateFiller()
 				if err != nil {
-					s.Errorf(err.Error())
+					s.Errorf("memphisWSLoop: " + err.Error())
 					continue
 				}
 				updateRaw, err := json.Marshal(update)
 				if err != nil {
-					s.Errorf(err.Error())
+					s.Errorf("memphisWSLoop: " + err.Error())
 					continue
 				}
 

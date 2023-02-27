@@ -25,6 +25,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -123,6 +124,10 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		filter := bson.M{"name": producedByHeader, "connection_id": connId}
 		var producer models.Producer
 		err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+		if err == mongo.ErrNoDocuments {
+			serv.Warnf("handleNewPoisonMessage: producer " + producedByHeader + " couldn't been found")
+			return
+		}
 		if err != nil {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return

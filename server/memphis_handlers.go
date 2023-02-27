@@ -339,7 +339,6 @@ func isSchemaVersionExists(version int, schemaId primitive.ObjectID) (bool, mode
 	var schemaVersion models.SchemaVersion
 	filter := bson.M{"schema_id": schemaId, "version_number": version}
 	err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
-
 	if err == mongo.ErrNoDocuments {
 		return false, schemaVersion, nil
 	} else if err != nil {

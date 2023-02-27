@@ -668,65 +668,6 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-	return
-}
-
-func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
-	var consumers []models.Consumer
-	var station models.Station
-
-	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
-	if err != nil {
-		serv.Errorf("KillConsumers: " + err.Error())
-	}
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		serv.Errorf("KillConsumers: " + err.Error())
-	}
-
-	if len(consumers) > 0 {
-		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
-		if err != nil {
-			errMsg := "At station ID: " + consumers[0].StationId.Hex() + ": " + err.Error()
-			serv.Errorf("KillConsumers: " + errMsg)
-		}
-		_, err = consumersCollection.UpdateMany(context.TODO(),
-			bson.M{"connection_id": connectionId},
-			bson.M{"$set": bson.M{"is_active": false}},
-		)
-		if err != nil {
-			errMsg := "At station: " + station.Name + ": " + err.Error()
-			serv.Errorf("KillConsumers: " + errMsg)
-			return err
-		}
-
-		userType := "application"
-		if consumers[0].CreatedByUser == "root" {
-			userType = "root"
-		}
-
-		var message string
-		var auditLogs []interface{}
-		var newAuditLog models.AuditLog
-		for _, consumer := range consumers {
-			message = "Consumer " + consumer.Name + " has been disconnected by user " + consumers[0].CreatedByUser
-			newAuditLog = models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   station.Name,
-				Message:       message,
-				CreatedByUser: consumers[0].CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      userType,
-			}
-			auditLogs = append(auditLogs, newAuditLog)
-		}
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			errMsg := "At station: " + station.Name + ": " + err.Error()
-			serv.Errorf("KillConsumers: " + errMsg)
-		}
-	}
-
-	return nil
 }
 
 func (ch ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {

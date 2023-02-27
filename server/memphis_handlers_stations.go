@@ -1542,6 +1542,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
 	var producer models.Producer
 	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err == mongo.ErrNoDocuments {
+		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
+		serv.Warnf("GetMessageDetails: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
 	if err != nil {
 		serv.Errorf("GetMessageDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1953,6 +1959,12 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	var schema models.Schema
 	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+	if err == mongo.ErrNoDocuments {
+		errMsg := "Schema " + station.Schema.SchemaName + " does not exist"
+		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

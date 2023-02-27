@@ -472,62 +472,6 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	respondWithErr(s, reply, nil)
 }
 
-func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
-	var producers []models.Producer
-	var station models.Station
-
-	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
-	if err != nil {
-		serv.Errorf("KillProducers: " + err.Error())
-	}
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		serv.Errorf("KillProducers: " + err.Error())
-	}
-
-	if len(producers) > 0 {
-		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
-		if err != nil {
-			serv.Errorf("KillProducers: " + "Producer " + producers[0].Name + ": " + err.Error())
-		}
-
-		_, err = producersCollection.UpdateMany(context.TODO(),
-			bson.M{"connection_id": connectionId},
-			bson.M{"$set": bson.M{"is_active": false}},
-		)
-		if err != nil {
-			serv.Errorf("KillProducers: At station " + station.Name + ": " + err.Error())
-			return err
-		}
-
-		userType := "application"
-		if producers[0].CreatedByUser == "root" {
-			userType = "root"
-		}
-
-		var message string
-		var auditLogs []interface{}
-		var newAuditLog models.AuditLog
-		for _, producer := range producers {
-			message = "Producer " + producer.Name + " has been disconnected by user " + producers[0].CreatedByUser
-			newAuditLog = models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   station.Name,
-				Message:       message,
-				CreatedByUser: producers[0].CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      userType,
-			}
-			auditLogs = append(auditLogs, newAuditLog)
-		}
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("KillProducers: At station " + station.Name + ": " + err.Error())
-		}
-	}
-
-	return nil
-}
-
 func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId, "is_deleted": false},
