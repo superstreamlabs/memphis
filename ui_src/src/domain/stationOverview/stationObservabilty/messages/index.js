@@ -62,7 +62,9 @@ const Messages = () => {
 
     const onCheckedAll = () => {
         setIsCheckAll(!isCheckAll);
-        subTabValue === 'Unacked'
+        tabValue === 'All'
+            ? setIsCheck(stationState?.stationSocketData?.messages.map((li) => li.message_seq))
+            : subTabValue === 'Unacked'
             ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
             : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
         setIndeterminate(false);
@@ -94,6 +96,8 @@ const Messages = () => {
     const handleChangeMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
+        setIsCheck([]);
+        setIsCheckAll(false);
         setTabValue(newValue);
         subTabValue === 'Schema violation' && setSubTabValue('Unacked');
     };
@@ -170,16 +174,9 @@ const Messages = () => {
         const id = tabValue === 'Dead-letter' ? message?._id : message?.message_seq;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                {tabValue === 'Dead-letter' && (
-                    <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
-                )}
-                <div
-                    className={selectedRowIndex === id ? 'row-message selected' : 'row-message'}
-                    style={{ paddingLeft: tabValue === 'Dead-letter' && '35px' }}
-                    key={id}
-                    id={id}
-                    onClick={() => onSelectedRow(id)}
-                >
+                <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
+
+                <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
                     {selectedRowIndex === id && <div className="hr-selected"></div>}
                     <span className="preview-message">{tabValue === 'Dead-letter' ? message?.message?.data : message?.data}</span>
                 </div>
@@ -192,16 +189,14 @@ const Messages = () => {
         return (
             <div className={isDls ? 'list-wrapper dls-list' : 'list-wrapper msg-list'}>
                 <div className="coulmns-table">
-                    <div className={isDls ? 'left-coulmn' : 'left-coulmn all'}>
-                        {tabValue === 'Dead-letter' && (
-                            <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                        )}
+                    <div className="left-coulmn">
+                        <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
                         <p>Messages (In hexa)</p>
                     </div>
                     <p className="right-coulmn">Information</p>
                 </div>
                 <div className="list">
-                    <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'}>
+                    <div className="rows-wrapper">
                         <Virtuoso
                             data={
                                 !isDls
@@ -251,40 +246,41 @@ const Messages = () => {
                     <p className="title">Station</p>
                     {showLastMsg()}
                 </div>
-                {tabValue === 'Dead-letter' &&
-                    (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && (
-                        <div className="right-side">
-                            <Button
-                                width="80px"
-                                height="32px"
-                                placeholder="Drop"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={isCheck.length === 0}
-                                isLoading={ignoreProcced}
-                                onClick={() => handleDrop()}
-                            />
-                            {subTabValue === 'Unacked' && (
-                                <Button
-                                    width="80px"
-                                    height="32px"
-                                    placeholder="Resend"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                                    isLoading={resendProcced}
-                                    onClick={() => handleResend()}
-                                />
-                            )}
-                        </div>
+                <div className="right-side">
+                    {(tabValue === 'All' ||
+                        (tabValue === 'Dead-letter' &&
+                            (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0))) && (
+                        <Button
+                            width="80px"
+                            height="32px"
+                            placeholder="Drop"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            disabled={isCheck.length === 0}
+                            isLoading={ignoreProcced}
+                            onClick={() => handleDrop()}
+                        />
                     )}
+                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && (
+                        <Button
+                            width="80px"
+                            height="32px"
+                            placeholder="Resend"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
+                            tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                            isLoading={resendProcced}
+                            onClick={() => handleResend()}
+                        />
+                    )}
+                </div>
             </div>
             <div className="tabs">
                 <CustomTabs
