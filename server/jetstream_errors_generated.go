@@ -405,7 +405,7 @@ const (
 	// JSTemplateNameNotMatchSubjectErr template name in subject does not match request
 	JSTemplateNameNotMatchSubjectErr ErrorIdentifier = 10073
 
-	// JSStreamWrongLastMsgIDErrF wrong last msg Hash: {hash}
+	// JSStreamWrongLastMsgHashErrF wrong last msg Hash: {hash}
 	JSStreamWrongLastMsgHashErrF ErrorIdentifier = 10131
 )
 
