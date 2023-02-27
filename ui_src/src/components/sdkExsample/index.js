@@ -197,7 +197,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         ) : (
                             <div className="code-example">
                                 <div className="code-content">
-                                    {generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, consumer ? codeExample.consumer : codeExample.producer)}
+                                    {generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, tabValue === 'Consumer' ? codeExample.consumer : codeExample.producer)}
                                 </div>
                             </div>
                         )}

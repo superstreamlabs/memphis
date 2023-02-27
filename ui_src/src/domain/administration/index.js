@@ -57,7 +57,7 @@ function Administration({ step }) {
         <div className="setting-container">
             <div className="menu-container">
                 <p className="header">Administration</p>
-                <p className="sub-header">Update and manage your account</p>
+                <p className="sub-header">Modify environment configuration</p>
                 <div className="side-menu">
                     <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
                         <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
@@ -68,7 +68,7 @@ function Administration({ step }) {
                         onClick={() => selectMenuItem('cluster_configuration')}
                     >
                         <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
-                        Memphis configuration
+                        Environment configuration
                     </div>
                 </div>
             </div>
