@@ -1056,7 +1056,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 	reply string,
 	dsr *destroyStationRequest,
 	shouldDeleteStream bool) {
-	isNative := shouldDeleteStream == true
+	isNative := shouldDeleteStream
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 
 	stationName, err := StationNameFromStr(dsr.StationName)
@@ -1108,19 +1108,21 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: dsr.Username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
+	if isNative {
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: dsr.Username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1129,7 +1131,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
