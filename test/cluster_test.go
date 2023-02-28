@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 )
 
 // Helper function to check that a cluster is formed

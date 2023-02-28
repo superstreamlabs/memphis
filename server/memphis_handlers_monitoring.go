@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
-	"memphis-broker/analytics"
-	"memphis-broker/conf"
-	"memphis-broker/models"
-	"memphis-broker/utils"
+	"memphis/analytics"
+	"memphis/conf"
+	"memphis/models"
+	"memphis/utils"
 	"net/http"
 	"os"
 	"os/exec"
@@ -127,7 +127,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
 			cpuComps := []models.SysComponent{{
-				Name: "memphis-broker",
+				Name: "memphis-0",
 				CPU: models.CompStats{
 					Total:      shortenFloat(maxCpu),
 					Current:    shortenFloat((v.CPU / 100) * maxCpu),
@@ -142,7 +142,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Healthy: true,
 			}}
 			components = append(components, models.SystemComponents{
-				Name:        "memphis-broker",
+				Name:        "memphis",
 				Components:  cpuComps,
 				Status:      checkCompStatus(cpuComps),
 				Ports:       []int{9000, 6666, 7770, 8222},
@@ -335,7 +335,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 		}
 		memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
 		cpuComps := []models.SysComponent{{
-			Name: "broker-0",
+			Name: "memphis-0",
 			CPU: models.CompStats{
 				Total:      shortenFloat(maxCpu),
 				Current:    shortenFloat((v.CPU / 100) * maxCpu),
@@ -350,7 +350,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Healthy: true,
 		}}
 		components = append(components, models.SystemComponents{
-			Name:        "memphis-cluster",
+			Name:        "memphis",
 			Components:  cpuComps,
 			Status:      checkCompStatus(cpuComps),
 			Ports:       []int{9000, 6666, 7770, 8222},
@@ -601,7 +601,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
-				if strings.Contains(container.Name, "memphis-broker") || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
+				if container.Name == "memphis" || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
@@ -690,7 +690,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			if strings.Contains(d.Name, "memphis-broker") {
+			if d.Name == "memphis" {
 				if BROKER_HOST == "" {
 					hosts = []string{}
 				} else {
@@ -745,7 +745,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			if strings.Contains(s.Name, "memphis-broker") {
+			if s.Name == "memphis" {
 				if BROKER_HOST == "" {
 					hosts = []string{}
 				} else {

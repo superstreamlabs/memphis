@@ -36,7 +36,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 
-	"memphis-broker/conf"
+	"memphis/conf"
 )
 
 var allowUnknownTopLevelField = int32(0)
@@ -2980,10 +2980,11 @@ func parseAccount(v map[string]interface{}, errors, warnings *[]error) (string, 
 
 // Parse an export stream or service.
 // e.g.
-//   {stream: "public.>"} # No accounts means public.
-//   {stream: "synadia.private.>", accounts: [cncf, natsio]}
-//   {service: "pub.request"} # No accounts means public.
-//   {service: "pub.special.request", accounts: [nats.io]}
+//
+//	{stream: "public.>"} # No accounts means public.
+//	{stream: "synadia.private.>", accounts: [cncf, natsio]}
+//	{service: "pub.request"} # No accounts means public.
+//	{service: "pub.special.request", accounts: [nats.io]}
 func parseExportStreamOrService(v interface{}, errors, warnings *[]error) (*export, *export, error) {
 	var (
 		curStream  *export
@@ -3248,9 +3249,10 @@ func parseServiceLatency(root token, v interface{}) (l *serviceLatency, retErr e
 
 // Parse an import stream or service.
 // e.g.
-//   {stream: {account: "synadia", subject:"public.synadia"}, prefix: "imports.synadia"}
-//   {stream: {account: "synadia", subject:"synadia.private.*"}}
-//   {service: {account: "synadia", subject: "pub.special.request"}, to: "synadia.request"}
+//
+//	{stream: {account: "synadia", subject:"public.synadia"}, prefix: "imports.synadia"}
+//	{stream: {account: "synadia", subject:"synadia.private.*"}}
+//	{service: {account: "synadia", subject: "pub.special.request"}, to: "synadia.request"}
 func parseImportStreamOrService(v interface{}, errors, warnings *[]error) (*importStream, *importService, error) {
 	var (
 		curStream  *importStream
