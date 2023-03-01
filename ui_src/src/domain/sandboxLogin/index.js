@@ -17,7 +17,7 @@ import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
 import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
-import betaFullLogo from '../../assets/images/betaFullLogo.svg';
+import FullLogo from '../../assets/images/fullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import sharps from '../../assets/images/sharps.svg';
 import { httpRequest } from '../../services/http';
@@ -126,7 +126,8 @@ const SandboxLogin = (props) => {
                     try {
                         const conn = await connect({
                             servers: [SOCKET_URL],
-                            token: '::memphis'
+                            token: '::memphis',
+                            timeout: '5000'
                         });
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {}
@@ -160,7 +161,8 @@ const SandboxLogin = (props) => {
                 try {
                     const conn = await connect({
                         servers: [SOCKET_URL],
-                        token: '::memphis'
+                        token: '::memphis',
+                        timeout: '5000'
                     });
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                 } catch (error) {}
@@ -194,7 +196,8 @@ const SandboxLogin = (props) => {
                 try {
                     const conn = await connect({
                         servers: [SOCKET_URL],
-                        token: '::memphis'
+                        token: '::memphis',
+                        timeout: '5000'
                     });
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                 } catch (error) {}
@@ -232,7 +235,7 @@ const SandboxLogin = (props) => {
                 <div className="desktop-container">
                     <div className="desktop-content">
                         <div className="logoImg">
-                            <img alt="logo" src={betaFullLogo}></img>
+                            <img alt="logo" src={FullLogo}></img>
                         </div>
                         <content is="x3d">
                             <div className="title">

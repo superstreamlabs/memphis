@@ -31,11 +31,10 @@ import stationsIcon from '../../assets/images/stationsIcon.svg';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
-import betaLogo from '../../assets/images/betaLogo.svg';
+import Logo from '../../assets/images/logo.svg';
 import logsIcon from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
-import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
@@ -161,7 +160,7 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img src={betaLogo} width="62" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                <img src={Logo} width="62" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
                 <div className="item-wrapper" onClick={() => history.push(pathDomains.overview)}>
                     <div className="icon">
                         {state.route === 'overview' ? (
