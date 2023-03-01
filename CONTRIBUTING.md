@@ -18,7 +18,7 @@ Whether it’s coding, user interface design, graphic design, writing, or organi
 
 &#x20; 1\. Install [Golang](https://go.dev/doc/install)
 
-&#x20; 2\. Fork Memphis [broker](https://github.com/memphisdev/memphis-broker)
+&#x20; 2\. Fork [Memphis](https://github.com/memphisdev/memphis)
 
 &#x20; 3\. Clone the forked repo to your local station
 
@@ -28,13 +28,13 @@ Whether it’s coding, user interface design, graphic design, writing, or organi
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose-mongo.yml -o docker-compose-mongo.yml && docker compose -f docker-compose-mongo.yml -p memphis up
 ```
 
-&#x20; 5\. Install broker dependencies - enter the cloned directory and run
+&#x20; 5\. Install Memphis dependencies - enter the cloned directory and run
 
 ```
 go get -d -v .
 ```
 
-&#x20; 6\. Run the broker in debug mode (If you're using vscode, click F5) or run via terminal via:
+&#x20; 6\. Run Memphis in debug mode (If you're using vscode, click F5) or run via terminal via:
 
 ```
 DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?retryWrites=true&w=majority" ROOT_PASSWORD="memphis" CONNECTION_TOKEN="memphis" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" JWT_SECRET="JWT_TEST_PURPOSE" REFRESH_JWT_SECRET="REFRESH_JWT_TEST_PURPOSE" go run main.go --js --auth memphis --websocket_no_tls
@@ -42,7 +42,7 @@ DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?ret
 
 ### Frontend Contributions
 
-&#x20; 1\. The source files of the UI can be found in a directory called ״[ui\_src](https://github.com/memphisdev/memphis-broker/tree/master/ui\_src)״
+&#x20; 1\. The source files of the UI can be found in a directory called ״[ui\_src](https://github.com/memphisdev/memphis/tree/master/ui\_src)״
 
 &#x20; 2\. Navigate to "ui\_src" dir
 
@@ -50,7 +50,7 @@ DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?ret
 
 &#x20; 4\. Run the UI locally by running `npm start`
 
-&#x20; 5\. Start coding! Here are some ["Good first issues"](https://github.com/memphisdev/memphis-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+&#x20; 5\. Start coding! Here are some ["Good first issues"](https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 &#x20; 6\. Once done - push your code and create a pull request to merge your updates with memphis main repo
 
@@ -64,7 +64,7 @@ Memphis backend opportunities are -&#x20;
 2. SDKs: [Python](https://github.com/memphisdev/memphis.py), [Go](https://github.com/memphisdev/memphis.go), [Node.js](https://github.com/memphisdev/memphis.js), or [future SDKs](https://github.com/orgs/memphisdev/projects/2/views/1?filterQuery=label%3A%22epic%3A+sdk%22)
 3. [Memphis CLI](https://github.com/memphisdev/memphis-cli)
 
-Grab a ["Good first issue"](https://github.com/memphisdev/memphis-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22), and once done - push your changes and open a "pull request"
+Grab a ["Good first issue"](https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22), and once done - push your changes and open a "pull request"
 
 ### Data Engineer
 

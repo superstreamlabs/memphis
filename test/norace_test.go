@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"

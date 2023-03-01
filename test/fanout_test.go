@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	"memphis-broker/server"
+	"memphis/server"
 
 	"github.com/nats-io/nats.go"
 )

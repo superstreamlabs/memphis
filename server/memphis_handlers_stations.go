@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -17,9 +17,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis-broker/analytics"
-	"memphis-broker/models"
-	"memphis-broker/utils"
+	"memphis/analytics"
+	"memphis/models"
+	"memphis/utils"
 	"sort"
 	"strconv"
 	"strings"
@@ -178,7 +178,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
 	shouldCreateStream bool) {
-	isNative := shouldCreateStream == true
+	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
@@ -339,46 +339,69 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                      newStation.ID,
+			"retention_type":           newStation.RetentionType,
+			"retention_value":          newStation.RetentionValue,
+			"storage_type":             newStation.StorageType,
+			"replicas":                 newStation.Replicas,
+			"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          newStation.CreatedByUser,
+			"creation_date":            newStation.CreationDate,
+			"last_update":              newStation.LastUpdate,
+			"functions":                newStation.Functions,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"is_native":                newStation.IsNative,
+			"dls_configuration":        newStation.DlsConfiguration,
+			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
+		},
+	}
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created by user " + username
-	serv.Noticef(message)
+	if updateResults.MatchedCount > 0 {
+		message := "Station " + stationName.Ext() + " has been created by user " + username
+		serv.Noticef(message)
 
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + " - create audit logs error: " + err.Error())
-	}
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("createStationDirect: Station " + csr.StationName + " - create audit logs error: " + err.Error())
+		}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			param1 := analytics.EventParam{
+				Name:  "station-name",
+				Value: stationName.Ext(),
+			}
+			param2 := analytics.EventParam{
+				Name:  "tiered-storage",
+				Value: strconv.FormatBool(csr.TieredStorageEnabled),
+			}
+			param3 := analytics.EventParam{
+				Name:  "nats-comp",
+				Value: strconv.FormatBool(!isNative),
+			}
+			analyticsParams := []analytics.EventParam{param1, param2, param3}
+			analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 		}
-		param2 := analytics.EventParam{
-			Name:  "tiered-storage",
-			Value: strconv.FormatBool(csr.TieredStorageEnabled),
-		}
-		param3 := analytics.EventParam{
-			Name:  "nats-comp",
-			Value: strconv.FormatBool(!isNative),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2, param3}
-		analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 	}
 
 	respondWithErr(s, reply, nil)
@@ -1050,7 +1073,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 	reply string,
 	dsr *destroyStationRequest,
 	shouldDeleteStream bool) {
-	isNative := shouldDeleteStream == true
+	isNative := shouldDeleteStream
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 
 	stationName, err := StationNameFromStr(dsr.StationName)
@@ -1102,19 +1125,21 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: dsr.Username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
+	if isNative {
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: dsr.Username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1123,7 +1148,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 	}
 
 	respondWithErr(s, reply, nil)
-	return
 }
 
 func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
@@ -1158,7 +1182,7 @@ func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string,
 
 		return leader, followers, nil
 	} else {
-		return "broker-0", []string{}, nil
+		return "memphis-0", []string{}, nil
 	}
 }
 
@@ -1541,6 +1565,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
 	var producer models.Producer
 	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	if err == mongo.ErrNoDocuments {
+		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
+		serv.Warnf("GetMessageDetails: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
 	if err != nil {
 		serv.Errorf("GetMessageDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1952,6 +1982,12 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	var schema models.Schema
 	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
+	if err == mongo.ErrNoDocuments {
+		errMsg := "Schema " + station.Schema.SchemaName + " does not exist"
+		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

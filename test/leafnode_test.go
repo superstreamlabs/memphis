@@ -30,8 +30,8 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/logger"
-	"memphis-broker/server"
+	"memphis/logger"
+	"memphis/server"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"

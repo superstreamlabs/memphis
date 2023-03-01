@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/internal/testhelper"
-	"memphis-broker/server"
+	"memphis/internal/testhelper"
+	"memphis/server"
 
 	"github.com/nats-io/nats.go"
 )

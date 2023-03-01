@@ -19,8 +19,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis-broker/analytics"
-	srvlog "memphis-broker/logger"
+	"memphis/analytics"
+	srvlog "memphis/logger"
 )
 
 // Logger interface of the NATS Server

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"text/template"
 
-	"memphis-broker/server"
+	"memphis/server"
 )
 
 var tagRe = regexp.MustCompile("\\{(.+?)}")

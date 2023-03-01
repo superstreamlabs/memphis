@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/logger"
+	"memphis/logger"
 
 	"github.com/nats-io/nats.go"
 )

@@ -1,4 +1,4 @@
-module memphis-broker
+module memphis
 
 go 1.19
 

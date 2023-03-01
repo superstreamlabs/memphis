@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -14,8 +14,8 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"memphis-broker/analytics"
-	"memphis-broker/models"
+	"memphis/analytics"
+	"memphis/models"
 	"strconv"
 	"sync"
 	"time"
@@ -104,34 +104,50 @@ func getActiveConnections() ([]models.Connection, error) {
 	return connections, nil
 }
 
-// TODO to be deleted
-func updateActiveProducersAndConsumers() {
-	producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
-	if err != nil {
-		serv.Warnf("updateActiveProducersAndConsumers: " + err.Error())
-		return
-	}
-
-	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
-	if err != nil {
-		serv.Warnf("updateActiveProducersAndConsumers: " + err.Error())
-		return
-	}
-
-	if producersCount > 0 || consumersCount > 0 {
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			param1 := analytics.EventParam{
-				Name:  "active-producers",
-				Value: strconv.Itoa(int(producersCount)),
-			}
-			param2 := analytics.EventParam{
-				Name:  "active-consumers",
-				Value: strconv.Itoa(int(consumersCount)),
-			}
-			analyticsParams := []analytics.EventParam{param1, param2}
-			analytics.SendEventWithParams("", analyticsParams, "data-sent")
+func updateSystemLiveness() {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		stationsHandler := StationsHandler{S: serv}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails()
+		if err != nil {
+			serv.Warnf("updateSystemLiveness: " + err.Error())
+			return
 		}
+
+		producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+		if err != nil {
+			serv.Warnf("updateSystemLiveness: " + err.Error())
+			return
+		}
+
+		consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+		if err != nil {
+			serv.Warnf("updateSystemLiveness: " + err.Error())
+			return
+		}
+
+		param1 := analytics.EventParam{
+			Name:  "total-messages",
+			Value: strconv.Itoa(int(totalMessages)),
+		}
+		param2 := analytics.EventParam{
+			Name:  "total-dls-messages",
+			Value: strconv.Itoa(int(totalDlsMsgs)),
+		}
+		param3 := analytics.EventParam{
+			Name:  "total-stations",
+			Value: strconv.Itoa(len(stations)),
+		}
+		param4 := analytics.EventParam{
+			Name:  "active-producers",
+			Value: strconv.Itoa(int(producersCount)),
+		}
+		param5 := analytics.EventParam{
+			Name:  "active-consumers",
+			Value: strconv.Itoa(int(consumersCount)),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
+		analytics.SendEventWithParams("", analyticsParams, "system-is-up")
 	}
 }
 
@@ -222,9 +238,18 @@ func (s *Server) KillZombieResources() {
 		}
 	}
 
-	for range time.Tick(time.Second * 60) {
+	count := 0
+	firstIteration := true
+	for range time.Tick(time.Minute * 1) {
 		s.Debugf("Killing Zombie resources iteration")
 		killFunc(s)
-		updateActiveProducersAndConsumers() // TODO to be deleted
+
+		if firstIteration || count == 1*60 { // once in 1 hour
+			updateSystemLiveness()
+			count = 0
+
+		}
+		firstIteration = false
+		count++
 	}
 }

@@ -42,7 +42,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server/sysmem"
+	"memphis/server/sysmem"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
@@ -15009,11 +15009,11 @@ func TestJetStreamPullConsumerCrossAccountsAndLeafNodes(t *testing.T) {
 }
 
 // This test is to explicitly test for all combinations of pull consumer behavior.
-// 1. Long poll, will be used to emulate push. A request is only invalidated when batch is filled, it expires, or we lose interest.
-// 2. Batch 1, will return no messages or a message. Works today.
-// 3. Conditional wait, or one shot. This is what the clients do when the do a fetch().
-//    They expect to wait up to a given time for any messages but will return once they have any to deliver, so parital fills.
-// 4. Try, which never waits at all ever.
+//  1. Long poll, will be used to emulate push. A request is only invalidated when batch is filled, it expires, or we lose interest.
+//  2. Batch 1, will return no messages or a message. Works today.
+//  3. Conditional wait, or one shot. This is what the clients do when the do a fetch().
+//     They expect to wait up to a given time for any messages but will return once they have any to deliver, so parital fills.
+//  4. Try, which never waits at all ever.
 func TestJetStreamPullConsumersOneShotBehavior(t *testing.T) {
 	s := RunBasicJetStreamServer()
 	if config := s.JetStreamConfig(); config != nil {
