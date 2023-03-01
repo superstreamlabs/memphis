@@ -178,7 +178,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
 	shouldCreateStream bool) {
-	isNative := shouldCreateStream == true
+	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
@@ -339,46 +339,69 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	_, err = stationsCollection.InsertOne(context.TODO(), newStation)
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"_id":                      newStation.ID,
+			"retention_type":           newStation.RetentionType,
+			"retention_value":          newStation.RetentionValue,
+			"storage_type":             newStation.StorageType,
+			"replicas":                 newStation.Replicas,
+			"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
+			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
+			"created_by_user":          newStation.CreatedByUser,
+			"creation_date":            newStation.CreationDate,
+			"last_update":              newStation.LastUpdate,
+			"functions":                newStation.Functions,
+			"idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"is_native":                newStation.IsNative,
+			"dls_configuration":        newStation.DlsConfiguration,
+			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
+		},
+	}
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	message := "Station " + stationName.Ext() + " has been created by user " + username
-	serv.Noticef(message)
+	if updateResults.MatchedCount > 0 {
+		message := "Station " + stationName.Ext() + " has been created by user " + username
+		serv.Noticef(message)
 
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + " - create audit logs error: " + err.Error())
-	}
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			serv.Errorf("createStationDirect: Station " + csr.StationName + " - create audit logs error: " + err.Error())
+		}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			param1 := analytics.EventParam{
+				Name:  "station-name",
+				Value: stationName.Ext(),
+			}
+			param2 := analytics.EventParam{
+				Name:  "tiered-storage",
+				Value: strconv.FormatBool(csr.TieredStorageEnabled),
+			}
+			param3 := analytics.EventParam{
+				Name:  "nats-comp",
+				Value: strconv.FormatBool(!isNative),
+			}
+			analyticsParams := []analytics.EventParam{param1, param2, param3}
+			analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 		}
-		param2 := analytics.EventParam{
-			Name:  "tiered-storage",
-			Value: strconv.FormatBool(csr.TieredStorageEnabled),
-		}
-		param3 := analytics.EventParam{
-			Name:  "nats-comp",
-			Value: strconv.FormatBool(!isNative),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2, param3}
-		analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 	}
 
 	respondWithErr(s, reply, nil)

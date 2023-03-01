@@ -96,7 +96,6 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 func (s *Server) createConsumerDirectV0(c *client, reply string, ccr createConsumerRequestV0, requestVersion int) {
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
 	respondWithErr(s, reply, err)
-	return
 }
 
 func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
@@ -347,14 +346,14 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if ccr.LastMessages < -1 {
-		errMsg := errors.New("Min value for LastMessages is -1")
+		errMsg := errors.New("min value for LastMessages is -1")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
 		respondWithErr(s, reply, errMsg)
 		return
 	}
 
 	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
-		errMsg := errors.New("Consumer creation options can't contain both startConsumeFromSequence and lastMessages")
+		errMsg := errors.New("consumer creation options can't contain both startConsumeFromSequence and lastMessages")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
 		respondWithErr(s, reply, errMsg)
 		return
