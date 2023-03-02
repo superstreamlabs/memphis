@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -601,7 +602,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
-				if container.Name == "memphis" || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
+				brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, container.Name)
+				if err != nil {
+					return components, metricsEnabled, err
+				}
+				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
@@ -690,7 +695,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			if d.Name == "memphis" {
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			if brokerMatch {
 				if BROKER_HOST == "" {
 					hosts = []string{}
 				} else {
@@ -745,7 +754,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			if s.Name == "memphis" {
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			if brokerMatch {
 				if BROKER_HOST == "" {
 					hosts = []string{}
 				} else {
@@ -1479,7 +1492,12 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 			updatesAvailable := !schemaVersion.Active
-			schemaDetails = models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+			schemaDetails = models.StationOverviewSchemaDetails{
+				SchemaName: schema.Name,
+				VersionNumber: station.Schema.VersionNumber,
+				UpdatesAvailable: updatesAvailable,
+				SchemaType: schema.Type,
+			}
 		}
 		response = gin.H{
 			"connected_producers":      connectedProducers,
@@ -1907,8 +1925,13 @@ func defaultSystemComp(compName string, healthy bool) models.SysComponent {
 func getRelevantComponents(name string, components []models.SysComponent, desired int) []models.SysComponent {
 	res := []models.SysComponent{}
 	for _, comp := range components {
-		if strings.Contains(comp.Name, name) {
+		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[0-9]\d*$`, comp.Name)
+		if regexMatch {
 			res = append(res, comp)
+		} else if name == "memphis-rest-gateway" {
+			if strings.Contains(comp.Name, name) {
+				res = append(res, comp)
+			}
 		}
 	}
 	missingComps := desired - len(res)

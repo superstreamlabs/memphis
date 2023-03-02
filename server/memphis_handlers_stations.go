@@ -734,7 +734,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		schemaDetailsResponse = models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: true}
+		schemaDetailsResponse = models.StationOverviewSchemaDetails{
+			SchemaName:       schemaName,
+			VersionNumber:    schemaVersion.VersionNumber,
+			UpdatesAvailable: true,
+			SchemaType:       schema.Type,
+		}
 		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 	}
 
@@ -2161,4 +2166,114 @@ func updateOldStationNativeness(s *Server) error {
 		bson.M{"$set": bson.M{"is_native": true}},
 	)
 	return err
+}
+
+func (sh StationsHandler) PurgeStation(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+
+	var body models.PurgeStationSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Warnf("PurgeStation: station name: " + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	exist, _, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("PurgeStation: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		errMsg := "Station " + stationName.external + " does not exist"
+		serv.Warnf("PurgeStation: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
+	if body.PurgeStation {
+		err = sh.S.PurgeStream(stationName.Intern())
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			serv.Errorf("PurgeStation: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	if body.PurgeDls {
+		streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
+		err = sh.S.PurgeStream(streamName)
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			serv.Errorf("PurgeStation dls: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-purge-station")
+	}
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (sh StationsHandler) RemoveMessages(c *gin.Context) {
+	if err := DenyForSandboxEnv(c); err != nil {
+		return
+	}
+
+	var body models.RemoveMessagesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Warnf("RemoveMessages: station name: " + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	exist, _, err := IsStationExist(stationName)
+	if err != nil {
+		serv.Errorf("RemoveMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		errMsg := "Station " + stationName.external + " does not exist"
+		serv.Warnf("RemoveMessages: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
+	for _, msg := range body.MessageSeqs {
+		err = sh.S.RemoveMsg(stationName, msg)
+		if err != nil {
+			if IsNatsErr(err, JSStreamNotFoundErr) || IsNatsErr(err, JSStreamMsgDeleteFailedF) {
+				continue
+			}
+			serv.Errorf("RemoveMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-remove-messages")
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }

@@ -59,6 +59,8 @@ const (
 	kindCreateStream   = "$memphis_create_stream"
 	kindUpdateStream   = "$memphis_update_stream"
 	kindDeleteStream   = "$memphis_delete_stream"
+	kindDeleteMessage  = "$memphis_delete_message"
+	kindPurgeStream    = "$memphis_purge_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
 	kindDeleteMsg      = "$memphis_delete_msg"
@@ -557,6 +559,32 @@ func (s *Server) RemoveStream(streamName string) error {
 
 	var resp JSApiStreamDeleteResponse
 	err := jsApiRequest(s, requestSubject, kindDeleteStream, []byte(_EMPTY_), &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) PurgeStream(streamName string) error {
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
+
+	var resp JSApiStreamPurgeResponse
+	err := jsApiRequest(s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
+
+	var resp JSApiMsgDeleteResponse
+	req := JSApiMsgDeleteRequest{Seq: msgSeq}
+	reqj, _ := json.Marshal(req)
+	err := jsApiRequest(s, requestSubject, kindDeleteMessage, reqj, &resp)
 	if err != nil {
 		return err
 	}
