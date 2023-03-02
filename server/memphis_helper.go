@@ -566,8 +566,8 @@ func (s *Server) RemoveStream(streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) PurgeStream(stationName StationName) error {
-	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, stationName.Intern())
+func (s *Server) PurgeStream(streamName string) error {
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
 
 	var resp JSApiStreamPurgeResponse
 	err := jsApiRequest(s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)

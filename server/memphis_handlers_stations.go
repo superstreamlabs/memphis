@@ -734,7 +734,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		schemaDetailsResponse = models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: true}
+		schemaDetailsResponse = models.StationOverviewSchemaDetails{
+			SchemaName:       schemaName,
+			VersionNumber:    schemaVersion.VersionNumber,
+			UpdatesAvailable: true,
+			SchemaType:       schema.Type,
+		}
 		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 	}
 
@@ -2194,17 +2199,23 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 		return
 	}
 
-	err = sh.S.PurgeStream(stationName)
-	if err != nil {
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := "Station " + stationName.external + " does not exist"
-			serv.Warnf("PurgeStation: " + errMsg)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+	if body.PurgeStation {
+		err = sh.S.PurgeStream(stationName.Intern())
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			serv.Errorf("PurgeStation: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		serv.Errorf("PurgeStation: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	}
+
+	if body.PurgeDls {
+		streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
+		err = sh.S.PurgeStream(streamName)
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			serv.Errorf("PurgeStation dls: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -2245,7 +2256,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
-	
+
 	for _, msg := range body.MessageSeqs {
 		err = sh.S.RemoveMsg(stationName, msg)
 		if err != nil {
@@ -2263,6 +2274,6 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-messages")
 	}
-	
+
 	c.IndentedJSON(200, gin.H{})
 }

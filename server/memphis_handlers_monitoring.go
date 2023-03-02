@@ -1479,7 +1479,12 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 			updatesAvailable := !schemaVersion.Active
-			schemaDetails = models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+			schemaDetails = models.StationOverviewSchemaDetails{
+				SchemaName: schema.Name,
+				VersionNumber: station.Schema.VersionNumber,
+				UpdatesAvailable: updatesAvailable,
+				SchemaType: schema.Type,
+			}
 		}
 		response = gin.H{
 			"connected_producers":      connectedProducers,

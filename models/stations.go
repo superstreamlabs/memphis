@@ -166,7 +166,9 @@ type DropDlsMessagesSchema struct {
 }
 
 type PurgeStationSchema struct {
-	StationName string `json:"station_name" binding:"required"`
+	StationName  string `json:"station_name" binding:"required"`
+	PurgeDls     bool   `json:"purge_dls" binding:"required"`
+	PurgeStation bool   `json:"purge_station" binding:"required"`
 }
 
 type RemoveMessagesSchema struct {
@@ -210,6 +212,7 @@ type SchemaDetails struct {
 
 type StationOverviewSchemaDetails struct {
 	SchemaName       string `json:"name" bson:"name"`
+	SchemaType       string `json:"schema_type" bson:"schema_type"`
 	VersionNumber    int    `json:"version_number" bson:"version_number"`
 	UpdatesAvailable bool   `json:"updates_available"`
 }

@@ -348,7 +348,12 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 	updatesAvailable := !schemaVersion.Active
-	schemaDetails := models.StationOverviewSchemaDetails{SchemaName: schema.Name, VersionNumber: station.Schema.VersionNumber, UpdatesAvailable: updatesAvailable}
+	schemaDetails := models.StationOverviewSchemaDetails{
+		SchemaName:       schema.Name,
+		VersionNumber:    station.Schema.VersionNumber,
+		UpdatesAvailable: updatesAvailable,
+		SchemaType:       schema.Type,
+	}
 
 	response = map[string]any{
 		"connected_producers":      connectedProducers,
