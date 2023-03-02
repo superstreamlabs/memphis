@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -601,7 +602,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
-				if container.Name == "memphis" || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
+				brokerMatch, err := regexp.MatchString(`^memphis-\d*[1-9]\d*$`, container.Name)
+				if err != nil {
+					return components, metricsEnabled, err
+				}
+				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
@@ -690,7 +695,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			if d.Name == "memphis" {
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[1-9]\d*$`, d.Name)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			if brokerMatch {
 				if BROKER_HOST == "" {
 					hosts = []string{}
 				} else {
@@ -745,7 +754,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			if s.Name == "memphis" {
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[1-9]\d*$`, s.Name)
+			if err != nil {
+				return components, metricsEnabled, err
+			}
+			if brokerMatch {
 				if BROKER_HOST == "" {
 					hosts = []string{}
 				} else {
