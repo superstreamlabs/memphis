@@ -121,14 +121,30 @@ const Messages = () => {
 
     const handleDrop = async () => {
         setIgnoreProcced(true);
+        let messages;
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacked' ? 'poison' : 'schema', dls_message_ids: isCheck });
-            let messages = subTabValue === 'Unacked' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
-            isCheck.map((messageId, index) => {
-                messages = messages?.filter((item) => {
-                    return item._id !== messageId;
+            if (tabValue === 'All') {
+                if (isCheckAll) {
+                    await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, { station_name: stationName });
+                    messages = [];
+                } else {
+                    await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
+                    messages = stationState?.stationSocketData?.messages;
+                    isCheck.map((messageId, index) => {
+                        messages = messages?.filter((item) => {
+                            return item.message_seq !== messageId;
+                        });
+                    });
+                }
+            } else {
+                await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacked' ? 'poison' : 'schema', dls_message_ids: isCheck });
+                messages = subTabValue === 'Unacked' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                isCheck.map((messageId, index) => {
+                    messages = messages?.filter((item) => {
+                        return item._id !== messageId;
+                    });
                 });
-            });
+            }
             setTimeout(() => {
                 setIgnoreProcced(false);
                 subTabValue === 'Unacked'

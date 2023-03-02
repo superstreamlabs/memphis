@@ -40,6 +40,8 @@ export const ApiEndpoints = {
     GET_POISON_MESSAGE_JOURNEY: '/stations/getPoisonMessageJourney',
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
     DROP_DLS_MESSAGE: '/stations/dropDlsMessages',
+    REMOVE_MESSAGES: '/stations/removeMessages',
+    PURGE_STATION: '/stations/purgeStation',
     RESEND_POISON_MESSAGE_JOURNEY: '/stations/resendPoisonMessages',
     USE_SCHEMA: '/stations/useSchema',
     GET_UPDATE_SCHEMA: '/stations/getUpdatesForSchemaByStation',
