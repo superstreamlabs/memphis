@@ -23,6 +23,7 @@ import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
 import Modal from '../../../../../components/modal';
 import { ZoomInRounded } from '@material-ui/icons';
+import Loader from '../../../../../components/loader';
 const { Panel } = Collapse;
 
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
@@ -149,6 +150,11 @@ exporter.enabled="true"`}
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
+            {!imagesLoaded && (
+                <div className="loader-integration-box">
+                    <Loader />
+                </div>
+            )}
             {imagesLoaded && (
                 <>
                     {grafanaConfiguration?.insideBanner}

@@ -22,6 +22,7 @@ import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
 import SelectComponent from '../../../../../components/select';
+import Loader from '../../../../../components/loader';
 
 const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
@@ -135,6 +136,11 @@ const S3Integration = ({ close, value }) => {
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
+            {!imagesLoaded && (
+                <div className="loader-integration-box">
+                    <Loader />
+                </div>
+            )}
             {imagesLoaded && (
                 <>
                     {s3Configuration?.insideBanner}
