@@ -602,7 +602,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
-				brokerMatch, err := regexp.MatchString(`^memphis-\d*[1-9]\d*$`, container.Name)
+				brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, container.Name)
 				if err != nil {
 					return components, metricsEnabled, err
 				}
@@ -695,7 +695,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[1-9]\d*$`, d.Name)
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -754,7 +754,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = "unhealthy"
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[1-9]\d*$`, s.Name)
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -1920,7 +1920,7 @@ func defaultSystemComp(compName string, healthy bool) models.SysComponent {
 func getRelevantComponents(name string, components []models.SysComponent, desired int) []models.SysComponent {
 	res := []models.SysComponent{}
 	for _, comp := range components {
-		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[1-9]\d*$`, comp.Name)
+		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[0-9]\d*$`, comp.Name)
 		if regexMatch {
 			res = append(res, comp)
 		} else if name == "memphis-rest-gateway" {
