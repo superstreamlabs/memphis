@@ -152,8 +152,8 @@ function SideBar() {
                     </div>
                 </div>
             </Link>
-            <div className="item-wrap">
-                <div className="item" onClick={() => AuthService.logout()}>
+            <div className="item-wrap" onClick={() => AuthService.logout()}>
+                <div className="item">
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />
                     </span>
