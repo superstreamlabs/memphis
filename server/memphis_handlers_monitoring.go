@@ -1918,10 +1918,9 @@ func defaultSystemComp(compName string, healthy bool) models.SysComponent {
 }
 
 func getRelevantComponents(name string, components []models.SysComponent, desired int) []models.SysComponent {
-
 	res := []models.SysComponent{}
 	for _, comp := range components {
-		regexMatch, _ := regexp.MatchString(name+`^-\d*[1-9]\d*$`, comp.Name)
+		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[1-9]\d*$`, comp.Name)
 		if regexMatch {
 			res = append(res, comp)
 		} else if name == "memphis-rest-gateway" {
