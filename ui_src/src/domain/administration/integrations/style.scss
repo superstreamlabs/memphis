@@ -3,10 +3,12 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 40px 40px 0px 40px;
     }
     .categories-list{
         display: flex;
         gap: 5px;
+        padding: 0 40px;
         .tag-wrapper{
             cursor: pointer;
         }
@@ -27,6 +29,7 @@
         }
     }
     .integration-list{
+        padding: 0 40px;
         height: calc(95vh - 174px);
         width: 100%;
         position: relative;
