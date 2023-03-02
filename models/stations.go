@@ -165,6 +165,15 @@ type DropDlsMessagesSchema struct {
 	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
 }
 
+type PurgeStationSchema struct {
+	StationName string `json:"station_name" binding:"required"`
+}
+
+type RemoveMessagesSchema struct {
+	StationName string   `json:"station_name" binding:"required"`
+	MessageSeqs []uint64 `json:"message_seqs" binding:"required"`
+}
+
 type ResendPoisonMessagesSchema struct {
 	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
 }
