@@ -21,7 +21,7 @@ import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 
-function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName }) {
+function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName, update }) {
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [allStations, setAllStations] = useState([]);
@@ -29,7 +29,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
     const [indeterminate, setIndeterminate] = useState(false);
 
     const onCheckedAll = (e) => {
-        if (attachedStations?.length > 0) {
+        if (!update && attachedStations?.length > 0) {
             setIndeterminate(!indeterminate);
             if (indeterminate) {
                 setIsCheck([]);
@@ -51,7 +51,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
     };
 
     const handleCheckedClick = (id, checked) => {
-        if (attachedStations?.includes(id)) return;
+        if (!update && attachedStations?.includes(id)) return;
         let checkedList = [];
         if (!checked) {
             setIsCheck(isCheck?.filter((item) => item !== id));
@@ -69,7 +69,14 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
             let native_staion = res.filter((station) => station.is_native);
-            setAllStations(native_staion);
+            if (update) {
+                let attachedStation = native_staion.filter((station) => {
+                    return attachedStations.includes(station.name);
+                });
+                setAllStations(attachedStation);
+            } else {
+                setAllStations(native_staion);
+            }
         } catch (err) {
             return;
         }
@@ -84,7 +91,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
         try {
             const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: isCheck, schema_name: schemaName });
             if (data) {
-                handleAttachedStations([...attachedStations, ...isCheck]);
+                !update && handleAttachedStations([...attachedStations, ...isCheck]);
                 setAttachLoader(false);
                 close();
             }
@@ -95,13 +102,13 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
 
     return (
         <div className="attach-station-content">
-            <p className="title">Attach to Station</p>
-            <p className="desc">Attaching a scheme to a station will force the producers to follow it</p>
+            <p className="title">{update ? 'Update a new version' : 'Attach to station'}</p>
+            <p className="desc">{update ? 'Which stations should be updated' : 'Attaching a scheme to a station will force the producers to follow it'}</p>
             <div className="stations-list">
                 {allStations?.length > 0 ? (
                     <div className="header">
                         <CheckboxComponent
-                            disabled={attachedStations?.length === allStations?.length}
+                            disabled={!update && attachedStations?.length === allStations?.length}
                             indeterminate={indeterminate}
                             checked={isCheckAll}
                             id={'selectAll'}
@@ -126,8 +133,8 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                                     onClick={() => handleCheckedClick(station.name, isCheck.includes(station.name) ? false : true)}
                                 >
                                     <CheckboxComponent
-                                        disabled={attachedStations?.includes(station.name)}
-                                        checked={isCheck.includes(station.name) || attachedStations.includes(station.name)}
+                                        disabled={!update && attachedStations?.includes(station.name)}
+                                        checked={isCheck.includes(station.name) || (!update && attachedStations.includes(station.name))}
                                         id={station.name}
                                         onChange={(e) => handleCheckedClick(e.target.id, e.target.checked)}
                                         name={station.name}

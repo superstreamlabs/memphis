@@ -13,6 +13,8 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
+import { AddRounded } from '@material-ui/icons';
+import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import stopUsingIcon from '../../../../assets/images/stopUsingIcon.svg';
@@ -23,20 +25,18 @@ import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
-import SchemaItem from './schemaItem';
-import { Context } from '../../../../hooks/store';
-import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
-import { AddRounded } from '@material-ui/icons';
+import { StationStoreContext } from '../..';
+import SchemaItem from './schemaItem';
 
-const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close }) => {
-    const [state, dispatch] = useContext(Context);
+const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
+    const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [selected, setSelected] = useState(schemaSelected);
+    const [selected, setSelected] = useState();
     const [useschemaLoading, setUseschemaLoading] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const history = useHistory();
@@ -72,6 +72,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
             const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: [stationName], schema_name: selected });
             if (data) {
                 handleSetSchema(data);
+                stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema_type });
                 setUseschemaLoading(false);
             }
         } catch (error) {
@@ -123,7 +124,6 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                                 <SchemaItem
                                     key={schema.name}
                                     schema={schema}
-                                    schemaSelected={schemaSelected}
                                     selected={selected}
                                     handleSelectedItem={(id) => setSelected(id)}
                                     handleStopUseSchema={() => setDeleteModal(true)}
@@ -145,7 +145,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                             backgroundColorType="purple"
                             fontSize="13px"
                             fontFamily="InterSemiBold"
-                            disabled={selected === schemaSelected || selected === ''}
+                            disabled={selected === ''}
                             isLoading={useschemaLoading}
                             onClick={useSchema}
                         />

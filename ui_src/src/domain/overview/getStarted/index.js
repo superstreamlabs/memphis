@@ -210,8 +210,8 @@ const GetStarted = ({ username, dataSentence, skip }) => {
                             fontFamily="InterSemiBold"
                             placeholder="Skip for now"
                             radiusType="circle"
-                            backgroundColorType="none"
-                            border="purple"
+                            backgroundColorType="purple"
+                            colorType="white"
                             fontSize="14px"
                             boxShadow="gray"
                             onClick={() => {

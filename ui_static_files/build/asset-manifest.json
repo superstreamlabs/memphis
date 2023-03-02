@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.2d79d34b.css",
-    "main.js": "/static/js/main.eb399363.js",
+    "main.css": "/static/css/main.b2e8e29a.css",
+    "main.js": "/static/js/main.6337bb6f.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -120,8 +120,8 @@
     "static/media/datadogBanner.svg": "/static/media/datadogBanner.426d70c8006e062169a9ef8949bbb581.svg",
     "static/media/newrelicIcon.svg": "/static/media/newrelicIcon.19afaa28b0521e1eb85f844d4e2be949.svg",
     "static/media/gcpIcon.svg": "/static/media/gcpIcon.17783a20d2ce647d86e59fd573b8388c.svg",
-    "static/media/betaFullLogo.svg": "/static/media/betaFullLogo.f67d5db5c3e88414474faa9d9aabd69b.svg",
     "static/media/newrelicBanner.svg": "/static/media/newrelicBanner.ec0e28266b579f6a7bf9c9fb8d455769.svg",
+    "static/media/fullLogo.svg": "/static/media/fullLogo.64576cea4e4d8598370f3e03920a2604.svg",
     "static/media/404.svg": "/static/media/404.9e16e4461a6da4e6a1562ae4ced0939f.svg",
     "static/media/pagerDutyIcon.svg": "/static/media/pagerDutyIcon.3125f9535963570c1b3fcffb2fc31cf4.svg",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
@@ -132,7 +132,6 @@
     "static/media/emptyTags.svg": "/static/media/emptyTags.cc3c010bc99b5579619b02885f447c9a.svg",
     "static/media/attachedPlaceholder.svg": "/static/media/attachedPlaceholder.b1f38ca10ba6cbd7af24f8b4dae01db8.svg",
     "static/media/integrationNavIcon.svg": "/static/media/integrationNavIcon.aa02d58323000ea4904a080cdcf6ef9d.svg",
-    "static/media/betaLogo.svg": "/static/media/betaLogo.1df8b56be93949d230ccd81a13124a5a.svg",
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
     "static/media/confImg1.svg": "/static/media/confImg1.cf98f3c124b944df126f52a16d6acb5e.svg",
@@ -168,7 +167,6 @@
     "static/media/deadLetterPlaceholder.svg": "/static/media/deadLetterPlaceholder.e81a59abbe86b8b18fa9bb9c1475fd4f.svg",
     "static/media/confImg2.svg": "/static/media/confImg2.1c3268df21a546024aff034eb843c214.svg",
     "static/media/dls_enable_icon.svg": "/static/media/dls_enable_icon.03a3706804e0d1fc7b44336af88b1314.svg",
-    "static/media/betaBadge.svg": "/static/media/betaBadge.a42129d258939b03d932ad47556cb31b.svg",
     "static/media/finishFlag.svg": "/static/media/finishFlag.cdd2d450a2a93dbfa465c9e00803394f.svg",
     "static/media/grayFinish.svg": "/static/media/grayFinish.5ebcc02830185386ebc7d136451079dd.svg",
     "static/media/installationIcon.svg": "/static/media/installationIcon.41169a79d4c6c64bd585e34d3c24e184.svg",
@@ -240,7 +238,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.2d79d34b.css",
-    "static/js/main.eb399363.js"
+    "static/css/main.b2e8e29a.css",
+    "static/js/main.6337bb6f.js"
   ]
 }

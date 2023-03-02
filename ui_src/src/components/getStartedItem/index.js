@@ -76,7 +76,7 @@ const GetStartedItem = (props) => {
                                 radiusType="circle"
                                 backgroundColorType={'purple'}
                                 fontSize="16px"
-                                fontWeight="bold"
+                                fontFamily="InterSemiBold"
                                 htmlType="submit"
                                 disabled={getStartedState?.nextDisable}
                                 onClick={() => onNext()}
@@ -91,7 +91,7 @@ const GetStartedItem = (props) => {
                             radiusType="circle"
                             backgroundColorType={'purple'}
                             fontSize="16px"
-                            fontWeight="bold"
+                            fontFamily="InterSemiBold"
                             htmlType="submit"
                             disabled={getStartedState?.nextDisable}
                             onClick={() => onNext()}
@@ -107,7 +107,7 @@ const GetStartedItem = (props) => {
                             radiusType="circle"
                             backgroundColorType={'black'}
                             fontSize="16px"
-                            fontWeight="bold"
+                            fontFamily="InterSemiBold"
                             htmlType="submit"
                             disabled={getStartedState?.currentStep === 1}
                             onClick={() => onBack()}

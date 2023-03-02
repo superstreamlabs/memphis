@@ -37,6 +37,8 @@ export function getBorderColor(borderColorType) {
             return '#1D1D1D';
         case 'search-input':
             return '#5A4FE5';
+        case 'white':
+            return '#ffffff';
         default:
             return borderColorType;
     }

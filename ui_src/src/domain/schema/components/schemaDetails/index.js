@@ -80,6 +80,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [editable, setEditable] = useState(false);
     const [attachStaionModal, setAttachStaionModal] = useState(false);
+    const [isUpdate, setIsUpdate] = useState(false);
     const [latestVersion, setLatest] = useState({});
 
     const history = useHistory();
@@ -170,6 +171,10 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 });
                 setRollBackModal(false);
                 setActivateVersionModal(false);
+                if (schemaDetails?.used_stations?.length > 0) {
+                    setIsUpdate(true);
+                    setAttachStaionModal(true);
+                }
             }
         } catch (err) {}
         setIsRollLoading(false);
@@ -663,14 +668,21 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 height="560px"
                 hr={false}
                 displayButtons={false}
-                clickOutside={() => setAttachStaionModal(false)}
+                clickOutside={() => {
+                    setIsUpdate(false);
+                    setAttachStaionModal(false);
+                }}
                 open={attachStaionModal}
             >
                 <AttachStationModal
-                    close={() => setAttachStaionModal(false)}
+                    close={() => {
+                        setIsUpdate(false);
+                        setAttachStaionModal(false);
+                    }}
                     schemaName={schemaDetails.schema_name}
                     handleAttachedStations={updateStations}
                     attachedStations={schemaDetails?.used_stations}
+                    update={isUpdate}
                 />
             </Modal>
         </schema-details>

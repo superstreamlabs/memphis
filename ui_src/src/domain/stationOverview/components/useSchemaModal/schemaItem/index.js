@@ -17,7 +17,7 @@ import React from 'react';
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
 import { parsingDate } from '../../../../../services/valueConvertor';
 
-const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, handleStopUseSchema }) => {
+const SchemaItem = ({ schema, handleSelectedItem, selected, handleStopUseSchema }) => {
     return (
         <div
             key={schema?.id}
@@ -35,11 +35,6 @@ const SchemaItem = ({ schema, schemaSelected, handleSelectedItem, selected, hand
                     <p className="date">{parsingDate(schema?.creation_date)}</p>
                 </div>
             </div>
-            {schema?.name === schemaSelected && (
-                <div className="delete-icon" onClick={handleStopUseSchema}>
-                    <CloseRounded />
-                </div>
-            )}
         </div>
     );
 };

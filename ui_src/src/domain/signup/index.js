@@ -19,8 +19,7 @@ import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
 import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
-import betaFullLogo from '../../assets/images/betaFullLogo.svg';
-import betaBadge from '../../assets/images/betaBadge.svg';
+import FullLogo from '../../assets/images/fullLogo.svg';
 import signupInfo from '../../assets/images/signupInfo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import signup from '../../assets/images/signup.svg';
@@ -110,7 +109,8 @@ const Signup = (props) => {
                     try {
                         const conn = await connect({
                             servers: [SOCKET_URL],
-                            token: '::memphis'
+                            token: '::memphis',
+                            timeout: '5000'
                         });
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {}
@@ -131,7 +131,7 @@ const Signup = (props) => {
                     {state.loading ? <Loader></Loader> : ''}
                     <img alt="signup-img" className="signup-img" src={signup}></img>
                     <div className="signup-form">
-                        <img alt="logo" className="form-logo" src={betaFullLogo}></img>
+                        <img alt="logo" className="form-logo" src={FullLogo}></img>
                         <p className="signup-sub-title">Let’s create your first user</p>
                         <Form
                             className="form-fields"
@@ -272,7 +272,6 @@ const Signup = (props) => {
 
                         <div className="version">
                             <p>v{systemVersion}</p>
-                            <img src={betaBadge} alt="betaBadge" />
                         </div>
                     </div>
                 </section>
