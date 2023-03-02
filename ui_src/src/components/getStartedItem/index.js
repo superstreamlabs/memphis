@@ -18,13 +18,12 @@ import { GetStartedStoreContext } from '../../domain/overview/getStarted';
 import bgGetStartedBottom from '../../assets/images/bgGetStartedBottom.svg';
 import { CONNECT_APP_VIDEO, CONNECT_CLI_VIDEO } from '../../config';
 import bgGetStarted from '../../assets/images/bgGetStarted.svg';
-import ConnectBG from '../../assets/images/connectBG.png';
-import InstallingBG from '../../assets/images/installingBG.png';
+import ConnectBG from '../../assets/images/connectBG.webp';
+import InstallingBG from '../../assets/images/installingBG.webp';
 import VideoPlayer from '../videoPlayer';
 import Button from '../button';
 
-const GetStartedItem = (props) => {
-    const { headerImage, headerTitle, headerDescription, style, children, onNext, onBack } = props;
+const GetStartedItem = ({ headerImage, headerTitle, headerDescription, children, onNext, onBack }) => {
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
 
     return (

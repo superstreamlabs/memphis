@@ -11,23 +11,23 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import { FiberManualRecord } from '@material-ui/icons';
 
-import datadogBannerPopup from '../assets/images/datadogBannerPopup.svg';
-import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.svg';
-import slackBannerPopup from '../assets/images/slackBannerPopup.svg';
-import pagerdutyBanner from '../assets/images/pagerdutyBanner.svg';
-import influxDBBanner from '../assets/images/influxDBBanner.svg';
-import newrelicBanner from '../assets/images/newrelicBanner.svg';
-import s3BannerPopup from '../assets/images/s3BannerPopup.svg';
-import datadogBanner from '../assets/images/datadogBanner.svg';
-import grafanaBanner from '../assets/images/grafanaBanner.svg';
+import datadogBannerPopup from '../assets/images/datadogBannerPopup.webp';
+import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
+import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
+import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
+import influxDBBanner from '../assets/images/influxDBBanner.webp';
+import newrelicBanner from '../assets/images/newrelicBanner.webp';
+import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
+import datadogBanner from '../assets/images/datadogBanner.webp';
+import grafanaBanner from '../assets/images/grafanaBanner.webp';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
-import slackBanner from '../assets/images/slackBanner.svg';
+import slackBanner from '../assets/images/slackBanner.webp';
 import datadogIcon from '../assets/images/datadogIcon.svg';
 import grafanaIcon from '../assets/images/grafanaIcon.svg';
 import slackLogo from '../assets/images/slackLogo.svg';
-import s3Banner from '../assets/images/s3Banner.svg';
+import s3Banner from '../assets/images/s3Banner.webp';
 import s3Logo from '../assets/images/s3Logo.svg';
 
 import { ColorPalette } from './globalConst';
