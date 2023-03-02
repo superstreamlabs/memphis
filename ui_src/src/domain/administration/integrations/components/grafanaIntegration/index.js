@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
@@ -31,7 +31,29 @@ const GrafanaIntegration = ({ close }) => {
     const grafanaConfiguration = INTEGRATION_LIST['Grafana'];
     const [currentStep, setCurrentStep] = useState(0);
     const [showModal, setShowModal] = useState(false);
+    const [imagesLoaded, setImagesLoaded] = useState(false);
 
+    useEffect(() => {
+        const images = [];
+        images.push(INTEGRATION_LIST['Grafana'].banner.props.src);
+        images.push(INTEGRATION_LIST['Grafana'].insideBanner.props.src);
+        images.push(INTEGRATION_LIST['Grafana'].icon.props.src);
+        const promises = [];
+
+        images.forEach((imageUrl) => {
+            const image = new Image();
+            promises.push(
+                new Promise((resolve) => {
+                    image.onload = resolve;
+                })
+            );
+            image.src = imageUrl;
+        });
+
+        Promise.all(promises).then(() => {
+            setImagesLoaded(true);
+        });
+    }, []);
     const handleToggleModal = () => {
         setShowModal(!showModal);
     };
@@ -127,58 +149,62 @@ exporter.enabled="true"`}
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
-            {grafanaConfiguration?.insideBanner}
-            <div className="integrate-header">
-                {grafanaConfiguration.header}
-                <div className="action-buttons flex-end">
-                    <Button
-                        width="140px"
-                        height="35px"
-                        placeholder="Integration guide"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        border="none"
-                        fontSize="12px"
-                        fontFamily="InterSemiBold"
-                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/grafana', '_blank')}
-                    />
-                </div>
-            </div>
-            {grafanaConfiguration.integrateDesc}
-            <div className="integration-guid-stepper">
-                <Collapse
-                    activeKey={currentStep}
-                    onChange={(key) => setCurrentStep(Number(key))}
-                    accordion={true}
-                    expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
-                >
-                    {grafanaConfiguration?.steps?.map((step) => {
-                        return (
-                            <Panel header={step.title} key={step.key}>
-                                {getContent(step.key)}
-                            </Panel>
-                        );
-                    })}
-                </Collapse>
-                <div className="close-btn">
-                    <Button
-                        width="300px"
-                        height="45px"
-                        placeholder="Close"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="14px"
-                        fontFamily="InterSemiBold"
-                        onClick={() => close()}
-                    />
-                </div>
-            </div>
-            {showModal && (
-                <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>
-                    <img width={'100%'} src={grafanaps} alt="zoomable" />
-                </Modal>
+            {imagesLoaded && (
+                <>
+                    {grafanaConfiguration?.insideBanner}
+                    <div className="integrate-header">
+                        {grafanaConfiguration.header}
+                        <div className="action-buttons flex-end">
+                            <Button
+                                width="140px"
+                                height="35px"
+                                placeholder="Integration guide"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                border="none"
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/grafana', '_blank')}
+                            />
+                        </div>
+                    </div>
+                    {grafanaConfiguration.integrateDesc}
+                    <div className="integration-guid-stepper">
+                        <Collapse
+                            activeKey={currentStep}
+                            onChange={(key) => setCurrentStep(Number(key))}
+                            accordion={true}
+                            expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
+                        >
+                            {grafanaConfiguration?.steps?.map((step) => {
+                                return (
+                                    <Panel header={step.title} key={step.key}>
+                                        {getContent(step.key)}
+                                    </Panel>
+                                );
+                            })}
+                        </Collapse>
+                        <div className="close-btn">
+                            <Button
+                                width="300px"
+                                height="45px"
+                                placeholder="Close"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="14px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => close()}
+                            />
+                        </div>
+                    </div>
+                    {showModal && (
+                        <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>
+                            <img width={'100%'} src={grafanaps} alt="zoomable" />
+                        </Modal>
+                    )}
+                </>
             )}
         </dynamic-integration>
     );

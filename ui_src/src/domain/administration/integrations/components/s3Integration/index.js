@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Form } from 'antd';
 
 import { INTEGRATION_LIST, REGIONS_OPTIONS } from '../../../../../const/integrationList';
@@ -39,7 +39,29 @@ const S3Integration = ({ close, value }) => {
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
+    const [imagesLoaded, setImagesLoaded] = useState(false);
 
+    useEffect(() => {
+        const images = [];
+        images.push(INTEGRATION_LIST['S3'].banner.props.src);
+        images.push(INTEGRATION_LIST['S3'].insideBanner.props.src);
+        images.push(INTEGRATION_LIST['S3'].icon.props.src);
+        const promises = [];
+
+        images.forEach((imageUrl) => {
+            const image = new Image();
+            promises.push(
+                new Promise((resolve) => {
+                    image.onload = resolve;
+                })
+            );
+            image.src = imageUrl;
+        });
+
+        Promise.all(promises).then(() => {
+            setImagesLoaded(true);
+        });
+    }, []);
     const updateKeysState = (field, value) => {
         let updatedValue = { ...formFields.keys };
         updatedValue[field] = value;
@@ -113,177 +135,182 @@ const S3Integration = ({ close, value }) => {
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
-            {s3Configuration?.insideBanner}
-            <div className="integrate-header">
-                {s3Configuration.header}
-                <div className={!isValue ? 'action-buttons flex-end' : 'action-buttons'}>
-                    {isValue && (
-                        <Button
-                            width="100px"
-                            height="35px"
-                            placeholder="Disconnect"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="red"
-                            border="none"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            isLoading={loadingDisconnect}
-                            disabled={process.env.REACT_APP_SANDBOX_ENV}
-                            onClick={() => disconnect()}
-                        />
-                    )}
-                    <Button
-                        width="140px"
-                        height="35px"
-                        placeholder="Integration guide"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        border="none"
-                        fontSize="12px"
-                        fontFamily="InterSemiBold"
-                        onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/storage/amazon-s3', '_blank')}
-                    />
-                </div>
-            </div>
-            {s3Configuration.integrateDesc}
-            <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
-                <div className="api-details">
-                    <p className="title">Integration details</p>
-                    <div className="api-key">
-                        <p>Secret access key</p>
-                        <span className="desc">
-                            When you use AWS programmatically, you provide your AWS access keys so that AWS can verify your identity in programmatic calls. Access keys
-                            can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user or the AWS account root user. <br />
-                            <b>Memphis encrypts all stored information using Triple DES algorithm</b>
-                        </span>
-                        <Form.Item
-                            name="secret_key"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please insert auth token.'
-                                }
-                            ]}
-                            initialValue={formFields?.keys?.secret_key}
-                        >
-                            <Input
-                                placeholder="****+crc"
-                                type="text"
-                                radiusType="semi-round"
-                                colorType="black"
+            {imagesLoaded && (
+                <>
+                    {s3Configuration?.insideBanner}
+                    <div className="integrate-header">
+                        {s3Configuration.header}
+                        <div className={!isValue ? 'action-buttons flex-end' : 'action-buttons'}>
+                            {isValue && (
+                                <Button
+                                    width="100px"
+                                    height="35px"
+                                    placeholder="Disconnect"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="red"
+                                    border="none"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    isLoading={loadingDisconnect}
+                                    disabled={process.env.REACT_APP_SANDBOX_ENV}
+                                    onClick={() => disconnect()}
+                                />
+                            )}
+                            <Button
+                                width="140px"
+                                height="35px"
+                                placeholder="Integration guide"
+                                colorType="white"
+                                radiusType="circle"
                                 backgroundColorType="purple"
-                                borderColorType="none"
-                                height="40px"
+                                border="none"
                                 fontSize="12px"
-                                onBlur={(e) => updateKeysState('secret_key', e.target.value)}
-                                onChange={(e) => updateKeysState('secret_key', e.target.value)}
-                                value={formFields?.keys?.secret_key}
+                                fontFamily="InterSemiBold"
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/storage/amazon-s3', '_blank')}
                             />
+                        </div>
+                    </div>
+                    {s3Configuration.integrateDesc}
+                    <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
+                        <div className="api-details">
+                            <p className="title">Integration details</p>
+                            <div className="api-key">
+                                <p>Secret access key</p>
+                                <span className="desc">
+                                    When you use AWS programmatically, you provide your AWS access keys so that AWS can verify your identity in programmatic calls. Access
+                                    keys can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user or the AWS account root user.{' '}
+                                    <br />
+                                    <b>Memphis encrypts all stored information using Triple DES algorithm</b>
+                                </span>
+                                <Form.Item
+                                    name="secret_key"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'Please insert auth token.'
+                                        }
+                                    ]}
+                                    initialValue={formFields?.keys?.secret_key}
+                                >
+                                    <Input
+                                        placeholder="****+crc"
+                                        type="text"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="purple"
+                                        borderColorType="none"
+                                        height="40px"
+                                        fontSize="12px"
+                                        onBlur={(e) => updateKeysState('secret_key', e.target.value)}
+                                        onChange={(e) => updateKeysState('secret_key', e.target.value)}
+                                        value={formFields?.keys?.secret_key}
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div className="input-field">
+                                <p>Access Key ID</p>
+                                <Form.Item
+                                    name="access_key"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'Please insert access key id'
+                                        }
+                                    ]}
+                                    initialValue={formFields?.keys?.access_key}
+                                >
+                                    <Input
+                                        placeholder="AKIOOJB9EKLP69O4RTHR"
+                                        type="text"
+                                        fontSize="12px"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        onBlur={(e) => updateKeysState('access_key', e.target.value)}
+                                        onChange={(e) => updateKeysState('access_key', e.target.value)}
+                                        value={formFields.keys?.access_key}
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div className="select-field">
+                                <p>Region</p>
+                                <Form.Item name="region" initialValue={formFields?.keys?.region || REGIONS_OPTIONS[0].name}>
+                                    <SelectComponent
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        radiusType="semi-round"
+                                        height="40px"
+                                        popupClassName="select-options"
+                                        options={REGIONS_OPTIONS}
+                                        value={formFields?.keys?.region || REGIONS_OPTIONS[0].name}
+                                        onChange={(e) => updateKeysState('region', e.match(/\[(.*?)\]/)[1])}
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div className="input-field">
+                                <p>Bucket name</p>
+                                <Form.Item
+                                    name="bucket_name"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'Please insert bucket name'
+                                        }
+                                    ]}
+                                    initialValue={formFields?.keys?.bucket_name}
+                                >
+                                    <Input
+                                        placeholder="Insert your bucket name"
+                                        type="text"
+                                        fontSize="12px"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        onBlur={(e) => updateKeysState('bucket_name', e.target.value)}
+                                        onChange={(e) => updateKeysState('bucket_name', e.target.value)}
+                                        value={formFields.keys?.bucket_name}
+                                    />
+                                </Form.Item>
+                            </div>
+                        </div>
+                        <Form.Item className="button-container">
+                            <div className="button-wrapper">
+                                <Button
+                                    width="80%"
+                                    height="45px"
+                                    placeholder="Close"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    border="gray-light"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => close(value)}
+                                />
+                                <Button
+                                    width="80%"
+                                    height="45px"
+                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    isLoading={loadingSubmit}
+                                    disabled={process.env.REACT_APP_SANDBOX_ENV || (isValue && !creationForm.isFieldsTouched())}
+                                    onClick={handleSubmit}
+                                />
+                            </div>
                         </Form.Item>
-                    </div>
-                    <div className="input-field">
-                        <p>Access Key ID</p>
-                        <Form.Item
-                            name="access_key"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please insert access key id'
-                                }
-                            ]}
-                            initialValue={formFields?.keys?.access_key}
-                        >
-                            <Input
-                                placeholder="AKIOOJB9EKLP69O4RTHR"
-                                type="text"
-                                fontSize="12px"
-                                radiusType="semi-round"
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                height="40px"
-                                onBlur={(e) => updateKeysState('access_key', e.target.value)}
-                                onChange={(e) => updateKeysState('access_key', e.target.value)}
-                                value={formFields.keys?.access_key}
-                            />
-                        </Form.Item>
-                    </div>
-                    <div className="select-field">
-                        <p>Region</p>
-                        <Form.Item name="region" initialValue={formFields?.keys?.region || REGIONS_OPTIONS[0].name}>
-                            <SelectComponent
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                radiusType="semi-round"
-                                height="40px"
-                                popupClassName="select-options"
-                                options={REGIONS_OPTIONS}
-                                value={formFields?.keys?.region || REGIONS_OPTIONS[0].name}
-                                onChange={(e) => updateKeysState('region', e.match(/\[(.*?)\]/)[1])}
-                            />
-                        </Form.Item>
-                    </div>
-                    <div className="input-field">
-                        <p>Bucket name</p>
-                        <Form.Item
-                            name="bucket_name"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please insert bucket name'
-                                }
-                            ]}
-                            initialValue={formFields?.keys?.bucket_name}
-                        >
-                            <Input
-                                placeholder="Insert your bucket name"
-                                type="text"
-                                fontSize="12px"
-                                radiusType="semi-round"
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                height="40px"
-                                onBlur={(e) => updateKeysState('bucket_name', e.target.value)}
-                                onChange={(e) => updateKeysState('bucket_name', e.target.value)}
-                                value={formFields.keys?.bucket_name}
-                            />
-                        </Form.Item>
-                    </div>
-                </div>
-                <Form.Item className="button-container">
-                    <div className="button-wrapper">
-                        <Button
-                            width="80%"
-                            height="45px"
-                            placeholder="Close"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="gray-light"
-                            fontSize="14px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => close(value)}
-                        />
-                        <Button
-                            width="80%"
-                            height="45px"
-                            placeholder={isValue ? 'Update' : 'Connect'}
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="14px"
-                            fontFamily="InterSemiBold"
-                            isLoading={loadingSubmit}
-                            disabled={process.env.REACT_APP_SANDBOX_ENV || (isValue && !creationForm.isFieldsTouched())}
-                            onClick={handleSubmit}
-                        />
-                    </div>
-                </Form.Item>
-            </Form>
+                    </Form>
+                </>
+            )}
         </dynamic-integration>
     );
 };
