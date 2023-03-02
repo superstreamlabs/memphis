@@ -1637,7 +1637,12 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
-	schemaDetailsResponse := models.StationOverviewSchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber, UpdatesAvailable: false}
+	schemaDetailsResponse := models.StationOverviewSchemaDetails{
+		SchemaName:       schemaName,
+		VersionNumber:    schemaVersion.VersionNumber,
+		UpdatesAvailable: false,
+		SchemaType:       schema.Type,
+	}
 	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
 	user, err := getUserDetailsFromMiddleware(c)
