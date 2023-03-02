@@ -20,6 +20,7 @@ import { MinusOutlined } from '@ant-design/icons';
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
+import stopUsingIcon from '../../../assets/images/stopUsingIcon.svg';
 import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
@@ -53,6 +54,8 @@ const StationOverviewHeader = () => {
     const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
+    const [detachLoader, setDetachLoader] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(false);
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -103,6 +106,21 @@ const StationOverviewHeader = () => {
         } catch (error) {
             setDeleteLoader(false);
             modalDeleteFlip(false);
+        }
+    };
+
+    const handleStopUseSchema = async () => {
+        setDetachLoader(true);
+        try {
+            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_SCHEMA_FROM_STATION, { station_name: stationState?.stationMetaData?.name });
+            if (data) {
+                setSchema(data);
+                setDeleteModal(false);
+                setDetachLoader(false);
+            }
+        } catch (error) {
+            setDetachLoader(false);
+            setDeleteModal(false);
         }
     };
 
@@ -224,14 +242,14 @@ const StationOverviewHeader = () => {
                                             width="80px"
                                             minWidth="80px"
                                             height="16px"
-                                            placeholder="Edit / Detach"
+                                            placeholder="Detach"
                                             colorType="white"
                                             radiusType="circle"
                                             backgroundColorType="purple"
                                             fontSize="10px"
                                             fontFamily="InterMedium"
                                             boxShadowStyle="float"
-                                            onClick={() => setUseSchemaModal(true)}
+                                            onClick={() => setDeleteModal(true)}
                                         />
                                         {stationState?.stationSocketData?.schema?.updates_available && (
                                             <Button
@@ -329,7 +347,6 @@ const StationOverviewHeader = () => {
                     className="use-schema-modal"
                 >
                     <UseSchemaModal
-                        schemaSelected={stationState?.stationSocketData?.schema?.name || ''}
                         stationName={stationState?.stationMetaData?.name}
                         handleSetSchema={(schema) => {
                             setSchema(schema);
@@ -371,6 +388,23 @@ const StationOverviewHeader = () => {
                         buttontxt="I understand, delete the station"
                         handleDeleteSelected={handleDeleteStation}
                         loader={deleteLoader}
+                    />
+                </Modal>
+                <Modal
+                    header={<img src={stopUsingIcon} alt="stopUsingIcon" />}
+                    width="520px"
+                    height="240px"
+                    displayButtons={false}
+                    clickOutside={() => setDeleteModal(false)}
+                    open={deleteModal}
+                >
+                    <DeleteItemsModal
+                        title="Are you sure you want to detach schema from the station?"
+                        desc="Detaching schema might interrupt producers from producing data"
+                        buttontxt="I understand, detach schema"
+                        textToConfirm="detach"
+                        handleDeleteSelected={handleStopUseSchema}
+                        loader={detachLoader}
                     />
                 </Modal>
             </div>

@@ -29,14 +29,14 @@ import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
 import { AddRounded } from '@material-ui/icons';
 
-const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close }) => {
+const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
     const [state, dispatch] = useContext(Context);
     const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [selected, setSelected] = useState(schemaSelected);
+    const [selected, setSelected] = useState();
     const [useschemaLoading, setUseschemaLoading] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const history = useHistory();
@@ -123,7 +123,6 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                                 <SchemaItem
                                     key={schema.name}
                                     schema={schema}
-                                    schemaSelected={schemaSelected}
                                     selected={selected}
                                     handleSelectedItem={(id) => setSelected(id)}
                                     handleStopUseSchema={() => setDeleteModal(true)}
@@ -145,7 +144,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, schemaSelected, close })
                             backgroundColorType="purple"
                             fontSize="13px"
                             fontFamily="InterSemiBold"
-                            disabled={selected === schemaSelected || selected === ''}
+                            disabled={selected === ''}
                             isLoading={useschemaLoading}
                             onClick={useSchema}
                         />
