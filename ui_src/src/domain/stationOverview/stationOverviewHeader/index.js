@@ -37,14 +37,12 @@ import SdkExample from '../../../components/sdkExsample';
 import { httpRequest } from '../../../services/http';
 import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
-import { Context } from '../../../hooks/store';
 import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 
 const StationOverviewHeader = () => {
-    const [state, dispatch] = useContext(Context);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const history = useHistory();

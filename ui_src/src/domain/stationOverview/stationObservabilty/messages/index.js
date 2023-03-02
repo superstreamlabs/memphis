@@ -16,7 +16,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
-import { msToUnits, numberWithCommas } from '../../../../services/valueConvertor';
+import { messageParser, msToUnits, numberWithCommas } from '../../../../services/valueConvertor';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -181,7 +181,9 @@ const Messages = () => {
                     onClick={() => onSelectedRow(id)}
                 >
                     {selectedRowIndex === id && <div className="hr-selected"></div>}
-                    <span className="preview-message">{tabValue === tabs[1] ? message?.message?.data : message?.data}</span>
+                    <span className="preview-message">
+                        {tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}
+                    </span>
                 </div>
             </div>
         );
@@ -196,7 +198,7 @@ const Messages = () => {
                         {tabValue === tabs[1] && (
                             <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
                         )}
-                        <p>Messages (In hexa)</p>
+                        <p>Messages</p>
                     </div>
                     <p className="right-coulmn">Information</p>
                 </div>

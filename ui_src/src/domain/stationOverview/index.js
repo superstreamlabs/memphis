@@ -39,18 +39,6 @@ const StationOverview = () => {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
 
-    const getStaionMetaData = async () => {
-        try {
-            let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
-            data.creation_date = await parsingDate(data.creation_date);
-            stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
-        } catch (error) {
-            if (error.status === 404) {
-                history.push(pathDomains.stations);
-            }
-        }
-    };
-
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
         data.messages?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
@@ -63,11 +51,24 @@ const StationOverview = () => {
         return data;
     };
 
+    const getStaionMetaData = async () => {
+        try {
+            let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
+            data.creation_date = await parsingDate(data.creation_date);
+            stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
+        } catch (error) {
+            if (error.status === 404) {
+                history.push(pathDomains.stations);
+            }
+        }
+    };
+
     const getStationDetails = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}`);
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
             setisLoading(false);
         } catch (error) {
             setisLoading(false);

@@ -11,49 +11,29 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
-import StatusIndication from '../../../../../components/indication';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
-import { decodeMessage } from '../../../../../services/decoder';
-import { hex_to_ascii } from '../../../../../services/valueConvertor';
+import { messageParser } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
+import { StationStoreContext } from '../../..';
 
 const { Panel } = Collapse;
 
 const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip }) => {
+    const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
-    const [parser, setParser] = useState(localStorage.getItem(LOCAL_STORAGE_MSG_PARSER) || 'string');
+    const [parser, setParser] = useState(stationState?.schemaType || localStorage.getItem(LOCAL_STORAGE_MSG_PARSER) || 'string');
     const [payload, setPayload] = useState(data);
 
     useEffect(() => {
         if (header === 'Payload') {
-            switch (parser) {
-                case 'string':
-                    setPayload(hex_to_ascii(data));
-                    break;
-                case 'json':
-                    let str = hex_to_ascii(data);
-                    if (isJsonString(str)) {
-                        setPayload(JSON.stringify(JSON.parse(str), null, 2));
-                    } else {
-                        setPayload(str);
-                    }
-                    break;
-                case 'protobuf':
-                    setPayload(JSON.stringify(decodeMessage(data), null, 2));
-                    break;
-                case 'bytes':
-                    setPayload(data);
-                    break;
-                default:
-                    setPayload(hex_to_ascii(data));
-            }
+            setPayload(messageParser(parser, data));
         }
     }, [parser, data]);
 
@@ -77,15 +57,6 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
             );
         }
         return obj;
-    };
-
-    const isJsonString = (str) => {
-        try {
-            JSON.parse(str);
-        } catch (e) {
-            return false;
-        }
-        return true;
     };
 
     return (
@@ -116,7 +87,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                         {header === 'Headers' && drawHeaders(data)}
                         {header === 'Payload' && (
                             <>
-                                <Copy data={data} />
+                                <Copy data={payload} />
                                 <div className="second-row">
                                     <SegmentButton
                                         value={parser || 'string'}

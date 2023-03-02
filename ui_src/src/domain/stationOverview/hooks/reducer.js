@@ -52,6 +52,12 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 selectedRowId: action.payload
             };
+        case 'SET_SCHEMA_TYPE':
+            return {
+                ...stationState,
+                schemaType: action.payload
+            };
+
         default:
             return stationState;
     }

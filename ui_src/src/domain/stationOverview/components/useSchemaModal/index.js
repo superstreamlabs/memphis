@@ -13,6 +13,8 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
+import { AddRounded } from '@material-ui/icons';
+import { useHistory } from 'react-router-dom';
 
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import stopUsingIcon from '../../../../assets/images/stopUsingIcon.svg';
@@ -23,14 +25,12 @@ import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
-import SchemaItem from './schemaItem';
-import { Context } from '../../../../hooks/store';
-import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
-import { AddRounded } from '@material-ui/icons';
+import { StationStoreContext } from '../..';
+import SchemaItem from './schemaItem';
 
 const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
-    const [state, dispatch] = useContext(Context);
+    const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
@@ -72,6 +72,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
             const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: [stationName], schema_name: selected });
             if (data) {
                 handleSetSchema(data);
+                stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema_type });
                 setUseschemaLoading(false);
             }
         } catch (error) {
