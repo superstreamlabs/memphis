@@ -27,6 +27,7 @@ import Modal from '../../../components/modal';
 import Input from '../../../components/Input';
 import { message } from 'antd';
 import Tag from '../../../components/tag';
+import Loader from '../../../components/loader';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -126,6 +127,11 @@ const Integrations = () => {
                     <Tag tag={CATEGORY_LIST[key]} onClick={(e) => setCategoryFilter(e)} border={categoryFilter === CATEGORY_LIST[key].name} />
                 ))}
             </div>
+            {!imagesLoaded && (
+                <div className="loading">
+                    <Loader background={false} />
+                </div>
+            )}
             {imagesLoaded && (
                 <div className="integration-list">
                     {Object.keys(filterList)?.map((integration) =>

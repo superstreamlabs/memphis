@@ -23,6 +23,7 @@ import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
 import Modal from '../../../../../components/modal';
 import { ZoomInRounded } from '@material-ui/icons';
+import Loader from '../../../../../components/loader';
 
 const { Panel } = Collapse;
 
@@ -178,6 +179,11 @@ EOF`}
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
+            {!imagesLoaded && (
+                <div className="loader-integration-box">
+                    <Loader />
+                </div>
+            )}
             {imagesLoaded && (
                 <>
                     {dataDogConfiguration?.insideBanner}

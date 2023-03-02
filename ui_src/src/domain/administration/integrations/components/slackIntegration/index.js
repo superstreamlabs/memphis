@@ -26,6 +26,7 @@ import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
 import { URL } from '../../../../../config';
+import Loader from '../../../../../components/loader';
 
 const urlSplit = URL.split('/', 3);
 
@@ -151,6 +152,11 @@ const SlackIntegration = ({ close, value }) => {
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
+            {!imagesLoaded && (
+                <div className="loader-integration-box">
+                    <Loader />
+                </div>
+            )}
             {imagesLoaded && (
                 <>
                     {slackConfiguration?.insideBanner}
