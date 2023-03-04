@@ -37,6 +37,7 @@ type StationsHandler struct{ S *Server }
 const (
 	stationObjectName     = "Station"
 	schemaToDlsUpdateType = "schemaverse_to_dls"
+	removeStation         = "remove_station"
 )
 
 type StationName struct {
@@ -1055,6 +1056,13 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 
 		serv.Noticef("Station " + stationName.Ext() + " has been deleted by user " + user.Username)
+
+		removeStationUpdate := models.ConfigurationsUpdate{
+			StationName: stationName.Intern(),
+			Type:        removeStation,
+			Update:      true,
+		}
+		serv.SendUpdateToClients(removeStationUpdate)
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -2245,7 +2253,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
-	
+
 	for _, msg := range body.MessageSeqs {
 		err = sh.S.RemoveMsg(stationName, msg)
 		if err != nil {
@@ -2263,6 +2271,6 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-messages")
 	}
-	
+
 	c.IndentedJSON(200, gin.H{})
 }

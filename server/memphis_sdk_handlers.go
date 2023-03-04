@@ -16,7 +16,7 @@ import (
 	"memphis/models"
 )
 
-const configurationsUpdatesSubject = "$memphis_sdk_configurations_updates"
+const sdkClientsUpdatesSubject = "$memphis_sdk_configurations_updates"
 
 type simplifiedMsgHandler func(*client, string, string, []byte)
 
@@ -243,7 +243,7 @@ func respondWithRespErr(s *Server, replySubject string, err error, resp memphisR
 }
 
 func (s *Server) SendUpdateToClients(configurationUpdate models.ConfigurationsUpdate) {
-	subject := configurationsUpdatesSubject
+	subject := sdkClientsUpdatesSubject
 	msg, err := json.Marshal(configurationUpdate)
 	if err != nil {
 		s.Errorf("SendUpdateToClients: " + err.Error())
