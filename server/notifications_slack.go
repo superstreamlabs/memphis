@@ -218,7 +218,7 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		if err != nil {
 			return slackIntegration, err
 		}
-		update := models.ConfigurationsUpdate{
+		update := models.SdkClientsUpdates{
 			Type:   sendNotificationType,
 			Update: properties[SchemaVAlert],
 		}
@@ -280,7 +280,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		return slackIntegration, err
 	}
 
-	update := models.ConfigurationsUpdate{
+	update := models.SdkClientsUpdates{
 		Type:   sendNotificationType,
 		Update: svfAlert,
 	}

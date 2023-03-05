@@ -251,7 +251,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 func changePMRetention(pmRetention int) error {
 	POISON_MSGS_RETENTION_IN_HOURS = pmRetention
-	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: "pm_retention", Update: POISON_MSGS_RETENTION_IN_HOURS})
+	msg, err := json.Marshal(models.SdkClientsUpdates{Type: "pm_retention", Update: POISON_MSGS_RETENTION_IN_HOURS})
 	if err != nil {
 		return err
 	}
@@ -352,7 +352,7 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 
 func changeTSTime(tsTime int) error {
 	TIERED_STORAGE_TIME_FRAME_SEC = tsTime
-	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: "tiered_storage_time_sec", Update: TIERED_STORAGE_TIME_FRAME_SEC})
+	msg, err := json.Marshal(models.SdkClientsUpdates{Type: "tiered_storage_time_sec", Update: TIERED_STORAGE_TIME_FRAME_SEC})
 	if err != nil {
 		return err
 	}
@@ -385,7 +385,7 @@ func editClusterCompHost(key string, host string) error {
 		REST_GW_HOST = host
 	}
 
-	msg, err := json.Marshal(models.ConfigurationsUpdate{Type: key, Update: host})
+	msg, err := json.Marshal(models.SdkClientsUpdates{Type: key, Update: host})
 	if err != nil {
 		return err
 	}
