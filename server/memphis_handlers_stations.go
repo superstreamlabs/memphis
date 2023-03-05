@@ -1060,7 +1060,6 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		removeStationUpdate := models.ConfigurationsUpdate{
 			StationName: stationName.Intern(),
 			Type:        removeStation,
-			Update:      true,
 		}
 		serv.SendUpdateToClients(removeStationUpdate)
 	}
