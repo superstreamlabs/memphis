@@ -261,7 +261,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 
 	switch body.Name {
 	case "slack":
-		update := models.ConfigurationsUpdate{
+		update := models.SdkClientsUpdates{
 			Type:   sendNotificationType,
 			Update: false,
 		}

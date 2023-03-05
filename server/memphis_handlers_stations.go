@@ -35,9 +35,9 @@ import (
 type StationsHandler struct{ S *Server }
 
 const (
-	stationObjectName     = "Station"
-	schemaToDlsUpdateType = "schemaverse_to_dls"
-	removeStation         = "remove_station"
+	stationObjectName       = "Station"
+	schemaToDlsUpdateType   = "schemaverse_to_dls"
+	removeStationUpdateType = "remove_station"
 )
 
 type StationName struct {
@@ -1057,9 +1057,9 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 		serv.Noticef("Station " + stationName.Ext() + " has been deleted by user " + user.Username)
 
-		removeStationUpdate := models.ConfigurationsUpdate{
+		removeStationUpdate := models.SdkClientsUpdates{
 			StationName: stationName.Intern(),
-			Type:        removeStation,
+			Type:        removeStationUpdateType,
 		}
 		serv.SendUpdateToClients(removeStationUpdate)
 	}
@@ -2084,7 +2084,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 			return
 		}
 	}
-	configUpdate := models.ConfigurationsUpdate{
+	configUpdate := models.SdkClientsUpdates{
 		StationName: stationName.Intern(),
 		Type:        schemaToDlsUpdateType,
 		Update:      station.DlsConfiguration.Schemaverse,

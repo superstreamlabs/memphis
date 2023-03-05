@@ -26,7 +26,7 @@ type GlobalConfigurationsUpdate struct {
 	Notifications bool `json:"notifications"`
 }
 
-type ConfigurationsUpdate struct {
+type SdkClientsUpdates struct {
 	StationName string `json:"station_name"`
 	Type        string `json:"type"`
 	Update      any    `json:"update"`
