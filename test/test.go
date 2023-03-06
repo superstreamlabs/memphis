@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 )
 
 var tempRoot = filepath.Join(os.TempDir(), "nats-server")

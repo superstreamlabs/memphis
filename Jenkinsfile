@@ -1,6 +1,6 @@
 def gitBranch = env.BRANCH_NAME
-def imageName = "memphis-broker"
-def gitURL = "git@github.com:Memphisdev/memphis-broker.git"
+def imageName = "memphis"
+def gitURL = "git@github.com:Memphisdev/memphis.git"
 def repoUrlPrefix = "memphisos"
 def test_suffix = "test"
 String unique_id = org.apache.commons.lang.RandomStringUtils.random(4, false, true)
@@ -90,7 +90,7 @@ node {
     stage('Open port forwarding to memphis service') {
       sh """
         until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done
-        nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 --namespace memphis-$unique_id &
+        nohup kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis-$unique_id &
       """
     }
 
@@ -147,7 +147,7 @@ node {
 	stage('Open port forwarding to memphis service') {
           sh """
 	    until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis  | grep -q "Running" ; do sleep 1; done
-     	    nohup kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 7770 --namespace memphis &
+     	    nohup kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis &
 	  """
    	}
 

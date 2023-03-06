@@ -2,7 +2,7 @@
 
 FROM --platform=$BUILDPLATFORM golang:1.19-alpine3.17 as build
 
-WORKDIR $GOPATH/src/memphis-broker
+WORKDIR $GOPATH/src/memphis
 COPY . .
 
 ARG TARGETOS TARGETARCH
@@ -15,8 +15,8 @@ WORKDIR /run
 RUN apk update && apk add --no-cache make protobuf-dev
 RUN apk add --update ca-certificates && mkdir -p /nats/bin && mkdir /nats/conf
 
-COPY --from=build $GOPATH/memphis-broker/memphis-broker /bin/nats-server
-COPY --from=build $GOPATH/memphis-broker/conf/* conf/
-COPY --from=build $GOPATH/memphis-broker/version.conf .
+COPY --from=build $GOPATH/memphis/memphis /bin/nats-server
+COPY --from=build $GOPATH/memphis/conf/* conf/
+COPY --from=build $GOPATH/memphis/version.conf .
 
 ENTRYPOINT ["/bin/nats-server"]

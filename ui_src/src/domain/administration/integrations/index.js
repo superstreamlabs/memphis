@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -27,6 +27,7 @@ import Modal from '../../../components/modal';
 import Input from '../../../components/Input';
 import { message } from 'antd';
 import Tag from '../../../components/tag';
+import Loader from '../../../components/loader';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -34,9 +35,34 @@ const Integrations = () => {
     const [integrationRequest, setIntegrationRequest] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [filterList, setFilterList] = useState(INTEGRATION_LIST);
+    const [imagesLoaded, setImagesLoaded] = useState(false);
 
     useEffect(() => {
         getallIntegration();
+    }, []);
+
+    useEffect(() => {
+        const images = [];
+        Object.values(INTEGRATION_LIST).forEach((integration) => {
+            images.push(integration.banner.props.src);
+            images.push(integration.insideBanner.props.src);
+            images.push(integration.icon.props.src);
+        });
+        const promises = [];
+
+        images.forEach((imageUrl) => {
+            const image = new Image();
+            promises.push(
+                new Promise((resolve) => {
+                    image.onload = resolve;
+                })
+            );
+            image.src = imageUrl;
+        });
+
+        Promise.all(promises).then(() => {
+            setImagesLoaded(true);
+        });
     }, []);
 
     useEffect(() => {
@@ -101,23 +127,30 @@ const Integrations = () => {
                     <Tag tag={CATEGORY_LIST[key]} onClick={(e) => setCategoryFilter(e)} border={categoryFilter === CATEGORY_LIST[key].name} />
                 ))}
             </div>
-            <div className="integration-list">
-                {Object.keys(filterList)?.map((integration) =>
-                    filterList[integration].comingSoon ? (
-                        <div key={filterList[integration].name} className="cloud-wrapper">
-                            <div className="dark-background">
-                                <img src={cloudeBadge} />
-                                <div className="cloud-icon">
-                                    <CloudQueueRounded />
+            {!imagesLoaded && (
+                <div className="loading">
+                    <Loader background={false} />
+                </div>
+            )}
+            {imagesLoaded && (
+                <div className="integration-list">
+                    {Object.keys(filterList)?.map((integration) =>
+                        filterList[integration].comingSoon ? (
+                            <div key={filterList[integration].name} className="cloud-wrapper">
+                                <div className="dark-background">
+                                    <img src={cloudeBadge} />
+                                    <div className="cloud-icon">
+                                        <CloudQueueRounded />
+                                    </div>
                                 </div>
+                                <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
                             </div>
+                        ) : (
                             <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
-                        </div>
-                    ) : (
-                        <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
-                    )
-                )}
-            </div>
+                        )
+                    )}
+                </div>
+            )}
             <Modal
                 className="request-integration-modal"
                 header={<img src={integrationRequestIcon} alt="errorModal" />}

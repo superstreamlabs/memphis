@@ -18,10 +18,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"memphis-broker/analytics"
-	"memphis-broker/db"
-	"memphis-broker/http_server"
-	"memphis-broker/server"
+	"memphis/analytics"
+	"memphis/db"
+	"memphis/http_server"
+	"memphis/server"
 
 	"os"
 

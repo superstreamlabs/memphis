@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -15,9 +15,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"memphis-broker/analytics"
-	"memphis-broker/models"
-	"memphis-broker/utils"
+	"memphis/analytics"
+	"memphis/models"
+	"memphis/utils"
 	"sort"
 	"strings"
 	"time"
@@ -470,62 +470,6 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(s, reply, nil)
-}
-
-func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
-	var producers []models.Producer
-	var station models.Station
-
-	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
-	if err != nil {
-		serv.Errorf("KillProducers: " + err.Error())
-	}
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		serv.Errorf("KillProducers: " + err.Error())
-	}
-
-	if len(producers) > 0 {
-		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
-		if err != nil {
-			serv.Errorf("KillProducers: " + "Producer " + producers[0].Name + ": " + err.Error())
-		}
-
-		_, err = producersCollection.UpdateMany(context.TODO(),
-			bson.M{"connection_id": connectionId},
-			bson.M{"$set": bson.M{"is_active": false}},
-		)
-		if err != nil {
-			serv.Errorf("KillProducers: At station " + station.Name + ": " + err.Error())
-			return err
-		}
-
-		userType := "application"
-		if producers[0].CreatedByUser == "root" {
-			userType = "root"
-		}
-
-		var message string
-		var auditLogs []interface{}
-		var newAuditLog models.AuditLog
-		for _, producer := range producers {
-			message = "Producer " + producer.Name + " has been disconnected by user " + producers[0].CreatedByUser
-			newAuditLog = models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   station.Name,
-				Message:       message,
-				CreatedByUser: producers[0].CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      userType,
-			}
-			auditLogs = append(auditLogs, newAuditLog)
-		}
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("KillProducers: At station " + station.Name + ": " + err.Error())
-		}
-	}
-
-	return nil
 }
 
 func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {

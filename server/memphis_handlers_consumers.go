@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -17,9 +17,9 @@ import (
 	"errors"
 	"sort"
 
-	"memphis-broker/analytics"
-	"memphis-broker/models"
-	"memphis-broker/utils"
+	"memphis/analytics"
+	"memphis/models"
+	"memphis/utils"
 	"strings"
 	"time"
 
@@ -96,7 +96,6 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 func (s *Server) createConsumerDirectV0(c *client, reply string, ccr createConsumerRequestV0, requestVersion int) {
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
 	respondWithErr(s, reply, err)
-	return
 }
 
 func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
@@ -264,7 +263,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		if consumerGroupExist {
 			if requestVersion == 1 {
 				if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
-					errMsg := errors.New("Consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
+					errMsg := errors.New("consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
 					serv.Warnf("createConsumerDirectCommon: " + errMsg.Error())
 					return errMsg
 				}
@@ -273,16 +272,26 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
 				err := s.CreateConsumer(newConsumer, station)
 				if err != nil {
-					errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-					serv.Errorf("createConsumerDirectCommon: " + errMsg)
+					if IsNatsErr(err, JSStreamNotFoundErr) {
+						errMsg := "Consumer " + consumerName + " at station " + cStationName + ": station does not exist"
+						serv.Warnf("createConsumerDirectCommon: " + errMsg)
+					} else {
+						errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+						serv.Errorf("createConsumerDirectCommon: " + errMsg)
+					}
 					return err
 				}
 			}
 		} else {
 			err := s.CreateConsumer(newConsumer, station)
 			if err != nil {
-				errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-				serv.Errorf("createConsumerDirectCommon: " + errMsg)
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					errMsg := "Consumer " + consumerName + " at station " + cStationName + ": station does not exist"
+					serv.Warnf("createConsumerDirectCommon: " + errMsg)
+				} else {
+					errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+					serv.Errorf("createConsumerDirectCommon: " + errMsg)
+				}
 				return err
 			}
 		}
@@ -337,14 +346,14 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if ccr.LastMessages < -1 {
-		errMsg := errors.New("Min value for LastMessages is -1")
+		errMsg := errors.New("min value for LastMessages is -1")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
 		respondWithErr(s, reply, errMsg)
 		return
 	}
 
 	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
-		errMsg := errors.New("Consumer creation options can't contain both startConsumeFromSequence and lastMessages")
+		errMsg := errors.New("consumer creation options can't contain both startConsumeFromSequence and lastMessages")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
 		respondWithErr(s, reply, errMsg)
 		return
@@ -621,17 +630,21 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+	deleted := false
 	if count == 0 { // no other members in this group
 		err = s.RemoveConsumer(stationName, consumer.ConsumersGroup)
-		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) {
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
 			respondWithErr(s, reply, err)
 			return
+		}
+		if err == nil {
+			deleted = true
 		}
 
 		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
-		if err != nil {
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
 			respondWithErr(s, reply, err)
@@ -639,94 +652,37 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	username := c.memphisInfo.username
-	if username == "" {
-		username = dcr.Username
-	}
+	if deleted {
+		username := c.memphisInfo.username
+		if username == "" {
+			username = dcr.Username
+		}
 
-	message := "Consumer " + name + " has been deleted by user " + username
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
-		serv.Errorf("DestroyConsumer: " + errMsg)
-	}
+		message := "Consumer " + name + " has been deleted by user " + username
+		serv.Noticef(message)
+		var auditLogs []interface{}
+		newAuditLog := models.AuditLog{
+			ID:            primitive.NewObjectID(),
+			StationName:   stationName.Ext(),
+			Message:       message,
+			CreatedByUser: username,
+			CreationDate:  time.Now(),
+			UserType:      "application",
+		}
+		auditLogs = append(auditLogs, newAuditLog)
+		err = CreateAuditLogs(auditLogs)
+		if err != nil {
+			errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + ": " + err.Error()
+			serv.Errorf("DestroyConsumer: " + errMsg)
+		}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(username, "user-remove-consumer-sdk")
+		shouldSendAnalytics, _ := shouldSendAnalytics()
+		if shouldSendAnalytics {
+			analytics.SendEvent(username, "user-remove-consumer-sdk")
+		}
 	}
 
 	respondWithErr(s, reply, nil)
-	return
-}
-
-func (ch ConsumersHandler) KillConsumers(connectionId primitive.ObjectID) error {
-	var consumers []models.Consumer
-	var station models.Station
-
-	cursor, err := consumersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
-	if err != nil {
-		serv.Errorf("KillConsumers: " + err.Error())
-	}
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		serv.Errorf("KillConsumers: " + err.Error())
-	}
-
-	if len(consumers) > 0 {
-		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": consumers[0].StationId}).Decode(&station)
-		if err != nil {
-			errMsg := "At station ID: " + consumers[0].StationId.Hex() + ": " + err.Error()
-			serv.Errorf("KillConsumers: " + errMsg)
-		}
-		_, err = consumersCollection.UpdateMany(context.TODO(),
-			bson.M{"connection_id": connectionId},
-			bson.M{"$set": bson.M{"is_active": false}},
-		)
-		if err != nil {
-			errMsg := "At station: " + station.Name + ": " + err.Error()
-			serv.Errorf("KillConsumers: " + errMsg)
-			return err
-		}
-
-		userType := "application"
-		if consumers[0].CreatedByUser == "root" {
-			userType = "root"
-		}
-
-		var message string
-		var auditLogs []interface{}
-		var newAuditLog models.AuditLog
-		for _, consumer := range consumers {
-			message = "Consumer " + consumer.Name + " has been disconnected by user " + consumers[0].CreatedByUser
-			newAuditLog = models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   station.Name,
-				Message:       message,
-				CreatedByUser: consumers[0].CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      userType,
-			}
-			auditLogs = append(auditLogs, newAuditLog)
-		}
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			errMsg := "At station: " + station.Name + ": " + err.Error()
-			serv.Errorf("KillConsumers: " + errMsg)
-		}
-	}
-
-	return nil
 }
 
 func (ch ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {

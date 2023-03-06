@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 )
 
 // waits until a calculated list of listeners is resolved or a timeout

@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis-broker/models"
+	"memphis/models"
 	"net/textproto"
 	"sort"
 	"strconv"
@@ -59,6 +59,8 @@ const (
 	kindCreateStream   = "$memphis_create_stream"
 	kindUpdateStream   = "$memphis_update_stream"
 	kindDeleteStream   = "$memphis_delete_stream"
+	kindDeleteMessage  = "$memphis_delete_message"
+	kindPurgeStream    = "$memphis_purge_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
 	kindDeleteMsg      = "$memphis_delete_msg"
@@ -559,6 +561,32 @@ func (s *Server) RemoveStream(streamName string) error {
 
 	var resp JSApiStreamDeleteResponse
 	err := jsApiRequest(s, requestSubject, kindDeleteStream, []byte(_EMPTY_), &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) PurgeStream(streamName string) error {
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
+
+	var resp JSApiStreamPurgeResponse
+	err := jsApiRequest(s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
+
+	var resp JSApiMsgDeleteResponse
+	req := JSApiMsgDeleteRequest{Seq: msgSeq}
+	reqj, _ := json.Marshal(req)
+	err := jsApiRequest(s, requestSubject, kindDeleteMessage, reqj, &resp)
 	if err != nil {
 		return err
 	}
