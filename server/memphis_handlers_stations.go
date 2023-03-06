@@ -307,7 +307,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		RetentionValue:       retentionValue,
 		StorageType:          storageType,
 		Replicas:             replicas,
-		DedupEnabled:         csr.DedupEnabled,      // TODO deprecated
 		DedupWindowInMs:      csr.DedupWindowMillis, // TODO deprecated
 		LastUpdate:           time.Now(),
 		Schema:               schemaDetails,
@@ -316,7 +315,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		IsNative:             isNative,
 		DlsConfiguration:     csr.DlsConfiguration,
 		TieredStorageEnabled: csr.TieredStorageEnabled,
-		DedupConfiguration:   csr.DedupConfiguration,
+		DedupEnabled:         csr.DedupEnabled,
 	}
 
 	if shouldCreateStream {
@@ -348,7 +347,6 @@ func (s *Server) createStationDirectIntern(c *client,
 			"retention_value":          newStation.RetentionValue,
 			"storage_type":             newStation.StorageType,
 			"replicas":                 newStation.Replicas,
-			"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          newStation.CreatedByUser,
 			"creation_date":            newStation.CreationDate,
@@ -807,7 +805,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		RetentionValue:       body.RetentionValue,
 		StorageType:          body.StorageType,
 		Replicas:             body.Replicas,
-		DedupEnabled:         body.DedupEnabled,    // TODO deprecated
 		DedupWindowInMs:      body.DedupWindowInMs, // TODO deprecated
 		CreatedByUser:        user.Username,
 		CreationDate:         time.Now(),
@@ -819,7 +816,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		DlsConfiguration:     body.DlsConfiguration,
 		IsNative:             true,
 		TieredStorageEnabled: body.TieredStorageEnabled,
-		DedupConfiguration:   body.DedupConfiguration,
+		DedupEnabled:         body.DedupEnabled,
 	}
 
 	err = sh.S.CreateStream(stationName, newStation)
@@ -853,7 +850,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"retention_value":          newStation.RetentionValue,
 				"storage_type":             newStation.StorageType,
 				"replicas":                 newStation.Replicas,
-				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
 				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
 				"created_by_user":          newStation.CreatedByUser,
 				"creation_date":            newStation.CreationDate,
@@ -861,7 +857,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"functions":                newStation.Functions,
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dedup_configuration":      newStation.DedupConfiguration,
+				"dedup_enabled":            newStation.DedupEnabled,
 				"dls_configuration":        newStation.DlsConfiguration,
 				"is_native":                newStation.IsNative,
 				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
@@ -875,7 +871,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"retention_value":          newStation.RetentionValue,
 				"storage_type":             newStation.StorageType,
 				"replicas":                 newStation.Replicas,
-				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
 				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
 				"created_by_user":          newStation.CreatedByUser,
 				"creation_date":            newStation.CreationDate,
@@ -883,7 +878,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				"functions":                newStation.Functions,
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dedup_configuration":      newStation.DedupConfiguration,
+				"dedup_enabled":            newStation.DedupEnabled,
 				"dls_configuration":        newStation.DlsConfiguration,
 				"is_native":                newStation.IsNative,
 				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
@@ -952,7 +947,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"retention_value":          body.RetentionValue,
 			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
-			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          user.Username,
 			"creation_date":            time.Now(),
@@ -961,7 +955,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"is_deleted":               false,
 			"schema":                   schemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dedup_configuration":      newStation.DedupConfiguration,
+			"dedup_enabled":            newStation.DedupEnabled,
 			"dls_configuration":        newStation.DlsConfiguration,
 			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})
@@ -973,7 +967,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"retention_value":          body.RetentionValue,
 			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
-			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          user.Username,
 			"creation_date":            time.Now(),
@@ -982,7 +975,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"is_deleted":               false,
 			"schema":                   emptySchemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dedup_configuration":      newStation.DedupConfiguration,
+			"dedup_enabled":            newStation.DedupEnabled,
 			"dls_configuration":        newStation.DlsConfiguration,
 			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})

@@ -313,7 +313,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 				"followers":                followers,
 				"schema":                   struct{}{},
 				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dedup_configuration":      station.DedupConfiguration,
+				"dedup_enabled":            station.DedupEnabled,
 				"dls_configuration":        station.DlsConfiguration,
 				"total_dls_messages":       totalDlsAmount,
 			}
@@ -336,7 +336,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 				"followers":                followers,
 				"schema":                   struct{}{},
 				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dedup_configuration":      station.DedupConfiguration,
+				"dedup_enabled":            station.DedupEnabled,
 				"dls_configuration":        station.DlsConfiguration,
 				"total_dls_messages":       totalDlsAmount,
 			}
@@ -375,7 +375,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		"followers":                followers,
 		"schema":                   schemaDetails,
 		"idempotency_window_in_ms": station.IdempotencyWindow,
-		"dedup_configuration":      station.DedupConfiguration,
+		"dedup_enabled":            station.DedupEnabled,
 		"dls_configuration":        station.DlsConfiguration,
 		"total_dls_messages":       totalDlsAmount,
 	}

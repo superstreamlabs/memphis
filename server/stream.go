@@ -58,7 +58,7 @@ type StreamConfig struct {
 	Mirror               *StreamSource   `json:"mirror,omitempty"`
 	Sources              []*StreamSource `json:"sources,omitempty"`
 	TieredStorageEnabled bool            `json:"tiered_storage_enabled"`
-	DedupConfiguration   bool            `json:"dedup_configuration,omitempty"`
+	DedupEnabled         bool            `json:"dedup_enabled,omitempty"`
 
 	// Allow republish of the message after being sequenced and stored.
 	RePublish *RePublish `json:"republish,omitempty"`
@@ -1442,7 +1442,7 @@ func (mset *stream) updateWithAdvisory(config *StreamConfig, sendAdvisory bool) 
 				// Let it fire right away, it will adjust properly on purge.
 				mset.ddtmr.Reset(time.Microsecond)
 			}
-			if cfg.DedupConfiguration && mset.msgDedupFilter.msgDedupTimer != nil {
+			if cfg.DedupEnabled && mset.msgDedupFilter.msgDedupTimer != nil {
 				mset.msgDedupFilter.msgDedupTimer.Reset(time.Microsecond)
 			}
 		}
@@ -3777,7 +3777,7 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 	}
 
 	// Msg Dedup Detection
-	if mset.cfg.DedupConfiguration {
+	if mset.cfg.DedupEnabled {
 		if dde := mset.checkMsg(hdr, msg); dde != nil {
 			mset.clfs++
 			mset.mu.Unlock()
@@ -3977,7 +3977,7 @@ func (mset *stream) processJetStreamMsg(subject, reply string, hdr, msg []byte, 
 		if msgId != _EMPTY_ {
 			mset.storeMsgId(&ddentry{msgId, seq, ts})
 		}
-		if mset.config().DedupConfiguration {
+		if mset.config().DedupEnabled {
 			mset.storeMsg(&ddentry{mset.msgDedupFilter.getHash(hdr, msg), seq, ts})
 		}
 		if rollupSub {
@@ -4369,7 +4369,7 @@ func (mset *stream) stop(deleteFlag, advisory bool) error {
 		mset.ddindex = 0
 	}
 
-	if mset.cfg.DedupConfiguration && mset.msgDedupFilter.msgDedupTimer != nil {
+	if mset.cfg.DedupEnabled && mset.msgDedupFilter.msgDedupTimer != nil {
 		mset.msgDedupFilter.msgDedupTimer.Stop()
 		mset.msgDedupFilter.msgDedupTimer = nil
 		mset.msgDedupFilter.msgDedupMap = nil

@@ -200,20 +200,19 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 	var newStation models.Station
 	stationName := sn.Ext()
 	newStation = models.Station{
-		ID:                 primitive.NewObjectID(),
-		Name:               stationName,
-		RetentionType:      "message_age_sec",
-		RetentionValue:     604800,
-		StorageType:        "file",
-		Replicas:           1,
-		DedupEnabled:       false, // TODO deprecated
-		DedupWindowInMs:    0,     // TODO deprecated
-		CreatedByUser:      username,
-		CreationDate:       time.Now(),
-		LastUpdate:         time.Now(),
-		Functions:          []models.Function{},
-		IdempotencyWindow:  120000,
-		DedupConfiguration: true,
+		ID:                primitive.NewObjectID(),
+		Name:              stationName,
+		RetentionType:     "message_age_sec",
+		RetentionValue:    604800,
+		StorageType:       "file",
+		Replicas:          1,
+		DedupWindowInMs:   0, // TODO deprecated
+		CreatedByUser:     username,
+		CreationDate:      time.Now(),
+		LastUpdate:        time.Now(),
+		Functions:         []models.Function{},
+		IdempotencyWindow: 120000,
+		DedupEnabled:      true,
 		DlsConfiguration: models.DlsConfiguration{
 			Poison:      true,
 			Schemaverse: true,
@@ -239,14 +238,13 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 			"retention_value":          newStation.RetentionValue,
 			"storage_type":             newStation.StorageType,
 			"replicas":                 newStation.Replicas,
-			"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
 			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          newStation.CreatedByUser,
 			"creation_date":            newStation.CreationDate,
 			"last_update":              newStation.LastUpdate,
 			"functions":                newStation.Functions,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dedup_configuration":      newStation.DedupConfiguration,
+			"dedup_enabled":            newStation.DedupEnabled,
 			"is_native":                newStation.IsNative,
 			"dls_configuration":        newStation.DlsConfiguration,
 		},

@@ -190,7 +190,7 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			NoAck:                false,
 			Duplicates:           idempotencyWindow,
 			TieredStorageEnabled: station.TieredStorageEnabled,
-			DedupConfiguration:   station.DedupConfiguration,
+			DedupEnabled:         station.DedupEnabled,
 		})
 }
 
@@ -210,21 +210,21 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 
 	return s.
 		memphisAddStream(&StreamConfig{
-			Name:               (name),
-			Subjects:           []string{name + ".>"},
-			Retention:          LimitsPolicy,
-			MaxConsumers:       -1,
-			MaxMsgs:            int64(-1),
-			MaxBytes:           int64(-1),
-			Discard:            DiscardOld,
-			MaxAge:             maxAge,
-			MaxMsgsPer:         -1,
-			MaxMsgSize:         int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
-			Storage:            storage,
-			Replicas:           station.Replicas,
-			NoAck:              false,
-			Duplicates:         idempotencyWindow,
-			DedupConfiguration: true,
+			Name:         (name),
+			Subjects:     []string{name + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(-1),
+			MaxBytes:     int64(-1),
+			Discard:      DiscardOld,
+			MaxAge:       maxAge,
+			MaxMsgsPer:   -1,
+			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
+			Storage:      storage,
+			Replicas:     station.Replicas,
+			NoAck:        false,
+			Duplicates:   idempotencyWindow,
+			DedupEnabled: true,
 		})
 }
 

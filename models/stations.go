@@ -60,7 +60,6 @@ type Station struct {
 	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
 	StorageType          string             `json:"storage_type" bson:"storage_type"`
 	Replicas             int                `json:"replicas" bson:"replicas"`
-	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
 	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
@@ -72,7 +71,7 @@ type Station struct {
 	IsNative             bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
-	DedupConfiguration   bool               `json:"dedup_configuration" bson:"dedup_configuration"`
+	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`
 }
 
 type GetStationResponseSchema struct {
@@ -82,7 +81,6 @@ type GetStationResponseSchema struct {
 	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
 	StorageType          string             `json:"storage_type" bson:"storage_type"`
 	Replicas             int                `json:"replicas" bson:"replicas"`
-	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
 	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
@@ -94,7 +92,7 @@ type GetStationResponseSchema struct {
 	IsNative             bool               `json:"is_native" bson:"is_native"`
 	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
-	DedupConfiguration   bool               `json:"dedup_configuration" bson:"dedup_configuration"`
+	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`
 }
 
 type ExtendedStation struct {
@@ -104,7 +102,6 @@ type ExtendedStation struct {
 	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
 	StorageType          string             `json:"storage_type" bson:"storage_type"`
 	Replicas             int                `json:"replicas" bson:"replicas"`
-	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
 	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
@@ -121,7 +118,7 @@ type ExtendedStation struct {
 	Producers            []Producer         `json:"producers"`
 	Consumers            []Consumer         `json:"consumers"`
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
-	DedupConfiguration   bool               `json:"dedup_configuration" bson:"dedup_configuration"`
+	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`
 }
 
 type ExtendedStationDetails struct {
@@ -143,14 +140,13 @@ type CreateStationSchema struct {
 	RetentionValue       int              `json:"retention_value"`
 	Replicas             int              `json:"replicas"`
 	StorageType          string           `json:"storage_type"`
-	DedupEnabled         bool             `json:"dedup_enabled"`                      // TODO deprecated
 	DedupWindowInMs      int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
 	Tags                 []CreateTag      `json:"tags"`
 	SchemaName           string           `json:"schema_name"`
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
-	DedupConfiguration   bool             `json:"dedup_configuration"`
+	DedupEnabled         bool             `json:"dedup_enabled"`
 }
 
 type DlsConfiguration struct {

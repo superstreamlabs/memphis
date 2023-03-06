@@ -1493,10 +1493,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			}
 			updatesAvailable := !schemaVersion.Active
 			schemaDetails = models.StationOverviewSchemaDetails{
-				SchemaName: schema.Name,
-				VersionNumber: station.Schema.VersionNumber,
+				SchemaName:       schema.Name,
+				VersionNumber:    station.Schema.VersionNumber,
 				UpdatesAvailable: updatesAvailable,
-				SchemaType: schema.Type,
+				SchemaType:       schema.Type,
 			}
 		}
 		response = gin.H{
@@ -1517,7 +1517,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"followers":                followers,
 			"schema":                   schemaDetails,
 			"idempotency_window_in_ms": station.IdempotencyWindow,
-			"dedup_configuration":      station.DedupConfiguration,
+			"dedup_enabled":            station.DedupEnabled,
 			"dls_configuration":        station.DlsConfiguration,
 			"total_dls_messages":       totalDlsAmount,
 			"tiered_storage_enabled":   station.TieredStorageEnabled,
@@ -1544,7 +1544,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"followers":                followers,
 				"schema":                   emptyResponse,
 				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dedup_configuration":      station.DedupConfiguration,
+				"dedup_enabled":            station.DedupEnabled,
 				"dls_configuration":        station.DlsConfiguration,
 				"total_dls_messages":       totalDlsAmount,
 				"tiered_storage_enabled":   station.TieredStorageEnabled,
@@ -1568,7 +1568,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"followers":                followers,
 				"schema":                   emptyResponse,
 				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dedup_configuration":      station.DedupConfiguration,
+				"dedup_enabled":            station.DedupEnabled,
 				"dls_configuration":        station.DlsConfiguration,
 				"total_dls_messages":       totalDlsAmount,
 				"tiered_storage_enabled":   station.TieredStorageEnabled,
