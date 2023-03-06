@@ -269,12 +269,20 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	if isCluster {
 		replicas = 3
 	}
+
+	v, err := s.Varz(nil)
+	if err != nil {
+		successCh <- err
+		return
+	}
+
 	// system logs stream
-	err := s.memphisAddStream(&StreamConfig{
+	err = s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
 		MaxAge:       retentionDur,
+		MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
@@ -297,7 +305,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		Name:         tieredStorageStream,
 		Subjects:     []string{tieredStorageStream + ".>"},
 		Retention:    WorkQueuePolicy,
-		MaxAge:       retentionDur,
+		MaxAge:       time.Hour * 24,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
