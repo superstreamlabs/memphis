@@ -102,6 +102,12 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
+	_, err = db.InitalizePostgreSQLDbConnection(s)
+	if err != nil {
+		s.Errorf("Failed initializing PostgreSQL db connection: " + err.Error())
+		os.Exit(1)
+	}
+
 	err = analytics.InitializeAnalytics(dbInstance.Client)
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
