@@ -15,9 +15,13 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 
 import { compareObjects } from '../../../services/valueConvertor';
-import ConfImg1 from '../../../assets/images/confImg1.svg';
-import ConfImg2 from '../../../assets/images/confImg2.svg';
-import ConfImg3 from '../../../assets/images/confImg3.svg';
+import BrokerHostname from '../../../assets/images/BrokerHostname.svg';
+import UIHostname from '../../../assets/images/UIHostname.svg';
+import DeadLetterInHours from '../../../assets/images/DeadLetterInHours.svg';
+import LogsRetentionInDays from '../../../assets/images/LogsRetentionInDays.svg';
+import RestHostname from '../../../assets/images/RestHostname.svg';
+import TieredStorageInterval from '../../../assets/images/TieredStorageInterval.svg';
+
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
 import Button from '../../../components/button';
@@ -43,6 +47,7 @@ function ClusterConfiguration() {
     useEffect(() => {
         getConfigurationValue();
     }, []);
+    m;
 
     const getConfigurationValue = async () => {
         try {
@@ -112,7 +117,7 @@ function ClusterConfiguration() {
                             title="DEAD LETTER MESSAGES RETENTION IN HOURS"
                             desc="Amount of hours to retain dead letter messages in a DLS"
                             value={formFields?.pm_retention}
-                            img={ConfImg2}
+                            img={DeadLetterInHours}
                             min={1}
                             max={30}
                             unit={'h'}
@@ -121,7 +126,7 @@ function ClusterConfiguration() {
                         <SliderRow
                             title="LOGS RETENTION IN DAYS"
                             desc="Amount of days to retain system logs"
-                            img={ConfImg1}
+                            img={LogsRetentionInDays}
                             value={formFields?.logs_retention}
                             min={1}
                             max={100}
@@ -131,7 +136,7 @@ function ClusterConfiguration() {
                         <TieredInputRow
                             title="TIERED STORAGE UPLOAD INTERVAL"
                             desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
-                            img={ConfImg1}
+                            img={TieredStorageInterval}
                             value={formFields?.tiered_storage_time_sec}
                             onChanges={(e, err) => {
                                 handleChange('tiered_storage_time_sec', e, err);
@@ -142,7 +147,7 @@ function ClusterConfiguration() {
                                 <InputRow
                                     title="BROKER HOSTNAME"
                                     desc={`*For display purpose only*\nWhich URL should be seen as the "broker hostname"`}
-                                    img={ConfImg3}
+                                    img={BrokerHostname}
                                     value={formFields?.broker_host}
                                     onChanges={(e) => handleChange('broker_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) : ''}
@@ -151,7 +156,7 @@ function ClusterConfiguration() {
                                 <InputRow
                                     title="UI HOSTNAME"
                                     desc={`*For display purpose only*\nWhich URL should be seen as the "UI hostname"`}
-                                    img={ConfImg3}
+                                    img={UIHostname}
                                     value={formFields?.ui_host}
                                     onChanges={(e) => handleChange('ui_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_UI_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_UI_HOST) : ''}
@@ -160,7 +165,7 @@ function ClusterConfiguration() {
                                 <InputRow
                                     title="REST GATEWAY HOSTNAME"
                                     desc={`*For display purpose only*\nWhich URL should be seen as the "REST Gateway hostname"`}
-                                    img={ConfImg3}
+                                    img={RestHostname}
                                     value={formFields?.rest_gw_host}
                                     onChanges={(e) => handleChange('rest_gw_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) : ''}
