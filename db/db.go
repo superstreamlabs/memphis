@@ -12,7 +12,10 @@
 package db
 
 import (
+	"errors"
+	"fmt"
 	"memphis/conf"
+	"strings"
 
 	"context"
 	"time"
@@ -21,7 +24,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"database/sql"
+
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -100,13 +105,33 @@ func Close(dbi DbInstance, l logger) {
 	}()
 }
 
-// TODO: create generic function for create table
+func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
+	defer db.Cancel()
+	defer func() {
+		if err := db.Client.Close(); err != nil {
+			l.Errorf("Failed to close PostgresSql client: " + err.Error())
+		}
+	}()
+}
+
+func AddInexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	addIndexQuery := fmt.Sprintf("CREATE INDEX %s ON %s (%s)", indexName, tableName, field)
+	db := dbPostgreSQL.Client
+	_, err := db.ExecContext(ctx, addIndexQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		station_name VARCHAR NOT NULL,
 		message VARCHAR NOT NULL,
-		created_by SERIAL NOT NULL,
+		created_by INTEGER NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
@@ -116,10 +141,10 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 	CREATE INDEX station_name
 	ON audit_logs (station_name);`
 
-	usersTable := `DROP TYPE IF EXISTS enum;
+	usersTable := `
 	CREATE TYPE enum AS ENUM ('root', 'management', 'application');
 	CREATE TABLE IF NOT EXISTS users(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		username VARCHAR NOT NULL UNIQUE,
 		password VARCHAR NOT NULL,
 		type enum NOT NULL,
@@ -133,15 +158,15 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		);`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value VARCHAR NOT NULL,
 		PRIMARY KEY (id)
 		);`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
-		id BIGSERIAL NOT NULL,
-		created_by SERIAL NOT NULL,
+		id INTEGER NOT NULL,
+		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		client_address VARCHAR NOT NULL,
@@ -152,17 +177,17 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		);`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		name VARCHAR NOT NULL,
 		keys JSON,
 		properties JSON,
 		PRIMARY KEY (id)
 		);`
 
-	schemasTable := `DROP TYPE IF EXISTS enum_type;
+	schemasTable := `
 	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
 	CREATE TABLE IF NOT EXISTS schemas(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL,
 		PRIMARY KEY (id)
@@ -171,28 +196,27 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		ON schemas (name);`
 
 	tagsTable := `CREATE TABLE IF NOT EXISTS tags(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		name VARCHAR NOT NULL,
 		color VARCHAR NOT NULL,
-		users INTEGER[] CHECK( 0 < ALL(users)),
-		stations INTEGER[] CHECK( 0 < ALL(stations)),
-		schemas INTEGER[] CHECK(0 < ALL(schemas)),
+		users INTEGER[] ,
+		stations INTEGER[],
+		schemas INTEGER[],
 		PRIMARY KEY (id)
 		);
 		CREATE INDEX name_tag
 		ON tags (name);`
 
 	consumersTable := `
-	DROP TYPE IF EXISTS enum_type_consumer;
 	CREATE TYPE enum_type_consumer AS ENUM ('application', 'connector');
 	CREATE TABLE IF NOT EXISTS consumers(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		name VARCHAR NOT NULL,
-		station_id SERIAL NOT NULL,
-		connection_id SERIAL NOT NULL,
+		station_id INTEGER NOT NULL,
+		connection_id INTEGER NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms BIGSERIAL NOT NULL,
-		created_by SERIAL NOT NULL,
+		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL,
 		is_deleted BOOL NOT NULL,
 		created_at TIMESTAMP NOT NULL,
@@ -211,18 +235,16 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		CREATE INDEX station_id
 		ON consumers (station_id);`
 
-	stationsTable := `DROP TYPE IF EXISTS enum_retention_type;
+	stationsTable := `
 	CREATE TYPE enum_retention_type AS ENUM ('msg_age_sec', 'size', 'bytes');
-	DROP TYPE IF EXISTS enum_storage_type;
 	CREATE TYPE enum_storage_type AS ENUM ('disk', 'memory');
-
 	CREATE TABLE IF NOT EXISTS stations(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		name VARCHAR NOT NULL,
 		retention_type enum_retention_type NOT NULL,
 		storage_type enum_storage_type NOT NULL,
 		replicas BIGSERIAL NOT NULL,
-		created_by SERIAL NOT NULL,
+		created_by INTEGER NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		updated_at TIMESTAMP NOT NULL,
 		is_deleted BOOL NOT NULL,
@@ -232,7 +254,6 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		dls_config JSON NOT NULL,
 		schema_name VARCHAR,
 		schema_version_number SERIAL,
-		
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
@@ -240,13 +261,13 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		);`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
-		id BIGSERIAL NOT NULL,
+		id INEGER NOT NULL,
 		version_number SERIAL NOT NULL,
 		active BOOL NOT NULL,
-		created_by SERIAL NOT NULL,
+		created_by INTEGER NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		schema_content TEXT NOT NULL,
-		schema_id SERIAL NOT NULL,
+		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR,
 		descriptor TEXT,
 		PRIMARY KEY (id),
@@ -258,14 +279,14 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES schemas(id)
 		);`
 
-	producersTable := `DROP TYPE IF EXISTS enum_producer_type;
+	producersTable := `
 	CREATE TYPE enum_producer_type AS ENUM ('application', 'connector');
 	CREATE TABLE IF NOT EXISTS producers(
-		id BIGSERIAL NOT NULL,
+		id INTEGER NOT NULL,
 		name VARCHAR NOT NULL,
-		station_id SERIAL NOT NULL,
-		connection_id SERIAL NOT NULL,	
-		created_by SERIAL NOT NULL,
+		station_id INTEGER NOT NULL,
+		connection_id INTEGER NOT NULL,	
+		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL,
 		is_deleted BOOL NOT NULL,
 		created_at TIMESTAMP NOT NULL,
@@ -290,68 +311,111 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 
 	_, err := db.ExecContext(ctx, usersTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, connectionsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
-
 	_, err = db.ExecContext(ctx, auditLogsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, configurationsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, integrationsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, schemasTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, tagsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, consumersTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, stationsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, schemaVersionsTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	_, err = db.ExecContext(ctx, producersTable)
 	if err != nil {
-		cancelfunc()
-		return err
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			cancelfunc()
+			return err
+		}
 	}
 
 	return nil
@@ -372,7 +436,7 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 		return DbPostgreSQLInstance{}, err
 	}
 
-	defer dbPostgreSQL.Close()
+	dbPostgreSQL.SetMaxOpenConns(3)
 
 	err = dbPostgreSQL.Ping()
 	if err != nil {
@@ -381,7 +445,17 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	}
 	l.Noticef("Established connection with the PostgreSQL DB")
 	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL}
-	createTablesInDb(dbPostgre)
+	err = createTablesInDb(dbPostgre)
+	if err != nil {
+		cancelfunc()
+		return DbPostgreSQLInstance{}, err
+	}
 
-	return DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc}, nil
+	// err = AddInexToTable("id_index", "users", "id", dbPostgre)
+	// if err != nil {
+	// 	return DbPostgreSQLInstance{}, err
+	// }
+
+	return DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}, nil
+
 }

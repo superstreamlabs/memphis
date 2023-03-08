@@ -14,5 +14,5 @@
   "POISON_MSGS_RETENTION_IN_HOURS": 3,
   "SERVER_NAME": "memphis-0",
   "TIERED_STORAGE_TIME_FRAME_SEC": 8,
-  "POSTGRESQL_URL": "postgres://memphis:memphis@localhost:5555/postgres?sslmode=disable"
+  "POSTGRESQL_URL": "postgres://memphis:memphis@localhost:5005/memphis?sslmode=disable"
 }

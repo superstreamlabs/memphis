@@ -17,5 +17,5 @@
   "TIERED_STORAGE_TIME_FRAME_SEC": 8,
   "POSTGRESQL_USER": "memphis",
   "POSTGRESQL_PASS": "memphis",
-  "POSTGRESQL_URL": "postgres://memphis:memphis@localhost:5555/postgres?sslmode=disable"
+  "POSTGRESQL_URL": "postgres://memphis:memphis@localhost:5005/memphis?sslmode=disable"
 }
