@@ -47,7 +47,6 @@ function ClusterConfiguration() {
     useEffect(() => {
         getConfigurationValue();
     }, []);
-    m;
 
     const getConfigurationValue = async () => {
         try {
