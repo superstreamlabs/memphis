@@ -104,7 +104,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 func (s *Server) ListenForConfigurationsUpdateEvents() error {
 	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var configurationsUpdate models.ConfigurationsUpdate
+			var configurationsUpdate models.SdkClientsUpdates
 			err := json.Unmarshal(msg, &configurationsUpdate)
 			if err != nil {
 				s.Errorf("ListenForConfigurationsUpdateEvents: " + err.Error())
