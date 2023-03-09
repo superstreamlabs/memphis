@@ -59,7 +59,9 @@ type Configuration struct {
 	EXPORTER                       bool
 	POSTGRESQL_USER                string
 	POSTGRESQL_PASS                string
-	POSTGRESQL_URL                 string
+	POSTGRESQL_DBNAME              string
+	POSTGRESQL_SERVICE             string
+	POSTGRESQL_PORT                string
 }
 
 func GetConfig() Configuration {

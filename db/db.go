@@ -125,8 +125,9 @@ func InsertToTable(dbPostgreSQL DbPostgreSQLInstance) error {
 		return err
 	}
 
+	defer stmt.Close()
 	// exec with context
-	_, err = stmt.ExecContext(ctx, 9, "username", "pass", "root", true, "2005-05-13 07:15:31.123456789", 1, "full_name", true, true)
+	_, err = stmt.ExecContext(ctx, 1, "shoham", "red", `{1,2}`, `{}`, `{}`)
 	if err != nil {
 		return err
 	}
@@ -513,7 +514,14 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 
-	connConfig, err := pgx.ParseConfig(configuration.POSTGRESQL_URL)
+	postgreSqlUser := configuration.POSTGRESQL_USER
+	postgreSqlPassword := configuration.POSTGRESQL_PASS
+	postgreSqlDbName := configuration.POSTGRESQL_DBNAME
+	postgreSqlServiceName := configuration.POSTGRESQL_SERVICE
+	postgreSqlPort := configuration.POSTGRESQL_PORT
+	postgreSqlUrl := "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
+
+	connConfig, err := pgx.ParseConfig(postgreSqlUrl)
 	if err != nil {
 		cancelfunc()
 		return DbPostgreSQLInstance{}, err

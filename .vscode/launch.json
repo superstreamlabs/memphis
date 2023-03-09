@@ -33,7 +33,12 @@
                 "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
-                "EXPORTER": "false"
+                "EXPORTER": "false",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_SERVICE": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         },
         {

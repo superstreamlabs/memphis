@@ -14,8 +14,5 @@
   "SHOWABLE_ERROR_STATUS_CODE": 666,
   "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
   "POISON_MSGS_RETENTION_IN_HOURS": 3,
-  "TIERED_STORAGE_TIME_FRAME_SEC": 8,
-  "POSTGRESQL_USER": "memphis",
-  "POSTGRESQL_PASS": "memphis",
-  "POSTGRESQL_URL": "postgres://memphis:memphis@localhost:5005/memphis?sslmode=disable"
+  "TIERED_STORAGE_TIME_FRAME_SEC": 8
 }
