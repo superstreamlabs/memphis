@@ -549,10 +549,10 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 		return DbPostgreSQLInstance{}, err
 	}
 
-	err = AddInexToTable("username_index", "users", "username", dbPostgre)
-	if err != nil {
-		return DbPostgreSQLInstance{}, err
-	}
+	// err = AddInexToTable("username_index", "users", "username", dbPostgre)
+	// if err != nil {
+	// 	return DbPostgreSQLInstance{}, err
+	// }
 
 	// err = InsertToTable(dbPostgre)
 	// if err != nil {
