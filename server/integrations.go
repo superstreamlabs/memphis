@@ -12,37 +12,29 @@
 package server
 
 import (
-	"context"
 	"memphis/db"
-
-	"memphis/models"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var IntegrationsCache map[string]interface{}
 var NotificationFunctionsMap map[string]interface{}
 var StorageFunctionsMap map[string]interface{}
-var IntegrationsCollection *mongo.Collection
 
 const PoisonMAlert = "poison_message_alert"
 const SchemaVAlert = "schema_validation_fail_alert"
 const DisconEAlert = "disconnection_events_alert"
 
-func InitializeIntegrations(c *mongo.Client) error {
-	IntegrationsCollection = db.GetCollection("integrations", c)
+func InitializeIntegrations() error {
 	IntegrationsCache = make(map[string]interface{})
 	NotificationFunctionsMap = make(map[string]interface{})
 	StorageFunctionsMap = make(map[string]interface{})
 	NotificationFunctionsMap["slack"] = sendMessageToSlackChannel
 	StorageFunctionsMap["s3"] = serv.uploadToS3Storage
 
-	err := InitializeConnection(c, "slack")
+	err := InitializeConnection("slack")
 	if err != nil {
 		return err
 	}
-	err = InitializeConnection(c, "s3")
+	err = InitializeConnection("s3")
 	if err != nil {
 		return err
 	}
@@ -54,12 +46,9 @@ func InitializeIntegrations(c *mongo.Client) error {
 	return nil
 }
 
-func InitializeConnection(c *mongo.Client, integrationsType string) error {
-	filter := bson.M{"name": integrationsType}
-	var integration models.Integration
-	err := IntegrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&integration)
-	if err == mongo.ErrNoDocuments {
+func InitializeConnection(integrationsType string) error {
+	exist, integration, err := db.GetIntegration(integrationsType)
+	if !exist {
 		return nil
 	} else if err != nil {
 		return err

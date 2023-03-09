@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/db"
 	"memphis/models"
 	"strings"
 	"time"
@@ -226,7 +227,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	exist, station, err := IsStationExist(sn)
+	exist, station, err := db.GetStationByName(sn.Ext())
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -275,7 +276,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		}
 	}
 
-	tags, err := h.Tags.GetTagsByStation(station.ID)
+	tags, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -343,7 +344,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return response, nil
 	}
 
-	schemaVersion, err := h.Schemas.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+	_, schemaVersion, err := db.GetSchemaVersionByID(station.Schema.VersionNumber, schema.ID)
 	if err != nil {
 		return map[string]any{}, err
 	}

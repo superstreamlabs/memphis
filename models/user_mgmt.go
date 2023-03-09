@@ -88,3 +88,18 @@ type ChangePasswordSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
+
+type FilteredGenericUser struct {
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
+	Username        string             `json:"username" bson:"username"`
+	UserType        string             `json:"user_type" bson:"user_type"`
+	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
+	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
+	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
+}
+
+type FilteredApplicationUser struct {
+	ID           primitive.ObjectID `json:"id" bson:"_id"`
+	Username     string             `json:"username" bson:"username"`
+	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
+}

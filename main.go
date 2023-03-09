@@ -102,14 +102,14 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	err = analytics.InitializeAnalytics(dbInstance.Client)
+	err = analytics.InitializeAnalytics()
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
 
-	err = server.InitializeIntegrations(dbInstance.Client)
+	err = server.InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
