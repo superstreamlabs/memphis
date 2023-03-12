@@ -39,7 +39,10 @@ require (
 	k8s.io/metrics v0.26.1
 )
 
-require github.com/jmespath/go-jmespath v0.4.0 // indirect
+require (
+	github.com/jackc/puddle/v2 v2.2.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect

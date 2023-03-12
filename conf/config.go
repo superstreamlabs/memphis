@@ -62,6 +62,10 @@ type Configuration struct {
 	POSTGRESQL_DBNAME              string
 	POSTGRESQL_SERVICE             string
 	POSTGRESQL_PORT                string
+	POSTGRESQL_TLS_ENABLED         bool
+	POSTGRESQL_TLS_KEY             string
+	POSTGRESQL_TLS_CRT             string
+	POSTGRESQL_TLS_CA              string
 }
 
 func GetConfig() Configuration {
