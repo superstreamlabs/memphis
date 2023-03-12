@@ -172,6 +172,12 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 		return true, configurationsStringValue, models.ConfigurationsIntValue{}, err
 	} else {
 		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
+		if err == mongo.ErrNoDocuments {
+			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+		}
+		if err != nil {
+			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		}
 		return true, models.ConfigurationsStringValue{}, configurationsIntValue, err
 	}
 }

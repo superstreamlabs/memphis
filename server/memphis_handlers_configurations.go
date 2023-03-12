@@ -31,7 +31,7 @@ type ConfigurationsHandler struct{}
 func (s *Server) initializeConfigurations() {
 	exist, _, pmRetention, err := db.GetConfiguration("pm_retention", false)
 	if err != nil || !exist {
-		if exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
@@ -44,7 +44,7 @@ func (s *Server) initializeConfigurations() {
 	}
 	exist, _, logsRetention, err := db.GetConfiguration("logs_retention", false)
 	if err != nil || !exist {
-		if exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		LOGS_RETENTION_IN_DAYS, err = strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
@@ -62,7 +62,7 @@ func (s *Server) initializeConfigurations() {
 
 	exist, _, tsTime, err := db.GetConfiguration("tiered_storage_time_sec", false)
 	if err != nil || !exist {
-		if exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.TIERED_STORAGE_TIME_FRAME_SEC > 3600 || configuration.TIERED_STORAGE_TIME_FRAME_SEC < 5 {
@@ -81,7 +81,7 @@ func (s *Server) initializeConfigurations() {
 
 	exist, brokerHost, _, err := db.GetConfiguration("broker_host", true)
 	if err != nil || !exist {
-		if exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
@@ -98,7 +98,7 @@ func (s *Server) initializeConfigurations() {
 	}
 	exist, uiHost, _, err := db.GetConfiguration("ui_host", true)
 	if err != nil || !exist {
-		if exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
@@ -115,7 +115,7 @@ func (s *Server) initializeConfigurations() {
 	}
 	exist, restGWHost, _, err := db.GetConfiguration("rest_gw_host", true)
 	if err != nil || !exist {
-		if exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
