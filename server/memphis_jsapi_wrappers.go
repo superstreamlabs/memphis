@@ -93,8 +93,6 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 				RetentionValue:    retentionValue,
 				StorageType:       storageType,
 				Replicas:          cfg.Replicas,
-				DedupEnabled:      true,
-				DedupWindowMillis: 0,
 				IdempotencyWindow: int64(cfg.Duplicates.Milliseconds()),
 				DlsConfiguration: models.DlsConfiguration{
 					Poison:      true,

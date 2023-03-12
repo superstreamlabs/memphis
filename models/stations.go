@@ -60,8 +60,6 @@ type Station struct {
 	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
 	StorageType          string             `json:"storage_type" bson:"storage_type"`
 	Replicas             int                `json:"replicas" bson:"replicas"`
-	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
-	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
@@ -81,8 +79,6 @@ type GetStationResponseSchema struct {
 	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
 	StorageType          string             `json:"storage_type" bson:"storage_type"`
 	Replicas             int                `json:"replicas" bson:"replicas"`
-	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
-	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
@@ -102,8 +98,6 @@ type ExtendedStation struct {
 	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
 	StorageType          string             `json:"storage_type" bson:"storage_type"`
 	Replicas             int                `json:"replicas" bson:"replicas"`
-	DedupEnabled         bool               `json:"dedup_enabled" bson:"dedup_enabled"`           // TODO deprecated
-	DedupWindowInMs      int                `json:"dedup_window_in_ms" bson:"dedup_window_in_ms"` // TODO deprecated
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
@@ -140,8 +134,6 @@ type CreateStationSchema struct {
 	RetentionValue       int              `json:"retention_value"`
 	Replicas             int              `json:"replicas"`
 	StorageType          string           `json:"storage_type"`
-	DedupEnabled         bool             `json:"dedup_enabled"`                      // TODO deprecated
-	DedupWindowInMs      int              `json:"dedup_window_in_ms" binding:"min=0"` // TODO deprecated
 	Tags                 []CreateTag      `json:"tags"`
 	SchemaName           string           `json:"schema_name"`
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`

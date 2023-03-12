@@ -309,7 +309,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), username, retentionType, retentionValue, storageType, replicas, csr.DedupEnabled, csr.DedupWindowMillis, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), username, retentionType, retentionValue, storageType, replicas, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -393,8 +393,6 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		RetentionValue:       station.RetentionValue,
 		StorageType:          station.StorageType,
 		Replicas:             station.Replicas,
-		DedupEnabled:         station.DedupEnabled,
-		DedupWindowInMs:      station.DedupWindowInMs,
 		CreatedByUser:        station.CreatedByUser,
 		CreationDate:         station.CreationDate,
 		LastUpdate:           station.LastUpdate,
@@ -759,7 +757,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, body.DedupEnabled, body.DedupWindowInMs, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -820,8 +818,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"retention_value":          body.RetentionValue,
 			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
-			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
-			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          user.Username,
 			"creation_date":            time.Now(),
 			"last_update":              time.Now(),
@@ -841,8 +837,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"retention_value":          body.RetentionValue,
 			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
-			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
-			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          user.Username,
 			"creation_date":            time.Now(),
 			"last_update":              time.Now(),
