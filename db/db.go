@@ -550,7 +550,7 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	config, err := pgxpool.ParseConfig(postgreSqlUrl)
 	config.MaxConns = 5
 
-	cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_KEY, configuration.POSTGRESQL_TLS_CRT)
+	cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
 	if err != nil {
 		fmt.Errorf("failed to load client certificate: %v", err)
 	}
