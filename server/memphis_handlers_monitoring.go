@@ -1483,7 +1483,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 
-			_, schemaVersion, err := db.GetSchemaVersionByID(station.Schema.VersionNumber, schema.ID)
+			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.Schema.VersionNumber, schema.ID)
 			if err != nil {
 				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

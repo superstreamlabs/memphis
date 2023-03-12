@@ -119,7 +119,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return
 		}
-		exist, producer, err := db.GetProducerByConnectionID(producedByHeader, connId)
+		exist, producer, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
 		if !exist {
 			serv.Warnf("handleNewPoisonMessage: producer " + producedByHeader + " couldn't been found")
 			return
@@ -384,7 +384,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 					return models.DlsMessageResponse{}, err
 				}
 				clientAddress = conn.ClientAddress
-				exist, prod, err := db.GetProducerByConnectionID(dlsMsg.Producer.Name, connectionId)
+				exist, prod, err := db.GetProducerByNameAndConnectionID(dlsMsg.Producer.Name, connectionId)
 				if !exist {
 					return models.DlsMessageResponse{}, errors.New("Producer " + dlsMsg.Producer.Name + " does not exist")
 				}

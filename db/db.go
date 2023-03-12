@@ -201,7 +201,7 @@ func InsertConfiguration(key string, stringValue string, intValue int, isString 
 	return nil
 }
 
-func UpdateConfiguration(key string, stringValue string, intValue int, isString bool) error {
+func UpsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
 	filter := bson.M{"key": key}
 	opts := options.Update().SetUpsert(true)
 	var update primitive.M
@@ -367,7 +367,7 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	return true, station, nil
 }
 
-func UpdateNewStation(stationName string, username string, retentionType string, retentionValue int, storageType string, replicas int, dedupEnabled bool, dedupWindowMillis int, schemaDetails models.SchemaDetails, idempotencyWindow int64, isNative bool, dlsConfiguration models.DlsConfiguration, tieredStorageEnabled bool) (models.Station, int64, error) {
+func UpsertNewStation(stationName string, username string, retentionType string, retentionValue int, storageType string, replicas int, dedupEnabled bool, dedupWindowMillis int, schemaDetails models.SchemaDetails, idempotencyWindow int64, isNative bool, dlsConfiguration models.DlsConfiguration, tieredStorageEnabled bool) (models.Station, int64, error) {
 	var update bson.M
 	var emptySchemaDetailsResponse struct{}
 	newStation := models.Station{
@@ -466,7 +466,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	return stations, nil
 }
 
-func DeleteStations(stationNames []string) error {
+func DeleteStationsByNames(stationNames []string) error {
 	_, err := stationsCollection.UpdateMany(context.TODO(),
 		bson.M{
 			"name": bson.M{"$in": stationNames},
@@ -525,7 +525,7 @@ func DetachSchemaFromStation(stationName string) error {
 	return nil
 }
 
-func UpdateStationDlsConfig(stationName string, dlsConfiguration models.DlsConfiguration) error {
+func UpsertStationDlsConfig(stationName string, dlsConfiguration models.DlsConfiguration) error {
 	filter := bson.M{
 		"name": stationName,
 		"$or": []interface{}{
@@ -648,7 +648,7 @@ func UpdateProducersConnection(connectionId primitive.ObjectID, isActive bool) e
 	return nil
 }
 
-func GetProducerByConnectionID(name string, connectionId primitive.ObjectID) (bool, models.Producer, error) {
+func GetProducerByNameAndConnectionID(name string, connectionId primitive.ObjectID) (bool, models.Producer, error) {
 	filter := bson.M{"name": name, "connection_id": connectionId}
 	var producer models.Producer
 	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
@@ -686,7 +686,7 @@ func GetActiveProducerByStationID(producerName string, stationId primitive.Objec
 	return true, producer, nil
 }
 
-func UpdateNewProducer(name string, stationId primitive.ObjectID, producerType string, connectionIdObj primitive.ObjectID, createdByUser string) (models.Producer, int64, error) {
+func UpsertNewProducer(name string, stationId primitive.ObjectID, producerType string, connectionIdObj primitive.ObjectID, createdByUser string) (models.Producer, int64, error) {
 	newProducer := models.Producer{
 		ID:            primitive.NewObjectID(),
 		Name:          name,
@@ -762,7 +762,7 @@ func GetProducersByStationID(stationId primitive.ObjectID) ([]models.ExtendedPro
 	return producers, nil
 }
 
-func DeleteProducer(name string, stationId primitive.ObjectID) (bool, models.Producer, error) {
+func DeleteProducerByNameAndStationID(name string, stationId primitive.ObjectID) (bool, models.Producer, error) {
 	var producer models.Producer
 	err := producersCollection.FindOneAndUpdate(context.TODO(),
 		bson.M{"name": name, "station_id": stationId, "is_active": true},
@@ -841,7 +841,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId primitive.ObjectID) 
 	return true, consumer, nil
 }
 
-func UpdateNewConsumer(name string, stationId primitive.ObjectID, consumerType string, connectionIdObj primitive.ObjectID, createdByUser string, cgName string, maxAckTime int, maxMsgDeliveries int, startConsumeFromSequence uint64, lastMessages int64) (models.Consumer, int64, error) {
+func UpsertNewConsumer(name string, stationId primitive.ObjectID, consumerType string, connectionIdObj primitive.ObjectID, createdByUser string, cgName string, maxAckTime int, maxMsgDeliveries int, startConsumeFromSequence uint64, lastMessages int64) (models.Consumer, int64, error) {
 	newConsumer := models.Consumer{
 		ID:                       primitive.NewObjectID(),
 		Name:                     name,
@@ -1114,7 +1114,7 @@ func UpdateSchemasOfDeletedUser(username string) error {
 	return nil
 }
 
-func GetSchemaVersionByID(version int, schemaId primitive.ObjectID) (bool, models.SchemaVersion, error) {
+func GetSchemaVersionByNumberAndID(version int, schemaId primitive.ObjectID) (bool, models.SchemaVersion, error) {
 	var schemaVersion models.SchemaVersion
 	filter := bson.M{"schema_id": schemaId, "version_number": version}
 	err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
@@ -1187,7 +1187,7 @@ func FindAndDeleteSchema(schemaIds []primitive.ObjectID) error {
 	return nil
 }
 
-func UpdateNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
+func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
 	newSchema := models.Schema{
 		ID:   primitive.NewObjectID(),
 		Name: schemaName,
@@ -1208,7 +1208,7 @@ func UpdateNewSchema(schemaName string, schemaType string) (models.Schema, int64
 	return newSchema, updateResults.MatchedCount, nil
 }
 
-func UpdateNewSchemaVersion(schemaVersionNumber int, username string, schemaContent string, schemaId primitive.ObjectID, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
+func UpsertNewSchemaVersion(schemaVersionNumber int, username string, schemaContent string, schemaId primitive.ObjectID, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
 	newSchemaVersion := models.SchemaVersion{
 		ID:                primitive.NewObjectID(),
 		VersionNumber:     schemaVersionNumber,
@@ -1485,7 +1485,7 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function execu
 }
 
 // Tags Functions
-func UpdateNewTag(name string, color string, stationArr []primitive.ObjectID, schemaArr []primitive.ObjectID, userArr []primitive.ObjectID) (models.Tag, error) {
+func UpsertNewTag(name string, color string, stationArr []primitive.ObjectID, schemaArr []primitive.ObjectID, userArr []primitive.ObjectID) (models.Tag, error) {
 	newTag := models.Tag{
 		ID:   primitive.NewObjectID(),
 		Name: name, Color: color,
@@ -1513,7 +1513,7 @@ func UpdateNewTag(name string, color string, stationArr []primitive.ObjectID, sc
 	return newTag, nil
 }
 
-func AddTagToEntity(tagName string, entity string, entity_id primitive.ObjectID) error {
+func UpsertEntityToTag(tagName string, entity string, entity_id primitive.ObjectID) error {
 	var entityDBList string
 	switch entity {
 	case "station":

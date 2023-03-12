@@ -225,7 +225,7 @@ func changePMRetention(pmRetention int) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpdateConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
+	err = db.UpsertConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func changePMRetention(pmRetention int) error {
 
 func changeLogsRetention(logsRetention int) error {
 	LOGS_RETENTION_IN_DAYS = logsRetention
-	err := db.UpdateConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
+	err := db.UpsertConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func changeTSTime(tsTime int) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpdateConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
+	err = db.UpsertConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func editClusterCompHost(key string, host string) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpdateConfiguration(key, host, 0, true)
+	err = db.UpsertConfiguration(key, host, 0, true)
 	if err != nil {
 		return err
 	}

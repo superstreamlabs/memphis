@@ -199,14 +199,14 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	newConsumer, matchedCount, err := db.UpdateNewConsumer(name, station.ID, consumerType, connectionIdObj, connection.CreatedByUser, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionIdObj, connection.CreatedByUser, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
 
-	if matchedCount == 0 {
+	if rowsUpdated == 0 {
 		message := "Consumer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		if consumerGroupExist {

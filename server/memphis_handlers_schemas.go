@@ -269,7 +269,7 @@ func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID
 
 func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion int, schema models.Schema) (models.ExtendedSchemaDetails, error) {
 	var schemaVersions []models.SchemaVersion
-	exist, usedSchemaVersion, err := db.GetSchemaVersionByID(schemaVersion, schema.ID)
+	exist, usedSchemaVersion, err := db.GetSchemaVersionByNumberAndID(schemaVersion, schema.ID)
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
@@ -441,14 +441,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
-	newSchema, matchedCount, err := db.UpdateNewSchema(schemaName, schemaType)
+	newSchema, rowsUpdated, err := db.UpsertNewSchema(schemaName, schemaType)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if matchedCount == 0 {
-		_, _, err = db.UpdateNewSchemaVersion(schemaVersionNumber, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
+	if rowsUpdated == 0 {
+		_, _, err = db.UpsertNewSchemaVersion(schemaVersionNumber, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
 		if err != nil {
 			serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -683,8 +683,8 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 			return
 		}
 	}
-	newSchemaVersion, matchedCount, err := db.UpdateNewSchemaVersion(versionNumber, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
-	if matchedCount == 0 {
+	newSchemaVersion, rowsUpdated, err := db.UpsertNewSchemaVersion(versionNumber, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
+	if rowsUpdated == 0 {
 		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created by " + user.Username
 		serv.Noticef(message)
 	} else {
@@ -733,7 +733,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 	}
 
 	schemaVersion := body.VersionNumber
-	exist, _, err = db.GetSchemaVersionByID(schemaVersion, schema.ID)
+	exist, _, err = db.GetSchemaVersionByNumberAndID(schemaVersion, schema.ID)
 
 	if err != nil {
 		serv.Errorf("RollBackVersion: Schema " + body.SchemaName + " version " + strconv.Itoa(schemaVersion) + ": " + err.Error())

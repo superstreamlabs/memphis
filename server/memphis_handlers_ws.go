@@ -344,7 +344,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return response, nil
 	}
 
-	_, schemaVersion, err := db.GetSchemaVersionByID(station.Schema.VersionNumber, schema.ID)
+	_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.Schema.VersionNumber, schema.ID)
 	if err != nil {
 		return map[string]any{}, err
 	}

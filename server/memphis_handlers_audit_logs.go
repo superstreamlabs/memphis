@@ -19,8 +19,7 @@ import (
 type AuditLogsHandler struct{}
 
 func CreateAuditLogs(auditLogs []interface{}) error {
-	err := db.InsertAuditLogs(auditLogs)
-	return err
+	return db.InsertAuditLogs(auditLogs)
 }
 
 func (ah AuditLogsHandler) GetAuditLogsByStation(station models.Station) ([]models.AuditLog, error) {

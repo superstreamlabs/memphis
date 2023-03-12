@@ -309,13 +309,13 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	_, matchedCount, err := db.UpdateNewStation(stationName.Ext(), username, retentionType, retentionValue, storageType, replicas, csr.DedupEnabled, csr.DedupWindowMillis, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), username, retentionType, retentionValue, storageType, replicas, csr.DedupEnabled, csr.DedupWindowMillis, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	if matchedCount > 0 {
+	if rowsUpdated > 0 {
 		message := "Station " + stationName.Ext() + " has been created by user " + username
 		serv.Noticef(message)
 
@@ -759,13 +759,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, matchedCount, err := db.UpdateNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, body.DedupEnabled, body.DedupWindowInMs, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, body.DedupEnabled, body.DedupWindowInMs, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if matchedCount > 0 {
+	if rowsUpdated > 0 {
 		errMsg := "Station " + newStation.Name + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -898,7 +898,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 	}
 
-	err := db.DeleteStations(stationNames)
+	err := db.DeleteStationsByNames(stationNames)
 	if err != nil {
 		serv.Errorf("RemoveStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1916,7 +1916,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 			Poison:      body.Poison,
 			Schemaverse: body.Schemaverse,
 		}
-		err = db.UpdateStationDlsConfig(body.StationName, dlsConfigurationNew)
+		err = db.UpsertStationDlsConfig(body.StationName, dlsConfigurationNew)
 		if err != nil {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1960,7 +1960,7 @@ func launchDlsForOldStations(s *Server) error {
 					Poison:      true,
 					Schemaverse: true,
 				}
-				err = db.UpdateStationDlsConfig(station.Name, dlsConfigurationNew)
+				err = db.UpsertStationDlsConfig(station.Name, dlsConfigurationNew)
 				if err != nil {
 					return err
 				}

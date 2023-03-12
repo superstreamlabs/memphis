@@ -133,8 +133,8 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
 		return false, false, errors.New("memphis: " + errMsg)
 	}
-	newProducer, matchedCount, err := db.UpdateNewProducer(name, station.ID, producerType, connectionIdObj, connection.CreatedByUser)
-	if matchedCount == 0 {
+	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, connectionIdObj, connection.CreatedByUser)
+	if rowsUpdated == 0 {
 		message := "Producer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		var auditLogs []interface{}
@@ -347,7 +347,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	exist, _, err := db.DeleteProducer(name, station.ID)
+	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
 	if !exist {
 		errMsg := "Producer " + name + " at station " + dpr.StationName + " does not exist"
 		serv.Warnf("destroyProducerDirect: " + errMsg)

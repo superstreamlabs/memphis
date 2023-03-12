@@ -93,11 +93,11 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 	if err != nil {
 		return models.Station{}, false, err
 	}
-	newStation, matchedCount, err := db.UpdateNewStation(stationName, username, "message_age_sec", 604800, "file", 1, false, 0, models.SchemaDetails{}, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName, username, "message_age_sec", 604800, "file", 1, false, 0, models.SchemaDetails{}, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}
-	if matchedCount > 0 {
+	if rowsUpdated > 0 {
 		return models.Station{}, false, nil
 	}
 
