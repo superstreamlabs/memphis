@@ -542,7 +542,7 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	fmt.Println("configuration.POSTGRESQL_TLS_ENABLED", configuration.POSTGRESQL_TLS_ENABLED)
 	if configuration.POSTGRESQL_TLS_ENABLED {
 		fmt.Println("tls connection")
-		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
+		postgreSqlUrl = "postgres://" + postgreSqlUser  + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
 	} else {
 		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
 	}
