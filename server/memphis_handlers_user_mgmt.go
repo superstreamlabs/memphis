@@ -83,14 +83,6 @@ func validateUserType(userType string) error {
 	return nil
 }
 
-// TODO check against hub api
-func validateHubCreds(hubUsername string, hubPassword string) error {
-	if hubUsername != "" && hubPassword != "" {
-		// TODO
-	}
-	return nil
-}
-
 func updateDeletedUserResources(user models.User) error {
 	if user.UserType == "application" {
 		err := RemoveUser(user.Username)
@@ -630,13 +622,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		}
 	}
 
-	err = validateHubCreds(body.HubUsername, body.HubPassword)
-	if err != nil {
-		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
 	var brokerConnectionCreds string
 	if userType == "application" {
 		brokerConnectionCreds, err = AddUser(username)
@@ -663,8 +648,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
-		"hub_username":            body.HubUsername,
-		"hub_password":            body.HubPassword,
 		"user_type":               userType,
 		"creation_date":           newUser.CreationDate,
 		"already_logged_in":       false,
@@ -806,48 +789,6 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
-	var body models.EditHubCredsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	err := validateHubCreds(body.HubUsername, body.HubPassword)
-	if err != nil {
-		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
-
-	err = db.EditHubCreds(user.Username, body.HubUsername, body.HubPassword)
-	if err != nil {
-		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{
-		"id":                user.ID,
-		"username":          user.Username,
-		"hub_username":      body.HubUsername,
-		"hub_password":      body.HubPassword,
-		"user_type":         user.UserType,
-		"creation_date":     user.CreationDate,
-		"already_logged_in": user.AlreadyLoggedIn,
-		"avatar_id":         user.AvatarId,
-	})
-}
-
 func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	var body models.EditAvatarSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -876,8 +817,6 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{
 		"id":                user.ID,
 		"username":          user.Username,
-		"hub_username":      user.HubUsername,
-		"hub_password":      user.HubPassword,
 		"user_type":         user.UserType,
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,

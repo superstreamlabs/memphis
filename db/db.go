@@ -382,7 +382,6 @@ func UpsertNewStation(stationName string, username string, retentionType string,
 		Replicas:             replicas,
 		LastUpdate:           time.Now(),
 		Schema:               schemaDetails,
-		Functions:            []models.Function{},
 		IdempotencyWindow:    idempotencyWindow,
 		IsNative:             isNative,
 		DlsConfiguration:     dlsConfiguration,
@@ -399,7 +398,6 @@ func UpsertNewStation(stationName string, username string, retentionType string,
 				"created_by_user":          newStation.CreatedByUser,
 				"creation_date":            newStation.CreationDate,
 				"last_update":              newStation.LastUpdate,
-				"functions":                newStation.Functions,
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"is_native":                newStation.IsNative,
@@ -418,7 +416,6 @@ func UpsertNewStation(stationName string, username string, retentionType string,
 				"created_by_user":          newStation.CreatedByUser,
 				"creation_date":            newStation.CreationDate,
 				"last_update":              newStation.LastUpdate,
-				"functions":                newStation.Functions,
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
@@ -445,7 +442,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 		}}}}},
 		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
 		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
+		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
 	})
 	if err == mongo.ErrNoDocuments {
 		return []models.ExtendedStation{}, nil
@@ -1324,8 +1321,6 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		Password:        hashedPassword,
 		FullName:        fullName,
 		Subscribtion:    subscription,
-		HubUsername:     "",
-		HubPassword:     "",
 		UserType:        userType,
 		CreationDate:    time.Now(),
 		AlreadyLoggedIn: false,
@@ -1431,17 +1426,6 @@ func UpdateSkipGetStarted(username string) error {
 
 func DeleteUser(username string) error {
 	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func EditHubCreds(username string, hubUsername string, password string) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"hub_username": hubUsername, "hub_password": password}},
-	)
 	if err != nil {
 		return err
 	}
@@ -1646,8 +1630,6 @@ func InsertNewSanboxUser(username string, email string, firstName string, lastNa
 		Password:        "",
 		FirstName:       firstName,
 		LastName:        lastName,
-		HubUsername:     "",
-		HubPassword:     "",
 		UserType:        "",
 		CreationDate:    time.Now(),
 		AlreadyLoggedIn: false,

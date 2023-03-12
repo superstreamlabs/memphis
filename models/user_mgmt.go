@@ -21,8 +21,6 @@ type User struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Username        string             `json:"username" bson:"username"`
 	Password        string             `json:"password" bson:"password"`
-	HubUsername     string             `json:"hub_username" bson:"hub_username"`
-	HubPassword     string             `json:"hub_password" bson:"hub_password"`
 	UserType        string             `json:"user_type" bson:"user_type"`
 	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
@@ -41,8 +39,6 @@ type Image struct {
 type AddUserSchema struct {
 	Username     string `json:"username" binding:"required,min=1,max=60"`
 	Password     string `json:"password"`
-	HubUsername  string `json:"hub_username"`
-	HubPassword  string `json:"hub_password"`
 	UserType     string `json:"user_type" binding:"required"`
 	AvatarId     int    `json:"avatar_id"`
 	FullName     string `json:"full_name"`
@@ -61,11 +57,6 @@ type LoginSchema struct {
 
 type RemoveUserSchema struct {
 	Username string `json:"username" binding:"required"`
-}
-
-type EditHubCredsSchema struct {
-	HubUsername string `json:"hub_username" binding:"required"`
-	HubPassword string `json:"hub_password" binding:"required"`
 }
 
 type EditAvatarSchema struct {

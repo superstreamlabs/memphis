@@ -17,18 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type FunctionParam struct {
-	ParamName  string `json:"param_name" bson:"param_name"`
-	ParamType  string `json:"param_type" bson:"param_type"`
-	ParamValue string `json:"param_value" bson:"param_value"`
-}
-
-type Function struct {
-	StepNumber     int                `json:"step_number" bson:"step_number"`
-	FunctionId     primitive.ObjectID `json:"function_id" bson:"function_id"`
-	FunctionParams []FunctionParam    `json:"function_params" bson:"function_params"`
-}
-
 type Message struct {
 	MessageSeq  int             `json:"message_seq" bson:"message_seq"`
 	Producer    ProducerDetails `json:"producer" bson:"producer"`
@@ -63,7 +51,6 @@ type Station struct {
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
-	Functions            []Function         `json:"functions" bson:"functions"`
 	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
 	Schema               SchemaDetails      `json:"schema" bson:"schema"`
 	IdempotencyWindow    int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
@@ -82,7 +69,6 @@ type GetStationResponseSchema struct {
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
-	Functions            []Function         `json:"functions" bson:"functions"`
 	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
 	Tags                 []CreateTag        `json:"tags"`
 	IdempotencyWindow    int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
@@ -101,7 +87,6 @@ type ExtendedStation struct {
 	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
 	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
 	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
-	Functions            []Function         `json:"functions" bson:"functions"`
 	TotalMessages        int                `json:"total_messages"`
 	PoisonMessages       int                `json:"posion_messages"`
 	Tags                 []CreateTag        `json:"tags"`
