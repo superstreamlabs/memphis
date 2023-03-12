@@ -539,7 +539,9 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	postgreSqlServiceName := configuration.POSTGRESQL_SERVICE
 	postgreSqlPort := configuration.POSTGRESQL_PORT
 	var postgreSqlUrl string
+	fmt.Println("configuration.POSTGRESQL_TLS_ENABLED", configuration.POSTGRESQL_TLS_ENABLED)
 	if configuration.POSTGRESQL_TLS_ENABLED {
+		fmt.Println("tls connection")
 		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
 	} else {
 		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
@@ -563,6 +565,7 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 	if configuration.POSTGRESQL_TLS_ENABLED {
 		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
+		fmt.Println("config.ConnConfig.TLSConfig", config.ConnConfig.TLSConfig)
 
 	}
 
