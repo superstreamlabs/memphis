@@ -613,24 +613,22 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	config, err := pgxpool.ParseConfig(postgreSqlUrl)
 	config.MaxConns = 5
 
-	cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
-	if err != nil {
-		cancelfunc()
-		return DbPostgreSQLInstance{}, err
-	}
-
-	CACert, err := ioutil.ReadFile(configuration.POSTGRESQL_TLS_CA)
-	if err != nil {
-		cancelfunc()
-		return DbPostgreSQLInstance{}, err
-	}
-
-	CACertPool := x509.NewCertPool()
-	CACertPool.AppendCertsFromPEM(CACert)
-
 	if configuration.POSTGRESQL_TLS_ENABLED {
-		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
+		cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
+		if err != nil {
+			cancelfunc()
+			return DbPostgreSQLInstance{}, err
+		}
 
+		CACert, err := ioutil.ReadFile(configuration.POSTGRESQL_TLS_CA)
+		if err != nil {
+			cancelfunc()
+			return DbPostgreSQLInstance{}, err
+		}
+
+		CACertPool := x509.NewCertPool()
+		CACertPool.AppendCertsFromPEM(CACert)
+		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
 	}
 
 	dbPostgreSQL, err := pgxpool.NewWithConfig(ctx, config)
@@ -688,7 +686,7 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	// }
 
 	return DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}, nil
-	}
+}
 
 // Configuration Functions
 func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStringValue, models.ConfigurationsIntValue, error) {
