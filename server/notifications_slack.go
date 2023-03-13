@@ -12,30 +12,24 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"memphis/db"
 	"memphis/models"
 	"strings"
 
 	"github.com/slack-go/slack"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func IsSlackEnabled() (bool, error) {
-	filter := bson.M{"name": "slack"}
-	var slackIntegration models.Integration
-	err := IntegrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&slackIntegration)
+	exist, _, err := db.GetIntegration("slack")
+	if !exist {
+		return false, nil
+	}
 	if err == nil {
 		return true, nil
 	}
 
-	if err == mongo.ErrNoDocuments {
-		err = nil
-	}
 	return false, err
 }
 
@@ -185,25 +179,17 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType strin
 }
 func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	filter := bson.M{"name": "slack"}
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&slackIntegration)
-	if err == mongo.ErrNoDocuments {
+	exist, slackIntegration, err := db.GetIntegration("slack")
+	if !exist {
 		err := testSlackIntegration(keys["auth_token"], keys["channel_id"], "Slack integration with Memphis was added successfully")
 		if err != nil {
 			return slackIntegration, err
 		}
-		slackIntegration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "slack",
-			Keys:       keys,
-			Properties: properties,
-		}
-		_, insertErr := integrationsCollection.InsertOne(context.TODO(), slackIntegration)
+		integrationRes, insertErr := db.InsertNewIntegration("slack", keys, properties)
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}
-
+		slackIntegration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "slack",
 			Keys:       keys,
@@ -234,62 +220,47 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	if authToken == "" {
-		var integrationFromDb models.Integration
-		filter := bson.M{"name": "slack"}
-		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
+		exist, integrationFromDb, err := db.GetIntegration("slack")
 		if err != nil {
-			return slackIntegration, err
+			return models.Integration{}, err
+		}
+		if !exist {
+			return models.Integration{}, errors.New("No auth token was provided")
 		}
 		authToken = integrationFromDb.Keys["auth_token"]
 	}
-
 	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
 	if err != nil {
 		return slackIntegration, err
 	}
 	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
-	filter := bson.M{"name": "slack"}
-	err = integrationsCollection.FindOneAndUpdate(context.TODO(),
-		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&slackIntegration)
-	if err == mongo.ErrNoDocuments {
-		slackIntegration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "slack",
-			Keys:       keys,
-			Properties: properties,
-		}
-		integrationsCollection.InsertOne(context.TODO(), slackIntegration)
-	} else if err != nil {
-		return slackIntegration, err
+	slackIntegration, err = db.UpdateIntegration("slack", keys, properties)
+	if err != nil {
+		return models.Integration{}, err
 	}
-
 	integrationToUpdate := models.CreateIntegrationSchema{
 		Name:       "slack",
 		Keys:       keys,
 		Properties: properties,
 		UIUrl:      uiUrl,
 	}
-
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
-		return slackIntegration, err
+		return models.Integration{}, err
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		return slackIntegration, err
+		return models.Integration{}, err
 	}
-
 	update := models.SdkClientsUpdates{
 		Type:   sendNotificationType,
 		Update: svfAlert,
 	}
 	serv.SendUpdateToClients(update)
-
 	keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
-	return slackIntegration, nil
+	return models.Integration{}, nil
 }
 
 func testSlackIntegration(authToken string, channelID string, message string) error {

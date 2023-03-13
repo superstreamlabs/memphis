@@ -13,7 +13,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,9 +28,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type SandboxHandler struct{}
@@ -135,26 +131,16 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 	}
 
 	if !exist {
-		user = models.SandboxUser{
-			ID:              primitive.NewObjectID(),
-			Username:        username,
-			Email:           email,
-			Password:        "",
-			FirstName:       firstName,
-			LastName:        lastName,
-			HubUsername:     "",
-			HubPassword:     "",
-			UserType:        "",
-			CreationDate:    time.Now(),
-			AlreadyLoggedIn: false,
-			AvatarId:        1,
-			ProfilePic:      profilePic,
+		user, err = db.InsertNewSanboxUser(username, email, firstName, lastName, profilePic)
+		if err != nil {
+			serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
 		}
 
 		if !strings.Contains(email, "@") {
 			email = email + "@github.memphis"
 		}
-
 		param := analytics.EventParam{
 			Name:  "email",
 			Value: email,
@@ -162,13 +148,6 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		analyticsParams := []analytics.EventParam{param}
 		analytics.SendEventWithParams("", analyticsParams, "new-sandbox-user")
 
-		var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
-		_, err = sandboxUsersCollection.InsertOne(context.TODO(), user)
-		if err != nil {
-			serv.Errorf("Login(Sandbox): With user " + username + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
 		serv.Noticef("New sandbox user was created: " + username)
 	}
 
@@ -179,10 +158,7 @@ func (sbh SandboxHandler) Login(c *gin.Context) {
 		return
 	}
 	if !user.AlreadyLoggedIn {
-		sandboxUsersCollection.UpdateOne(context.TODO(),
-			bson.M{"_id": user.ID},
-			bson.M{"$set": bson.M{"already_logged_in": true}},
-		)
+		db.UpdateSandboxUserAlreadyLoggedIn(user.ID)
 	}
 	serv.Noticef("Sandbox user logged in: " + username)
 	domain := ""
@@ -308,14 +284,11 @@ func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
 }
 
 func IsSandboxUserExist(username string) (bool, models.SandboxUser, error) {
-	filter := bson.M{"username": username}
-	var user models.SandboxUser
-	var sandboxUsersCollection *mongo.Collection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
-	err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, user, nil
+	exist, user, err := db.GetSandboxUser(username)
+	if !exist {
+		return false, models.SandboxUser{}, nil
 	} else if err != nil {
-		return false, user, err
+		return false, models.SandboxUser{}, err
 	}
 	return true, user, nil
 }

@@ -135,42 +135,42 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(sn StationName, station models.Station) error {
+func (s *Server) CreateStream(sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool) error {
 	var maxMsgs int
-	if station.RetentionType == "messages" && station.RetentionValue > 0 {
-		maxMsgs = station.RetentionValue
+	if retentionType == "messages" && retentionValue > 0 {
+		maxMsgs = retentionValue
 	} else {
 		maxMsgs = -1
 	}
 
 	var maxBytes int
-	if station.RetentionType == "bytes" && station.RetentionValue > 0 {
-		maxBytes = station.RetentionValue
+	if retentionType == "bytes" && retentionValue > 0 {
+		maxBytes = retentionValue
 	} else {
 		maxBytes = -1
 	}
 
 	var maxAge time.Duration
-	if station.RetentionType == "message_age_sec" && station.RetentionValue > 0 {
-		maxAge = time.Duration(station.RetentionValue) * time.Second
+	if retentionType == "message_age_sec" && retentionValue > 0 {
+		maxAge = time.Duration(retentionValue) * time.Second
 	} else {
 		maxAge = time.Duration(0)
 	}
 
 	var storage StorageType
-	if station.StorageType == "memory" {
+	if storageType == "memory" {
 		storage = MemoryStorage
 	} else {
 		storage = FileStorage
 	}
 
 	var idempotencyWindow time.Duration
-	if station.IdempotencyWindow <= 0 {
+	if idempotencyW <= 0 {
 		idempotencyWindow = 2 * time.Minute // default
-	} else if station.IdempotencyWindow < 100 {
+	} else if idempotencyW < 100 {
 		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
 	} else {
-		idempotencyWindow = time.Duration(station.IdempotencyWindow) * time.Millisecond
+		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
 	}
 
 	return s.
@@ -186,18 +186,18 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			MaxMsgsPer:           -1,
 			MaxMsgSize:           int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:              storage,
-			Replicas:             station.Replicas,
+			Replicas:             replicas,
 			NoAck:                false,
 			Duplicates:           idempotencyWindow,
-			TieredStorageEnabled: station.TieredStorageEnabled,
+			TieredStorageEnabled: tieredStorageEnabled,
 		})
 }
 
-func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
+func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
 	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
 
 	var storage StorageType
-	if station.StorageType == "memory" {
+	if storageType == "memory" {
 		storage = MemoryStorage
 	} else {
 		storage = FileStorage
@@ -220,7 +220,7 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 			MaxMsgsPer:   -1,
 			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:      storage,
-			Replicas:     station.Replicas,
+			Replicas:     replicas,
 			NoAck:        false,
 			Duplicates:   idempotencyWindow,
 		})
