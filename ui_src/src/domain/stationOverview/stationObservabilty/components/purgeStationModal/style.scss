@@ -1,0 +1,45 @@
+.delete-modal-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    p {
+        margin: 0;
+    }
+    .title {
+        font-size: 18px;
+        font-family: 'InterMedium';
+    }
+    .desc {
+        font-size: 14px;
+        color: #667085;
+    }
+    .checkbox-body {
+        padding: 10px 15px 10px 15px;
+        margin: 10px 0 10px 0;
+        border: 1px solid #ebebeb;
+        border-radius: 8px;
+        span {
+            display: flex;
+            p {
+                padding-left: 8px;
+                margin: 0;
+                font-weight: 600;
+            }
+        }
+    }
+    .confirm-section {
+        color: #667085;
+        p {
+            margin-bottom: 5px;
+        }
+        b {
+            font-family: 'InterSemiBold';
+        }
+    }
+    .buttons {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+    }
+}
