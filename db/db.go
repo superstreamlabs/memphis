@@ -215,6 +215,9 @@ func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
 
 	err = rows.Scan(&username)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return err
+		}
 		return err
 	}
 
