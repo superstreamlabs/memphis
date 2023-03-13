@@ -147,8 +147,8 @@ function SideBar() {
                     </div>
                 </div>
             </Link>
-            <div className="item-wrap">
-                <div className="item" onClick={() => AuthService.logout()}>
+            <div className="item-wrap" onClick={() => AuthService.logout()}>
+                <div className="item">
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />
                     </span>
@@ -160,7 +160,7 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img src={Logo} width="62" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                <img src={Logo} width="45" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
                 <div className="item-wrapper" onClick={() => history.push(pathDomains.overview)}>
                     <div className="icon">
                         {state.route === 'overview' ? (

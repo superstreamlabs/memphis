@@ -1,18 +1,21 @@
 <div align="center">
   
-  ![Memphis light logo](https://github.com/memphisdev/memphis/blob/master/logo-white.png?raw=true#gh-dark-mode-only)
+  ![GA Banner](https://user-images.githubusercontent.com/70286779/223524472-80e568ba-e1d6-4682-a8ab-1beb6dc2bf10.png#gh-dark-mode-only)
+<!--   ![Memphis light logo](https://github.com/memphisdev/memphis/blob/master/logo-white.png?raw=true#gh-dark-mode-only) -->
   
 </div>
 
 <div align="center">
   
-  ![Memphis light logo](https://github.com/memphisdev/memphis/blob/master/logo-black.png?raw=true#gh-light-mode-only)
+<!--   ![Memphis light logo](https://github.com/memphisdev/memphis/blob/master/logo-black.png?raw=true#gh-light-mode-only) -->
+  ![Banner_2](https://user-images.githubusercontent.com/70286779/223525250-2b604b44-f831-4254-a29d-54f735f14e3c.png#gh-light-mode-only)
+
   
 </div>
 
 <div align="center">
 <h4>Simple as RabbitMQ, robust as Apache Kafka, and perfect for busy developers.</h4>
-<img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
+<!-- <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br> -->
 
   
   <a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>

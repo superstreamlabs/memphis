@@ -12,22 +12,19 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"sort"
 
 	"memphis/analytics"
+	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -49,10 +46,8 @@ func validateConsumerType(consumerType string) error {
 }
 
 func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"consumers_group": consumerGroup, "station_id": stationId, "is_deleted": false}
-	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
+	exist, consumer, err := db.GetActiveConsumerByCG(consumerGroup, stationId)
+	if !exist {
 		return false, models.Consumer{}, nil
 	} else if err != nil {
 		return false, models.Consumer{}, err
@@ -61,21 +56,8 @@ func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (b
 }
 
 func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.CgMember, error) {
-	var consumers []models.CgMember
-
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", station.ID}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	consumers, err := db.GetConsumerGroupMembers(cgName, station.ID)
 	if err != nil {
-		return consumers, err
-	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
 		return consumers, err
 	}
 
@@ -129,7 +111,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection ID is not valid")
 		return err
 	}
-	exist, connection, err := IsConnectionExist(connectionIdObj)
+	exist, connection, err := db.GetConnectionByID(connectionIdObj)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -152,7 +134,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -198,7 +180,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		}
 	}
 
-	exist, _, err = IsConsumerExist(name, station.ID)
+	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -217,47 +199,14 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	newConsumer := models.Consumer{
-		ID:                       primitive.NewObjectID(),
-		Name:                     name,
-		StationId:                station.ID,
-		Type:                     consumerType,
-		ConnectionId:             connectionIdObj,
-		CreatedByUser:            connection.CreatedByUser,
-		ConsumersGroup:           consumerGroup,
-		IsActive:                 true,
-		CreationDate:             time.Now(),
-		IsDeleted:                false,
-		MaxAckTimeMs:             int64(maxAckTime),
-		MaxMsgDeliveries:         maxMsgDeliveries,
-		StartConsumeFromSequence: startConsumeFromSequence,
-		LastMessages:             lastMessages,
-	}
-
-	filter := bson.M{"name": newConsumer.Name, "station_id": station.ID, "is_active": true, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                         newConsumer.ID,
-			"type":                        newConsumer.Type,
-			"connection_id":               newConsumer.ConnectionId,
-			"created_by_user":             newConsumer.CreatedByUser,
-			"consumers_group":             newConsumer.ConsumersGroup,
-			"creation_date":               newConsumer.CreationDate,
-			"max_ack_time_ms":             newConsumer.MaxAckTimeMs,
-			"max_msg_deliveries":          newConsumer.MaxMsgDeliveries,
-			"start_consume_from_sequence": newConsumer.StartConsumeFromSequence,
-			"last_messages":               newConsumer.LastMessages,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := consumersCollection.UpdateOne(context.TODO(), filter, update, opts)
+	newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionIdObj, connection.CreatedByUser, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
 
-	if updateResults.MatchedCount == 0 {
+	if rowsUpdated == 0 {
 		message := "Consumer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		if consumerGroupExist {
@@ -365,27 +314,12 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
-	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-	})
+	consumers, err := db.GetAllConsumers()
 	if err != nil {
 		serv.Errorf("GetAllConsumers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		serv.Errorf("GetAllConsumers: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	if len(consumers) == 0 {
 		c.IndentedJSON(200, []string{})
 	} else {
@@ -395,21 +329,8 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 
 func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station, poisonedCgMap map[string]int) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
 	var cgs []models.Cg
-	var consumers []models.ExtendedConsumer
-
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"connection", 0}}}},
-	})
+	consumers, err := db.GetAllConsumersByStation(station.ID)
 	if err != nil {
-		return cgs, cgs, cgs, err
-	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
 		return cgs, cgs, cgs, err
 	}
 
@@ -524,7 +445,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		return
 	}
 
-	exist, station, err := IsStationExist(sn)
+	exist, station, err := db.GetStationByName(sn.Ext())
 	if err != nil {
 		serv.Errorf("GetAllConsumersByStation: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -536,24 +457,8 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		return
 	}
 
-	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	consumers, err := db.GetAllConsumersByStation(station.ID)
 	if err != nil {
-		errMsg := "Station " + body.StationName + ": " + err.Error()
-		serv.Errorf("GetAllConsumersByStation: " + errMsg)
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
 		errMsg := "Station " + body.StationName + ": " + err.Error()
 		serv.Errorf("GetAllConsumersByStation: " + errMsg)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -584,20 +489,15 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	name := strings.ToLower(dcr.ConsumerName)
-	_, station, err := IsStationExist(stationName)
+	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		errMsg := "Station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
 		respondWithErr(s, reply, err)
 		return
 	}
-
-	var consumer models.Consumer
-	err = consumersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": station.ID, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
+	exist, consumer, err := db.DeleteConsumer(name, station.ID)
+	if !exist {
 		errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + " does not exist"
 		serv.Warnf("DestroyConsumer: " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
@@ -610,19 +510,8 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	_, err = consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"name": name, "station_id": station.ID},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
-	if err != nil {
-		errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + ": " + err.Error()
-		serv.Errorf("DestroyConsumer: " + errMsg)
-		respondWithErr(s, reply, err)
-		return
-	}
-
 	// ensure not part of an active consumer group
-	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "consumers_group": consumer.ConsumersGroup, "is_deleted": false})
+	count, err := db.CountActiveConsumersInCG(consumer.ConsumersGroup, station.ID)
 	if err != nil {
 		errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
@@ -686,10 +575,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 }
 
 func (ch ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId, "is_deleted": false},
-		bson.M{"$set": bson.M{"is_active": true}},
-	)
+	err := db.UpdateConsumersConnection(connectionId, false)
 	if err != nil {
 		serv.Errorf("ReliveConsumers: " + err.Error())
 		return err

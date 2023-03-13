@@ -12,11 +12,11 @@
 package server
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
 	"memphis/analytics"
+	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 	"mime/multipart"
@@ -29,19 +29,14 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
-	filter := bson.M{"user_type": "root"}
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
+	exist, _, err := db.GetRootUser()
+	if !exist {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -50,9 +45,10 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), bson.M{"user_type": "root"}).Decode(&user)
-	if err != nil {
+	exist, user, err := db.GetRootUser()
+	if !exist {
+		return false, errors.New("Root user does not exist")
+	} else if err != nil {
 		return false, err
 	}
 
@@ -64,10 +60,8 @@ func isRootUserLoggedIn() (bool, error) {
 }
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
-	filter := bson.M{"username": username}
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
+	exist, user, err := db.GetUserByUsername(username)
+	if !exist {
 		return false, models.User{}, nil
 	} else if err != nil {
 		return false, models.User{}, err
@@ -89,15 +83,7 @@ func validateUserType(userType string) error {
 	return nil
 }
 
-// TODO check against hub api
-func validateHubCreds(hubUsername string, hubPassword string) error {
-	if hubUsername != "" && hubPassword != "" {
-		// TODO
-	}
-	return nil
-}
-
-func updateUserResources(user models.User) error {
+func updateDeletedUserResources(user models.User) error {
 	if user.UserType == "application" {
 		err := RemoveUser(user.Username)
 		if err != nil {
@@ -105,42 +91,27 @@ func updateUserResources(user models.User) error {
 		}
 	}
 
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": user.Username},
-		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
-	)
+	err := db.UpdateStationsOfDeletedUser(user.Username)
 	if err != nil {
 		return err
 	}
 
-	_, err = connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": user.Username},
-		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
-	)
+	err = db.UpdateConncetionsOfDeletedUser(user.Username)
 	if err != nil {
 		return err
 	}
 
-	_, err = producersCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": user.Username},
-		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
-	)
+	err = db.UpdateProducersOfDeletedUser(user.Username)
 	if err != nil {
 		return err
 	}
 
-	_, err = consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": user.Username},
-		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)", "is_active": false}},
-	)
+	err = db.UpdateConsumersOfDeletedUser(user.Username)
 	if err != nil {
 		return err
 	}
 
-	_, err = schemaVersionCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": user.Username},
-		bson.M{"$set": bson.M{"created_by_user": user.Username + "(deleted)"}},
-	)
+	err = db.UpdateSchemasOfDeletedUser(user.Username)
 	if err != nil {
 		return err
 	}
@@ -246,24 +217,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		rootUserId, _ := primitive.ObjectIDFromHex("6314c8f7ef142f3f04fccdc3") // default root user id
-		newUser := models.User{
-			ID:              rootUserId,
-			Username:        "root",
-			Password:        hashedPwdString,
-			HubUsername:     "",
-			HubPassword:     "",
-			UserType:        "root",
-			CreationDate:    time.Now(),
-			AlreadyLoggedIn: false,
-			AvatarId:        1,
-		}
-
-		_, err = usersCollection.InsertOne(context.TODO(), newUser)
+		_, err = db.CreateUser("root", "root", hashedPwdString, "", false, 1)
 		if err != nil {
-			if mongo.IsDuplicateKeyError(err) {
-				return nil
-			}
 			return err
 		}
 
@@ -287,10 +242,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		}
 	} else {
-		_, err = usersCollection.UpdateOne(context.TODO(),
-			bson.M{"username": "root"},
-			bson.M{"$set": bson.M{"password": hashedPwdString}},
-		)
+		err = db.ChangeUserPassword("root", hashedPwdString)
 		if err != nil {
 			return err
 		}
@@ -330,10 +282,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 	hashedPwdString := string(hashedPwd)
-	_, err = usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"password": hashedPwdString}},
-	)
+	err = db.ChangeUserPassword(username, hashedPwdString)
 	if err != nil {
 		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -368,10 +317,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	if !user.AlreadyLoggedIn {
-		usersCollection.UpdateOne(context.TODO(),
-			bson.M{"_id": user.ID},
-			bson.M{"$set": bson.M{"already_logged_in": true}},
-		)
+		db.UpdateUserAlreadyLoggedIn(user.ID)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -428,7 +374,14 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	username := user.Username
-	exist, user, err := IsUserExist(username)
+	_, systemKey, err := db.GetSystemKey("analytics")
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+	exist, user, err := db.GetUserByUsername(username)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -437,8 +390,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	if !exist {
 		exist, sandboxUser, err := IsSandboxUserExist(username)
 		if exist {
-			var systemKey models.SystemKey
-			err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
 			if err != nil {
 				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -475,15 +426,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 			return
 		}
 	}
-
-	var systemKey models.SystemKey
-	err = systemKeysCollection.FindOne(context.TODO(), bson.M{"key": "analytics"}).Decode(&systemKey)
-	if err != nil {
-		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
@@ -567,19 +509,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser := models.User{
-		ID:              primitive.NewObjectID(),
-		Username:        username,
-		Password:        hashedPwdString,
-		FullName:        fullName,
-		Subscribtion:    subscription,
-		UserType:        "management",
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
-		AvatarId:        1,
-	}
-
-	_, err = usersCollection.InsertOne(context.TODO(), newUser)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -641,7 +571,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	username := strings.ToLower(body.Username)
-	exist, _, err := IsUserExist(username)
+	exist, _, err := db.GetUserByUsername(username)
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -692,13 +622,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		}
 	}
 
-	err = validateHubCreds(body.HubUsername, body.HubPassword)
-	if err != nil {
-		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
 	var brokerConnectionCreds string
 	if userType == "application" {
 		brokerConnectionCreds, err = AddUser(username)
@@ -708,20 +631,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			return
 		}
 	}
-
-	newUser := models.User{
-		ID:              primitive.NewObjectID(),
-		Username:        username,
-		Password:        hashedPwdString,
-		HubUsername:     body.HubUsername,
-		HubPassword:     body.HubPassword,
-		UserType:        userType,
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
-		AvatarId:        avatarId,
-	}
-
-	_, err = usersCollection.InsertOne(context.TODO(), newUser)
+	newUser, err := db.CreateUser(username, userType, hashedPwdString, "", false, avatarId)
 	if err != nil || len(username) == 0 {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -738,8 +648,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
-		"hub_username":            body.HubUsername,
-		"hub_password":            body.HubPassword,
 		"user_type":               userType,
 		"creation_date":           newUser.CreationDate,
 		"already_logged_in":       false,
@@ -749,24 +657,8 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
-	type filteredUser struct {
-		ID              primitive.ObjectID `json:"id" bson:"_id"`
-		Username        string             `json:"username" bson:"username"`
-		UserType        string             `json:"user_type" bson:"user_type"`
-		CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-		AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
-		AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
-	}
-	var users []filteredUser
-
-	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
+	users, err := db.GetAllUsers()
 	if err != nil {
-		serv.Errorf("GetAllUsers: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err = cursor.All(context.TODO(), &users); err != nil {
 		serv.Errorf("GetAllUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -786,26 +678,8 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
-	type filteredUser struct {
-		ID           primitive.ObjectID `json:"id" bson:"_id"`
-		Username     string             `json:"username" bson:"username"`
-		CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
-	}
-	var users []filteredUser
-
-	cursor, err := usersCollection.Find(context.TODO(), bson.M{
-		"$or": []interface{}{
-			bson.M{"user_type": "application"},
-			bson.M{"user_type": "root"},
-		},
-	})
+	users, err := db.GetAllApplicationUsers()
 	if err != nil {
-		serv.Errorf("GetApplicationUsers: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err = cursor.All(context.TODO(), &users); err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -840,7 +714,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	exist, userToRemove, err := IsUserExist(username)
+	exist, userToRemove, err := db.GetUserByUsername(username)
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -857,14 +731,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	err = updateUserResources(userToRemove)
+	err = updateDeletedUserResources(userToRemove)
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
-	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
+	err = db.DeleteUser(username)
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -892,14 +766,14 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	err = updateUserResources(user)
+	err = updateDeletedUserResources(user)
 	if err != nil {
 		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
-	_, err = usersCollection.DeleteOne(context.TODO(), bson.M{"username": user.Username})
+	err = db.DeleteUser(user.Username)
 	if err != nil {
 		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -913,51 +787,6 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	serv.Noticef("User " + user.Username + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
-}
-
-func (umh UserMgmtHandler) EditHubCreds(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
-	var body models.EditHubCredsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	err := validateHubCreds(body.HubUsername, body.HubPassword)
-	if err != nil {
-		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
-
-	_, err = usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"hub_username": body.HubUsername, "hub_password": body.HubPassword}},
-	)
-	if err != nil {
-		serv.Errorf("EditHubCreds: User " + body.HubUsername + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{
-		"id":                user.ID,
-		"username":          user.Username,
-		"hub_username":      body.HubUsername,
-		"hub_password":      body.HubPassword,
-		"user_type":         user.UserType,
-		"creation_date":     user.CreationDate,
-		"already_logged_in": user.AlreadyLoggedIn,
-		"avatar_id":         user.AvatarId,
-	})
 }
 
 func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
@@ -978,10 +807,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	_, err = usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": user.Username},
-		bson.M{"$set": bson.M{"avatar_id": avatarId}},
-	)
+	err = db.EditAvatar(user.Username, avatarId)
 	if err != nil {
 		serv.Errorf("EditAvatar: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -991,8 +817,6 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{
 		"id":                user.ID,
 		"username":          user.Username,
-		"hub_username":      user.HubUsername,
-		"hub_password":      user.HubPassword,
 		"user_type":         user.UserType,
 		"creation_date":     user.CreationDate,
 		"already_logged_in": user.AlreadyLoggedIn,
@@ -1023,13 +847,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_ = os.Remove(fileName)
 
-	newImage := models.Image{
-		ID:    primitive.NewObjectID(),
-		Name:  "company_logo",
-		Image: base64Encoding,
-	}
-
-	_, err = imagesCollection.InsertOne(context.TODO(), newImage)
+	err = db.InsertImage("company_logo", base64Encoding)
 	if err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1040,7 +858,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
-	_, err := imagesCollection.DeleteOne(context.TODO(), bson.M{"name": "company_logo"})
+	err := db.DeleteImage("company_logo")
 	if err != nil {
 		serv.Errorf("RemoveCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1051,12 +869,12 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
-	var image models.Image
-	err := imagesCollection.FindOne(context.TODO(), bson.M{"name": "company_logo"}).Decode(&image)
-	if err == mongo.ErrNoDocuments {
+	exist, image, err := db.GetImage("company_logo")
+	if !exist {
 		c.IndentedJSON(200, gin.H{"image": ""})
 		return
-	} else if err != nil {
+	}
+	if err != nil {
 		serv.Errorf("GetCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -1080,10 +898,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	_, err := systemKeysCollection.UpdateOne(context.TODO(),
-		bson.M{"key": "analytics"},
-		bson.M{"$set": bson.M{"value": flag}},
-	)
+	err := db.EditSystemKey("analytics", flag)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1115,20 +930,15 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	userName := strings.ToLower(user.Username)
-	_, err = usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": userName},
-		bson.M{"$set": bson.M{"skip_get_started": true}},
-	)
-
-	_, err = sandboxUsersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": userName},
-		bson.M{"$set": bson.M{"skip_get_started": true}},
-	)
+	username := strings.ToLower(user.Username)
+	err = db.UpdateSkipGetStarted(username)
 	if err != nil {
-		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		err2 := db.UpdateSkipGetStartedSandbox(username)
+		if err2 != nil {
+			serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1140,20 +950,8 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
-
-	var userList []models.FilteredUser
-
-	cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
-	})
+	userList, err := db.GetAllActiveUsers()
 	if err != nil {
-		return []string{}, err
-	}
-
-	if err = cursorUsers.All(context.TODO(), &userList); err != nil {
 		return []string{}, err
 	}
 
@@ -1168,18 +966,12 @@ func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
 }
 
 func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
-	var tags []models.Tag
-	tagsRes := []models.CreateTag{}
-	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
-	cursorTags, err := tagsCollection.Find(context.TODO(), filter)
+	tags, err := db.GetAllUsedTags()
 	if err != nil {
-		return tagsRes, err
+		return []models.CreateTag{}, err
 	}
 
-	if err = cursorTags.All(context.TODO(), &tags); err != nil {
-		return tagsRes, err
-	}
-
+	tagsRes := []models.CreateTag{}
 	for _, tag := range tags {
 		tagRes := models.CreateTag{
 			Name:  tag.Name,
@@ -1187,7 +979,7 @@ func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
 		}
 		tagsRes = append(tagsRes, tagRes)
 	}
-	return tagsRes, err
+	return tagsRes, nil
 }
 
 func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
