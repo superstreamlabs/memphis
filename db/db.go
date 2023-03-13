@@ -15,7 +15,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"io/ioutil"
 
 	"memphis/conf"
@@ -53,6 +52,7 @@ type DbPostgreSQLInstance struct {
 	Client *pgxpool.Pool
 	Ctx    context.Context
 	Cancel context.CancelFunc
+	Conn   *pgxpool.Conn
 }
 
 func InitializeDbConnection(l logger) (DbInstance, error) {
@@ -114,111 +114,109 @@ func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
 	}()
 }
 
-// func JoinTable(dbPostgreSQL DbPostgreSQLInstance) error {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+func JoinTable(dbPostgre DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	query := `SELECT users
+    FROM users AS q
+    JOIN tags AS a ON q.id = a.users
+    WHERE q.id = $1`
 
-// 	db := dbPostgreSQL.Client
-// 	query := `SELECT users
-//     FROM users AS q
-//     JOIN tags AS a ON q.id = a.users
-//     WHERE q.id = $1`
-// 	_, err := db.Query(ctx, query, 1)
+	conn := dbPostgre.Conn
 
-// 	if err != nil {
-// 		cancelfunc()
-// 		return err
-// 	}
+	defer conn.Release()
+	_, err := conn.Conn().Prepare(ctx, "join", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, "join", 1)
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
-// func InsertToTable(dbPostgreSQL DbPostgreSQLInstance) error {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	db := dbPostgreSQL.Client
-// 	query := `INSERT INTO users (id, username, password, type, already_logged_in, created_at, avatar_id, full_name, subscription, skip_get_started)
-// 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`
-// 	stmt, err := db.PrepareContext(ctx, query)
-// 	if err != nil {
-// 		return err
-// 	}
+func InsertToTable(dbPostgre DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn := dbPostgre.Conn
+	defer conn.Release()
+	_, err := conn.Conn().Prepare(ctx, "insert into", `INSERT INTO tags (name, color, users, stations, schemas) 
+    VALUES($1, $2, $3, $4, $5);`)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, "insert into", "sname", "red", "{1}", "{}", "{}")
+	if err != nil {
+		return err
+	}
 
-// 	defer stmt.Close()
-// 	// exec with context
-// 	_, err = stmt.ExecContext(ctx, 1, "shoham", "red", `{1,2}`, `{}`, `{}`)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	// exec without context
-// 	// _, err = stmt.Exec(10, "sh", "t1212", "root", true, "2005-05-13 07:15:31.123456789", 1, "ttd", true, true)
-// 	// if err != nil {
-// 	// 	return err
-// 	// }
+	return nil
+}
 
-// 	return nil
-// }
+func SelectFromTable(dbPostgre DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
 
-// func SelectFromTable(dbPostgreSQL DbPostgreSQLInstance) error {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	db := dbPostgreSQL.Client
-// 	query := `SELECT username FROM users WHERE id = $1`
-// 	stmt, err := db.PrepareContext(ctx, query)
-// 	if err != nil {
-// 		return err
-// 	}
+	conn := dbPostgre.Conn
+	defer conn.Release()
+	_, err := conn.Conn().Prepare(ctx, "select from", `SELECT username FROM users WHERE username = $1`)
+	if err != nil {
+		return err
+	}
+	var username string
+	rows := conn.Conn().QueryRow(ctx, "select from", "test")
 
-// 	defer stmt.Close()
-// 	id := 10
-// 	var username string
-// 	err = stmt.QueryRowContext(ctx, id).Scan(&username)
-// 	switch {
-// 	case err == sql.ErrNoRows:
-// 		fmt.Printf("no user with id %d", id)
-// 	case err != nil:
-// 		fmt.Println(err)
-// 	default:
-// 		fmt.Printf("username is %s\n", username)
-// 	}
-// 	return nil
+	err = rows.Scan(&username)
+	if err != nil {
+		return err
+	}
 
-// }
+	return nil
 
-// func updateFieldInTable(dbPostgreSQL DbPostgreSQLInstance) error {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	db := dbPostgreSQL.Client
-// 	query := `
-// 	UPDATE users
-// 	SET username = $2
-// 	WHERE id = $1
-// 	RETURNING id, username;`
+}
 
-// 	db.QueryRow(ctx, query)
-// 	var id int
-// 	var username string
-// 	err := db.QueryRowContext(ctx, query, 10, "testnew").Scan(&id, &username)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
+func updateFieldInTable(dbPostgre DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
 
-// }
+	conn := dbPostgre.Conn
+	defer conn.Release()
+	_, err := conn.Conn().Prepare(ctx, "update", `UPDATE users
+	SET username = $2
+	WHERE id = $1
+	RETURNING id, username;`)
+	if err != nil {
+		return err
+	}
+	var username string
+	var id int
+	rows := conn.Conn().QueryRow(ctx, "update", 7, "test")
+	err = rows.Scan(&id, &username)
+	if err != nil {
+		return err
+	}
 
-// func dropRowInTable(dbPostgreSQL DbPostgreSQLInstance) error {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	db := dbPostgreSQL.Client
-// 	query := `
-// 	DELETE FROM users
-// 	WHERE id = $1;`
+	return nil
+}
 
-// 	_, err := db.ExecContext(ctx, query, 10)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+func dropRowInTable(dbPostgre DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn := dbPostgre.Conn
+	defer conn.Release()
+	_, err := conn.Conn().Prepare(ctx, "drop", `DELETE FROM users WHERE id = $1;`)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, "drop", 7)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func AddInexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
@@ -364,11 +362,11 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		schema_name VARCHAR,
 		schema_version_number SERIAL,
 		PRIMARY KEY (id),
-		UNIQUE (name, is_deleted),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
 			REFERENCES users(id)
-		);`
+		);
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations (name, is_deleted) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
@@ -539,10 +537,8 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	postgreSqlServiceName := configuration.POSTGRESQL_SERVICE
 	postgreSqlPort := configuration.POSTGRESQL_PORT
 	var postgreSqlUrl string
-	fmt.Println("configuration.POSTGRESQL_TLS_ENABLED", configuration.POSTGRESQL_TLS_ENABLED)
 	if configuration.POSTGRESQL_TLS_ENABLED {
-		fmt.Println("tls connection")
-		postgreSqlUrl = "postgres://" + postgreSqlUser  + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
+		postgreSqlUrl = "postgres://" + postgreSqlUser + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
 	} else {
 		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
 	}
@@ -552,12 +548,14 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 	cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
 	if err != nil {
-		fmt.Errorf("failed to load client certificate: %v", err)
+		cancelfunc()
+		return DbPostgreSQLInstance{}, err
 	}
 
 	CACert, err := ioutil.ReadFile(configuration.POSTGRESQL_TLS_CA)
 	if err != nil {
-		fmt.Errorf("failed to load server certificate: %v", err)
+		cancelfunc()
+		return DbPostgreSQLInstance{}, err
 	}
 
 	CACertPool := x509.NewCertPool()
@@ -565,7 +563,6 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 	if configuration.POSTGRESQL_TLS_ENABLED {
 		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
-		fmt.Println("config.ConnConfig.TLSConfig", config.ConnConfig.TLSConfig)
 
 	}
 
@@ -581,14 +578,19 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 		return DbPostgreSQLInstance{}, err
 	}
 	l.Noticef("Established connection with the PostgreSQL DB")
-	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL}
+	conn, err := dbPostgreSQL.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return DbPostgreSQLInstance{}, err
+	}
+	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL, Conn: conn}
 	err = createTablesInDb(dbPostgre)
 	if err != nil {
 		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
 
-	// err = AddInexToTable("username_index", "users", "username", dbPostgre)
+	// err = AddInexToTable("username_index_2", "users", "username", dbPostgre)
 	// if err != nil {
 	// 	return DbPostgreSQLInstance{}, err
 	// }
