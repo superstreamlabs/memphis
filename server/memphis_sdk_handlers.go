@@ -31,8 +31,6 @@ type createStationRequest struct {
 	RetentionValue       int                     `json:"retention_value"`
 	StorageType          string                  `json:"storage_type"`
 	Replicas             int                     `json:"replicas"`
-	DedupEnabled         bool                    `json:"dedup_enabled"`      // TODO deprecated
-	DedupWindowMillis    int                     `json:"dedup_window_in_ms"` // TODO deprecated
 	IdempotencyWindow    int64                   `json:"idempotency_window_in_ms"`
 	DlsConfiguration     models.DlsConfiguration `json:"dls_configuration"`
 	Username             string                  `json:"username"`

@@ -12,12 +12,12 @@
 package server
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"memphis/analytics"
+	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 	"sort"
@@ -26,10 +26,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type StationsHandler struct{ S *Server }
@@ -141,18 +138,12 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 	DeleteTagsFromStation(station.ID)
 
-	_, err = producersCollection.UpdateMany(context.TODO(),
-		bson.M{"station_id": station.ID},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
+	err = db.DeleteProducersByStationID(station.ID)
 	if err != nil {
 		return err
 	}
 
-	_, err = consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"station_id": station.ID},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
+	err = db.DeleteConsumersByStationID(station.ID)
 	if err != nil {
 		return err
 	}
@@ -189,7 +180,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, _, err := IsStationExist(stationName)
+	exist, _, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -209,7 +200,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	var schemaDetails models.SchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(csr.SchemaName)
-		exist, schema, err := IsSchemaExist(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName)
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -297,29 +288,8 @@ func (s *Server) createStationDirectIntern(c *client,
 		username = csr.Username
 	}
 
-	newStation := models.Station{
-		ID:                   primitive.NewObjectID(),
-		Name:                 stationName.Ext(),
-		CreatedByUser:        username,
-		CreationDate:         time.Now(),
-		IsDeleted:            false,
-		RetentionType:        retentionType,
-		RetentionValue:       retentionValue,
-		StorageType:          storageType,
-		Replicas:             replicas,
-		DedupEnabled:         csr.DedupEnabled,      // TODO deprecated
-		DedupWindowInMs:      csr.DedupWindowMillis, // TODO deprecated
-		LastUpdate:           time.Now(),
-		Schema:               schemaDetails,
-		Functions:            []models.Function{},
-		IdempotencyWindow:    csr.IdempotencyWindow,
-		IsNative:             isNative,
-		DlsConfiguration:     csr.DlsConfiguration,
-		TieredStorageEnabled: csr.TieredStorageEnabled,
-	}
-
 	if shouldCreateStream {
-		err = s.CreateStream(stationName, newStation)
+		err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
 		if err != nil {
 			if IsNatsErr(err, JSInsufficientResourcesErr) {
 				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
@@ -333,41 +303,19 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	err = s.CreateDlsStream(stationName, newStation)
+	err = s.CreateDlsStream(stationName, storageType, replicas)
 	if err != nil {
 		serv.Errorf("createStationDirect: Create DLS at station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                      newStation.ID,
-			"retention_type":           newStation.RetentionType,
-			"retention_value":          newStation.RetentionValue,
-			"storage_type":             newStation.StorageType,
-			"replicas":                 newStation.Replicas,
-			"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
-			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
-			"created_by_user":          newStation.CreatedByUser,
-			"creation_date":            newStation.CreationDate,
-			"last_update":              newStation.LastUpdate,
-			"functions":                newStation.Functions,
-			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"is_native":                newStation.IsNative,
-			"dls_configuration":        newStation.DlsConfiguration,
-			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-		},
-	}
-	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), username, retentionType, retentionValue, storageType, replicas, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	if updateResults.MatchedCount > 0 {
+	if rowsUpdated > 0 {
 		message := "Station " + stationName.Ext() + " has been created by user " + username
 		serv.Noticef(message)
 
@@ -416,15 +364,8 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	}
 	tagsHandler := TagsHandler{S: sh.S}
 
-	var station models.GetStationResponseSchema
-	err := stationsCollection.FindOne(context.TODO(), bson.M{
-		"name": body.StationName,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	}).Decode(&station)
-	if err == mongo.ErrNoDocuments {
+	exist, station, err := db.GetStationByName(body.StationName)
+	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("GetStation: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -434,15 +375,33 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 	if err != nil {
 		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	station.Tags = tags
+
 	if station.StorageType == "file" {
 		station.StorageType = "disk"
+	}
+
+	stationResponse := models.GetStationResponseSchema{
+		ID:                   station.ID,
+		Name:                 station.Name,
+		RetentionType:        station.RetentionType,
+		RetentionValue:       station.RetentionValue,
+		StorageType:          station.StorageType,
+		Replicas:             station.Replicas,
+		CreatedByUser:        station.CreatedByUser,
+		CreationDate:         station.CreationDate,
+		LastUpdate:           station.LastUpdate,
+		IsDeleted:            station.IsDeleted,
+		IdempotencyWindow:    station.IdempotencyWindow,
+		IsNative:             station.IsNative,
+		DlsConfiguration:     station.DlsConfiguration,
+		TieredStorageEnabled: station.TieredStorageEnabled,
+		Tags:                 tags,
 	}
 
 	_, ok = IntegrationsCache["s3"].(models.Integration)
@@ -450,23 +409,13 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		station.TieredStorageEnabled = false
 	}
 
-	c.IndentedJSON(200, station)
+	c.IndentedJSON(200, stationResponse)
 }
 
 func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails, error) {
 	var exStations []models.ExtendedStationDetails
-	var stations []models.Station
-
-	filter := bson.M{"$or": []interface{}{
-		bson.M{"is_deleted": bson.M{"$exists": false}},
-		bson.M{"is_deleted": false},
-	}}
-	cursor, err := stationsCollection.Find(context.TODO(), filter)
+	stations, err := db.GetActiveStations()
 	if err != nil {
-		return []models.ExtendedStationDetails{}, err
-	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
 	streamInfoToDls := make(map[string]models.StationMsgsDetails)
@@ -503,7 +452,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
-			tags, err := tagsHandler.GetTagsByStation(station.ID)
+			tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
@@ -517,14 +466,14 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 			msgsInfo := streamInfoToDls[fullStationName.Intern()]
 
 			activity := false
-			activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "is_active": true})
+			activeCount, err := db.CountActiveProudcersByStationID(station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
 			}
 			if activeCount > 0 {
 				activity = true
 			} else {
-				activeCount, err = consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": station.ID, "is_active": true})
+				activeCount, err = db.CountActiveConsumersByStationID(station.ID)
 				if err != nil {
 					return []models.ExtendedStationDetails{}, err
 				}
@@ -549,21 +498,8 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uint64, uint64, error) {
 	totalMessages := uint64(0)
 	totalDlsMessages := uint64(0)
-	var stations []models.ExtendedStation
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{
-			bson.D{{"is_deleted", false}},
-			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
-		}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
-		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"functions", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
-	})
+	stations, err := db.GetAllStationsDetails()
 	if err != nil {
-		return stations, totalMessages, totalDlsMessages, err
-	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return stations, totalMessages, totalDlsMessages, err
 	}
 	if len(stations) == 0 {
@@ -607,7 +543,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 			if err != nil {
 				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
-			tags, err := tagsHandler.GetTagsByStation(stations[i].ID)
+			tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
 			if err != nil {
 				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
@@ -691,7 +627,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := IsStationExist(stationName)
+	exist, _, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -715,7 +651,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	var schemaDetailsResponse models.StationOverviewSchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
-		exist, schema, err := IsSchemaExist(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName)
 		if err != nil {
 			serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -742,6 +678,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			SchemaType:       schema.Type,
 		}
 		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+	} else {
+		schemaDetails = models.SchemaDetails{SchemaName: "", VersionNumber: 0}
 	}
 
 	var retentionType string
@@ -799,28 +737,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	newStation := models.Station{
-		ID:                   primitive.NewObjectID(),
-		Name:                 stationName.Ext(),
-		RetentionType:        retentionType,
-		RetentionValue:       body.RetentionValue,
-		StorageType:          body.StorageType,
-		Replicas:             body.Replicas,
-		DedupEnabled:         body.DedupEnabled,    // TODO deprecated
-		DedupWindowInMs:      body.DedupWindowInMs, // TODO deprecated
-		CreatedByUser:        user.Username,
-		CreationDate:         time.Now(),
-		LastUpdate:           time.Now(),
-		Functions:            []models.Function{},
-		IsDeleted:            false,
-		Schema:               schemaDetails,
-		IdempotencyWindow:    body.IdempotencyWindow,
-		DlsConfiguration:     body.DlsConfiguration,
-		IsNative:             true,
-		TieredStorageEnabled: body.TieredStorageEnabled,
-	}
-
-	err = sh.S.CreateStream(stationName, newStation)
+	err = sh.S.CreateStream(stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
 	if err != nil {
 		if IsNatsErr(err, JSInsufficientResourcesErr) {
 			serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
@@ -833,67 +750,19 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	err = sh.S.CreateDlsStream(stationName, newStation)
+	err = sh.S.CreateDlsStream(stationName, body.StorageType, body.Replicas)
 	if err != nil {
 		serv.Errorf("CreateStation: Create DLS at station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
-	var emptySchemaDetailsResponse struct{}
-	var update bson.M
-	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	if schemaName != "" {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
-				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
-				"functions":                newStation.Functions,
-				"schema":                   newStation.Schema,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"is_native":                newStation.IsNative,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	} else {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"dedup_enabled":            newStation.DedupEnabled,    // TODO deprecated
-				"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
-				"functions":                newStation.Functions,
-				"schema":                   emptySchemaDetailsResponse,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"is_native":                newStation.IsNative,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if updateResults.MatchedCount > 0 {
+	if rowsUpdated > 0 {
 		errMsg := "Station " + newStation.Name + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -942,18 +811,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
-			"id":                       primitive.NewObjectID(),
+			"id":                       newStation.ID,
 			"name":                     stationName.Ext(),
 			"retention_type":           retentionType,
 			"retention_value":          body.RetentionValue,
 			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
-			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
-			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          user.Username,
 			"creation_date":            time.Now(),
 			"last_update":              time.Now(),
-			"functions":                []models.Function{},
 			"is_deleted":               false,
 			"schema":                   schemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
@@ -961,19 +827,17 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
 		})
 	} else {
+		var emptySchemaDetailsResponse struct{}
 		c.IndentedJSON(200, gin.H{
-			"id":                       primitive.NewObjectID(),
+			"id":                       newStation.ID,
 			"name":                     stationName.Ext(),
 			"retention_type":           retentionType,
 			"retention_value":          body.RetentionValue,
 			"storage_type":             storageTypeForResponse,
 			"replicas":                 body.Replicas,
-			"dedup_enabled":            body.DedupEnabled,    // TODO deprecated
-			"dedup_window_in_ms":       body.DedupWindowInMs, // TODO deprecated
 			"created_by_user":          user.Username,
 			"creation_date":            time.Now(),
 			"last_update":              time.Now(),
-			"functions":                []models.Function{},
 			"is_deleted":               false,
 			"schema":                   emptySchemaDetailsResponse,
 			"idempotency_window_in_ms": newStation.IdempotencyWindow,
@@ -1004,7 +868,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 		stationNames = append(stationNames, stationName.Ext())
 
-		exist, station, err := IsStationExist(stationName)
+		exist, station, err := db.GetStationByName(stationName.Ext())
 		if err != nil {
 			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1025,16 +889,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 	}
 
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{
-			"name": bson.M{"$in": stationNames},
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"is_deleted": true}},
-	)
+	err := db.DeleteStationsByNames(stationNames)
 	if err != nil {
 		serv.Errorf("RemoveStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1096,7 +951,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
@@ -1119,16 +974,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(),
-		bson.M{
-			"name": stationName.Ext(),
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"is_deleted": true}},
-	)
+	err = db.DeleteStation(stationName.Ext())
 	if err != nil {
 		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1225,7 +1071,7 @@ func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId, dlsType string) 
 	if err != nil {
 		return dlsMessage, err
 	}
-	exist, station, err := IsStationExist(sn)
+	exist, station, err := db.GetStationByName(sn.Ext())
 	if err != nil {
 		return dlsMessage, err
 	}
@@ -1459,7 +1305,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if !exist {
 		errMsg := "Station " + stationName.external + " does not exist"
 		serv.Warnf("GetMessageDetails: " + errMsg)
@@ -1574,10 +1420,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		})
 	}
 
-	filter := bson.M{"name": producedByHeader, "station_id": station.ID, "connection_id": connectionId}
-	var producer models.Producer
-	err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
+	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+	if !exist {
 		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
 		serv.Warnf("GetMessageDetails: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -1589,7 +1433,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	_, conn, err := IsConnectionExist(connectionId)
+	_, conn, err := db.GetConnectionByID(connectionId)
 	if err != nil {
 		serv.Errorf("GetMessageDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1625,7 +1469,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	}
 
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := IsSchemaExist(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName)
 	if err != nil {
 		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -1667,7 +1511,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			return
 		}
 
-		exist, station, err := IsStationExist(stationName)
+		exist, station, err := db.GetStationByName(stationName.Ext())
 		if err != nil {
 			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1680,7 +1524,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			return
 		}
 
-		_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+		err = db.AttachSchemaToStation(stationName.Ext(), schemaDetails)
 		if err != nil {
 			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -1749,7 +1593,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	exist, _, err := IsStationExist(stationName)
+	exist, _, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1765,7 +1609,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	var schemaDetails models.SchemaDetails
 	schemaName := strings.ToLower(asr.Name)
-	exist, schema, err := IsSchemaExist(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1786,7 +1630,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	}
 	schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
-	_, err = stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName.Ext(), "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+	err = db.AttachSchemaToStation(stationName.Ext(), schemaDetails)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1842,7 +1686,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 }
 
 func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
-	exist, _, err := IsStationExist(sn)
+	exist, _, err := db.GetStationByName(sn.Ext())
 	if err != nil {
 		return err
 	}
@@ -1851,16 +1695,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 	}
 
 	if updateDB {
-		_, err = stationsCollection.UpdateOne(context.TODO(),
-			bson.M{
-				"name": sn.Ext(),
-				"$or": []interface{}{
-					bson.M{"is_deleted": false},
-					bson.M{"is_deleted": bson.M{"$exists": false}},
-				},
-			},
-			bson.M{"$set": bson.M{"schema": bson.M{}}},
-		)
+		err = db.DetachSchemaFromStation(sn.Ext())
 		if err != nil {
 			return err
 		}
@@ -1920,7 +1755,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1984,7 +1819,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1997,9 +1832,8 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	var schema models.Schema
-	err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
-	if err == mongo.ErrNoDocuments {
+	exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+	if !exist {
 		errMsg := "Schema " + station.Schema.SchemaName + " does not exist"
 		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -2053,7 +1887,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2073,21 +1907,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 			Poison:      body.Poison,
 			Schemaverse: body.Schemaverse,
 		}
-		filter := bson.M{
-			"name": body.StationName,
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			}}
-
-		update := bson.M{
-			"$set": bson.M{
-				"dls_configuration": dlsConfigurationNew,
-			},
-		}
-		opts := options.Update().SetUpsert(true)
-
-		_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+		err = db.UpsertStationDlsConfig(body.StationName, dlsConfigurationNew)
 		if err != nil {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2113,18 +1933,8 @@ func (s *Server) AlignOldStations() error {
 }
 
 func launchDlsForOldStations(s *Server) error {
-	var stations []models.Station
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	})
+	stations, err := db.GetActiveStations()
 	if err != nil {
-		return err
-	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return err
 	}
 	for _, station := range stations {
@@ -2141,25 +1951,11 @@ func launchDlsForOldStations(s *Server) error {
 					Poison:      true,
 					Schemaverse: true,
 				}
-				filter := bson.M{
-					"name": station.Name,
-					"$or": []interface{}{
-						bson.M{"is_deleted": false},
-						bson.M{"is_deleted": bson.M{"$exists": false}},
-					}}
-
-				update := bson.M{
-					"$set": bson.M{
-						"dls_configuration": dlsConfigurationNew,
-					},
-				}
-				opts := options.Update().SetUpsert(true)
-
-				_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+				err = db.UpsertStationDlsConfig(station.Name, dlsConfigurationNew)
 				if err != nil {
 					return err
 				}
-				err = s.CreateDlsStream(sn, station)
+				err = s.CreateDlsStream(sn, station.StorageType, station.Replicas)
 				if err != nil {
 					serv.Errorf("LaunchDlsForOldStations: CreateDlsStream: At station " + station.Name + ": " + err.Error())
 					return err
@@ -2173,10 +1969,7 @@ func launchDlsForOldStations(s *Server) error {
 }
 
 func updateOldStationNativeness(s *Server) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"is_native": bson.M{"$exists": false}},
-		bson.M{"$set": bson.M{"is_native": true}},
-	)
+	err := db.UpdateIsNativeOldStations()
 	return err
 }
 
@@ -2198,7 +1991,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := IsStationExist(stationName)
+	exist, _, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("PurgeStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2256,7 +2049,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := IsStationExist(stationName)
+	exist, _, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("RemoveMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
