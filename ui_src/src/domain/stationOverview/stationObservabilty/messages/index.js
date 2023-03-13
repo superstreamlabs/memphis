@@ -20,9 +20,12 @@ import { msToUnits, numberWithCommas } from '../../../../services/valueConvertor
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
+import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
+import purge from '../../../../assets/images/purge.svg';
 import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import PurgeStationModal from '../components/purgeStationModal';
 import CheckboxComponent from '../../../../components/checkBox';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import DetailBox from '../../../../components/detailBox';
@@ -30,6 +33,7 @@ import DlsConfig from '../../../../components/dlsConfig';
 import { httpRequest } from '../../../../services/http';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
+import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import MessageDetails from '../components/messageDetails';
@@ -38,13 +42,14 @@ import { Virtuoso } from 'react-virtuoso';
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+    const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
-    const [isCheckAll, setIsCheckAll] = useState(false);
     const [tabValue, setTabValue] = useState('All');
+    const [loader, setLoader] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['All', 'Dead-letter', 'Details'];
     const subTabs = [
@@ -60,19 +65,6 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
     };
 
-    const onCheckedAll = () => {
-        setIsCheckAll(!isCheckAll);
-        tabValue === 'All'
-            ? setIsCheck(stationState?.stationSocketData?.messages.map((li) => li.message_seq))
-            : subTabValue === 'Unacked'
-            ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
-            : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
-        setIndeterminate(false);
-        if (isCheckAll) {
-            setIsCheck([]);
-        }
-    };
-
     const handleCheckedClick = (e) => {
         const { id, checked } = e.target;
         let checkedList = [];
@@ -85,10 +77,8 @@ const Messages = () => {
             setIsCheck(checkedList);
         }
         if (subTabValue === 'Unacked') {
-            setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
         } else {
-            setIsCheckAll(checkedList.length === stationState?.stationSocketData?.schema_failed_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.schema_failed_messages?.length);
         }
     };
@@ -97,7 +87,7 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
         setIsCheck([]);
-        setIsCheckAll(false);
+
         setTabValue(newValue);
         subTabValue === 'Schema violation' && setSubTabValue('Unacked');
     };
@@ -116,7 +106,6 @@ const Messages = () => {
         setSelectedRowIndex(null);
         setSubTabValue(newValue);
         setIsCheck([]);
-        setIsCheckAll(false);
     };
 
     const handleDrop = async () => {
@@ -124,18 +113,13 @@ const Messages = () => {
         let messages;
         try {
             if (tabValue === 'All') {
-                if (isCheckAll) {
-                    await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, { station_name: stationName });
-                    messages = [];
-                } else {
-                    await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
-                    messages = stationState?.stationSocketData?.messages;
-                    isCheck.map((messageId, index) => {
-                        messages = messages?.filter((item) => {
-                            return item.message_seq !== messageId;
-                        });
+                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
+                messages = stationState?.stationSocketData?.messages;
+                isCheck.map((messageId, index) => {
+                    messages = messages?.filter((item) => {
+                        return item.message_seq !== messageId;
                     });
-                }
+                });
             } else {
                 await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacked' ? 'poison' : 'schema', dls_message_ids: isCheck });
                 messages = subTabValue === 'Unacked' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
@@ -153,11 +137,32 @@ const Messages = () => {
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
-                setIsCheckAll(false);
                 setIndeterminate(false);
             }, 1500);
         } catch (error) {
             setIgnoreProcced(false);
+        }
+    };
+
+    const handlePurge = async (purgeData) => {
+        setLoader(true);
+        setIgnoreProcced(true);
+        try {
+            let purgeDataPayload = purgeData;
+            purgeData['station_name'] = stationName;
+            await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
+            setTimeout(() => {
+                setIgnoreProcced(false);
+                stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                setSelectedRowIndex(null);
+                setIsCheck([]);
+                setIndeterminate(false);
+            }, 1500);
+            modalPurgeFlip(false);
+        } catch (error) {
+            setIgnoreProcced(false);
+        } finally {
+            setLoader(false);
         }
     };
 
@@ -175,7 +180,6 @@ const Messages = () => {
                     onClick: () => message.destroy('memphisSuccessMessage')
                 });
                 setIsCheck([]);
-                setIsCheckAll(false);
             }, 1500);
         } catch (error) {
             setResendProcced(false);
@@ -205,10 +209,7 @@ const Messages = () => {
         return (
             <div className={isDls ? 'list-wrapper dls-list' : 'list-wrapper msg-list'}>
                 <div className="coulmns-table">
-                    <div className="left-coulmn">
-                        <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                        <p>Messages (In hexa)</p>
-                    </div>
+                    <p className="left-coulmn">Messages</p>
                     <p className="right-coulmn">Information</p>
                 </div>
                 <div className="list">
@@ -395,8 +396,47 @@ const Messages = () => {
                         }
                         data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
+                    <DetailBox
+                        img={purge}
+                        title={'Purge'}
+                        desc={<span>Clean station from messages.</span>}
+                        data={[
+                            <Button
+                                width="80px"
+                                height="32px"
+                                placeholder="Purge"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
+                                onClick={() => modalPurgeFlip(true)}
+                            />
+                        ]}
+                    />
                 </div>
             )}
+            <Modal
+                header={<img src={purgeWrapperIcon} alt="deleteWrapperIcon" />}
+                width="460px"
+                height="320px"
+                displayButtons={false}
+                clickOutside={() => modalPurgeFlip(false)}
+                open={modalPurgeIsOpen}
+            >
+                <PurgeStationModal
+                    title="Purge"
+                    desc="This action will clean the station from messages."
+                    handlePurgeSelected={(purgeData) => {
+                        handlePurge(purgeData);
+                    }}
+                    cancel={() => modalPurgeFlip(false)}
+                    loader={loader}
+                    msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
+                    dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
+                />
+            </Modal>
         </div>
     );
 };
