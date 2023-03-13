@@ -60,7 +60,7 @@ type Configuration struct {
 	POSTGRESQL_USER                string
 	POSTGRESQL_PASS                string
 	POSTGRESQL_DBNAME              string
-	POSTGRESQL_SERVICE             string
+	POSTGRESQL_HOST             string
 	POSTGRESQL_PORT                string
 	POSTGRESQL_TLS_ENABLED         bool
 	POSTGRESQL_TLS_KEY             string

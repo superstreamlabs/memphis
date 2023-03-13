@@ -15,7 +15,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"memphis/conf"
 	"strings"
@@ -70,7 +70,6 @@ type DbPostgreSQLInstance struct {
 	Client *pgxpool.Pool
 	Ctx    context.Context
 	Cancel context.CancelFunc
-	Conn   *pgxpool.Conn
 }
 
 func InitializeDbConnection(l logger) (DbInstance, error) {
@@ -146,7 +145,7 @@ func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
 	}()
 }
 
-func JoinTable(dbPostgre DbPostgreSQLInstance) error {
+func JoinTable(dbPostgreSQL *pgxpool.Pool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	query := `SELECT users
@@ -154,10 +153,14 @@ func JoinTable(dbPostgre DbPostgreSQLInstance) error {
     JOIN tags AS a ON q.id = a.users
     WHERE q.id = $1`
 
-	conn := dbPostgre.Conn
+	conn, err := dbPostgreSQL.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return err
+	}
 
 	defer conn.Release()
-	_, err := conn.Conn().Prepare(ctx, "join", query)
+	_, err = conn.Conn().Prepare(ctx, "join", query)
 	if err != nil {
 		return err
 	}
@@ -169,13 +172,18 @@ func JoinTable(dbPostgre DbPostgreSQLInstance) error {
 	return nil
 }
 
-func InsertToTable(dbPostgre DbPostgreSQLInstance) error {
+func InsertToTable(dbPostgreSQL *pgxpool.Pool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn := dbPostgre.Conn
+	conn, err := dbPostgreSQL.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return err
+	}
 	defer conn.Release()
-	_, err := conn.Conn().Prepare(ctx, "insert into", `INSERT INTO tags (name, color, users, stations, schemas) 
-    VALUES($1, $2, $3, $4, $5);`)
+	query := `INSERT INTO tags (name, color, users, stations, schemas) 
+    VALUES($1, $2, $3, $4, $5);`
+	_, err = conn.Conn().Prepare(ctx, "insert into", query)
 	if err != nil {
 		return err
 	}
@@ -187,13 +195,18 @@ func InsertToTable(dbPostgre DbPostgreSQLInstance) error {
 	return nil
 }
 
-func SelectFromTable(dbPostgre DbPostgreSQLInstance) error {
+func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn := dbPostgre.Conn
+	conn, err := dbPostgreSQL.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return err
+	}
 	defer conn.Release()
-	_, err := conn.Conn().Prepare(ctx, "select from", `SELECT username FROM users WHERE username = $1`)
+	query := `SELECT username FROM users WHERE username = $1`
+	_, err = conn.Conn().Prepare(ctx, "select from", query)
 	if err != nil {
 		return err
 	}
@@ -209,16 +222,21 @@ func SelectFromTable(dbPostgre DbPostgreSQLInstance) error {
 
 }
 
-func updateFieldInTable(dbPostgre DbPostgreSQLInstance) error {
+func updateFieldInTable(dbPostgreSQL *pgxpool.Pool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn := dbPostgre.Conn
+	conn, err := dbPostgreSQL.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return err
+	}
 	defer conn.Release()
-	_, err := conn.Conn().Prepare(ctx, "update", `UPDATE users
+	query := `UPDATE users
 	SET username = $2
 	WHERE id = $1
-	RETURNING id, username;`)
+	RETURNING id, username;`
+	_, err = conn.Conn().Prepare(ctx, "update", query)
 	if err != nil {
 		return err
 	}
@@ -233,13 +251,18 @@ func updateFieldInTable(dbPostgre DbPostgreSQLInstance) error {
 	return nil
 }
 
-func dropRowInTable(dbPostgre DbPostgreSQLInstance) error {
+func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn := dbPostgre.Conn
+	conn, err := dbPostgreSQL.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return err
+	}
 	defer conn.Release()
-	_, err := conn.Conn().Prepare(ctx, "drop", `DELETE FROM users WHERE id = $1;`)
+	query := `DELETE FROM users WHERE id = $1;`
+	_, err = conn.Conn().Prepare(ctx, "drop", query)
 	if err != nil {
 		return err
 	}
@@ -297,7 +320,7 @@ func AddInexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQ
 	return nil
 }
 
-func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
+func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
 		station_name VARCHAR NOT NULL,
@@ -350,8 +373,8 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
-		keys JSON,
-		properties JSON,
+		keys JSON NOT NULL DEFAULT '{}',
+		properties JSON NOT NULL DEFAULT '{}',
 		PRIMARY KEY (id)
 		);`
 
@@ -425,7 +448,7 @@ func createTablesInDb(dbPostgreSQL DbPostgreSQLInstance) error {
 		idempotency_window_ms SERIAL NOT NULL,
 		is_native BOOL NOT NULL ,
 		tiered_storage_enabled BOOL NOT NULL,
-		dls_config JSON NOT NULL,
+		dls_config JSON NOT NULL DEFAULT '{}',
 		schema_name VARCHAR,
 		schema_version_number SERIAL,
 		PRIMARY KEY (id),
@@ -601,13 +624,13 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	postgreSqlUser := configuration.POSTGRESQL_USER
 	postgreSqlPassword := configuration.POSTGRESQL_PASS
 	postgreSqlDbName := configuration.POSTGRESQL_DBNAME
-	postgreSqlServiceName := configuration.POSTGRESQL_SERVICE
+	postgreSqlHost := configuration.POSTGRESQL_HOST
 	postgreSqlPort := configuration.POSTGRESQL_PORT
 	var postgreSqlUrl string
 	if configuration.POSTGRESQL_TLS_ENABLED {
-		postgreSqlUrl = "postgres://" + postgreSqlUser + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
+		postgreSqlUrl = "postgres://" + postgreSqlUser + "@" + postgreSqlHost + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
 	} else {
-		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlServiceName + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
+		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlHost + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
 	}
 
 	config, err := pgxpool.ParseConfig(postgreSqlUrl)
@@ -620,7 +643,7 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 			return DbPostgreSQLInstance{}, err
 		}
 
-		CACert, err := ioutil.ReadFile(configuration.POSTGRESQL_TLS_CA)
+		CACert, err := os.ReadFile(configuration.POSTGRESQL_TLS_CA)
 		if err != nil {
 			cancelfunc()
 			return DbPostgreSQLInstance{}, err
@@ -642,48 +665,13 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
-	l.Noticef("Established connection with the PostgreSQL DB")
-	conn, err := dbPostgreSQL.Acquire(ctx)
+	l.Noticef("Established connection with the meta-data storage")
+	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL}
+	err = createTables(dbPostgre)
 	if err != nil {
 		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
-	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL, Conn: conn}
-	err = createTablesInDb(dbPostgre)
-	if err != nil {
-		cancelfunc()
-		return DbPostgreSQLInstance{}, err
-	}
-
-	// err = AddInexToTable("username_index_2", "users", "username", dbPostgre)
-	// if err != nil {
-	// 	return DbPostgreSQLInstance{}, err
-	// }
-
-	// err = InsertToTable(dbPostgre)
-	// if err != nil {
-	// 	return DbPostgreSQLInstance{}, err
-	// }
-
-	// err = SelectFromTable(dbPostgre)
-	// if err != nil {
-	// 	return DbPostgreSQLInstance{}, err
-	// }
-
-	// err = updateFieldInTable(dbPostgre)
-	// if err != nil {
-	// 	return DbPostgreSQLInstance{}, err
-	// }
-
-	// err = dropRowInTable(dbPostgre)
-	// if err != nil {
-	// 	return DbPostgreSQLInstance{}, err
-	// }
-
-	// err = JoinTable(dbPostgre)
-	// if err != nil {
-	// 	return DbPostgreSQLInstance{}, err
-	// }
 
 	return DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}, nil
 }

@@ -37,7 +37,7 @@
                 "POSTGRESQL_USER": "memphis" ,
 	            "POSTGRESQL_PASS": "memphis",
 	            "POSTGRESQL_DBNAME": "memphis",
-	            "POSTGRESQL_SERVICE": "localhost", 
+	            "POSTGRESQL_HOST": "localhost", 
 	            "POSTGRESQL_PORT": "5005", 
             }
         },
