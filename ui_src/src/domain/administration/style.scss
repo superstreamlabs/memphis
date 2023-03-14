@@ -46,11 +46,19 @@
                 opacity: 50%;
                 cursor: not-allowed;
             }
+            .update-available{
+                background: var(--purple);
+                color: white;
+                border-radius: 15px;
+                padding: 0 5px;
+                font-family: 'InterMedium';
+                margin-left: 5px;
+            }
         }
     }
 
     .setting-items {
-        position: absolute;
+        position: relative;
         height: calc(100% - 40px);
         width: calc(100% - 350px);
         top: 20px;
