@@ -136,10 +136,10 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	} else {
 		color = "101, 87, 255" // default memphis-purple color
 	}
-	stationArr := []primitive.ObjectID{}
-	schemaArr := []primitive.ObjectID{}
-	userArr := []primitive.ObjectID{}
-	newTag, err := db.UpsertNewTag(name, color, stationArr, schemaArr, userArr)
+	stationArr := []int{}
+	schemaArr := []int{}
+	userArr := []int{}
+	newTag, err := db.UpsertNewTagV1(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

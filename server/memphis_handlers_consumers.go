@@ -206,6 +206,16 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
+	stationId := 1
+	connId := 1
+	//TODO:pass createdByUser instead 1
+	_, rowsUpdated, err = db.UpsertNewConsumerV1(name, stationId, consumerType, connId, 1, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	if err != nil {
+		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		serv.Errorf("createConsumerDirectCommon: " + errMsg)
+		return err
+	}
+
 	if rowsUpdated == 0 {
 		message := "Consumer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)

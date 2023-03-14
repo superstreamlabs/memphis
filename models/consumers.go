@@ -34,6 +34,23 @@ type Consumer struct {
 	LastMessages             int64              `json:"last_messages" bson:"last_messages"`
 }
 
+type ConsumerPg struct {
+	ID                  int       `json:"id"`
+	Name                string    `json:"name"`
+	StationId           int       `json:"station_id"`
+	Type                string    `json:"type"`
+	ConnectionId        int       `json:"connection_id"`
+	ConsumersGroup      string    `json:"consumers_group"`
+	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
+	CreatedBy           int       `json:"created_by"`
+	IsActive            bool      `json:"is_active"`
+	CreatedAt           time.Time `json:"created_at" `
+	IsDeleted           bool      `json:"is_deleted"`
+	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
+	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
+	LastMessages        int64     `json:"last_messages"`
+}
+
 type ExtendedConsumer struct {
 	Name             string    `json:"name" bson:"name"`
 	CreatedByUser    string    `json:"created_by_user" bson:"created_by_user"`

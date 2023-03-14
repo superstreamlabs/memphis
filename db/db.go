@@ -980,7 +980,6 @@ func UpsertNewStation(
 	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
 	tieredStorageEnabled bool) (models.StationPg, int64, error) {
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1021,13 +1020,20 @@ func UpsertNewStation(
 	updatedAt := time.Now()
 
 	//TODO: change the 1 to username
-	res := conn.Conn().QueryRow(ctx, "upsert new station",
+	rows, err := conn.Conn().Query(ctx, "upsert new station",
 		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt, updatedAt,
-		false, idempotencyWindow, isNative, tieredStorageEnabled, dlsConfiguration, schemaDetails.SchemaName, schemaDetails.VersionNumber).Scan(&newStation.ID)
-	if res != nil {
+		false, idempotencyWindow, isNative, tieredStorageEnabled, dlsConfiguration, schemaDetails.SchemaName, schemaDetails.VersionNumber)
+	if err != nil {
 		return models.StationPg{}, 0, err
 	}
+	for rows.Next() {
+		err := rows.Scan(&newStation.ID)
+		if err != nil {
+			return models.StationPg{}, 0, err
+		}
+	}
 
+	rowsAffected := rows.CommandTag().RowsAffected()
 	newStation = models.StationPg{
 		ID:                   newStation.ID,
 		Name:                 stationName,
@@ -1045,7 +1051,7 @@ func UpsertNewStation(
 		DlsConfiguration:     dlsConfiguration,
 		TieredStorageEnabled: tieredStorageEnabled,
 	}
-	return newStation, 1, nil
+	return newStation, rowsAffected, nil
 }
 
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
@@ -1292,6 +1298,65 @@ func GetActiveProducerByStationID(producerName string, stationId primitive.Objec
 	return true, producer, nil
 }
 
+func UpsertNewProducerV1(name string, stationId int, producerType string, connectionIdObj int, createdByUser int) (models.ProducerPg, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return models.ProducerPg{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO producers ( 
+		name, 
+		station_id, 
+		connection_id,
+		created_by, 
+		is_active, 
+		is_deleted, 
+		created_at, 
+		type) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+	ON CONFLICT(id) DO UPDATE SET station_id = EXCLUDED.station_id ,connection_id = EXCLUDED.connection_id, created_by = EXCLUDED.created_by, type = EXCLUDED.type
+	RETURNING id`
+
+	_, err = conn.Conn().Prepare(ctx, "upsert new producer", query)
+	if err != nil {
+		return models.ProducerPg{}, 0, err
+	}
+
+	newProducer := models.ProducerPg{}
+	createAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, "upsert new producer",
+		name, stationId, connectionIdObj, createdByUser, false, false, createAt, producerType)
+	if err != nil {
+		return models.ProducerPg{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newProducer.ID)
+		if err != nil {
+			return models.ProducerPg{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	newProducer = models.ProducerPg{
+		ID:            newProducer.ID,
+		Name:          name,
+		StationId:     stationId,
+		Type:          producerType,
+		ConnectionId:  connectionIdObj,
+		CreatedByUser: createdByUser,
+		IsActive:      true,
+		CreationDate:  time.Now(),
+		IsDeleted:     false,
+	}
+	return newProducer, rowsAffected, nil
+}
+
 func UpsertNewProducer(name string, stationId primitive.ObjectID, producerType string, connectionIdObj primitive.ObjectID, createdByUser string) (models.Producer, int64, error) {
 	newProducer := models.Producer{
 		ID:            primitive.NewObjectID(),
@@ -1445,6 +1510,84 @@ func GetActiveConsumerByCG(consumersGroup string, stationId primitive.ObjectID) 
 		return true, models.Consumer{}, err
 	}
 	return true, consumer, nil
+}
+
+func UpsertNewConsumerV1(name string,
+	stationId int,
+	consumerType string,
+	connectionIdObj int,
+	createdByUser int,
+	cgName string,
+	maxAckTime int,
+	maxMsgDeliveries int,
+	startConsumeFromSequence uint64,
+	lastMessages int64) (models.ConsumerPg, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return models.ConsumerPg{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO consumers ( 
+		name, 
+		station_id,
+		connection_id,
+		consumers_group,
+		max_ack_time_ms,
+		created_by,
+		is_active, 
+		is_deleted, 
+		created_at,
+		max_msg_deliveries,
+		start_consume_from_seq,
+		last_msgs,
+		type) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+	ON CONFLICT(id) DO UPDATE SET station_id = EXCLUDED.station_id ,connection_id = EXCLUDED.connection_id, consumers_group =  EXCLUDED.consumers_group, max_ack_time_ms = EXCLUDED.max_ack_time_ms, created_by = EXCLUDED.created_by, type = EXCLUDED.type, max_msg_deliveries = EXCLUDED.max_msg_deliveries, start_consume_from_seq = EXCLUDED.start_consume_from_seq, last_msgs = EXCLUDED.last_msgs
+	RETURNING id`
+
+	_, err = conn.Conn().Prepare(ctx, "upsert new consumer", query)
+	if err != nil {
+		return models.ConsumerPg{}, 0, err
+	}
+
+	newConsumer := models.ConsumerPg{}
+	createdAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, "upsert new consumer",
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, false, false, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+	if err != nil {
+		return models.ConsumerPg{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newConsumer.ID)
+		if err != nil {
+			return models.ConsumerPg{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	newConsumer = models.ConsumerPg{
+		ID:                  newConsumer.ID,
+		Name:                name,
+		StationId:           stationId,
+		Type:                consumerType,
+		ConnectionId:        connectionIdObj,
+		CreatedBy:           createdByUser,
+		ConsumersGroup:      cgName,
+		IsActive:            true,
+		CreatedAt:           time.Now(),
+		IsDeleted:           false,
+		MaxAckTimeMs:        int64(maxAckTime),
+		MaxMsgDeliveries:    maxMsgDeliveries,
+		StartConsumeFromSeq: startConsumeFromSequence,
+		LastMessages:        lastMessages,
+	}
+	return newConsumer, rowsAffected, nil
 }
 
 func UpsertNewConsumer(name string, stationId primitive.ObjectID, consumerType string, connectionIdObj primitive.ObjectID, createdByUser string, cgName string, maxAckTime int, maxMsgDeliveries int, startConsumeFromSequence uint64, lastMessages int64) (models.Consumer, int64, error) {
@@ -1793,6 +1936,50 @@ func FindAndDeleteSchema(schemaIds []primitive.ObjectID) error {
 	return nil
 }
 
+func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return models.SchemaPg{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO schemas ( 
+		name, 
+		type) 
+    VALUES($1, $2) 
+	ON CONFLICT(id) DO UPDATE SET type = EXCLUDED.type
+	RETURNING id`
+
+	_, err = conn.Conn().Prepare(ctx, "upsert new schema", query)
+	if err != nil {
+		return models.SchemaPg{}, 0, err
+	}
+
+	newSchema := models.SchemaPg{}
+	rows, err := conn.Conn().Query(ctx, "upsert new schema", schemaName, schemaType)
+	if err != nil {
+		return models.SchemaPg{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newSchema.ID)
+		if err != nil {
+			return models.SchemaPg{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	newSchema = models.SchemaPg{
+		ID:   newSchema.ID,
+		Name: schemaName,
+		Type: schemaType,
+	}
+	return newSchema, rowsAffected, nil
+}
+
 func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
 	newSchema := models.Schema{
 		ID:   primitive.NewObjectID(),
@@ -1812,6 +1999,64 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 		return models.Schema{}, 0, err
 	}
 	return newSchema, updateResults.MatchedCount, nil
+}
+
+func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersionPg, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return models.SchemaVersionPg{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO schema_versions ( 
+		version_number,
+		active,
+		created_by,
+		created_at,
+		schema_content,
+		schema_id,
+		msg_struct_name,
+		descriptor)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+	ON CONFLICT(id) DO UPDATE SET version_number = EXCLUDED.version_number, active = EXCLUDED.active, created_by = EXCLUDED.created_by, created_at = EXCLUDED.created_at, schema_content = EXCLUDED.schema_content, schema_id = EXCLUDED.schema_id, msg_struct_name = EXCLUDED.msg_struct_name, descriptor = EXCLUDED.descriptor
+	RETURNING id`
+
+	_, err = conn.Conn().Prepare(ctx, "upsert new schema version", query)
+	if err != nil {
+		return models.SchemaVersionPg{}, 0, err
+	}
+
+	newSchemaVersion := models.SchemaVersionPg{}
+	createdAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, "upsert new schema version", schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
+	if err != nil {
+		return models.SchemaVersionPg{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newSchemaVersion.ID)
+		if err != nil {
+			return models.SchemaVersionPg{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	newSchemaVersion = models.SchemaVersionPg{
+		ID:                newSchemaVersion.ID,
+		VersionNumber:     schemaVersionNumber,
+		Active:            active,
+		CreatedByUser:     username,
+		CreationDate:      time.Now(),
+		SchemaContent:     schemaContent,
+		SchemaId:          schemaId,
+		MessageStructName: messageStructName,
+		Descriptor:        descriptor,
+	}
+	return newSchemaVersion, rowsAffected, nil
 }
 
 func UpsertNewSchemaVersion(schemaVersionNumber int, username string, schemaContent string, schemaId primitive.ObjectID, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
@@ -2078,6 +2323,54 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function execu
 }
 
 // Tags Functions
+func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.TagPg, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return models.TagPg{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO tags ( 
+		name,
+		color,
+		users,
+		stations,
+		schemas) 
+    VALUES($1, $2, $3, $4, $5) 
+	ON CONFLICT(id) DO UPDATE SET color = EXCLUDED.color, users = EXCLUDED.users, stations = EXCLUDED.stations, schemas = EXCLUDED.schemas
+	RETURNING id`
+
+	_, err = conn.Conn().Prepare(ctx, "upsert new tag", query)
+	if err != nil {
+		return models.TagPg{}, err
+	}
+
+	newTag := models.TagPg{}
+	rows, err := conn.Conn().Query(ctx, "upsert new tag", name, color, userArr, stationArr, schemaArr)
+	if err != nil {
+		return models.TagPg{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newTag.ID)
+		if err != nil {
+			return models.TagPg{}, err
+		}
+	}
+
+	newTag = models.TagPg{
+		ID:   newTag.ID,
+		Name: name, Color: color,
+		Stations: stationArr,
+		Schemas:  schemaArr,
+		Users:    userArr,
+	}
+	return newTag, nil
+
+}
 func UpsertNewTag(name string, color string, stationArr []primitive.ObjectID, schemaArr []primitive.ObjectID, userArr []primitive.ObjectID) (models.Tag, error) {
 	newTag := models.Tag{
 		ID:   primitive.NewObjectID(),

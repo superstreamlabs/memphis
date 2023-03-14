@@ -23,6 +23,12 @@ type Schema struct {
 	Type string             `json:"type" bson:"type"`
 }
 
+type SchemaPg struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
 type SchemaVersion struct {
 	ID                primitive.ObjectID `json:"id" bson:"_id"`
 	VersionNumber     int                `json:"version_number" bson:"version_number"`
@@ -33,6 +39,18 @@ type SchemaVersion struct {
 	SchemaId          primitive.ObjectID `json:"schema_id" bson:"schema_id"`
 	MessageStructName string             `json:"message_struct_name" bson:"message_struct_name"`
 	Descriptor        string             `json:"-" bson:"descriptor"`
+}
+
+type SchemaVersionPg struct {
+	ID                int       `json:"id" `
+	VersionNumber     int       `json:"version_number"`
+	Active            bool      `json:"active"`
+	CreatedByUser     int       `json:"created_by_user"`
+	CreationDate      time.Time `json:"creation_date"`
+	SchemaContent     string    `json:"schema_content"`
+	SchemaId          int       `json:"schema_id"`
+	MessageStructName string    `json:"message_struct_name"`
+	Descriptor        string    `json:"-"`
 }
 
 type CreateNewSchema struct {

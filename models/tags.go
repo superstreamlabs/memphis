@@ -24,6 +24,15 @@ type Tag struct {
 	Schemas  []primitive.ObjectID `json:"schemas" bson:"schemas"`
 }
 
+type TagPg struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Color    string `json:"color"`
+	Users    []int  `json:"users"`
+	Stations []int  `json:"stations"`
+	Schemas  []int  `json:"schemas"`
+}
+
 type CreateTag struct {
 	Name  string `json:"name" binding:"required,min=1,max=20"`
 	Color string `json:"color"`

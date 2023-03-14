@@ -60,21 +60,21 @@ type Station struct {
 }
 
 type StationPg struct {
-	ID                   int              `json:"id" bson:"_id"`
-	Name                 string           `json:"name" bson:"name"`
-	RetentionType        string           `json:"retention_type" bson:"retention_type"`
-	RetentionValue       int              `json:"retention_value" bson:"retention_value"`
-	StorageType          string           `json:"storage_type" bson:"storage_type"`
-	Replicas             int              `json:"replicas" bson:"replicas"`
-	CreatedBy            string           `json:"created_by" bson:"created_by"`
-	CreatedAt            time.Time        `json:"created_at" bson:"created_at"`
-	UpdatedAt            time.Time        `json:"updated_at" bson:"updated_at"`
-	IsDeleted            bool             `json:"is_deleted" bson:"is_deleted"`
-	Schema               SchemaDetails    `json:"schema" bson:"schema"`
-	IdempotencyWindow    int64            `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative             bool             `json:"is_native" bson:"is_native"`
-	DlsConfiguration     DlsConfiguration `json:"dls_configuration" bson:"dls_configuration"`
-	TieredStorageEnabled bool             `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	ID                   int              `json:"id"`
+	Name                 string           `json:"name"`
+	RetentionType        string           `json:"retention_type"`
+	RetentionValue       int              `json:"retention_value"`
+	StorageType          string           `json:"storage_type"`
+	Replicas             int              `json:"replicas"`
+	CreatedBy            string           `json:"created_by"`
+	CreatedAt            time.Time        `json:"created_at"`
+	UpdatedAt            time.Time        `json:"updated_at"`
+	IsDeleted            bool             `json:"is_deleted"`
+	Schema               SchemaDetails    `json:"schema"`
+	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
+	IsNative             bool             `json:"is_native"`
+	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
+	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 }
 
 type GetStationResponseSchema struct {

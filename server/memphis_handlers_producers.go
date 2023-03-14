@@ -133,7 +133,11 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
 		return false, false, errors.New("memphis: " + errMsg)
 	}
-	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, connectionIdObj, connection.CreatedByUser)
+	//TODO: replace connection.CreatedByUser to int
+	stationId := 1
+	connId := 1
+	createdBy := 1
+	newProducer, rowsUpdated, err := db.UpsertNewProducerV1(name, stationId, producerType, connId, createdBy)
 	if rowsUpdated == 0 {
 		message := "Producer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)

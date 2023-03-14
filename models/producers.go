@@ -29,6 +29,18 @@ type Producer struct {
 	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
 }
 
+type ProducerPg struct {
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	StationId     int       `json:"station_id"`
+	Type          string    `json:"type"`
+	ConnectionId  int       `json:"connection_id"`
+	CreatedByUser int       `json:"created_by_user"`
+	IsActive      bool      `json:"is_active"`
+	CreationDate  time.Time `json:"creation_date"`
+	IsDeleted     bool      `json:"is_deleted"`
+}
+
 type ExtendedProducer struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id"`
 	Name          string             `json:"name" bson:"name"`
