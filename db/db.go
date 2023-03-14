@@ -980,8 +980,6 @@ func UpsertNewStation(
 	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
 	tieredStorageEnabled bool) (models.StationPg, int64, error) {
-	var update bson.M
-	var emptySchemaDetailsResponse struct{}
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1047,51 +1045,7 @@ func UpsertNewStation(
 		DlsConfiguration:     dlsConfiguration,
 		TieredStorageEnabled: tieredStorageEnabled,
 	}
-	if schemaDetails.SchemaName != "" {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"created_by":               newStation.CreatedBy,
-				"created_at":               newStation.CreatedAt,
-				"updated_at":               newStation.UpdatedAt,
-				"schema":                   newStation.Schema,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"is_native":                newStation.IsNative,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	} else {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"created_by":               newStation.CreatedBy,
-				"created_at":               newStation.CreatedAt,
-				"updated_at":               newStation.UpdatedAt,
-				"schema":                   emptySchemaDetailsResponse,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"is_native":                newStation.IsNative,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	}
-	//TODO: move to postgres syntax
-	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.StationPg{}, 0, err
-	}
-	return newStation, updateResults.MatchedCount, nil
+	return newStation, 1, nil
 }
 
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
