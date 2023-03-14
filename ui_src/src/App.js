@@ -145,6 +145,11 @@ const App = withRouter(() => {
                         />
                         <PrivateRoute
                             exact
+                            path={`${pathDomains.administration}/version_upgrade`}
+                            component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
+                        />
+                        <PrivateRoute
+                            exact
                             path={pathDomains.stations}
                             component={
                                 <AppWrapper
