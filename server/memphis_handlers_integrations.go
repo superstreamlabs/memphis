@@ -12,17 +12,15 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 
 	"memphis/analytics"
+	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const sendNotificationType = "send_notification"
@@ -162,11 +160,8 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	if !ok {
 		return
 	}
-	filter := bson.M{"name": strings.ToLower(body.Name)}
-	var integration models.Integration
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&integration)
-	if err == mongo.ErrNoDocuments {
+	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name))
+	if !exist {
 		c.IndentedJSON(200, nil)
 		return
 	} else if err != nil {
@@ -187,15 +182,8 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	var integrations []models.Integration
-	cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
-	if err == mongo.ErrNoDocuments {
-	} else if err != nil {
-		serv.Errorf("GetAllIntegrations: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if err = cursor.All(context.TODO(), &integrations); err != nil {
+	_, integrations, err := db.GetAllIntegrations()
+	if err != nil {
 		serv.Errorf("GetAllIntegrations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -232,8 +220,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	}
 
 	integrationType := strings.ToLower(body.Name)
-	filter := bson.M{"name": integrationType}
-	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
+	err := db.DeleteIntegration(integrationType)
 	if err != nil {
 		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

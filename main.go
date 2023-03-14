@@ -91,7 +91,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) db.DbInstance {
+func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
@@ -102,14 +102,21 @@ func runMemphis(s *server.Server) db.DbInstance {
 		os.Exit(1)
 	}
 
-	err = analytics.InitializeAnalytics(dbInstance.Client)
+	dbPostgresSql, err := db.InitalizePostgreSQLDbConnection(s)
+	if err != nil {
+		s.Errorf("Failed initializing PostgreSQL db connection: " + err.Error())
+		os.Exit(1)
+	}
+
+
+	err = analytics.InitializeAnalytics()
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers(dbInstance)
 
-	err = server.InitializeIntegrations(dbInstance.Client)
+	err = server.InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
@@ -152,7 +159,7 @@ func runMemphis(s *server.Server) db.DbInstance {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return dbInstance
+	return dbInstance, dbPostgresSql
 }
 
 func main() {
@@ -196,8 +203,9 @@ func main() {
 		defer undo()
 	}
 
-	dbConnection := runMemphis(s)
+	dbConnection, dbPostgresSql := runMemphis(s)
 	defer db.Close(dbConnection, s)
+	defer db.ClosePostgresSql(dbPostgresSql, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
 }

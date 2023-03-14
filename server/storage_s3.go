@@ -13,10 +13,10 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 
+	"memphis/db"
 	"memphis/models"
 	"strconv"
 	"strings"
@@ -27,10 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TieredStorageMsg struct {
@@ -97,14 +93,12 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 	bucketName := keys["bucket_name"]
 
 	if keys["secret_key"] == "" {
-		var integrationFromDb models.Integration
-		filter := bson.M{"name": "s3"}
-		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
+		exist, integrationFromDb, err := db.GetIntegration("s3")
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
-			}
 			return 500, map[string]string{}, err
+		}
+		if !exist {
+			return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
 		}
 		secretKey = integrationFromDb.Keys["secret_key"]
 		keys["secret_key"] = secretKey
@@ -142,22 +136,13 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 }
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var s3Integration models.Integration
-	filter := bson.M{"name": "s3"}
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&s3Integration)
-	if err == mongo.ErrNoDocuments {
-		s3Integration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "s3",
-			Keys:       keys,
-			Properties: properties,
-		}
-		_, insertErr := integrationsCollection.InsertOne(context.TODO(), s3Integration)
+	exist, s3Integration, err := db.GetIntegration("s3")
+	if !exist {
+		integrationRes, insertErr := db.InsertNewIntegration("s3", keys, properties)
 		if insertErr != nil {
-			return s3Integration, insertErr
+			return models.Integration{}, insertErr
 		}
-
+		s3Integration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "s3",
 			Keys:       keys,
@@ -165,37 +150,25 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
-			return s3Integration, err
+			return models.Integration{}, err
 		}
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
-			return s3Integration, err
+			return models.Integration{}, err
 		}
 		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
 	} else if err != nil {
-		return s3Integration, err
+		return models.Integration{}, err
 	}
-	return s3Integration, errors.New("S3 integration already exists")
+	return models.Integration{}, errors.New("S3 integration already exists")
 
 }
 
 func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var s3Integration models.Integration
-	filter := bson.M{"name": "s3"}
-	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
-		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&s3Integration)
-	if err == mongo.ErrNoDocuments {
-		s3Integration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "s3",
-			Keys:       keys,
-			Properties: properties,
-		}
-		integrationsCollection.InsertOne(context.TODO(), s3Integration)
-	} else if err != nil {
-		return s3Integration, err
+	s3Integration, err := db.UpdateIntegration("s3", keys, properties)
+	if err != nil {
+		return models.Integration{}, err
 	}
 
 	integrationToUpdate := models.CreateIntegrationSchema{

@@ -12,10 +12,10 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"memphis/analytics"
+	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 	"strconv"
@@ -23,38 +23,28 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ConfigurationsHandler struct{}
 
 func (s *Server) initializeConfigurations() {
-	var pmRetention models.ConfigurationsIntValue
-	err := configurationsCollection.FindOne(context.TODO(), bson.M{"key": "pm_retention"}).Decode(&pmRetention)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
+	exist, _, pmRetention, err := db.GetConfiguration("pm_retention", false)
+	if err != nil || !exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
-		pmRetention = models.ConfigurationsIntValue{
-			ID:    primitive.NewObjectID(),
-			Key:   "pm_retention",
-			Value: POISON_MSGS_RETENTION_IN_HOURS,
-		}
-		_, err = configurationsCollection.InsertOne(context.TODO(), pmRetention)
+		err = db.InsertConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		POISON_MSGS_RETENTION_IN_HOURS = pmRetention.Value
 	}
-	var logsRetention models.ConfigurationsIntValue
-	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "logs_retention"}).Decode(&logsRetention)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
+	exist, _, logsRetention, err := db.GetConfiguration("logs_retention", false)
+	if err != nil || !exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		LOGS_RETENTION_IN_DAYS, err = strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
@@ -62,12 +52,7 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 			LOGS_RETENTION_IN_DAYS = 30 //default
 		}
-		logsRetention = models.ConfigurationsIntValue{
-			ID:    primitive.NewObjectID(),
-			Key:   "logs_retention",
-			Value: LOGS_RETENTION_IN_DAYS,
-		}
-		_, err = configurationsCollection.InsertOne(context.TODO(), logsRetention)
+		err = db.InsertConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -75,10 +60,9 @@ func (s *Server) initializeConfigurations() {
 		LOGS_RETENTION_IN_DAYS = logsRetention.Value
 	}
 
-	var tsTime models.ConfigurationsIntValue
-	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "tiered_storage_time_sec"}).Decode(&tsTime)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
+	exist, _, tsTime, err := db.GetConfiguration("tiered_storage_time_sec", false)
+	if err != nil || !exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.TIERED_STORAGE_TIME_FRAME_SEC > 3600 || configuration.TIERED_STORAGE_TIME_FRAME_SEC < 5 {
@@ -87,12 +71,7 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			TIERED_STORAGE_TIME_FRAME_SEC = configuration.TIERED_STORAGE_TIME_FRAME_SEC
 		}
-		tsTime = models.ConfigurationsIntValue{
-			ID:    primitive.NewObjectID(),
-			Key:   "tiered_storage_time_sec",
-			Value: TIERED_STORAGE_TIME_FRAME_SEC,
-		}
-		_, err = configurationsCollection.InsertOne(context.TODO(), tsTime)
+		err = db.InsertConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -100,10 +79,9 @@ func (s *Server) initializeConfigurations() {
 		TIERED_STORAGE_TIME_FRAME_SEC = tsTime.Value
 	}
 
-	var brokerHost models.ConfigurationsStringValue
-	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "broker_host"}).Decode(&brokerHost)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
+	exist, brokerHost, _, err := db.GetConfiguration("broker_host", true)
+	if err != nil || !exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
@@ -111,22 +89,16 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			BROKER_HOST = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
-		brokerHost = models.ConfigurationsStringValue{
-			ID:    primitive.NewObjectID(),
-			Key:   "broker_host",
-			Value: BROKER_HOST,
-		}
-		_, err = configurationsCollection.InsertOne(context.TODO(), brokerHost)
+		err = db.InsertConfiguration("broker_host", BROKER_HOST, 0, true)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		BROKER_HOST = brokerHost.Value
 	}
-	var uiHost models.ConfigurationsStringValue
-	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "ui_host"}).Decode(&uiHost)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
+	exist, uiHost, _, err := db.GetConfiguration("ui_host", true)
+	if err != nil || !exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
@@ -134,22 +106,16 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			UI_HOST = "http://memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local:9000"
 		}
-		uiHost = models.ConfigurationsStringValue{
-			ID:    primitive.NewObjectID(),
-			Key:   "ui_host",
-			Value: UI_HOST,
-		}
-		_, err = configurationsCollection.InsertOne(context.TODO(), uiHost)
+		err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		UI_HOST = uiHost.Value
 	}
-	var restGWHost models.ConfigurationsStringValue
-	err = configurationsCollection.FindOne(context.TODO(), bson.M{"key": "rest_gw_host"}).Decode(&restGWHost)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
+	exist, restGWHost, _, err := db.GetConfiguration("rest_gw_host", true)
+	if err != nil || !exist {
+		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
@@ -162,7 +128,7 @@ func (s *Server) initializeConfigurations() {
 			Key:   "rest_gw_host",
 			Value: REST_GW_HOST,
 		}
-		_, err = configurationsCollection.InsertOne(context.TODO(), restGWHost)
+		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST, 0, true)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -259,29 +225,12 @@ func changePMRetention(pmRetention int) error {
 	if err != nil {
 		return err
 	}
-	filter := bson.M{"key": "pm_retention"}
-	update := bson.M{
-		"$set": bson.M{
-			"value": POISON_MSGS_RETENTION_IN_HOURS,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	err = db.UpsertConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
 	if err != nil {
 		return err
 	}
-	var stations []models.Station
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	})
+	stations, err := db.GetActiveStations()
 	if err != nil {
-		return err
-	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return err
 	}
 	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
@@ -314,14 +263,7 @@ func changePMRetention(pmRetention int) error {
 
 func changeLogsRetention(logsRetention int) error {
 	LOGS_RETENTION_IN_DAYS = logsRetention
-	filter := bson.M{"key": "logs_retention"}
-	update := bson.M{
-		"$set": bson.M{
-			"value": LOGS_RETENTION_IN_DAYS,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	err := db.UpsertConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
 	if err != nil {
 		return err
 	}
@@ -360,14 +302,7 @@ func changeTSTime(tsTime int) error {
 	if err != nil {
 		return err
 	}
-	filter := bson.M{"key": "tiered_storage_time_sec"}
-	update := bson.M{
-		"$set": bson.M{
-			"value": TIERED_STORAGE_TIME_FRAME_SEC,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	err = db.UpsertConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
 	if err != nil {
 		return err
 	}
@@ -393,14 +328,7 @@ func editClusterCompHost(key string, host string) error {
 	if err != nil {
 		return err
 	}
-	filter := bson.M{"key": key}
-	update := bson.M{
-		"$set": bson.M{
-			"value": host,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err = configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	err = db.UpsertConfiguration(key, host, 0, true)
 	if err != nil {
 		return err
 	}

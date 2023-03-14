@@ -22,6 +22,7 @@ import (
 	"math"
 	"memphis/analytics"
 	"memphis/conf"
+	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
@@ -37,8 +38,6 @@ import (
 	"github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1344,7 +1343,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	auditLogsHandler := AuditLogsHandler{}
 	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
 	tagsHandler := TagsHandler{S: mh.S}
-	schemasHandler := SchemasHandler{S: mh.S}
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1357,7 +1355,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1446,7 +1444,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 	}
 
-	tags, err := tagsHandler.GetTagsByStation(station.ID)
+	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1473,10 +1471,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	// Check when the schema object in station is not empty, not optional for non native stations
 	if station.Schema != emptySchemaDetailsObj {
-		var schema models.Schema
+
 		var schemaDetails models.StationOverviewSchemaDetails
-		err = schemasCollection.FindOne(context.TODO(), bson.M{"name": station.Schema.SchemaName}).Decode(&schema)
-		if err == mongo.ErrNoDocuments {
+		exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+		if !exist {
 			schemaDetails = models.StationOverviewSchemaDetails{}
 		} else {
 			if err != nil {
@@ -1485,7 +1483,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 
-			schemaVersion, err := schemasHandler.GetSchemaVersion(station.Schema.VersionNumber, schema.ID)
+			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.Schema.VersionNumber, schema.ID)
 			if err != nil {
 				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1493,10 +1491,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			}
 			updatesAvailable := !schemaVersion.Active
 			schemaDetails = models.StationOverviewSchemaDetails{
-				SchemaName: schema.Name,
-				VersionNumber: station.Schema.VersionNumber,
+				SchemaName:       schema.Name,
+				VersionNumber:    station.Schema.VersionNumber,
 				UpdatesAvailable: updatesAvailable,
-				SchemaType: schema.Type,
+				SchemaType:       schema.Type,
 			}
 		}
 		response = gin.H{
