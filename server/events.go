@@ -26,7 +26,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis-broker/server/pse"
+	"memphis/server/pse"
 
 	"github.com/klauspost/compress/s2"
 	"github.com/nats-io/jwt/v2"

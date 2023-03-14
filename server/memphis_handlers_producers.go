@@ -5,28 +5,25 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"memphis-broker/analytics"
-	"memphis-broker/models"
-	"memphis-broker/utils"
+	"memphis/analytics"
+	"memphis/db"
+	"memphis/models"
+	"memphis/utils"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -67,7 +64,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": Connection ID " + pConnectionId + " is not valid")
 		return false, false, err
 	}
-	exist, connection, err := IsConnectionExist(connectionIdObj)
+	exist, connection, err := db.GetConnectionByID(connectionIdObj)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -83,7 +80,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, errors.New("memphis: " + errMsg)
 	}
 
-	exist, station, err := IsStationExist(pStationName)
+	exist, station, err := db.GetStationByName(pStationName.Ext())
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -126,7 +123,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
-	exist, _, err = IsProducerExist(name, station.ID)
+	exist, _, err = db.GetActiveProducerByStationID(name, station.ID)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -136,37 +133,8 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
 		return false, false, errors.New("memphis: " + errMsg)
 	}
-
-	newProducer := models.Producer{
-		ID:            primitive.NewObjectID(),
-		Name:          name,
-		StationId:     station.ID,
-		Type:          producerType,
-		ConnectionId:  connectionIdObj,
-		CreatedByUser: connection.CreatedByUser,
-		IsActive:      true,
-		CreationDate:  time.Now(),
-		IsDeleted:     false,
-	}
-
-	filter := bson.M{"name": newProducer.Name, "station_id": station.ID, "is_active": true, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":             newProducer.ID,
-			"type":            newProducer.Type,
-			"connection_id":   newProducer.ConnectionId,
-			"created_by_user": newProducer.CreatedByUser,
-			"creation_date":   newProducer.CreationDate,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
-	}
-
-	if updateResults.MatchedCount == 0 {
+	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, connectionIdObj, connection.CreatedByUser)
+	if rowsUpdated == 0 {
 		message := "Producer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		var auditLogs []interface{}
@@ -259,23 +227,8 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
-	var producers []models.ExtendedProducer
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	producers, err := db.GetAllProducers()
 	if err != nil {
-		serv.Errorf("GetAllProducers: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err = cursor.All(context.TODO(), &producers); err != nil {
 		serv.Errorf("GetAllProducers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -289,23 +242,8 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 }
 
 func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
-	var producers []models.ExtendedProducer
-
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	producers, err := db.GetProducersByStationID(station.ID)
 	if err != nil {
-		return producers, producers, producers, err
-	}
-
-	if err = cursor.All(context.TODO(), &producers); err != nil {
 		return producers, producers, producers, err
 	}
 
@@ -361,7 +299,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	}
 
 	stationName, err := StationNameFromStr(body.StationName)
-	exist, station, err := IsStationExist(stationName)
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -372,23 +310,8 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 
-	var producers []models.ExtendedProducer
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", station.ID}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	producers, err := db.GetProducersByStationID(station.ID)
 	if err != nil {
-		serv.Errorf("GetAllProducersByStation: Station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if err = cursor.All(context.TODO(), &producers); err != nil {
 		serv.Errorf("GetAllProducersByStation: Station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -417,20 +340,15 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	name := strings.ToLower(dpr.ProducerName)
-	_, station, err := IsStationExist(stationName)
+	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + "at station " + dpr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
-	var producer models.Producer
-	err = producersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": station.ID, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&producer)
-
-	if err == mongo.ErrNoDocuments {
+	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
+	if !exist {
 		errMsg := "Producer " + name + " at station " + dpr.StationName + " does not exist"
 		serv.Warnf("destroyProducerDirect: " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
@@ -472,67 +390,8 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	respondWithErr(s, reply, nil)
 }
 
-func (ph ProducersHandler) KillProducers(connectionId primitive.ObjectID) error {
-	var producers []models.Producer
-	var station models.Station
-
-	cursor, err := producersCollection.Find(context.TODO(), bson.M{"connection_id": connectionId, "is_active": true})
-	if err != nil {
-		serv.Errorf("KillProducers: " + err.Error())
-	}
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		serv.Errorf("KillProducers: " + err.Error())
-	}
-
-	if len(producers) > 0 {
-		err = stationsCollection.FindOne(context.TODO(), bson.M{"_id": producers[0].StationId}).Decode(&station)
-		if err != nil {
-			serv.Errorf("KillProducers: " + "Producer " + producers[0].Name + ": " + err.Error())
-		}
-
-		_, err = producersCollection.UpdateMany(context.TODO(),
-			bson.M{"connection_id": connectionId},
-			bson.M{"$set": bson.M{"is_active": false}},
-		)
-		if err != nil {
-			serv.Errorf("KillProducers: At station " + station.Name + ": " + err.Error())
-			return err
-		}
-
-		userType := "application"
-		if producers[0].CreatedByUser == "root" {
-			userType = "root"
-		}
-
-		var message string
-		var auditLogs []interface{}
-		var newAuditLog models.AuditLog
-		for _, producer := range producers {
-			message = "Producer " + producer.Name + " has been disconnected by user " + producers[0].CreatedByUser
-			newAuditLog = models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   station.Name,
-				Message:       message,
-				CreatedByUser: producers[0].CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      userType,
-			}
-			auditLogs = append(auditLogs, newAuditLog)
-		}
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("KillProducers: At station " + station.Name + ": " + err.Error())
-		}
-	}
-
-	return nil
-}
-
 func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId, "is_deleted": false},
-		bson.M{"$set": bson.M{"is_active": true}},
-	)
+	err := db.UpdateProducersConnection(connectionId, true)
 	if err != nil {
 		serv.Errorf("ReliveProducers: " + err.Error())
 		return err

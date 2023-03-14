@@ -5,27 +5,23 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis-broker/models"
+	"memphis/db"
+	"memphis/models"
 	"sync"
 
 	"strconv"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
@@ -83,9 +79,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				if UI_HOST == "" {
 					UI_HOST = integrationUpdate.UIUrl
 				}
-				configurationsCollection.UpdateOne(context.TODO(), bson.M{"key": "ui_host"},
-					bson.M{"$set": bson.M{"value": UI_HOST}})
-
+				db.UpsertConfiguration("ui_host", UI_HOST, 0, true)
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
@@ -104,7 +98,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 func (s *Server) ListenForConfigurationsUpdateEvents() error {
 	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var configurationsUpdate models.ConfigurationsUpdate
+			var configurationsUpdate models.SdkClientsUpdates
 			err := json.Unmarshal(msg, &configurationsUpdate)
 			if err != nil {
 				s.Errorf("ListenForConfigurationsUpdateEvents: " + err.Error())
@@ -327,25 +321,17 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
 
-	filter := bson.M{"key": "ui_host"}
-	var configurationsStringValue models.ConfigurationsStringValue
-	err = configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
-	if err == mongo.ErrNoDocuments {
+	exist, ui_host, _, err := db.GetConfiguration("ui_host", true)
+	if !exist {
 		UI_HOST = ""
-		uiUrlKey := models.SystemKey{
-			ID:    primitive.NewObjectID(),
-			Key:   "ui_host",
-			Value: UI_HOST,
-		}
-
-		_, err = configurationsCollection.InsertOne(context.TODO(), uiUrlKey)
+		err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	} else {
-		UI_HOST = configurationsStringValue.Value
+		UI_HOST = ui_host.Value
 	}
 
 	err = s.InitializeThroughputSampling()

@@ -30,7 +30,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis-broker/server/sysmem"
+	"memphis/server/sysmem"
 
 	"github.com/minio/highwayhash"
 	"github.com/nats-io/nkeys"

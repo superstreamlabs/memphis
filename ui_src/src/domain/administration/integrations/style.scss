@@ -3,15 +3,33 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 40px 40px 0px 40px;
     }
     .categories-list{
         display: flex;
         gap: 5px;
+        padding: 0 40px;
         .tag-wrapper{
             cursor: pointer;
         }
     }
+    .loading{
+        .loader-container {
+            height: calc(95vh - 174px);
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            .memphis-gif{
+                top: unset !important;
+                transform: unset !important;
+                left: unset !important;
+            }
+        }
+    }
     .integration-list{
+        padding: 0 40px;
         height: calc(95vh - 174px);
         width: 100%;
         position: relative;
@@ -20,7 +38,6 @@
         margin-right: 1vw;
         margin-top: 20px;
         gap: 20px;
-        padding: 10px;
         align-content: flex-start;
         flex-wrap: wrap;
         .cloud-wrapper{

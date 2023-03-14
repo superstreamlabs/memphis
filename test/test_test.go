@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 
 	"golang.org/x/time/rate"
 )

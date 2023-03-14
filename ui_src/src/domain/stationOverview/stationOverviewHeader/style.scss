@@ -88,7 +88,11 @@
                 }
                 .storage-section{
                     display: flex;
-                    gap: 20px;
+                    gap: 15px;
+                    span{
+                        position: relative;
+                        top: 1px;
+                    }
                 }
             }
 

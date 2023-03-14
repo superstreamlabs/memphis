@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -13,23 +13,20 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 
-	"memphis-broker/models"
+	"memphis/db"
+	"memphis/models"
 	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TieredStorageMsg struct {
@@ -96,14 +93,12 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 	bucketName := keys["bucket_name"]
 
 	if keys["secret_key"] == "" {
-		var integrationFromDb models.Integration
-		filter := bson.M{"name": "s3"}
-		err := integrationsCollection.FindOne(context.TODO(), filter).Decode(&integrationFromDb)
+		exist, integrationFromDb, err := db.GetIntegration("s3")
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
-			}
 			return 500, map[string]string{}, err
+		}
+		if !exist {
+			return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
 		}
 		secretKey = integrationFromDb.Keys["secret_key"]
 		keys["secret_key"] = secretKey
@@ -141,22 +136,13 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 }
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var s3Integration models.Integration
-	filter := bson.M{"name": "s3"}
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&s3Integration)
-	if err == mongo.ErrNoDocuments {
-		s3Integration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "s3",
-			Keys:       keys,
-			Properties: properties,
-		}
-		_, insertErr := integrationsCollection.InsertOne(context.TODO(), s3Integration)
+	exist, s3Integration, err := db.GetIntegration("s3")
+	if !exist {
+		integrationRes, insertErr := db.InsertNewIntegration("s3", keys, properties)
 		if insertErr != nil {
-			return s3Integration, insertErr
+			return models.Integration{}, insertErr
 		}
-
+		s3Integration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "s3",
 			Keys:       keys,
@@ -164,37 +150,25 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
-			return s3Integration, err
+			return models.Integration{}, err
 		}
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
-			return s3Integration, err
+			return models.Integration{}, err
 		}
 		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
 	} else if err != nil {
-		return s3Integration, err
+		return models.Integration{}, err
 	}
-	return s3Integration, errors.New("S3 integration already exists")
+	return models.Integration{}, errors.New("S3 integration already exists")
 
 }
 
 func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var s3Integration models.Integration
-	filter := bson.M{"name": "s3"}
-	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
-		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&s3Integration)
-	if err == mongo.ErrNoDocuments {
-		s3Integration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       "s3",
-			Keys:       keys,
-			Properties: properties,
-		}
-		integrationsCollection.InsertOne(context.TODO(), s3Integration)
-	} else if err != nil {
-		return s3Integration, err
+	s3Integration, err := db.UpdateIntegration("s3", keys, properties)
+	if err != nil {
+		return models.Integration{}, err
 	}
 
 	integrationToUpdate := models.CreateIntegrationSchema{
@@ -231,13 +205,18 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 			err = errors.New("Bucket name is not exists")
 			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "send request failed") {
-			err = errors.New("Invalid region")
+			err = errors.New("Invalid region name")
 			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "could not find region configuration") {
-			err = errors.New("Invalid region: region is empty")
+			awsErr := err.(awserr.Error)
+			err = errors.New(awsErr.Message() + " : region name is empty")
 			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "validation error(s) found") || strings.Contains(err.Error(), "BadRequest: Bad Request") {
 			err = errors.New("Invalid bucket name")
+			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "incorrect region") {
+			awsErr := err.(awserr.Error)
+			err = errors.New(awsErr.Message())
 			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500

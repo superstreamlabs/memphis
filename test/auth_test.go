@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 )
 
 func doAuthConnect(t tLogger, c net.Conn, token, user, pass string) {

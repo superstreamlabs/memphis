@@ -33,7 +33,7 @@ import (
 	jwt "github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 
-	"memphis-broker/internal/testhelper"
+	"memphis/internal/testhelper"
 )
 
 type captureLeafNodeRandomIPLogger struct {

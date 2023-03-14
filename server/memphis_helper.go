@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis-broker/models"
+	"memphis/models"
 	"net/textproto"
 	"sort"
 	"strconv"
@@ -59,6 +59,8 @@ const (
 	kindCreateStream   = "$memphis_create_stream"
 	kindUpdateStream   = "$memphis_update_stream"
 	kindDeleteStream   = "$memphis_delete_stream"
+	kindDeleteMessage  = "$memphis_delete_message"
+	kindPurgeStream    = "$memphis_purge_stream"
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
 	kindDeleteMsg      = "$memphis_delete_msg"
@@ -133,42 +135,42 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(sn StationName, station models.Station) error {
+func (s *Server) CreateStream(sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool) error {
 	var maxMsgs int
-	if station.RetentionType == "messages" && station.RetentionValue > 0 {
-		maxMsgs = station.RetentionValue
+	if retentionType == "messages" && retentionValue > 0 {
+		maxMsgs = retentionValue
 	} else {
 		maxMsgs = -1
 	}
 
 	var maxBytes int
-	if station.RetentionType == "bytes" && station.RetentionValue > 0 {
-		maxBytes = station.RetentionValue
+	if retentionType == "bytes" && retentionValue > 0 {
+		maxBytes = retentionValue
 	} else {
 		maxBytes = -1
 	}
 
 	var maxAge time.Duration
-	if station.RetentionType == "message_age_sec" && station.RetentionValue > 0 {
-		maxAge = time.Duration(station.RetentionValue) * time.Second
+	if retentionType == "message_age_sec" && retentionValue > 0 {
+		maxAge = time.Duration(retentionValue) * time.Second
 	} else {
 		maxAge = time.Duration(0)
 	}
 
 	var storage StorageType
-	if station.StorageType == "memory" {
+	if storageType == "memory" {
 		storage = MemoryStorage
 	} else {
 		storage = FileStorage
 	}
 
 	var idempotencyWindow time.Duration
-	if station.IdempotencyWindow <= 0 {
+	if idempotencyW <= 0 {
 		idempotencyWindow = 2 * time.Minute // default
-	} else if station.IdempotencyWindow < 100 {
+	} else if idempotencyW < 100 {
 		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
 	} else {
-		idempotencyWindow = time.Duration(station.IdempotencyWindow) * time.Millisecond
+		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
 	}
 
 	return s.
@@ -184,18 +186,18 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			MaxMsgsPer:           -1,
 			MaxMsgSize:           int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:              storage,
-			Replicas:             station.Replicas,
+			Replicas:             replicas,
 			NoAck:                false,
 			Duplicates:           idempotencyWindow,
-			TieredStorageEnabled: station.TieredStorageEnabled,
+			TieredStorageEnabled: tieredStorageEnabled,
 		})
 }
 
-func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
+func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
 	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
 
 	var storage StorageType
-	if station.StorageType == "memory" {
+	if storageType == "memory" {
 		storage = MemoryStorage
 	} else {
 		storage = FileStorage
@@ -218,7 +220,7 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 			MaxMsgsPer:   -1,
 			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:      storage,
-			Replicas:     station.Replicas,
+			Replicas:     replicas,
 			NoAck:        false,
 			Duplicates:   idempotencyWindow,
 		})
@@ -267,12 +269,20 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	if isCluster {
 		replicas = 3
 	}
+
+	v, err := s.Varz(nil)
+	if err != nil {
+		successCh <- err
+		return
+	}
+
 	// system logs stream
-	err := s.memphisAddStream(&StreamConfig{
+	err = s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
 		MaxAge:       retentionDur,
+		MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
@@ -295,7 +305,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		Name:         tieredStorageStream,
 		Subjects:     []string{tieredStorageStream + ".>"},
 		Retention:    WorkQueuePolicy,
-		MaxAge:       retentionDur,
+		MaxAge:       time.Hour * 24,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
@@ -557,6 +567,32 @@ func (s *Server) RemoveStream(streamName string) error {
 
 	var resp JSApiStreamDeleteResponse
 	err := jsApiRequest(s, requestSubject, kindDeleteStream, []byte(_EMPTY_), &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) PurgeStream(streamName string) error {
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
+
+	var resp JSApiStreamPurgeResponse
+	err := jsApiRequest(s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
+	if err != nil {
+		return err
+	}
+
+	return resp.ToError()
+}
+
+func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
+
+	var resp JSApiMsgDeleteResponse
+	req := JSApiMsgDeleteRequest{Seq: msgSeq}
+	reqj, _ := json.Marshal(req)
+	err := jsApiRequest(s, requestSubject, kindDeleteMessage, reqj, &resp)
 	if err != nil {
 		return err
 	}

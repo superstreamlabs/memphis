@@ -40,7 +40,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis-broker/logger"
+	"memphis/logger"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"

@@ -40,7 +40,7 @@ var (
 
 const (
 	// VERSION is the current version for the memphis.
-	VERSION = "0.4.5-beta"
+	VERSION = "1.0.0"
 
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
 	COMP_WITH_NATS_VERSION = "2.9.0"

@@ -27,7 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis-broker/internal/ldap"
+	"memphis/internal/ldap"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"

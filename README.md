@@ -1,18 +1,21 @@
 <div align="center">
   
-  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/master/logo-white.png?raw=true#gh-dark-mode-only)
+  ![GA Banner](https://user-images.githubusercontent.com/70286779/223524472-80e568ba-e1d6-4682-a8ab-1beb6dc2bf10.png#gh-dark-mode-only)
+<!--   ![Memphis light logo](https://github.com/memphisdev/memphis/blob/master/logo-white.png?raw=true#gh-dark-mode-only) -->
   
 </div>
 
 <div align="center">
   
-  ![Memphis light logo](https://github.com/memphisdev/memphis-broker/blob/master/logo-black.png?raw=true#gh-light-mode-only)
+<!--   ![Memphis light logo](https://github.com/memphisdev/memphis/blob/master/logo-black.png?raw=true#gh-light-mode-only) -->
+  ![Banner_2](https://user-images.githubusercontent.com/70286779/223525250-2b604b44-f831-4254-a29d-54f735f14e3c.png#gh-light-mode-only)
+
   
 </div>
 
 <div align="center">
 <h4>Simple as RabbitMQ, robust as Apache Kafka, and perfect for busy developers.</h4>
-<img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br>
+<!-- <img width="750" alt="Memphis UI" src="https://user-images.githubusercontent.com/70286779/204081372-186aae7b-a387-4253-83d1-b07dff69b3d0.png"><br> -->
 
   
   <a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
@@ -31,11 +34,11 @@
 
 <p align="center">
 <a href="https://discord.gg/WZpysvAeTf"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
-<a href="https://github.com/memphisdev/memphis-broker/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis-broker?color=6557ff"></a> 
+<a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
   <img src="https://img.shields.io/npm/dw/memphis-dev?color=ffc633&label=installations">
-<a href="https://github.com/memphisdev/memphis-broker/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> 
-<a href="https://docs.memphis.dev/memphis/release-notes/releases/v0.4.2-beta"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis-broker?color=61dfc6"></a>
-<img src="https://img.shields.io/github/last-commit/memphisdev/memphis-broker?color=61dfc6&label=last%20commit">
+<a href="https://github.com/memphisdev/memphis/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Code%20of%20Conduct-v1.0-ff69b4.svg?color=ffc633" alt="Code Of Conduct"></a> 
+<a href="https://docs.memphis.dev/memphis/release-notes/releases/v0.4.2-beta"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/memphisdev/memphis?color=61dfc6"></a>
+<img src="https://img.shields.io/github/last-commit/memphisdev/memphis?color=61dfc6&label=last%20commit">
 </p>
 
 **[Memphis](https://memphis.dev)** is a next-generation alternative to traditional message brokers.<br><br>
@@ -111,7 +114,7 @@ docker compose -f docker-compose.yml -p memphis up
 ```shell
 To access Memphis using UI/CLI/SDK from localhost, run the below commands:
 
-  - kubectl port-forward service/memphis-cluster 6666:6666 9000:9000 7770:7770 --namespace memphis > /dev/null &
+  - kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis > /dev/null &
 
 For interacting with the broker via HTTP:
 
@@ -152,12 +155,12 @@ We welcome you to our discord server with your questions, doubts and feedback.
 
 ### Create a bug 🐞 report
 
-If you see an error message or run into an issue, please [create bug report](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20bug&template=bug_report.md&title=). This effort is valued and it will help all Memphis{dev} users.
+If you see an error message or run into an issue, please [create bug report](https://github.com/memphisdev/memphis/issues/new?assignees=&labels=type%3A%20bug&template=bug_report.md&title=). This effort is valued and it will help all Memphis{dev} users.
 
 
 ### Submit a feature 💡 request 
 
-If you have an idea, or you think that we're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis-broker/issues/new?assignees=&labels=type%3A%20feature%20request).
+If you have an idea, or you think that we're missing a capability that would make development easier and more robust, please [Submit feature request](https://github.com/memphisdev/memphis/issues/new?assignees=&labels=type%3A%20feature%20request).
 
 If an issue❗with similar feature request already exists, don't forget to leave a "+1".
 If you add some more information such as your thoughts and vision about the feature, your comments will be embraced warmly :)
@@ -173,8 +176,8 @@ Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Co
 ## Contributors ✨
 
 Thanks goes to these wonderful people ❤:<br><br>
- <a href = "https://github.com/memphisdev/memphis-broker/graphs/contributors">
-   <img src = "https://contrib.rocks/image?repo=memphisdev/memphis-broker"/>
+ <a href = "https://github.com/memphisdev/memphis/graphs/contributors">
+   <img src = "https://contrib.rocks/image?repo=memphisdev/memphis"/>
  </a>
 
 ## License 📃

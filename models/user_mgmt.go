@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -21,8 +21,6 @@ type User struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Username        string             `json:"username" bson:"username"`
 	Password        string             `json:"password" bson:"password"`
-	HubUsername     string             `json:"hub_username" bson:"hub_username"`
-	HubPassword     string             `json:"hub_password" bson:"hub_password"`
 	UserType        string             `json:"user_type" bson:"user_type"`
 	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
 	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
@@ -41,8 +39,6 @@ type Image struct {
 type AddUserSchema struct {
 	Username     string `json:"username" binding:"required,min=1,max=60"`
 	Password     string `json:"password"`
-	HubUsername  string `json:"hub_username"`
-	HubPassword  string `json:"hub_password"`
 	UserType     string `json:"user_type" binding:"required"`
 	AvatarId     int    `json:"avatar_id"`
 	FullName     string `json:"full_name"`
@@ -61,11 +57,6 @@ type LoginSchema struct {
 
 type RemoveUserSchema struct {
 	Username string `json:"username" binding:"required"`
-}
-
-type EditHubCredsSchema struct {
-	HubUsername string `json:"hub_username" binding:"required"`
-	HubPassword string `json:"hub_password" binding:"required"`
 }
 
 type EditAvatarSchema struct {
@@ -87,4 +78,19 @@ type FilteredUser struct {
 type ChangePasswordSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type FilteredGenericUser struct {
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
+	Username        string             `json:"username" bson:"username"`
+	UserType        string             `json:"user_type" bson:"user_type"`
+	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
+	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
+	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
+}
+
+type FilteredApplicationUser struct {
+	ID           primitive.ObjectID `json:"id" bson:"_id"`
+	Username     string             `json:"username" bson:"username"`
+	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
 }

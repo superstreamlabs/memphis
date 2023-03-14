@@ -5,7 +5,7 @@
 //
 // Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
 //
-// https://github.com/memphisdev/memphis-broker/blob/master/LICENSE
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
@@ -39,18 +39,6 @@ const StationOverview = () => {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
 
-    const getStaionMetaData = async () => {
-        try {
-            let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
-            data.creation_date = await parsingDate(data.creation_date);
-            stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
-        } catch (error) {
-            if (error.status === 404) {
-                history.push(pathDomains.stations);
-            }
-        }
-    };
-
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
         data.messages?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
@@ -63,11 +51,24 @@ const StationOverview = () => {
         return data;
     };
 
+    const getStaionMetaData = async () => {
+        try {
+            let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
+            data.creation_date = await parsingDate(data.creation_date);
+            stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
+        } catch (error) {
+            if (error.status === 404) {
+                history.push(pathDomains.stations);
+            }
+        }
+    };
+
     const getStationDetails = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}`);
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
             setisLoading(false);
         } catch (error) {
             setisLoading(false);

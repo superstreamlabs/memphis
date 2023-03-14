@@ -33,7 +33,12 @@
                 "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
-                "EXPORTER": "false"
+                "EXPORTER": "false",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         },
         {
@@ -68,7 +73,7 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "broker-0"
+                "SERVER_NAME": "memphis-0"
             }
         },
         {
@@ -103,7 +108,7 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "broker-1"
+                "SERVER_NAME": "memphis-1"
             }
         },
         {
@@ -138,7 +143,7 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "broker-2"
+                "SERVER_NAME": "memphis-2"
             }
         }
     ]

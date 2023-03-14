@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis-broker/server"
+	"memphis/server"
 )
 
 const PERF_PORT = 8422
