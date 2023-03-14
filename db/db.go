@@ -51,6 +51,8 @@ var sandboxUsersCollection *mongo.Collection
 var integrationsCollection *mongo.Collection
 var configurationsCollection *mongo.Collection
 
+var postgresConnection DbPostgreSQLInstance
+
 const (
 	dbOperationTimeout = 20
 )
@@ -276,42 +278,7 @@ func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
 	return nil
 }
 
-// System Keys Functions
-func GetSystemKey(key string) (bool, models.SystemKey, error) {
-	filter := bson.M{"key": key}
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err == mongo.ErrNoDocuments {
-		return false, models.SystemKey{}, nil
-	}
-	if err != nil {
-		return true, models.SystemKey{}, err
-	}
-	return true, systemKey, nil
-}
-
-func InsertSystemKey(key string, value string) error {
-	systemKey := models.SystemKey{
-		ID:    primitive.NewObjectID(),
-		Key:   key,
-		Value: value,
-	}
-	_, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
-	return err
-}
-
-func EditSystemKey(key string, value string) error {
-	_, err := systemKeysCollection.UpdateOne(context.TODO(),
-		bson.M{"key": "analytics"},
-		bson.M{"$set": bson.M{"value": value}},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func AddInexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
+func AddIndexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	addIndexQuery := "CREATE INDEX" + pgx.Identifier{indexName}.Sanitize() + "ON" + pgx.Identifier{tableName}.Sanitize() + "(" + pgx.Identifier{field}.Sanitize() + ")"
@@ -676,7 +643,43 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 		return DbPostgreSQLInstance{}, err
 	}
 
-	return DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}, nil
+	postgresConnection = DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}
+	return postgresConnection, nil
+}
+
+// System Keys Functions
+func GetSystemKey(key string) (bool, models.SystemKey, error) {
+	filter := bson.M{"key": key}
+	var systemKey models.SystemKey
+	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	if err == mongo.ErrNoDocuments {
+		return false, models.SystemKey{}, nil
+	}
+	if err != nil {
+		return true, models.SystemKey{}, err
+	}
+	return true, systemKey, nil
+}
+
+func InsertSystemKey(key string, value string) error {
+	systemKey := models.SystemKey{
+		ID:    primitive.NewObjectID(),
+		Key:   key,
+		Value: value,
+	}
+	_, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
+	return err
+}
+
+func EditSystemKey(key string, value string) error {
+	_, err := systemKeysCollection.UpdateOne(context.TODO(),
+		bson.M{"key": "analytics"},
+		bson.M{"$set": bson.M{"value": value}},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Configuration Functions
