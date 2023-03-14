@@ -66,9 +66,9 @@ type StationPg struct {
 	RetentionValue       int              `json:"retention_value" bson:"retention_value"`
 	StorageType          string           `json:"storage_type" bson:"storage_type"`
 	Replicas             int              `json:"replicas" bson:"replicas"`
-	CreatedByUser        string           `json:"created_by_user" bson:"created_by_user"`
-	CreationDate         time.Time        `json:"creation_date" bson:"creation_date"`
-	LastUpdate           time.Time        `json:"last_update" bson:"last_update"`
+	CreatedBy            string           `json:"created_by" bson:"created_by"`
+	CreatedAt            time.Time        `json:"created_at" bson:"created_at"`
+	UpdatedAt            time.Time        `json:"updated_at" bson:"updated_at"`
 	IsDeleted            bool             `json:"is_deleted" bson:"is_deleted"`
 	Schema               SchemaDetails    `json:"schema" bson:"schema"`
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`

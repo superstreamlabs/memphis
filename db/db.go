@@ -967,14 +967,17 @@ func UpsertNewStationV0(stationName string, username string, retentionType strin
 	return newStation, updateResults.MatchedCount, nil
 }
 
-func UpsertNewStation(stationName string,
+// TODO: username should be int
+func UpsertNewStation(
+	stationName string,
 	username string,
 	retentionType string,
 	retentionValue int,
 	storageType string,
 	replicas int,
 	schemaDetails models.SchemaDetails,
-	idempotencyWindow int64, isNative bool,
+	idempotencyWindow int64,
+	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
 	tieredStorageEnabled bool) (models.StationPg, int64, error) {
 	var update bson.M
@@ -1006,9 +1009,11 @@ func UpsertNewStation(stationName string,
 		dls_config, 
 		schema_name, 
 		schema_version_number) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id `
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
+	ON CONFLICT(name, is_deleted) WHERE is_deleted = false DO UPDATE SET dls_config = EXCLUDED.dls_config ,schema_name = EXCLUDED.schema_name, schema_version_number = EXCLUDED.schema_version_number
+	RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new station name", query)
+	_, err = conn.Conn().Prepare(ctx, "upsert new station", query)
 	if err != nil {
 		return models.StationPg{}, 0, err
 	}
@@ -1017,9 +1022,10 @@ func UpsertNewStation(stationName string,
 	createAt := time.Now()
 	updatedAt := time.Now()
 
-	res := conn.Conn().QueryRow(ctx, "upsert new station name",
-		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt,
-		updatedAt, false, idempotencyWindow, isNative, tieredStorageEnabled, dlsConfiguration, schemaDetails.SchemaName, schemaDetails.VersionNumber).Scan(&newStation.ID)
+	//TODO: change the 1 to username
+	res := conn.Conn().QueryRow(ctx, "upsert new station",
+		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt, updatedAt,
+		false, idempotencyWindow, isNative, tieredStorageEnabled, dlsConfiguration, schemaDetails.SchemaName, schemaDetails.VersionNumber).Scan(&newStation.ID)
 	if res != nil {
 		return models.StationPg{}, 0, err
 	}
@@ -1027,14 +1033,14 @@ func UpsertNewStation(stationName string,
 	newStation = models.StationPg{
 		ID:                   newStation.ID,
 		Name:                 stationName,
-		CreatedByUser:        username,
-		CreationDate:         time.Now(),
+		CreatedBy:            username,
+		CreatedAt:            time.Now(),
 		IsDeleted:            false,
 		RetentionType:        retentionType,
 		RetentionValue:       retentionValue,
 		StorageType:          storageType,
 		Replicas:             replicas,
-		LastUpdate:           time.Now(),
+		UpdatedAt:            time.Now(),
 		Schema:               schemaDetails,
 		IdempotencyWindow:    idempotencyWindow,
 		IsNative:             isNative,
@@ -1049,9 +1055,9 @@ func UpsertNewStation(stationName string,
 				"retention_value":          newStation.RetentionValue,
 				"storage_type":             newStation.StorageType,
 				"replicas":                 newStation.Replicas,
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
+				"created_by":               newStation.CreatedBy,
+				"created_at":               newStation.CreatedAt,
+				"updated_at":               newStation.UpdatedAt,
 				"schema":                   newStation.Schema,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"is_native":                newStation.IsNative,
@@ -1067,9 +1073,9 @@ func UpsertNewStation(stationName string,
 				"retention_value":          newStation.RetentionValue,
 				"storage_type":             newStation.StorageType,
 				"replicas":                 newStation.Replicas,
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
+				"created_by":               newStation.CreatedBy,
+				"created_at":               newStation.CreatedAt,
+				"updated_at":               newStation.UpdatedAt,
 				"schema":                   emptySchemaDetailsResponse,
 				"idempotency_window_in_ms": newStation.IdempotencyWindow,
 				"dls_configuration":        newStation.DlsConfiguration,
