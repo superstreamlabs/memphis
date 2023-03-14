@@ -756,27 +756,27 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, _, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if rowsUpdated > 0 {
-		errMsg := "Station " + newStation.Name + " already exists"
-		serv.Warnf("CreateStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+	// if rowsUpdated > 0 {
+	// 	errMsg := "Station " + newStation.Name + " already exists"
+	// 	serv.Warnf("CreateStation: " + errMsg)
+	// 	c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+	// 	return
+	// }
 
-	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
-		if err != nil {
-			serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
+	// if len(body.Tags) > 0 {
+	// 	err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+	// 	if err != nil {
+	// 		serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
+	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	// 		return
+	// 	}
+	// }
 
 	message := "Station " + stationName.Ext() + " has been created by " + user.Username
 	serv.Noticef(message)

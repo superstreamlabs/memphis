@@ -30,6 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	// "github.com/jackc/pgx/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -409,6 +410,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		retention_type enum_retention_type NOT NULL DEFAULT 'message_age_sec',
+		retention_value SERIAL NOT NULL,
 		storage_type enum_storage_type NOT NULL DEFAULT 'file',
 		replicas SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
@@ -899,7 +901,7 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	return true, station, nil
 }
 
-func UpsertNewStation(stationName string, username string, retentionType string, retentionValue int, storageType string, replicas int, schemaDetails models.SchemaDetails, idempotencyWindow int64, isNative bool, dlsConfiguration models.DlsConfiguration, tieredStorageEnabled bool) (models.Station, int64, error) {
+func UpsertNewStationV0(stationName string, username string, retentionType string, retentionValue int, storageType string, replicas int, schemaDetails models.SchemaDetails, idempotencyWindow int64, isNative bool, dlsConfiguration models.DlsConfiguration, tieredStorageEnabled bool) (models.Station, int64, error) {
 	var update bson.M
 	var emptySchemaDetailsResponse struct{}
 	newStation := models.Station{
@@ -961,6 +963,127 @@ func UpsertNewStation(stationName string, username string, retentionType string,
 	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		return models.Station{}, 0, err
+	}
+	return newStation, updateResults.MatchedCount, nil
+}
+
+func UpsertNewStation(stationName string,
+	username string,
+	retentionType string,
+	retentionValue int,
+	storageType string,
+	replicas int,
+	schemaDetails models.SchemaDetails,
+	idempotencyWindow int64, isNative bool,
+	dlsConfiguration models.DlsConfiguration,
+	tieredStorageEnabled bool) (models.StationPg, int64, error) {
+	var update bson.M
+	var emptySchemaDetailsResponse struct{}
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		cancelfunc()
+		return models.StationPg{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO stations ( 
+		name, 
+		retention_type, 
+		retention_value,
+		storage_type, 
+		replicas, 
+		created_by, 
+		created_at, 
+		updated_at, 
+		is_deleted, 
+		idempotency_window_ms, 
+		is_native, 
+		tiered_storage_enabled, 
+		dls_config, 
+		schema_name, 
+		schema_version_number) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id `
+
+	_, err = conn.Conn().Prepare(ctx, "upsert new station name", query)
+	if err != nil {
+		return models.StationPg{}, 0, err
+	}
+
+	newStation := models.StationPg{}
+	createAt := time.Now()
+	updatedAt := time.Now()
+
+	res := conn.Conn().QueryRow(ctx, "upsert new station name",
+		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt,
+		updatedAt, false, idempotencyWindow, isNative, tieredStorageEnabled, dlsConfiguration, schemaDetails.SchemaName, schemaDetails.VersionNumber).Scan(&newStation.ID)
+	if res != nil {
+		return models.StationPg{}, 0, err
+	}
+
+	newStation = models.StationPg{
+		ID:                   newStation.ID,
+		Name:                 stationName,
+		CreatedByUser:        username,
+		CreationDate:         time.Now(),
+		IsDeleted:            false,
+		RetentionType:        retentionType,
+		RetentionValue:       retentionValue,
+		StorageType:          storageType,
+		Replicas:             replicas,
+		LastUpdate:           time.Now(),
+		Schema:               schemaDetails,
+		IdempotencyWindow:    idempotencyWindow,
+		IsNative:             isNative,
+		DlsConfiguration:     dlsConfiguration,
+		TieredStorageEnabled: tieredStorageEnabled,
+	}
+	if schemaDetails.SchemaName != "" {
+		update = bson.M{
+			"$setOnInsert": bson.M{
+				"_id":                      newStation.ID,
+				"retention_type":           newStation.RetentionType,
+				"retention_value":          newStation.RetentionValue,
+				"storage_type":             newStation.StorageType,
+				"replicas":                 newStation.Replicas,
+				"created_by_user":          newStation.CreatedByUser,
+				"creation_date":            newStation.CreationDate,
+				"last_update":              newStation.LastUpdate,
+				"schema":                   newStation.Schema,
+				"idempotency_window_in_ms": newStation.IdempotencyWindow,
+				"is_native":                newStation.IsNative,
+				"dls_configuration":        newStation.DlsConfiguration,
+				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
+			},
+		}
+	} else {
+		update = bson.M{
+			"$setOnInsert": bson.M{
+				"_id":                      newStation.ID,
+				"retention_type":           newStation.RetentionType,
+				"retention_value":          newStation.RetentionValue,
+				"storage_type":             newStation.StorageType,
+				"replicas":                 newStation.Replicas,
+				"created_by_user":          newStation.CreatedByUser,
+				"creation_date":            newStation.CreationDate,
+				"last_update":              newStation.LastUpdate,
+				"schema":                   emptySchemaDetailsResponse,
+				"idempotency_window_in_ms": newStation.IdempotencyWindow,
+				"dls_configuration":        newStation.DlsConfiguration,
+				"is_native":                newStation.IsNative,
+				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
+			},
+		}
+	}
+	//TODO: move to postgres syntax
+	filter := bson.M{"name": newStation.Name, "is_deleted": false}
+	opts := options.Update().SetUpsert(true)
+	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return models.StationPg{}, 0, err
 	}
 	return newStation, updateResults.MatchedCount, nil
 }

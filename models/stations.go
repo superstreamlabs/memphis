@@ -59,6 +59,24 @@ type Station struct {
 	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
 }
 
+type StationPg struct {
+	ID                   int              `json:"id" bson:"_id"`
+	Name                 string           `json:"name" bson:"name"`
+	RetentionType        string           `json:"retention_type" bson:"retention_type"`
+	RetentionValue       int              `json:"retention_value" bson:"retention_value"`
+	StorageType          string           `json:"storage_type" bson:"storage_type"`
+	Replicas             int              `json:"replicas" bson:"replicas"`
+	CreatedByUser        string           `json:"created_by_user" bson:"created_by_user"`
+	CreationDate         time.Time        `json:"creation_date" bson:"creation_date"`
+	LastUpdate           time.Time        `json:"last_update" bson:"last_update"`
+	IsDeleted            bool             `json:"is_deleted" bson:"is_deleted"`
+	Schema               SchemaDetails    `json:"schema" bson:"schema"`
+	IdempotencyWindow    int64            `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
+	IsNative             bool             `json:"is_native" bson:"is_native"`
+	DlsConfiguration     DlsConfiguration `json:"dls_configuration" bson:"dls_configuration"`
+	TieredStorageEnabled bool             `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+}
+
 type GetStationResponseSchema struct {
 	ID                   primitive.ObjectID `json:"id" bson:"_id"`
 	Name                 string             `json:"name" bson:"name"`
