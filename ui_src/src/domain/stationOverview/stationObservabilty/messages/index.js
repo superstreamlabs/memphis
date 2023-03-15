@@ -48,7 +48,7 @@ const Messages = () => {
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
-    const [tabValue, setTabValue] = useState('All');
+    const [tabValue, setTabValue] = useState('Messages');
     const [loader, setLoader] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['Messages', 'Dead-letter', 'Details'];
@@ -93,6 +93,7 @@ const Messages = () => {
     };
 
     useEffect(() => {
+        console.log(stationState?.stationSocketData);
         if (selectedRowIndex && !userScrolled) {
             const element = document.getElementById(selectedRowIndex);
             if (element) {
@@ -112,7 +113,7 @@ const Messages = () => {
         setIgnoreProcced(true);
         let messages;
         try {
-            if (tabValue === 'All') {
+            if (tabValue === 'Messages') {
                 await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
                 messages = stationState?.stationSocketData?.messages;
                 isCheck.map((messageId, index) => {
@@ -149,20 +150,27 @@ const Messages = () => {
         setIgnoreProcced(true);
         try {
             let purgeDataPayload = purgeData;
-            purgeData['station_name'] = stationName;
+            purgeDataPayload['station_name'] = stationName;
             await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
             setTimeout(() => {
                 setIgnoreProcced(false);
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
+                if (purgeData['purge_station']) {
+                    stationDispatch({ type: 'SET_MESSAGES', payload: [] });
+                }
+                if (purgeData['purge_dls']) {
+                    stationDispatch({ type: 'SET_POISON_MESSAGES', payload: [] });
+                    stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: [] });
+                }
                 setIndeterminate(false);
             }, 1500);
+            setLoader(false);
             modalPurgeFlip(false);
         } catch (error) {
-            setIgnoreProcced(false);
-        } finally {
             setLoader(false);
+            setIgnoreProcced(false);
         }
     };
 
@@ -266,9 +274,10 @@ const Messages = () => {
                     {showLastMsg()}
                 </div>
                 <div className="right-side">
-                    {(tabValue === 'All' ||
+                    {((tabValue === 'Messages' && stationState?.stationSocketData?.messages?.length > 0) ||
                         (tabValue === 'Dead-letter' &&
-                            (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0))) && (
+                            ((subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0) ||
+                                (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)))) && (
                         <Button
                             width="80px"
                             height="32px"
@@ -283,7 +292,7 @@ const Messages = () => {
                             onClick={() => handleDrop()}
                         />
                     )}
-                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && (
+                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <Button
                             width="80px"
                             height="32px"
