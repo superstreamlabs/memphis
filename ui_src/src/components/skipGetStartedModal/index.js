@@ -12,19 +12,8 @@
 
 import React from 'react';
 import Modal from '../modal';
-import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import { capitalizeFirst } from '../../services/valueConvertor';
 
 const SkipGetStrtedModal = ({ open, skip, cancel }) => {
-    const skipGetStarted = async () => {
-        try {
-            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
-            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-        } catch (error) {}
-    };
-
     return (
         <Modal
             header="Are we skipping the tutorial?"
@@ -33,10 +22,7 @@ const SkipGetStrtedModal = ({ open, skip, cancel }) => {
             rBtnText="Skip"
             lBtnText="Don't skip"
             lBtnClick={() => cancel()}
-            rBtnClick={() => {
-                skip();
-                skipGetStarted();
-            }}
+            rBtnClick={() => skip()}
             clickOutside={() => cancel()}
             open={open}
         >

@@ -120,7 +120,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                 ) : (
                     <div className="placeholder">
                         <img src={attachedPlaceholder} alt="attachedPlaceholder" />
-                        <p>No Station found</p>
+                        <p>No station found</p>
                     </div>
                 )}
                 {allStations?.length > 0 && (
