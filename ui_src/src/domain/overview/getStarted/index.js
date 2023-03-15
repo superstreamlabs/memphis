@@ -15,7 +15,7 @@ import './style.scss';
 import React, { createContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
-import pathDomains from '../../../router';
+import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../const/localStorageConsts';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
@@ -32,6 +32,7 @@ import CreateStation from './createStation';
 import Reducer from './hooks/reducer';
 import SideStep from './sideStep';
 import Finish from './finish';
+import { capitalizeFirst } from '../../../services/valueConvertor';
 
 const steps = [{ stepName: 'Create Station' }, { stepName: 'Create App user' }, { stepName: 'Produce data' }, { stepName: 'Consume data' }, { stepName: 'Finish' }];
 
@@ -92,6 +93,7 @@ const GetStarted = ({ username, dataSentence, skip }) => {
     const [open, modalFlip] = useState(false);
     const history = useHistory();
     const createStationFormRef = useRef(null);
+    const getStartedStateRef = useRef(null);
     const [targetLocation, setTargetLocation] = useState(null);
     const [displayGetStarted, setDisplayGetStarted] = useState(true);
 
@@ -103,7 +105,15 @@ const GetStarted = ({ username, dataSentence, skip }) => {
     }, [displayGetStarted, targetLocation, history]);
 
     useEffect(() => {
+        getStartedStateRef.current = getStartedState;
+    }, [getStartedState]);
+
+    useEffect(() => {
         const unblock = history.block((location) => {
+            if (getStartedStateRef.current.completedSteps >= 4) {
+                setTargetLocation(location.pathname);
+                handleConfirm();
+            }
             if (displayGetStarted) {
                 modalFlip(true);
                 setTargetLocation(location.pathname);
@@ -116,11 +126,18 @@ const GetStarted = ({ username, dataSentence, skip }) => {
     }, [displayGetStarted, history]);
 
     const handleConfirm = () => {
+        skipGetStarted();
         setDisplayGetStarted(false);
         targetLocation ? history.push(targetLocation) : skip();
         modalFlip(false);
     };
 
+    const skipGetStarted = async () => {
+        try {
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+        } catch (error) {}
+    };
     const getStepsDescription = (stepNumber) => {
         switch (stepNumber) {
             case 1:
@@ -173,7 +190,7 @@ const GetStarted = ({ username, dataSentence, skip }) => {
     const getOverviewData = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component ==='memphis');
+            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component === 'memphis');
             indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
             getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
         } catch (error) {}
