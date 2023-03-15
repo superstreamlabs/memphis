@@ -14,6 +14,7 @@ package db
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"os"
 
@@ -659,6 +660,14 @@ func InsertSystemKey(key string, value string) error {
 	return err
 }
 
+func InsertSystemKeyPg(key string, stringValue string, intValue int, isString bool) error {
+	err := InsertConfigurationPg(key, stringValue, intValue, isString)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func EditSystemKey(key string, value string) error {
 	_, err := systemKeysCollection.UpdateOne(context.TODO(),
 		bson.M{"key": "analytics"},
@@ -694,6 +703,77 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 		}
 		return true, models.ConfigurationsStringValue{}, configurationsIntValue, err
 	}
+}
+
+func InsertConfigurationPg(key string, stringValue string, intValue int, isString bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	if isString {
+		query := `INSERT INTO configurations( 
+			key, 
+			value) 
+		VALUES($1, $2) 
+		RETURNING id`
+
+		stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+		if err != nil {
+			return err
+		}
+
+		newConfiguration := models.ConfigurationsStringValuePg{}
+		rows, err := conn.Conn().Query(ctx, stmt.Name,
+			key, stringValue)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			err := rows.Scan(&newConfiguration.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+	} else {
+		query := `INSERT INTO configurations( 
+			key, 
+			value) 
+		VALUES($1, $2) 
+		RETURNING id`
+
+		stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+		if err != nil {
+			return err
+		}
+
+		newConfiguration := models.ConfigurationsIntValuePg{}
+		rows, err := conn.Conn().Query(ctx, stmt.Name,
+			key, stringValue)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			err := rows.Scan(&newConfiguration.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := rows.Err(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func InsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
@@ -740,6 +820,50 @@ func UpsertConfiguration(key string, stringValue string, intValue int, isString 
 	}
 	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertConnectionPg(connection models.ConnectionPg) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO connections ( 
+		id,
+		created_by, 
+		is_active, 
+		created_at,
+		client_address) 
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_connection", query)
+	if err != nil {
+		return err
+	}
+
+	newConnection := models.ConnectionPg{}
+	createdAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
+		connection.CreatedBy, connection.IsActive, createdAt, connection.ClientAddress)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newConnection.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
 		return err
 	}
 	return nil
@@ -811,6 +935,62 @@ func GetActiveConnections() ([]models.Connection, error) {
 	}
 
 	return connections, nil
+}
+
+func InsertAuditLogsPg(auditLogs []interface{}) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Release()
+	var auditLog []models.AuditLogPg
+
+	b, err := json.Marshal(auditLogs)
+	err = json.Unmarshal(b, &auditLog)
+	if err != nil {
+		return err
+	}
+
+	stationName := auditLog[0].StationName
+	message := auditLog[0].Message
+	createdBy := auditLog[0].CreatedBy
+	createdAt := auditLog[0].CreatedAt
+
+	query := `INSERT INTO audit_logs ( 
+		station_name, 
+		message, 
+		created_by,
+		created_at
+		) 
+    VALUES($1, $2, $3, $4) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_audit_logs", query)
+	if err != nil {
+		return err
+	}
+
+	newAuditLog := models.AuditLogPg{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		stationName, message, createdBy, createdAt)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newAuditLog.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Audit Logs Functions
@@ -1016,6 +1196,10 @@ func UpsertNewStation(
 		if err != nil {
 			return models.StationPg{}, 0, err
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.StationPg{}, 0, err
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1317,7 +1501,7 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 	isDeleted := false
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, createdByUser, isActive, isDeleted, createAt, producerType)
+		name, stationId, "1", createdByUser, isActive, isDeleted, createAt, producerType)
 	if err != nil {
 		return models.ProducerPg{}, 0, err
 	}
@@ -1326,6 +1510,10 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 		if err != nil {
 			return models.ProducerPg{}, 0, err
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.ProducerPg{}, 0, err
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1544,8 +1732,9 @@ func UpsertNewConsumerV1(name string,
 	isActive := true
 	isDeleted := false
 
+	//TODO: pass connectionIdObj instead of "1"
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+		name, stationId, "1", cgName, maxAckTime, createdByUser, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
 	if err != nil {
 		return models.ConsumerPg{}, 0, err
 	}
@@ -1556,6 +1745,9 @@ func UpsertNewConsumerV1(name string,
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		return models.ConsumerPg{}, 0, err
+	}
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newConsumer = models.ConsumerPg{
 		ID:                  newConsumer.ID,
@@ -1954,6 +2146,10 @@ func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, i
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		return models.SchemaPg{}, 0, err
+	}
+
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newSchema = models.SchemaPg{
 		ID:   newSchema.ID,
@@ -2022,6 +2218,10 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 		if err != nil {
 			return models.SchemaVersionPg{}, 0, err
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.SchemaVersionPg{}, 0, err
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -2110,6 +2310,52 @@ func DeleteIntegration(name string) error {
 	return nil
 }
 
+func InsertNewIntegrationPg(name string, keys map[string]string, properties map[string]bool) (models.IntegrationV1, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.IntegrationV1{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO integrations ( 
+		name, 
+		keys,
+		properties) 
+    VALUES($1, $2, $3) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_integration", query)
+	if err != nil {
+		return models.IntegrationV1{}, err
+	}
+
+	newIntegration := models.IntegrationV1{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	if err != nil {
+		return models.IntegrationV1{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newIntegration.ID)
+		if err != nil {
+			return models.IntegrationV1{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.IntegrationV1{}, err
+	}
+
+	newIntegration = models.IntegrationV1{
+		ID:         newIntegration.ID,
+		Name:       name,
+		Keys:       keys,
+		Properties: properties,
+	}
+	return newIntegration, nil
+}
+
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	integration := models.Integration{
 		ID:         primitive.NewObjectID(),
@@ -2187,6 +2433,10 @@ func CreateUserV1(username string, userType string, hashedPassword string, fullN
 		if err != nil {
 			return models.User{}, err
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.User{}, err
 	}
 
 	newUser = models.User{
@@ -2392,6 +2642,10 @@ func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int
 		if err != nil {
 			return models.TagPg{}, err
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.TagPg{}, err
 	}
 
 	newTag = models.TagPg{
@@ -2610,6 +2864,14 @@ func UpdateSkipGetStartedSandbox(username string) error {
 		bson.M{"username": username},
 		bson.M{"$set": bson.M{"skip_get_started": true}},
 	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertImagePg(name string, base64Encoding string, intValue int, isString bool) error {
+	err := InsertConfigurationPg(name, base64Encoding, intValue, isString)
 	if err != nil {
 		return err
 	}

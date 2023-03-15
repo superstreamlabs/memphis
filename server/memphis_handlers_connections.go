@@ -142,7 +142,9 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		} else {
-			err := connectionsHandler.CreateConnection(username, client.RemoteAddress().String(), objID)
+			//TODO: pass username instead of userNameId
+			userNameId := 1
+			err := connectionsHandler.CreateConnection(userNameId, client.RemoteAddress().String(), objIdString)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
@@ -172,31 +174,33 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(username, clientAddress string, connectionId primitive.ObjectID) error {
-	username = strings.ToLower(username)
-	exist, _, err := db.GetUserByUsername(username)
-	if err != nil {
-		errMsg := "User " + username + ": " + err.Error()
-		serv.Errorf("CreateConnection error: " + errMsg)
-		return err
-	}
-	if !exist {
-		errMsg := "User " + username + " does not exist"
-		return errors.New(errMsg)
-	}
+func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string, connectionId string) error {
+	// username = strings.ToLower(username)
+	// exist, _, err := db.GetUserByUsername(username)
+	// if err != nil {
+	// 	errMsg := "User " + username + ": " + err.Error()
+	// 	serv.Errorf("CreateConnection error: " + errMsg)
+	// 	return err
+	// }
+	// if !exist {
+	// 	errMsg := "User " + username + " does not exist"
+	// 	return errors.New(errMsg)
+	// }
 
-	newConnection := models.Connection{
+	newConnection := models.ConnectionPg{
 		ID:            connectionId,
-		CreatedByUser: username,
+		CreatedBy:     username,
 		IsActive:      true,
-		CreationDate:  time.Now(),
+		CreatedAt:     time.Now(),
 		ClientAddress: clientAddress,
 	}
 
-	err = db.InsertConnection(newConnection)
+	//TODO: don't forget remove this line
+	newConnection.CreatedBy = 1
+	err := db.InsertConnectionPg(newConnection)
 	if err != nil {
-		errMsg := "User " + username + ": " + err.Error()
-		serv.Errorf("CreateConnection error: " + errMsg)
+		// errMsg := "User " + username + ": " + err.Error()
+		// serv.Errorf("CreateConnection error: " + errMsg)
 		return err
 	}
 	return nil

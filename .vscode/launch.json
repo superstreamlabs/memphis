@@ -73,7 +73,12 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-0"
+                "SERVER_NAME": "memphis-0",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         },
         {
@@ -108,7 +113,12 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-1"
+                "SERVER_NAME": "memphis-1",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         },
         {
@@ -143,7 +153,12 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-2"
+                "SERVER_NAME": "memphis-2",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         }
     ]

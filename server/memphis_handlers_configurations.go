@@ -35,7 +35,7 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
-		err = db.InsertConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
+		err = db.InsertConfigurationPg("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -52,7 +52,7 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 			LOGS_RETENTION_IN_DAYS = 30 //default
 		}
-		err = db.InsertConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
+		err = db.InsertConfigurationPg("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -71,7 +71,7 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			TIERED_STORAGE_TIME_FRAME_SEC = configuration.TIERED_STORAGE_TIME_FRAME_SEC
 		}
-		err = db.InsertConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
+		err = db.InsertConfigurationPg("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -89,7 +89,7 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			BROKER_HOST = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
-		err = db.InsertConfiguration("broker_host", BROKER_HOST, 0, true)
+		err = db.InsertConfigurationPg("broker_host", BROKER_HOST, 0, true)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -106,7 +106,7 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			UI_HOST = "http://memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local:9000"
 		}
-		err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
+		err = db.InsertConfigurationPg("ui_host", UI_HOST, 0, true)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -128,7 +128,7 @@ func (s *Server) initializeConfigurations() {
 			Key:   "rest_gw_host",
 			Value: REST_GW_HOST,
 		}
-		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST, 0, true)
+		err = db.InsertConfigurationPg("rest_gw_host", REST_GW_HOST, 0, true)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}

@@ -111,21 +111,21 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection ID is not valid")
 		return err
 	}
-	exist, connection, err := db.GetConnectionByID(connectionIdObj)
+	_, connection, err := db.GetConnectionByID(connectionIdObj)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
-	if !exist {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Connection ID " + connectionId + " was not found"
-		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New(errMsg)
-	}
-	if !connection.IsActive {
-		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection is not active")
-		return errors.New("connection is not active")
-	}
+	// if !exist {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Connection ID " + connectionId + " was not found"
+	// 	serv.Warnf("createConsumerDirectCommon: " + errMsg)
+	// 	return errors.New(errMsg)
+	// }
+	// if !connection.IsActive {
+	// 	serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection is not active")
+	// 	return errors.New("connection is not active")
+	// }
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
@@ -134,63 +134,63 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
-	if !exist {
-		var created bool
-		_, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
-		if err != nil {
-			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-			serv.Errorf("createConsumerDirectCommon: " + errMsg)
-			return err
-		}
-
-		if created {
-			message := "Station " + stationName.Ext() + " has been created by user " + connection.CreatedByUser
-			serv.Noticef(message)
-			var auditLogs []interface{}
-			newAuditLog := models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   stationName.Ext(),
-				Message:       message,
-				CreatedByUser: connection.CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      "application",
-			}
-			auditLogs = append(auditLogs, newAuditLog)
-			err = CreateAuditLogs(auditLogs)
-			if err != nil {
-				errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-				serv.Errorf("createConsumerDirect: " + errMsg)
-			}
-
-			shouldSendAnalytics, _ := shouldSendAnalytics()
-			if shouldSendAnalytics {
-				param := analytics.EventParam{
-					Name:  "station-name",
-					Value: stationName.Ext(),
-				}
-				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
-			}
-		}
-	}
-
-	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
+	// if !exist {
+	// 	var created bool
+	_, _, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 	if err != nil {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
-	if exist {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
-		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New("memphis: " + errMsg)
-	}
+
+	// 	if created {
+	// 		message := "Station " + stationName.Ext() + " has been created by user " + connection.CreatedByUser
+	// 		serv.Noticef(message)
+	// 		var auditLogs []interface{}
+	// 		newAuditLog := models.AuditLog{
+	// 			ID:            primitive.NewObjectID(),
+	// 			StationName:   stationName.Ext(),
+	// 			Message:       message,
+	// 			CreatedByUser: connection.CreatedByUser,
+	// 			CreationDate:  time.Now(),
+	// 			UserType:      "application",
+	// 		}
+	// 		auditLogs = append(auditLogs, newAuditLog)
+	// 		err = CreateAuditLogs(auditLogs)
+	// 		if err != nil {
+	// 			errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+	// 			serv.Errorf("createConsumerDirect: " + errMsg)
+	// 		}
+
+	// 		shouldSendAnalytics, _ := shouldSendAnalytics()
+	// 		if shouldSendAnalytics {
+	// 			param := analytics.EventParam{
+	// 				Name:  "station-name",
+	// 				Value: stationName.Ext(),
+	// 			}
+	// 			analyticsParams := []analytics.EventParam{param}
+	// 			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
+	// 		}
+	// 	}
+	// }
+
+	// exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
+	// if err != nil {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+	// 	serv.Errorf("createConsumerDirectCommon: " + errMsg)
+	// 	return err
+	// }
+	// if exist {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
+	// 	serv.Warnf("createConsumerDirectCommon: " + errMsg)
+	// 	return errors.New("memphis: " + errMsg)
+	// }
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {
@@ -199,16 +199,16 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionIdObj, connection.CreatedByUser, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
-	if err != nil {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
-	}
+	// newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionIdObj, connection.CreatedByUser, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	// if err != nil {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+	// 	serv.Errorf("createConsumerDirectCommon: " + errMsg)
+	// 	return err
+	// }
 
 	stationId := 1
 	//TODO:pass createdByUser instead 1
-	_, rowsUpdated, err = db.UpsertNewConsumerV1(name, stationId, consumerType, connectionId, 1, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	newConsumer, rowsUpdated, err := db.UpsertNewConsumerV1(name, stationId, consumerType, connectionId, 1, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -220,7 +220,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		serv.Noticef(message)
 		if consumerGroupExist {
 			if requestVersion == 1 {
-				if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+				if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
 					errMsg := errors.New("consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
 					serv.Warnf("createConsumerDirectCommon: " + errMsg.Error())
 					return errMsg
@@ -254,13 +254,12 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			}
 		}
 		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: connection.CreatedByUser,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+		newAuditLog := models.AuditLogPg{
+			StationName: stationName.Ext(),
+			Message:     message,
+			CreatedBy:   1,
+			CreatedAt:   time.Now(),
+			UserType:    "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)

@@ -320,13 +320,12 @@ func (s *Server) createStationDirectIntern(c *client,
 		serv.Noticef(message)
 
 		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+		newAuditLog := models.AuditLogPg{
+			StationName: stationName.Ext(),
+			Message:     message,
+			CreatedBy:   1,
+			CreatedAt:   time.Now(),
+			UserType:    "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -782,13 +781,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	message := "Station " + stationName.Ext() + " has been created by " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
+	newAuditLog := models.AuditLogPg{
+		StationName: stationName.Ext(),
+		Message:     message,
+		CreatedBy:   1,
+		CreatedAt:   time.Now(),
+		UserType:    user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -988,13 +986,12 @@ func (s *Server) removeStationDirectIntern(c *client,
 	serv.Noticef(message)
 	if isNative {
 		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: dsr.Username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+		newAuditLog := models.AuditLogPg{
+			StationName: stationName.Ext(),
+			Message:     message,
+			CreatedBy:   1,
+			CreatedAt:   time.Now(),
+			UserType:    "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1538,13 +1535,12 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		serv.Noticef(message)
 
 		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Intern(),
-			Message:       message,
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			UserType:      user.UserType,
+		newAuditLog := models.AuditLogPg{
+			StationName: stationName.Intern(),
+			Message:     message,
+			CreatedBy:   1,
+			CreatedAt:   time.Now(),
+			UserType:    user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1645,13 +1641,12 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	serv.Noticef(message)
 
 	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Intern(),
-		Message:       message,
-		CreatedByUser: username,
-		CreationDate:  time.Now(),
-		UserType:      "sdk",
+	newAuditLog := models.AuditLogPg{
+		StationName: stationName.Intern(),
+		Message:     message,
+		CreatedBy:   1,
+		CreatedAt:   time.Now(),
+		UserType:    "sdk",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1786,13 +1781,12 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	message := "Schema " + station.Schema.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Intern(),
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
+	newAuditLog := models.AuditLogPg{
+		StationName: stationName.Intern(),
+		Message:     message,
+		CreatedBy:   1,
+		CreatedAt:   time.Now(),
+		UserType:    user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

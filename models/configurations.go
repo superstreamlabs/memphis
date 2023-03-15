@@ -43,3 +43,15 @@ type ConfigurationsStringValue struct {
 	Key   string             `json:"key" bson:"key"`
 	Value string             `json:"value" bson:"value"`
 }
+
+type ConfigurationsIntValuePg struct {
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value int    `json:"value"`
+}
+
+type ConfigurationsStringValuePg struct {
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}

@@ -210,7 +210,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 	// }
 
 	exist := false
-
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -849,7 +848,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_ = os.Remove(fileName)
 
-	err = db.InsertImage("company_logo", base64Encoding)
+	err = db.InsertImagePg("company_logo", base64Encoding, 0, true)
 	if err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

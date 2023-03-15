@@ -433,7 +433,7 @@ func getInternalConsumerName(cn string) string {
 	return replaceDelimiters(cn)
 }
 
-func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station) error {
+func (s *Server) CreateConsumer(consumer models.ConsumerPg, station models.Station) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
 		consumerName = consumer.ConsumersGroup
@@ -471,7 +471,7 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 
 	var optStartSeq uint64
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
-	if consumer.LastMessages == 0 && consumer.StartConsumeFromSequence == 0 {
+	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
 		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
@@ -480,11 +480,11 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 		}
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = lastMessages
-	} else if consumer.StartConsumeFromSequence == 1 || consumer.LastMessages == -1 {
+	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
 		deliveryPolicy = DeliverAll
-	} else if consumer.StartConsumeFromSequence > 1 {
+	} else if consumer.StartConsumeFromSeq > 1 {
 		deliveryPolicy = DeliverByStartSequence
-		optStartSeq = consumer.StartConsumeFromSequence
+		optStartSeq = consumer.StartConsumeFromSeq
 	}
 
 	consumerConfig := &ConsumerConfig{

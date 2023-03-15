@@ -37,7 +37,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var integration models.Integration
+	var integration models.IntegrationV1
 	var message string
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {

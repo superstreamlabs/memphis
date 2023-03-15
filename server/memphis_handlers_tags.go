@@ -245,13 +245,12 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	serv.Noticef(message)
 	if entity == "station" {
 		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
-			Message:       message,
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			UserType:      user.UserType,
+		newAuditLog := models.AuditLogPg{
+			StationName: stationName,
+			Message:     message,
+			CreatedBy:   1,
+			CreatedAt:   time.Now(),
+			UserType:    user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -369,13 +368,12 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				message = "Tag " + name + " has been added to station " + stationName.Ext() + " by user " + user.Username
 
 				var auditLogs []interface{}
-				newAuditLog := models.AuditLog{
-					ID:            primitive.NewObjectID(),
-					StationName:   stationName.Intern(),
-					Message:       message,
-					CreatedByUser: user.Username,
-					CreationDate:  time.Now(),
-					UserType:      user.UserType,
+				newAuditLog := models.AuditLogPg{
+					StationName: stationName.Intern(),
+					Message:     message,
+					CreatedBy:   1,
+					CreatedAt:   time.Now(),
+					UserType:    user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
@@ -427,13 +425,12 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				message = "Tag " + name + " has been deletd from station " + stationName.Ext() + " by user " + user.Username
 
 				var auditLogs []interface{}
-				newAuditLog := models.AuditLog{
-					ID:            primitive.NewObjectID(),
-					StationName:   stationName.Intern(),
-					Message:       message,
-					CreatedByUser: user.Username,
-					CreationDate:  time.Now(),
-					UserType:      user.UserType,
+				newAuditLog := models.AuditLogPg{
+					StationName: stationName.Intern(),
+					Message:     message,
+					CreatedBy:   1,
+					CreatedAt:   time.Now(),
+					UserType:    user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
