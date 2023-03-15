@@ -59,18 +59,18 @@ func isRootUserLoggedIn() (bool, error) {
 	}
 }
 
-func authenticateUser(username string, password string) (bool, models.User, error) {
+func authenticateUser(username string, password string) (bool, models.UserV0, error) {
 	exist, user, err := db.GetUserByUsername(username)
 	if !exist {
-		return false, models.User{}, nil
+		return false, models.UserV0{}, nil
 	} else if err != nil {
-		return false, models.User{}, err
+		return false, models.UserV0{}, err
 	}
 
 	hashedPwd := []byte(user.Password)
 	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
 	if err != nil {
-		return false, models.User{}, nil
+		return false, models.UserV0{}, nil
 	}
 
 	return true, user, nil
@@ -83,7 +83,7 @@ func validateUserType(userType string) error {
 	return nil
 }
 
-func updateDeletedUserResources(user models.User) error {
+func updateDeletedUserResources(user models.UserV0) error {
 	if user.UserType == "application" {
 		err := RemoveUser(user.Username)
 		if err != nil {
@@ -139,14 +139,14 @@ func validateEmail(email string) error {
 }
 
 type userToTokens interface {
-	models.User | models.SandboxUser
+	models.UserV0 | models.SandboxUser
 }
 
 func CreateTokens[U userToTokens](user U) (string, string, error) {
 	atClaims := jwt.MapClaims{}
 	var at *jwt.Token
 	switch u := any(user).(type) {
-	case models.User:
+	case models.UserV0:
 		atClaims["user_id"] = u.ID.Hex()
 		atClaims["username"] = u.Username
 		atClaims["user_type"] = u.UserType
@@ -204,10 +204,12 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	exist, err := isRootUserExist()
-	if err != nil {
-		return err
-	}
+	// exist, err := isRootUserExist()
+	// if err != nil {
+	// 	return err
+	// }
+
+	exist := false
 
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
@@ -217,7 +219,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser("root", "root", hashedPwdString, "", false, 1)
+		_, err = db.CreateUserV1("root", "root", hashedPwdString, "", false, 1)
 		if err != nil {
 			return err
 		}
@@ -509,7 +511,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
+	_, err = db.CreateUserV1(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -517,50 +519,50 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 
 	serv.Noticef("User " + username + " has been signed up")
-	token, refreshToken, err := CreateTokens(newUser)
-	if err != nil {
-		serv.Errorf("CreateUserSignUp error: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	var env string
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-		env = "docker"
-	} else {
-		env = "K8S"
-	}
+	// token, refreshToken, err := CreateTokens(newUser)
+	// if err != nil {
+	// 	serv.Errorf("CreateUserSignUp error: " + err.Error())
+	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	// 	return
+	// }
+	// var env string
+	// if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+	// 	env = "docker"
+	// } else {
+	// 	env = "K8S"
+	// }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "email",
-			Value: newUser.Username,
-		}
-		param2 := analytics.EventParam{
-			Name:  "newsletter",
-			Value: strconv.FormatBool(subscription),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(newUser.Username, analyticsParams, "user-signup")
-	}
+	// shouldSendAnalytics, _ := shouldSendAnalytics()
+	// if shouldSendAnalytics {
+	// 	param1 := analytics.EventParam{
+	// 		Name:  "email",
+	// 		Value: username,
+	// 	}
+	// 	param2 := analytics.EventParam{
+	// 		Name:  "newsletter",
+	// 		Value: strconv.FormatBool(subscription),
+	// 	}
+	// 	analyticsParams := []analytics.EventParam{param1, param2}
+	// 	analytics.SendEventWithParams(username, analyticsParams, "user-signup")
+	// }
 
-	domain := ""
-	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-	c.IndentedJSON(200, gin.H{
-		"jwt":               token,
-		"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-		"user_id":           newUser.ID,
-		"username":          newUser.Username,
-		"user_type":         newUser.UserType,
-		"creation_date":     newUser.CreationDate,
-		"already_logged_in": newUser.AlreadyLoggedIn,
-		"avatar_id":         newUser.AvatarId,
-		"send_analytics":    shouldSendAnalytics,
-		"env":               env,
-		"namespace":         configuration.K8S_NAMESPACE,
-		"full_name":         newUser.FullName,
-	})
+	// domain := ""
+	// secure := false
+	// c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	// c.IndentedJSON(200, gin.H{
+	// 	"jwt":               token,
+	// 	"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+	// 	"user_id":           newUser.ID,
+	// 	"username":          newUser.Username,
+	// 	"user_type":         newUser.UserType,
+	// 	"created_at":        newUser.CreatedAt,
+	// 	"already_logged_in": newUser.AlreadyLoggedIn,
+	// 	"avatar_id":         newUser.AvatarId,
+	// 	"send_analytics":    shouldSendAnalytics,
+	// 	"env":               env,
+	// 	"namespace":         configuration.K8S_NAMESPACE,
+	// 	"full_name":         newUser.FullName,
+	// })
 }
 
 func (umh UserMgmtHandler) AddUser(c *gin.Context) {
@@ -631,7 +633,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			return
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, hashedPwdString, "", false, avatarId)
+	newUser, err := db.CreateUserV1(username, userType, hashedPwdString, "", false, avatarId)
 	if err != nil || len(username) == 0 {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -649,7 +651,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"id":                      newUser.ID,
 		"username":                username,
 		"user_type":               userType,
-		"creation_date":           newUser.CreationDate,
+		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
 		"avatar_id":               body.AvatarId,
 		"broker_connection_creds": brokerConnectionCreds,

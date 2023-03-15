@@ -17,7 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type User struct {
+type UserV0 struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Username        string             `json:"username" bson:"username"`
 	Password        string             `json:"password" bson:"password"`
@@ -28,6 +28,19 @@ type User struct {
 	FullName        string             `json:"full_name" bson:"full_name"`
 	Subscribtion    bool               `json:"subscription" bson:"subscription"`
 	SkipGetStarted  bool               `json:"skip_get_started" bson:"skip_get_started"`
+}
+
+type User struct {
+	ID              int       `json:"id"`
+	Username        string    `json:"username"`
+	Password        string    `json:"password"`
+	UserType        string    `json:"user_type"`
+	AlreadyLoggedIn bool      `json:"already_logged_in"`
+	CreatedAt       time.Time `json:"created_at"`
+	AvatarId        int       `json:"avatar_id"`
+	FullName        string    `json:"full_name"`
+	Subscribtion    bool      `json:"subscription"`
+	SkipGetStarted  bool      `json:"skip_get_started"`
 }
 
 type Image struct {
