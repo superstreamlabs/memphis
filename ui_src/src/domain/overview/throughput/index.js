@@ -16,7 +16,6 @@ import React, { useEffect, useState, useContext } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-// import ReplayIcon from '@mui/icons-material/Replay';
 import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
@@ -267,7 +266,7 @@ function Throughput() {
                 {socketFailIndicator ? (
                     <div className="failed-socket">
                         <img src={DataNotFound} alt="Data not found" />
-                        <p className="title">No Data found</p>
+                        <p className="title">No data found</p>
                         <div className="reload" onClick={() => setSocketFailIndicator(false)}>
                             <Replay />
                             <p>Reload Data</p>
