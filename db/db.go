@@ -646,16 +646,6 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 // System Keys Functions
 func GetSystemKey(key string) (bool, models.SystemKey, error) {
-	// filter := bson.M{"key": key}
-	// err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.SystemKey{}, nil
-	// }
-	// if err != nil {
-	// 	return true, models.SystemKey{}, err
-	// }
-	// return true, systemKey, nil
-	var systemKey models.SystemKey
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -663,20 +653,24 @@ func GetSystemKey(key string) (bool, models.SystemKey, error) {
 		return true, models.SystemKey{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM configurations WHERE key = $1`
+	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_system_key", query)
 	if err != nil {
 		return true, models.SystemKey{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, key)
-	err = row.Scan(&systemKey.ID, &systemKey.Key, &systemKey.Value)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
+	if err != nil {
+		return true, models.SystemKey{}, err
+	}
+	defer rows.Close()
+	systemKeys, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SystemKey])
 	if err == pgx.ErrNoRows {
 		return false, models.SystemKey{}, nil
 	}
 	if err != nil {
 		return true, models.SystemKey{}, err
 	}
-	return true, systemKey, nil
+	return true, systemKeys[0], nil
 }
 
 func InsertSystemKey(key string, value string) error {
@@ -703,28 +697,27 @@ func EditSystemKey(key string, value string) error {
 
 // Configuration Functions
 func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStringValue, models.ConfigurationsIntValue, error) {
-	var configurationsStringValue models.ConfigurationsStringValue
-	var configurationsIntValue models.ConfigurationsIntValue
-	filter := bson.M{"key": key}
-	if isString {
-		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
-		if err == mongo.ErrNoDocuments {
-			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-		}
-		if err != nil {
-			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-		}
-		return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
-	} else {
-		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
-		if err == mongo.ErrNoDocuments {
-			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-		}
-		if err != nil {
-			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-		}
-		return true, models.ConfigurationsStringValue{}, configurationsIntValue, nil
-	}
+	// var configurationsIntValue models.ConfigurationsIntValue
+	// filter := bson.M{"key": key}
+	// if isString {
+	// 	err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
+	// 	if err == mongo.ErrNoDocuments {
+	// 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+	// 	}
+	// 	if err != nil {
+	// 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+	// 	}
+	// 	return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
+	// } else {
+	// 	err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
+	// 	if err == mongo.ErrNoDocuments {
+	// 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+	// 	}
+	// 	if err != nil {
+	// 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+	// 	}
+	// 	return true, models.ConfigurationsStringValue{}, configurationsIntValue, nil
+	// }
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -737,15 +730,19 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 	if err != nil {
 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, key)
-	err = row.Scan(&configurationsStringValue.ID, &configurationsStringValue.Key, &configurationsStringValue.Value)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
+	if err != nil {
+		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+	}
+	defer rows.Close()
+	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsStringValue])
 	if err == pgx.ErrNoRows {
 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
 	}
 	if err != nil {
 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
 	}
-	return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
+	return true, configurations[0], models.ConfigurationsIntValue{}, nil
 }
 
 func InsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
@@ -829,7 +826,6 @@ func UpdateConncetionsOfDeletedUser(username string) error {
 }
 
 func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
-	var connection models.Connection
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -842,15 +838,19 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	if err != nil {
 		return true, models.Connection{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, connectionId)
-	err = row.Scan(&connection.ID, &connection.CreatedBy, &connection.IsActive, &connection.CreationDate, &connection.ClientAddress)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
+	if err != nil {
+		return true, models.Connection{}, err
+	}
+	defer rows.Close()
+	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
 	if err == pgx.ErrNoRows {
 		return false, models.Connection{}, nil
 	}
 	if err != nil {
 		return true, models.Connection{}, err
 	}
-	return true, connection, nil
+	return true, connections[0], nil
 }
 
 func KillRelevantConnections(ids []string) error {
@@ -873,7 +873,7 @@ func GetActiveConnections() ([]models.Connection, error) {
 		return []models.Connection{}, err
 	}
 	defer conn.Release()
-	query := `SELECT connections FROM connections AS c WHERE c.is_active = true`
+	query := `SELECT connections FROM connections WHERE is_active = true`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_connection", query)
 	if err != nil {
 		return []models.Connection{}, err
@@ -890,11 +890,7 @@ func GetActiveConnections() ([]models.Connection, error) {
 	if err != nil {
 		return []models.Connection{}, err
 	}
-	for _, c := range connections { //TODO: return connections
-		fmt.Println(c)
-	}
 	return connections, nil
-
 }
 
 // Audit Logs Functions
@@ -931,9 +927,6 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 	if err != nil {
 		return []models.AuditLog{}, err
 	}
-	for _, c := range auditLogs { //TODO: return auditLogs
-		fmt.Println(c)
-	}
 	return auditLogs, nil
 }
 
@@ -947,7 +940,6 @@ func RemoveAllAuditLogsByStation(name string) error {
 
 // Station Functions
 func GetActiveStations() ([]models.Station, error) {
-	var stations2 []models.Station
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -972,14 +964,10 @@ func GetActiveStations() ([]models.Station, error) {
 	if err != nil {
 		return []models.Station{}, err
 	}
-	for _, c := range stations { //TODO: return stations
-		fmt.Println(c)
-	}
-	return stations2, nil
+	return stations, nil
 }
 
 func GetStationByName(name string) (bool, models.Station, error) {
-	var station models.Station
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -992,12 +980,19 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	if err != nil {
 		return true, models.Station{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, name)
-	err = row.Scan(&station)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
 	if err == pgx.ErrNoRows {
 		return false, models.Station{}, nil
 	}
-	return true, station, nil
+	if err != nil {
+		return true, models.Station{}, err
+	}
+	return true, stations[0], nil
 }
 
 // TODO: username should be int
@@ -1471,7 +1466,6 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 }
 
 func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
-	var producer models.Producer
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1484,20 +1478,22 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, username, stationId, connectionId)
-	err = row.Scan(&producer)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, stationId, connectionId)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err == pgx.ErrNoRows {
-		return false, models.Producer{}, err
+		return false, models.Producer{}, nil
 	}
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	return true, producer, nil
+	return true, producers[0], nil
 }
 
 func GetActiveProducerByStationID(producerName string, stationId int) (bool, models.Producer, error) {
-	var producer models.Producer
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1511,15 +1507,19 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, producerName, stationId)
-	err = row.Scan(&producer)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, producerName, stationId)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err == pgx.ErrNoRows {
-		return false, models.Producer{}, err
+		return false, models.Producer{}, nil
 	}
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	return true, producer, nil
+	return true, producers[0], nil
 }
 
 func UpsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int) (models.Producer, int64, error) {
@@ -1553,8 +1553,7 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 	isActive := true
 	isDeleted := false
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, createdByUser, isActive, isDeleted, createAt, producerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, isActive, isDeleted, createAt, producerType)
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
@@ -1580,6 +1579,7 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 	return newProducer, rowsAffected, nil
 }
 
+// TODO: Aggregate
 func GetAllProducers() ([]models.ExtendedProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1591,8 +1591,8 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	query := `
 		SELECT p._id, p.name, p.type, p.connection_id, p.created_by_user, p.creation_date, p.is_active, p.is_deleted, s.name AS station_name, c.client_address AS client_address
 		FROM producers p
-		LEFT JOIN stations s ON p.station_id = s._id
-		LEFT JOIN connections c ON p.connection_id = c._id
+		LEFT JOIN stations ON p.station_id = s._id
+		LEFT JOIN connections ON p.connection_id = c._id
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_producers", query)
 	if err != nil {
@@ -1721,11 +1721,6 @@ func DeleteProducersByStationID(stationId int) error {
 }
 
 func CountActiveProudcersByStationID(stationId int) (int64, error) {
-	// activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return activeCount, nil
 	var activeCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1748,11 +1743,6 @@ func CountActiveProudcersByStationID(stationId int) (int64, error) {
 }
 
 func CountAllActiveProudcers() (int64, error) {
-	// producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return producersCount, nil
 	var producersCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1799,17 +1789,6 @@ func KillProducersByConnections(connectionIds []string) error {
 
 // Consumer Functions
 func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.Consumer, error) {
-	var consumer models.Consumer
-	// filter := bson.M{"consumers_group": consumersGroup, "station_id": stationId, "is_deleted": false}
-	// err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Consumer{}, nil
-	// }
-	// if err != nil {
-	// 	return true, models.Consumer{}, err
-	// }
-	// return true, consumer, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1823,16 +1802,19 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, consumersGroup, stationId)
-	err = row.Scan(&consumer)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, consumersGroup, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err == pgx.ErrNoRows {
 		return false, models.Consumer{}, nil
 	}
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	return true, consumer, nil
-
+	return true, consumers[0], nil
 }
 
 func UpsertNewConsumer(name string,
@@ -2082,11 +2064,6 @@ func DeleteConsumersByStationID(stationId int) error {
 }
 
 func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, error) {
-	// count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "consumers_group": consumersGroup, "is_deleted": false})
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return count, nil
 	var count int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2132,11 +2109,6 @@ func CountActiveConsumersByStationID(stationId int) (int64, error) {
 }
 
 func CountAllActiveConsumers() (int64, error) {
-	// consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return consumersCount, nil
 	var consumersCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2297,16 +2269,6 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 }
 
 func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, models.Consumer, error) {
-	var consumer models.Consumer
-	// filter := bson.M{"name": consumerName, "station_id": stationId, "is_active": true}
-	// err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Consumer{}, nil
-	// } else if err != nil {
-	// 	return true, models.Consumer{}, err
-	// }
-	// return true, consumer, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2319,15 +2281,19 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, consumerName, stationId)
-	err = row.Scan(&consumer)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, consumerName, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err == pgx.ErrNoRows {
 		return false, models.Consumer{}, nil
 	}
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	return true, consumer, nil
+	return true, consumers[0], nil
 }
 
 func UpdateConsumersConnection(connectionId string, isActive bool) error {
@@ -2366,16 +2332,6 @@ func KillConsumersByConnections(connectionIds []string) error {
 
 // Schema Functions
 func GetSchemaByName(name string) (bool, models.Schema, error) {
-	var schema models.Schema
-	// err := schemasCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&schema)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Schema{}, nil
-	// }
-	// if err != nil {
-	// 	return true, models.Schema{}, err
-	// }
-	// return true, schema, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2388,33 +2344,22 @@ func GetSchemaByName(name string) (bool, models.Schema, error) {
 	if err != nil {
 		return true, models.Schema{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, name)
-	err = row.Scan(&schema)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Schema{}, err
+	}
+	defer rows.Close()
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Schema])
 	if err == pgx.ErrNoRows {
 		return false, models.Schema{}, nil
 	}
 	if err != nil {
 		return true, models.Schema{}, err
 	}
-	return true, schema, nil
-
+	return true, schemas[0], nil
 }
 
 func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
-	var schemaVersions []models.SchemaVersion
-	// filter := bson.M{"schema_id": id}
-	// findOptions := options.Find()
-	// findOptions.SetSort(bson.M{"creation_date": -1})
-
-	// cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
-	// if err != nil {
-	// 	return []models.SchemaVersion{}, err
-	// }
-	// if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
-	// 	return []models.SchemaVersion{}, err
-	// }
-	// return schemaVersions, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2433,30 +2378,17 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 		return []models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemaVersions = []models.SchemaVersion{}
-	for rows.Next() {
-		var version models.SchemaVersion
-		if err := rows.Scan(
-			&conn,
-		); err != nil {
-			return []models.SchemaVersion{}, err
-		}
-		schemaVersions = append(schemaVersions, version)
+	schemaVersions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	if err == pgx.ErrNoRows {
+		return []models.SchemaVersion{}, nil
 	}
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return []models.SchemaVersion{}, err
 	}
 	return schemaVersions, nil
 }
 
 func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
-	var schemaVersion models.SchemaVersion
-	// err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": id, "active": true}).Decode(&schemaVersion)
-	// if err != nil {
-	// 	return models.SchemaVersion{}, err
-	// }
-	// return schemaVersion, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2469,12 +2401,19 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, id)
-	err = row.Scan(&schemaVersion)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
-	return schemaVersion, nil
+	defer rows.Close()
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	if err == pgx.ErrNoRows {
+		return models.SchemaVersion{}, nil
+	}
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+	return schemas[0], nil
 }
 
 func UpdateSchemasOfDeletedUser(username string) error {
@@ -2489,16 +2428,6 @@ func UpdateSchemasOfDeletedUser(username string) error {
 }
 
 func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.SchemaVersion, error) {
-	var schemaVersion models.SchemaVersion
-	// filter := bson.M{"schema_id": schemaId, "version_number": version}
-	// err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.SchemaVersion{}, nil
-	// } else if err != nil {
-	// 	return true, models.SchemaVersion{}, err
-	// }
-	// return true, schemaVersion, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2511,15 +2440,19 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, version, schemaId)
-	err = row.Scan(&schemaVersion)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, version, schemaId)
+	if err != nil {
+		return true, models.SchemaVersion{}, err
+	}
+	defer rows.Close()
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
 	if err == pgx.ErrNoRows {
 		return false, models.SchemaVersion{}, nil
 	}
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
-	return true, schemaVersion, nil
+	return true, schemas[0], nil
 }
 
 func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
@@ -2732,18 +2665,6 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 
 // Integration Functions
 func GetIntegration(name string) (bool, models.Integration, error) {
-	var integration models.Integration
-	// filter := bson.M{"name": name}
-	// err := integrationsCollection.FindOne(context.TODO(),
-	// 	filter).Decode(&integration)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Integration{}, nil
-	// }
-	// if err != nil {
-	// 	return true, models.Integration{}, err
-	// }
-	// return true, integration, err
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2757,31 +2678,22 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 	if err != nil {
 		return true, models.Integration{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, name)
-	err = row.Scan(&integration)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Integration{}, err
+	}
+	defer rows.Close()
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
 	if err == pgx.ErrNoRows {
 		return false, models.Integration{}, nil
 	}
 	if err != nil {
 		return true, models.Integration{}, err
 	}
-	return true, integration, nil
+	return true, integrations[0], nil
 }
 
 func GetAllIntegrations() (bool, []models.Integration, error) {
-	var integrations []models.Integration
-	// cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, []models.Integration{}, nil
-	// }
-	// if err != nil {
-	// 	return true, []models.Integration{}, err
-	// }
-	// if err = cursor.All(context.TODO(), &integrations); err != nil {
-	// 	return true, []models.Integration{}, err
-	// }
-	// return true, integrations, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2799,17 +2711,11 @@ func GetAllIntegrations() (bool, []models.Integration, error) {
 		return true, []models.Integration{}, err
 	}
 	defer rows.Close()
-	integrations = []models.Integration{}
-	for rows.Next() {
-		var integration models.Integration
-		if err := rows.Scan(
-			&integration,
-		); err != nil {
-			return true, []models.Integration{}, err
-		}
-		integrations = append(integrations, integration)
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+	if err == pgx.ErrNoRows {
+		return false, []models.Integration{}, nil
 	}
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return true, []models.Integration{}, err
 	}
 	return true, integrations, nil
@@ -2903,16 +2809,6 @@ func ChangeUserPassword(username string, hashedPassword string) error {
 }
 
 func GetRootUser() (bool, models.User, error) {
-	var user models.User
-	// filter := bson.M{"user_type": "root"}
-	// err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.User{}, nil
-	// } else if err != nil {
-	// 	return true, models.User{}, err
-	// }
-	// return true, user, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2925,28 +2821,22 @@ func GetRootUser() (bool, models.User, error) {
 	if err != nil {
 		return true, models.User{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name)
-	err = row.Scan(&user)
-	if err == pgx.ErrNoRows {
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
 		return true, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err == pgx.ErrNoRows {
+		return false, models.User{}, nil
 	}
 	if err != nil {
 		return true, models.User{}, err
 	}
-	return true, user, nil
+	return true, users[0], nil
 }
 
 func GetUserByUsername(username string) (bool, models.User, error) {
-	var user models.User
-	// filter := bson.M{"username": username}
-	// err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.User{}, nil
-	// } else if err != nil {
-	// 	return true, models.User{}, err
-	// }
-	// return true, user, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2959,20 +2849,22 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	if err != nil {
 		return true, models.User{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, username)
-	err = row.Scan(&user)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err == pgx.ErrNoRows {
-		return true, models.User{}, nil
+		return false, models.User{}, nil
 	}
 	if err != nil {
 		return true, models.User{}, err
 	}
-	return true, user, nil
+	return true, users[0], nil
 }
 
 func GetUserByUserId(userId int) (bool, models.User, error) {
-	var user models.User
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2985,30 +2877,22 @@ func GetUserByUserId(userId int) (bool, models.User, error) {
 	if err != nil {
 		return true, models.User{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, userId)
-	err = row.Scan(&user)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, userId)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err == pgx.ErrNoRows {
-		return true, models.User{}, nil
+		return false, models.User{}, nil
 	}
 	if err != nil {
 		return true, models.User{}, err
 	}
-	return true, user, nil
+	return true, users[0], nil
 }
 
 func GetAllUsers() ([]models.FilteredGenericUser, error) {
-	var users []models.FilteredGenericUser
-
-	// cursor, err := usersCollection.Find(context.TODO(), bson.M{})
-	// if err != nil {
-	// 	return []models.FilteredGenericUser{}, err
-	// }
-
-	// if err = cursor.All(context.TODO(), &users); err != nil {
-	// 	return []models.FilteredGenericUser{}, err
-	// }
-	// return users, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3026,39 +2910,17 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer rows.Close()
-	users = []models.FilteredGenericUser{}
-	for rows.Next() {
-		var user models.FilteredGenericUser
-		if err := rows.Scan(
-			&user,
-		); err != nil {
-			return []models.FilteredGenericUser{}, err
-		}
-		users = append(users, user)
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredGenericUser])
+	if err == pgx.ErrNoRows {
+		return []models.FilteredGenericUser{}, nil
 	}
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
 	return users, nil
 }
 
 func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
-	var users []models.FilteredApplicationUser
-
-	// cursor, err := usersCollection.Find(context.TODO(), bson.M{
-	// 	"$or": []interface{}{
-	// 		bson.M{"user_type": "application"},
-	// 		bson.M{"user_type": "root"},
-	// 	},
-	// })
-	// if err != nil {
-	// 	return []models.FilteredApplicationUser{}, err
-	// }
-
-	// if err = cursor.All(context.TODO(), &users); err != nil {
-	// 	return []models.FilteredApplicationUser{}, err
-	// }
-	// return users, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3077,21 +2939,14 @@ func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 		return []models.FilteredApplicationUser{}, err
 	}
 	defer rows.Close()
-	users = []models.FilteredApplicationUser{}
-	for rows.Next() {
-		var user models.FilteredApplicationUser
-		if err := rows.Scan(
-			&user,
-		); err != nil {
-			return []models.FilteredApplicationUser{}, err
-		}
-		users = append(users, user)
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
+	if err == pgx.ErrNoRows {
+		return []models.FilteredApplicationUser{}, nil
 	}
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return []models.FilteredApplicationUser{}, err
 	}
 	return users, nil
-
 }
 
 func UpdateUserAlreadyLoggedIn(userId int) {
@@ -3133,23 +2988,6 @@ func EditAvatar(username string, avatarId int) error {
 
 // TODO: Aggregate
 func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function executed on stations collection
-	var userList []models.FilteredUser
-
-	// cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-	// 	bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
-	// 	bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
-	// 	bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
-	// 	bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
-	// })
-	// if err != nil {
-	// 	return []models.FilteredUser{}, err
-	// }
-
-	// if err = cursorUsers.All(context.TODO(), &userList); err != nil {
-	// 	return []models.FilteredUser{}, err
-	// }
-	// return userList, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3172,16 +3010,13 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function execu
 		return []models.FilteredUser{}, err
 	}
 	defer rows.Close()
-
-	for rows.Next() {
-		var user models.FilteredUser
-		err := rows.Scan(&user)
-		if err != nil {
-			return []models.FilteredUser{}, err
-		}
-		userList = append(userList, user)
+	userList, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredUser])
+	if err == pgx.ErrNoRows {
+		return []models.FilteredUser{}, nil
 	}
-
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
 	return userList, nil
 }
 
@@ -3290,27 +3125,17 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	case "user":
 		entityDBList = "users"
 	}
-	var tags []models.Tag
-	// cursor, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: id})
-	// if err != nil {
-	// 	return []models.Tag{}, err
-	// }
-	// if err = cursor.All(context.TODO(), &tags); err != nil {
-	// 	return []models.Tag{}, err
-	// }
-	// return tags, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return []models.Tag{}, err
 	}
 	defer conn.Release()
 	query := fmt.Sprintf(`SELECT * FROM tags WHERE $1 = ANY(%s)`, entityDBList)
 	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id", query)
 	if err != nil {
-		return nil, err
+		return []models.Tag{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
 
@@ -3318,25 +3143,17 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	tags = []models.Tag{}
-	for rows.Next() {
-		var tag models.Tag
-		err := rows.Scan(&tag)
-		if err != nil {
-			return nil, err
-		}
-		tags = append(tags, tag)
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err == pgx.ErrNoRows {
+		return []models.Tag{}, err
 	}
-
-	if rows.Err() != nil {
-		return nil, err
+	if err != nil {
+		return []models.Tag{}, err
 	}
-
 	return tags, nil
 }
 
 func GetTagsByEntityType(entity string) ([]models.Tag, error) {
-	var tags []models.Tag
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -3353,7 +3170,7 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return []models.Tag{}, err
 	}
 	defer conn.Release()
 	var query string
@@ -3364,7 +3181,7 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 	}
 	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_type", query)
 	if err != nil {
-		return nil, err
+		return []models.Tag{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name)
 
@@ -3372,35 +3189,18 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	tags = []models.Tag{}
-	for rows.Next() {
-		var tag models.Tag
-		err := rows.Scan(&tag)
-		if err != nil {
-			return nil, err
-		}
-		tags = append(tags, tag)
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err == pgx.ErrNoRows {
+		return []models.Tag{}, nil
 	}
-
-	if rows.Err() != nil {
-		return nil, err
+	if err != nil {
+		return []models.Tag{}, err
 	}
 
 	return tags, nil
 }
 
 func GetAllUsedTags() ([]models.Tag, error) {
-	var tags []models.Tag
-	// filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
-	// cursor, err := tagsCollection.Find(context.TODO(), filter)
-	// if err != nil {
-	// 	return []models.Tag{}, err
-	// }
-	// if err = cursor.All(context.TODO(), &tags); err != nil {
-	// 	return []models.Tag{}, err
-	// }
-	// return tags, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3419,36 +3219,17 @@ func GetAllUsedTags() ([]models.Tag, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	tags = []models.Tag{}
-	for rows.Next() {
-		var tag models.Tag
-		err := rows.Scan(&tag)
-		if err != nil {
-			return nil, err
-		}
-		tags = append(tags, tag)
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err == pgx.ErrNoRows {
+		return []models.Tag{}, nil
 	}
-
-	if rows.Err() != nil {
-		return nil, err
+	if err != nil {
+		return []models.Tag{}, err
 	}
-
 	return tags, nil
 }
 
 func GetTagByName(name string) (bool, models.Tag, error) {
-	var tag models.Tag
-	// filter := bson.M{
-	// 	"name": name,
-	// }
-	// err := tagsCollection.FindOne(context.TODO(), filter).Decode(&tag)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Tag{}, nil
-	// } else if err != nil {
-	// 	return true, models.Tag{}, err
-	// }
-	// return true, tag, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3461,15 +3242,19 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 	if err != nil {
 		return true, models.Tag{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, name)
-	err = row.Scan(&tag)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Tag{}, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
 	if err == pgx.ErrNoRows {
 		return false, models.Tag{}, nil
 	}
 	if err != nil {
 		return true, models.Tag{}, err
 	}
-	return true, tag, err
+	return true, tags[0], nil
 }
 
 // Sandbox Functions
@@ -3486,17 +3271,6 @@ func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 }
 
 func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
-	var user models.SandboxUser
-	// filter := bson.M{"username": username}
-	// err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, user, nil
-	// }
-	// if err != nil {
-	// 	return true, models.SandboxUser{}, err
-	// }
-	// return true, user, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3509,15 +3283,19 @@ func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 	if err != nil {
 		return true, models.SandboxUser{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, username)
-	err = row.Scan(&user)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	if err != nil {
+		return true, models.SandboxUser{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
 	if err == pgx.ErrNoRows {
-		return true, models.SandboxUser{}, nil
+		return false, models.SandboxUser{}, nil
 	}
 	if err != nil {
 		return true, models.SandboxUser{}, err
 	}
-	return true, user, nil
+	return true, users[0], nil
 }
 
 func UpdateSkipGetStartedSandbox(username string) error {
@@ -3550,15 +3328,6 @@ func DeleteImage(name string) error {
 }
 
 func GetImage(name string) (bool, models.Image, error) {
-	var image models.Image
-	// err := imagesCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&image)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Image{}, nil
-	// } else if err != nil {
-	// 	return true, models.Image{}, err
-	// }
-	// return true, image, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3571,13 +3340,17 @@ func GetImage(name string) (bool, models.Image, error) {
 	if err != nil {
 		return true, models.Image{}, err
 	}
-	row := conn.Conn().QueryRow(ctx, stmt.Name, name)
-	err = row.Scan(&image)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Image{}, err
+	}
+	defer rows.Close()
+	images, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Image])
 	if err == pgx.ErrNoRows {
 		return false, models.Image{}, nil
 	}
 	if err != nil {
 		return true, models.Image{}, err
 	}
-	return true, image, nil
+	return true, images[0], nil
 }
