@@ -11,12 +11,8 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package models
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
 type SystemKey struct {
-	ID    primitive.ObjectID `json:"id" bson:"_id"`
-	Key   string             `json:"key" bson:"key"`
-	Value string             `json:"value" bson:"value"`
+	ID    int    `json:"id" bson:"_id"`
+	Key   string `json:"key" bson:"key"`
+	Value string `json:"value" bson:"value"`
 }

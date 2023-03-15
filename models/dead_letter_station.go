@@ -13,17 +13,15 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProducerDetails struct {
-	Name          string             `json:"name" bson:"name"`
-	ClientAddress string             `json:"client_address" bson:"client_address"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
+	Name          string `json:"name"`
+	ClientAddress string `json:"client_address"`
+	ConnectionId  string `json:"connection_id"`
+	CreatedBy     int    `json:"created_by"`
+	IsActive      bool   `json:"is_active"`
+	IsDeleted     bool   `json:"is_deleted"`
 }
 
 type MsgHeader struct {

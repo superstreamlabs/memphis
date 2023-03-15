@@ -45,7 +45,6 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -59,32 +58,32 @@ const (
 // Info is the information sent to clients, routes, gateways, and leaf nodes,
 // to help them understand information about this server.
 type Info struct {
-	ID                string             `json:"server_id"`
-	Name              string             `json:"server_name"`
-	Version           string             `json:"version"`
-	Proto             int                `json:"proto"`
-	GitCommit         string             `json:"git_commit,omitempty"`
-	GoVersion         string             `json:"go"`
-	Host              string             `json:"host"`
-	Port              int                `json:"port"`
-	Headers           bool               `json:"headers"`
-	AuthRequired      bool               `json:"auth_required,omitempty"`
-	TLSRequired       bool               `json:"tls_required,omitempty"`
-	TLSVerify         bool               `json:"tls_verify,omitempty"`
-	TLSAvailable      bool               `json:"tls_available,omitempty"`
-	MaxPayload        int32              `json:"max_payload"`
-	JetStream         bool               `json:"jetstream,omitempty"`
-	IP                string             `json:"ip,omitempty"`
-	CID               uint64             `json:"client_id,omitempty"`
-	ClientIP          string             `json:"client_ip,omitempty"`
-	Nonce             string             `json:"nonce,omitempty"`
-	Cluster           string             `json:"cluster,omitempty"`
-	Dynamic           bool               `json:"cluster_dynamic,omitempty"`
-	Domain            string             `json:"domain,omitempty"`
-	ClientConnectURLs []string           `json:"connect_urls,omitempty"`    // Contains URLs a client can connect to.
-	WSConnectURLs     []string           `json:"ws_connect_urls,omitempty"` // Contains URLs a ws client can connect to.
-	LameDuckMode      bool               `json:"ldm,omitempty"`
-	ConnectionId      primitive.ObjectID `json:"connection_id"`
+	ID                string   `json:"server_id"`
+	Name              string   `json:"server_name"`
+	Version           string   `json:"version"`
+	Proto             int      `json:"proto"`
+	GitCommit         string   `json:"git_commit,omitempty"`
+	GoVersion         string   `json:"go"`
+	Host              string   `json:"host"`
+	Port              int      `json:"port"`
+	Headers           bool     `json:"headers"`
+	AuthRequired      bool     `json:"auth_required,omitempty"`
+	TLSRequired       bool     `json:"tls_required,omitempty"`
+	TLSVerify         bool     `json:"tls_verify,omitempty"`
+	TLSAvailable      bool     `json:"tls_available,omitempty"`
+	MaxPayload        int32    `json:"max_payload"`
+	JetStream         bool     `json:"jetstream,omitempty"`
+	IP                string   `json:"ip,omitempty"`
+	CID               uint64   `json:"client_id,omitempty"`
+	ClientIP          string   `json:"client_ip,omitempty"`
+	Nonce             string   `json:"nonce,omitempty"`
+	Cluster           string   `json:"cluster,omitempty"`
+	Dynamic           bool     `json:"cluster_dynamic,omitempty"`
+	Domain            string   `json:"domain,omitempty"`
+	ClientConnectURLs []string `json:"connect_urls,omitempty"`    // Contains URLs a client can connect to.
+	WSConnectURLs     []string `json:"ws_connect_urls,omitempty"` // Contains URLs a ws client can connect to.
+	LameDuckMode      bool     `json:"ldm,omitempty"`
+	ConnectionId      string   `json:"connection_id"`
 
 	// Route Specific
 	Import        *SubjectPermission `json:"import,omitempty"`

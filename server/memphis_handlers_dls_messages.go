@@ -23,8 +23,6 @@ import (
 	"strings"
 
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -61,7 +59,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
-	if !station.DlsConfiguration.Poison {
+	if !station.DlsConfigurationPoison {
 		return
 	}
 
@@ -113,7 +111,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			return
 		}
 
-		connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
+		connId := connectionIdHeader
 		_, conn, err := db.GetConnectionByID(connId)
 		if err != nil {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
@@ -133,7 +131,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			Name:          producedByHeader,
 			ClientAddress: conn.ClientAddress,
 			ConnectionId:  connId,
-			CreatedByUser: producer.CreatedByUser,
+			CreatedBy:     producer.CreatedBy,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		}
@@ -360,7 +358,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	var producer models.Producer
 	var dlsMsg models.DlsMessage
 	var clientAddress string
-	var connectionId primitive.ObjectID
+	var connectionId string
 
 	for i, msg := range msgs {
 		err = json.Unmarshal(msg.Data, &dlsMsg)
@@ -378,7 +376,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 						return models.DlsMessageResponse{}, err
 					}
 				}
-				connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
+				connectionId = connectionIdHeader
 				_, conn, err := db.GetConnectionByID(connectionId)
 				if err != nil {
 					return models.DlsMessageResponse{}, err
@@ -445,7 +443,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			Name:          producer.Name,
 			ConnectionId:  producer.ConnectionId,
 			ClientAddress: clientAddress,
-			CreatedByUser: producer.CreatedByUser,
+			CreatedBy:     producer.CreatedBy,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		},

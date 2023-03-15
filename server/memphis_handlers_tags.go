@@ -17,11 +17,11 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type TagsHandler struct{ S *Server }
@@ -35,12 +35,12 @@ func validateEntityType(entity string) error {
 	}
 }
 
-func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, color string) error {
+func CreateTag(name string, entity_type string, entity_id int, color string) error {
 	name = strings.ToLower(name)
 	entity := strings.ToLower(entity_type)
-	stationArr := []primitive.ObjectID{}
-	schemaArr := []primitive.ObjectID{}
-	userArr := []primitive.ObjectID{}
+	stationArr := []int{}
+	schemaArr := []int{}
+	userArr := []int{}
 	switch entity {
 	case "station":
 		stationArr = append(stationArr, entity_id)
@@ -56,7 +56,7 @@ func CreateTag(name string, entity_type string, entity_id primitive.ObjectID, co
 	return nil
 }
 
-func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id primitive.ObjectID) error {
+func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id int) error {
 	if len(tags) == 0 {
 		return nil
 	}
@@ -87,26 +87,26 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id prim
 	return nil
 }
 
-func DeleteTagsFromStation(id primitive.ObjectID) {
+func DeleteTagsFromStation(id int) {
 	err := db.RemoveAllTagsFromEntity("stations", id)
 	if err != nil {
-		serv.Errorf("DeleteTagsFromStation: Station ID " + id.Hex() + ": " + err.Error())
+		serv.Errorf("DeleteTagsFromStation: Station ID " + strconv.Itoa(id) + ": " + err.Error())
 		return
 	}
 }
 
-func DeleteTagsFromSchema(id primitive.ObjectID) {
+func DeleteTagsFromSchema(id int) {
 	err := db.RemoveAllTagsFromEntity("schemas", id)
 	if err != nil {
-		serv.Errorf("DeleteTagsFromSchema: Schema ID " + id.Hex() + ": " + err.Error())
+		serv.Errorf("DeleteTagsFromSchema: Schema ID " + strconv.Itoa(id) + ": " + err.Error())
 		return
 	}
 }
 
-func DeleteTagsFromUser(id primitive.ObjectID) {
+func DeleteTagsFromUser(id int) {
 	err := db.RemoveAllTagsFromEntity("users", id)
 	if err != nil {
-		serv.Errorf("DeleteTagsFromUser: User ID " + id.Hex() + ": " + err.Error())
+		serv.Errorf("DeleteTagsFromUser: User ID " + strconv.Itoa(id) + ": " + err.Error())
 		return
 	}
 }
@@ -139,7 +139,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	stationArr := []int{}
 	schemaArr := []int{}
 	userArr := []int{}
-	newTag, err := db.UpsertNewTagV1(name, color, stationArr, schemaArr, userArr)
+	newTag, err := db.UpsertNewTag(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -171,7 +171,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	var entity_id primitive.ObjectID
+	var entity_id int
 	var stationName string
 	var message string
 
@@ -246,12 +246,11 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	if entity == "station" {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName,
-			Message:       message,
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			UserType:      user.UserType,
+			StationName:  stationName,
+			Message:      message,
+			CreatedBy:    user.ID,
+			CreationDate: time.Now(),
+			UserType:     user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -271,7 +270,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	}
 	entity := strings.ToLower(body.EntityType)
 	err := validateEntityType(entity)
-	var entity_id primitive.ObjectID
+	var entity_id int
 	if err != nil {
 		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -370,12 +369,11 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 				var auditLogs []interface{}
 				newAuditLog := models.AuditLog{
-					ID:            primitive.NewObjectID(),
-					StationName:   stationName.Intern(),
-					Message:       message,
-					CreatedByUser: user.Username,
-					CreationDate:  time.Now(),
-					UserType:      user.UserType,
+					StationName:  stationName.Intern(),
+					Message:      message,
+					CreatedBy:    user.ID,
+					CreationDate: time.Now(),
+					UserType:     user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
@@ -428,12 +426,11 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 				var auditLogs []interface{}
 				newAuditLog := models.AuditLog{
-					ID:            primitive.NewObjectID(),
-					StationName:   stationName.Intern(),
-					Message:       message,
-					CreatedByUser: user.Username,
-					CreationDate:  time.Now(),
-					UserType:      user.UserType,
+					StationName:  stationName.Intern(),
+					Message:      message,
+					CreatedBy:    user.ID,
+					CreationDate: time.Now(),
+					UserType:     user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
@@ -458,7 +455,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	}
 	c.IndentedJSON(200, tags)
 }
-func (th TagsHandler) GetTagsByEntityWithID(entity string, id primitive.ObjectID) ([]models.CreateTag, error) {
+func (th TagsHandler) GetTagsByEntityWithID(entity string, id int) ([]models.CreateTag, error) {
 	tags, err := db.GetTagsByEntityID(entity, id)
 	if err != nil {
 		return []models.CreateTag{}, err

@@ -163,11 +163,11 @@ func JoinTable(dbPostgreSQL *pgxpool.Pool) error {
 	}
 
 	defer conn.Release()
-	_, err = conn.Conn().Prepare(ctx, "join", query)
+	stmt, err := conn.Conn().Prepare(ctx, "join", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, "join", 1)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, 1)
 	if err != nil {
 		return err
 	}
@@ -211,12 +211,12 @@ func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
 	}
 	defer conn.Release()
 	query := `SELECT username FROM users WHERE username = $1`
-	_, err = conn.Conn().Prepare(ctx, "select from", query)
+	stmt, err := conn.Conn().Prepare(ctx, "select_from", query)
 	if err != nil {
 		return err
 	}
 	var username string
-	rows := conn.Conn().QueryRow(ctx, "select from", "test")
+	rows := conn.Conn().QueryRow(ctx, stmt.Name, "test")
 
 	err = rows.Scan(&username)
 	if err != nil {
@@ -243,13 +243,13 @@ func updateFieldInTable(dbPostgreSQL *pgxpool.Pool) error {
 	SET username = $2
 	WHERE id = $1
 	RETURNING id, username;`
-	_, err = conn.Conn().Prepare(ctx, "update", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update", query)
 	if err != nil {
 		return err
 	}
 	var username string
 	var id int
-	rows := conn.Conn().QueryRow(ctx, "update", 7, "test")
+	rows := conn.Conn().QueryRow(ctx, stmt.Name, 7, "test")
 	err = rows.Scan(&id, &username)
 	if err != nil {
 		return err
@@ -268,11 +268,11 @@ func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM users WHERE id = $1;`
-	_, err = conn.Conn().Prepare(ctx, "drop", query)
+	stmt, err := conn.Conn().Prepare(ctx, "drop", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, "drop", 7)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, 7)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		);`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
-		id SERIAL NOT NULL,
+		id VARCHAR NOT NULL,
 		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
@@ -357,7 +357,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
-		PRIMARY KEY (id)
+		PRIMARY KEY (id),
+		UNIQUE(name)
 		);
 		CREATE INDEX name
 		ON schemas (name);`
@@ -380,17 +381,17 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
-		connection_id INTEGER NOT NULL,
+		type enum_type_consumer NOT NULL DEFAULT 'application',
+		connection_id VARCHAR NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
-		is_active BOOL NOT NULL DEFAULT false,
-		is_deleted BOOL NOT NULL DEFAULT false,
+		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMP NOT NULL,
+		is_deleted BOOL NOT NULL DEFAULT false,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
-		type enum_type_consumer NOT NULL DEFAULT 'application',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
@@ -403,7 +404,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES stations(id)
 		);
 		CREATE INDEX station_id
-		ON consumers (station_id);`
+		ON consumers (station_id);
+		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true`
 
 	stationsTable := `
 	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
@@ -431,12 +433,12 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			FOREIGN KEY(created_by)
 			REFERENCES users(id)
 		);
-		CREATE UNIQUE INDEX unique_station_name_deleted ON stations (name, is_deleted) WHERE is_deleted = false;`
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
 		version_number SERIAL NOT NULL,
-		active BOOL NOT NULL,
+		active BOOL NOT NULL DEFAULT false,
 		created_by INTEGER NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		schema_content TEXT NOT NULL,
@@ -444,6 +446,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		msg_struct_name VARCHAR,
 		descriptor TEXT,
 		PRIMARY KEY (id),
+		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
 			REFERENCES users(id),
@@ -458,12 +461,12 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
-		connection_id INTEGER NOT NULL,	
-		created_by INTEGER NOT NULL,
-		is_active BOOL NOT NULL DEFAULT false,
-		is_deleted BOOL NOT NULL DEFAULT false,
-		created_at TIMESTAMP NOT NULL,
 		type enum_producer_type NOT NULL DEFAULT 'application',
+		connection_id VARCHAR NOT NULL,	
+		created_by INTEGER NOT NULL,
+		is_active BOOL NOT NULL DEFAULT true,
+		created_at TIMESTAMP NOT NULL,
+		is_deleted BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
@@ -476,7 +479,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES connections(id)
 		);
 		CREATE INDEX producer_station_id
-		ON producers(station_id);`
+		ON producers(station_id);
+		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
 
 	db := dbPostgreSQL.Client
 	ctx := dbPostgreSQL.Ctx
@@ -598,6 +602,9 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	}
 
 	config, err := pgxpool.ParseConfig(postgreSqlUrl)
+	if err != nil {
+		return DbPostgreSQLInstance{}, err
+	}
 	config.MaxConns = 5
 
 	if configuration.POSTGRESQL_TLS_ENABLED {
@@ -639,16 +646,16 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 // System Keys Functions
 func GetSystemKey(key string) (bool, models.SystemKey, error) {
-	filter := bson.M{"key": key}
+	// filter := bson.M{"key": key}
+	// err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.SystemKey{}, nil
+	// }
+	// if err != nil {
+	// 	return true, models.SystemKey{}, err
+	// }
+	// return true, systemKey, nil
 	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err == mongo.ErrNoDocuments {
-		return false, models.SystemKey{}, nil
-	}
-	if err != nil {
-		return true, models.SystemKey{}, err
-	}
-	return true, systemKey, nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -673,13 +680,14 @@ func GetSystemKey(key string) (bool, models.SystemKey, error) {
 }
 
 func InsertSystemKey(key string, value string) error {
-	systemKey := models.SystemKey{
-		ID:    primitive.NewObjectID(),
-		Key:   key,
-		Value: value,
-	}
-	_, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
-	return err
+	// systemKey := models.SystemKey{
+	// 	ID:    primitive.NewObjectID(),
+	// 	Key:   key,
+	// 	Value: value,
+	// }
+	// _, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
+	// return err
+	return nil
 }
 
 func EditSystemKey(key string, value string) error {
@@ -696,27 +704,27 @@ func EditSystemKey(key string, value string) error {
 // Configuration Functions
 func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStringValue, models.ConfigurationsIntValue, error) {
 	var configurationsStringValue models.ConfigurationsStringValue
-	var configurationsIntValue models.ConfigurationsIntValue
-	filter := bson.M{"key": key}
-	if isString {
-		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
-		if err == mongo.ErrNoDocuments {
-			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-		}
-		if err != nil {
-			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-		}
-		return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
-	} else {
-		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
-		if err == mongo.ErrNoDocuments {
-			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-		}
-		if err != nil {
-			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-		}
-		return true, models.ConfigurationsStringValue{}, configurationsIntValue, nil
-	}
+	// var configurationsIntValue models.ConfigurationsIntValue
+	// filter := bson.M{"key": key}
+	// if isString {
+	// 	err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
+	// 	if err == mongo.ErrNoDocuments {
+	// 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+	// 	}
+	// 	if err != nil {
+	// 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+	// 	}
+	// 	return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
+	// } else {
+	// 	err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
+	// 	if err == mongo.ErrNoDocuments {
+	// 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+	// 	}
+	// 	if err != nil {
+	// 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+	// 	}
+	// 	return true, models.ConfigurationsStringValue{}, configurationsIntValue, nil
+	// }
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -741,27 +749,27 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 }
 
 func InsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
-	if isString {
-		config := models.ConfigurationsStringValue{
-			ID:    primitive.NewObjectID(),
-			Key:   key,
-			Value: stringValue,
-		}
-		_, err := configurationsCollection.InsertOne(context.TODO(), config)
-		if err != nil {
-			return err
-		}
-	} else {
-		config := models.ConfigurationsIntValue{
-			ID:    primitive.NewObjectID(),
-			Key:   key,
-			Value: intValue,
-		}
-		_, err := configurationsCollection.InsertOne(context.TODO(), config)
-		if err != nil {
-			return err
-		}
-	}
+	// if isString {
+	// 	config := models.ConfigurationsStringValue{
+	// 		ID:    primitive.NewObjectID(),
+	// 		Key:   key,
+	// 		Value: stringValue,
+	// 	}
+	// 	_, err := configurationsCollection.InsertOne(context.TODO(), config)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	config := models.ConfigurationsIntValue{
+	// 		ID:    primitive.NewObjectID(),
+	// 		Key:   key,
+	// 		Value: intValue,
+	// 	}
+	// 	_, err := configurationsCollection.InsertOne(context.TODO(), config)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 	return nil
 }
 
@@ -798,7 +806,7 @@ func InsertConnection(connection models.Connection) error {
 	return err
 }
 
-func UpdateConnection(connectionId primitive.ObjectID, isActive bool) error {
+func UpdateConnection(connectionId string, isActive bool) error {
 	_, err := connectionsCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": isActive}},
@@ -820,16 +828,16 @@ func UpdateConncetionsOfDeletedUser(username string) error {
 	return nil
 }
 
-func GetConnectionByID(connectionId primitive.ObjectID) (bool, models.Connection, error) {
-	filter := bson.M{"_id": connectionId}
+func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	var connection models.Connection
-	err := connectionsCollection.FindOne(context.TODO(), filter).Decode(&connection)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Connection{}, nil
-	} else if err != nil {
-		return true, models.Connection{}, err
-	}
-	return true, connection, nil
+	// filter := bson.M{"_id": connectionId}
+	// err := connectionsCollection.FindOne(context.TODO(), filter).Decode(&connection)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Connection{}, nil
+	// } else if err != nil {
+	// 	return true, models.Connection{}, err
+	// }
+	// return true, connection, nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -843,7 +851,7 @@ func GetConnectionByID(connectionId primitive.ObjectID) (bool, models.Connection
 		return true, models.Connection{}, err
 	}
 	row := conn.Conn().QueryRow(ctx, stmt.Name, connectionId)
-	err = row.Scan(&connection.ID, &connection.CreatedByUser, &connection.IsActive, &connection.CreationDate, &connection.ClientAddress)
+	err = row.Scan(&connection.ID, &connection.CreatedBy, &connection.IsActive, &connection.CreationDate, &connection.ClientAddress)
 	if err == pgx.ErrNoRows {
 		return false, models.Connection{}, nil
 	}
@@ -853,14 +861,14 @@ func GetConnectionByID(connectionId primitive.ObjectID) (bool, models.Connection
 	return true, connection, nil
 }
 
-func KillRelevantConnections(ids []primitive.ObjectID) error {
-	_, err := connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"_id": bson.M{"$in": ids}},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
-	if err != nil {
-		return err
-	}
+func KillRelevantConnections(ids []string) error {
+	// _, err := connectionsCollection.UpdateMany(context.TODO(),
+	// 	bson.M{"_id": bson.M{"$in": ids}},
+	// 	bson.M{"$set": bson.M{"is_active": false}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -898,10 +906,10 @@ func GetActiveConnections() ([]models.Connection, error) {
 
 // Audit Logs Functions
 func InsertAuditLogs(auditLogs []interface{}) error {
-	_, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
-	if err != nil {
-		return err
-	}
+	// _, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
@@ -964,7 +972,7 @@ func GetActiveStations() ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	defer rows.Close()
-	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.StationPg])
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
 	if err == pgx.ErrNoRows {
 		return []models.Station{}, nil
 	}
@@ -996,7 +1004,7 @@ func GetStationByName(name string) (bool, models.Station, error) {
 		return true, models.Station{}, err
 	}
 	defer rows.Close()
-	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.StationPg])
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
 	if err == pgx.ErrNoRows {
 		return false, models.Station{}, nil
 	}
@@ -1009,76 +1017,10 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	return true, station2, nil
 }
 
-func UpsertNewStationV0(stationName string, username string, retentionType string, retentionValue int, storageType string, replicas int, schemaDetails models.SchemaDetails, idempotencyWindow int64, isNative bool, dlsConfiguration models.DlsConfiguration, tieredStorageEnabled bool) (models.Station, int64, error) {
-	var update bson.M
-	var emptySchemaDetailsResponse struct{}
-	newStation := models.Station{
-		ID:                   primitive.NewObjectID(),
-		Name:                 stationName,
-		CreatedByUser:        username,
-		CreationDate:         time.Now(),
-		IsDeleted:            false,
-		RetentionType:        retentionType,
-		RetentionValue:       retentionValue,
-		StorageType:          storageType,
-		Replicas:             replicas,
-		LastUpdate:           time.Now(),
-		Schema:               schemaDetails,
-		IdempotencyWindow:    idempotencyWindow,
-		IsNative:             isNative,
-		DlsConfiguration:     dlsConfiguration,
-		TieredStorageEnabled: tieredStorageEnabled,
-	}
-	if schemaDetails.SchemaName != "" {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
-				"schema":                   newStation.Schema,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"is_native":                newStation.IsNative,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	} else {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
-				"schema":                   emptySchemaDetailsResponse,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"is_native":                newStation.IsNative,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	}
-	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.Station{}, 0, err
-	}
-	return newStation, updateResults.MatchedCount, nil
-}
-
 // TODO: username should be int
 func UpsertNewStation(
 	stationName string,
-	username string,
+	userId int,
 	retentionType string,
 	retentionValue int,
 	storageType string,
@@ -1087,13 +1029,13 @@ func UpsertNewStation(
 	idempotencyWindow int64,
 	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
-	tieredStorageEnabled bool) (models.StationPg, int64, error) {
+	tieredStorageEnabled bool) (models.Station, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return models.StationPg{}, 0, err
+		return models.Station{}, 0, err
 	}
 	defer conn.Release()
 
@@ -1107,25 +1049,25 @@ func UpsertNewStation(
 		created_at, 
 		updated_at, 
 		is_deleted, 
-		schema_name, 
+		schema_name,
 		schema_version_number,
 		idempotency_window_ms, 
 		is_native, 
 		dls_configuration_poison, 
 		dls_configuration_schemaverse,
-		tiered_storage_enabled)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) 
-	RETURNING id`
+		tiered_storage_enabled
+		) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new station", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_station", query)
 	if err != nil {
-		return models.StationPg{}, 0, err
+		return models.Station{}, 0, err
 	}
 	createAt := time.Now()
 	updatedAt := time.Now()
-	newStation := models.StationPg{
+	newStation := models.Station{
 		Name:                        stationName,
-		CreatedBy:                   username,
+		CreatedBy:                   userId,
 		CreatedAt:                   createAt,
 		IsDeleted:                   false,
 		RetentionType:               retentionType,
@@ -1143,16 +1085,16 @@ func UpsertNewStation(
 	}
 
 	//TODO: change the 1 to username
-	rows, err := conn.Conn().Query(ctx, "upsert new station",
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt, updatedAt,
 		false, schemaDetails.SchemaName, schemaDetails.VersionNumber, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
 	if err != nil {
-		return models.StationPg{}, 0, err
+		return models.Station{}, 0, err
 	}
 	for rows.Next() {
 		err := rows.Scan(&newStation.ID)
 		if err != nil {
-			return models.StationPg{}, 0, err
+			return models.Station{}, 0, err
 		}
 	}
 
@@ -1163,26 +1105,26 @@ func UpsertNewStation(
 // TODO: Aggregate
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	var stations []models.ExtendedStation
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{
-			bson.D{{"is_deleted", false}},
-			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
-		}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
-		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
-	})
-	if err == mongo.ErrNoDocuments {
-		return []models.ExtendedStation{}, nil
-	}
-	if err != nil {
-		return []models.ExtendedStation{}, err
-	}
+	// cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"$or", []interface{}{
+	// 		bson.D{{"is_deleted", false}},
+	// 		bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
+	// 	}}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
+	// })
+	// if err == mongo.ErrNoDocuments {
+	// 	return []models.ExtendedStation{}, nil
+	// }
+	// if err != nil {
+	// 	return []models.ExtendedStation{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &stations); err != nil {
-		return []models.ExtendedStation{}, err
-	}
-	return stations, nil
+	// if err = cursor.All(context.TODO(), &stations); err != nil {
+	// 	return []models.ExtendedStation{}, err
+	// }
+	// return stations, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1352,30 +1294,30 @@ func UpdateStationsOfDeletedUser(username string) error {
 
 // TODO: Aggregate
 func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
-	var stations []models.Station
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$unwind", bson.D{{"path", "$schema"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"schema.name", schemaName}, {"is_deleted", false}}}},
-		bson.D{{"$project", bson.D{{"name", 1}}}},
-	})
-	if err != nil {
-		return []string{}, err
-	}
+	// var stations []models.Station
+	// cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$unwind", bson.D{{"path", "$schema"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$match", bson.D{{"schema.name", schemaName}, {"is_deleted", false}}}},
+	// 	bson.D{{"$project", bson.D{{"name", 1}}}},
+	// })
+	// if err != nil {
+	// 	return []string{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &stations); err != nil {
-		return []string{}, err
-	}
-	if len(stations) == 0 {
-		return []string{}, nil
-	}
+	// if err = cursor.All(context.TODO(), &stations); err != nil {
+	// 	return []string{}, err
+	// }
+	// if len(stations) == 0 {
+	// 	return []string{}, nil
+	// }
+
+	// for _, station := range stations {
+	// 	stationNames = append(stationNames, station.Name)
+	// }
+
+	// return stationNames, nil
 
 	var stationNames []string
-	for _, station := range stations {
-		stationNames = append(stationNames, station.Name)
-	}
-
-	return stationNames, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1415,13 +1357,13 @@ func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
 }
 
 func GetCountStationsUsingSchema(schemaName string) (int, error) {
-	filter := bson.M{"schema.name": schemaName, "is_deleted": false}
-	countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
-	if err != nil {
-		return 0, err
-	}
+	// filter := bson.M{"schema.name": schemaName, "is_deleted": false}
+	// countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
+	// if err != nil {
+	// 	return 0, err
+	// }
 
-	return int(countStations), nil
+	// return int(countStations), nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1460,22 +1402,22 @@ func RemoveSchemaFromAllUsingStations(schemaName string) error {
 // Producer Functions
 
 // TODO: Aggregate
-func GetProducersByConnectionIDWithStationDetails(connectionId primitive.ObjectID) ([]models.ExtendedProducer, error) {
+func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedProducer, error) {
 	var producers []models.ExtendedProducer
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"connection_id", connectionId}, {"is_active", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
-	if err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	return producers, nil
+	// cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"connection_id", connectionId}, {"is_active", true}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}}}},
+	// 	bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
+	// })
+	// if err != nil {
+	// 	return []models.ExtendedProducer{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &producers); err != nil {
+	// 	return []models.ExtendedProducer{}, err
+	// }
+	// return producers, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1514,7 +1456,7 @@ func GetProducersByConnectionIDWithStationDetails(connectionId primitive.ObjectI
 
 }
 
-func UpdateProducersConnection(connectionId primitive.ObjectID, isActive bool) error {
+func UpdateProducersConnection(connectionId string, isActive bool) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": connectionId},
 		bson.M{"$set": bson.M{"is_active": isActive}},
@@ -1525,17 +1467,17 @@ func UpdateProducersConnection(connectionId primitive.ObjectID, isActive bool) e
 	return nil
 }
 
-func GetProducerByNameAndConnectionID(name string, connectionId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": name, "connection_id": connectionId}
+func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {
 	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, err
-	}
-	if err != nil {
-		return true, models.Producer{}, err
-	}
-	return true, producer, nil
+	// filter := bson.M{"name": name, "connection_id": connectionId}
+	// err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Producer{}, err
+	// }
+	// if err != nil {
+	// 	return true, models.Producer{}, err
+	// }
+	// return true, producer, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1560,17 +1502,17 @@ func GetProducerByNameAndConnectionID(name string, connectionId primitive.Object
 	return true, producer, nil
 }
 
-func GetProducerByStationIDAndUsername(username string, stationId primitive.ObjectID, connectionId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": username, "station_id": stationId, "connection_id": connectionId}
+func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
 	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, err
-	}
-	if err != nil {
-		return true, models.Producer{}, err
-	}
-	return true, producer, nil
+	// filter := bson.M{"name": username, "station_id": stationId, "connection_id": connectionId}
+	// err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Producer{}, err
+	// }
+	// if err != nil {
+	// 	return true, models.Producer{}, err
+	// }
+	// return true, producer, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1595,16 +1537,16 @@ func GetProducerByStationIDAndUsername(username string, stationId primitive.Obje
 	return true, producer, nil
 }
 
-func GetActiveProducerByStationID(producerName string, stationId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": producerName, "station_id": stationId, "is_active": true}
+func GetActiveProducerByStationID(producerName string, stationId int) (bool, models.Producer, error) {
 	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, nil
-	} else if err != nil {
-		return true, models.Producer{}, err
-	}
-	return true, producer, nil
+	// filter := bson.M{"name": producerName, "station_id": stationId, "is_active": true}
+	// err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Producer{}, nil
+	// } else if err != nil {
+	// 	return true, models.Producer{}, err
+	// }
+	// return true, producer, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1630,13 +1572,13 @@ func GetActiveProducerByStationID(producerName string, stationId primitive.Objec
 	return true, producer, nil
 }
 
-func UpsertNewProducerV1(name string, stationId int, producerType string, connectionIdObj int, createdByUser int) (models.ProducerPg, int64, error) {
+func UpsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int) (models.Producer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return models.ProducerPg{}, 0, err
+		return models.Producer{}, 0, err
 	}
 	defer conn.Release()
 
@@ -1649,74 +1591,43 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 		is_deleted, 
 		created_at, 
 		type) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
-	ON CONFLICT(id) DO UPDATE SET station_id = EXCLUDED.station_id ,connection_id = EXCLUDED.connection_id, created_by = EXCLUDED.created_by, type = EXCLUDED.type
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new producer", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_producer", query)
 	if err != nil {
-		return models.ProducerPg{}, 0, err
+		return models.Producer{}, 0, err
 	}
 
-	newProducer := models.ProducerPg{}
+	newProducer := models.Producer{}
 	createAt := time.Now()
+	isActive := true
+	isDeleted := false
 
-	rows, err := conn.Conn().Query(ctx, "upsert new producer",
-		name, stationId, connectionIdObj, createdByUser, false, false, createAt, producerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		name, stationId, connectionIdObj, createdByUser, isActive, isDeleted, createAt, producerType)
 	if err != nil {
-		return models.ProducerPg{}, 0, err
+		return models.Producer{}, 0, err
 	}
 	for rows.Next() {
 		err := rows.Scan(&newProducer.ID)
 		if err != nil {
-			return models.ProducerPg{}, 0, err
+			return models.Producer{}, 0, err
 		}
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newProducer = models.ProducerPg{
-		ID:            newProducer.ID,
-		Name:          name,
-		StationId:     stationId,
-		Type:          producerType,
-		ConnectionId:  connectionIdObj,
-		CreatedByUser: createdByUser,
-		IsActive:      true,
-		CreationDate:  time.Now(),
-		IsDeleted:     false,
+	newProducer = models.Producer{
+		ID:           newProducer.ID,
+		Name:         name,
+		StationId:    stationId,
+		Type:         producerType,
+		ConnectionId: connectionIdObj,
+		CreatedBy:    createdByUser,
+		IsActive:     isActive,
+		CreatedAt:    time.Now(),
+		IsDeleted:    isDeleted,
 	}
 	return newProducer, rowsAffected, nil
-}
-
-func UpsertNewProducer(name string, stationId primitive.ObjectID, producerType string, connectionIdObj primitive.ObjectID, createdByUser string) (models.Producer, int64, error) {
-	newProducer := models.Producer{
-		ID:            primitive.NewObjectID(),
-		Name:          name,
-		StationId:     stationId,
-		Type:          producerType,
-		ConnectionId:  connectionIdObj,
-		CreatedByUser: createdByUser,
-		IsActive:      true,
-		CreationDate:  time.Now(),
-		IsDeleted:     false,
-	}
-
-	filter := bson.M{"name": newProducer.Name, "station_id": stationId, "is_active": true, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":             newProducer.ID,
-			"type":            newProducer.Type,
-			"connection_id":   newProducer.ConnectionId,
-			"created_by_user": newProducer.CreatedByUser,
-			"creation_date":   newProducer.CreationDate,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return newProducer, 0, err
-	}
-	return newProducer, updateResults.MatchedCount, nil
 }
 
 func GetAllProducers() ([]models.ExtendedProducer, error) {
@@ -1752,28 +1663,29 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	return producers, nil
 }
 
-func GetProducersByStationID(stationId primitive.ObjectID) ([]models.ExtendedProducer, error) {
+// TODO: Aggregate
+func GetProducersByStationID(stationId int) ([]models.ExtendedProducer, error) {
 	var producers []models.ExtendedProducer
 
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", stationId}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	// cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"station_id", stationId}}}},
+	// 	bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+	// 	bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
+	// })
 
-	if err != nil {
-		return []models.ExtendedProducer{}, err
-	}
+	// if err != nil {
+	// 	return []models.ExtendedProducer{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	return producers, nil
+	// if err = cursor.All(context.TODO(), &producers); err != nil {
+	// 	return []models.ExtendedProducer{}, err
+	// }
+	// return producers, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1831,7 +1743,7 @@ func GetProducersByStationID(stationId primitive.ObjectID) ([]models.ExtendedPro
 	return producers, nil
 }
 
-func DeleteProducerByNameAndStationID(name string, stationId primitive.ObjectID) (bool, models.Producer, error) {
+func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
 	var producer models.Producer
 	err := producersCollection.FindOneAndUpdate(context.TODO(),
 		bson.M{"name": name, "station_id": stationId, "is_active": true},
@@ -1846,7 +1758,7 @@ func DeleteProducerByNameAndStationID(name string, stationId primitive.ObjectID)
 	return true, producer, nil
 }
 
-func DeleteProducersByStationID(stationId primitive.ObjectID) error {
+func DeleteProducersByStationID(stationId int) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": stationId},
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
@@ -1857,13 +1769,13 @@ func DeleteProducersByStationID(stationId primitive.ObjectID) error {
 	return nil
 }
 
-func CountActiveProudcersByStationID(stationId primitive.ObjectID) (int64, error) {
-	activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
-	if err != nil {
-		return 0, err
-	}
-	return activeCount, nil
-
+func CountActiveProudcersByStationID(stationId int) (int64, error) {
+	// activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return activeCount, nil
+	var activeCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1885,12 +1797,12 @@ func CountActiveProudcersByStationID(stationId primitive.ObjectID) (int64, error
 }
 
 func CountAllActiveProudcers() (int64, error) {
-	producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
-	if err != nil {
-		return 0, err
-	}
-	return producersCount, nil
-
+	// producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return producersCount, nil
+	var producersCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1922,7 +1834,7 @@ func UpdateProducersOfDeletedUser(username string) error {
 	return nil
 }
 
-func KillProducersByConnections(connectionIds []primitive.ObjectID) error {
+func KillProducersByConnections(connectionIds []string) error {
 	_, err := producersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": bson.M{"$in": connectionIds}},
 		bson.M{"$set": bson.M{"is_active": false}},
@@ -1935,17 +1847,17 @@ func KillProducersByConnections(connectionIds []primitive.ObjectID) error {
 }
 
 // Consumer Functions
-func GetActiveConsumerByCG(consumersGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"consumers_group": consumersGroup, "station_id": stationId, "is_deleted": false}
+func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.Consumer, error) {
 	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Consumer{}, nil
-	}
-	if err != nil {
-		return true, models.Consumer{}, err
-	}
-	return true, consumer, nil
+	// filter := bson.M{"consumers_group": consumersGroup, "station_id": stationId, "is_deleted": false}
+	// err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Consumer{}, nil
+	// }
+	// if err != nil {
+	// 	return true, models.Consumer{}, err
+	// }
+	// return true, consumer, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1971,22 +1883,22 @@ func GetActiveConsumerByCG(consumersGroup string, stationId primitive.ObjectID) 
 	return true, consumer, nil
 }
 
-func UpsertNewConsumerV1(name string,
+func UpsertNewConsumer(name string,
 	stationId int,
 	consumerType string,
-	connectionIdObj int,
+	connectionIdObj string,
 	createdByUser int,
 	cgName string,
 	maxAckTime int,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
-	lastMessages int64) (models.ConsumerPg, int64, error) {
+	lastMessages int64) (models.Consumer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return models.ConsumerPg{}, 0, err
+		return models.Consumer{}, 0, err
 	}
 	defer conn.Release()
 
@@ -2005,31 +1917,32 @@ func UpsertNewConsumerV1(name string,
 		last_msgs,
 		type) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
-	ON CONFLICT(id) DO UPDATE SET station_id = EXCLUDED.station_id ,connection_id = EXCLUDED.connection_id, consumers_group =  EXCLUDED.consumers_group, max_ack_time_ms = EXCLUDED.max_ack_time_ms, created_by = EXCLUDED.created_by, type = EXCLUDED.type, max_msg_deliveries = EXCLUDED.max_msg_deliveries, start_consume_from_seq = EXCLUDED.start_consume_from_seq, last_msgs = EXCLUDED.last_msgs
 	RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new consumer", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_consumer", query)
 	if err != nil {
-		return models.ConsumerPg{}, 0, err
+		return models.Consumer{}, 0, err
 	}
 
-	newConsumer := models.ConsumerPg{}
+	newConsumer := models.Consumer{}
 	createdAt := time.Now()
+	isActive := true
+	isDeleted := false
 
-	rows, err := conn.Conn().Query(ctx, "upsert new consumer",
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, false, false, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
 	if err != nil {
-		return models.ConsumerPg{}, 0, err
+		return models.Consumer{}, 0, err
 	}
 	for rows.Next() {
 		err := rows.Scan(&newConsumer.ID)
 		if err != nil {
-			return models.ConsumerPg{}, 0, err
+			return models.Consumer{}, 0, err
 		}
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newConsumer = models.ConsumerPg{
+	newConsumer = models.Consumer{
 		ID:                  newConsumer.ID,
 		Name:                name,
 		StationId:           stationId,
@@ -2037,9 +1950,9 @@ func UpsertNewConsumerV1(name string,
 		ConnectionId:        connectionIdObj,
 		CreatedBy:           createdByUser,
 		ConsumersGroup:      cgName,
-		IsActive:            true,
+		IsActive:            isActive,
 		CreatedAt:           time.Now(),
-		IsDeleted:           false,
+		IsDeleted:           isDeleted,
 		MaxAckTimeMs:        int64(maxAckTime),
 		MaxMsgDeliveries:    maxMsgDeliveries,
 		StartConsumeFromSeq: startConsumeFromSequence,
@@ -2048,63 +1961,24 @@ func UpsertNewConsumerV1(name string,
 	return newConsumer, rowsAffected, nil
 }
 
-func UpsertNewConsumer(name string, stationId primitive.ObjectID, consumerType string, connectionIdObj primitive.ObjectID, createdByUser string, cgName string, maxAckTime int, maxMsgDeliveries int, startConsumeFromSequence uint64, lastMessages int64) (models.Consumer, int64, error) {
-	newConsumer := models.Consumer{
-		ID:                       primitive.NewObjectID(),
-		Name:                     name,
-		StationId:                stationId,
-		Type:                     consumerType,
-		ConnectionId:             connectionIdObj,
-		CreatedByUser:            createdByUser,
-		ConsumersGroup:           cgName,
-		IsActive:                 true,
-		CreationDate:             time.Now(),
-		IsDeleted:                false,
-		MaxAckTimeMs:             int64(maxAckTime),
-		MaxMsgDeliveries:         maxMsgDeliveries,
-		StartConsumeFromSequence: startConsumeFromSequence,
-		LastMessages:             lastMessages,
-	}
-	filter := bson.M{"name": newConsumer.Name, "station_id": stationId, "is_active": true, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                         newConsumer.ID,
-			"type":                        newConsumer.Type,
-			"connection_id":               newConsumer.ConnectionId,
-			"created_by_user":             newConsumer.CreatedByUser,
-			"consumers_group":             newConsumer.ConsumersGroup,
-			"creation_date":               newConsumer.CreationDate,
-			"max_ack_time_ms":             newConsumer.MaxAckTimeMs,
-			"max_msg_deliveries":          newConsumer.MaxMsgDeliveries,
-			"start_consume_from_sequence": newConsumer.StartConsumeFromSequence,
-			"last_messages":               newConsumer.LastMessages,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := consumersCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return newConsumer, 0, err
-	}
-	return newConsumer, updateResults.MatchedCount, nil
-}
-
+// TODO: Aggregate
 func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-	})
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	return consumers, nil
+	// cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+	// })
+	// if err != nil {
+	// 	return []models.ExtendedConsumer{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &consumers); err != nil {
+	// 	return []models.ExtendedConsumer{}, err
+	// }
+	// return consumers, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2144,25 +2018,26 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	return consumers, nil
 }
 
-func GetAllConsumersByStation(stationId primitive.ObjectID) ([]models.ExtendedConsumer, error) {
+// TODO: Aggregate
+func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) {
 	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", stationId}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
+	// cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"station_id", stationId}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
+	// 	bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
+	// })
+	// if err != nil {
+	// 	return []models.ExtendedConsumer{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	return consumers, nil
+	// if err = cursor.All(context.TODO(), &consumers); err != nil {
+	// 	return []models.ExtendedConsumer{}, err
+	// }
+	// return consumers, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2217,7 +2092,7 @@ func GetAllConsumersByStation(stationId primitive.ObjectID) ([]models.ExtendedCo
 	return consumers, nil
 }
 
-func DeleteConsumer(name string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
+func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	var consumer models.Consumer
 	err := consumersCollection.FindOneAndUpdate(context.TODO(),
 		bson.M{"name": name, "station_id": stationId, "is_active": true},
@@ -2242,7 +2117,7 @@ func DeleteConsumer(name string, stationId primitive.ObjectID) (bool, models.Con
 	return true, consumer, nil
 }
 
-func DeleteConsumersByStationID(stationId primitive.ObjectID) error {
+func DeleteConsumersByStationID(stationId int) error {
 	_, err := consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"station_id": stationId},
 		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
@@ -2253,13 +2128,13 @@ func DeleteConsumersByStationID(stationId primitive.ObjectID) error {
 	return nil
 }
 
-func CountActiveConsumersInCG(consumersGroup string, stationId primitive.ObjectID) (int64, error) {
-	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "consumers_group": consumersGroup, "is_deleted": false})
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-
+func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, error) {
+	// count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "consumers_group": consumersGroup, "is_deleted": false})
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return count, nil
+	var count int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2280,13 +2155,13 @@ func CountActiveConsumersInCG(consumersGroup string, stationId primitive.ObjectI
 	return count, nil
 }
 
-func CountActiveConsumersByStationID(stationId primitive.ObjectID) (int64, error) {
-	activeCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
-	if err != nil {
-		return 0, err
-	}
-	return activeCount, nil
-
+func CountActiveConsumersByStationID(stationId int) (int64, error) {
+	// activeCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return activeCount, nil
+	var activeCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2308,12 +2183,12 @@ func CountActiveConsumersByStationID(stationId primitive.ObjectID) (int64, error
 }
 
 func CountAllActiveConsumers() (int64, error) {
-	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
-	if err != nil {
-		return 0, err
-	}
-	return consumersCount, nil
-
+	// consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return consumersCount, nil
+	var consumersCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2334,25 +2209,26 @@ func CountAllActiveConsumers() (int64, error) {
 	return consumersCount, nil
 }
 
-func GetConsumerGroupMembers(cgName string, stationId primitive.ObjectID) ([]models.CgMember, error) {
+// TODO: Aggregate
+func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, error) {
 	var consumers []models.CgMember
 
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", stationId}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
-	if err != nil {
-		return []models.CgMember{}, err
-	}
+	// cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", stationId}}}},
+	// 	bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
+	// 	bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
+	// })
+	// if err != nil {
+	// 	return []models.CgMember{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		return []models.CgMember{}, err
-	}
-	return consumers, nil
+	// if err = cursor.All(context.TODO(), &consumers); err != nil {
+	// 	return []models.CgMember{}, err
+	// }
+	// return consumers, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2404,21 +2280,22 @@ func GetConsumerGroupMembers(cgName string, stationId primitive.ObjectID) ([]mod
 	return consumers, nil
 }
 
-func GetConsumersByConnectionIDWithStationDetails(connectionId primitive.ObjectID) ([]models.ExtendedConsumer, error) {
+// TODO: Aggregate
+func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedConsumer, error) {
 	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"connection_id", connectionId}, {"is_active", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}}})
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	return consumers, nil
+	// cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"connection_id", connectionId}, {"is_active", true}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}}}},
+	// 	bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}}})
+	// if err != nil {
+	// 	return []models.ExtendedConsumer{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &consumers); err != nil {
+	// 	return []models.ExtendedConsumer{}, err
+	// }
+	// return consumers, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2469,16 +2346,16 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId primitive.ObjectI
 	return consumers, nil
 }
 
-func GetActiveConsumerByStationID(consumerName string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"name": consumerName, "station_id": stationId, "is_active": true}
+func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, models.Consumer, error) {
 	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Consumer{}, nil
-	} else if err != nil {
-		return true, models.Consumer{}, err
-	}
-	return true, consumer, nil
+	// filter := bson.M{"name": consumerName, "station_id": stationId, "is_active": true}
+	// err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Consumer{}, nil
+	// } else if err != nil {
+	// 	return true, models.Consumer{}, err
+	// }
+	// return true, consumer, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2503,14 +2380,14 @@ func GetActiveConsumerByStationID(consumerName string, stationId primitive.Objec
 	return true, consumer, nil
 }
 
-func UpdateConsumersConnection(connectionId primitive.ObjectID, isActive bool) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": isActive}},
-	)
-	if err != nil {
-		return err
-	}
+func UpdateConsumersConnection(connectionId string, isActive bool) error {
+	// _, err := consumersCollection.UpdateMany(context.TODO(),
+	// 	bson.M{"connection_id": connectionId},
+	// 	bson.M{"$set": bson.M{"is_active": isActive}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
@@ -2525,7 +2402,7 @@ func UpdateConsumersOfDeletedUser(username string) error {
 	return nil
 }
 
-func KillConsumersByConnections(connectionIds []primitive.ObjectID) error {
+func KillConsumersByConnections(connectionIds []string) error {
 	_, err := consumersCollection.UpdateMany(context.TODO(),
 		bson.M{"connection_id": bson.M{"$in": connectionIds}},
 		bson.M{"$set": bson.M{"is_active": false}},
@@ -2540,14 +2417,14 @@ func KillConsumersByConnections(connectionIds []primitive.ObjectID) error {
 // Schema Functions
 func GetSchemaByName(name string) (bool, models.Schema, error) {
 	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&schema)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Schema{}, nil
-	}
-	if err != nil {
-		return true, models.Schema{}, err
-	}
-	return true, schema, nil
+	// err := schemasCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&schema)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Schema{}, nil
+	// }
+	// if err != nil {
+	// 	return true, models.Schema{}, err
+	// }
+	// return true, schema, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2573,20 +2450,20 @@ func GetSchemaByName(name string) (bool, models.Schema, error) {
 
 }
 
-func GetSchemaVersionsBySchemaID(id primitive.ObjectID) ([]models.SchemaVersion, error) {
+func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 	var schemaVersions []models.SchemaVersion
-	filter := bson.M{"schema_id": id}
-	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"creation_date": -1})
+	// filter := bson.M{"schema_id": id}
+	// findOptions := options.Find()
+	// findOptions.SetSort(bson.M{"creation_date": -1})
 
-	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		return []models.SchemaVersion{}, err
-	}
-	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
-		return []models.SchemaVersion{}, err
-	}
-	return schemaVersions, nil
+	// cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
+	// if err != nil {
+	// 	return []models.SchemaVersion{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
+	// 	return []models.SchemaVersion{}, err
+	// }
+	// return schemaVersions, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2622,13 +2499,13 @@ func GetSchemaVersionsBySchemaID(id primitive.ObjectID) ([]models.SchemaVersion,
 	return schemaVersions, nil
 }
 
-func GetActiveVersionBySchemaID(id primitive.ObjectID) (models.SchemaVersion, error) {
+func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 	var schemaVersion models.SchemaVersion
-	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": id, "active": true}).Decode(&schemaVersion)
-	if err != nil {
-		return models.SchemaVersion{}, err
-	}
-	return schemaVersion, nil
+	// err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": id, "active": true}).Decode(&schemaVersion)
+	// if err != nil {
+	// 	return models.SchemaVersion{}, err
+	// }
+	// return schemaVersion, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2661,16 +2538,16 @@ func UpdateSchemasOfDeletedUser(username string) error {
 	return nil
 }
 
-func GetSchemaVersionByNumberAndID(version int, schemaId primitive.ObjectID) (bool, models.SchemaVersion, error) {
+func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.SchemaVersion, error) {
 	var schemaVersion models.SchemaVersion
-	filter := bson.M{"schema_id": schemaId, "version_number": version}
-	err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
-	if err == mongo.ErrNoDocuments {
-		return false, models.SchemaVersion{}, nil
-	} else if err != nil {
-		return true, models.SchemaVersion{}, err
-	}
-	return true, schemaVersion, nil
+	// filter := bson.M{"schema_id": schemaId, "version_number": version}
+	// err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.SchemaVersion{}, nil
+	// } else if err != nil {
+	// 	return true, models.SchemaVersion{}, err
+	// }
+	// return true, schemaVersion, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2695,7 +2572,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId primitive.ObjectID) (bo
 	return true, schemaVersion, nil
 }
 
-func UpdateSchemaActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
+func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
 		bson.M{"schema_id": schemaId},
 		bson.M{"$set": bson.M{"active": false}},
@@ -2711,14 +2588,13 @@ func UpdateSchemaActiveVersion(schemaId primitive.ObjectID, versionNumber int) e
 	return nil
 }
 
-func GetShcemaVersionsCount(schemaId primitive.ObjectID) (int, error) {
-	countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schemaId})
-	if err != nil {
-		return 0, err
-	}
+func GetShcemaVersionsCount(schemaId int) (int, error) {
+	// countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schemaId})
+	// if err != nil {
+	// 	return 0, err
+	// }
 
-	return int(countVersions), err
-
+	// return int(countVersions), err
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -2740,25 +2616,26 @@ func GetShcemaVersionsCount(schemaId primitive.ObjectID) (int, error) {
 	return count, nil
 }
 
+// TODO: Aggregate
 func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	var schemas []models.ExtendedSchema
-	cursor, err := schemasCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "extendedSchema"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$extendedSchema"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"extendedSchema.version_number", 1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "activeVersion"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$activeVersion"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"activeVersion.active", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}, {"version_number", "$activeVersion.version_number"}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-	})
-	if err != nil {
-		return []models.ExtendedSchema{}, err
-	}
-	if err = cursor.All(context.TODO(), &schemas); err != nil {
-		return []models.ExtendedSchema{}, err
-	}
-	return schemas, nil
+	// cursor, err := schemasCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "extendedSchema"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$extendedSchema"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$match", bson.D{{"extendedSchema.version_number", 1}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "activeVersion"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$activeVersion"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$match", bson.D{{"activeVersion.active", true}}}},
+	// 	bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}, {"version_number", "$activeVersion.version_number"}}}},
+	// 	bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
+	// })
+	// if err != nil {
+	// 	return []models.ExtendedSchema{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &schemas); err != nil {
+	// 	return []models.ExtendedSchema{}, err
+	// }
+	// return schemas, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2798,7 +2675,7 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	return schemas, nil
 }
 
-func FindAndDeleteSchema(schemaIds []primitive.ObjectID) error {
+func FindAndDeleteSchema(schemaIds []int) error {
 	filter := bson.M{"schema_id": bson.M{"$in": schemaIds}}
 	_, err := schemaVersionCollection.DeleteMany(context.TODO(), filter)
 	if err != nil {
@@ -2813,7 +2690,7 @@ func FindAndDeleteSchema(schemaIds []primitive.ObjectID) error {
 	return nil
 }
 
-func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, int64, error) {
+func UpsertNewSchema(schemaName string, schemaType string) (models.SchemaPg, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2826,17 +2703,15 @@ func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, i
 	query := `INSERT INTO schemas ( 
 		name, 
 		type) 
-    VALUES($1, $2) 
-	ON CONFLICT(id) DO UPDATE SET type = EXCLUDED.type
-	RETURNING id`
+    VALUES($1, $2) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new schema", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema", query)
 	if err != nil {
 		return models.SchemaPg{}, 0, err
 	}
 
 	newSchema := models.SchemaPg{}
-	rows, err := conn.Conn().Query(ctx, "upsert new schema", schemaName, schemaType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType)
 	if err != nil {
 		return models.SchemaPg{}, 0, err
 	}
@@ -2856,28 +2731,7 @@ func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, i
 	return newSchema, rowsAffected, nil
 }
 
-func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
-	newSchema := models.Schema{
-		ID:   primitive.NewObjectID(),
-		Name: schemaName,
-		Type: schemaType,
-	}
-	filter := bson.M{"name": newSchema.Name}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":  newSchema.ID,
-			"type": newSchema.Type,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.Schema{}, 0, err
-	}
-	return newSchema, updateResults.MatchedCount, nil
-}
-
-func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersionPg, int64, error) {
+func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersionPg, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2896,11 +2750,9 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 		schema_id,
 		msg_struct_name,
 		descriptor)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
-	ON CONFLICT(id) DO UPDATE SET version_number = EXCLUDED.version_number, active = EXCLUDED.active, created_by = EXCLUDED.created_by, created_at = EXCLUDED.created_at, schema_content = EXCLUDED.schema_content, schema_id = EXCLUDED.schema_id, msg_struct_name = EXCLUDED.msg_struct_name, descriptor = EXCLUDED.descriptor
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new schema version", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema_version", query)
 	if err != nil {
 		return models.SchemaVersionPg{}, 0, err
 	}
@@ -2908,7 +2760,7 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 	newSchemaVersion := models.SchemaVersionPg{}
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, "upsert new schema version", schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
 	if err != nil {
 		return models.SchemaVersionPg{}, 0, err
 	}
@@ -2924,8 +2776,8 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 		ID:                newSchemaVersion.ID,
 		VersionNumber:     schemaVersionNumber,
 		Active:            active,
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
+		CreatedBy:         username,
+		CreatedAt:         time.Now(),
 		SchemaContent:     schemaContent,
 		SchemaId:          schemaId,
 		MessageStructName: messageStructName,
@@ -2934,51 +2786,19 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 	return newSchemaVersion, rowsAffected, nil
 }
 
-func UpsertNewSchemaVersion(schemaVersionNumber int, username string, schemaContent string, schemaId primitive.ObjectID, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
-	newSchemaVersion := models.SchemaVersion{
-		ID:                primitive.NewObjectID(),
-		VersionNumber:     schemaVersionNumber,
-		Active:            active,
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
-		SchemaContent:     schemaContent,
-		SchemaId:          schemaId,
-		MessageStructName: messageStructName,
-		Descriptor:        descriptor,
-	}
-	filter := bson.M{"schema_id": schemaId, "version_number": schemaVersionNumber}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                 newSchemaVersion.ID,
-			"active":              newSchemaVersion.Active,
-			"created_by_user":     newSchemaVersion.CreatedByUser,
-			"creation_date":       newSchemaVersion.CreationDate,
-			"schema_content":      newSchemaVersion.SchemaContent,
-			"message_struct_name": newSchemaVersion.MessageStructName,
-			"descriptor":          newSchemaVersion.Descriptor,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := schemaVersionCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.SchemaVersion{}, 0, err
-	}
-	return newSchemaVersion, updateResults.MatchedCount, nil
-}
-
 // Integration Functions
 func GetIntegration(name string) (bool, models.Integration, error) {
-	filter := bson.M{"name": name}
 	var integration models.Integration
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&integration)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Integration{}, nil
-	}
-	if err != nil {
-		return true, models.Integration{}, err
-	}
-	return true, integration, err
+	// filter := bson.M{"name": name}
+	// err := integrationsCollection.FindOne(context.TODO(),
+	// 	filter).Decode(&integration)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Integration{}, nil
+	// }
+	// if err != nil {
+	// 	return true, models.Integration{}, err
+	// }
+	// return true, integration, err
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3006,17 +2826,17 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 
 func GetAllIntegrations() (bool, []models.Integration, error) {
 	var integrations []models.Integration
-	cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
-	if err == mongo.ErrNoDocuments {
-		return false, []models.Integration{}, nil
-	}
-	if err != nil {
-		return true, []models.Integration{}, err
-	}
-	if err = cursor.All(context.TODO(), &integrations); err != nil {
-		return true, []models.Integration{}, err
-	}
-	return true, integrations, nil
+	// cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, []models.Integration{}, nil
+	// }
+	// if err != nil {
+	// 	return true, []models.Integration{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &integrations); err != nil {
+	// 	return true, []models.Integration{}, err
+	// }
+	// return true, integrations, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3061,69 +2881,68 @@ func DeleteIntegration(name string) error {
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	integration := models.Integration{
-		ID:         primitive.NewObjectID(),
-		Name:       name,
-		Keys:       keys,
-		Properties: properties,
-	}
-	_, err := integrationsCollection.InsertOne(context.TODO(), integration)
-	if err != nil {
-		return models.Integration{}, err
-	}
+	integration := models.Integration{}
 	return integration, nil
 }
 
 func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	var integration models.Integration
-	filter := bson.M{"name": name}
-	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
-		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&integration)
-	if err == mongo.ErrNoDocuments {
-		integration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       name,
-			Keys:       keys,
-			Properties: properties,
-		}
-		_, err = integrationsCollection.InsertOne(context.TODO(), integration)
-		if err != nil {
-			return models.Integration{}, err
-		}
-	} else if err != nil {
-		return models.Integration{}, err
-	}
 	return integration, nil
 }
 
 // User Functions
 func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int) (models.User, error) {
-	var id primitive.ObjectID
-	if userType == "root" {
-		id, _ = primitive.ObjectIDFromHex("6314c8f7ef142f3f04fccdc3") // default root user id
-	} else {
-		id = primitive.NewObjectID()
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.User{}, err
 	}
-	newUser := models.User{
-		ID:              id,
+	defer conn.Release()
+
+	query := `INSERT INTO users ( 
+		username,
+		password,
+		type,
+		already_logged_in,
+		created_at,
+		avatar_id,
+		full_name, 
+		subscription,
+		skip_get_started) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
+	if err != nil {
+		return models.User{}, err
+	}
+	createdAt := time.Now()
+	skipGetStarted := false
+	alreadyLoggedIn := false
+
+	newUser := models.User{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted)
+	if err != nil {
+		return models.User{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newUser.ID)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	newUser = models.User{
+		ID:              newUser.ID,
 		Username:        username,
 		Password:        hashedPassword,
 		FullName:        fullName,
 		Subscribtion:    subscription,
 		UserType:        userType,
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
+		CreatedAt:       createdAt,
+		AlreadyLoggedIn: alreadyLoggedIn,
 		AvatarId:        avatarId,
-	}
-	_, err := usersCollection.InsertOne(context.TODO(), newUser)
-	if err != nil {
-		if userType == "root" {
-			if mongo.IsDuplicateKeyError(err) {
-				return newUser, nil
-			}
-		}
-		return models.User{}, err
 	}
 	return newUser, nil
 }
@@ -3140,15 +2959,15 @@ func ChangeUserPassword(username string, hashedPassword string) error {
 }
 
 func GetRootUser() (bool, models.User, error) {
-	filter := bson.M{"user_type": "root"}
 	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, models.User{}, nil
-	} else if err != nil {
-		return true, models.User{}, err
-	}
-	return true, user, nil
+	// filter := bson.M{"user_type": "root"}
+	// err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.User{}, nil
+	// } else if err != nil {
+	// 	return true, models.User{}, err
+	// }
+	// return true, user, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3174,15 +2993,15 @@ func GetRootUser() (bool, models.User, error) {
 }
 
 func GetUserByUsername(username string) (bool, models.User, error) {
-	filter := bson.M{"username": username}
 	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, models.User{}, nil
-	} else if err != nil {
-		return true, models.User{}, err
-	}
-	return true, user, nil
+	// filter := bson.M{"username": username}
+	// err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.User{}, nil
+	// } else if err != nil {
+	// 	return true, models.User{}, err
+	// }
+	// return true, user, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3191,7 +3010,7 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 		return true, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE username = 'root'`
+	query := `SELECT * FROM users WHERE id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
 	if err != nil {
 		return true, models.User{}, err
@@ -3207,18 +3026,44 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	return true, user, nil
 }
 
+func GetUserByUserId(userId int) (bool, models.User, error) {
+	var user models.User
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	row := conn.Conn().QueryRow(ctx, stmt.Name, userId)
+	err = row.Scan(&user)
+	if err == pgx.ErrNoRows {
+		return true, models.User{}, nil
+	}
+	if err != nil {
+		return true, models.User{}, err
+	}
+	return true, user, nil
+}
+
 func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	var users []models.FilteredGenericUser
 
-	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
-	if err != nil {
-		return []models.FilteredGenericUser{}, err
-	}
+	// cursor, err := usersCollection.Find(context.TODO(), bson.M{})
+	// if err != nil {
+	// 	return []models.FilteredGenericUser{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &users); err != nil {
-		return []models.FilteredGenericUser{}, err
-	}
-	return users, nil
+	// if err = cursor.All(context.TODO(), &users); err != nil {
+	// 	return []models.FilteredGenericUser{}, err
+	// }
+	// return users, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3256,20 +3101,20 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 	var users []models.FilteredApplicationUser
 
-	cursor, err := usersCollection.Find(context.TODO(), bson.M{
-		"$or": []interface{}{
-			bson.M{"user_type": "application"},
-			bson.M{"user_type": "root"},
-		},
-	})
-	if err != nil {
-		return []models.FilteredApplicationUser{}, err
-	}
+	// cursor, err := usersCollection.Find(context.TODO(), bson.M{
+	// 	"$or": []interface{}{
+	// 		bson.M{"user_type": "application"},
+	// 		bson.M{"user_type": "root"},
+	// 	},
+	// })
+	// if err != nil {
+	// 	return []models.FilteredApplicationUser{}, err
+	// }
 
-	if err = cursor.All(context.TODO(), &users); err != nil {
-		return []models.FilteredApplicationUser{}, err
-	}
-	return users, nil
+	// if err = cursor.All(context.TODO(), &users); err != nil {
+	// 	return []models.FilteredApplicationUser{}, err
+	// }
+	// return users, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3305,7 +3150,7 @@ func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 
 }
 
-func UpdateUserAlreadyLoggedIn(userId primitive.ObjectID) {
+func UpdateUserAlreadyLoggedIn(userId int) {
 	usersCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": userId},
 		bson.M{"$set": bson.M{"already_logged_in": true}},
@@ -3342,23 +3187,24 @@ func EditAvatar(username string, avatarId int) error {
 	return nil
 }
 
+// TODO: Aggregate
 func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function executed on stations collection
 	var userList []models.FilteredUser
 
-	cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
-	})
-	if err != nil {
-		return []models.FilteredUser{}, err
-	}
+	// cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
+	// 	bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
+	// 	bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
+	// 	bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
+	// 	bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
+	// })
+	// if err != nil {
+	// 	return []models.FilteredUser{}, err
+	// }
 
-	if err = cursorUsers.All(context.TODO(), &userList); err != nil {
-		return []models.FilteredUser{}, err
-	}
-	return userList, nil
+	// if err = cursorUsers.All(context.TODO(), &userList); err != nil {
+	// 	return []models.FilteredUser{}, err
+	// }
+	// return userList, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3396,7 +3242,7 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function execu
 }
 
 // Tags Functions
-func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.TagPg, error) {
+func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.TagPg, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3412,17 +3258,15 @@ func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int
 		users,
 		stations,
 		schemas) 
-    VALUES($1, $2, $3, $4, $5) 
-	ON CONFLICT(id) DO UPDATE SET color = EXCLUDED.color, users = EXCLUDED.users, stations = EXCLUDED.stations, schemas = EXCLUDED.schemas
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new tag", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_tag", query)
 	if err != nil {
 		return models.TagPg{}, err
 	}
 
 	newTag := models.TagPg{}
-	rows, err := conn.Conn().Query(ctx, "upsert new tag", name, color, userArr, stationArr, schemaArr)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr)
 	if err != nil {
 		return models.TagPg{}, err
 	}
@@ -3443,35 +3287,8 @@ func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int
 	return newTag, nil
 
 }
-func UpsertNewTag(name string, color string, stationArr []primitive.ObjectID, schemaArr []primitive.ObjectID, userArr []primitive.ObjectID) (models.Tag, error) {
-	newTag := models.Tag{
-		ID:   primitive.NewObjectID(),
-		Name: name, Color: color,
-		Stations: stationArr,
-		Schemas:  schemaArr,
-		Users:    userArr,
-	}
 
-	filter := bson.M{"name": newTag.Name}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":      newTag.ID,
-			"name":     newTag.Name,
-			"color":    newTag.Color,
-			"stations": newTag.Stations,
-			"schemas":  newTag.Schemas,
-			"users":    newTag.Users,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.Tag{}, err
-	}
-	return newTag, nil
-}
-
-func UpsertEntityToTag(tagName string, entity string, entity_id primitive.ObjectID) error {
+func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -3493,7 +3310,7 @@ func UpsertEntityToTag(tagName string, entity string, entity_id primitive.Object
 	return nil
 }
 
-func RemoveAllTagsFromEntity(entity string, entity_id primitive.ObjectID) error {
+func RemoveAllTagsFromEntity(entity string, entity_id int) error {
 	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{entity: entity_id}})
 	if err != nil {
 		return err
@@ -3501,7 +3318,7 @@ func RemoveAllTagsFromEntity(entity string, entity_id primitive.ObjectID) error 
 	return nil
 }
 
-func RemoveTagFromEntity(tagName string, entity string, entity_id primitive.ObjectID) error {
+func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -3519,7 +3336,7 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id primitive.Obje
 	return nil
 }
 
-func GetTagsByEntityID(entity string, id primitive.ObjectID) ([]models.Tag, error) {
+func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -3530,14 +3347,14 @@ func GetTagsByEntityID(entity string, id primitive.ObjectID) ([]models.Tag, erro
 		entityDBList = "users"
 	}
 	var tags []models.Tag
-	cursor, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: id})
-	if err != nil {
-		return []models.Tag{}, err
-	}
-	if err = cursor.All(context.TODO(), &tags); err != nil {
-		return []models.Tag{}, err
-	}
-	return tags, nil
+	// cursor, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: id})
+	// if err != nil {
+	// 	return []models.Tag{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &tags); err != nil {
+	// 	return []models.Tag{}, err
+	// }
+	// return tags, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3587,25 +3404,25 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 	default:
 		entityDBList = ""
 	}
-	var cursor *mongo.Cursor
-	if entityDBList == "" { // Get All
-		cur, err := tagsCollection.Find(context.TODO(), bson.M{})
-		if err != nil {
-			return []models.Tag{}, err
-		}
-		cursor = cur
-	} else {
-		cur, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: bson.M{"$not": bson.M{"$size": 0}}})
-		if err != nil {
-			return []models.Tag{}, err
-		}
-		cursor = cur
-	}
+	// var cursor *mongo.Cursor
+	// if entityDBList == "" { // Get All
+	// 	cur, err := tagsCollection.Find(context.TODO(), bson.M{})
+	// 	if err != nil {
+	// 		return []models.Tag{}, err
+	// 	}
+	// 	cursor = cur
+	// } else {
+	// 	cur, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: bson.M{"$not": bson.M{"$size": 0}}})
+	// 	if err != nil {
+	// 		return []models.Tag{}, err
+	// 	}
+	// 	cursor = cur
+	// }
 
-	if err := cursor.All(context.TODO(), &tags); err != nil {
-		return []models.Tag{}, err
-	}
-	return tags, nil
+	// if err := cursor.All(context.TODO(), &tags); err != nil {
+	// 	return []models.Tag{}, err
+	// }
+	// return tags, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3649,15 +3466,15 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 
 func GetAllUsedTags() ([]models.Tag, error) {
 	var tags []models.Tag
-	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
-	cursor, err := tagsCollection.Find(context.TODO(), filter)
-	if err != nil {
-		return []models.Tag{}, err
-	}
-	if err = cursor.All(context.TODO(), &tags); err != nil {
-		return []models.Tag{}, err
-	}
-	return tags, nil
+	// filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
+	// cursor, err := tagsCollection.Find(context.TODO(), filter)
+	// if err != nil {
+	// 	return []models.Tag{}, err
+	// }
+	// if err = cursor.All(context.TODO(), &tags); err != nil {
+	// 	return []models.Tag{}, err
+	// }
+	// return tags, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3695,17 +3512,17 @@ func GetAllUsedTags() ([]models.Tag, error) {
 }
 
 func GetTagByName(name string) (bool, models.Tag, error) {
-	filter := bson.M{
-		"name": name,
-	}
 	var tag models.Tag
-	err := tagsCollection.FindOne(context.TODO(), filter).Decode(&tag)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Tag{}, nil
-	} else if err != nil {
-		return true, models.Tag{}, err
-	}
-	return true, tag, nil
+	// filter := bson.M{
+	// 	"name": name,
+	// }
+	// err := tagsCollection.FindOne(context.TODO(), filter).Decode(&tag)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Tag{}, nil
+	// } else if err != nil {
+	// 	return true, models.Tag{}, err
+	// }
+	// return true, tag, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3732,28 +3549,11 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 
 // Sandbox Functions
 func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-	user := models.SandboxUser{
-		ID:              primitive.NewObjectID(),
-		Username:        username,
-		Email:           email,
-		Password:        "",
-		FirstName:       firstName,
-		LastName:        lastName,
-		UserType:        "",
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
-		AvatarId:        1,
-		ProfilePic:      profilePic,
-	}
-
-	_, err := sandboxUsersCollection.InsertOne(context.TODO(), user)
-	if err != nil {
-		return models.SandboxUser{}, err
-	}
+	user := models.SandboxUser{}
 	return user, nil
 }
 
-func UpdateSandboxUserAlreadyLoggedIn(userId primitive.ObjectID) {
+func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 	sandboxUsersCollection.UpdateOne(context.TODO(),
 		bson.M{"_id": userId},
 		bson.M{"$set": bson.M{"already_logged_in": true}},
@@ -3761,16 +3561,16 @@ func UpdateSandboxUserAlreadyLoggedIn(userId primitive.ObjectID) {
 }
 
 func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
-	filter := bson.M{"username": username}
 	var user models.SandboxUser
-	err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, user, nil
-	}
-	if err != nil {
-		return true, models.SandboxUser{}, err
-	}
-	return true, user, nil
+	// filter := bson.M{"username": username}
+	// err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, user, nil
+	// }
+	// if err != nil {
+	// 	return true, models.SandboxUser{}, err
+	// }
+	// return true, user, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3806,13 +3606,9 @@ func UpdateSkipGetStartedSandbox(username string) error {
 	return nil
 }
 
-// Image Functions
+// Image Functions TODO: convert to configuration
 func InsertImage(name string, base64Encoding string) error {
-	newImage := models.Image{
-		ID:    primitive.NewObjectID(),
-		Name:  name,
-		Image: base64Encoding,
-	}
+	newImage := models.Image{}
 	_, err := imagesCollection.InsertOne(context.TODO(), newImage)
 	if err != nil {
 		return err
@@ -3830,13 +3626,13 @@ func DeleteImage(name string) error {
 
 func GetImage(name string) (bool, models.Image, error) {
 	var image models.Image
-	err := imagesCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&image)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Image{}, nil
-	} else if err != nil {
-		return true, models.Image{}, err
-	}
-	return true, image, nil
+	// err := imagesCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&image)
+	// if err == mongo.ErrNoDocuments {
+	// 	return false, models.Image{}, nil
+	// } else if err != nil {
+	// 	return true, models.Image{}, err
+	// }
+	// return true, image, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()

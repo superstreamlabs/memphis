@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ConfigurationsHandler struct{}
@@ -122,11 +121,6 @@ func (s *Server) initializeConfigurations() {
 			REST_GW_HOST = "http://localhost:4444"
 		} else {
 			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local:4444"
-		}
-		restGWHost = models.ConfigurationsStringValue{
-			ID:    primitive.NewObjectID(),
-			Key:   "rest_gw_host",
-			Value: REST_GW_HOST,
 		}
 		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST, 0, true)
 		if err != nil {
