@@ -641,14 +641,14 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	exist, schema, err := db.GetSchemaByName(schemaName)
 	if err != nil {
 		serv.Errorf("CreateNewVersion: Schema" + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
-		return
+		// c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
+		// return
 	}
 	if !exist {
 		errMsg := "Schema " + body.SchemaName + " does not exist"
 		serv.Warnf("CreateNewVersion: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
+		// c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		// return
 	}
 
 	user, err := getUserDetailsFromMiddleware(c)
@@ -706,8 +706,8 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		serv.Noticef(message)
 	} else {
 		serv.Warnf("CreateNewVersion: Schema " + body.SchemaName + ": Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " already exists")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Version already exists"})
-		return
+		// c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Version already exists"})
+		// return
 	}
 	extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema)
 	if err != nil {

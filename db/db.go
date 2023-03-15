@@ -158,7 +158,6 @@ func JoinTable(dbPostgreSQL *pgxpool.Pool) error {
 
 	conn, err := dbPostgreSQL.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return err
 	}
 
@@ -180,7 +179,6 @@ func InsertToTable(dbPostgreSQL *pgxpool.Pool) error {
 	defer cancelfunc()
 	conn, err := dbPostgreSQL.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return err
 	}
 	defer conn.Release()
@@ -204,7 +202,6 @@ func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
 
 	conn, err := dbPostgreSQL.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return err
 	}
 	defer conn.Release()
@@ -234,7 +231,6 @@ func updateFieldInTable(dbPostgreSQL *pgxpool.Pool) error {
 
 	conn, err := dbPostgreSQL.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return err
 	}
 	defer conn.Release()
@@ -263,7 +259,6 @@ func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
 
 	conn, err := dbPostgreSQL.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return err
 	}
 	defer conn.Release()
@@ -292,6 +287,8 @@ func AddIndexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreS
 }
 
 func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
+	cancelfunc := dbPostgreSQL.Cancel
+	defer cancelfunc()
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
 		station_name VARCHAR NOT NULL,
@@ -477,14 +474,12 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 
 	db := dbPostgreSQL.Client
 	ctx := dbPostgreSQL.Ctx
-	cancelfunc := dbPostgreSQL.Cancel
 
 	_, err := db.Exec(ctx, usersTable)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -494,7 +489,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -504,7 +498,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -514,7 +507,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -524,7 +516,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -534,7 +525,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -544,7 +534,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -554,7 +543,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -563,7 +551,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -573,7 +560,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -582,7 +568,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -593,6 +578,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 
+	defer cancelfunc()
 	postgreSqlUser := configuration.POSTGRESQL_USER
 	postgreSqlPassword := configuration.POSTGRESQL_PASS
 	postgreSqlDbName := configuration.POSTGRESQL_DBNAME
@@ -611,13 +597,11 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	if configuration.POSTGRESQL_TLS_ENABLED {
 		cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
 		if err != nil {
-			cancelfunc()
 			return DbPostgreSQLInstance{}, err
 		}
 
 		CACert, err := os.ReadFile(configuration.POSTGRESQL_TLS_CA)
 		if err != nil {
-			cancelfunc()
 			return DbPostgreSQLInstance{}, err
 		}
 
@@ -628,20 +612,17 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 	dbPostgreSQL, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
 
 	err = dbPostgreSQL.Ping(ctx)
 	if err != nil {
-		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
 	l.Noticef("Established connection with the meta-data storage")
 	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL}
 	err = createTables(dbPostgre)
 	if err != nil {
-		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
 
@@ -985,7 +966,6 @@ func UpsertNewStation(
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return models.StationPg{}, 0, err
 	}
 	defer conn.Release()
@@ -1304,7 +1284,6 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return models.ProducerPg{}, 0, err
 	}
 	defer conn.Release()
@@ -1527,7 +1506,6 @@ func UpsertNewConsumerV1(name string,
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return models.ConsumerPg{}, 0, err
 	}
 	defer conn.Release()
@@ -1942,7 +1920,6 @@ func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, i
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return models.SchemaPg{}, 0, err
 	}
 	defer conn.Release()
@@ -2007,7 +1984,6 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return models.SchemaVersionPg{}, 0, err
 	}
 	defer conn.Release()
@@ -2329,7 +2305,6 @@ func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		cancelfunc()
 		return models.TagPg{}, err
 	}
 	defer conn.Release()
