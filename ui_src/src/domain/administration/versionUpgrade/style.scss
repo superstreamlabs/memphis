@@ -47,6 +47,22 @@
         flex-wrap: wrap;
         gap: 20px;
         overflow: auto;
+        .loading{
+            display: contents;
+            .loader-container {
+                height: calc(100%);
+                width: 95%;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                .memphis-gif{
+                    top: unset !important;
+                    transform: unset !important;
+                    left: unset !important;
+                }
+            }
+        }
     }
     .uptodate-section{
         width: 90%;
