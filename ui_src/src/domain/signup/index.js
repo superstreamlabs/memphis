@@ -47,7 +47,7 @@ const Signup = (props) => {
         user_type: 'management'
     });
     const [error, setError] = useState('');
-    const [systemVersion, setSystemVersion] = useState('');
+    const [systemVersion, setSystemVersion] = useState('1.0.0');
     const [isLoading, setisLoading] = useState(true);
 
     const referer = props?.location?.state?.referer || '/overview';
