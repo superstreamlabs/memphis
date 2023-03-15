@@ -704,27 +704,27 @@ func EditSystemKey(key string, value string) error {
 // Configuration Functions
 func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStringValue, models.ConfigurationsIntValue, error) {
 	var configurationsStringValue models.ConfigurationsStringValue
-	// var configurationsIntValue models.ConfigurationsIntValue
-	// filter := bson.M{"key": key}
-	// if isString {
-	// 	err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
-	// 	if err == mongo.ErrNoDocuments {
-	// 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-	// 	}
-	// 	if err != nil {
-	// 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-	// 	}
-	// 	return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
-	// } else {
-	// 	err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
-	// 	if err == mongo.ErrNoDocuments {
-	// 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-	// 	}
-	// 	if err != nil {
-	// 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-	// 	}
-	// 	return true, models.ConfigurationsStringValue{}, configurationsIntValue, nil
-	// }
+	var configurationsIntValue models.ConfigurationsIntValue
+	filter := bson.M{"key": key}
+	if isString {
+		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
+		if err == mongo.ErrNoDocuments {
+			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+		}
+		if err != nil {
+			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		}
+		return true, configurationsStringValue, models.ConfigurationsIntValue{}, nil
+	} else {
+		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
+		if err == mongo.ErrNoDocuments {
+			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
+		}
+		if err != nil {
+			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		}
+		return true, models.ConfigurationsStringValue{}, configurationsIntValue, nil
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -732,7 +732,7 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM configurations WHERE key = $1`
+	query := `SELECT value FROM configurations WHERE key = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_configuration", query)
 	if err != nil {
 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
@@ -830,14 +830,6 @@ func UpdateConncetionsOfDeletedUser(username string) error {
 
 func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	var connection models.Connection
-	// filter := bson.M{"_id": connectionId}
-	// err := connectionsCollection.FindOne(context.TODO(), filter).Decode(&connection)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Connection{}, nil
-	// } else if err != nil {
-	// 	return true, models.Connection{}, err
-	// }
-	// return true, connection, nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -902,6 +894,7 @@ func GetActiveConnections() ([]models.Connection, error) {
 		fmt.Println(c)
 	}
 	return connections, nil
+
 }
 
 // Audit Logs Functions
@@ -986,7 +979,7 @@ func GetActiveStations() ([]models.Station, error) {
 }
 
 func GetStationByName(name string) (bool, models.Station, error) {
-	var station2 models.Station
+	var station models.Station
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -994,27 +987,17 @@ func GetStationByName(name string) (bool, models.Station, error) {
 		return true, models.Station{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM stations WHERE name = $1 AND (is_deleted = false OR is_deleted IS NULL) LIMIT 1`
+	query := `SELECT * FROM stations WHERE name = $1 AND (is_deleted = false OR is_deleted IS NULL)`
 	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_name", query)
 	if err != nil {
 		return true, models.Station{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
-	if err != nil {
-		return true, models.Station{}, err
-	}
-	defer rows.Close()
-	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	row := conn.Conn().QueryRow(ctx, stmt.Name, name)
+	err = row.Scan(&station)
 	if err == pgx.ErrNoRows {
 		return false, models.Station{}, nil
 	}
-	if err != nil {
-		return true, models.Station{}, err
-	}
-	for _, s := range stations { //TODO: return stations[0]
-		fmt.Println(s)
-	}
-	return true, station2, nil
+	return true, station, nil
 }
 
 // TODO: username should be int
@@ -1063,6 +1046,8 @@ func UpsertNewStation(
 	if err != nil {
 		return models.Station{}, 0, err
 	}
+
+	// newStation := models.StationPg{}
 	createAt := time.Now()
 	updatedAt := time.Now()
 	newStation := models.Station{
@@ -1133,27 +1118,18 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 		return []models.ExtendedStation{}, err
 	}
 	defer conn.Release()
-	// query := `
-	// SELECT * FROM stations AS s
-	// LEFT JOIN producers AS p
-	// ON s._id = p.station_id
-	// LEFT JOIN consumers AS c
-	// ON s._id = c.station_id
-	// WHERE s.is_deleted = false OR s.is_deleted IS NULL
-	// GROUP BY
-	// 	s._id, s.name, s.retention_type, s.retention_value, s.storage_type, s.replicas,
-	// 	s.idempotency_window_in_ms, s.created_by_user, s.creation_date, s.last_update,
-	// 	s.dls_configuration, s.is_native, s.tiered_storage_enabled`
-
-	query := `SELECT s.id, s.name, s.retention_type, s.retention_value, s.storage_type, s.replicas, s.idempotency_window_in_ms, s.created_by_user, s.creation_date, s.last_update, s.dls_configuration, s.is_native, 
-			array_agg(DISTINCT p.*) as producers, 
-			array_agg(DISTINCT c.*) as consumers, 
-			s.tiered_storage_enabled
-		FROM stations s
-		LEFT JOIN producers p ON p.station_id = s.id
-		LEFT JOIN consumers c ON c.station_id = s.id
-		WHERE s.is_deleted = false OR s.is_deleted IS NULL
-		GROUP BY s.id`
+	query := `
+	SELECT stations
+	FROM stations AS s
+	LEFT JOIN producers AS p
+	ON s._id = p.station_id
+	LEFT JOIN consumers AS c
+	ON s._id = c.station_id
+	WHERE s.is_deleted = false OR s.is_deleted IS NULL
+	GROUP BY
+		s._id, s.name, s.retention_type, s.retention_value, s.storage_type, s.replicas,
+		s.idempotency_window_in_ms, s.created_by_user, s.creation_date, s.last_update,
+		s.dls_configuration, s.is_native, s.tiered_storage_enabled`
 
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details", query)
 	if err != nil {
@@ -1170,13 +1146,12 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 		var consumers []models.Consumer
 		var producers []models.Producer
 		if err := rows.Scan(
-			&station.ID, &station.Name, &station.RetentionType, &station.RetentionValue, &station.StorageType, &station.Replicas, &station.CreatedByUser, &station.CreationDate, &station.LastUpdate, &station.IdempotencyWindow, &station.IsNative, &station.DlsConfiguration.Poison, &station.DlsConfiguration.Schemaverse, &station.TieredStorageEnabled,
+			&station,
 			&producers,
 			&consumers,
 		); err != nil {
 			return []models.ExtendedStation{}, err
 		}
-
 		station.Consumers = consumers
 		station.Producers = producers
 		stations = append(stations, station)
@@ -1354,17 +1329,10 @@ func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
 	}
 
 	return stationNames, nil
+
 }
 
 func GetCountStationsUsingSchema(schemaName string) (int, error) {
-	// filter := bson.M{"schema.name": schemaName, "is_deleted": false}
-	// countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
-	// if err != nil {
-	// 	return 0, err
-	// }
-
-	// return int(countStations), nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1504,16 +1472,6 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 
 func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
 	var producer models.Producer
-	// filter := bson.M{"name": username, "station_id": stationId, "connection_id": connectionId}
-	// err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Producer{}, err
-	// }
-	// if err != nil {
-	// 	return true, models.Producer{}, err
-	// }
-	// return true, producer, nil
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1522,7 +1480,7 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 	}
 	defer conn.Release()
 	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_system_key", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_station_id_and_username", query)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
@@ -1539,14 +1497,6 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 
 func GetActiveProducerByStationID(producerName string, stationId int) (bool, models.Producer, error) {
 	var producer models.Producer
-	// filter := bson.M{"name": producerName, "station_id": stationId, "is_active": true}
-	// err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Producer{}, nil
-	// } else if err != nil {
-	// 	return true, models.Producer{}, err
-	// }
-	// return true, producer, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1741,6 +1691,7 @@ func GetProducersByStationID(stationId int) ([]models.ExtendedProducer, error) {
 	}
 
 	return producers, nil
+
 }
 
 func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
@@ -1881,6 +1832,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 		return true, models.Consumer{}, err
 	}
 	return true, consumer, nil
+
 }
 
 func UpsertNewConsumer(name string,
@@ -2090,6 +2042,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	return consumers, nil
+
 }
 
 func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
@@ -2153,14 +2106,10 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 	}
 
 	return count, nil
+
 }
 
 func CountActiveConsumersByStationID(stationId int) (int64, error) {
-	// activeCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return activeCount, nil
 	var activeCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2278,6 +2227,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	}
 
 	return consumers, nil
+
 }
 
 // TODO: Aggregate
@@ -2589,12 +2539,6 @@ func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 }
 
 func GetShcemaVersionsCount(schemaId int) (int, error) {
-	// countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schemaId})
-	// if err != nil {
-	// 	return 0, err
-	// }
-
-	// return int(countVersions), err
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3404,25 +3348,6 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 	default:
 		entityDBList = ""
 	}
-	// var cursor *mongo.Cursor
-	// if entityDBList == "" { // Get All
-	// 	cur, err := tagsCollection.Find(context.TODO(), bson.M{})
-	// 	if err != nil {
-	// 		return []models.Tag{}, err
-	// 	}
-	// 	cursor = cur
-	// } else {
-	// 	cur, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: bson.M{"$not": bson.M{"$size": 0}}})
-	// 	if err != nil {
-	// 		return []models.Tag{}, err
-	// 	}
-	// 	cursor = cur
-	// }
-
-	// if err := cursor.All(context.TODO(), &tags); err != nil {
-	// 	return []models.Tag{}, err
-	// }
-	// return tags, nil
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
