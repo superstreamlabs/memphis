@@ -32,6 +32,8 @@ var AnalyticsClient posthog.Client
 
 func InitializeAnalytics() error {
 	exist, deployment, err := db.GetSystemKey("deployment_id")
+	//TODO: in the meantime until we finish with get functions if already exists in db please do: exist = true
+	//exist = true
 	if !exist {
 		deploymentId = primitive.NewObjectID().Hex()
 
