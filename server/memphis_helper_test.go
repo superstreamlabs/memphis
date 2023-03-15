@@ -44,7 +44,7 @@ func TestMemphisGetMsgs(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			s := RunBasicJetStreamServer()
+			s := RunBasicJetStreamServer(t)
 			defer s.Shutdown()
 
 			if config := s.JetStreamConfig(); config != nil {

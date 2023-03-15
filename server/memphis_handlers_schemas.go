@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"memphis/analytics"
 	"memphis/models"
 	"memphis/utils"
@@ -46,18 +45,18 @@ const (
 )
 
 var (
-	ErrNoSchema = errors.New("No schemas found")
+	ErrNoSchema = errors.New("no schemas found")
 )
 
 func validateProtobufContent(schemaContent string) error {
 	parser := protoparse.Parser{
 		Accessor: func(filename string) (io.ReadCloser, error) {
-			return ioutil.NopCloser(strings.NewReader(schemaContent)), nil
+			return io.NopCloser(strings.NewReader(schemaContent)), nil
 		},
 	}
 	_, err := parser.ParseFiles("")
 	if err != nil {
-		return errors.New("Your Proto file is invalid: " + err.Error())
+		return errors.New("your Proto file is invalid: " + err.Error())
 	}
 
 	return nil
@@ -66,7 +65,7 @@ func validateProtobufContent(schemaContent string) error {
 func validateJsonSchemaContent(schemaContent string) error {
 	_, err := jsonschema.CompileString("test", schemaContent)
 	if err != nil {
-		return errors.New("Your json schema is invalid")
+		return errors.New("your json schema is invalid")
 	}
 
 	return nil
@@ -96,7 +95,7 @@ func generateProtobufDescriptor(schemaName string, schemaVersionNum int, schemaC
 		return nil, err
 	}
 
-	descContent, err := ioutil.ReadFile(descFilename)
+	descContent, err := os.ReadFile(descFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -116,9 +115,9 @@ func validateSchemaName(schemaName string) error {
 }
 
 func validateSchemaType(schemaType string) error {
-	invalidTypeErrStr := fmt.Sprintf("unsupported schema type")
+	invalidTypeErrStr := "unsupported schema type"
 	invalidTypeErr := errors.New(invalidTypeErrStr)
-	invalidSupportTypeErrStr := fmt.Sprintf("Avro is not supported at this time")
+	invalidSupportTypeErrStr := "avro is not supported at this time"
 	invalidSupportTypeErr := errors.New(invalidSupportTypeErrStr)
 
 	if schemaType == "protobuf" || schemaType == "json" || schemaType == "graphql" {
@@ -132,7 +131,7 @@ func validateSchemaType(schemaType string) error {
 
 func validateSchemaContent(schemaContent, schemaType string) error {
 	if len(schemaContent) == 0 {
-		return errors.New("Your schema content is invalid")
+		return errors.New("your schema content is invalid")
 	}
 
 	switch schemaType {
@@ -146,7 +145,6 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 		if err != nil {
 			return err
 		}
-		break
 	case "graphql":
 		err := validateGraphqlSchemaContent(schemaContent)
 		if err != nil {
@@ -164,7 +162,7 @@ func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaCon
 	}
 
 	if schemaType != "protobuf" {
-		return "", errors.New("Descriptor generation with schema type: " + schemaType + ", while protobuf is expected")
+		return "", errors.New("descriptor generation with schema type: " + schemaType + ", while protobuf is expected")
 	}
 
 	descriptor, err := generateProtobufDescriptor(schemaName, schemaVersionNum, schemaContent)
@@ -176,7 +174,7 @@ func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaCon
 
 func validateMessageStructName(messageStructName string) error {
 	if messageStructName == "" {
-		return errors.New("Message struct name is required when schema type is Protobuf")
+		return errors.New("message struct name is required when schema type is Protobuf")
 	}
 	return nil
 }
@@ -715,12 +713,12 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 
 func deleteSchemaFromStations(s *Server, schemaName string) error {
 	var stations []models.Station
-	cursor, err := stationsCollection.Find(nil, bson.M{"schema.name": schemaName})
+	cursor, err := stationsCollection.Find(context.TODO(), bson.M{"schema.name": schemaName})
 	if err != nil {
 		return err
 	}
 
-	if err = cursor.All(nil, &stations); err != nil {
+	if err = cursor.All(context.TODO(), &stations); err != nil {
 		return err
 	}
 

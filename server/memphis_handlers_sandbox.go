@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -245,7 +245,7 @@ func getGoogleAuthToken(code string) (*googleOauthToken, error) {
 		return nil, errors.New("could not retrieve token")
 	}
 
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func GetGoogleUser(gOauthToken googleOauthToken) (*googleClaims, error) {
 		return nil, errors.New("could not retrieve user")
 	}
 
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +345,7 @@ func getGithubAccessToken(code string) (string, error) {
 		return "", resperr
 	}
 
-	respbody, _ := ioutil.ReadAll(resp.Body)
+	respbody, _ := io.ReadAll(resp.Body)
 
 	var ghresp githubAccessTokenResponse
 	if err := json.Unmarshal(respbody, &ghresp); err != nil {
@@ -374,7 +374,7 @@ func getGithubData(accessToken string) (map[string]any, error) {
 		return nil, resperr
 	}
 
-	respbody, _ := ioutil.ReadAll(resp.Body)
+	respbody, _ := io.ReadAll(resp.Body)
 
 	data := make(map[string]any)
 	err := json.Unmarshal(respbody, &data)

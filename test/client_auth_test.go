@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2016-2019 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,11 +10,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/nats-io/nats.go"
@@ -64,18 +65,17 @@ func TestMultipleUserAuth(t *testing.T) {
 const testToken = "$2a$05$3sSWEVA1eMCbV0hWavDjXOx.ClBjI6u1CuUdLqf22cbJjXsnzz8/."
 
 func TestTokenInConfig(t *testing.T) {
-	confFileName := "test.conf"
-	defer removeFile(t, confFileName)
 	content := `
 	listen: 127.0.0.1:4567
 	authorization={
 		token: ` + testToken + `
 		timeout: 5
 	}`
-	if err := ioutil.WriteFile(confFileName, []byte(content), 0666); err != nil {
+	confFile := createConfFile(t, []byte(content))
+	if err := os.WriteFile(confFile, []byte(content), 0666); err != nil {
 		t.Fatalf("Error writing config file: %v", err)
 	}
-	s, opts := RunServerWithConfig(confFileName)
+	s, opts := RunServerWithConfig(confFile)
 	defer s.Shutdown()
 
 	url := fmt.Sprintf("nats://test@%s:%d/", opts.Host, opts.Port)

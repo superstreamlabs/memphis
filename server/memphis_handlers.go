@@ -68,7 +68,7 @@ type srvMemphis struct {
 	dbCtx                  context.Context
 	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
-	fallbackLogQ           *ipQueue
+	fallbackLogQ           *ipQueue[fallbackLog]
 	jsApiMu                sync.Mutex
 	ws                     memphisWS
 }

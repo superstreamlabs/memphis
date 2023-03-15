@@ -378,7 +378,7 @@ func (s *Server) popFallbackLogs() {
 	logs := s.memphis.fallbackLogQ.pop()
 
 	for _, l := range logs {
-		log := l.(fallbackLog)
+		log := l
 		publishLogToSubjectAndAnalytics(s, log.label, log.log)
 	}
 }
@@ -838,6 +838,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 		DeliverPolicy: DeliverByStartSequence,
 		Durable:       durableName,
 		AckPolicy:     AckExplicit,
+		Replicas:      1,
 	}
 
 	err := s.memphisAddConsumer(streamName, &cc)
@@ -974,6 +975,7 @@ func (s *Server) memphisGetMessagesByFilter(streamName, filterSubject string, st
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
 		FilterSubject: filterSubject,
+		Replicas:      1,
 	}
 	var msgs []StoredMsg
 	err := serv.memphisAddConsumer(streamName, &cc)

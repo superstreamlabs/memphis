@@ -331,7 +331,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
       "fmt"
       "strings"
       "net/http"
-      "io/ioutil"
+      "io"
     )
     
     func main() {
@@ -359,7 +359,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         }
         defer res.Body.Close()
       
-        body, err := ioutil.ReadAll(res.Body)
+        body, err := io.ReadAll(res.Body)
         if err != nil {
             fmt.Println(err)
             return
@@ -371,7 +371,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
       "fmt"
       "strings"
       "net/http"
-      "io/ioutil"
+      "io"
     )
     
     func main() {
@@ -403,7 +403,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         }
         defer res.Body.Close()
       
-        body, err := ioutil.ReadAll(res.Body)
+        body, err := io.ReadAll(res.Body)
         if err != nil {
             fmt.Println(err)
             return

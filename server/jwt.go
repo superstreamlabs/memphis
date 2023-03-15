@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,12 +10,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ func ReadOperatorJWT(jwtfile string) (*jwt.OperatorClaims, error) {
 }
 
 func readOperatorJWT(jwtfile string) (string, *jwt.OperatorClaims, error) {
-	contents, err := ioutil.ReadFile(jwtfile)
+	contents, err := os.ReadFile(jwtfile)
 	if err != nil {
 		// Check to see if the JWT has been inlined.
 		if !strings.HasPrefix(jwtfile, jwtPrefix) {

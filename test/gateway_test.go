@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018-2019 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
@@ -25,7 +26,6 @@ import (
 	"time"
 
 	"memphis/server"
-
 	"github.com/nats-io/nats.go"
 )
 
@@ -82,6 +82,9 @@ func expectNumberOfProtos(t *testing.T, expFn expectFun, proto *regexp.Regexp, e
 }
 
 func TestGatewayAccountInterest(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	sb := runGatewayServer(ob)
 	defer sb.Shutdown()
@@ -159,6 +162,9 @@ func TestGatewayAccountInterest(t *testing.T) {
 }
 
 func TestGatewaySubjectInterest(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	fooAcc := server.NewAccount("$foo")
 	ob.Accounts = []*server.Account{fooAcc}
@@ -301,6 +307,9 @@ func TestGatewaySubjectInterest(t *testing.T) {
 }
 
 func TestGatewayQueue(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	fooAcc := server.NewAccount("$foo")
 	ob.Accounts = []*server.Account{fooAcc}
@@ -403,6 +412,9 @@ func TestGatewayQueue(t *testing.T) {
 }
 
 func TestGatewaySendAllSubs(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	sb := runGatewayServer(ob)
 	defer sb.Shutdown()
@@ -496,6 +508,9 @@ func TestGatewayNoPanicOnBadProtocol(t *testing.T) {
 }
 
 func TestGatewayNoAccUnsubAfterQSub(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	sb := runGatewayServer(ob)
 	defer sb.Shutdown()
@@ -531,6 +546,9 @@ func TestGatewayNoAccUnsubAfterQSub(t *testing.T) {
 }
 
 func TestGatewayErrorOnRSentFromOutbound(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	sb := runGatewayServer(ob)
 	defer sb.Shutdown()
@@ -603,7 +621,6 @@ func TestGatewayTLSMixedIPAndDNS(t *testing.T) {
 			listen: "127.0.0.1:-1"
 		}
 	`))
-	defer removeFile(t, confA1)
 	srvA1, optsA1 := RunServerWithConfig(confA1)
 	defer srvA1.Shutdown()
 
@@ -628,7 +645,6 @@ func TestGatewayTLSMixedIPAndDNS(t *testing.T) {
 	`
 	confA2 := createConfFile(t, []byte(fmt.Sprintf(confA2Template,
 		optsA1.Cluster.Host, optsA1.Cluster.Port)))
-	defer removeFile(t, confA2)
 	srvA2, optsA2 := RunServerWithConfig(confA2)
 	defer srvA2.Shutdown()
 
@@ -675,6 +691,9 @@ func TestGatewayTLSMixedIPAndDNS(t *testing.T) {
 }
 
 func TestGatewayAdvertiseInCluster(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob1 := testDefaultOptionsForGateway("B")
 	ob1.Cluster.Name = "B"
 	ob1.Cluster.Host = "127.0.0.1"
@@ -770,6 +789,9 @@ func TestGatewayAuthTimeout(t *testing.T) {
 }
 
 func TestGatewayFirstPingGoesAfterConnect(t *testing.T) {
+	server.GatewayDoNotForceInterestOnlyMode(true)
+	defer server.GatewayDoNotForceInterestOnlyMode(false)
+
 	ob := testDefaultOptionsForGateway("B")
 	// For this test, we want the first ping to NOT be disabled.
 	ob.DisableShortFirstPing = false

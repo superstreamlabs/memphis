@@ -15,7 +15,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
 	"memphis/analytics"
 	"memphis/models"
 	"memphis/utils"
@@ -211,7 +210,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 }
 
 func imageToBase64(imagePath string) (string, error) {
-	bytes, err := ioutil.ReadFile(imagePath)
+	bytes, err := os.ReadFile(imagePath)
 	if err != nil {
 		return "", err
 	}
@@ -1120,6 +1119,11 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 		bson.M{"username": userName},
 		bson.M{"$set": bson.M{"skip_get_started": true}},
 	)
+	if err != nil {
+		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	_, err = sandboxUsersCollection.UpdateOne(context.TODO(),
 		bson.M{"username": userName},

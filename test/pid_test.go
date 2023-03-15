@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2019 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,11 +10,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -22,17 +22,14 @@ import (
 func TestPidFile(t *testing.T) {
 	opts := DefaultTestOptions
 
-	tmpDir := createDir(t, "_nats-server")
-	defer removeDir(t, tmpDir)
-
-	file := createFileAtDir(t, tmpDir, "nats-server:pid_")
+	file := createTempFile(t, "nats-server:pid_")
 	file.Close()
 	opts.PidFile = file.Name()
 
 	s := RunServer(&opts)
 	s.Shutdown()
 
-	buf, err := ioutil.ReadFile(opts.PidFile)
+	buf, err := os.ReadFile(opts.PidFile)
 	if err != nil {
 		t.Fatalf("Could not read pid_file: %v", err)
 	}

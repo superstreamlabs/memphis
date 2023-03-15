@@ -80,11 +80,11 @@
     "deprecates": ""
   },
   {
-    "constant": "JSClusterNoPeersErr",
+    "constant": "JSClusterNoPeersErrF",
     "code": 400,
     "error_code": 10005,
-    "description": "no suitable peers for placement",
-    "comment": "",
+    "description": "{err}",
+    "comment": "Error causing no peers to be available",
     "help": "",
     "url": "",
     "deprecates": ""
@@ -1220,10 +1220,10 @@
     "deprecates": ""
   },
   {
-    "constant": "JSStreamMoveInProgress",
+    "constant": "JSStreamMoveInProgressF",
     "code": 400,
     "error_code": 10124,
-    "description": "stream move already in progress",
+    "description": "stream move already in progress: {msg}",
     "comment": "",
     "help": "",
     "url": "",
@@ -1284,6 +1284,46 @@
     "code": 400,
     "error_code": 10130,
     "description": "stream name already in use, cannot restore",
+    "comment": "",
+    "help": "",
+    "url": "",
+    "deprecates": ""
+  },
+  {
+    "constant": "JSConsumerCreateFilterSubjectMismatchErr",
+    "code": 400,
+    "error_code": 10131,
+    "description": "Consumer create request did not match filtered subject from create subject",
+    "comment": "",
+    "help": "",
+    "url": "",
+    "deprecates": ""
+  },
+  {
+    "constant": "JSConsumerCreateDurableAndNameMismatch",
+    "code": 400,
+    "error_code": 10132,
+    "description": "Consumer Durable and Name have to be equal if both are provided",
+    "comment": "",
+    "help": "",
+    "url": "",
+    "deprecates": ""
+  },
+  {
+    "constant": "JSReplicasCountCannotBeNegative",
+    "code": 400,
+    "error_code": 10133,
+    "description": "replicas count cannot be negative",
+    "comment": "",
+    "help": "",
+    "url": "",
+    "deprecates": ""
+  },
+  {
+    "constant": "JSConsumerReplicasShouldMatchStream",
+    "code": 400,
+    "error_code": 10134,
+    "description": "consumer config replicas must match interest retention stream's replicas",
     "comment": "",
     "help": "",
     "url": "",
