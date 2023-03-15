@@ -327,7 +327,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		);`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
-		id SERIAL NOT NULL,
+		id VARCHAR NOT NULL,
 		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
@@ -377,7 +377,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
 		type enum_type_consumer NOT NULL DEFAULT 'application',
-		connection_id INTEGER NOT NULL,
+		connection_id VARCHAR NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
@@ -457,7 +457,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
 		type enum_producer_type NOT NULL DEFAULT 'application',
-		connection_id INTEGER NOT NULL,	
+		connection_id VARCHAR NOT NULL,	
 		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMP NOT NULL,
@@ -1285,7 +1285,7 @@ func GetActiveProducerByStationID(producerName string, stationId primitive.Objec
 	return true, producer, nil
 }
 
-func UpsertNewProducerV1(name string, stationId int, producerType string, connectionIdObj int, createdByUser int) (models.ProducerPg, int64, error) {
+func UpsertNewProducerV1(name string, stationId int, producerType string, connectionIdObj string, createdByUser int) (models.ProducerPg, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1501,7 +1501,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId primitive.ObjectID) 
 func UpsertNewConsumerV1(name string,
 	stationId int,
 	consumerType string,
-	connectionIdObj int,
+	connectionIdObj string,
 	createdByUser int,
 	cgName string,
 	maxAckTime int,

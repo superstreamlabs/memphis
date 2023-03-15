@@ -34,7 +34,7 @@ type ProducerPg struct {
 	Name         string    `json:"name"`
 	StationId    int       `json:"station_id"`
 	Type         string    `json:"type"`
-	ConnectionId int       `json:"connection_id"`
+	ConnectionId string    `json:"connection_id"`
 	CreatedBy    int       `json:"created_by"`
 	IsActive     bool      `json:"is_active"`
 	CreatedAt    time.Time `json:"created_at"`

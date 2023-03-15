@@ -39,7 +39,7 @@ type ConsumerPg struct {
 	Name                string    `json:"name"`
 	StationId           int       `json:"station_id"`
 	Type                string    `json:"type"`
-	ConnectionId        int       `json:"connection_id"`
+	ConnectionId        string    `json:"connection_id"`
 	ConsumersGroup      string    `json:"consumers_group"`
 	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
 	CreatedBy           int       `json:"created_by"`

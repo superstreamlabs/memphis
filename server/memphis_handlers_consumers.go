@@ -142,7 +142,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		_, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
 		if err != nil {
 			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 			serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -207,9 +207,8 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 
 	stationId := 1
-	connId := 1
 	//TODO:pass createdByUser instead 1
-	_, rowsUpdated, err = db.UpsertNewConsumerV1(name, stationId, consumerType, connId, 1, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	_, rowsUpdated, err = db.UpsertNewConsumerV1(name, stationId, consumerType, connectionId, 1, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
