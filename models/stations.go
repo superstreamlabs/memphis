@@ -60,21 +60,23 @@ type Station struct {
 }
 
 type StationPg struct {
-	ID                   int              `json:"id"`
-	Name                 string           `json:"name"`
-	RetentionType        string           `json:"retention_type"`
-	RetentionValue       int              `json:"retention_value"`
-	StorageType          string           `json:"storage_type"`
-	Replicas             int              `json:"replicas"`
-	CreatedBy            string           `json:"created_by"`
-	CreatedAt            time.Time        `json:"created_at"`
-	UpdatedAt            time.Time        `json:"updated_at"`
-	IsDeleted            bool             `json:"is_deleted"`
-	Schema               SchemaDetails    `json:"schema"`
-	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
-	IsNative             bool             `json:"is_native"`
-	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
-	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
+	ID                          int       `json:"id"`
+	Name                        string    `json:"name"`
+	RetentionType               string    `json:"retention_type"`
+	RetentionValue              int       `json:"retention_value"`
+	StorageType                 string    `json:"storage_type"`
+	Replicas                    int       `json:"replicas"`
+	CreatedBy                   string    `json:"created_by"`
+	CreatedAt                   time.Time `json:"created_at"`
+	UpdatedAt                   time.Time `json:"updated_at"`
+	IsDeleted                   bool      `json:"is_deleted"`
+	SchemaName                  string    `json:"schema_name"`
+	SchemaVersionNumber         int       `json:"schema_vesrion_number"`
+	IdempotencyWindow           int64     `json:"idempotency_window_in_ms"`
+	IsNative                    bool      `json:"is_native"`
+	DlsConfigurationPoison      bool      `json:"dls_configuration_poison"`
+	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse"`
+	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 }
 
 type GetStationResponseSchema struct {
