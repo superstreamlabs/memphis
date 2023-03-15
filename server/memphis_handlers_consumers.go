@@ -216,7 +216,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	if rowsUpdated == 0 {
+	if rowsUpdated == 1 {
 		message := "Consumer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		if consumerGroupExist {

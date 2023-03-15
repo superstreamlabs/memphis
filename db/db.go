@@ -162,11 +162,11 @@ func JoinTable(dbPostgreSQL *pgxpool.Pool) error {
 	}
 
 	defer conn.Release()
-	_, err = conn.Conn().Prepare(ctx, "join", query)
+	stmt, err := conn.Conn().Prepare(ctx, "join", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, "join", 1)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, 1)
 	if err != nil {
 		return err
 	}
@@ -184,11 +184,11 @@ func InsertToTable(dbPostgreSQL *pgxpool.Pool) error {
 	defer conn.Release()
 	query := `INSERT INTO tags (name, color, users, stations, schemas) 
     VALUES($1, $2, $3, $4, $5);`
-	_, err = conn.Conn().Prepare(ctx, "insert into", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_into", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, "insert into", "sname", "red", "{1}", "{}", "{}")
+	_, err = conn.Conn().Exec(ctx, stmt.Name, "sname", "red", "{1}", "{}", "{}")
 	if err != nil {
 		return err
 	}
@@ -206,12 +206,12 @@ func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
 	}
 	defer conn.Release()
 	query := `SELECT username FROM users WHERE username = $1`
-	_, err = conn.Conn().Prepare(ctx, "select from", query)
+	stmt, err := conn.Conn().Prepare(ctx, "select_from", query)
 	if err != nil {
 		return err
 	}
 	var username string
-	rows := conn.Conn().QueryRow(ctx, "select from", "test")
+	rows := conn.Conn().QueryRow(ctx, stmt.Name, "test")
 
 	err = rows.Scan(&username)
 	if err != nil {
@@ -238,13 +238,13 @@ func updateFieldInTable(dbPostgreSQL *pgxpool.Pool) error {
 	SET username = $2
 	WHERE id = $1
 	RETURNING id, username;`
-	_, err = conn.Conn().Prepare(ctx, "update", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update", query)
 	if err != nil {
 		return err
 	}
 	var username string
 	var id int
-	rows := conn.Conn().QueryRow(ctx, "update", 7, "test")
+	rows := conn.Conn().QueryRow(ctx, stmt.Name, 7, "test")
 	err = rows.Scan(&id, &username)
 	if err != nil {
 		return err
@@ -263,11 +263,11 @@ func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM users WHERE id = $1;`
-	_, err = conn.Conn().Prepare(ctx, "drop", query)
+	stmt, err := conn.Conn().Prepare(ctx, "drop", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, "drop", 7)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, 7)
 	if err != nil {
 		return err
 	}
@@ -352,7 +352,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
-		PRIMARY KEY (id)
+		PRIMARY KEY (id),
+		UNIQUE(name)
 		);
 		CREATE INDEX name
 		ON schemas (name);`
@@ -398,7 +399,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES stations(id)
 		);
 		CREATE INDEX station_id
-		ON consumers (station_id);`
+		ON consumers (station_id);
+		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true`
 
 	stationsTable := `
 	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
@@ -425,7 +427,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			FOREIGN KEY(created_by)
 			REFERENCES users(id)
 		);
-		CREATE UNIQUE INDEX unique_station_name_deleted ON stations (name, is_deleted) WHERE is_deleted = false;`
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
@@ -438,6 +440,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		msg_struct_name VARCHAR,
 		descriptor TEXT,
 		PRIMARY KEY (id),
+		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
 			REFERENCES users(id),
@@ -470,7 +473,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES connections(id)
 		);
 		CREATE INDEX producer_station_id
-		ON producers(station_id);`
+		ON producers(station_id);
+		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
 
 	db := dbPostgreSQL.Client
 	ctx := dbPostgreSQL.Ctx
@@ -986,11 +990,9 @@ func UpsertNewStation(
 		dls_config, 
 		schema_name, 
 		schema_version_number) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
-	ON CONFLICT(name, is_deleted) WHERE is_deleted = false DO UPDATE SET dls_config = EXCLUDED.dls_config ,schema_name = EXCLUDED.schema_name, schema_version_number = EXCLUDED.schema_version_number
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new station", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_station", query)
 	if err != nil {
 		return models.StationPg{}, 0, err
 	}
@@ -1000,7 +1002,7 @@ func UpsertNewStation(
 	updatedAt := time.Now()
 
 	//TODO: change the 1 to username
-	rows, err := conn.Conn().Query(ctx, "upsert new station",
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt, updatedAt,
 		false, idempotencyWindow, isNative, tieredStorageEnabled, dlsConfiguration, schemaDetails.SchemaName, schemaDetails.VersionNumber)
 	if err != nil {
@@ -1297,11 +1299,9 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 		is_deleted, 
 		created_at, 
 		type) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
-	ON CONFLICT(id) DO UPDATE SET station_id = EXCLUDED.station_id ,connection_id = EXCLUDED.connection_id, created_by = EXCLUDED.created_by, type = EXCLUDED.type
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new producer", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_producer", query)
 	if err != nil {
 		return models.ProducerPg{}, 0, err
 	}
@@ -1309,8 +1309,8 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 	newProducer := models.ProducerPg{}
 	createAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, "upsert new producer",
-		name, stationId, connectionIdObj, createdByUser, false, false, createAt, producerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		name, stationId, connectionIdObj, createdByUser, true, false, createAt, producerType)
 	if err != nil {
 		return models.ProducerPg{}, 0, err
 	}
@@ -1525,10 +1525,9 @@ func UpsertNewConsumerV1(name string,
 		last_msgs,
 		type) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
-	ON CONFLICT(id) DO UPDATE SET station_id = EXCLUDED.station_id ,connection_id = EXCLUDED.connection_id, consumers_group =  EXCLUDED.consumers_group, max_ack_time_ms = EXCLUDED.max_ack_time_ms, created_by = EXCLUDED.created_by, type = EXCLUDED.type, max_msg_deliveries = EXCLUDED.max_msg_deliveries, start_consume_from_seq = EXCLUDED.start_consume_from_seq, last_msgs = EXCLUDED.last_msgs
 	RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new consumer", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_consumer", query)
 	if err != nil {
 		return models.ConsumerPg{}, 0, err
 	}
@@ -1536,8 +1535,8 @@ func UpsertNewConsumerV1(name string,
 	newConsumer := models.ConsumerPg{}
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, "upsert new consumer",
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, false, false, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, true, false, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
 	if err != nil {
 		return models.ConsumerPg{}, 0, err
 	}
@@ -1927,17 +1926,15 @@ func UpsertNewSchemaV1(schemaName string, schemaType string) (models.SchemaPg, i
 	query := `INSERT INTO schemas ( 
 		name, 
 		type) 
-    VALUES($1, $2) 
-	ON CONFLICT(id) DO UPDATE SET type = EXCLUDED.type
-	RETURNING id`
+    VALUES($1, $2) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new schema", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema", query)
 	if err != nil {
 		return models.SchemaPg{}, 0, err
 	}
 
 	newSchema := models.SchemaPg{}
-	rows, err := conn.Conn().Query(ctx, "upsert new schema", schemaName, schemaType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType)
 	if err != nil {
 		return models.SchemaPg{}, 0, err
 	}
@@ -1997,11 +1994,9 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 		schema_id,
 		msg_struct_name,
 		descriptor)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
-	ON CONFLICT(id) DO UPDATE SET version_number = EXCLUDED.version_number, active = EXCLUDED.active, created_by = EXCLUDED.created_by, created_at = EXCLUDED.created_at, schema_content = EXCLUDED.schema_content, schema_id = EXCLUDED.schema_id, msg_struct_name = EXCLUDED.msg_struct_name, descriptor = EXCLUDED.descriptor
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new schema version", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema_version", query)
 	if err != nil {
 		return models.SchemaVersionPg{}, 0, err
 	}
@@ -2009,7 +2004,7 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 	newSchemaVersion := models.SchemaVersionPg{}
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, "upsert new schema version", schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
 	if err != nil {
 		return models.SchemaVersionPg{}, 0, err
 	}
@@ -2315,17 +2310,15 @@ func UpsertNewTagV1(name string, color string, stationArr []int, schemaArr []int
 		users,
 		stations,
 		schemas) 
-    VALUES($1, $2, $3, $4, $5) 
-	ON CONFLICT(id) DO UPDATE SET color = EXCLUDED.color, users = EXCLUDED.users, stations = EXCLUDED.stations, schemas = EXCLUDED.schemas
-	RETURNING id`
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
 
-	_, err = conn.Conn().Prepare(ctx, "upsert new tag", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_tag", query)
 	if err != nil {
 		return models.TagPg{}, err
 	}
 
 	newTag := models.TagPg{}
-	rows, err := conn.Conn().Query(ctx, "upsert new tag", name, color, userArr, stationArr, schemaArr)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr)
 	if err != nil {
 		return models.TagPg{}, err
 	}

@@ -138,7 +138,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	connId := 1
 	createdBy := 1
 	newProducer, rowsUpdated, err := db.UpsertNewProducerV1(name, stationId, producerType, connId, createdBy)
-	if rowsUpdated == 0 {
+	if rowsUpdated == 1 {
 		message := "Producer " + name + " has been created by user " + connection.CreatedByUser
 		serv.Noticef(message)
 		var auditLogs []interface{}

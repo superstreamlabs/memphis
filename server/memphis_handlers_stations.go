@@ -762,11 +762,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if rowsUpdated > 0 {
+	//rowsUpdated == 0 means that the row already exists
+	if rowsUpdated == 0 {
 		errMsg := "Station " + newStation.Name + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
-		// c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		// return
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
 	}
 
 	// if len(body.Tags) > 0 {
