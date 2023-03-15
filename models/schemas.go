@@ -45,8 +45,8 @@ type SchemaVersionPg struct {
 	ID                int       `json:"id" `
 	VersionNumber     int       `json:"version_number"`
 	Active            bool      `json:"active"`
-	CreatedByUser     int       `json:"created_by_user"`
-	CreationDate      time.Time `json:"creation_date"`
+	CreatedBy         int       `json:"created_by"`
+	CreatedAt         time.Time `json:"created_at"`
 	SchemaContent     string    `json:"schema_content"`
 	SchemaId          int       `json:"schema_id"`
 	MessageStructName string    `json:"message_struct_name"`

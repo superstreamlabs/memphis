@@ -376,17 +376,17 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
+		type enum_type_consumer NOT NULL DEFAULT 'application',
 		connection_id INTEGER NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		is_deleted BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
+		is_deleted BOOL NOT NULL DEFAULT false,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
-		type enum_type_consumer NOT NULL DEFAULT 'application',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
@@ -456,12 +456,12 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
+		type enum_producer_type NOT NULL DEFAULT 'application',
 		connection_id INTEGER NOT NULL,	
 		created_by INTEGER NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		is_deleted BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
-		type enum_producer_type NOT NULL DEFAULT 'application',
+		is_deleted BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
 			FOREIGN KEY(created_by)
@@ -1330,15 +1330,15 @@ func UpsertNewProducerV1(name string, stationId int, producerType string, connec
 
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newProducer = models.ProducerPg{
-		ID:            newProducer.ID,
-		Name:          name,
-		StationId:     stationId,
-		Type:          producerType,
-		ConnectionId:  connectionIdObj,
-		CreatedByUser: createdByUser,
-		IsActive:      isActive,
-		CreationDate:  time.Now(),
-		IsDeleted:     isDeleted,
+		ID:           newProducer.ID,
+		Name:         name,
+		StationId:    stationId,
+		Type:         producerType,
+		ConnectionId: connectionIdObj,
+		CreatedBy:    createdByUser,
+		IsActive:     isActive,
+		CreatedAt:    time.Now(),
+		IsDeleted:    isDeleted,
 	}
 	return newProducer, rowsAffected, nil
 }
@@ -2029,8 +2029,8 @@ func UpsertNewSchemaVersionV1(schemaVersionNumber int, username int, schemaConte
 		ID:                newSchemaVersion.ID,
 		VersionNumber:     schemaVersionNumber,
 		Active:            active,
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
+		CreatedBy:         username,
+		CreatedAt:         time.Now(),
 		SchemaContent:     schemaContent,
 		SchemaId:          schemaId,
 		MessageStructName: messageStructName,
