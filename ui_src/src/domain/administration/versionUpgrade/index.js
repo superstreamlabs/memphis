@@ -21,6 +21,7 @@ import fullLogo from '../../../assets/images/fullLogo.svg';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import NoteItem from './components/noteItem';
+import Loader from '../../../components/loader';
 
 const releaseNotes = 'https://api.github.com/repos/Memphisdev/gitbook-backup/contents/release-notes/releases';
 const latestRelease = 'https://api.github.com/repos/Memphisdev/memphis/releases';
@@ -97,7 +98,13 @@ function VersionUpgrade() {
                             />
                         </div>
                     </div>
+
                     <div className="feature-list">
+                        {features?.length === 0 && (
+                            <div className="loading">
+                                <Loader background={false} />
+                            </div>
+                        )}
                         {features.map((feature, index) => (
                             <NoteItem key={index} feature={feature} />
                         ))}
