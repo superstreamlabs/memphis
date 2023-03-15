@@ -38,11 +38,13 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, checkbox
                                 {checkbox && <CheckboxComponent checked={tab.checked} />}
                                 <TooltipComponent text={tooltip && tooltip[index]}>{tab?.name || tab} </TooltipComponent>
                                 {length && length[index] && (
-                                    <div className="error-icon">
-                                        <div>
-                                            <PriorityHighRounded />
-                                        </div>
-                                    </div>
+                                    // <div className="error-icon">
+                                    //     <div>
+                                    //         {/* {length} */}
+                                    //         <PriorityHighRounded />
+                                    //     </div>
+                                    // </div>
+                                    <label className="dls-size"> {length}</label>
                                 )}
                             </label>
                         )
