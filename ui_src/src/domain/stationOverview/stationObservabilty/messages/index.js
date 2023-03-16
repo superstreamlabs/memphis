@@ -322,7 +322,8 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={[null, stationState?.stationSocketData?.total_dls_messages || null, null]}
+                    length={[null, stationState?.stationSocketData?.poison_messages?.length || null, null]}
+                    icon
                 />
             </div>
             {tabValue === tabs[1] && (
@@ -332,6 +333,10 @@ const Messages = () => {
                         value={subTabValue}
                         onChange={handleChangeSubMenuItem}
                         tabs={subTabs}
+                        length={[
+                            stationState?.stationSocketData?.poison_messages?.length || null,
+                            stationState?.stationSocketData?.schema_failed_messages?.length || null
+                        ]}
                         tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
                     />
                 </div>
