@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2013-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -18,11 +19,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"runtime"
 	"sort"
@@ -157,7 +159,7 @@ func readBodyEx(t *testing.T, url string, status int, content string) []byte {
 	if ct != content {
 		stackFatalf(t, "Expected %s content-type, got %s\n", content, ct)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		stackFatalf(t, "Got an error reading the body: %v\n", err)
 	}
@@ -1671,7 +1673,7 @@ func TestHandleRoot(t *testing.T) {
 		t.Fatalf("Expected a %d response, got %d\n", http.StatusOK, resp.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("Expected no error reading body: Got %v\n", err)
 	}
@@ -2009,7 +2011,7 @@ func TestConcurrentMonitoring(t *testing.T) {
 					ech <- fmt.Sprintf("Expected application/json content-type, got %s\n", ct)
 					return
 				}
-				if _, err := ioutil.ReadAll(resp.Body); err != nil {
+				if _, err := io.ReadAll(resp.Body); err != nil {
 					ech <- fmt.Sprintf("Got an error reading the body: %v\n", err)
 					return
 				}
@@ -2181,6 +2183,62 @@ func TestConnzTLSCfg(t *testing.T) {
 		check(varz.Cluster.TLSVerify, varz.Cluster.TLSRequired, varz.Cluster.TLSTimeout)
 		check(varz.Gateway.TLSVerify, varz.Gateway.TLSRequired, varz.Gateway.TLSTimeout)
 		check(varz.LeafNode.TLSVerify, varz.LeafNode.TLSRequired, varz.LeafNode.TLSTimeout)
+	}
+}
+
+func TestConnzTLSPeerCerts(t *testing.T) {
+	resetPreviousHTTPConnections()
+
+	tc := &TLSConfigOpts{}
+	tc.CertFile = "../test/configs/certs/server-cert.pem"
+	tc.KeyFile = "../test/configs/certs/server-key.pem"
+	tc.CaFile = "../test/configs/certs/ca.pem"
+	tc.Verify = true
+	tc.Timeout = 2.0
+
+	var err error
+	opts := DefaultMonitorOptions()
+	opts.TLSConfig, err = GenTLSConfig(tc)
+	require_NoError(t, err)
+
+	s := RunServer(opts)
+	defer s.Shutdown()
+
+	nc := natsConnect(t, s.ClientURL(),
+		nats.ClientCert("../test/configs/certs/client-cert.pem", "../test/configs/certs/client-key.pem"),
+		nats.RootCAs("../test/configs/certs/ca.pem"))
+	defer nc.Close()
+
+	endpoint := fmt.Sprintf("http://%s:%d/connz", opts.HTTPHost, s.MonitorAddr().Port)
+	for mode := 0; mode < 2; mode++ {
+		// Without "auth" option, we should not get the details
+		connz := pollConz(t, s, mode, endpoint, nil)
+		require_True(t, len(connz.Conns) == 1)
+		c := connz.Conns[0]
+		if c.TLSPeerCerts != nil {
+			t.Fatalf("Did not expect TLSPeerCerts when auth is not specified: %+v", c.TLSPeerCerts)
+		}
+		// Now specify "auth" option
+		connz = pollConz(t, s, mode, endpoint+"?auth=1", &ConnzOptions{Username: true})
+		require_True(t, len(connz.Conns) == 1)
+		c = connz.Conns[0]
+		if c.TLSPeerCerts == nil {
+			t.Fatal("Expected TLSPeerCerts to be set, was not")
+		} else if len(c.TLSPeerCerts) != 1 {
+			t.Fatalf("Unexpected peer certificates: %+v", c.TLSPeerCerts)
+		} else {
+			for _, d := range c.TLSPeerCerts {
+				if d.Subject != "CN=localhost,OU=nats.io,O=Synadia,ST=California,C=US" {
+					t.Fatalf("Unexpected subject: %s", d.Subject)
+				}
+				if len(d.SubjectPKISha256) != 64 {
+					t.Fatalf("Unexpected spki_sha256: %s", d.SubjectPKISha256)
+				}
+				if len(d.CertSha256) != 64 {
+					t.Fatalf("Unexpected cert_sha256: %s", d.CertSha256)
+				}
+			}
+		}
 	}
 }
 
@@ -2403,7 +2461,7 @@ func Benchmark_VarzHttp(b *testing.B) {
 			b.Fatalf("Expected no error: Got %v\n", err)
 		}
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			b.Fatalf("Got an error reading the body: %v\n", err)
 		}
@@ -2574,7 +2632,6 @@ func TestMonitorClusterURLs(t *testing.T) {
 		}
 	`
 	conf := createConfFile(t, []byte(fmt.Sprintf(template, "nats://"+s2ClusterHostPort, "")))
-	defer removeFile(t, conf)
 	s1, _ := RunServerWithConfig(conf)
 	defer s1.Shutdown()
 
@@ -3166,6 +3223,9 @@ func TestMonitorGatewayz(t *testing.T) {
 }
 
 func TestMonitorGatewayzAccounts(t *testing.T) {
+	GatewayDoNotForceInterestOnlyMode(true)
+	defer GatewayDoNotForceInterestOnlyMode(false)
+
 	resetPreviousHTTPConnections()
 
 	// Create bunch of Accounts
@@ -3188,7 +3248,6 @@ func TestMonitorGatewayzAccounts(t *testing.T) {
 		}
 		no_sys_acc = true
 	`, accounts)))
-	defer removeFile(t, bConf)
 
 	sb, ob := RunServerWithConfig(bConf)
 	defer sb.Shutdown()
@@ -3213,7 +3272,6 @@ func TestMonitorGatewayzAccounts(t *testing.T) {
 		}
 		no_sys_acc = true
 	`, accounts, sb.GatewayAddr().Port)))
-	defer removeFile(t, aConf)
 
 	sa, oa := RunServerWithConfig(aConf)
 	defer sa.Shutdown()
@@ -3590,11 +3648,10 @@ func TestMonitorOpJWT(t *testing.T) {
 	resolver = MEMORY
 	`
 	conf := createConfFile(t, []byte(content))
-	defer removeFile(t, conf)
 	sa, _ := RunServerWithConfig(conf)
 	defer sa.Shutdown()
 
-	theJWT, err := ioutil.ReadFile("../test/configs/nkeys/op.jwt")
+	theJWT, err := os.ReadFile("../test/configs/nkeys/op.jwt")
 	require_NoError(t, err)
 	theJWT = []byte(strings.Split(string(theJWT), "\n")[1])
 	claim, err := jwt.DecodeOperatorClaims(string(theJWT))
@@ -3621,6 +3678,7 @@ func TestMonitorOpJWT(t *testing.T) {
 
 func TestMonitorLeafz(t *testing.T) {
 	content := `
+	server_name: "hub"
 	listen: "127.0.0.1:-1"
 	http: "127.0.0.1:-1"
 	operator = "../test/configs/nkeys/op.jwt"
@@ -3631,7 +3689,6 @@ func TestMonitorLeafz(t *testing.T) {
 	}
 	`
 	conf := createConfFile(t, []byte(content))
-	defer removeFile(t, conf)
 	sb, ob := RunServerWithConfig(conf)
 	defer sb.Shutdown()
 
@@ -3650,14 +3707,14 @@ func TestMonitorLeafz(t *testing.T) {
 		return acc, creds
 	}
 	acc1, mycreds1 := createAcc(t)
-	defer removeFile(t, mycreds1)
 	acc2, mycreds2 := createAcc(t)
-	defer removeFile(t, mycreds2)
+	leafName := "my-leaf-node"
 
 	content = `
 		port: -1
 		http: "127.0.0.1:-1"
 		ping_interval = 1
+		server_name: %s
 		accounts {
 			%s {
 				users [
@@ -3686,11 +3743,11 @@ func TestMonitorLeafz(t *testing.T) {
 		}
 		`
 	config := fmt.Sprintf(content,
+		leafName,
 		acc1.Name, acc2.Name,
 		acc1.Name, ob.LeafNode.Port, mycreds1,
 		acc2.Name, ob.LeafNode.Port, mycreds2)
 	conf = createConfFile(t, []byte(config))
-	defer removeFile(t, conf)
 	sa, oa := RunServerWithConfig(conf)
 	defer sa.Shutdown()
 
@@ -3760,6 +3817,12 @@ func TestMonitorLeafz(t *testing.T) {
 				}
 			} else {
 				t.Fatalf("Expected account to be %q or %q, got %q", acc1.Name, acc2.Name, ln.Account)
+			}
+			if ln.Name != "hub" {
+				t.Fatalf("Expected name to be %q, got %q", "hub", ln.Name)
+			}
+			if !ln.IsSpoke {
+				t.Fatal("Expected leafnode connection to be spoke")
 			}
 			if ln.RTT == "" {
 				t.Fatalf("RTT not tracked?")
@@ -3848,6 +3911,12 @@ func TestMonitorLeafz(t *testing.T) {
 				}
 			} else {
 				t.Fatalf("Expected account to be %q or %q, got %q", acc1.Name, acc2.Name, ln.Account)
+			}
+			if ln.Name != leafName {
+				t.Fatalf("Expected name to be %q, got %q", leafName, ln.Name)
+			}
+			if ln.IsSpoke {
+				t.Fatal("Expected leafnode connection to be hub")
 			}
 			if ln.RTT == "" {
 				t.Fatalf("RTT not tracked?")
@@ -4031,8 +4100,7 @@ func TestMonitorJsz(t *testing.T) {
 		{7500, 7501, 7502, 5502},
 		{5500, 5501, 5502, 7502},
 	} {
-		tmpDir := createDir(t, fmt.Sprintf("srv_%d", test.port))
-		defer removeDir(t, tmpDir)
+		tmpDir := t.TempDir()
 		cf := createConfFile(t, []byte(fmt.Sprintf(`
 		listen: 127.0.0.1:%d
 		http: 127.0.0.1:%d
@@ -4062,7 +4130,6 @@ func TestMonitorJsz(t *testing.T) {
 			routes: [nats-route://127.0.0.1:%d]
 		}
 		server_name: server_%d `, test.port, test.mport, tmpDir, test.cport, test.routed, test.port)))
-		defer removeFile(t, cf)
 
 		s, _ := RunServerWithConfig(cf)
 		defer s.Shutdown()
@@ -4114,7 +4181,7 @@ func TestMonitorJsz(t *testing.T) {
 	_, err = js.Publish("foo", nil)
 	require_NoError(t, err)
 	// Wait for mirror replication
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	monUrl1 := fmt.Sprintf("http://127.0.0.1:%d/jsz", 7501)
 	monUrl2 := fmt.Sprintf("http://127.0.0.1:%d/jsz", 5501)
@@ -4141,6 +4208,41 @@ func TestMonitorJsz(t *testing.T) {
 			info := readJsInfo(url + "?accounts=true")
 			if len(info.AccountDetails) != 2 {
 				t.Fatalf("expected both accounts to be returned by %s but got %v", url, info)
+			}
+		}
+	})
+	t.Run("accounts reserved metrics", func(t *testing.T) {
+		for _, url := range []string{monUrl1, monUrl2} {
+			info := readJsInfo(url + "?accounts=true&acc=ACC")
+			if len(info.AccountDetails) != 1 {
+				t.Fatalf("expected single account")
+			}
+			acc := info.AccountDetails[0]
+			got := int(acc.ReservedMemory)
+			expected := 5242880
+			if got != expected {
+				t.Errorf("Expected: %v, got: %v", expected, got)
+			}
+			got = int(acc.ReservedStore)
+			expected = 4194304
+			if got != expected {
+				t.Errorf("Expected: %v, got: %v", expected, got)
+			}
+
+			info = readJsInfo(url + "?accounts=true&acc=BCC_TO_HAVE_ONE_EXTRA")
+			if len(info.AccountDetails) != 1 {
+				t.Fatalf("expected single account")
+			}
+			acc = info.AccountDetails[0]
+			got = int(acc.ReservedMemory)
+			expected = -1
+			if got != expected {
+				t.Errorf("Expected: %v, got: %v", expected, got)
+			}
+			got = int(acc.ReservedStore)
+			expected = -1
+			if got != expected {
+				t.Errorf("Expected: %v, got: %v", expected, got)
 			}
 		}
 	})
@@ -4222,6 +4324,9 @@ func TestMonitorJsz(t *testing.T) {
 			if info.AccountDetails[0].Streams[0].Consumer[0].Config != nil {
 				t.Fatal("Config expected to not be present")
 			}
+			if len(info.AccountDetails[0].Streams[0].ConsumerRaftGroups) != 0 {
+				t.Fatalf("expected consumer raft groups to not be returned by %s but got %v", url, info)
+			}
 		}
 	})
 	t.Run("config", func(t *testing.T) {
@@ -4267,8 +4372,16 @@ func TestMonitorJsz(t *testing.T) {
 		found := 0
 		for i, url := range []string{monUrl1, monUrl2} {
 			info := readJsInfo(url + "")
+			if info.Meta.Peer != getHash(info.Meta.Leader) {
+				t.Fatalf("Invalid Peer: %+v", info.Meta)
+			}
 			if info.Meta.Replicas != nil {
 				found++
+				for _, r := range info.Meta.Replicas {
+					if r.Peer == _EMPTY_ {
+						t.Fatalf("Replicas' Peer is empty: %+v", r)
+					}
+				}
 				if info.Meta.Leader != srvs[i].Name() {
 					t.Fatalf("received cluster info from non leader: leader %s, server: %s", info.Meta.Leader, srvs[i].Name())
 				}
@@ -4286,6 +4399,39 @@ func TestMonitorJsz(t *testing.T) {
 			info := readJsInfo(url + "?acc=DOES_NOT_EXIT")
 			if len(info.AccountDetails) != 0 {
 				t.Fatalf("expected no account to be returned by %s but got %v", url, info)
+			}
+		}
+	})
+	t.Run("raftgroups", func(t *testing.T) {
+		for _, url := range []string{monUrl1, monUrl2} {
+			info := readJsInfo(url + "?acc=ACC&consumers=true&raft=true")
+			if len(info.AccountDetails) != 1 {
+				t.Fatalf("expected account ACC to be returned by %s but got %v", url, info)
+			}
+
+			// We will have two streams and order is not guaranteed. So grab the one we want.
+			var si StreamDetail
+			if info.AccountDetails[0].Streams[0].Name == "my-stream-replicated" {
+				si = info.AccountDetails[0].Streams[0]
+			} else {
+				si = info.AccountDetails[0].Streams[1]
+			}
+
+			if len(si.Consumer) == 0 {
+				t.Fatalf("expected consumers to be returned by %s but got %v", url, info)
+			}
+			if len(si.ConsumerRaftGroups) == 0 {
+				t.Fatalf("expected consumer raft groups to be returned by %s but got %v", url, info)
+			}
+			if len(si.RaftGroup) == 0 {
+				t.Fatal("expected stream raft group info to be included")
+			}
+			crgroup := si.ConsumerRaftGroups[0]
+			if crgroup.Name != "my-consumer-replicated" {
+				t.Fatalf("expected consumer name to be included in raft group info, got: %v", crgroup.Name)
+			}
+			if len(crgroup.RaftGroup) == 0 {
+				t.Fatal("expected consumer raft group info to be included")
 			}
 		}
 	})
@@ -4308,7 +4454,6 @@ func TestMonitorReloadTLSConfig(t *testing.T) {
 	conf := createConfFile(t, []byte(fmt.Sprintf(template,
 		"../test/configs/certs/server-noip.pem",
 		"../test/configs/certs/server-key-noip.pem")))
-	defer removeFile(t, conf)
 
 	s, _ := RunServerWithConfig(conf)
 	defer s.Shutdown()

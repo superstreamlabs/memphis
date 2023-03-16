@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,10 +27,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis/server/pse"
-
 	"github.com/klauspost/compress/s2"
 	"github.com/nats-io/jwt/v2"
+	"memphis/server/pse"
 )
 
 const (
@@ -91,7 +91,7 @@ type internal struct {
 	sweeper  *time.Timer
 	stmr     *time.Timer
 	replies  map[string]msgHandler
-	sendq    *ipQueue // of *pubMsg
+	sendq    *ipQueue[*pubMsg]
 	resetCh  chan struct{}
 	wg       sync.WaitGroup
 	sq       *sendq
@@ -269,7 +269,7 @@ func newPubMsg(c *client, sub, rply string, si *ServerInfo, hdr map[string]strin
 	} else {
 		m = &pubMsg{}
 	}
-	// When getting something from a pool it is criticical that all fields are
+	// When getting something from a pool it is critical that all fields are
 	// initialized. Doing this way guarantees that if someone adds a field to
 	// the structure, the compiler will fail the build if this line is not updated.
 	(*m) = pubMsg{c, sub, rply, si, hdr, msg, oct, echo, last}
@@ -331,8 +331,7 @@ RESET:
 		select {
 		case <-sendq.ch:
 			msgs := sendq.pop()
-			for _, pmi := range msgs {
-				pm := pmi.(*pubMsg)
+			for _, pm := range msgs {
 				if pm.si != nil {
 					pm.si.Name = servername
 					pm.si.Domain = domain
@@ -486,9 +485,9 @@ func (s *Server) sendInternalAccountMsg(a *Account, subject string, msg interfac
 
 // Used to send an internal message with an optional reply to an arbitrary account.
 func (s *Server) sendInternalAccountMsgWithReply(a *Account, subject, reply string, hdr map[string]string, msg interface{}, echo bool) error {
-	s.mu.Lock()
+	s.mu.RLock()
 	if s.sys == nil || s.sys.sendq == nil {
-		s.mu.Unlock()
+		s.mu.RUnlock()
 		return ErrNoSysAccount
 	}
 	c := s.sys.client
@@ -499,16 +498,16 @@ func (s *Server) sendInternalAccountMsgWithReply(a *Account, subject, reply stri
 		a.mu.Unlock()
 	}
 	s.sys.sendq.push(newPubMsg(c, subject, reply, nil, hdr, msg, noCompression, echo, false))
-	s.mu.Unlock()
+	s.mu.RUnlock()
 	return nil
 }
 
 // This will queue up a message to be sent.
 // Lock should not be held.
 func (s *Server) sendInternalMsgLocked(subj, rply string, si *ServerInfo, msg interface{}) {
-	s.mu.Lock()
+	s.mu.RLock()
 	s.sendInternalMsg(subj, rply, si, msg)
-	s.mu.Unlock()
+	s.mu.RUnlock()
 }
 
 // This will queue up a message to be sent.
@@ -522,13 +521,13 @@ func (s *Server) sendInternalMsg(subj, rply string, si *ServerInfo, msg interfac
 
 // Will send an api response.
 func (s *Server) sendInternalResponse(subj string, response *ServerAPIResponse) {
-	s.mu.Lock()
+	s.mu.RLock()
 	if s.sys == nil || s.sys.sendq == nil {
-		s.mu.Unlock()
+		s.mu.RUnlock()
 		return
 	}
 	s.sys.sendq.push(newPubMsg(nil, subj, _EMPTY_, response.Server, nil, response, response.compress, false, false))
-	s.mu.Unlock()
+	s.mu.RUnlock()
 }
 
 // Used to send internal messages from other system clients to avoid no echo issues.
@@ -540,13 +539,13 @@ func (c *client) sendInternalMsg(subj, rply string, si *ServerInfo, msg interfac
 	if s == nil {
 		return
 	}
-	s.mu.Lock()
+	s.mu.RLock()
 	if s.sys == nil || s.sys.sendq == nil {
-		s.mu.Unlock()
+		s.mu.RUnlock()
 		return
 	}
 	s.sys.sendq.push(newPubMsg(c, subj, rply, si, nil, msg, noCompression, false, false))
-	s.mu.Unlock()
+	s.mu.RUnlock()
 }
 
 // Locked version of checking if events system running. Also checks server.
@@ -699,7 +698,7 @@ func (s *Server) sendStatsz(subj string) {
 		js.mu.RUnlock()
 		jStat.Stats = js.usageStats()
 		// Update our own usage since we do not echo so we will not hear ourselves.
-		ourNode := string(getHash(s.serverName()))
+		ourNode := getHash(s.serverName())
 		if v, ok := s.nodeToInfo.Load(ourNode); ok && v != nil {
 			ni := v.(nodeInfo)
 			ni.stats = jStat.Stats
@@ -713,13 +712,21 @@ func (s *Server) sendStatsz(subj string) {
 		if mg := js.getMetaGroup(); mg != nil {
 			if mg.Leader() {
 				if ci := s.raftNodeToClusterInfo(mg); ci != nil {
-					jStat.Meta = &MetaClusterInfo{Name: ci.Name, Leader: ci.Leader, Replicas: ci.Replicas, Size: mg.ClusterSize()}
+					jStat.Meta = &MetaClusterInfo{
+						Name:     ci.Name,
+						Leader:   ci.Leader,
+						Peer:     getHash(ci.Leader),
+						Replicas: ci.Replicas,
+						Size:     mg.ClusterSize(),
+					}
 				}
 			} else {
 				// non leader only include a shortened version without peers
+				leader := s.serverNameForNode(mg.GroupLeader())
 				jStat.Meta = &MetaClusterInfo{
 					Name:   mg.Group(),
-					Leader: s.serverNameForNode(mg.GroupLeader()),
+					Leader: leader,
+					Peer:   getHash(leader),
 					Size:   mg.ClusterSize(),
 				}
 			}
@@ -771,8 +778,39 @@ func (s *Server) startRemoteServerSweepTimer() {
 const sysHashLen = 8
 
 // Computes a hash of 8 characters for the name.
-func getHash(name string) []byte {
+func getHash(name string) string {
 	return getHashSize(name, sysHashLen)
+}
+
+var nameToHashSize8 = sync.Map{}
+var nameToHashSize6 = sync.Map{}
+
+// Computes a hash for the given `name`. The result will be `size` characters long.
+func getHashSize(name string, size int) string {
+	compute := func() string {
+		sha := sha256.New()
+		sha.Write([]byte(name))
+		b := sha.Sum(nil)
+		for i := 0; i < size; i++ {
+			b[i] = digits[int(b[i]%base)]
+		}
+		return string(b[:size])
+	}
+	var m *sync.Map
+	switch size {
+	case 8:
+		m = &nameToHashSize8
+	case 6:
+		m = &nameToHashSize6
+	default:
+		return compute()
+	}
+	if v, ok := m.Load(name); ok {
+		return v.(string)
+	}
+	h := compute()
+	m.Store(name, h)
+	return h
 }
 
 // Returns the node name for this server which is a hash of the server name.
@@ -796,7 +834,7 @@ func (s *Server) initEventTracking() {
 		return
 	}
 	// Create a system hash which we use for other servers to target us specifically.
-	s.sys.shash = string(getHash(s.info.Name))
+	s.sys.shash = getHash(s.info.Name)
 
 	// This will be for all inbox responses.
 	subject := fmt.Sprintf(inboxRespSubj, s.sys.shash, "*")
@@ -880,8 +918,8 @@ func (s *Server) initEventTracking() {
 			s.zReq(c, reply, msg, &optz.EventFilterOptions, optz, func() (interface{}, error) { return s.Jsz(&optz.JSzOptions) })
 		},
 		"HEALTHZ": func(sub *subscription, c *client, _ *Account, subject, reply string, msg []byte) {
-			optz := &EventFilterOptions{}
-			s.zReq(c, reply, msg, optz, optz, func() (interface{}, error) { return s.healthz(), nil })
+			optz := &HealthzEventOptions{}
+			s.zReq(c, reply, msg, &optz.EventFilterOptions, optz, func() (interface{}, error) { return s.healthz(&optz.HealthzOptions), nil })
 		},
 	}
 	for name, req := range monSrvc {
@@ -898,15 +936,7 @@ func (s *Server) initEventTracking() {
 		if tk := strings.Split(subject, tsep); len(tk) != accReqTokens {
 			return _EMPTY_, fmt.Errorf("subject %q is malformed", subject)
 		} else {
-			acc := tk[accReqAccIndex]
-			if ci, _, _, _, err := c.srv.getRequestInfo(c, msg); err == nil && ci.Account != _EMPTY_ {
-				// Make sure the accounts match.
-				if ci.Account != acc {
-					// Do not leak too much here.
-					return _EMPTY_, fmt.Errorf("bad request")
-				}
-			}
-			return acc, nil
+			return tk[accReqAccIndex], nil
 		}
 	}
 	monAccSrvc := map[string]msgHandler{
@@ -1059,20 +1089,32 @@ func (s *Server) addSystemAccountExports(sacc *Account) {
 		return
 	}
 	accConnzSubj := fmt.Sprintf(accDirectReqSubj, "*", "CONNZ")
-	if err := sacc.AddServiceExportWithResponse(accConnzSubj, Streamed, nil); err != nil {
-		s.Errorf("Error adding system service export for %q: %v", accConnzSubj, err)
+	// prioritize not automatically added exports
+	if !sacc.hasServiceExportMatching(accConnzSubj) {
+		// pick export type that clamps importing account id into subject
+		if err := sacc.addServiceExportWithResponseAndAccountPos(accConnzSubj, Streamed, nil, 4); err != nil {
+			//if err := sacc.AddServiceExportWithResponse(accConnzSubj, Streamed, nil); err != nil {
+			s.Errorf("Error adding system service export for %q: %v", accConnzSubj, err)
+		}
 	}
+	// prioritize not automatically added exports
 	accStatzSubj := fmt.Sprintf(accDirectReqSubj, "*", "STATZ")
-	if err := sacc.AddServiceExportWithResponse(accStatzSubj, Streamed, nil); err != nil {
-		s.Errorf("Error adding system service export for %q: %v", accStatzSubj, err)
+	if !sacc.hasServiceExportMatching(accStatzSubj) {
+		// pick export type that clamps importing account id into subject
+		if err := sacc.addServiceExportWithResponseAndAccountPos(accStatzSubj, Streamed, nil, 4); err != nil {
+			s.Errorf("Error adding system service export for %q: %v", accStatzSubj, err)
+		}
 	}
+	// FIXME(dlc) - Old experiment, Remove?
+	if !sacc.hasServiceExportMatching(accSubsSubj) {
+		if err := sacc.AddServiceExport(accSubsSubj, nil); err != nil {
+			s.Errorf("Error adding system service export for %q: %v", accSubsSubj, err)
+		}
+	}
+
 	// Register any accounts that existed prior.
 	s.registerSystemImportsForExisting()
 
-	// FIXME(dlc) - Old experiment, Remove?
-	if err := sacc.AddServiceExport(accSubsSubj, nil); err != nil {
-		s.Errorf("Error adding system service export for %q: %v", accSubsSubj, err)
-	}
 	// in case of a mixed mode setup, enable js exports anyway
 	if s.JetStreamEnabled() || !s.standAloneMode() {
 		s.checkJetStreamExports()
@@ -1163,7 +1205,7 @@ func (s *Server) remoteServerShutdown(sub *subscription, c *client, _ *Account, 
 	}
 
 	// JetStream node updates if applicable.
-	node := string(getHash(si.Name))
+	node := getHash(si.Name)
 	if v, ok := s.nodeToInfo.Load(node); ok && v != nil {
 		ni := v.(nodeInfo)
 		ni.offline = true
@@ -1201,7 +1243,7 @@ func (s *Server) remoteServerUpdate(sub *subscription, c *client, _ *Account, su
 		stats = ssm.Stats.JetStream.Stats
 	}
 
-	node := string(getHash(si.Name))
+	node := getHash(si.Name)
 	s.nodeToInfo.Store(node, nodeInfo{
 		si.Name,
 		si.Version,
@@ -1213,6 +1255,11 @@ func (s *Server) remoteServerUpdate(sub *subscription, c *client, _ *Account, su
 		stats,
 		false, si.JetStream,
 	})
+	s.mu.Lock()
+	if s.running && s.eventsEnabled() && ssm.Server.ID != s.info.ID {
+		s.updateRemoteServer(&si)
+	}
+	s.mu.Unlock()
 }
 
 // updateRemoteServer is called when we have an update from a remote server.
@@ -1244,7 +1291,7 @@ func (s *Server) processNewServer(si *ServerInfo) {
 
 	// Add to our nodeToName
 	if s.sameDomain(si.Domain) {
-		node := string(getHash(si.Name))
+		node := getHash(si.Name)
 		// Only update if non-existent
 		if _, ok := s.nodeToInfo.Load(node); !ok {
 			s.nodeToInfo.Store(node, nodeInfo{si.Name, si.Version, si.Cluster, si.Domain, si.ID, si.Tags, nil, nil, false, si.JetStream})
@@ -1435,6 +1482,12 @@ type AccountStatzEventOptions struct {
 // In the context of system events, JszEventOptions are options passed to Jsz
 type JszEventOptions struct {
 	JSzOptions
+	EventFilterOptions
+}
+
+// In the context of system events, HealthzEventOptions are options passed to Healthz
+type HealthzEventOptions struct {
+	HealthzOptions
 	EventFilterOptions
 }
 
@@ -1638,7 +1691,7 @@ func (s *Server) registerSystemImports(a *Account) {
 
 	importSrvc := func(subj, mappedSubj string) {
 		if !a.serviceImportExists(subj) {
-			if err := a.AddServiceImport(sacc, subj, mappedSubj); err != nil {
+			if err := a.addServiceImportWithClaim(sacc, subj, mappedSubj, nil, true); err != nil {
 				s.Errorf("Error setting up system service import %s -> %s for account: %v",
 					subj, mappedSubj, err)
 			}
@@ -1715,9 +1768,8 @@ func (s *Server) sendAccConnsUpdate(a *Account, subj ...string) {
 		},
 		AccountStat: *stat,
 	}
-	// Set timer to fire again unless we are at zero, but only if the account
-	// is not configured for JetStream.
-	if m.TotalConns == 0 && !a.jetStreamConfiguredNoLock() {
+	// Set timer to fire again unless we are at zero.
+	if m.TotalConns == 0 {
 		clearTimer(&a.ctmr)
 	} else {
 		// Check to see if we have an HB running and update.

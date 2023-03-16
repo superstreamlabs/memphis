@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
@@ -21,7 +22,6 @@ import (
 
 	"memphis/logger"
 	"memphis/server"
-
 	"github.com/nats-io/nats.go"
 )
 
@@ -1676,7 +1676,6 @@ func TestNewRouteLeafNodeOriginSupport(t *testing.T) {
 	no_sys_acc: true
 	`
 	conf := createConfFile(t, []byte(content))
-	defer removeFile(t, conf)
 
 	s, opts := RunServerWithConfig(conf)
 	defer s.Shutdown()
@@ -1690,7 +1689,6 @@ func TestNewRouteLeafNodeOriginSupport(t *testing.T) {
 	no_sys_acc: true
 	`
 	lconf := createConfFile(t, []byte(fmt.Sprintf(lcontent, opts.LeafNode.Port)))
-	defer removeFile(t, lconf)
 
 	ln, _ := RunServerWithConfig(lconf)
 	defer ln.Shutdown()

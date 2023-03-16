@@ -205,6 +205,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)
@@ -488,6 +489,7 @@ func (pmh PoisonMessagesHandler) GetTotalDlsMsgsByStation(stationName string) (i
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)
@@ -591,6 +593,7 @@ func RemovePoisonedCg(stationName StationName, cgName string) error {
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)

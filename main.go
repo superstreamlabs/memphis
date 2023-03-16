@@ -32,17 +32,18 @@ var usageStr = `
 Usage: nats-server [options]
 
 Server Options:
-    -a, --addr <host>                Bind to host address (default: 0.0.0.0)
+    -a, --addr, --net <host>         Bind to host address (default: 0.0.0.0)
     -p, --port <port>                Use port for clients (default: 6666)
-    -n, --name <server_name>         Server name (default: auto)
+    -n, --name --server_name <server_name>  Server name (default: auto)
     -P, --pid <file>                 File to store PID
     -m, --http_port <port>           Use port for http monitoring
     -ms,--https_port <port>          Use port for https monitoring
     -c, --config <file>              Configuration file
     -t                               Test configuration and exit
-    -sl,--signal <signal>[=<pid>]    Send signal to nats-server process (stop, quit, reopen, reload)
-                                     <pid> can be either a PID (e.g. 1) or the path to a PID file (e.g. /var/run/nats-server.pid)
-        --client_advertise <string>  Client URL to advertise to other servers
+    -sl,--signal <signal>[=<pid>]    Send signal to nats-server process (ldm, stop, quit, term, reopen, reload)
+                                     pid> can be either a PID (e.g. 1) or the path to a PID file (e.g. /var/run/nats-server.pid)
+    --client_advertise <string>  Client URL to advertise to other servers
+    --ports_file_dir <dir>       Creates a ports file in the specified directory (<executable_name>_<pid>.ports).
 
 Logging Options:
     -l, --log <file>                 File to redirect log output
@@ -54,6 +55,8 @@ Logging Options:
     -VV                              Verbose trace (traces system account as well)
     -DV                              Debug and trace
     -DVV                             Debug and verbose trace (traces system account as well)
+    --log_size_limit <limit>     Logfile size limit (default: auto)
+    --max_traced_msg_len <len>   Maximum printable length for traced messages (default: unlimited)
 
 JetStream Options:
     -js, --jetstream                 Enable JetStream functionality.
@@ -78,6 +81,7 @@ Cluster Options:
         --no_advertise <bool>        Do not advertise known cluster information to clients
         --cluster_advertise <string> Cluster URL to advertise to other servers
         --connect_retries <number>   For implicit routes, number of connect retries
+        --cluster_listen <url>       Cluster url from which members can solicit routes
 
 Common Options:
     -h, --help                       Show this message
@@ -198,9 +202,11 @@ func main() {
 	// Adjust MAXPROCS if running under linux/cgroups quotas.
 	undo, err := maxprocs.Set(maxprocs.Logger(s.Debugf))
 	if err != nil {
-		server.PrintAndDie(fmt.Sprintf("failed to set GOMAXPROCS: %v", err))
+		s.Warnf("Failed to set GOMAXPROCS: %v", err)
 	} else {
 		defer undo()
+		// Reset these from the snapshots from init for monitor.go
+		server.SnapshotMonitorInfo()
 	}
 
 	dbConnection, dbPostgresSql := runMemphis(s)
