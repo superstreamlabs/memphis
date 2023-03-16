@@ -124,9 +124,9 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
-		// s.Errorf("Failed to create root user: " + err.Error())
-		// db.Close(dbInstance, s)
-		// os.Exit(1)
+		s.Errorf("Failed to create root user: " + err.Error())
+		db.Close(dbInstance, s)
+		os.Exit(1)
 	}
 
 	go http_server.InitializeHttpServer(s)

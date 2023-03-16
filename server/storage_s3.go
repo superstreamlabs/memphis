@@ -136,15 +136,13 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 }
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	// exist, s3Integration, err := db.GetIntegration("s3")
-	var err error
-	exist := false
+	exist, s3Integration, err := db.GetIntegration("s3")
 	if !exist {
 		integrationRes, insertErr := db.InsertNewIntegration("s3", keys, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
-		s3Integration := integrationRes
+		s3Integration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "s3",
 			Keys:       keys,

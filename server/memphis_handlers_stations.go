@@ -639,8 +639,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if exist {
 		errMsg := "Station " + stationName.external + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
-		// c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		// return
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
 	}
 
 	// user, err := getUserDetailsFromMiddleware(c)
@@ -759,7 +759,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	//TODO: pass user.ID instead of 1
+	//TODO: replace 1 to user.ID
 	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), 1, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
@@ -782,10 +782,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	// 		return
 	// 	}
 	// }
-
-	// message := "Station " + stationName.Ext() + " has been created by " + user.Username
-	message := "Station " + stationName.Ext() + " has been created by "
-
+	//TODO: replace 1 to user.Username
+	message := "Station " + stationName.Ext() + " has been created by 1 "
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
@@ -793,8 +791,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		Message:      message,
 		CreatedBy:    1,
 		CreationDate: time.Now(),
-		// UserType:     user.Type,
-		UserType: "appliction",
+		UserType:     "application",
+		// UserType:     user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -802,19 +800,20 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 	}
 
-	// shouldSendAnalytics, _ := shouldSendAnalytics()
-	// if shouldSendAnalytics {
-	// 	param1 := analytics.EventParam{
-	// 		Name:  "station-name",
-	// 		Value: stationName.Ext(),
-	// 	}
-	// 	param2 := analytics.EventParam{
-	// 		Name:  "tiered-storage",
-	// 		Value: strconv.FormatBool(newStation.TieredStorageEnabled),
-	// 	}
-	// analyticsParams := []analytics.EventParam{param1, param2}
-	// analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
-	// }
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		param1 := analytics.EventParam{
+			Name:  "station-name",
+			Value: stationName.Ext(),
+		}
+		param2 := analytics.EventParam{
+			Name:  "tiered-storage",
+			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
+		//TODO: replace 1 to user.Username
+		analytics.SendEventWithParams("1", analyticsParams, "user-create-station")
+	}
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
