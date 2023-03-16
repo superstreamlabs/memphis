@@ -1920,6 +1920,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
+	//TODO: check if we can remove 'IsStationExist' function because it exists also inside of function 'removeSchemaFromStation'
 	exist, station, err := IsStationExist(stationName)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
