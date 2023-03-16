@@ -13,14 +13,12 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Schema struct {
-	ID   primitive.ObjectID `json:"id" bson:"_id"`
-	Name string             `json:"name" bson:"name"`
-	Type string             `json:"type" bson:"type"`
+	ID   int    `json:"id" bson:"_id"`
+	Name string `json:"name" bson:"name"`
+	Type string `json:"type" bson:"type"`
 }
 
 type SchemaPg struct {
@@ -30,15 +28,15 @@ type SchemaPg struct {
 }
 
 type SchemaVersion struct {
-	ID                primitive.ObjectID `json:"id" bson:"_id"`
-	VersionNumber     int                `json:"version_number" bson:"version_number"`
-	Active            bool               `json:"active" bson:"active"`
-	CreatedByUser     string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate      time.Time          `json:"creation_date" bson:"creation_date"`
-	SchemaContent     string             `json:"schema_content" bson:"schema_content"`
-	SchemaId          primitive.ObjectID `json:"schema_id" bson:"schema_id"`
-	MessageStructName string             `json:"message_struct_name" bson:"message_struct_name"`
-	Descriptor        string             `json:"-" bson:"descriptor"`
+	ID                int       `json:"id" bson:"_id"`
+	VersionNumber     int       `json:"version_number" bson:"version_number"`
+	Active            bool      `json:"active" bson:"active"`
+	CreatedByUser     string    `json:"created_by_user" bson:"created_by_user"`
+	CreationDate      time.Time `json:"creation_date" bson:"creation_date"`
+	SchemaContent     string    `json:"schema_content" bson:"schema_content"`
+	SchemaId          int       `json:"schema_id" bson:"schema_id"`
+	MessageStructName string    `json:"message_struct_name" bson:"message_struct_name"`
+	Descriptor        string    `json:"-" bson:"descriptor"`
 }
 
 type SchemaVersionPg struct {
@@ -62,23 +60,23 @@ type CreateNewSchema struct {
 }
 
 type ExtendedSchema struct {
-	ID                  primitive.ObjectID `json:"id" bson:"_id"`
-	Name                string             `json:"name" bson:"name"`
-	Type                string             `json:"type" bson:"type"`
-	CreatedByUser       string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate        time.Time          `json:"creation_date" bson:"creation_date"`
-	ActiveVersionNumber int                `json:"active_version_number" bson:"version_number"`
-	Used                bool               `json:"used"`
-	Tags                []CreateTag        `json:"tags"`
+	ID                  int         `json:"id" bson:"_id"`
+	Name                string      `json:"name" bson:"name"`
+	Type                string      `json:"type" bson:"type"`
+	CreatedByUser       string      `json:"created_by_user" bson:"created_by_user"`
+	CreationDate        time.Time   `json:"creation_date" bson:"creation_date"`
+	ActiveVersionNumber int         `json:"active_version_number" bson:"version_number"`
+	Used                bool        `json:"used"`
+	Tags                []CreateTag `json:"tags"`
 }
 
 type ExtendedSchemaDetails struct {
-	ID           primitive.ObjectID `json:"id"`
-	SchemaName   string             `json:"schema_name"`
-	Type         string             `json:"type"`
-	Versions     []SchemaVersion    `json:"versions"`
-	UsedStations []string           `json:"used_stations"`
-	Tags         []CreateTag        `json:"tags"`
+	ID           int             `json:"id"`
+	SchemaName   string          `json:"schema_name"`
+	Type         string          `json:"type"`
+	Versions     []SchemaVersion `json:"versions"`
+	UsedStations []string        `json:"used_stations"`
+	Tags         []CreateTag     `json:"tags"`
 }
 
 type ProducerSchemaUpdateType int

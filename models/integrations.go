@@ -13,14 +13,13 @@ package models
 
 import (
 	"github.com/slack-go/slack"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Integration struct {
-	ID         primitive.ObjectID `json:"id" bson:"_id"`
-	Name       string             `json:"name" bson:"name"`
-	Keys       map[string]string  `json:"keys" bson:"keys"`
-	Properties map[string]bool    `json:"properties" bson:"properties"`
+	ID         int               `json:"id" bson:"_id"`
+	Name       string            `json:"name" bson:"name"`
+	Keys       map[string]string `json:"keys" bson:"keys"`
+	Properties map[string]bool   `json:"properties" bson:"properties"`
 }
 
 type IntegrationV1 struct {

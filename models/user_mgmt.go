@@ -13,22 +13,7 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-type UserV0 struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Username        string             `json:"username" bson:"username"`
-	Password        string             `json:"password" bson:"password"`
-	UserType        string             `json:"user_type" bson:"user_type"`
-	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
-	FullName        string             `json:"full_name" bson:"full_name"`
-	Subscribtion    bool               `json:"subscription" bson:"subscription"`
-	SkipGetStarted  bool               `json:"skip_get_started" bson:"skip_get_started"`
-}
 
 type User struct {
 	ID              int       `json:"id"`
@@ -44,9 +29,9 @@ type User struct {
 }
 
 type Image struct {
-	ID    primitive.ObjectID `json:"id" bson:"_id"`
-	Name  string             `json:"name" bson:"name"`
-	Image string             `json:"image" bson:"image"`
+	ID    int    `json:"id" bson:"_id"`
+	Name  string `json:"name" bson:"name"`
+	Image string `json:"image" bson:"image"`
 }
 
 type AddUserSchema struct {
@@ -94,16 +79,16 @@ type ChangePasswordSchema struct {
 }
 
 type FilteredGenericUser struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	Username        string             `json:"username" bson:"username"`
-	UserType        string             `json:"user_type" bson:"user_type"`
-	CreationDate    time.Time          `json:"creation_date" bson:"creation_date"`
-	AlreadyLoggedIn bool               `json:"already_logged_in" bson:"already_logged_in"`
-	AvatarId        int                `json:"avatar_id" bson:"avatar_id"`
+	ID              int       `json:"id" bson:"_id"`
+	Username        string    `json:"username" bson:"username"`
+	UserType        string    `json:"user_type" bson:"user_type"`
+	CreationDate    time.Time `json:"creation_date" bson:"creation_date"`
+	AlreadyLoggedIn bool      `json:"already_logged_in" bson:"already_logged_in"`
+	AvatarId        int       `json:"avatar_id" bson:"avatar_id"`
 }
 
 type FilteredApplicationUser struct {
-	ID           primitive.ObjectID `json:"id" bson:"_id"`
-	Username     string             `json:"username" bson:"username"`
-	CreationDate time.Time          `json:"creation_date" bson:"creation_date"`
+	ID           int       `json:"id" bson:"_id"`
+	Username     string    `json:"username" bson:"username"`
+	CreationDate time.Time `json:"creation_date" bson:"creation_date"`
 }

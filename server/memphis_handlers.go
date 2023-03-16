@@ -82,20 +82,20 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.UserV0, error) {
 	return userModel, nil
 }
 
-func CreateDefaultStation(s *Server, sn StationName, username string) (models.StationPg, bool, error) {
+func CreateDefaultStation(s *Server, sn StationName, userId int) (models.Station, bool, error) {
 	stationName := sn.Ext()
 	err := s.CreateStream(sn, "message_age_sec", 604800, "file", 120000, 1, false)
 	if err != nil {
-		return models.StationPg{}, false, err
+		return models.Station{}, false, err
 	}
 
 	err = s.CreateDlsStream(sn, "file", 1)
 	if err != nil {
-		return models.StationPg{}, false, err
+		return models.Station{}, false, err
 	}
-	newStation, _, err := db.UpsertNewStation(stationName, username, "message_age_sec", 604800, "file", 1, models.SchemaDetails{}, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
+	newStation, _, err := db.UpsertNewStation(stationName, userId, "message_age_sec", 604800, "file", 1, models.SchemaDetails{}, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
 	if err != nil {
-		return models.StationPg{}, false, err
+		return models.Station{}, false, err
 	}
 	// if rowsUpdated > 0 {
 	// 	return models.StationPg{}, false, nil

@@ -59,18 +59,18 @@ func isRootUserLoggedIn() (bool, error) {
 	}
 }
 
-func authenticateUser(username string, password string) (bool, models.UserV0, error) {
+func authenticateUser(username string, password string) (bool, models.User, error) {
 	exist, user, err := db.GetUserByUsername(username)
 	if !exist {
-		return false, models.UserV0{}, nil
+		return false, models.User{}, nil
 	} else if err != nil {
-		return false, models.UserV0{}, err
+		return false, models.User{}, err
 	}
 
 	hashedPwd := []byte(user.Password)
 	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
 	if err != nil {
-		return false, models.UserV0{}, nil
+		return false, models.User{}, nil
 	}
 
 	return true, user, nil
@@ -83,7 +83,7 @@ func validateUserType(userType string) error {
 	return nil
 }
 
-func updateDeletedUserResources(user models.UserV0) error {
+func updateDeletedUserResources(user models.User) error {
 	if user.UserType == "application" {
 		err := RemoveUser(user.Username)
 		if err != nil {
@@ -139,24 +139,24 @@ func validateEmail(email string) error {
 }
 
 type userToTokens interface {
-	models.UserV0 | models.SandboxUser
+	models.User | models.SandboxUser
 }
 
 func CreateTokens[U userToTokens](user U) (string, string, error) {
 	atClaims := jwt.MapClaims{}
 	var at *jwt.Token
 	switch u := any(user).(type) {
-	case models.UserV0:
-		atClaims["user_id"] = u.ID.Hex()
+	case models.User:
+		atClaims["user_id"] = u.ID
 		atClaims["username"] = u.Username
 		atClaims["user_type"] = u.UserType
-		atClaims["creation_date"] = u.CreationDate
+		atClaims["creation_date"] = u.CreatedAt
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	case models.SandboxUser:
-		atClaims["user_id"] = u.ID.Hex()
+		atClaims["user_id"] = u.ID
 		atClaims["username"] = u.Username
 		atClaims["user_type"] = u.UserType
 		atClaims["creation_date"] = u.CreationDate
@@ -354,7 +354,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"creation_date":           user.CreationDate,
+		"created_at":           user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
@@ -451,7 +451,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"creation_date":           user.CreationDate,
+		"created_at":           user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          sendAnalytics,
@@ -510,7 +510,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	_, err = db.CreateUserV1(username, "management", hashedPwdString, fullName, subscription, 1)
+
+	_, err = db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -819,7 +820,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		"id":                user.ID,
 		"username":          user.Username,
 		"user_type":         user.UserType,
-		"creation_date":     user.CreationDate,
+		"creation_date":     user.CreatedAt,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         avatarId,
 	})
@@ -848,7 +849,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_ = os.Remove(fileName)
 
-	err = db.InsertImagePg("company_logo", base64Encoding, 0, true)
+	err = db.InsertImage("company_logo", base64Encoding, 0, true)
 	if err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

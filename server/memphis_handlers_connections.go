@@ -21,8 +21,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ConnectionsHandler struct{}
@@ -68,7 +66,7 @@ func handleConnectMessage(client *client) error {
 	var (
 		isNativeMemphisClient bool
 		username              string
-		objID                 primitive.ObjectID
+		objID                 string
 	)
 	switch len(splittedMemphisInfo) {
 	case 2:
@@ -106,13 +104,7 @@ func handleConnectMessage(client *client) error {
 	}
 
 	if isNativeMemphisClient {
-		objIdString := splittedMemphisInfo[0]
-		objID, err = primitive.ObjectIDFromHex(objIdString)
-		if err != nil {
-			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
-			return err
-		}
+		objID := splittedMemphisInfo[0]
 
 		exist, _, err = db.GetConnectionByID(objID)
 		if err != nil {
@@ -122,19 +114,19 @@ func handleConnectMessage(client *client) error {
 		}
 
 		if exist {
-			err = connectionsHandler.ReliveConnection(primitive.ObjectID(objID))
+			err = connectionsHandler.ReliveConnection(objID)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
 				return err
 			}
-			err = producersHandler.ReliveProducers(primitive.ObjectID(objID))
+			err = producersHandler.ReliveProducers(objID)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
 				return err
 			}
-			err = consumersHandler.ReliveConsumers(primitive.ObjectID(objID))
+			err = consumersHandler.ReliveConsumers(objID)
 			if err != nil {
 
 				errMsg := "User " + username + ": " + err.Error()
@@ -144,14 +136,14 @@ func handleConnectMessage(client *client) error {
 		} else {
 			//TODO: pass username instead of userNameId
 			userNameId := 1
-			err := connectionsHandler.CreateConnection(userNameId, client.RemoteAddress().String(), objIdString)
+			err := connectionsHandler.CreateConnection(userNameId, client.RemoteAddress().String(), objID)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
 				return err
 			}
 		}
-		updateNewClientWithConfig(client, objIdString)
+		updateNewClientWithConfig(client, objID)
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
@@ -206,7 +198,7 @@ func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string
 	return nil
 }
 
-func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) error {
+func (ch ConnectionsHandler) ReliveConnection(connectionId string) error {
 	err := db.UpdateConnection(connectionId, true)
 	if err != nil {
 		serv.Errorf("ReliveConnection error: " + err.Error())
@@ -216,7 +208,7 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId primitive.ObjectID) e
 }
 
 func (mci *memphisClientInfo) updateDisconnection() error {
-	if mci.connectionId.IsZero() {
+	if mci.connectionId == "" {
 		return nil
 	}
 
