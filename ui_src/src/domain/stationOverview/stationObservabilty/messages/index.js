@@ -50,6 +50,7 @@ const Messages = () => {
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
     const [loader, setLoader] = useState(false);
+    const [purgeData, setPurgeData] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
@@ -147,6 +148,17 @@ const Messages = () => {
         }
     };
 
+    useEffect(() => {
+        if (
+            (stationState?.stationSocketData?.total_messages === 0 && purgeData.purge_station) ||
+            (stationState?.stationSocketData?.total_dls_messages === 0 && purgeData.purge_dls)
+        ) {
+            modalPurgeFlip(false);
+            setLoader(false);
+            setPurgeData({});
+        }
+    }, [stationState?.stationSocketData]);
+
     const handlePurge = async (purgeData) => {
         setLoader(true);
         setIgnoreProcced(true);
@@ -154,15 +166,15 @@ const Messages = () => {
             let purgeDataPayload = purgeData;
             purgeDataPayload['station_name'] = stationName;
             await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
-            setTimeout(() => {
-                setIgnoreProcced(false);
-                stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
-                setSelectedRowIndex(null);
-                setIsCheck([]);
-                setIndeterminate(false);
-            }, 1500);
-            setLoader(false);
-            modalPurgeFlip(false);
+            setIgnoreProcced(false);
+            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+            let data = stationState?.stationSocketData;
+            if (purgeDataPayload['purge_station']) data['total_messages'] = 0;
+            if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
+            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            setSelectedRowIndex(null);
+            setIsCheck([]);
+            setIndeterminate(false);
         } catch (error) {
             setLoader(false);
             setIgnoreProcced(false);
@@ -432,6 +444,7 @@ const Messages = () => {
                     desc="This action will clean the station from messages."
                     handlePurgeSelected={(purgeData) => {
                         handlePurge(purgeData);
+                        setPurgeData(purgeData);
                     }}
                     cancel={() => modalPurgeFlip(false)}
                     loader={loader}
