@@ -73,7 +73,7 @@ type DlsMessage struct {
 type DlsMessageResponse struct {
 	ID           string            `json:"_id"`
 	StationName  string            `json:"station_name"`
-	SchemaType   string            `json:"station_type"`
+	SchemaType   string            `json:"schema_type"`
 	MessageSeq   int               `json:"message_seq"`
 	Producer     ProducerDetails   `json:"producer"`
 	PoisonedCgs  []PoisonedCg      `json:"poisoned_cgs"`
