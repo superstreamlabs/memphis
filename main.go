@@ -145,12 +145,6 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	// run only on the leader
 	go s.KillZombieResources()
 
-	// For backward compatibility
-	err = s.AlignOldStations()
-	if err != nil {
-		s.Errorf("LaunchDlsForOldStations: " + err.Error())
-	}
-
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
