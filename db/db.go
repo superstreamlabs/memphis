@@ -665,7 +665,7 @@ func GetSystemKey(key string) (bool, models.SystemKey, error) {
 	}
 	defer rows.Close()
 	systemKeys, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SystemKey])
-	if err == pgx.ErrNoRows {
+	if len(systemKeys) == 0 {
 		return false, models.SystemKey{}, nil
 	}
 	if err != nil {
@@ -745,7 +745,7 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 	}
 	defer rows.Close()
 	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsStringValue])
-	if err == pgx.ErrNoRows {
+	if len(configurations) == 0 {
 		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
 	}
 	if err != nil {
@@ -968,7 +968,7 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	}
 	defer rows.Close()
 	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
-	if err == pgx.ErrNoRows {
+	if len(connections) == 0 {
 		return false, models.Connection{}, nil
 	}
 	if err != nil {
@@ -1101,7 +1101,7 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 	}
 	defer rows.Close()
 	auditLogs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AuditLog])
-	if err == pgx.ErrNoRows {
+	if len(auditLogs) == 0 {
 		return []models.AuditLog{}, nil
 	}
 	if err != nil {
@@ -1166,7 +1166,7 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	}
 	defer rows.Close()
 	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
-	if err == pgx.ErrNoRows {
+	if len(stations) == 0 {
 		return false, models.Station{}, nil
 	}
 	if err != nil {
@@ -1668,7 +1668,7 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
-	if err == pgx.ErrNoRows {
+	if len(producers) == 0 {
 		return false, models.Producer{}, nil
 	}
 	if err != nil {
@@ -1792,7 +1792,7 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
-	if err == pgx.ErrNoRows {
+	if len(producers) == 0 {
 		return []models.ExtendedProducer{}, nil
 	}
 	if err != nil {
@@ -2478,7 +2478,7 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
-	if err == pgx.ErrNoRows {
+	if len(consumers) == 0 {
 		return false, models.Consumer{}, nil
 	}
 	if err != nil {
@@ -2570,7 +2570,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 	}
 	defer rows.Close()
 	schemaVersions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
-	if err == pgx.ErrNoRows {
+	if len(schemaVersions) == 0 {
 		return []models.SchemaVersion{}, nil
 	}
 	if err != nil {
@@ -2637,7 +2637,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 	}
 	defer rows.Close()
 	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
-	if err == pgx.ErrNoRows {
+	if len(schemas) == 0 {
 		return false, models.SchemaVersion{}, nil
 	}
 	if err != nil {
@@ -2883,7 +2883,7 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 	}
 	defer rows.Close()
 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
-	if err == pgx.ErrNoRows {
+	if len(integrations) == 0 {
 		return false, models.Integration{}, nil
 	}
 	if err != nil {
@@ -3132,7 +3132,7 @@ func GetRootUser() (bool, models.User, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err == pgx.ErrNoRows {
+	if len(users) == 0 {
 		return false, models.User{}, nil
 	}
 	if err != nil {
@@ -3188,7 +3188,7 @@ func GetUserByUserId(userId int) (bool, models.User, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err == pgx.ErrNoRows {
+	if len(users) == 0 {
 		return false, models.User{}, nil
 	}
 	if err != nil {
@@ -3245,7 +3245,7 @@ func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
-	if err == pgx.ErrNoRows {
+	if len(users) == 0 {
 		return []models.FilteredApplicationUser{}, nil
 	}
 	if err != nil {
@@ -3453,7 +3453,7 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
-	if err == pgx.ErrNoRows {
+	if len(tags) == 0 {
 		return []models.Tag{}, err
 	}
 	if err != nil {
@@ -3529,7 +3529,7 @@ func GetAllUsedTags() ([]models.Tag, error) {
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
-	if err == pgx.ErrNoRows {
+	if len(tags) == 0 {
 		return []models.Tag{}, nil
 	}
 	if err != nil {
@@ -3598,7 +3598,7 @@ func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
-	if err == pgx.ErrNoRows {
+	if len(users) == 0 {
 		return false, models.SandboxUser{}, nil
 	}
 	if err != nil {
@@ -3619,7 +3619,7 @@ func UpdateSkipGetStartedSandbox(username string) error {
 }
 
 // Image Functions
-func InsertImag(name string, base64Encoding string, intValue int, isString bool) error {
+func InsertImage(name string, base64Encoding string, intValue int, isString bool) error {
 	err := InsertConfigurationPg(name, base64Encoding, intValue, isString)
 	if err != nil {
 		return err
@@ -3654,7 +3654,7 @@ func GetImage(name string) (bool, models.Image, error) {
 	}
 	defer rows.Close()
 	images, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Image])
-	if err == pgx.ErrNoRows {
+	if len(images) == 0 {
 		return false, models.Image{}, nil
 	}
 	if err != nil {

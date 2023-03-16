@@ -73,9 +73,9 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.initWS()
 }
 
-func getUserDetailsFromMiddleware(c *gin.Context) (models.UserV0, error) {
+func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	user, _ := c.Get("user")
-	userModel := user.(models.UserV0)
+	userModel := user.(models.User)
 	if len(userModel.Username) == 0 {
 		return userModel, errors.New("username is empty")
 	}

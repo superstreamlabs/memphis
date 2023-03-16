@@ -1933,55 +1933,6 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
 }
 
-func (s *Server) AlignOldStations() error {
-	err := launchDlsForOldStations(s)
-	if err != nil {
-		return err
-	}
-	return updateOldStationNativeness(s)
-}
-
-func launchDlsForOldStations(s *Server) error {
-	stations, err := db.GetActiveStations()
-	if err != nil {
-		return err
-	}
-	for _, station := range stations {
-		sn, err := StationNameFromStr(station.Name)
-		if err != nil {
-			return err
-		}
-		streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-
-		_, err = s.memphisStreamInfo(streamName)
-		if err != nil {
-			if IsNatsErr(err, JSStreamNotFoundErr) {
-				dlsConfigurationNew := models.DlsConfiguration{
-					Poison:      true,
-					Schemaverse: true,
-				}
-				err = db.UpsertStationDlsConfig(station.Name, dlsConfigurationNew)
-				if err != nil {
-					return err
-				}
-				err = s.CreateDlsStream(sn, station.StorageType, station.Replicas)
-				if err != nil {
-					serv.Errorf("LaunchDlsForOldStations: CreateDlsStream: At station " + station.Name + ": " + err.Error())
-					return err
-				}
-			} else {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func updateOldStationNativeness(s *Server) error {
-	err := db.UpdateIsNativeOldStations()
-	return err
-}
-
 func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	if err := DenyForSandboxEnv(c); err != nil {
 		return

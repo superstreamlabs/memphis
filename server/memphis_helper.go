@@ -433,7 +433,7 @@ func getInternalConsumerName(cn string) string {
 	return replaceDelimiters(cn)
 }
 
-func (s *Server) CreateConsumer(consumer models.ConsumerPg, station models.Station) error {
+func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
 		consumerName = consumer.ConsumersGroup

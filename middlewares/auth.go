@@ -63,7 +63,7 @@ func extractToken(authHeader string) (string, error) {
 	return tokenString, nil
 }
 
-func verifyToken(tokenString string, secret string) (models.UserV0, error) {
+func verifyToken(tokenString string, secret string) (models.User, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("verifyToken: unexpected signing method: %v", token.Header["alg"])
@@ -71,17 +71,17 @@ func verifyToken(tokenString string, secret string) (models.UserV0, error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return models.UserV0{}, errors.New("f")
+		return models.User{}, errors.New("f")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok && !token.Valid {
-		return models.UserV0{}, errors.New("f")
+		return models.User{}, errors.New("f")
 	}
 
 	userId := claims["user_id"].(int)
 	creationDate, _ := time.Parse("2006-01-02T15:04:05.000Z", claims["creation_date"].(string))
-	user := models.UserV0{
+	user := models.User{
 		ID:              userId,
 		Username:        claims["username"].(string),
 		UserType:        claims["user_type"].(string),
