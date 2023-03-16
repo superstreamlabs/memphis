@@ -18,7 +18,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"memphis/analytics"
+
+	// "memphis/analytics"
 	"memphis/db"
 	"memphis/http_server"
 	"memphis/server"
@@ -91,16 +92,16 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
+func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	dbInstance, err := db.InitializeDbConnection(s)
-	if err != nil {
-		s.Errorf("Failed initializing db connection: " + err.Error())
-		os.Exit(1)
-	}
+	// dbInstance, err := db.InitializeDbConnection(s)
+	// if err != nil {
+	// 	s.Errorf("Failed initializing db connection: " + err.Error())
+	// 	os.Exit(1)
+	// }
 
 	dbPostgresSql, err := db.InitalizePostgreSQLDbConnection(s)
 	if err != nil {
@@ -108,27 +109,26 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 		os.Exit(1)
 	}
 
+	// err = analytics.InitializeAnalytics()
+	// if err != nil {
+	// s.Errorf("Failed initializing analytics: " + err.Error())
+	// }
 
-	err = analytics.InitializeAnalytics()
-	if err != nil {
-		s.Errorf("Failed initializing analytics: " + err.Error())
-	}
+	s.InitializeMemphisHandlers()
 
-	s.InitializeMemphisHandlers(dbInstance)
-
-	err = server.InitializeIntegrations()
-	if err != nil {
-		s.Errorf("Failed initializing integrations: " + err.Error())
-	}
+	// err = server.InitializeIntegrations()
+	// if err != nil {
+	// 	s.Errorf("Failed initializing integrations: " + err.Error())
+	// }
 
 	go s.CreateInternalJetStreamResources()
 
-	err = server.CreateRootUserOnFirstSystemLoad()
-	if err != nil {
-		s.Errorf("Failed to create root user: " + err.Error())
-		db.Close(dbInstance, s)
-		os.Exit(1)
-	}
+	// err = server.CreateRootUserOnFirstSystemLoad()
+	// if err != nil {
+	// s.Errorf("Failed to create root user: " + err.Error())
+	// db.Close(dbInstance, s)
+	// os.Exit(1)
+	// }
 
 	go http_server.InitializeHttpServer(s)
 
@@ -142,10 +142,10 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	go s.KillZombieResources()
 
 	// For backward compatibility
-	err = s.AlignOldStations()
-	if err != nil {
-		s.Errorf("LaunchDlsForOldStations: " + err.Error())
-	}
+	// err = s.AlignOldStations()
+	// if err != nil {
+	// 	s.Errorf("LaunchDlsForOldStations: " + err.Error())
+	// }
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
@@ -159,7 +159,7 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return dbInstance, dbPostgresSql
+	return dbPostgresSql
 }
 
 func main() {
@@ -203,9 +203,9 @@ func main() {
 		defer undo()
 	}
 
-	dbConnection, dbPostgresSql := runMemphis(s)
-	defer db.Close(dbConnection, s)
+	dbPostgresSql := runMemphis(s)
+	// defer db.Close(dbConnection, s)
 	defer db.ClosePostgresSql(dbPostgresSql, s)
-	defer analytics.Close()
+	// defer analytics.Close()
 	s.WaitForShutdown()
 }

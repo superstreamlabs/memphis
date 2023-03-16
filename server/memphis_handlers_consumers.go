@@ -374,7 +374,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				DeletedConsumers:      []models.ExtendedConsumer{},
 				IsActive:              consumer.IsActive,
 				IsDeleted:             consumer.IsDeleted,
-				LastStatusChangeDate:  consumer.CreationDate,
+				LastStatusChangeDate:  consumer.CreatedAt,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {

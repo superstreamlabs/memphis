@@ -60,11 +60,11 @@ type memphisWS struct {
 	quitCh        chan struct{}
 }
 
-func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
+func (s *Server) InitializeMemphisHandlers() {
 	serv = s
-	s.memphis.dbClient = dbInstance.Client
-	s.memphis.dbCtx = dbInstance.Ctx
-	s.memphis.dbCancel = dbInstance.Cancel
+	// s.memphis.dbClient = dbInstance.Client
+	// s.memphis.dbCtx = dbInstance.Ctx
+	// s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
 	// s.memphis.serverID is initialized earlier, when logger is configured
 
@@ -105,19 +105,20 @@ func CreateDefaultStation(s *Server, sn StationName, userId int) (models.Station
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics")
-	if err != nil {
-		return false, err
-	}
-	if !exist {
-		return false, nil
-	}
+	// exist, systemKey, err := db.GetSystemKey("analytics")
+	// if err != nil {
+	// 	return false, err
+	// }
+	// if !exist {
+	// 	return false, nil
+	// }
 
-	if systemKey.Value == "true" {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	// if systemKey.Value == "true" {
+	// 	return true, nil
+	// } else {
+	// 	return false, nil
+	// }
+	return false, nil
 }
 
 func validateName(name, objectType string) error {

@@ -250,15 +250,15 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.Producer, []models.Producer, []models.Producer, error) { // for socket io endpoint
 	producers, err := db.GetProducersByStationID(station.ID)
 	if err != nil {
 		return producers, producers, producers, err
 	}
 
-	var connectedProducers []models.ExtendedProducer
-	var disconnectedProducers []models.ExtendedProducer
-	var deletedProducers []models.ExtendedProducer
+	var connectedProducers []models.Producer
+	var disconnectedProducers []models.Producer
+	var deletedProducers []models.Producer
 	producersNames := []string{}
 
 	for _, producer := range producers {
@@ -277,25 +277,25 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	}
 
 	if len(connectedProducers) == 0 {
-		connectedProducers = []models.ExtendedProducer{}
+		connectedProducers = []models.Producer{}
 	}
 
 	if len(disconnectedProducers) == 0 {
-		disconnectedProducers = []models.ExtendedProducer{}
+		disconnectedProducers = []models.Producer{}
 	}
 
 	if len(deletedProducers) == 0 {
-		deletedProducers = []models.ExtendedProducer{}
+		deletedProducers = []models.Producer{}
 	}
 
 	sort.Slice(connectedProducers, func(i, j int) bool {
-		return connectedProducers[j].CreationDate.Before(connectedProducers[i].CreationDate)
+		return connectedProducers[j].CreatedAt.Before(connectedProducers[i].CreatedAt)
 	})
 	sort.Slice(disconnectedProducers, func(i, j int) bool {
-		return disconnectedProducers[j].CreationDate.Before(disconnectedProducers[i].CreationDate)
+		return disconnectedProducers[j].CreatedAt.Before(disconnectedProducers[i].CreatedAt)
 	})
 	sort.Slice(deletedProducers, func(i, j int) bool {
-		return deletedProducers[j].CreationDate.Before(deletedProducers[i].CreationDate)
+		return deletedProducers[j].CreatedAt.Before(deletedProducers[i].CreatedAt)
 	})
 	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }

@@ -34,8 +34,8 @@ type Consumer struct {
 
 type ExtendedConsumer struct {
 	Name             string    `json:"name" bson:"name"`
-	CreatedByUser    string    `json:"created_by_user" bson:"created_by_user"`
-	CreationDate     time.Time `json:"creation_date" bson:"creation_date"`
+	CreatedBy        string    `json:"created_by_user" bson:"created_by_user"`
+	CreatedAt        time.Time `json:"creation_date" bson:"creation_date"`
 	IsActive         bool      `json:"is_active" bson:"is_active"`
 	IsDeleted        bool      `json:"is_deleted" bson:"is_deleted"`
 	ClientAddress    string    `json:"client_address" bson:"client_address"`

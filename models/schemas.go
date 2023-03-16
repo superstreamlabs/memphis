@@ -31,8 +31,8 @@ type SchemaVersion struct {
 	ID                int       `json:"id" bson:"_id"`
 	VersionNumber     int       `json:"version_number" bson:"version_number"`
 	Active            bool      `json:"active" bson:"active"`
-	CreatedByUser     string    `json:"created_by_user" bson:"created_by_user"`
-	CreationDate      time.Time `json:"creation_date" bson:"creation_date"`
+	CreatedBy         int       `json:"created_by_user" bson:"created_by_user"`
+	CreatedAt         time.Time `json:"creation_date" bson:"creation_date"`
 	SchemaContent     string    `json:"schema_content" bson:"schema_content"`
 	SchemaId          int       `json:"schema_id" bson:"schema_id"`
 	MessageStructName string    `json:"message_struct_name" bson:"message_struct_name"`
@@ -63,8 +63,8 @@ type ExtendedSchema struct {
 	ID                  int         `json:"id" bson:"_id"`
 	Name                string      `json:"name" bson:"name"`
 	Type                string      `json:"type" bson:"type"`
-	CreatedByUser       string      `json:"created_by_user" bson:"created_by_user"`
-	CreationDate        time.Time   `json:"creation_date" bson:"creation_date"`
+	CreatedBy           int         `json:"created_by_user" bson:"created_by_user"`
+	CreatedAt           time.Time   `json:"creation_date" bson:"creation_date"`
 	ActiveVersionNumber int         `json:"active_version_number" bson:"version_number"`
 	Used                bool        `json:"used"`
 	Tags                []CreateTag `json:"tags"`
