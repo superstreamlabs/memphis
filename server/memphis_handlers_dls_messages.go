@@ -438,9 +438,22 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	sort.Slice(poisonedCgs, func(i, j int) bool {
 		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
 	})
+
+	schemaType := ""
+	if station.Schema.SchemaName != "" {
+		exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+		if err != nil {
+			return models.DlsMessageResponse{}, err
+		}
+		if exist {
+			schemaType = schema.Type
+		}
+	}
+
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,
 		StationName: dlsMsg.StationName,
+		SchemaType:  schemaType,
 		MessageSeq:  dlsMsg.MessageSeq,
 		Producer: models.ProducerDetails{
 			Name:          producer.Name,
