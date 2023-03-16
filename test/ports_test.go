@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018-2019 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,13 +10,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,7 +34,7 @@ func waitForFile(path string, dur time.Duration) ([]byte, error) {
 			time.Sleep(25 * time.Millisecond)
 			continue
 		} else {
-			return ioutil.ReadFile(path)
+			return os.ReadFile(path)
 		}
 	}
 	return nil, errors.New("Timeout")
@@ -45,7 +45,7 @@ func portFile(dirname string) string {
 }
 
 func TestPortsFile(t *testing.T) {
-	portFileDir := createDir(t, "")
+	portFileDir := t.TempDir()
 
 	opts := DefaultTestOptions
 	opts.PortsFileDir = portFileDir
@@ -122,9 +122,7 @@ func TestPortsFile(t *testing.T) {
 // makes a temp directory with two directories 'A' and 'B'
 // the location of the ports file is changed from dir A to dir B.
 func TestPortsFileReload(t *testing.T) {
-	// make a temp dir
-	tempDir := createDir(t, "")
-	defer removeDir(t, tempDir)
+	tempDir := t.TempDir()
 
 	// make child temp dir A
 	dirA := filepath.Join(tempDir, "A")
@@ -137,7 +135,7 @@ func TestPortsFileReload(t *testing.T) {
 	`, dirA)
 	config = strings.Replace(config, "\\", "/", -1)
 	confPath := filepath.Join(tempDir, fmt.Sprintf("%d.conf", os.Getpid()))
-	if err := ioutil.WriteFile(confPath, []byte(config), 0666); err != nil {
+	if err := os.WriteFile(confPath, []byte(config), 0666); err != nil {
 		t.Fatalf("Error writing ports file (%s): %v", confPath, err)
 	}
 
@@ -178,7 +176,7 @@ func TestPortsFileReload(t *testing.T) {
 		port: -1
 	`, dirB)
 	config = strings.Replace(config, "\\", "/", -1)
-	if err := ioutil.WriteFile(confPath, []byte(config), 0666); err != nil {
+	if err := os.WriteFile(confPath, []byte(config), 0666); err != nil {
 		t.Fatalf("Error writing ports file (%s): %v", confPath, err)
 	}
 

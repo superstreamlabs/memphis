@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2021 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -20,7 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -128,7 +129,7 @@ func (oc *OCSPMonitor) getLocalStatus() ([]byte, *ocsp.Response, error) {
 	key := fmt.Sprintf("%x", sha256.Sum256(oc.Leaf.Raw))
 
 	oc.mu.Lock()
-	raw, err := ioutil.ReadFile(filepath.Join(storeDir, defaultOCSPStoreDir, key))
+	raw, err := os.ReadFile(filepath.Join(storeDir, defaultOCSPStoreDir, key))
 	oc.mu.Unlock()
 	if err != nil {
 		return nil, nil, err
@@ -167,7 +168,7 @@ func (oc *OCSPMonitor) getRemoteStatus() ([]byte, *ocsp.Response, error) {
 			return nil, fmt.Errorf("non-ok http status: %d", resp.StatusCode)
 		}
 
-		return ioutil.ReadAll(resp.Body)
+		return io.ReadAll(resp.Body)
 	}
 
 	// Request documentation:
@@ -733,7 +734,7 @@ func hasOCSPStatusRequest(cert *x509.Certificate) bool {
 // new path, in an attempt to avoid corrupting existing data.
 func (oc *OCSPMonitor) writeOCSPStatus(storeDir, file string, data []byte) error {
 	storeDir = filepath.Join(storeDir, defaultOCSPStoreDir)
-	tmp, err := ioutil.TempFile(storeDir, "tmp-cert-status")
+	tmp, err := os.CreateTemp(storeDir, "tmp-cert-status")
 	if err != nil {
 		return err
 	}
@@ -759,7 +760,7 @@ func (oc *OCSPMonitor) writeOCSPStatus(storeDir, file string, data []byte) error
 }
 
 func parseCertPEM(name string) ([]*x509.Certificate, error) {
-	data, err := ioutil.ReadFile(name)
+	data, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}

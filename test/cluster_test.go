@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2013-2020 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
@@ -25,7 +26,7 @@ import (
 )
 
 // Helper function to check that a cluster is formed
-func checkClusterFormed(t *testing.T, servers ...*server.Server) {
+func checkClusterFormed(t testing.TB, servers ...*server.Server) {
 	t.Helper()
 	expectedNumRoutes := len(servers) - 1
 	checkFor(t, 10*time.Second, 100*time.Millisecond, func() error {
@@ -541,7 +542,6 @@ func TestClusterNameOption(t *testing.T) {
 			listen: 127.0.0.1:-1
 		}
 	`))
-	defer removeFile(t, conf)
 
 	s, opts := RunServerWithConfig(conf)
 	defer s.Shutdown()
@@ -562,7 +562,6 @@ func TestEphemeralClusterName(t *testing.T) {
 			listen: 127.0.0.1:-1
 		}
 	`))
-	defer removeFile(t, conf)
 
 	s, opts := RunServerWithConfig(conf)
 	defer s.Shutdown()
@@ -607,7 +606,6 @@ func TestClusterNameConflictsDropRoutes(t *testing.T) {
 			listen: 127.0.0.1:5244
 		}
 	`))
-	defer removeFile(t, conf)
 
 	s1, _ := RunServerWithConfig(conf)
 	defer s1.Shutdown()
@@ -621,7 +619,6 @@ func TestClusterNameConflictsDropRoutes(t *testing.T) {
 			routes = [nats-route://127.0.0.1:5244]
 		}
 	`))
-	defer removeFile(t, conf2)
 
 	s2, _ := RunServerWithConfig(conf2)
 	defer s2.Shutdown()
@@ -642,7 +639,6 @@ func TestClusterNameDynamicNegotiation(t *testing.T) {
 		listen: 127.0.0.1:-1
 		cluster {listen: 127.0.0.1:5244}
 	`))
-	defer removeFile(t, conf)
 
 	seed, _ := RunServerWithConfig(conf)
 	defer seed.Shutdown()
@@ -654,7 +650,6 @@ func TestClusterNameDynamicNegotiation(t *testing.T) {
 			routes = [nats-route://127.0.0.1:5244]
 		}
 	`))
-	defer removeFile(t, oconf)
 
 	// Create a random number of additional servers, up to 20.
 	numServers := rand.Intn(20) + 1

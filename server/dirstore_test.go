@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2021 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,13 +10,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"os"
@@ -65,7 +65,7 @@ func init() {
 
 func TestShardedDirStoreWriteAndReadonly(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	store, err := NewDirJWTStore(dir, true, false)
 	require_NoError(t, err)
@@ -118,7 +118,7 @@ func TestShardedDirStoreWriteAndReadonly(t *testing.T) {
 
 func TestUnshardedDirStoreWriteAndReadonly(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	store, err := NewDirJWTStore(dir, false, false)
 	require_NoError(t, err)
@@ -179,7 +179,7 @@ func TestNoCreateRequiresDir(t *testing.T) {
 
 func TestCreateMakesDir(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	fullPath := filepath.Join(dir, "a/b")
 
@@ -197,9 +197,9 @@ func TestCreateMakesDir(t *testing.T) {
 
 func TestShardedDirStorePackMerge(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
-	dir2 := createDir(t, "jwtstore_test")
-	dir3 := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
+	dir2 := t.TempDir()
+	dir3 := t.TempDir()
 
 	store, err := NewDirJWTStore(dir, true, false)
 	require_NoError(t, err)
@@ -272,8 +272,8 @@ func TestShardedDirStorePackMerge(t *testing.T) {
 
 func TestShardedToUnsharedDirStorePackMerge(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
-	dir2 := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
+	dir2 := t.TempDir()
 
 	store, err := NewDirJWTStore(dir, true, false)
 	require_NoError(t, err)
@@ -331,7 +331,7 @@ func TestShardedToUnsharedDirStorePackMerge(t *testing.T) {
 
 func TestMergeOnlyOnNewer(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewDirJWTStore(dir, true, false)
 	require_NoError(t, err)
@@ -392,7 +392,7 @@ func createTestAccount(t *testing.T, dirStore *DirJWTStore, expSec int, accKey n
 
 func assertStoreSize(t *testing.T, dirStore *DirJWTStore, length int) {
 	t.Helper()
-	f, err := ioutil.ReadDir(dirStore.directory)
+	f, err := os.ReadDir(dirStore.directory)
 	require_NoError(t, err)
 	require_Len(t, len(f), length)
 	dirStore.Lock()
@@ -404,7 +404,7 @@ func assertStoreSize(t *testing.T, dirStore *DirJWTStore, length int) {
 
 func TestExpiration(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*50, 10, true, 0, nil)
 	require_NoError(t, err)
@@ -428,7 +428,7 @@ func TestExpiration(t *testing.T) {
 	failAt := time.Now().Add(4 * time.Second)
 	for time.Now().Before(failAt) {
 		time.Sleep(100 * time.Millisecond)
-		f, err := ioutil.ReadDir(dir)
+		f, err := os.ReadDir(dir)
 		require_NoError(t, err)
 		if len(f) == 1 {
 			lh := dirStore.Hash()
@@ -441,7 +441,7 @@ func TestExpiration(t *testing.T) {
 
 func TestLimit(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*100, 5, true, 0, nil)
 	require_NoError(t, err)
@@ -483,7 +483,7 @@ func TestLimit(t *testing.T) {
 
 func TestLimitNoEvict(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*50, 2, false, 0, nil)
 	require_NoError(t, err)
@@ -535,7 +535,7 @@ func TestLimitNoEvict(t *testing.T) {
 
 func TestLruLoad(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*100, 2, true, 0, nil)
 	require_NoError(t, err)
 	defer dirStore.Close()
@@ -567,7 +567,7 @@ func TestLruLoad(t *testing.T) {
 
 func TestLruVolume(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*50, 2, true, 0, nil)
 	require_NoError(t, err)
@@ -609,7 +609,7 @@ func TestLruVolume(t *testing.T) {
 
 func TestLru(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*50, 2, true, 0, nil)
 	require_NoError(t, err)
@@ -658,7 +658,7 @@ func TestLru(t *testing.T) {
 
 func TestReload(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 	notificationChan := make(chan struct{}, 5)
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*100, 2, true, 0, func(publicKey string) {
 		notificationChan <- struct{}{}
@@ -677,7 +677,7 @@ func TestReload(t *testing.T) {
 		jwt, err := account.Encode(accKey)
 		require_NoError(t, err)
 		file := fmt.Sprintf("%s/%s.jwt", dir, pKey)
-		err = ioutil.WriteFile(file, []byte(jwt), 0644)
+		err = os.WriteFile(file, []byte(jwt), 0644)
 		require_NoError(t, err)
 		return file
 	}
@@ -719,7 +719,7 @@ func TestReload(t *testing.T) {
 
 func TestExpirationUpdate(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 
 	dirStore, err := NewExpiringDirJWTStore(dir, false, false, NoDelete, time.Millisecond*50, 10, true, 0, nil)
 	require_NoError(t, err)
@@ -736,7 +736,7 @@ func TestExpirationUpdate(t *testing.T) {
 	h = nh
 
 	time.Sleep(1500 * time.Millisecond)
-	f, err := ioutil.ReadDir(dir)
+	f, err := os.ReadDir(dir)
 	require_NoError(t, err)
 	require_Len(t, len(f), 1)
 
@@ -746,7 +746,7 @@ func TestExpirationUpdate(t *testing.T) {
 	h = nh
 
 	time.Sleep(1500 * time.Millisecond)
-	f, err = ioutil.ReadDir(dir)
+	f, err = os.ReadDir(dir)
 	require_NoError(t, err)
 	require_Len(t, len(f), 1)
 
@@ -756,17 +756,16 @@ func TestExpirationUpdate(t *testing.T) {
 	h = nh
 
 	time.Sleep(1500 * time.Millisecond)
-	f, err = ioutil.ReadDir(dir)
+	f, err = os.ReadDir(dir)
 	require_NoError(t, err)
 	require_Len(t, len(f), 1)
 
 	createTestAccount(t, dirStore, 1, accountKey)
 	nh = dirStore.Hash()
 	require_NotEqual(t, h, nh)
-	h = nh
 
 	time.Sleep(1500 * time.Millisecond)
-	f, err = ioutil.ReadDir(dir)
+	f, err = os.ReadDir(dir)
 	require_NoError(t, err)
 	require_Len(t, len(f), 0)
 
@@ -777,10 +776,10 @@ func TestExpirationUpdate(t *testing.T) {
 
 func TestTTL(t *testing.T) {
 	t.Parallel()
-	dir := createDir(t, "jwtstore_test")
+	dir := t.TempDir()
 	require_OneJWT := func() {
 		t.Helper()
-		f, err := ioutil.ReadDir(dir)
+		f, err := os.ReadDir(dir)
 		require_NoError(t, err)
 		require_Len(t, len(f), 1)
 	}
@@ -804,7 +803,7 @@ func TestTTL(t *testing.T) {
 		// observe expiration
 		for i := 0; i < 40; i++ {
 			time.Sleep(50 * time.Millisecond)
-			f, err := ioutil.ReadDir(dir)
+			f, err := os.ReadDir(dir)
 			require_NoError(t, err)
 			if len(f) == 0 {
 				return
@@ -838,12 +837,13 @@ func TestRemove(t *testing.T) {
 		RenameDeleted: {0, 1},
 		NoDelete:      {1, 0},
 	} {
+		deleteType, test := deleteType, test // fixes govet capturing loop variables
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
-			dir := createDir(t, "jwtstore_test")
+			dir := t.TempDir()
 			require_OneJWT := func() {
 				t.Helper()
-				f, err := ioutil.ReadDir(dir)
+				f, err := os.ReadDir(dir)
 				require_NoError(t, err)
 				require_Len(t, len(f), 1)
 			}
@@ -893,7 +893,7 @@ func TestNotificationOnPack(t *testing.T) {
 		}
 		notificationChan <- struct{}{}
 	}
-	dirPack := createDir(t, "jwtstore_test")
+	dirPack := t.TempDir()
 	packStore, err := NewExpiringDirJWTStore(dirPack, false, false, NoDelete, infDur, 0, true, 0, notification)
 	require_NoError(t, err)
 	// prefill the store with data
@@ -908,7 +908,7 @@ func TestNotificationOnPack(t *testing.T) {
 	packStore.Close()
 	hash := packStore.Hash()
 	for _, shard := range []bool{true, false, true, false} {
-		dirMerge := createDir(t, "jwtstore_test")
+		dirMerge := t.TempDir()
 		mergeStore, err := NewExpiringDirJWTStore(dirMerge, shard, false, NoDelete, infDur, 0, true, 0, notification)
 		require_NoError(t, err)
 		// set
@@ -948,7 +948,7 @@ func TestNotificationOnPackWalk(t *testing.T) {
 	const iterCnt = 8
 	store := [storeCnt]*DirJWTStore{}
 	for i := 0; i < storeCnt; i++ {
-		dirMerge := createDir(t, "jwtstore_test")
+		dirMerge := t.TempDir()
 		mergeStore, err := NewExpiringDirJWTStore(dirMerge, true, false, NoDelete, infDur, 0, true, 0, nil)
 		require_NoError(t, err)
 		store[i] = mergeStore

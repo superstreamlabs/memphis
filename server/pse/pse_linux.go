@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2015-2018 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,12 +10,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package pse
 
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync/atomic"
 	"syscall"
@@ -47,7 +47,7 @@ func init() {
 
 // Sampling function to keep pcpu relevant.
 func periodic() {
-	contents, err := ioutil.ReadFile(procStatFile)
+	contents, err := os.ReadFile(procStatFile)
 	if err != nil {
 		return
 	}
@@ -87,7 +87,7 @@ func periodic() {
 
 // ProcUsage returns CPU usage
 func ProcUsage(pcpu *float64, rss, vss *int64) error {
-	contents, err := ioutil.ReadFile(procStatFile)
+	contents, err := os.ReadFile(procStatFile)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2020 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -49,7 +50,7 @@ type pubArg struct {
 	queues  [][]byte
 	size    int
 	hdr     int
-	psi     *serviceImport
+	psi     []*serviceImport
 }
 
 // Parser constants
@@ -924,7 +925,6 @@ func (c *client) parse(buf []byte) error {
 					if err != nil {
 						return err
 					}
-
 				}
 
 				if err := c.overMaxControlLineLimit(arg, mcl); err != nil {

@@ -14,7 +14,6 @@ package server
 import (
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -182,7 +181,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 }
 
 func imageToBase64(imagePath string) (string, error) {
-	bytes, err := ioutil.ReadFile(imagePath)
+	bytes, err := os.ReadFile(imagePath)
 	if err != nil {
 		return "", err
 	}

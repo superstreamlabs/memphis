@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -19,7 +20,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net"
 	"net/url"
@@ -158,18 +158,24 @@ type LeafNodeOpts struct {
 	tlsConfigOpts *TLSConfigOpts
 }
 
+// SignatureHandler is used to sign a nonce from the server while
+// authenticating with Nkeys. The callback should sign the nonce and
+// return the JWT and the raw signature.
+type SignatureHandler func([]byte) (string, []byte, error)
+
 // RemoteLeafOpts are options for connecting to a remote server as a leaf node.
 type RemoteLeafOpts struct {
-	LocalAccount string      `json:"local_account,omitempty"`
-	NoRandomize  bool        `json:"-"`
-	URLs         []*url.URL  `json:"urls,omitempty"`
-	Credentials  string      `json:"-"`
-	TLS          bool        `json:"-"`
-	TLSConfig    *tls.Config `json:"-"`
-	TLSTimeout   float64     `json:"tls_timeout,omitempty"`
-	Hub          bool        `json:"hub,omitempty"`
-	DenyImports  []string    `json:"-"`
-	DenyExports  []string    `json:"-"`
+	LocalAccount string           `json:"local_account,omitempty"`
+	NoRandomize  bool             `json:"-"`
+	URLs         []*url.URL       `json:"urls,omitempty"`
+	Credentials  string           `json:"-"`
+	SignatureCB  SignatureHandler `json:"-"`
+	TLS          bool             `json:"-"`
+	TLSConfig    *tls.Config      `json:"-"`
+	TLSTimeout   float64          `json:"tls_timeout,omitempty"`
+	Hub          bool             `json:"hub,omitempty"`
+	DenyImports  []string         `json:"-"`
+	DenyExports  []string         `json:"-"`
 
 	// When an URL has the "ws" (or "wss") scheme, then the server will initiate the
 	// connection as a websocket connection. By default, the websocket frames will be
@@ -246,8 +252,10 @@ type Options struct {
 	JetStreamDomain       string        `json:"-"`
 	JetStreamExtHint      string        `json:"-"`
 	JetStreamKey          string        `json:"-"`
+	JetStreamCipher       StoreCipher   `json:"-"`
 	JetStreamUniqueTag    string
 	JetStreamLimits       JSLimitOpts
+	JetStreamMaxCatchup   int64
 	StoreDir              string            `json:"-"`
 	JsAccDefaultDomain    map[string]string `json:"-"` // account to domain name mapping
 	Websocket             WebsocketOpts     `json:"-"`
@@ -431,6 +439,9 @@ type MQTTOpts struct {
 	// replicas count (lower than StreamReplicas if specified, but also lower
 	// than the automatic value determined by cluster size).
 	// Note that existing consumers are not modified.
+	//
+	// UPDATE: This is no longer used while messages stream has interest policy retention
+	// which requires consumer replica count to match the parent stream.
 	ConsumerReplicas int
 
 	// Indicate if the consumers should be created with memory storage.
@@ -1924,6 +1935,15 @@ func parseJetStream(v interface{}, opts *Options, errors *[]error, warnings *[]e
 				doEnable = mv.(bool)
 			case "key", "ek", "encryption_key":
 				opts.JetStreamKey = mv.(string)
+			case "cipher":
+				switch strings.ToLower(mv.(string)) {
+				case "chacha", "chachapoly":
+					opts.JetStreamCipher = ChaCha
+				case "aes":
+					opts.JetStreamCipher = AES
+				default:
+					return &configErr{tk, fmt.Sprintf("Unknown cipher type: %q", mv)}
+				}
 			case "extension_hint":
 				opts.JetStreamExtHint = mv.(string)
 			case "limits":
@@ -1932,6 +1952,12 @@ func parseJetStream(v interface{}, opts *Options, errors *[]error, warnings *[]e
 				}
 			case "unique_tag":
 				opts.JetStreamUniqueTag = strings.ToLower(strings.TrimSpace(mv.(string)))
+			case "max_outstanding_catchup":
+				s, err := getStorageSize(mv)
+				if err != nil {
+					return &configErr{tk, fmt.Sprintf("%s %s", strings.ToLower(mk), err)}
+				}
+				opts.JetStreamMaxCatchup = s
 			default:
 				if !tk.IsUsedVariable() {
 					err := &unknownConfigFieldErr{
@@ -2980,11 +3006,10 @@ func parseAccount(v map[string]interface{}, errors, warnings *[]error) (string, 
 
 // Parse an export stream or service.
 // e.g.
-//
-//	{stream: "public.>"} # No accounts means public.
-//	{stream: "synadia.private.>", accounts: [cncf, natsio]}
-//	{service: "pub.request"} # No accounts means public.
-//	{service: "pub.special.request", accounts: [nats.io]}
+// {stream: "public.>"} # No accounts means public.
+// {stream: "synadia.private.>", accounts: [cncf, natsio]}
+// {service: "pub.request"} # No accounts means public.
+// {service: "pub.special.request", accounts: [nats.io]}
 func parseExportStreamOrService(v interface{}, errors, warnings *[]error) (*export, *export, error) {
 	var (
 		curStream  *export
@@ -3249,10 +3274,9 @@ func parseServiceLatency(root token, v interface{}) (l *serviceLatency, retErr e
 
 // Parse an import stream or service.
 // e.g.
-//
-//	{stream: {account: "synadia", subject:"public.synadia"}, prefix: "imports.synadia"}
-//	{stream: {account: "synadia", subject:"synadia.private.*"}}
-//	{service: {account: "synadia", subject: "pub.special.request"}, to: "synadia.request"}
+// {stream: {account: "synadia", subject:"public.synadia"}, prefix: "imports.synadia"}
+// {stream: {account: "synadia", subject:"synadia.private.*"}}
+// {service: {account: "synadia", subject: "pub.special.request"}, to: "synadia.request"}
 func parseImportStreamOrService(v interface{}, errors, warnings *[]error) (*importStream, *importService, error) {
 	var (
 		curStream  *importStream
@@ -4202,7 +4226,14 @@ func parseMQTT(v interface{}, o *Options, errors *[]error, warnings *[]error) er
 		case "stream_replicas":
 			o.MQTT.StreamReplicas = int(mv.(int64))
 		case "consumer_replicas":
-			o.MQTT.ConsumerReplicas = int(mv.(int64))
+			err := &configWarningErr{
+				field: mk,
+				configErr: configErr{
+					token:  tk,
+					reason: `consumer replicas setting ignored in this server version`,
+				},
+			}
+			*warnings = append(*warnings, err)
 		case "consumer_memory_storage":
 			o.MQTT.ConsumerMemoryStorage = mv.(bool)
 		case "consumer_inactive_threshold", "consumer_auto_cleanup":
@@ -4261,7 +4292,7 @@ func GenTLSConfig(tc *TLSConfigOpts) (*tls.Config, error) {
 	}
 	// Add in CAs if applicable.
 	if tc.CaFile != "" {
-		rootPEM, err := ioutil.ReadFile(tc.CaFile)
+		rootPEM, err := os.ReadFile(tc.CaFile)
 		if err != nil || rootPEM == nil {
 			return nil, err
 		}
@@ -4648,8 +4679,8 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	fs.StringVar(&configFile, "c", "", "Configuration file.")
 	fs.StringVar(&configFile, "config", "", "Configuration file.")
 	fs.BoolVar(&opts.CheckConfig, "t", false, "Check configuration and exit.")
-	fs.StringVar(&signal, "sl", "", "Send signal to nats-server process (stop, quit, reopen, reload).")
-	fs.StringVar(&signal, "signal", "", "Send signal to nats-server process (stop, quit, reopen, reload).")
+	fs.StringVar(&signal, "sl", "", "Send signal to nats-server process (ldm, stop, quit, term, reopen, reload).")
+	fs.StringVar(&signal, "signal", "", "Send signal to nats-server process (ldm, stop, quit, term, reopen, reload).")
 	fs.StringVar(&opts.PidFile, "P", "", "File to store process pid.")
 	fs.StringVar(&opts.PidFile, "pid", "", "File to store process pid.")
 	fs.StringVar(&opts.PortsFileDir, "ports_file_dir", "", "Creates a ports file in the specified directory (<executable_name>_<pid>.ports).")
@@ -4974,7 +5005,7 @@ func processSignal(signal string) error {
 // 2. If such a file exists and can be read, return its contents.
 // 3. Otherwise, return the original "pidStr" string.
 func maybeReadPidFile(pidStr string) string {
-	if b, err := ioutil.ReadFile(pidStr); err == nil {
+	if b, err := os.ReadFile(pidStr); err == nil {
 		return string(b)
 	}
 	return pidStr
