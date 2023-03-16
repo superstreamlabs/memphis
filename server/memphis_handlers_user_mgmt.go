@@ -60,15 +60,15 @@ func isRootUserLoggedIn() (bool, error) {
 }
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
-	_, user, err := db.GetUserByUsername(username)
-	// if !exist {
-	// 	return false, models.User{}, nil
-	// } else if err != nil {
-	// 	return false, models.User{}, err
-	// }
+	exist, user, err := db.GetUserByUsername(username)
+	if !exist {
+		return false, models.User{}, nil
+	} else if err != nil {
+		return false, models.User{}, err
+	}
 
-	// hashedPwd := []byte(user.Password)
-	// err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
+	hashedPwd := []byte(user.Password)
+	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
 	if err != nil {
 		return false, models.User{}, nil
 	}
