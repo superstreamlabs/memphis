@@ -324,7 +324,7 @@ func (s *Server) StartBackgroundTasks() error {
 	exist, ui_host, _, err := db.GetConfiguration("ui_host", true)
 	if !exist {
 		UI_HOST = ""
-		err = db.InsertConfigurationPg("ui_host", UI_HOST, 0, true)
+		err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
 		if err != nil {
 			return err
 		}

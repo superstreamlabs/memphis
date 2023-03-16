@@ -189,7 +189,7 @@ func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string
 
 	//TODO: don't forget remove this line
 	newConnection.CreatedBy = 1
-	err := db.InsertConnectionPg(newConnection)
+	err := db.InsertConnection(newConnection)
 	if err != nil {
 		// errMsg := "User " + username + ": " + err.Error()
 		// serv.Errorf("CreateConnection error: " + errMsg)
