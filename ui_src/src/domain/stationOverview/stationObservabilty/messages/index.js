@@ -93,7 +93,6 @@ const Messages = () => {
     };
 
     useEffect(() => {
-        console.log(stationState?.stationSocketData);
         if (selectedRowIndex && !userScrolled) {
             const element = document.getElementById(selectedRowIndex);
             if (element) {
@@ -160,13 +159,6 @@ const Messages = () => {
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
-                if (purgeData['purge_station']) {
-                    stationDispatch({ type: 'SET_MESSAGES', payload: [] });
-                }
-                if (purgeData['purge_dls']) {
-                    stationDispatch({ type: 'SET_POISON_MESSAGES', payload: [] });
-                    stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: [] });
-                }
                 setIndeterminate(false);
             }, 1500);
             setLoader(false);
