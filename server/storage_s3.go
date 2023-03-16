@@ -54,19 +54,19 @@ func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 	IntegrationsCache["s3"] = s3Integration
 }
 
-func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.IntegrationV1, int, error) {
+func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.Integration, int, error) {
 	statusCode, _, err := it.handleS3Integrtation(keys)
 	if err != nil {
-		return models.IntegrationV1{}, statusCode, err
+		return models.Integration{}, statusCode, err
 	}
 
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
 	s3Integration, err := createS3Integration(keys, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
-			return models.IntegrationV1{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+			return models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
 		} else {
-			return models.IntegrationV1{}, 500, err
+			return models.Integration{}, 500, err
 		}
 	}
 	return s3Integration, statusCode, nil
@@ -135,14 +135,14 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 	return statusCode, keys, nil
 }
 
-func createS3Integration(keys map[string]string, properties map[string]bool) (models.IntegrationV1, error) {
+func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	// exist, s3Integration, err := db.GetIntegration("s3")
 	var err error
 	exist := false
 	if !exist {
-		integrationRes, insertErr := db.InsertNewIntegrationPg("s3", keys, properties)
+		integrationRes, insertErr := db.InsertNewIntegration("s3", keys, properties)
 		if insertErr != nil {
-			return models.IntegrationV1{}, insertErr
+			return models.Integration{}, insertErr
 		}
 		s3Integration := integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
@@ -152,18 +152,18 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
-			return models.IntegrationV1{}, err
+			return models.Integration{}, err
 		}
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
-			return models.IntegrationV1{}, err
+			return models.Integration{}, err
 		}
 		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
 	} else if err != nil {
-		return models.IntegrationV1{}, err
+		return models.Integration{}, err
 	}
-	return models.IntegrationV1{}, errors.New("S3 integration already exists")
+	return models.Integration{}, errors.New("S3 integration already exists")
 
 }
 

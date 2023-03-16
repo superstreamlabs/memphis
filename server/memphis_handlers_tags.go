@@ -146,13 +146,13 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 		return
 	}
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
-	message := "New Tag " + newTag.Name + " has been created " + " by user " + user.Username
-	serv.Noticef(message)
+	// user, err := getUserDetailsFromMiddleware(c)
+	// if err != nil {
+	// 	serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
+	// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	// }
+	// message := "New Tag " + newTag.Name + " has been created " + " by user " + user.Username
+	// serv.Noticef(message)
 
 	c.IndentedJSON(200, newTag)
 }

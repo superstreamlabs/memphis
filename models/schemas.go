@@ -16,30 +16,12 @@ import (
 )
 
 type Schema struct {
-	ID   int    `json:"id" bson:"_id"`
-	Name string `json:"name" bson:"name"`
-	Type string `json:"type" bson:"type"`
-}
-
-type SchemaPg struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
 type SchemaVersion struct {
-	ID                int       `json:"id" bson:"_id"`
-	VersionNumber     int       `json:"version_number" bson:"version_number"`
-	Active            bool      `json:"active" bson:"active"`
-	CreatedByUser     string    `json:"created_by_user" bson:"created_by_user"`
-	CreationDate      time.Time `json:"creation_date" bson:"creation_date"`
-	SchemaContent     string    `json:"schema_content" bson:"schema_content"`
-	SchemaId          int       `json:"schema_id" bson:"schema_id"`
-	MessageStructName string    `json:"message_struct_name" bson:"message_struct_name"`
-	Descriptor        string    `json:"-" bson:"descriptor"`
-}
-
-type SchemaVersionPg struct {
 	ID                int       `json:"id" `
 	VersionNumber     int       `json:"version_number"`
 	Active            bool      `json:"active"`

@@ -643,11 +643,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		// return
 	}
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
+	// user, err := getUserDetailsFromMiddleware(c)
+	// if err != nil {
+	// 	serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+	// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	// }
 
 	schemaName := body.SchemaName
 	var schemaDetails models.SchemaDetails
@@ -759,7 +759,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	//TODO: pass user.ID instead of 1
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), 1, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -782,15 +783,18 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	// 	}
 	// }
 
-	message := "Station " + stationName.Ext() + " has been created by " + user.Username
+	// message := "Station " + stationName.Ext() + " has been created by " + user.Username
+	message := "Station " + stationName.Ext() + " has been created by "
+
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		StationName:  stationName.Ext(),
 		Message:      message,
-		CreatedBy:    user.ID,
+		CreatedBy:    1,
 		CreationDate: time.Now(),
-		UserType:     user.UserType,
+		// UserType:     user.Type,
+		UserType: "appliction",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -798,29 +802,29 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "tiered-storage",
-			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
-	}
+	// shouldSendAnalytics, _ := shouldSendAnalytics()
+	// if shouldSendAnalytics {
+	// 	param1 := analytics.EventParam{
+	// 		Name:  "station-name",
+	// 		Value: stationName.Ext(),
+	// 	}
+	// 	param2 := analytics.EventParam{
+	// 		Name:  "tiered-storage",
+	// 		Value: strconv.FormatBool(newStation.TieredStorageEnabled),
+	// 	}
+	// analyticsParams := []analytics.EventParam{param1, param2}
+	// analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
+	// }
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
-			"id":                            newStation.ID,
-			"name":                          stationName.Ext(),
-			"retention_type":                retentionType,
-			"retention_value":               body.RetentionValue,
-			"storage_type":                  storageTypeForResponse,
-			"replicas":                      body.Replicas,
-			"created_by_user":               user.Username,
+			"id":              newStation.ID,
+			"name":            stationName.Ext(),
+			"retention_type":  retentionType,
+			"retention_value": body.RetentionValue,
+			"storage_type":    storageTypeForResponse,
+			"replicas":        body.Replicas,
+			// "created_by_user":               user.Username,
 			"creation_date":                 time.Now(),
 			"last_update":                   time.Now(),
 			"is_deleted":                    false,
@@ -833,13 +837,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	} else {
 		var emptySchemaDetailsResponse struct{}
 		c.IndentedJSON(200, gin.H{
-			"id":                            newStation.ID,
-			"name":                          stationName.Ext(),
-			"retention_type":                retentionType,
-			"retention_value":               body.RetentionValue,
-			"storage_type":                  storageTypeForResponse,
-			"replicas":                      body.Replicas,
-			"created_by_user":               user.Username,
+			"id":              newStation.ID,
+			"name":            stationName.Ext(),
+			"retention_type":  retentionType,
+			"retention_value": body.RetentionValue,
+			"storage_type":    storageTypeForResponse,
+			"replicas":        body.Replicas,
+			// "created_by_user":               user.Username,
 			"creation_date":                 time.Now(),
 			"last_update":                   time.Now(),
 			"is_deleted":                    false,

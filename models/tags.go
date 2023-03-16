@@ -12,15 +12,6 @@
 package models
 
 type Tag struct {
-	ID       int    `json:"id" bson:"_id"`
-	Name     string `json:"name" bson:"name"`
-	Color    string `json:"color" bson:"color"`
-	Users    []int  `json:"users" bson:"users"`
-	Stations []int  `json:"stations" bson:"stations"`
-	Schemas  []int  `json:"schemas" bson:"schemas"`
-}
-
-type TagPg struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Color    string `json:"color"`

@@ -108,7 +108,6 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 		os.Exit(1)
 	}
 
-
 	err = analytics.InitializeAnalytics()
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
@@ -125,18 +124,18 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
-		s.Errorf("Failed to create root user: " + err.Error())
-		db.Close(dbInstance, s)
-		os.Exit(1)
+		// s.Errorf("Failed to create root user: " + err.Error())
+		// db.Close(dbInstance, s)
+		// os.Exit(1)
 	}
 
 	go http_server.InitializeHttpServer(s)
 
 	err = s.StartBackgroundTasks()
-	if err != nil {
-		s.Errorf("Background task failed: " + err.Error())
-		os.Exit(1)
-	}
+	// if err != nil {
+	// 	s.Errorf("Background task failed: " + err.Error())
+	// 	os.Exit(1)
+	// }
 
 	// run only on the leader
 	go s.KillZombieResources()

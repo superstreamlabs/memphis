@@ -16,17 +16,10 @@ import (
 )
 
 type Integration struct {
-	ID         int               `json:"id" bson:"_id"`
-	Name       string            `json:"name" bson:"name"`
-	Keys       map[string]string `json:"keys" bson:"keys"`
-	Properties map[string]bool   `json:"properties" bson:"properties"`
-}
-
-type IntegrationV1 struct {
 	ID         int               `json:"id"`
 	Name       string            `json:"name"`
-	Keys       map[string]string `json:"keys" `
-	Properties map[string]bool   `json:"properties" `
+	Keys       map[string]string `json:"keys"`
+	Properties map[string]bool   `json:"properties"`
 }
 
 type SlackIntegration struct {

@@ -143,10 +143,10 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(integrationType string,
 	return keys, properties, 0, nil
 }
 
-func (it IntegrationsHandler) handleCreateSlackIntegration(integrationType string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, models.IntegrationV1, int, error) {
+func (it IntegrationsHandler) handleCreateSlackIntegration(integrationType string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, models.Integration, int, error) {
 	keys, properties, errorCode, err := it.getSlackIntegrationDetails(integrationType, body)
 	if err != nil {
-		return keys, properties, models.IntegrationV1{}, errorCode, err
+		return keys, properties, models.Integration{}, errorCode, err
 	}
 	if UI_HOST == "" {
 		UI_HOST = strings.ToLower(body.UIUrl)
@@ -154,9 +154,9 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(integrationType strin
 	slackIntegration, err := createSlackIntegration(keys, properties, UI_HOST)
 	if err != nil {
 		if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
-			return map[string]string{}, map[string]bool{}, models.IntegrationV1{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+			return map[string]string{}, map[string]bool{}, models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
 		} else {
-			return map[string]string{}, map[string]bool{}, models.IntegrationV1{}, 500, err
+			return map[string]string{}, map[string]bool{}, models.Integration{}, 500, err
 		}
 	}
 	return keys, properties, slackIntegration, 0, nil
@@ -177,8 +177,8 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType strin
 	}
 	return slackIntegration, 0, nil
 }
-func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.IntegrationV1, error) {
-	var slackIntegration models.IntegrationV1
+func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
+	var slackIntegration models.Integration
 	// exist, slackIntegration, err := db.GetIntegration("slack")
 	exist := false
 	var err error
@@ -187,7 +187,7 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		if err != nil {
 			return slackIntegration, err
 		}
-		integrationRes, insertErr := db.InsertNewIntegrationPg("slack", keys, properties)
+		integrationRes, insertErr := db.InsertNewIntegration("slack", keys, properties)
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}

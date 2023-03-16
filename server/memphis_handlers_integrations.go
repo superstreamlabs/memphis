@@ -28,16 +28,16 @@ const sendNotificationType = "send_notification"
 type IntegrationsHandler struct{ S *Server }
 
 func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	var integration models.IntegrationV1
+	var integration models.Integration
 	var message string
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {

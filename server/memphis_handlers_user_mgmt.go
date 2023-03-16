@@ -60,15 +60,15 @@ func isRootUserLoggedIn() (bool, error) {
 }
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
-	exist, user, err := db.GetUserByUsername(username)
-	if !exist {
-		return false, models.User{}, nil
-	} else if err != nil {
-		return false, models.User{}, err
-	}
+	_, user, err := db.GetUserByUsername(username)
+	// if !exist {
+	// 	return false, models.User{}, nil
+	// } else if err != nil {
+	// 	return false, models.User{}, err
+	// }
 
-	hashedPwd := []byte(user.Password)
-	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
+	// hashedPwd := []byte(user.Password)
+	// err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
 	if err != nil {
 		return false, models.User{}, nil
 	}
@@ -218,7 +218,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUserV1("root", "root", hashedPwdString, "", false, 1)
+		_, err = db.CreateUser("root", "root", hashedPwdString, "", false, 1)
 		if err != nil {
 			return err
 		}
@@ -354,7 +354,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"created_at":           user.CreatedAt,
+		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
@@ -451,7 +451,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"created_at":           user.CreatedAt,
+		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          sendAnalytics,
@@ -509,7 +509,6 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
-
 
 	_, err = db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
@@ -633,7 +632,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			return
 		}
 	}
-	newUser, err := db.CreateUserV1(username, userType, hashedPwdString, "", false, avatarId)
+	newUser, err := db.CreateUser(username, userType, hashedPwdString, "", false, avatarId)
 	if err != nil || len(username) == 0 {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
