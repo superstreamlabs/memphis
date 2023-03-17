@@ -27,8 +27,8 @@ const (
 	// JSClusterIncompleteErr incomplete results
 	JSClusterIncompleteErr ErrorIdentifier = 10004
 
-	// JSClusterNoPeersErr no suitable peers for placement
-	JSClusterNoPeersErr ErrorIdentifier = 10005
+	// JSClusterNoPeersErrF Error causing no peers to be available ({err})
+	JSClusterNoPeersErrF ErrorIdentifier = 10005
 
 	// JSClusterNotActiveErr JetStream not in clustered mode
 	JSClusterNotActiveErr ErrorIdentifier = 10006
@@ -63,8 +63,14 @@ const (
 	// JSConsumerConfigRequiredErr consumer config required
 	JSConsumerConfigRequiredErr ErrorIdentifier = 10078
 
+	// JSConsumerCreateDurableAndNameMismatch Consumer Durable and Name have to be equal if both are provided
+	JSConsumerCreateDurableAndNameMismatch ErrorIdentifier = 10132
+
 	// JSConsumerCreateErrF General consumer creation failure string ({err})
 	JSConsumerCreateErrF ErrorIdentifier = 10012
+
+	// JSConsumerCreateFilterSubjectMismatchErr Consumer create request did not match filtered subject from create subject
+	JSConsumerCreateFilterSubjectMismatchErr ErrorIdentifier = 10131
 
 	// JSConsumerDeliverCycleErr consumer deliver subject forms a cycle
 	JSConsumerDeliverCycleErr ErrorIdentifier = 10081
@@ -174,6 +180,9 @@ const (
 	// JSConsumerReplicasExceedsStream consumer config replica count exceeds parent stream
 	JSConsumerReplicasExceedsStream ErrorIdentifier = 10126
 
+	// JSConsumerReplicasShouldMatchStream consumer config replicas must match interest retention stream's replicas
+	JSConsumerReplicasShouldMatchStream ErrorIdentifier = 10134
+
 	// JSConsumerSmallHeartbeatErr consumer idle heartbeat needs to be >= 100ms
 	JSConsumerSmallHeartbeatErr ErrorIdentifier = 10083
 
@@ -252,6 +261,9 @@ const (
 	// JSRaftGeneralErrF General RAFT error string ({err})
 	JSRaftGeneralErrF ErrorIdentifier = 10041
 
+	// JSReplicasCountCannotBeNegative replicas count cannot be negative
+	JSReplicasCountCannotBeNegative ErrorIdentifier = 10133
+
 	// JSRestoreSubscribeFailedErrF JetStream unable to subscribe to restore snapshot {subject}: {err}
 	JSRestoreSubscribeFailedErrF ErrorIdentifier = 10042
 
@@ -324,8 +336,8 @@ const (
 	// JSStreamMoveAndScaleErr can not move and scale a stream in a single update
 	JSStreamMoveAndScaleErr ErrorIdentifier = 10123
 
-	// JSStreamMoveInProgress stream move already in progress
-	JSStreamMoveInProgress ErrorIdentifier = 10124
+	// JSStreamMoveInProgressF stream move already in progress: {msg}
+	JSStreamMoveInProgressF ErrorIdentifier = 10124
 
 	// JSStreamMoveNotInProgress stream move not in progress
 	JSStreamMoveNotInProgress ErrorIdentifier = 10129
@@ -406,7 +418,7 @@ const (
 	JSTemplateNameNotMatchSubjectErr ErrorIdentifier = 10073
 
 	// JSStreamWrongLastMsgHashErrF wrong last msg Hash: {hash}
-	JSStreamWrongLastMsgHashErrF ErrorIdentifier = 10131
+	JSStreamWrongLastMsgHashErrF ErrorIdentifier = 10135
 )
 
 var (
@@ -414,7 +426,7 @@ var (
 		JSAccountResourcesExceededErr:              {Code: 400, ErrCode: 10002, Description: "resource limits exceeded for account"},
 		JSBadRequestErr:                            {Code: 400, ErrCode: 10003, Description: "bad request"},
 		JSClusterIncompleteErr:                     {Code: 503, ErrCode: 10004, Description: "incomplete results"},
-		JSClusterNoPeersErr:                        {Code: 400, ErrCode: 10005, Description: "no suitable peers for placement"},
+		JSClusterNoPeersErrF:                       {Code: 400, ErrCode: 10005, Description: "{err}"},
 		JSClusterNotActiveErr:                      {Code: 500, ErrCode: 10006, Description: "JetStream not in clustered mode"},
 		JSClusterNotAssignedErr:                    {Code: 500, ErrCode: 10007, Description: "JetStream cluster not assigned to this server"},
 		JSClusterNotAvailErr:                       {Code: 503, ErrCode: 10008, Description: "JetStream system temporarily unavailable"},
@@ -426,7 +438,9 @@ var (
 		JSClusterUnSupportFeatureErr:               {Code: 503, ErrCode: 10036, Description: "not currently supported in clustered mode"},
 		JSConsumerBadDurableNameErr:                {Code: 400, ErrCode: 10103, Description: "durable name can not contain '.', '*', '>'"},
 		JSConsumerConfigRequiredErr:                {Code: 400, ErrCode: 10078, Description: "consumer config required"},
+		JSConsumerCreateDurableAndNameMismatch:     {Code: 400, ErrCode: 10132, Description: "Consumer Durable and Name have to be equal if both are provided"},
 		JSConsumerCreateErrF:                       {Code: 500, ErrCode: 10012, Description: "{err}"},
+		JSConsumerCreateFilterSubjectMismatchErr:   {Code: 400, ErrCode: 10131, Description: "Consumer create request did not match filtered subject from create subject"},
 		JSConsumerDeliverCycleErr:                  {Code: 400, ErrCode: 10081, Description: "consumer deliver subject forms a cycle"},
 		JSConsumerDeliverToWildcardsErr:            {Code: 400, ErrCode: 10079, Description: "consumer deliver subject has wildcards"},
 		JSConsumerDescriptionTooLongErrF:           {Code: 400, ErrCode: 10107, Description: "consumer description is too long, maximum allowed is {max}"},
@@ -463,6 +477,7 @@ var (
 		JSConsumerPushMaxWaitingErr:                {Code: 400, ErrCode: 10080, Description: "consumer in push mode can not set max waiting"},
 		JSConsumerReplacementWithDifferentNameErr:  {Code: 400, ErrCode: 10106, Description: "consumer replacement durable config not the same"},
 		JSConsumerReplicasExceedsStream:            {Code: 400, ErrCode: 10126, Description: "consumer config replica count exceeds parent stream"},
+		JSConsumerReplicasShouldMatchStream:        {Code: 400, ErrCode: 10134, Description: "consumer config replicas must match interest retention stream's replicas"},
 		JSConsumerSmallHeartbeatErr:                {Code: 400, ErrCode: 10083, Description: "consumer idle heartbeat needs to be >= 100ms"},
 		JSConsumerStoreFailedErrF:                  {Code: 500, ErrCode: 10104, Description: "error creating store for consumer: {err}"},
 		JSConsumerWQConsumerNotDeliverAllErr:       {Code: 400, ErrCode: 10101, Description: "consumer must be deliver all on workqueue stream"},
@@ -489,6 +504,7 @@ var (
 		JSNotEnabledForAccountErr:                  {Code: 503, ErrCode: 10039, Description: "JetStream not enabled for account"},
 		JSPeerRemapErr:                             {Code: 503, ErrCode: 10075, Description: "peer remap failed"},
 		JSRaftGeneralErrF:                          {Code: 500, ErrCode: 10041, Description: "{err}"},
+		JSReplicasCountCannotBeNegative:            {Code: 400, ErrCode: 10133, Description: "replicas count cannot be negative"},
 		JSRestoreSubscribeFailedErrF:               {Code: 500, ErrCode: 10042, Description: "JetStream unable to subscribe to restore snapshot {subject}: {err}"},
 		JSSequenceNotFoundErrF:                     {Code: 400, ErrCode: 10043, Description: "sequence {seq} not found"},
 		JSSnapshotDeliverSubjectInvalidErr:         {Code: 400, ErrCode: 10015, Description: "deliver subject not valid"},
@@ -513,7 +529,7 @@ var (
 		JSStreamMirrorNotUpdatableErr:              {Code: 400, ErrCode: 10055, Description: "stream mirror configuration can not be updated"},
 		JSStreamMismatchErr:                        {Code: 400, ErrCode: 10056, Description: "stream name in subject does not match request"},
 		JSStreamMoveAndScaleErr:                    {Code: 400, ErrCode: 10123, Description: "can not move and scale a stream in a single update"},
-		JSStreamMoveInProgress:                     {Code: 400, ErrCode: 10124, Description: "stream move already in progress"},
+		JSStreamMoveInProgressF:                    {Code: 400, ErrCode: 10124, Description: "stream move already in progress: {msg}"},
 		JSStreamMoveNotInProgress:                  {Code: 400, ErrCode: 10129, Description: "stream move not in progress"},
 		JSStreamMsgDeleteFailedF:                   {Code: 500, ErrCode: 10057, Description: "{err}"},
 		JSStreamNameContainsPathSeparatorsErr:      {Code: 400, ErrCode: 10128, Description: "Stream name can not contain path separators"},
@@ -537,7 +553,7 @@ var (
 		JSStreamTemplateNotFoundErr:                {Code: 404, ErrCode: 10068, Description: "template not found"},
 		JSStreamUpdateErrF:                         {Code: 500, ErrCode: 10069, Description: "{err}"},
 		JSStreamWrongLastMsgIDErrF:                 {Code: 400, ErrCode: 10070, Description: "wrong last msg ID: {id}"},
-		JSStreamWrongLastMsgHashErrF:               {Code: 400, ErrCode: 10131, Description: "wrong last msg Hash: {hash}"},
+		JSStreamWrongLastMsgHashErrF:               {Code: 400, ErrCode: 10135, Description: "wrong last msg Hash: {hash}"},
 		JSStreamWrongLastSequenceErrF:              {Code: 400, ErrCode: 10071, Description: "wrong last sequence: {seq}"},
 		JSTempStorageFailedErr:                     {Code: 500, ErrCode: 10072, Description: "JetStream unable to open temp storage for restore"},
 		JSTemplateNameNotMatchSubjectErr:           {Code: 400, ErrCode: 10073, Description: "template name in subject does not match request"},
@@ -596,14 +612,20 @@ func NewJSClusterIncompleteError(opts ...ErrorOption) *ApiError {
 	return ApiErrors[JSClusterIncompleteErr]
 }
 
-// NewJSClusterNoPeersError creates a new JSClusterNoPeersErr error: "no suitable peers for placement"
-func NewJSClusterNoPeersError(opts ...ErrorOption) *ApiError {
+// NewJSClusterNoPeersError creates a new JSClusterNoPeersErrF error: "{err}"
+func NewJSClusterNoPeersError(err error, opts ...ErrorOption) *ApiError {
 	eopts := parseOpts(opts)
 	if ae, ok := eopts.err.(*ApiError); ok {
 		return ae
 	}
 
-	return ApiErrors[JSClusterNoPeersErr]
+	e := ApiErrors[JSClusterNoPeersErrF]
+	args := e.toReplacerArgs([]interface{}{"{err}", err})
+	return &ApiError{
+		Code:        e.Code,
+		ErrCode:     e.ErrCode,
+		Description: strings.NewReplacer(args...).Replace(e.Description),
+	}
 }
 
 // NewJSClusterNotActiveError creates a new JSClusterNotActiveErr error: "JetStream not in clustered mode"
@@ -716,6 +738,16 @@ func NewJSConsumerConfigRequiredError(opts ...ErrorOption) *ApiError {
 	return ApiErrors[JSConsumerConfigRequiredErr]
 }
 
+// NewJSConsumerCreateDurableAndNameMismatchError creates a new JSConsumerCreateDurableAndNameMismatch error: "Consumer Durable and Name have to be equal if both are provided"
+func NewJSConsumerCreateDurableAndNameMismatchError(opts ...ErrorOption) *ApiError {
+	eopts := parseOpts(opts)
+	if ae, ok := eopts.err.(*ApiError); ok {
+		return ae
+	}
+
+	return ApiErrors[JSConsumerCreateDurableAndNameMismatch]
+}
+
 // NewJSConsumerCreateError creates a new JSConsumerCreateErrF error: "{err}"
 func NewJSConsumerCreateError(err error, opts ...ErrorOption) *ApiError {
 	eopts := parseOpts(opts)
@@ -730,6 +762,16 @@ func NewJSConsumerCreateError(err error, opts ...ErrorOption) *ApiError {
 		ErrCode:     e.ErrCode,
 		Description: strings.NewReplacer(args...).Replace(e.Description),
 	}
+}
+
+// NewJSConsumerCreateFilterSubjectMismatchError creates a new JSConsumerCreateFilterSubjectMismatchErr error: "Consumer create request did not match filtered subject from create subject"
+func NewJSConsumerCreateFilterSubjectMismatchError(opts ...ErrorOption) *ApiError {
+	eopts := parseOpts(opts)
+	if ae, ok := eopts.err.(*ApiError); ok {
+		return ae
+	}
+
+	return ApiErrors[JSConsumerCreateFilterSubjectMismatchErr]
 }
 
 // NewJSConsumerDeliverCycleError creates a new JSConsumerDeliverCycleErr error: "consumer deliver subject forms a cycle"
@@ -1128,6 +1170,16 @@ func NewJSConsumerReplicasExceedsStreamError(opts ...ErrorOption) *ApiError {
 	return ApiErrors[JSConsumerReplicasExceedsStream]
 }
 
+// NewJSConsumerReplicasShouldMatchStreamError creates a new JSConsumerReplicasShouldMatchStream error: "consumer config replicas must match interest retention stream's replicas"
+func NewJSConsumerReplicasShouldMatchStreamError(opts ...ErrorOption) *ApiError {
+	eopts := parseOpts(opts)
+	if ae, ok := eopts.err.(*ApiError); ok {
+		return ae
+	}
+
+	return ApiErrors[JSConsumerReplicasShouldMatchStream]
+}
+
 // NewJSConsumerSmallHeartbeatError creates a new JSConsumerSmallHeartbeatErr error: "consumer idle heartbeat needs to be >= 100ms"
 func NewJSConsumerSmallHeartbeatError(opts ...ErrorOption) *ApiError {
 	eopts := parseOpts(opts)
@@ -1404,6 +1456,16 @@ func NewJSRaftGeneralError(err error, opts ...ErrorOption) *ApiError {
 		ErrCode:     e.ErrCode,
 		Description: strings.NewReplacer(args...).Replace(e.Description),
 	}
+}
+
+// NewJSReplicasCountCannotBeNegativeError creates a new JSReplicasCountCannotBeNegative error: "replicas count cannot be negative"
+func NewJSReplicasCountCannotBeNegativeError(opts ...ErrorOption) *ApiError {
+	eopts := parseOpts(opts)
+	if ae, ok := eopts.err.(*ApiError); ok {
+		return ae
+	}
+
+	return ApiErrors[JSReplicasCountCannotBeNegative]
 }
 
 // NewJSRestoreSubscribeFailedError creates a new JSRestoreSubscribeFailedErrF error: "JetStream unable to subscribe to restore snapshot {subject}: {err}"
@@ -1718,14 +1780,20 @@ func NewJSStreamMoveAndScaleError(opts ...ErrorOption) *ApiError {
 	return ApiErrors[JSStreamMoveAndScaleErr]
 }
 
-// NewJSStreamMoveInProgressError creates a new JSStreamMoveInProgress error: "stream move already in progress"
-func NewJSStreamMoveInProgressError(opts ...ErrorOption) *ApiError {
+// NewJSStreamMoveInProgressError creates a new JSStreamMoveInProgressF error: "stream move already in progress: {msg}"
+func NewJSStreamMoveInProgressError(msg interface{}, opts ...ErrorOption) *ApiError {
 	eopts := parseOpts(opts)
 	if ae, ok := eopts.err.(*ApiError); ok {
 		return ae
 	}
 
-	return ApiErrors[JSStreamMoveInProgress]
+	e := ApiErrors[JSStreamMoveInProgressF]
+	args := e.toReplacerArgs([]interface{}{"{msg}", msg})
+	return &ApiError{
+		Code:        e.Code,
+		ErrCode:     e.ErrCode,
+		Description: strings.NewReplacer(args...).Replace(e.Description),
+	}
 }
 
 // NewJSStreamMoveNotInProgressError creates a new JSStreamMoveNotInProgress error: "stream move not in progress"

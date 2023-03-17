@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2017-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -205,7 +206,7 @@ type tlsOption struct {
 func (t *tlsOption) Apply(server *Server) {
 	server.mu.Lock()
 	tlsRequired := t.newValue != nil
-	server.info.TLSRequired = tlsRequired
+	server.info.TLSRequired = tlsRequired && !server.getOpts().AllowNonTLS
 	message := "disabled"
 	if tlsRequired {
 		server.info.TLSVerify = (t.newValue.ClientAuth == tls.RequireAndVerifyClientCert)
@@ -412,7 +413,9 @@ func (r *routesOption) Apply(server *Server) {
 	}
 
 	// Add routes.
+	server.mu.Lock()
 	server.solicitRoutes(r.add)
+	server.mu.Unlock()
 
 	server.Noticef("Reloaded: cluster routes")
 }
@@ -944,7 +947,7 @@ func imposeOrder(value interface{}) error {
 		sort.Strings(value.AllowedOrigins)
 	case string, bool, uint8, int, int32, int64, time.Duration, float64, nil, LeafNodeOpts, ClusterOpts, *tls.Config, PinnedCertSet,
 		*URLAccResolver, *MemAccResolver, *DirAccResolver, *CacheDirAccResolver, Authentication, MQTTOpts, jwt.TagList,
-		*OCSPConfig, map[string]string, JSLimitOpts:
+		*OCSPConfig, map[string]string, JSLimitOpts, StoreCipher:
 		// explicitly skipped types
 	default:
 		// this will fail during unit tests
@@ -975,7 +978,7 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 		field := oldConfig.Type().Field(i)
 		// field.PkgPath is empty for exported fields, and is not for unexported ones.
 		// We skip the unexported fields.
-		if field.PkgPath != "" {
+		if field.PkgPath != _EMPTY_ {
 			continue
 		}
 		var (

@@ -135,42 +135,42 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(sn StationName, station models.Station) error {
+func (s *Server) CreateStream(sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool, dedupEnabled bool) error {
 	var maxMsgs int
-	if station.RetentionType == "messages" && station.RetentionValue > 0 {
-		maxMsgs = station.RetentionValue
+	if retentionType == "messages" && retentionValue > 0 {
+		maxMsgs = retentionValue
 	} else {
 		maxMsgs = -1
 	}
 
 	var maxBytes int
-	if station.RetentionType == "bytes" && station.RetentionValue > 0 {
-		maxBytes = station.RetentionValue
+	if retentionType == "bytes" && retentionValue > 0 {
+		maxBytes = retentionValue
 	} else {
 		maxBytes = -1
 	}
 
 	var maxAge time.Duration
-	if station.RetentionType == "message_age_sec" && station.RetentionValue > 0 {
-		maxAge = time.Duration(station.RetentionValue) * time.Second
+	if retentionType == "message_age_sec" && retentionValue > 0 {
+		maxAge = time.Duration(retentionValue) * time.Second
 	} else {
 		maxAge = time.Duration(0)
 	}
 
 	var storage StorageType
-	if station.StorageType == "memory" {
+	if storageType == "memory" {
 		storage = MemoryStorage
 	} else {
 		storage = FileStorage
 	}
 
 	var idempotencyWindow time.Duration
-	if station.IdempotencyWindow <= 0 {
+	if idempotencyW <= 0 {
 		idempotencyWindow = 2 * time.Minute // default
-	} else if station.IdempotencyWindow < 100 {
+	} else if idempotencyW < 100 {
 		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
 	} else {
-		idempotencyWindow = time.Duration(station.IdempotencyWindow) * time.Millisecond
+		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
 	}
 
 	return s.
@@ -186,19 +186,19 @@ func (s *Server) CreateStream(sn StationName, station models.Station) error {
 			MaxMsgsPer:           -1,
 			MaxMsgSize:           int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:              storage,
-			Replicas:             station.Replicas,
+			Replicas:             replicas,
 			NoAck:                false,
 			Duplicates:           idempotencyWindow,
-			TieredStorageEnabled: station.TieredStorageEnabled,
-			DedupEnabled:         station.DedupEnabled,
+			TieredStorageEnabled: tieredStorageEnabled,
+			DedupEnabled:         dedupEnabled,
 		})
 }
 
-func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
+func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
 	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
 
 	var storage StorageType
-	if station.StorageType == "memory" {
+	if storageType == "memory" {
 		storage = MemoryStorage
 	} else {
 		storage = FileStorage
@@ -221,7 +221,7 @@ func (s *Server) CreateDlsStream(sn StationName, station models.Station) error {
 			MaxMsgsPer:   -1,
 			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:      storage,
-			Replicas:     station.Replicas,
+			Replicas:     replicas,
 			NoAck:        false,
 			Duplicates:   idempotencyWindow,
 			DedupEnabled: true,
@@ -271,12 +271,20 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	if isCluster {
 		replicas = 3
 	}
+
+	v, err := s.Varz(nil)
+	if err != nil {
+		successCh <- err
+		return
+	}
+
 	// system logs stream
-	err := s.memphisAddStream(&StreamConfig{
+	err = s.memphisAddStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
 		MaxAge:       retentionDur,
+		MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
@@ -299,7 +307,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		Name:         tieredStorageStream,
 		Subjects:     []string{tieredStorageStream + ".>"},
 		Retention:    WorkQueuePolicy,
-		MaxAge:       retentionDur,
+		MaxAge:       time.Hour * 24,
 		MaxConsumers: -1,
 		Discard:      DiscardOld,
 		Storage:      FileStorage,
@@ -372,7 +380,7 @@ func (s *Server) popFallbackLogs() {
 	logs := s.memphis.fallbackLogQ.pop()
 
 	for _, l := range logs {
-		log := l.(fallbackLog)
+		log := l
 		publishLogToSubjectAndAnalytics(s, log.label, log.log)
 	}
 }
@@ -832,6 +840,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 		DeliverPolicy: DeliverByStartSequence,
 		Durable:       durableName,
 		AckPolicy:     AckExplicit,
+		Replicas:      1,
 	}
 
 	err := s.memphisAddConsumer(streamName, &cc)
@@ -968,6 +977,7 @@ func (s *Server) memphisGetMessagesByFilter(streamName, filterSubject string, st
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
 		FilterSubject: filterSubject,
+		Replicas:      1,
 	}
 	var msgs []StoredMsg
 	err := serv.memphisAddConsumer(streamName, &cc)

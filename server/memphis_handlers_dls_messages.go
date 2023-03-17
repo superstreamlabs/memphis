@@ -12,10 +12,11 @@
 package server
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"memphis/db"
 	"memphis/models"
 	"sort"
 	"strconv"
@@ -23,9 +24,7 @@ import (
 
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -57,7 +56,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
-	_, station, err := IsStationExist(stationName)
+	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
@@ -115,16 +114,13 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
-		_, conn, err := IsConnectionExist(connId)
+		_, conn, err := db.GetConnectionByID(connId)
 		if err != nil {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return
 		}
-
-		filter := bson.M{"name": producedByHeader, "connection_id": connId}
-		var producer models.Producer
-		err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-		if err == mongo.ErrNoDocuments {
+		exist, producer, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
+		if !exist {
 			serv.Warnf("handleNewPoisonMessage: producer " + producedByHeader + " couldn't been found")
 			return
 		}
@@ -209,6 +205,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)
@@ -383,16 +380,19 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 					}
 				}
 				connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
-				_, conn, err := IsConnectionExist(connectionId)
+				_, conn, err := db.GetConnectionByID(connectionId)
 				if err != nil {
 					return models.DlsMessageResponse{}, err
 				}
 				clientAddress = conn.ClientAddress
-				filter := bson.M{"name": dlsMsg.Producer.Name, "connection_id": connectionId}
-				err = producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
+				exist, prod, err := db.GetProducerByNameAndConnectionID(dlsMsg.Producer.Name, connectionId)
+				if !exist {
+					return models.DlsMessageResponse{}, errors.New("Producer " + dlsMsg.Producer.Name + " does not exist")
+				}
 				if err != nil {
 					return models.DlsMessageResponse{}, err
 				}
+				producer = prod
 			}
 
 			if msgType == "poison" {
@@ -438,9 +438,22 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	sort.Slice(poisonedCgs, func(i, j int) bool {
 		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
 	})
+
+	schemaType := ""
+	if station.Schema.SchemaName != "" {
+		exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+		if err != nil {
+			return models.DlsMessageResponse{}, err
+		}
+		if exist {
+			schemaType = schema.Type
+		}
+	}
+
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,
 		StationName: dlsMsg.StationName,
+		SchemaType:  schemaType,
 		MessageSeq:  dlsMsg.MessageSeq,
 		Producer: models.ProducerDetails{
 			Name:          producer.Name,
@@ -489,6 +502,7 @@ func (pmh PoisonMessagesHandler) GetTotalDlsMsgsByStation(stationName string) (i
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)
@@ -592,6 +606,7 @@ func RemovePoisonedCg(stationName StationName, cgName string) error {
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)

@@ -15,10 +15,9 @@ import './style.scss';
 import React, { useContext } from 'react';
 import { Context } from '../../../hooks/store';
 import { numberWithCommas } from '../../../services/valueConvertor';
-import TotalMsg from '../../../assets/images/total_msg.svg';
-import TotalPoison from '../../../assets/images/totalPoison.svg';
-import TotalStations from '../../../assets/images/total_stations.svg';
-import comingSoonBox from '../../../assets/images/comingSoonBox.svg';
+import TotalMsg from '../../../assets/images/TotalMessages.svg';
+import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
+import TotalStations from '../../../assets/images/TotalStations.svg';
 import { Divider } from 'antd';
 
 const GenericDetails = () => {

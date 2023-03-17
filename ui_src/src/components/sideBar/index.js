@@ -28,18 +28,19 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
+import { GithubRequest } from '../../services/githubRequests';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
-import Logo from '../../assets/images/logo.svg';
 import logsIcon from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import TooltipComponent from '../tooltip/tooltip';
+import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL } from '../../config';
-import TooltipComponent from '../tooltip/tooltip';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -47,6 +48,8 @@ const overlayStyles = {
     paddingTop: '5px',
     paddingBottom: '5px'
 };
+
+const latestRelease = 'https://api.github.com/repos/Memphisdev/memphis/releases';
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
@@ -69,6 +72,8 @@ function SideBar() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
             if (data) {
+                const latest = await GithubRequest(latestRelease);
+                dispatch({ type: 'IS_LATEST', payload: latest[0].name.replace('v', '').replace('-beta', '') >= data.version });
                 setSystemVersion(data.version);
             }
         } catch (error) {}
@@ -147,8 +152,8 @@ function SideBar() {
                     </div>
                 </div>
             </Link>
-            <div className="item-wrap">
-                <div className="item" onClick={() => AuthService.logout()}>
+            <div className="item-wrap" onClick={() => AuthService.logout()}>
+                <div className="item">
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />
                     </span>
@@ -160,7 +165,7 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img src={Logo} width="62" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                <img src={Logo} width="45" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
                 <div className="item-wrapper" onClick={() => history.push(pathDomains.overview)}>
                     <div className="icon">
                         {state.route === 'overview' ? (
@@ -237,7 +242,12 @@ function SideBar() {
                         ></img>
                     </div>
                 </Popover>
-                <version is="x3d">
+                <version
+                    is="x3d"
+                    style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
+                    onClick={() => (!state.isLatest ? history.push(`${pathDomains.administration}/version_upgrade`) : null)}
+                >
+                    {!state.isLatest && <div className="update-note" />}
                     <p>v{systemVersion}</p>
                 </version>
             </div>

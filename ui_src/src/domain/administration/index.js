@@ -19,10 +19,13 @@ import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
 import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
 import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
 import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
+import versionUpgradeColor from '../../assets/images/setting/versionUpgradeColor.svg';
+import versionUpgradeGray from '../../assets/images/setting/versionUpgradeGray.svg';
 import Integrations from './integrations';
 import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
+import VersionUpgrade from './versionUpgrade';
 
 function Administration({ step }) {
     const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
@@ -49,6 +52,13 @@ function Administration({ step }) {
                     history.replace(`${pathDomains.administration}/integrations`);
                     break;
                 }
+            case 'version_upgrade':
+                if (window.location.href.split('/version_upgrade').length > 1) {
+                    return <VersionUpgrade />;
+                } else {
+                    history.replace(`${pathDomains.administration}/version_upgrade`);
+                    break;
+                }
             default:
                 return;
         }
@@ -69,6 +79,11 @@ function Administration({ step }) {
                     >
                         <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                         Environment configuration
+                    </div>
+                    <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('version_upgrade')}>
+                        <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
+                        Version upgrade
+                        {!state.isLatest && <div className="update-available">Available</div>}
                     </div>
                 </div>
             </div>

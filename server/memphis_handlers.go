@@ -21,14 +21,10 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Handlers struct {
@@ -44,20 +40,6 @@ type Handlers struct {
 	Configurations ConfigurationsHandler
 }
 
-var usersCollection *mongo.Collection
-var imagesCollection *mongo.Collection
-var stationsCollection *mongo.Collection
-var connectionsCollection *mongo.Collection
-var producersCollection *mongo.Collection
-var consumersCollection *mongo.Collection
-var systemKeysCollection *mongo.Collection
-var auditLogsCollection *mongo.Collection
-var tagsCollection *mongo.Collection
-var schemasCollection *mongo.Collection
-var schemaVersionCollection *mongo.Collection
-var sandboxUsersCollection *mongo.Collection
-var integrationsCollection *mongo.Collection
-var configurationsCollection *mongo.Collection
 var serv *Server
 var configuration = conf.GetConfig()
 
@@ -68,7 +50,7 @@ type srvMemphis struct {
 	dbCtx                  context.Context
 	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
-	fallbackLogQ           *ipQueue
+	fallbackLogQ           *ipQueue[fallbackLog]
 	jsApiMu                sync.Mutex
 	ws                     memphisWS
 }
@@ -86,21 +68,6 @@ func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
 	s.memphis.nuid = nuid.New()
 	// s.memphis.serverID is initialized earlier, when logger is configured
 
-	usersCollection = db.GetCollection("users", dbInstance.Client)
-	imagesCollection = db.GetCollection("images", dbInstance.Client)
-	stationsCollection = db.GetCollection("stations", dbInstance.Client)
-	connectionsCollection = db.GetCollection("connections", dbInstance.Client)
-	producersCollection = db.GetCollection("producers", dbInstance.Client)
-	consumersCollection = db.GetCollection("consumers", dbInstance.Client)
-	systemKeysCollection = db.GetCollection("system_keys", dbInstance.Client)
-	auditLogsCollection = db.GetCollection("audit_logs", dbInstance.Client)
-	tagsCollection = db.GetCollection("tags", dbInstance.Client)
-	schemasCollection = db.GetCollection("schemas", dbInstance.Client)
-	schemaVersionCollection = db.GetCollection("schema_versions", dbInstance.Client)
-	sandboxUsersCollection = db.GetCollection("sandbox_users", serv.memphis.dbClient)
-	integrationsCollection = db.GetCollection("integrations", dbInstance.Client)
-	configurationsCollection = db.GetCollection("configurations", dbInstance.Client)
-
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
 	s.initWS()
@@ -115,158 +82,35 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	return userModel, nil
 }
 
-func IsUserExist(username string) (bool, models.User, error) {
-	filter := bson.M{"username": username}
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, user, nil
-	} else if err != nil {
-		return false, user, err
-	}
-	return true, user, nil
-}
-
-func IsStationExist(sn StationName) (bool, models.Station, error) {
-	stationName := sn.Ext()
-	filter := bson.M{
-		"name": stationName,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	}
-	var station models.Station
-	err := stationsCollection.FindOne(context.TODO(), filter).Decode(&station)
-	if err == mongo.ErrNoDocuments {
-		return false, station, nil
-	} else if err != nil {
-		return false, station, err
-	}
-	return true, station, nil
-}
-
-func IsTagExist(tagName string) (bool, models.Tag, error) {
-	filter := bson.M{
-		"name": tagName,
-	}
-	var tag models.Tag
-	err := tagsCollection.FindOne(context.TODO(), filter).Decode(&tag)
-	if err == mongo.ErrNoDocuments {
-		return false, tag, nil
-	} else if err != nil {
-		return false, tag, err
-	}
-	return true, tag, nil
-}
-
-func IsConnectionExist(connectionId primitive.ObjectID) (bool, models.Connection, error) {
-	filter := bson.M{"_id": connectionId}
-	var connection models.Connection
-	err := connectionsCollection.FindOne(context.TODO(), filter).Decode(&connection)
-	if err == mongo.ErrNoDocuments {
-		return false, connection, nil
-	} else if err != nil {
-		return false, connection, err
-	}
-	return true, connection, nil
-}
-
-func IsConsumerExist(consumerName string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"name": consumerName, "station_id": stationId, "is_active": true}
-	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, consumer, nil
-	} else if err != nil {
-		return false, consumer, err
-	}
-	return true, consumer, nil
-}
-
-func IsProducerExist(producerName string, stationId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": producerName, "station_id": stationId, "is_active": true}
-	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, producer, nil
-	} else if err != nil {
-		return false, producer, err
-	}
-	return true, producer, nil
-}
-
 func CreateDefaultStation(s *Server, sn StationName, username string) (models.Station, bool, error) {
-	var newStation models.Station
 	stationName := sn.Ext()
-	newStation = models.Station{
-		ID:                primitive.NewObjectID(),
-		Name:              stationName,
-		RetentionType:     "message_age_sec",
-		RetentionValue:    604800,
-		StorageType:       "file",
-		Replicas:          1,
-		DedupWindowInMs:   0, // TODO deprecated
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
-		LastUpdate:        time.Now(),
-		Functions:         []models.Function{},
-		IdempotencyWindow: 120000,
-		DedupEnabled:      true,
-		DlsConfiguration: models.DlsConfiguration{
-			Poison:      true,
-			Schemaverse: true,
-		},
-		IsNative: true,
+	err := s.CreateStream(sn, "message_age_sec", 604800, "file", 120000, 1, false, true)
+	if err != nil {
+		return models.Station{}, false, err
 	}
 
-	err := s.CreateStream(sn, newStation)
+	err = s.CreateDlsStream(sn, "file", 1)
 	if err != nil {
-		return newStation, false, err
+		return models.Station{}, false, err
 	}
-
-	err = s.CreateDlsStream(sn, newStation)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName, username, "message_age_sec", 604800, "file", 1, models.SchemaDetails{}, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
 	if err != nil {
-		return newStation, false, err
+		return models.Station{}, false, err
 	}
-
-	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                      newStation.ID,
-			"retention_type":           newStation.RetentionType,
-			"retention_value":          newStation.RetentionValue,
-			"storage_type":             newStation.StorageType,
-			"replicas":                 newStation.Replicas,
-			"dedup_window_in_ms":       newStation.DedupWindowInMs, // TODO deprecated
-			"created_by_user":          newStation.CreatedByUser,
-			"creation_date":            newStation.CreationDate,
-			"last_update":              newStation.LastUpdate,
-			"functions":                newStation.Functions,
-			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dedup_enabled":            newStation.DedupEnabled,
-			"is_native":                newStation.IsNative,
-			"dls_configuration":        newStation.DlsConfiguration,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return newStation, false, err
-	}
-	if updateResults.MatchedCount > 0 {
-		return newStation, false, nil
+	if rowsUpdated > 0 {
+		return models.Station{}, false, nil
 	}
 
 	return newStation, true, nil
 }
 
 func shouldSendAnalytics() (bool, error) {
-	filter := bson.M{"key": "analytics"}
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
+	exist, systemKey, err := db.GetSystemKey("analytics")
 	if err != nil {
 		return false, err
+	}
+	if !exist {
+		return false, nil
 	}
 
 	if systemKey.Value == "true" {
@@ -320,29 +164,4 @@ func replaceDelimiters(name string) string {
 
 func revertDelimiters(name string) string {
 	return strings.Replace(name, delimiterReplacement, delimiterToReplace, -1)
-}
-
-func IsSchemaExist(schemaName string) (bool, models.Schema, error) {
-	filter := bson.M{
-		"name": schemaName}
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), filter).Decode(&schema)
-	if err == mongo.ErrNoDocuments {
-		return false, schema, nil
-	} else if err != nil {
-		return false, schema, err
-	}
-	return true, schema, nil
-}
-
-func isSchemaVersionExists(version int, schemaId primitive.ObjectID) (bool, models.SchemaVersion, error) {
-	var schemaVersion models.SchemaVersion
-	filter := bson.M{"schema_id": schemaId, "version_number": version}
-	err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
-	if err == mongo.ErrNoDocuments {
-		return false, schemaVersion, nil
-	} else if err != nil {
-		return false, schemaVersion, err
-	}
-	return true, schemaVersion, nil
 }

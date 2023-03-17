@@ -25,6 +25,11 @@ const Reducer = (state, action) => {
                 ...state,
                 companyLogo: action.payload
             };
+        case 'IS_LATEST':
+            return {
+                ...state,
+                isLatest: action.payload
+            };
         case 'SET_LOADER':
             return {
                 ...state,
@@ -92,6 +97,7 @@ const Reducer = (state, action) => {
                 ...state,
                 FilterOption: action.payload
             };
+
         case 'SET_SCHEMA_TAGS':
             index = state?.schemaList?.findIndex((schema) => schema.name === action.payload?.schemaName);
             updateSchemaListState[index].tags = action.payload.tags;

@@ -12,16 +12,12 @@
 package analytics
 
 import (
-	"context"
 	"memphis/conf"
 	"memphis/db"
-	"memphis/models"
 	"strings"
 
 	"github.com/posthog/posthog-go"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type EventParam struct {
@@ -30,23 +26,16 @@ type EventParam struct {
 }
 
 var configuration = conf.GetConfig()
-var systemKeysCollection *mongo.Collection
 var deploymentId string
 var analyticsFlag string
 var AnalyticsClient posthog.Client
 
-func InitializeAnalytics(c *mongo.Client) error {
-	systemKeysCollection = db.GetCollection("system_keys", c)
-	deployment, err := getSystemKey("deployment_id")
-	if err == mongo.ErrNoDocuments {
+func InitializeAnalytics() error {
+	exist, deployment, err := db.GetSystemKey("deployment_id")
+	if !exist {
 		deploymentId = primitive.NewObjectID().Hex()
-		deploymentKey := models.SystemKey{
-			ID:    primitive.NewObjectID(),
-			Key:   "deployment_id",
-			Value: deploymentId,
-		}
 
-		_, err = systemKeysCollection.InsertOne(context.TODO(), deploymentKey)
+		err = db.InsertSystemKey("deployment_id", deploymentId)
 		if err != nil {
 			return err
 		}
@@ -56,24 +45,16 @@ func InitializeAnalytics(c *mongo.Client) error {
 		deploymentId = deployment.Value
 	}
 
-	analytics, err := getSystemKey("analytics")
-	if err == mongo.ErrNoDocuments {
-		var analyticsKey models.SystemKey
+	exist, analytics, err := db.GetSystemKey("analytics")
+	if !exist {
+		value := ""
 		if configuration.ANALYTICS == "true" {
-			analyticsKey = models.SystemKey{
-				ID:    primitive.NewObjectID(),
-				Key:   "analytics",
-				Value: "true",
-			}
+			value = "true"
 		} else {
-			analyticsKey = models.SystemKey{
-				ID:    primitive.NewObjectID(),
-				Key:   "analytics",
-				Value: "false",
-			}
+			value = "false"
 		}
 
-		_, err = systemKeysCollection.InsertOne(context.TODO(), analyticsKey)
+		err = db.InsertSystemKey("analytics", value)
 		if err != nil {
 			return err
 		}
@@ -93,18 +74,8 @@ func InitializeAnalytics(c *mongo.Client) error {
 	return nil
 }
 
-func getSystemKey(key string) (models.SystemKey, error) {
-	filter := bson.M{"key": key}
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err != nil {
-		return systemKey, err
-	}
-	return systemKey, nil
-}
-
 func Close() {
-	analytics, _ := getSystemKey("analytics")
+	_, analytics, _ := db.GetSystemKey("analytics")
 	if analytics.Value == "true" {
 		AnalyticsClient.Close()
 	}

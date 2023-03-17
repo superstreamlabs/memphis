@@ -31,7 +31,6 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)
 	userMgmtRoutes.DELETE("/removeMyUser", userMgmtHandler.RemoveMyUser)
 	userMgmtRoutes.PUT("/editAvatar", userMgmtHandler.EditAvatar)
-	userMgmtRoutes.PUT("/editHubCreds", userMgmtHandler.EditHubCreds)
 	userMgmtRoutes.PUT("/editCompanyLogo", userMgmtHandler.EditCompanyLogo)
 	userMgmtRoutes.DELETE("/removeCompanyLogo", userMgmtHandler.RemoveCompanyLogo)
 	userMgmtRoutes.GET("/getCompanyLogo", userMgmtHandler.GetCompanyLogo)

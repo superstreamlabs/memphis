@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -83,7 +84,6 @@ func TestTrustedKeysOptions(t *testing.T) {
 
 func TestTrustConfigOption(t *testing.T) {
 	confFileName := createConfFile(t, []byte(fmt.Sprintf("trusted = %q", t1)))
-	defer removeFile(t, confFileName)
 	opts, err := ProcessConfigFile(confFileName)
 	if err != nil {
 		t.Fatalf("Error parsing config: %v", err)
@@ -96,7 +96,6 @@ func TestTrustConfigOption(t *testing.T) {
 	}
 
 	confFileName = createConfFile(t, []byte(fmt.Sprintf("trusted = [%q, %q]", t1, t2)))
-	defer removeFile(t, confFileName)
 	opts, err = ProcessConfigFile(confFileName)
 	if err != nil {
 		t.Fatalf("Error parsing config: %v", err)
@@ -113,7 +112,6 @@ func TestTrustConfigOption(t *testing.T) {
 
 	// Now do a bad one.
 	confFileName = createConfFile(t, []byte(fmt.Sprintf("trusted = [%q, %q]", t1, "bad")))
-	defer removeFile(t, confFileName)
 	_, err = ProcessConfigFile(confFileName)
 	if err == nil {
 		t.Fatalf("Expected an error parsing trust keys with a bad key")

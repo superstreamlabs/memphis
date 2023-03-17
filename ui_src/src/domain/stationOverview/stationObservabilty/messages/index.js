@@ -20,9 +20,12 @@ import { messageParser, msToUnits, numberWithCommas } from '../../../../services
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
+import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
+import purge from '../../../../assets/images/purge.svg';
 import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import PurgeStationModal from '../components/purgeStationModal';
 import CheckboxComponent from '../../../../components/checkBox';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import DetailBox from '../../../../components/detailBox';
@@ -30,6 +33,7 @@ import DlsConfig from '../../../../components/dlsConfig';
 import { httpRequest } from '../../../../services/http';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
+import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import MessageDetails from '../components/messageDetails';
@@ -38,13 +42,14 @@ import { Virtuoso } from 'react-virtuoso';
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+    const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
-    const [isCheckAll, setIsCheckAll] = useState(false);
-    const [tabValue, setTabValue] = useState('Messages');
+    const [tabValue, setTabValue] = useState('All');
+    const [loader, setLoader] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
@@ -60,17 +65,6 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
     };
 
-    const onCheckedAll = () => {
-        setIsCheckAll(!isCheckAll);
-        subTabValue === 'Unacked'
-            ? setIsCheck(stationState?.stationSocketData?.poison_messages.map((li) => li._id))
-            : setIsCheck(stationState?.stationSocketData?.schema_failed_messages.map((li) => li._id));
-        setIndeterminate(false);
-        if (isCheckAll) {
-            setIsCheck([]);
-        }
-    };
-
     const handleCheckedClick = (e) => {
         const { id, checked } = e.target;
         let checkedList = [];
@@ -83,10 +77,8 @@ const Messages = () => {
             setIsCheck(checkedList);
         }
         if (subTabValue === 'Unacked') {
-            setIsCheckAll(checkedList.length === stationState?.stationSocketData?.poison_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
         } else {
-            setIsCheckAll(checkedList.length === stationState?.stationSocketData?.schema_failed_messages?.length);
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.schema_failed_messages?.length);
         }
     };
@@ -94,6 +86,8 @@ const Messages = () => {
     const handleChangeMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
         setSelectedRowIndex(null);
+        setIsCheck([]);
+
         setTabValue(newValue);
         subTabValue === 'Schema violation' && setSubTabValue('Unacked');
     };
@@ -112,19 +106,29 @@ const Messages = () => {
         setSelectedRowIndex(null);
         setSubTabValue(newValue);
         setIsCheck([]);
-        setIsCheckAll(false);
     };
 
     const handleDrop = async () => {
         setIgnoreProcced(true);
+        let messages;
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacked' ? 'poison' : 'schema', dls_message_ids: isCheck });
-            let messages = subTabValue === 'Unacked' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
-            isCheck.map((messageId, index) => {
-                messages = messages?.filter((item) => {
-                    return item._id !== messageId;
+            if (tabValue === 'All') {
+                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
+                messages = stationState?.stationSocketData?.messages;
+                isCheck.map((messageId, index) => {
+                    messages = messages?.filter((item) => {
+                        return item.message_seq !== messageId;
+                    });
                 });
-            });
+            } else {
+                await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacked' ? 'poison' : 'schema', dls_message_ids: isCheck });
+                messages = subTabValue === 'Unacked' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                isCheck.map((messageId, index) => {
+                    messages = messages?.filter((item) => {
+                        return item._id !== messageId;
+                    });
+                });
+            }
             setTimeout(() => {
                 setIgnoreProcced(false);
                 subTabValue === 'Unacked'
@@ -133,11 +137,32 @@ const Messages = () => {
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
-                setIsCheckAll(false);
                 setIndeterminate(false);
             }, 1500);
         } catch (error) {
             setIgnoreProcced(false);
+        }
+    };
+
+    const handlePurge = async (purgeData) => {
+        setLoader(true);
+        setIgnoreProcced(true);
+        try {
+            let purgeDataPayload = purgeData;
+            purgeData['station_name'] = stationName;
+            await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
+            setTimeout(() => {
+                setIgnoreProcced(false);
+                stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                setSelectedRowIndex(null);
+                setIsCheck([]);
+                setIndeterminate(false);
+            }, 1500);
+            modalPurgeFlip(false);
+        } catch (error) {
+            setIgnoreProcced(false);
+        } finally {
+            setLoader(false);
         }
     };
 
@@ -155,7 +180,6 @@ const Messages = () => {
                     onClick: () => message.destroy('memphisSuccessMessage')
                 });
                 setIsCheck([]);
-                setIsCheckAll(false);
             }, 1500);
         } catch (error) {
             setResendProcced(false);
@@ -170,16 +194,9 @@ const Messages = () => {
         const id = tabValue === tabs[1] ? message?._id : message?.message_seq;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                {tabValue === tabs[1] && (
-                    <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
-                )}
-                <div
-                    className={selectedRowIndex === id ? 'row-message selected' : 'row-message'}
-                    style={{ paddingLeft: tabValue === tabs[1] && '35px' }}
-                    key={id}
-                    id={id}
-                    onClick={() => onSelectedRow(id)}
-                >
+                <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
+
+                <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
                     {selectedRowIndex === id && <div className="hr-selected"></div>}
                     <span className="preview-message">
                         {tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}
@@ -194,16 +211,11 @@ const Messages = () => {
         return (
             <div className={isDls ? 'list-wrapper dls-list' : 'list-wrapper msg-list'}>
                 <div className="coulmns-table">
-                    <div className={isDls ? 'left-coulmn' : 'left-coulmn all'}>
-                        {tabValue === tabs[1] && (
-                            <CheckboxComponent indeterminate={indeterminate} checked={isCheckAll} id={'selectAll'} onChange={onCheckedAll} name={'selectAll'} />
-                        )}
-                        <p>Messages</p>
-                    </div>
+                    <p className="left-coulmn">Messages</p>
                     <p className="right-coulmn">Information</p>
                 </div>
                 <div className="list">
-                    <div className={isDls ? 'rows-wrapper' : 'rows-wrapper all'}>
+                    <div className="rows-wrapper">
                         <Virtuoso
                             data={
                                 !isDls
@@ -253,40 +265,41 @@ const Messages = () => {
                     <p className="title">Station</p>
                     {showLastMsg()}
                 </div>
-                {tabValue === tabs[1] &&
-                    (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0) && (
-                        <div className="right-side">
-                            <Button
-                                width="80px"
-                                height="32px"
-                                placeholder="Drop"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={isCheck.length === 0}
-                                isLoading={ignoreProcced}
-                                onClick={() => handleDrop()}
-                            />
-                            {subTabValue === 'Unacked' && (
-                                <Button
-                                    width="80px"
-                                    height="32px"
-                                    placeholder="Resend"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                                    isLoading={resendProcced}
-                                    onClick={() => handleResend()}
-                                />
-                            )}
-                        </div>
+                <div className="right-side">
+                    {(tabValue === 'All' ||
+                        (tabValue === 'Dead-letter' &&
+                            (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0))) && (
+                        <Button
+                            width="80px"
+                            height="32px"
+                            placeholder="Drop"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            disabled={isCheck.length === 0}
+                            isLoading={ignoreProcced}
+                            onClick={() => handleDrop()}
+                        />
                     )}
+                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && (
+                        <Button
+                            width="80px"
+                            height="32px"
+                            placeholder="Resend"
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
+                            tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
+                            isLoading={resendProcced}
+                            onClick={() => handleResend()}
+                        />
+                    )}
+                </div>
             </div>
             <div className="tabs">
                 <CustomTabs
@@ -383,6 +396,25 @@ const Messages = () => {
                         data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
                     <DetailBox
+                        img={purge}
+                        title={'Purge'}
+                        desc={<span>Clean station from messages.</span>}
+                        data={[
+                            <Button
+                                width="80px"
+                                height="32px"
+                                placeholder="Purge"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
+                                onClick={() => modalPurgeFlip(true)}
+                            />
+                        ]}
+                    />
+                    <DetailBox
                         img={idempotencyIcon}
                         title={'Deduplication'}
                         desc={<span>Ensures messages with the same message-payload and header will be produced only once for the configured time.</span>}
@@ -390,6 +422,26 @@ const Messages = () => {
                     />
                 </div>
             )}
+            <Modal
+                header={<img src={purgeWrapperIcon} alt="deleteWrapperIcon" />}
+                width="460px"
+                height="320px"
+                displayButtons={false}
+                clickOutside={() => modalPurgeFlip(false)}
+                open={modalPurgeIsOpen}
+            >
+                <PurgeStationModal
+                    title="Purge"
+                    desc="This action will clean the station from messages."
+                    handlePurgeSelected={(purgeData) => {
+                        handlePurge(purgeData);
+                    }}
+                    cancel={() => modalPurgeFlip(false)}
+                    loader={loader}
+                    msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
+                    dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
+                />
+            </Modal>
         </div>
     );
 };

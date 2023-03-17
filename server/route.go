@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2013-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -608,7 +609,7 @@ func (c *client) processRouteInfo(info *Info) {
 		c.route.leafnodeURL = info.LeafNodeURLs[0]
 	}
 	// Compute the hash of this route based on remote server name
-	c.route.hash = string(getHash(info.Name))
+	c.route.hash = getHash(info.Name)
 	// Same with remote server ID (used for GW mapped replies routing).
 	// Use getGWHash since we don't use the same hash len for that
 	// for backward compatibility.
@@ -651,7 +652,7 @@ func (c *client) processRouteInfo(info *Info) {
 		if sendInfo {
 			// The incoming INFO from the route will have IP set
 			// if it has Cluster.Advertise. In that case, use that
-			// otherwise contruct it from the remote TCP address.
+			// otherwise construct it from the remote TCP address.
 			if info.IP == "" {
 				// Need to get the remote IP address.
 				c.mu.Lock()
@@ -1304,6 +1305,7 @@ func (s *Server) createRoute(conn net.Conn, rURL *url.URL) *client {
 	authRequired := s.routeInfo.AuthRequired
 	tlsRequired := s.routeInfo.TLSRequired
 	clusterName := s.info.Cluster
+	tlsName := s.routeTLSName
 	s.mu.Unlock()
 
 	// Grab lock
@@ -1328,8 +1330,13 @@ func (s *Server) createRoute(conn net.Conn, rURL *url.URL) *client {
 			tlsConfig = tlsConfig.Clone()
 		}
 		// Perform (server or client side) TLS handshake.
-		if _, err := c.doTLSHandshake("route", didSolicit, rURL, tlsConfig, _EMPTY_, opts.Cluster.TLSTimeout, opts.Cluster.TLSPinnedCerts); err != nil {
+		if resetTLSName, err := c.doTLSHandshake("route", didSolicit, rURL, tlsConfig, tlsName, opts.Cluster.TLSTimeout, opts.Cluster.TLSPinnedCerts); err != nil {
 			c.mu.Unlock()
+			if resetTLSName {
+				s.mu.Lock()
+				s.routeTLSName = _EMPTY_
+				s.mu.Unlock()
+			}
 			return nil
 		}
 	}
@@ -1607,7 +1614,7 @@ func (s *Server) updateRouteSubscriptionMap(acc *Account, sub *subscription, del
 		if ls, ok := lqws[key]; ok && ls == n {
 			acc.mu.Unlock()
 			return
-		} else {
+		} else if n > 0 {
 			lqws[key] = n
 		}
 		acc.mu.Unlock()
@@ -1896,7 +1903,22 @@ func (c *client) isSolicitedRoute() bool {
 	return c.kind == ROUTER && c.route != nil && c.route.didSolicit
 }
 
+// Save the first hostname found in route URLs. This will be used in gossip mode
+// when trying to create a TLS connection by setting the tlsConfig.ServerName.
+// Lock is held on entry
+func (s *Server) saveRouteTLSName(routes []*url.URL) {
+	for _, u := range routes {
+		if s.routeTLSName == _EMPTY_ && net.ParseIP(u.Hostname()) == nil {
+			s.routeTLSName = u.Hostname()
+		}
+	}
+}
+
+// Start connection process to provided routes. Each route connection will
+// be started in a dedicated go routine.
+// Lock is held on entry
 func (s *Server) solicitRoutes(routes []*url.URL) {
+	s.saveRouteTLSName(routes)
 	for _, r := range routes {
 		route := r
 		s.startGoRoutine(func() { s.connectToRoute(route, true, true) })
