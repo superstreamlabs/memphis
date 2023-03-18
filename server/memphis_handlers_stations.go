@@ -643,11 +643,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	// user, err := getUserDetailsFromMiddleware(c)
-	// if err != nil {
-	// 	serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-	// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	// }
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
 
 	schemaName := body.SchemaName
 	var schemaDetails models.SchemaDetails
@@ -759,8 +759,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	//TODO: replace 1 to user.ID
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), 1, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -782,8 +781,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	// 		return
 	// 	}
 	// }
-	//TODO: replace 1 to user.Username
-	message := "Station " + stationName.Ext() + " has been created by 1 "
+	message := "Station " + stationName.Ext() + " has been created by " +  user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
@@ -856,9 +854,9 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

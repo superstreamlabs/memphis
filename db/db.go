@@ -673,18 +673,7 @@ func GetSystemKey(key string) (bool, models.SystemKey, error) {
 	return true, systemKeys[0], nil
 }
 
-func InsertSystemKey(key string, value string) error {
-	// systemKey := models.SystemKey{
-	// 	ID:    primitive.NewObjectID(),
-	// 	Key:   key,
-	// 	Value: value,
-	// }
-	// _, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
-	// return err
-	return nil
-}
-
-func InsertSystemKeyPg(key string, stringValue string, intValue int, isString bool) error {
+func InsertSystemKey(key string, stringValue string, intValue int, isString bool) error {
 	err := InsertConfiguration(key, stringValue, intValue, isString)
 	if err != nil {
 		return err
@@ -744,11 +733,11 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 	}
 	defer rows.Close()
 	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsStringValue])
-	if len(configurations) == 0 {
-		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-	}
 	if err != nil {
 		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+	}
+	if len(configurations) == 0 {
+		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
 	}
 	return true, configurations[0], models.ConfigurationsIntValue{}, nil
 }
@@ -793,7 +782,7 @@ func InsertConfiguration(key string, stringValue string, intValue int, isString 
 			if errors.As(err, &pgErr) {
 				if pgErr.Detail != "" {
 					if strings.Contains(pgErr.Detail, "already exists") {
-						return errors.New("configuration " + newConfiguration.Key + " already exists")
+						return errors.New("configuration" + newConfiguration.Key + " already exists")
 					} else {
 						return errors.New(pgErr.Detail)
 					}
@@ -1101,10 +1090,28 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 }
 
 func RemoveAllAuditLogsByStation(name string) error {
-	_, err := auditLogsCollection.DeleteMany(context.TODO(), bson.M{"station_name": name})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
+	defer conn.Release()
+
+	removeAuditLogs := `DELETE FROM audit_logs
+	WHERE station_name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs", removeAuditLogs)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -2589,7 +2596,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 		return []models.SchemaVersion{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM schema_versions WHERE schema_id=$1 ORDER BY creation_date DESC`
+	query := `SELECT * FROM schema_versions WHERE schema_id=$1 ORDER BY created_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_schema_versions_by_schema_id", query)
 	if err != nil {
 		cancelfunc()
@@ -2775,14 +2782,37 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 }
 
 func FindAndDeleteSchema(schemaIds []int) error {
-	filter := bson.M{"schema_id": bson.M{"$in": schemaIds}}
-	_, err := schemaVersionCollection.DeleteMany(context.TODO(), filter)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeSchemaVersionsQuery := `DELETE FROM schema_versions
+	WHERE schema_id = ANY($1)`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions", removeSchemaVersionsQuery)
 	if err != nil {
 		return err
 	}
 
-	filter = bson.M{"_id": bson.M{"$in": schemaIds}}
-	_, err = schemasCollection.DeleteMany(context.TODO(), filter)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaIds)
+	if err != nil {
+		return err
+	}
+
+	removeSchemasQuery := `DELETE FROM schemas
+	WHERE id = ANY($1)`
+
+	stmt, err = conn.Conn().Prepare(ctx, "remove_schemas", removeSchemasQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaIds)
 	if err != nil {
 		return err
 	}
@@ -2979,12 +3009,30 @@ func GetAllIntegrations() (bool, []models.Integration, error) {
 }
 
 func DeleteIntegration(name string) error {
-	filter := bson.M{"name": name}
-	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
+	defer conn.Release()
+
+	removeIntegrationQuery := `DELETE FROM integrations
+	WHERE name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_integration", removeIntegrationQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
+	if err != nil {
+		return err
+	}
+
 	return nil
+
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -3296,6 +3344,32 @@ func UpdateSkipGetStarted(username string) error {
 }
 
 func DeleteUser(username string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeUserQuery := `DELETE FROM users
+	WHERE username = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_user", removeUserQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteUser1(username string) error {
 	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
 	if err != nil {
 		return err
@@ -3664,7 +3738,24 @@ func InsertImage(name string, base64Encoding string, intValue int, isString bool
 }
 
 func DeleteImage(name string) error {
-	_, err := imagesCollection.DeleteOne(context.TODO(), bson.M{"name": name})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeImageQuery := `DELETE FROM configurations
+	WHERE key = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_image", removeImageQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
 	if err != nil {
 		return err
 	}

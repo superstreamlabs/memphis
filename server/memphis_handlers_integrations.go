@@ -209,9 +209,9 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 
 	var body models.DisconnectIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)

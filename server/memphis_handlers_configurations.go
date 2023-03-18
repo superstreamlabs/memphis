@@ -29,8 +29,7 @@ type ConfigurationsHandler struct{}
 
 func (s *Server) initializeConfigurations() {
 	exist, _, pmRetention, err := db.GetConfiguration("pm_retention", false)
-	// if err != nil || !exist
-	if err != nil {
+	if err != nil || !exist {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}

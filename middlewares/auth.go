@@ -79,7 +79,7 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		return models.User{}, errors.New("f")
 	}
 
-	userId := claims["user_id"].(int)
+	userId := int(claims["user_id"].(float64))
 	creationDate, _ := time.Parse("2006-01-02T15:04:05.000Z", claims["creation_date"].(string))
 	user := models.User{
 		ID:              userId,
@@ -106,13 +106,13 @@ func Authenticate(c *gin.Context) {
 			return
 		}
 
-		// user, err := verifyToken(tokenString, configuration.JWT_SECRET)
-		// if err != nil {
-		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		// 	return
-		// }
+		user, err := verifyToken(tokenString, configuration.JWT_SECRET)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 
-		// c.Set("user", user)
+		c.Set("user", user)
 	} else if path == refreshTokenRoute {
 		tokenString, err := c.Cookie("jwt-refresh-token")
 		if err != nil {
