@@ -32,10 +32,12 @@ var AnalyticsClient posthog.Client
 
 func InitializeAnalytics() error {
 	exist, deployment, err := db.GetSystemKey("deployment_id")
+	//TODO: in the meantime until we finish with get functions if already exists in db please do: exist = true
+	//exist = true
 	if !exist {
 		deploymentId = primitive.NewObjectID().Hex()
 
-		err = db.InsertSystemKey("deployment_id", deploymentId)
+		err = db.InsertSystemKeyPg("deployment_id", deploymentId, 0, true)
 		if err != nil {
 			return err
 		}
@@ -54,7 +56,7 @@ func InitializeAnalytics() error {
 			value = "false"
 		}
 
-		err = db.InsertSystemKey("analytics", value)
+		err = db.InsertSystemKeyPg("analytics", value, 0, true)
 		if err != nil {
 			return err
 		}

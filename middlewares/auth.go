@@ -97,56 +97,33 @@ func Authenticate(c *gin.Context) {
 	path := strings.ToLower(c.Request.URL.Path)
 	needToAuthenticate := isAuthNeeded(path)
 	if needToAuthenticate {
-		// var tokenString string
-		// var err error
-		// tokenString, err = extractToken(c.GetHeader("authorization"))
+		var tokenString string
+		var err error
+		tokenString, err = extractToken(c.GetHeader("authorization"))
 
-		// if err != nil || tokenString == "" {
-		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		// 	return
-		// }
+		if err != nil || tokenString == "" {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 
-		// user, err := verifyToken(tokenString, configuration.JWT_SECRET)
-		// if err != nil {
-		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		// 	return
-		// }
-
-		user := models.User{
-			ID:              45,
-			Username:        "root",
-			Password:        "memphis",
-			UserType:        "root",
-			AlreadyLoggedIn: true,
-			CreatedAt:       time.Now(),
-			AvatarId:        1,
-			FullName:        "ttd",
-			SkipGetStarted:  true,
+		user, err := verifyToken(tokenString, configuration.JWT_SECRET)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
 		}
 
 		c.Set("user", user)
 	} else if path == refreshTokenRoute {
-		// tokenString, err := c.Cookie("jwt-refresh-token")
-		// if err != nil {
-		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		// 	return
-		// }
+		tokenString, err := c.Cookie("jwt-refresh-token")
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 
-		// user, err := verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
-		// if err != nil {
-		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		// 	return
-		// }
-		user := models.User{
-			ID:              45,
-			Username:        "root",
-			Password:        "memphis",
-			UserType:        "root",
-			AlreadyLoggedIn: true,
-			CreatedAt:       time.Now(),
-			AvatarId:        1,
-			FullName:        "ttd",
-			SkipGetStarted:  true,
+		user, err := verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
 		}
 
 		c.Set("user", user)

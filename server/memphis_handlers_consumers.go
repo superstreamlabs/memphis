@@ -112,15 +112,15 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
-	if !exist {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Connection ID " + connectionId + " was not found"
-		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New(errMsg)
-	}
-	if !connection.IsActive {
-		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection is not active")
-		return errors.New("connection is not active")
-	}
+	// if !exist {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Connection ID " + connectionId + " was not found"
+	// 	serv.Warnf("createConsumerDirectCommon: " + errMsg)
+	// 	return errors.New(errMsg)
+	// }
+	// if !connection.IsActive {
+	// 	serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection is not active")
+	// 	return errors.New("connection is not active")
+	// }
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -183,15 +183,53 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
 	if err != nil {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
-	if exist {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
-		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New("memphis: " + errMsg)
-	}
+
+	// 	if created {
+	// 		message := "Station " + stationName.Ext() + " has been created by user " + connection.CreatedByUser
+	// 		serv.Noticef(message)
+	// 		var auditLogs []interface{}
+	// 		newAuditLog := models.AuditLog{
+	// 			ID:            primitive.NewObjectID(),
+	// 			StationName:   stationName.Ext(),
+	// 			Message:       message,
+	// 			CreatedByUser: connection.CreatedByUser,
+	// 			CreationDate:  time.Now(),
+	// 			UserType:      "application",
+	// 		}
+	// 		auditLogs = append(auditLogs, newAuditLog)
+	// 		err = CreateAuditLogs(auditLogs)
+	// 		if err != nil {
+	// 			errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+	// 			serv.Errorf("createConsumerDirect: " + errMsg)
+	// 		}
+
+	// 		shouldSendAnalytics, _ := shouldSendAnalytics()
+	// 		if shouldSendAnalytics {
+	// 			param := analytics.EventParam{
+	// 				Name:  "station-name",
+	// 				Value: stationName.Ext(),
+	// 			}
+	// 			analyticsParams := []analytics.EventParam{param}
+	// 			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
+	// 		}
+	// 	}
+	// }
+
+	// exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
+	// if err != nil {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+	// 	serv.Errorf("createConsumerDirectCommon: " + errMsg)
+	// 	return err
+	// }
+	// if exist {
+	// 	errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
+	// 	serv.Warnf("createConsumerDirectCommon: " + errMsg)
+	// 	return errors.New("memphis: " + errMsg)
+	// }
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {

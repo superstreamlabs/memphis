@@ -29,7 +29,8 @@ type ConfigurationsHandler struct{}
 
 func (s *Server) initializeConfigurations() {
 	exist, _, pmRetention, err := db.GetConfiguration("pm_retention", false)
-	if err != nil || !exist {
+	// if err != nil || !exist
+	if err != nil {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -121,6 +122,10 @@ func (s *Server) initializeConfigurations() {
 			REST_GW_HOST = "http://localhost:4444"
 		} else {
 			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local:4444"
+		}
+		restGWHost = models.ConfigurationsStringValue{
+			Key:   "rest_gw_host",
+			Value: REST_GW_HOST,
 		}
 		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST, 0, true)
 		if err != nil {

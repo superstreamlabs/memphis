@@ -14,7 +14,7 @@ package db
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -36,7 +36,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 )
 
 var configuration = conf.GetConfig()
@@ -347,7 +346,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL,
+		name VARCHAR NOT NULL UNIQUE,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
 		PRIMARY KEY (id)
@@ -367,7 +366,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 
 	tagsTable := `CREATE TABLE IF NOT EXISTS tags(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL,
+		name VARCHAR NOT NULL UNIQUE,
 		color VARCHAR NOT NULL,
 		users INTEGER[] ,
 		stations INTEGER[],
@@ -587,8 +586,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 	return nil
 }
 
-var sqlDb *sql.DB
-
 func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 
@@ -644,16 +641,6 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	}
 	postgresConnection = DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}
 	_ = InsertToTable(postgresConnection.Client)
-	connConfig, err := pgx.ParseConfig(postgreSqlUrl)
-	if err != nil {
-		return DbPostgreSQLInstance{}, err
-	}
-	connStr := stdlib.RegisterConnConfig(connConfig)
-	dbSql, err := sql.Open("pgx", connStr)
-	if err != nil {
-		return DbPostgreSQLInstance{}, err
-	}
-	sqlDb = dbSql
 	return postgresConnection, nil
 }
 
@@ -694,6 +681,14 @@ func InsertSystemKey(key string, value string) error {
 	// }
 	// _, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
 	// return err
+	return nil
+}
+
+func InsertSystemKeyPg(key string, stringValue string, intValue int, isString bool) error {
+	err := InsertConfiguration(key, stringValue, intValue, isString)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -741,27 +736,96 @@ func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStr
 }
 
 func InsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
-	// if isString {
-	// 	config := models.ConfigurationsStringValue{
-	// 		ID:    primitive.NewObjectID(),
-	// 		Key:   key,
-	// 		Value: stringValue,
-	// 	}
-	// 	_, err := configurationsCollection.InsertOne(context.TODO(), config)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// } else {
-	// 	config := models.ConfigurationsIntValue{
-	// 		ID:    primitive.NewObjectID(),
-	// 		Key:   key,
-	// 		Value: intValue,
-	// 	}
-	// 	_, err := configurationsCollection.InsertOne(context.TODO(), config)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	if isString {
+		query := `INSERT INTO configurations( 
+			key, 
+			value) 
+		VALUES($1, $2) 
+		RETURNING id`
+
+		stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+		if err != nil {
+			return err
+		}
+
+		newConfiguration := models.ConfigurationsStringValuePg{}
+		rows, err := conn.Conn().Query(ctx, stmt.Name,
+			key, stringValue)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			err := rows.Scan(&newConfiguration.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := rows.Err(); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				fmt.Println(pgErr.Detail)
+				if pgErr.Detail != "" {
+					if strings.Contains(pgErr.Detail, "already exists") {
+						return errors.New("configuration " + newConfiguration.Key + " already exists")
+					} else {
+						return errors.New(pgErr.Detail)
+					}
+				} else {
+					return errors.New(pgErr.Message)
+				}
+			} else {
+				return err
+			}
+		}
+	} else {
+		query := `INSERT INTO configurations( 
+			key, 
+			value) 
+		VALUES($1, $2) 
+		RETURNING id`
+
+		stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+		if err != nil {
+			return err
+		}
+
+		newConfiguration := models.ConfigurationsIntValuePg{}
+		rows, err := conn.Conn().Query(ctx, stmt.Name,
+			key, stringValue)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			err := rows.Scan(&newConfiguration.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := rows.Err(); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				fmt.Println(pgErr.Detail)
+				if pgErr.Detail != "" {
+					return errors.New(pgErr.Detail)
+				} else {
+					return errors.New(pgErr.Message)
+				}
+			} else {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -790,12 +854,65 @@ func UpsertConfiguration(key string, stringValue string, intValue int, isString 
 }
 
 // Connection Functions
-func InsertConnection(connection models.Connection) error {
-	_, err := connectionsCollection.InsertOne(context.TODO(), connection)
+func InsertConnection(connection models.ConnectionPg) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
-	return err
+	defer conn.Release()
+
+	query := `INSERT INTO connections ( 
+		id,
+		created_by, 
+		is_active, 
+		created_at,
+		client_address) 
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_connection", query)
+	if err != nil {
+		return err
+	}
+
+	newConnection := models.ConnectionPg{}
+	createdAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
+		connection.CreatedBy, connection.IsActive, createdAt, connection.ClientAddress)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newConnection.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return errors.New("connection " + newConnection.ID + " already exists")
+				} else {
+					return errors.New(pgErr.Detail)
+				}
+			} else {
+				return errors.New(pgErr.Message)
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 func UpdateConnection(connectionId string, isActive bool) error {
@@ -888,12 +1005,59 @@ func GetActiveConnections() ([]models.Connection, error) {
 	return connections, nil
 }
 
-// Audit Logs Functions
 func InsertAuditLogs(auditLogs []interface{}) error {
-	// _, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
-	// if err != nil {
-	// 	return err
-	// }
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Release()
+	var auditLog []models.AuditLogPg
+
+	b, err := json.Marshal(auditLogs)
+	err = json.Unmarshal(b, &auditLog)
+	if err != nil {
+		return err
+	}
+
+	stationName := auditLog[0].StationName
+	message := auditLog[0].Message
+	createdBy := auditLog[0].CreatedBy
+	createdAt := auditLog[0].CreatedAt
+
+	query := `INSERT INTO audit_logs ( 
+		station_name, 
+		message, 
+		created_by,
+		created_at
+		) 
+    VALUES($1, $2, $3, $4) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_audit_logs", query)
+	if err != nil {
+		return err
+	}
+
+	newAuditLog := models.AuditLogPg{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		stationName, message, createdBy, createdAt)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newAuditLog.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1069,6 +1233,24 @@ func UpsertNewStation(
 	for rows.Next() {
 		err := rows.Scan(&newStation.ID)
 		if err != nil {
+			return models.Station{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Station{}, 0, errors.New("Station" + newStation.Name + " already exists")
+				} else {
+					return models.Station{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Station{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
 			return models.Station{}, 0, err
 		}
 	}
@@ -1541,6 +1723,26 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		return models.Producer{}, 0, err
+	}
+
+	// if err := rows.Err(); err != nil {
+	// 	var pgErr *pgconn.PgError
+	// 	if errors.As(err, &pgErr) {
+	// 		fmt.Println(pgErr.Detail)
+	// 		if pgErr.Detail != "" {
+	// 			return models.Schema{}, 0, errors.New(pgErr.Detail)
+	// 		} else {
+	// 			return models.Schema{}, 0, errors.New(pgErr.Message)
+	// 		}
+	// 		// => syntax error at end of input
+	// 		// fmt.Println(pgErr.Code)    // => 42601
+	// 	}else{
+	// 		return models.Schema{}, 0, err
+	// 	}
+	// }
+
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newProducer = models.Producer{
 		ID:           newProducer.ID,
@@ -1798,6 +2000,26 @@ func UpsertNewConsumer(name string,
 			return models.Consumer{}, 0, err
 		}
 	}
+
+	if err := rows.Err(); err != nil {
+		return models.Consumer{}, 0, err
+	}
+
+	// if err := rows.Err(); err != nil {
+	// 	var pgErr *pgconn.PgError
+	// 	if errors.As(err, &pgErr) {
+	// 		fmt.Println(pgErr.Detail)
+	// 		if pgErr.Detail != "" {
+	// 			return models.Schema{}, 0, errors.New(pgErr.Detail)
+	// 		} else {
+	// 			return models.Schema{}, 0, errors.New(pgErr.Message)
+	// 		}
+	// 		// => syntax error at end of input
+	// 		// fmt.Println(pgErr.Code)    // => 42601
+	// 	}else{
+	// 		return models.Schema{}, 0, err
+	// 	}
+	// }
 
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newConsumer = models.Consumer{
@@ -2361,13 +2583,13 @@ func FindAndDeleteSchema(schemaIds []int) error {
 	return nil
 }
 
-func UpsertNewSchema(schemaName string, schemaType string) (models.SchemaPg, int64, error) {
+func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return models.SchemaPg{}, 0, err
+		return models.Schema{}, 0, err
 	}
 	defer conn.Release()
 
@@ -2378,23 +2600,41 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.SchemaPg, int
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema", query)
 	if err != nil {
-		return models.SchemaPg{}, 0, err
+		return models.Schema{}, 0, err
 	}
 
-	newSchema := models.SchemaPg{}
+	newSchema := models.Schema{}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType)
 	if err != nil {
-		return models.SchemaPg{}, 0, err
+		return models.Schema{}, 0, err
 	}
 	for rows.Next() {
 		err := rows.Scan(&newSchema.ID)
 		if err != nil {
-			return models.SchemaPg{}, 0, err
+			return models.Schema{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Schema{}, 0, errors.New("Schema" + newSchema.Name + " already exists")
+				} else {
+					return models.Schema{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Schema{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Schema{}, 0, err
 		}
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newSchema = models.SchemaPg{
+	newSchema = models.Schema{
 		ID:   newSchema.ID,
 		Name: schemaName,
 		Type: schemaType,
@@ -2402,13 +2642,13 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.SchemaPg, int
 	return newSchema, rowsAffected, nil
 }
 
-func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersionPg, int64, error) {
+func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return models.SchemaVersionPg{}, 0, err
+		return models.SchemaVersion{}, 0, err
 	}
 	defer conn.Release()
 
@@ -2425,25 +2665,44 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema_version", query)
 	if err != nil {
-		return models.SchemaVersionPg{}, 0, err
+		return models.SchemaVersion{}, 0, err
 	}
 
-	newSchemaVersion := models.SchemaVersionPg{}
+	newSchemaVersion := models.SchemaVersion{}
 	createdAt := time.Now()
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
 	if err != nil {
-		return models.SchemaVersionPg{}, 0, err
+		return models.SchemaVersion{}, 0, err
 	}
 	for rows.Next() {
 		err := rows.Scan(&newSchemaVersion.ID)
 		if err != nil {
-			return models.SchemaVersionPg{}, 0, err
+			return models.SchemaVersion{}, 0, err
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.SchemaVersion{}, 0, errors.New("version already exists")
+				} else {
+					return models.SchemaVersion{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.SchemaVersion{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.SchemaVersion{}, 0, err
+		}
+
+	}
+
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newSchemaVersion = models.SchemaVersionPg{
+	newSchemaVersion = models.SchemaVersion{
 		ID:                newSchemaVersion.ID,
 		VersionNumber:     schemaVersionNumber,
 		Active:            active,
@@ -2525,8 +2784,62 @@ func DeleteIntegration(name string) error {
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	integration := models.Integration{}
-	return integration, nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := postgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO integrations ( 
+		name, 
+		keys,
+		properties) 
+    VALUES($1, $2, $3) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_integration", query)
+	if err != nil {
+		return models.Integration{}, err
+	}
+
+	newIntegration := models.Integration{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newIntegration.ID)
+		if err != nil {
+			return models.Integration{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Integration{}, errors.New("Integration" + newIntegration.Name + " already exists")
+				} else {
+					return models.Integration{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Integration{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Integration{}, err
+		}
+	}
+	newIntegration = models.Integration{
+		ID:         newIntegration.ID,
+		Name:       name,
+		Keys:       keys,
+		Properties: properties,
+	}
+	return newIntegration, nil
 }
 
 func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -2573,6 +2886,24 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	for rows.Next() {
 		err := rows.Scan(&newUser.ID)
 		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.User{}, errors.New("User " + newUser.Username + " already exists")
+				} else {
+					return models.User{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.User{}, errors.New(pgErr.Message)
+			}
+		} else {
 			return models.User{}, err
 		}
 	}
@@ -2638,6 +2969,7 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 		return true, models.User{}, err
 	}
 	defer conn.Release()
+	// TODO: replace to this line query := `SELECT * FROM users WHERE username = $1`
 	query := `SELECT * FROM users WHERE username = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
 	if err != nil {
@@ -2812,13 +3144,13 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function execu
 }
 
 // Tags Functions
-func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.TagPg, error) {
+func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.Tag, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return models.TagPg{}, err
+		return models.Tag{}, err
 	}
 	defer conn.Release()
 
@@ -2832,22 +3164,40 @@ func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_tag", query)
 	if err != nil {
-		return models.TagPg{}, err
+		return models.Tag{}, err
 	}
 
-	newTag := models.TagPg{}
+	newTag := models.Tag{}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr)
 	if err != nil {
-		return models.TagPg{}, err
+		return models.Tag{}, err
 	}
 	for rows.Next() {
 		err := rows.Scan(&newTag.ID)
 		if err != nil {
-			return models.TagPg{}, err
+			return models.Tag{}, err
 		}
 	}
 
-	newTag = models.TagPg{
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Tag{}, errors.New("Tag" + newTag.Name + " already exists")
+				} else {
+					return models.Tag{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Tag{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Tag{}, err
+		}
+	}
+
+	newTag = models.Tag{
 		ID:   newTag.ID,
 		Name: name, Color: color,
 		Stations: stationArr,
@@ -3100,10 +3450,9 @@ func UpdateSkipGetStartedSandbox(username string) error {
 	return nil
 }
 
-// Image Functions TODO: convert to configuration
-func InsertImage(name string, base64Encoding string) error {
-	newImage := models.Image{}
-	_, err := imagesCollection.InsertOne(context.TODO(), newImage)
+// Image Functions
+func InsertImage(name string, base64Encoding string, intValue int, isString bool) error {
+	err := InsertConfiguration(name, base64Encoding, intValue, isString)
 	if err != nil {
 		return err
 	}

@@ -208,9 +208,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 	// if err != nil {
 	// 	return err
 	// }
-
+	//TODO: in the meantime until we finish with get functions if already exists in db please do: exist := true
 	exist := false
-
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -355,7 +354,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"creation_date":           user.CreatedAt,
+		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
@@ -452,7 +451,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"creation_date":           user.CreatedAt,
+		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          sendAnalytics,
@@ -849,7 +848,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_ = os.Remove(fileName)
 
-	err = db.InsertImage("company_logo", base64Encoding)
+	err = db.InsertImage("company_logo", base64Encoding, 0, true)
 	if err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

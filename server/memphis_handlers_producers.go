@@ -64,20 +64,33 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": Connection ID " + pConnectionId + " is not valid")
 		return false, false, err
 	}
-	exist, connection, err := db.GetConnectionByID(connectionIdObj)
+	_, connection, err := db.GetConnectionByID(connectionIdObj)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
 	}
-	if !exist {
-		errMsg := "Connection ID " + pConnectionId + " was not found"
-		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
-		return false, false, errors.New("memphis: " + errMsg)
-	}
-	if !connection.IsActive {
-		errMsg := "Connection with ID " + pConnectionId + " is not active"
-		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
-		return false, false, errors.New("memphis: " + errMsg)
+	// if !exist {
+	// 	errMsg := "Connection ID " + pConnectionId + " was not found"
+	// 	serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
+	// 	return false, false, errors.New("memphis: " + errMsg)
+	// }
+	// if !connection.IsActive {
+	// 	errMsg := "Connection with ID " + pConnectionId + " is not active"
+	// 	serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
+	// 	return false, false, errors.New("memphis: " + errMsg)
+	// }
+
+	// exist, station, err := db.GetStationByName(pStationName.Ext())
+	// if err != nil {
+	// 	serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+	// 	return false, false, err
+	// }
+	// if !exist {
+	// var created bool
+	station, _, err := CreateDefaultStation(s, pStationName, 1)
+	if err != nil {
+		serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+		return false, false, err
 	}
 
 	exist, station, err := db.GetStationByName(pStationName.Ext())
@@ -94,8 +107,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		var created bool
 		_, created, err = CreateDefaultStation(s, pStationName, connection.CreatedBy)
 		if err != nil {
-			serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-			return false, false, err
+			serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		}
 		if created {
 			message := "Station " + pStationName.Ext() + " has been created by user " + user.Username
@@ -123,19 +135,22 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				analyticsParams := []analytics.EventParam{param}
 				analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-station-sdk")
 			}
+			// analyticsParams := []analytics.EventParam{param}
+			// analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
 		}
 	}
+	// }
 
-	exist, _, err = db.GetActiveProducerByStationID(name, station.ID)
-	if err != nil {
-		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
-	}
-	if exist {
-		errMsg := "Producer name (" + pName + ") has to be unique per station (" + pStationName.external + ")"
-		serv.Warnf("createProducerDirectCommon: " + errMsg)
-		return false, false, errors.New("memphis: " + errMsg)
-	}
+	// exist, _, err = db.GetActiveProducerByStationID(name, station.ID)
+	// if err != nil {
+	// 	serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+	// 	return false, false, err
+	// }
+	// if exist {
+	// 	errMsg := "Producer name (" + pName + ") has to be unique per station (" + pStationName.external + ")"
+	// 	serv.Warnf("createProducerDirectCommon: " + errMsg)
+	// 	return false, false, errors.New("memphis: " + errMsg)
+	// }
 	//TODO: replace connection.CreatedByUser to int
 	stationId := 1
 	createdBy := 1

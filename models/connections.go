@@ -22,3 +22,11 @@ type Connection struct {
 	CreationDate  time.Time `json:"creation_date"`
 	ClientAddress string    `json:"client_address"`
 }
+
+type ConnectionPg struct {
+	ID            string    `json:"id"`
+	CreatedBy     int       `json:"created_by"`
+	IsActive      bool      `json:"is_active"`
+	CreatedAt     time.Time `json:"created_at"`
+	ClientAddress string    `json:"client_address"`
+}

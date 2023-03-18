@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	// "memphis/analytics"
+	"memphis/analytics"
 	"memphis/db"
 	"memphis/http_server"
 	"memphis/server"
@@ -109,10 +110,10 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 		os.Exit(1)
 	}
 
-	// err = analytics.InitializeAnalytics()
-	// if err != nil {
-	// s.Errorf("Failed initializing analytics: " + err.Error())
-	// }
+	err = analytics.InitializeAnalytics()
+	if err != nil {
+		s.Errorf("Failed initializing analytics: " + err.Error())
+	}
 
 	s.InitializeMemphisHandlers()
 
@@ -123,29 +124,23 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 
 	go s.CreateInternalJetStreamResources()
 
-	// err = server.CreateRootUserOnFirstSystemLoad()
-	// if err != nil {
-	// s.Errorf("Failed to create root user: " + err.Error())
-	// db.Close(dbInstance, s)
-	// os.Exit(1)
-	// }
+	err = server.CreateRootUserOnFirstSystemLoad()
+	if err != nil {
+		// s.Errorf("Failed to create root user: " + err.Error())
+		// db.Close(dbInstance, s)
+		// os.Exit(1)
+	}
 
 	go http_server.InitializeHttpServer(s)
 
 	err = s.StartBackgroundTasks()
-	if err != nil {
-		s.Errorf("Background task failed: " + err.Error())
-		os.Exit(1)
-	}
+	// if err != nil {
+	// 	s.Errorf("Background task failed: " + err.Error())
+	// 	os.Exit(1)
+	// }
 
 	// run only on the leader
 	go s.KillZombieResources()
-
-	// For backward compatibility
-	// err = s.AlignOldStations()
-	// if err != nil {
-	// 	s.Errorf("LaunchDlsForOldStations: " + err.Error())
-	// }
 
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {

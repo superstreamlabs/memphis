@@ -179,7 +179,9 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType strin
 }
 func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
-	exist, slackIntegration, err := db.GetIntegration("slack")
+	// exist, slackIntegration, err := db.GetIntegration("slack")
+	exist := false
+	var err error
 	if !exist {
 		err := testSlackIntegration(keys["auth_token"], keys["channel_id"], "Slack integration with Memphis was added successfully")
 		if err != nil {
