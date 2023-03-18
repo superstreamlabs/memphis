@@ -19,7 +19,6 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -59,12 +58,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 
-	connectionIdObj := pConnectionId
-	if err != nil {
-		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": Connection ID " + pConnectionId + " is not valid")
-		return false, false, err
-	}
-	_, connection, err := db.GetConnectionByID(connectionIdObj)
+	exist, connection, err := db.GetConnectionByID(pConnectionId)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -87,9 +81,19 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	// }
 	// if !exist {
 	// var created bool
-	station, _, err := CreateDefaultStation(s, pStationName, 1)
+	// station, _, err := CreateDefaultStation(s, pStationName, 1)
+	// if err != nil {
+	// 	serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+	// 	return false, false, err
+	// }
+
+	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+		return false, false, err
+	}
+	if !exist {
+		serv.Errorf("createProducerDirectCommon: user" + user.Username + "is not exists")
 		return false, false, err
 	}
 
@@ -98,14 +102,9 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
 	}
-	_, user, err := db.GetUserByUserId(connection.CreatedBy)
-	if err != nil {
-		serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
-	}
 	if !exist {
 		var created bool
-		_, created, err = CreateDefaultStation(s, pStationName, connection.CreatedBy)
+		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedBy)
 		if err != nil {
 			serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		}
@@ -133,7 +132,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 					Value: pStationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-station-sdk")
+				analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station-sdk")
 			}
 			// analyticsParams := []analytics.EventParam{param}
 			// analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
@@ -141,20 +140,17 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	// }
 
-	// exist, _, err = db.GetActiveProducerByStationID(name, station.ID)
-	// if err != nil {
-	// 	serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-	// 	return false, false, err
-	// }
-	// if exist {
-	// 	errMsg := "Producer name (" + pName + ") has to be unique per station (" + pStationName.external + ")"
-	// 	serv.Warnf("createProducerDirectCommon: " + errMsg)
-	// 	return false, false, errors.New("memphis: " + errMsg)
-	// }
-	//TODO: replace connection.CreatedByUser to int
-	stationId := 1
-	createdBy := 1
-	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, stationId, producerType, pConnectionId, createdBy)
+	exist, _, err = db.GetActiveProducerByStationID(name, station.ID)
+	if err != nil {
+		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+		return false, false, err
+	}
+	if exist {
+		errMsg := "Producer name (" + pName + ") has to be unique per station (" + pStationName.external + ")"
+		serv.Warnf("createProducerDirectCommon: " + errMsg)
+		return false, false, errors.New("memphis: " + errMsg)
+	}
+	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: " + err.Error())
 		return false, false, err
@@ -183,7 +179,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				Value: newProducer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-producer-sdk")
+			analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-producer-sdk")
 		}
 	}
 	shouldSendNotifications, err := IsSlackEnabled()

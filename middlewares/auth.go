@@ -106,13 +106,13 @@ func Authenticate(c *gin.Context) {
 			return
 		}
 
-		user, err := verifyToken(tokenString, configuration.JWT_SECRET)
-		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-			return
-		}
+		// user, err := verifyToken(tokenString, configuration.JWT_SECRET)
+		// if err != nil {
+		// 	c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		// 	return
+		// }
 
-		c.Set("user", user)
+		// c.Set("user", user)
 	} else if path == refreshTokenRoute {
 		tokenString, err := c.Cookie("jwt-refresh-token")
 		if err != nil {

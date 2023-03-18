@@ -387,18 +387,18 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	// exist, _, err := db.GetSchemaByName(schemaName)
-	// if err != nil {
-	// 	serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
-	// 	return
-	// }
-	// if exist {
-	// 	errMsg := "Schema with the name " + schemaName + " already exists"
-	// 	serv.Warnf("CreateNewSchema: " + errMsg)
-	// 	c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-	// 	return
-	// }
+	exist, _, err := db.GetSchemaByName(schemaName)
+	if err != nil {
+		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
+		return
+	}
+	if exist {
+		errMsg := "Schema with the name " + schemaName + " already exists"
+		serv.Warnf("CreateNewSchema: " + errMsg)
+		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
 	// user, err := getUserDetailsFromMiddleware(c)
 	// if err != nil {
 	// 	serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
@@ -447,23 +447,17 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 
-	// newSchema, rowsUpdated, err := db.UpsertNewSchema(schemaName, schemaType)
-	// if err != nil {
-	// 	serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 	return
-	// }
 	if rowsUpdated == 1 {
-		//TODO: change 1 to username
-		newSchemaId := 1
-		_, _, err = db.UpsertNewSchemaVersion(schemaVersionNumber, 1, schemaContent, newSchemaId, messageStructName, descriptor, true)
+		//TODO change to USER.ID instead of 1
+		_, _, err = db.UpsertNewSchemaVersion(schemaVersionNumber, 1, schemaContent, newSchema.ID, messageStructName, descriptor, true)
 		if err != nil {
 			serv.Errorf("CreateNewSchema: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		// message := "Schema " + schemaName + " has been created by " + user.Username
-		// serv.Noticef(message)
+		//TODO change to USER.ID instead of 1
+		message := "Schema " + schemaName + " has been created by " + "1"
+		serv.Noticef(message)
 	} else {
 		errMsg := "Schema with the name " + schemaName + " already exists"
 		serv.Warnf("CreateNewSchema: " + errMsg)
@@ -709,12 +703,12 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Version already exists"})
 		return
 	}
-	// extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema)
-	// if err != nil {
-	// 	serv.Errorf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 	return
-	// }
+	extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema)
+	if err != nil {
+		serv.Errorf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	// shouldSendAnalytics, _ := shouldSendAnalytics()
 	// if shouldSendAnalytics {
@@ -722,9 +716,8 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	// 	analytics.SendEvent(user.Username, "user-create-new-schema-version")
 	// }
 
-	c.IndentedJSON(200, gin.H{})
+	c.IndentedJSON(200, extedndedSchemaDetails)
 
-	// c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
 func (sh SchemasHandler) RollBackVersion(c *gin.Context) {

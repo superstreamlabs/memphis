@@ -204,12 +204,10 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	// exist, err := isRootUserExist()
-	// if err != nil {
-	// 	return err
-	// }
-	//TODO: in the meantime until we finish with get functions if already exists in db please do: exist := true
-	exist := false
+	exist, err := isRootUserExist()
+	if err != nil {
+		return err
+	}
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
