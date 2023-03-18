@@ -79,7 +79,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				if UI_HOST == "" {
 					UI_HOST = integrationUpdate.UIUrl
 				}
-				db.UpsertConfiguration("ui_host", UI_HOST, 0, true)
+				db.UpsertConfiguration("ui_host", UI_HOST)
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
@@ -321,10 +321,10 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
 
-	exist, ui_host, _, err := db.GetConfiguration("ui_host", true)
+	exist, ui_host, err := db.GetConfiguration("ui_host")
 	if !exist {
 		UI_HOST = ""
-		err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
+		err = db.InsertConfiguration("ui_host", UI_HOST)
 		if err != nil {
 			return err
 		}

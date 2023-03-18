@@ -30,14 +30,8 @@ type SdkClientsUpdates struct {
 	Update      any    `json:"update"`
 }
 
-type ConfigurationsIntValue struct {
-	ID    int    `json:"id"`
-	Key   string `json:"key"`
-	Value int    `json:"value"`
-}
-
-type ConfigurationsStringValue struct {
-	ID    int    `json:"id"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
+type ConfigurationsValue struct {
+	ID    int    `json:"id" bson:"_id"`
+	Key   string `json:"key" bson:"key"`
+	Value string `json:"value" bson:"value"`
 }

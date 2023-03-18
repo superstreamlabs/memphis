@@ -1368,7 +1368,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.Producer, 0), make([]models.Producer, 0), make([]models.Producer, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {

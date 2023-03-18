@@ -235,7 +235,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, errors.New("Station " + stationName + " does not exist")
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.Producer, 0), make([]models.Producer, 0), make([]models.Producer, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
 		if err != nil {

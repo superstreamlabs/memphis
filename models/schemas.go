@@ -42,11 +42,11 @@ type CreateNewSchema struct {
 }
 
 type ExtendedSchema struct {
-	ID                  int         `json:"id" bson:"_id"`
-	Name                string      `json:"name" bson:"name"`
-	Type                string      `json:"type" bson:"type"`
-	CreatedByUser       string      `json:"created_by_user" bson:"created_by_user"`
-	CreationDate        time.Time   `json:"creation_date" bson:"creation_date"`
+	ID                  int         `json:"id"`
+	Name                string      `json:"name"`
+	Type                string      `json:"type"`
+	CreatedBy           int         `json:"created_by"`
+	CreatedAt           time.Time   `json:"created_at"`
 	ActiveVersionNumber int         `json:"active_version_number" bson:"version_number"`
 	Used                bool        `json:"used"`
 	Tags                []CreateTag `json:"tags"`
