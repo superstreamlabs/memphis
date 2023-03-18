@@ -1504,7 +1504,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		UpdatesAvailable: false,
 		SchemaType:       schema.Type,
 	}
-	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -1534,7 +1533,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			return
 		}
 
-		err = db.AttachSchemaToStation(stationName.Ext(), schemaDetails)
+		err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
 		if err != nil {
 			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -1615,8 +1614,6 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, errors.New("memphis: "+errMsg))
 		return
 	}
-
-	var schemaDetails models.SchemaDetails
 	schemaName := strings.ToLower(asr.Name)
 	exist, schema, err := db.GetSchemaByName(schemaName)
 	if err != nil {
@@ -1637,9 +1634,8 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
-	err = db.AttachSchemaToStation(stationName.Ext(), schemaDetails)
+	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1915,11 +1911,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	poisonConfigChanged := station.DlsConfigurationPoison != body.Poison
 	schemaverseConfigChanged := station.DlsConfigurationSchemaverse != body.Schemaverse
 	if poisonConfigChanged || schemaverseConfigChanged {
-		dlsConfigurationNew := models.DlsConfiguration{
-			Poison:      body.Poison,
-			Schemaverse: body.Schemaverse,
-		}
-		err = db.UpsertStationDlsConfig(body.StationName, dlsConfigurationNew)
+		err = db.UpdateStationDlsConfig(body.StationName, body.Poison, body.Schemaverse)
 		if err != nil {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

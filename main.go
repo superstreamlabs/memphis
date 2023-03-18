@@ -117,27 +117,27 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 
 	s.InitializeMemphisHandlers()
 
-	// err = server.InitializeIntegrations()
-	// if err != nil {
-	// 	s.Errorf("Failed initializing integrations: " + err.Error())
-	// }
+	err = server.InitializeIntegrations()
+	if err != nil {
+		s.Errorf("Failed initializing integrations: " + err.Error())
+	}
 
 	go s.CreateInternalJetStreamResources()
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
-		// s.Errorf("Failed to create root user: " + err.Error())
+		s.Errorf("Failed to create root user: " + err.Error())
 		// db.Close(dbInstance, s)
-		// os.Exit(1)
+		os.Exit(1)
 	}
 
 	go http_server.InitializeHttpServer(s)
 
 	err = s.StartBackgroundTasks()
-	// if err != nil {
-	// 	s.Errorf("Background task failed: " + err.Error())
-	// 	os.Exit(1)
-	// }
+	if err != nil {
+		s.Errorf("Background task failed: " + err.Error())
+		os.Exit(1)
+	}
 
 	// run only on the leader
 	go s.KillZombieResources()

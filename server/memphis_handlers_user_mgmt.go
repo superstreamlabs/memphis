@@ -67,11 +67,11 @@ func authenticateUser(username string, password string) (bool, models.User, erro
 		return false, models.User{}, err
 	}
 
-	// hashedPwd := []byte(user.Password)
-	// err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
-	// if err != nil {
-	// 	return false, models.User{}, nil
-	// }
+	hashedPwd := []byte(user.Password)
+	err = bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
+	if err != nil {
+		return false, models.User{}, nil
+	}
 
 	return true, user, nil
 }
@@ -91,27 +91,27 @@ func updateDeletedUserResources(user models.User) error {
 		}
 	}
 
-	err := db.UpdateStationsOfDeletedUser(user.Username)
+	err := db.UpdateStationsOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConncetionsOfDeletedUser(user.Username)
+	err = db.UpdateConncetionsOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateProducersOfDeletedUser(user.Username)
+	err = db.UpdateProducersOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConsumersOfDeletedUser(user.Username)
+	err = db.UpdateConsumersOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateSchemasOfDeletedUser(user.Username)
+	err = db.UpdateSchemasOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
@@ -897,7 +897,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditSystemKey("analytics", flag)
+	err := db.EditConfigurationValue("analytics", flag)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
