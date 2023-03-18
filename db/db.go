@@ -1800,19 +1800,27 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 }
 
 func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
-	// var producer models.Producer
-	// err := producersCollection.FindOneAndUpdate(context.TODO(),
-	// 	bson.M{"name": name, "station_id": stationId, "is_active": true},
-	// 	bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	// ).Decode(&producer)
-	// if err == mongo.ErrNoDocuments {
-	// 	return false, models.Producer{}, nil
-	// }
-	// if err != nil {
-	// 	return true, models.Producer{}, err
-	// }
-	// return true, producer, nil
-	return true, models.Producer{}, nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING * LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_station_dls_config", query)
+	if err != nil {
+		return true, models.Producer{}, nil
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Producer{}, nil
+	}
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
 func DeleteProducersByStationID(stationId int) error {
@@ -2119,7 +2127,7 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = trueRETURNING *`
+	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
 	if err != nil {
 		return true, models.Consumer{}, err
