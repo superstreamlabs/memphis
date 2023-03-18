@@ -27,11 +27,6 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-
 	// "github.com/jackc/pgx/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -39,20 +34,6 @@ import (
 )
 
 var configuration = conf.GetConfig()
-var usersCollection *mongo.Collection
-var imagesCollection *mongo.Collection
-var stationsCollection *mongo.Collection
-var connectionsCollection *mongo.Collection
-var producersCollection *mongo.Collection
-var consumersCollection *mongo.Collection
-var systemKeysCollection *mongo.Collection
-var auditLogsCollection *mongo.Collection
-var tagsCollection *mongo.Collection
-var schemasCollection *mongo.Collection
-var schemaVersionCollection *mongo.Collection
-var sandboxUsersCollection *mongo.Collection
-var integrationsCollection *mongo.Collection
-var configurationsCollection *mongo.Collection
 
 var postgresConnection DbPostgreSQLInstance
 
@@ -65,11 +46,11 @@ type logger interface {
 	Errorf(string, ...interface{})
 }
 
-type DbInstance struct {
-	Client *mongo.Client
-	Ctx    context.Context
-	Cancel context.CancelFunc
-}
+// type DbInstance struct {
+// 	Client *mongo.Client
+// 	Ctx    context.Context
+// 	Cancel context.CancelFunc
+// }
 
 type DbPostgreSQLInstance struct {
 	Client *pgxpool.Pool
@@ -77,71 +58,71 @@ type DbPostgreSQLInstance struct {
 	Cancel context.CancelFunc
 }
 
-func InitializeDbConnection(l logger) (DbInstance, error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
+// func InitializeDbConnection(l logger) (DbInstance, error) {
+// 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
 
-	var clientOptions *options.ClientOptions
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
-	} else {
-		auth := options.Credential{
-			Username: configuration.MONGO_USER,
-			Password: configuration.MONGO_PASS,
-		}
-		if !configuration.EXTERNAL_MONGO {
-			auth.AuthSource = configuration.DB_NAME
-		}
+// 	var clientOptions *options.ClientOptions
+// 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+// 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
+// 	} else {
+// 		auth := options.Credential{
+// 			Username: configuration.MONGO_USER,
+// 			Password: configuration.MONGO_PASS,
+// 		}
+// 		if !configuration.EXTERNAL_MONGO {
+// 			auth.AuthSource = configuration.DB_NAME
+// 		}
 
-		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
-	}
+// 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
+// 	}
 
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		cancel()
-		return DbInstance{}, err
-	}
+// 	client, err := mongo.Connect(ctx, clientOptions)
+// 	if err != nil {
+// 		cancel()
+// 		return DbInstance{}, err
+// 	}
 
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		cancel()
-		return DbInstance{}, err
-	}
-	usersCollection = GetCollection("users", client)
-	imagesCollection = GetCollection("images", client)
-	stationsCollection = GetCollection("stations", client)
-	connectionsCollection = GetCollection("connections", client)
-	producersCollection = GetCollection("producers", client)
-	consumersCollection = GetCollection("consumers", client)
-	systemKeysCollection = GetCollection("system_keys", client)
-	auditLogsCollection = GetCollection("audit_logs", client)
-	tagsCollection = GetCollection("tags", client)
-	schemasCollection = GetCollection("schemas", client)
-	schemaVersionCollection = GetCollection("schema_versions", client)
-	sandboxUsersCollection = GetCollection("sandbox_users", client)
-	integrationsCollection = GetCollection("integrations", client)
-	configurationsCollection = GetCollection("configurations", client)
+// 	err = client.Ping(ctx, nil)
+// 	if err != nil {
+// 		cancel()
+// 		return DbInstance{}, err
+// 	}
+// 	usersCollection = GetCollection("users", client)
+// 	imagesCollection = GetCollection("images", client)
+// 	stationsCollection = GetCollection("stations", client)
+// 	connectionsCollection = GetCollection("connections", client)
+// 	producersCollection = GetCollection("producers", client)
+// 	consumersCollection = GetCollection("consumers", client)
+// 	systemKeysCollection = GetCollection("system_keys", client)
+// 	auditLogsCollection = GetCollection("audit_logs", client)
+// 	tagsCollection = GetCollection("tags", client)
+// 	schemasCollection = GetCollection("schemas", client)
+// 	schemaVersionCollection = GetCollection("schema_versions", client)
+// 	sandboxUsersCollection = GetCollection("sandbox_users", client)
+// 	integrationsCollection = GetCollection("integrations", client)
+// 	configurationsCollection = GetCollection("configurations", client)
 
-	l.Noticef("Established connection with the DB")
-	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
-}
+// 	l.Noticef("Established connection with the DB")
+// 	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
+// }
 
-func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
-	dbName := configuration.DB_NAME
-	if configuration.EXTERNAL_MONGO {
-		dbName = "memphis-db"
-	}
-	var collection *mongo.Collection = dbClient.Database(dbName).Collection(collectionName)
-	return collection
-}
+// func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
+// 	dbName := configuration.DB_NAME
+// 	if configuration.EXTERNAL_MONGO {
+// 		dbName = "memphis-db"
+// 	}
+// 	var collection *mongo.Collection = dbClient.Database(dbName).Collection(collectionName)
+// 	return collection
+// }
 
-func Close(dbi DbInstance, l logger) {
-	defer dbi.Cancel()
-	defer func() {
-		if err := dbi.Client.Disconnect(dbi.Ctx); err != nil {
-			l.Errorf("Failed to close Mongodb client: " + err.Error())
-		}
-	}()
-}
+// func Close(dbi DbInstance, l logger) {
+// 	defer dbi.Cancel()
+// 	defer func() {
+// 		if err := dbi.Client.Disconnect(dbi.Ctx); err != nil {
+// 			l.Errorf("Failed to close Mongodb client: " + err.Error())
+// 		}
+// 	}()
+// }
 
 func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
 	defer db.Cancel()
@@ -680,11 +661,17 @@ func InsertSystemKey(key string, value string) error {
 	return nil
 }
 
-func EditSystemKey(key string, value string) error {
-	_, err := systemKeysCollection.UpdateOne(context.TODO(),
-		bson.M{"key": "analytics"},
-		bson.M{"$set": bson.M{"value": value}},
-	)
+func EditConfigurationValue(key string, value string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE configurations SET value = $2 WHERE key = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "edit_configuration_value", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, key, value)
 	if err != nil {
 		return err
 	}
@@ -715,6 +702,9 @@ func GetConfiguration(key string) (bool, models.ConfigurationsValue, error) {
 		return true, models.ConfigurationsValue{}, err
 	}
 	if len(configurations) == 0 {
+		return false, models.ConfigurationsValue{}, nil
+	}
+	if configurations[0].Value == "" {
 		return false, models.ConfigurationsValue{}, nil
 	}
 	return true, configurations[0], nil
@@ -784,16 +774,17 @@ func InsertConfiguration(key string, value string) error {
 	return nil
 }
 
-func UpsertConfiguration(key string, value string) error {
-	filter := bson.M{"key": key}
-	opts := options.Update().SetUpsert(true)
-	var update primitive.M
-	update = bson.M{
-		"$set": bson.M{
-			"value": value,
-		},
+func UpdateConfiguration(key string, value string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET value = $2 WHERE key = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
 	}
-	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = conn.Conn().Query(ctx, stmt.Name, key, value)
 	if err != nil {
 		return err
 	}
@@ -858,21 +849,41 @@ func InsertConnection(connection models.Connection) error {
 }
 
 func UpdateConnection(connectionId string, isActive bool) error {
-	_, err := connectionsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": isActive}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE connections SET is_active = $1 WHERE id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, isActive, connectionId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateConncetionsOfDeletedUser(username string) error {
-	_, err := connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	)
+func UpdateConncetionsOfDeletedUser(userId int) error {
+	// _, err := connectionsCollection.UpdateMany(context.TODO(),
+	// 	bson.M{"created_by_user": username},
+	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE connections SET created_by = $1 WHERE created_by = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
 	if err != nil {
 		return err
 	}
@@ -908,14 +919,19 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 }
 
 func KillRelevantConnections(ids []string) error {
-	// _, err := connectionsCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"_id": bson.M{"$in": ids}},
-	// 	bson.M{"$set": bson.M{"is_active": false}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE connections SET is_active = false WHERE id = ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, ids)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -1333,16 +1349,19 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 }
 
 func DeleteStationsByNames(stationNames []string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{
-			"name": bson.M{"$in": stationNames},
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"is_deleted": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations
+	SET is_deleted = true
+	WHERE name = ANY($1)
+	AND (is_deleted = false)`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_stations_by_names", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames)
 	if err != nil {
 		return err
 	}
@@ -1350,24 +1369,37 @@ func DeleteStationsByNames(stationNames []string) error {
 }
 
 func DeleteStation(name string) error {
-	_, err := stationsCollection.UpdateOne(context.TODO(),
-		bson.M{
-			"name": name,
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"is_deleted": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations
+	SET is_deleted = true
+	WHERE name = $1
+	AND (is_deleted = false)`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func AttachSchemaToStation(stationName string, schemaDetails models.SchemaDetails) error {
-	_, err := stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName, "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+func AttachSchemaToStation(stationName string, schemaName string, versionNumber int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET schema_name = $2, schema_version_number = $3
+	WHERE name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, schemaName, versionNumber)
 	if err != nil {
 		return err
 	}
@@ -1375,60 +1407,60 @@ func AttachSchemaToStation(stationName string, schemaDetails models.SchemaDetail
 }
 
 func DetachSchemaFromStation(stationName string) error {
-	_, err := stationsCollection.UpdateOne(context.TODO(),
-		bson.M{
-			"name": stationName,
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"schema": bson.M{}}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET schema_name = '', schema_version_number = ''
+	WHERE name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpsertStationDlsConfig(stationName string, dlsConfiguration models.DlsConfiguration) error {
-	filter := bson.M{
-		"name": stationName,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		}}
-
-	update := bson.M{
-		"$set": bson.M{
-			"dls_configuration": dlsConfiguration,
-		},
+func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET dls_configuration_poison = $2, dls_configuration_schemaverse = $3
+	WHERE name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "update_station_dls_config", query)
+	if err != nil {
+		return err
 	}
-	opts := options.Update().SetUpsert(true)
-
-	_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, poison, schemaverse)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateIsNativeOldStations() error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"is_native": bson.M{"$exists": false}},
-		bson.M{"$set": bson.M{"is_native": true}},
-	)
+func UpdateStationsOfDeletedUser(userId int) error {
+	// _, err := stationsCollection.UpdateMany(context.TODO(),
+	// 	bson.M{"created_by_user": username},
+	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET created_by = $1 WHERE created_by = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func UpdateStationsOfDeletedUser(username string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
 	if err != nil {
 		return err
 	}
@@ -1499,12 +1531,16 @@ func GetCountStationsUsingSchema(schemaName string) (int, error) {
 }
 
 func RemoveSchemaFromAllUsingStations(schemaName string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{
-			"schema.name": schemaName,
-		},
-		bson.M{"$set": bson.M{"schema": bson.M{}}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, schemaName)
 	if err != nil {
 		return err
 	}
@@ -1548,10 +1584,16 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 }
 
 func UpdateProducersConnection(connectionId string, isActive bool) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": isActive}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = $1 WHERE connection_id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_producers_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, isActive, connectionId)
 	if err != nil {
 		return err
 	}
@@ -1777,25 +1819,40 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 }
 
 func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
-	var producer models.Producer
-	err := producersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": stationId, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING * LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_station_dls_config", query)
+	if err != nil {
+		return true, models.Producer{}, nil
 	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Producer{}, nil
+	}
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	return true, producer, nil
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
 func DeleteProducersByStationID(stationId int) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"station_id": stationId},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
 		return err
 	}
@@ -1846,11 +1903,25 @@ func CountAllActiveProudcers() (int64, error) {
 	return producersCount, nil
 }
 
-func UpdateProducersOfDeletedUser(username string) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
-	)
+func UpdateProducersOfDeletedUser(userId int) error {
+	// _, err := producersCollection.UpdateMany(context.TODO(),
+	// 	bson.M{"created_by_user": username},
+	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET created_by = $1 WHERE created_by = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
 	if err != nil {
 		return err
 	}
@@ -1858,14 +1929,19 @@ func UpdateProducersOfDeletedUser(username string) error {
 }
 
 func KillProducersByConnections(connectionIds []string) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": bson.M{"$in": connectionIds}},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false WHERE connection_id = ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
 	if err != nil {
 		return err
 	}
-
+	_, err = conn.Conn().Query(ctx, stmt.Name, connectionIds)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -2066,35 +2142,50 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 }
 
 func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
-	var consumer models.Consumer
-	err := consumersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": stationId, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Consumer{}, nil
-	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
+	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	_, err = consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"name": name, "station_id": stationId},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
-	if err == mongo.ErrNoDocuments {
+	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
 		return false, models.Consumer{}, err
 	}
+	query2 := `UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2`
+	updateAllStmt, err := conn.Conn().Prepare(ctx, "update_all_related_consumers", query2)
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	return true, consumer, nil
+	_, err = conn.Conn().Query(ctx, updateAllStmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	return true, consumers[0], nil
 }
 
 func DeleteConsumersByStationID(stationId int) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"station_id": stationId},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
 		return err
 	}
@@ -2280,21 +2371,41 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 }
 
 func UpdateConsumersConnection(connectionId string, isActive bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET is_active = $1 WHERE connection_id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, isActive, connectionId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateConsumersOfDeletedUser(userId int) error {
 	// _, err := consumersCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"connection_id": connectionId},
-	// 	bson.M{"$set": bson.M{"is_active": isActive}},
+	// 	bson.M{"created_by_user": username},
+	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
 	// )
 	// if err != nil {
 	// 	return err
 	// }
-	return nil
-}
-
-func UpdateConsumersOfDeletedUser(username string) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
-	)
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET created_by = $1 WHERE created_by = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
 	if err != nil {
 		return err
 	}
@@ -2302,14 +2413,19 @@ func UpdateConsumersOfDeletedUser(username string) error {
 }
 
 func KillConsumersByConnections(connectionIds []string) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": bson.M{"$in": connectionIds}},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET is_active = false WHERE connection_id ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
 	if err != nil {
 		return err
 	}
-
+	_, err = conn.Conn().Query(ctx, stmt.Name, connectionIds)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -2399,11 +2515,25 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 	return schemas[0], nil
 }
 
-func UpdateSchemasOfDeletedUser(username string) error {
-	_, err := schemasCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	)
+func UpdateSchemasOfDeletedUser(userId int) error {
+	// _, err := schemasCollection.UpdateMany(context.TODO(),
+	// 	bson.M{"created_by_user": username},
+	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE schemas SET created_by = $1 WHERE created_by = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
 	if err != nil {
 		return err
 	}
@@ -2439,15 +2569,22 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 }
 
 func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
-	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
-		bson.M{"schema_id": schemaId},
-		bson.M{"$set": bson.M{"active": false}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE schema_versions
+		SET active = CASE
+		WHEN version_number = $2 THEN true
+		ELSE false
+		END
+	WHERE schema_id = $1
+`
+	stmt, err := conn.Conn().Prepare(ctx, "update_schema_active_version", query)
 	if err != nil {
 		return err
 	}
-
-	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
+	_, err = conn.Conn().Query(ctx, stmt.Name, schemaId, versionNumber)
 	if err != nil {
 		return err
 	}
@@ -2835,8 +2972,33 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 }
 
 func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var integration models.Integration
-	return integration, nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `
+	INSERT INTO integrations(name, keys, properties)
+	VALUES($1, $2, $3)
+	ON CONFLICT(name) DO UPDATE
+	SET keys = excluded.keys, properties = excluded.properties
+	RETURNING id, name, keys, properties
+`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+	if err != nil {
+		return models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return models.Integration{}, err
+	}
+	return integrations[0], nil
 }
 
 // User Functions
@@ -2914,13 +3076,19 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 }
 
 func ChangeUserPassword(username string, hashedPassword string) error {
-	// _, err := usersCollection.UpdateOne(context.TODO(),
-	// 	bson.M{"username": username},
-	// 	bson.M{"$set": bson.M{"password": hashedPassword}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET password = $2 WHERE username = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -3119,19 +3287,17 @@ func DeleteUser(username string) error {
 	return nil
 }
 
-func DeleteUser1(username string) error {
-	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
+func EditAvatar(username string, avatarId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET avatar_id = $2 WHERE username = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "edit_avatar", query)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func EditAvatar(username string, avatarId int) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"avatar_id": avatarId}},
-	)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId)
 	if err != nil {
 		return err
 	}
@@ -3244,12 +3410,26 @@ func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 	case "user":
 		entityDBList = "users"
 	}
-	filter := bson.M{"name": tagName}
-	update := bson.M{
-		"$addToSet": bson.M{entityDBList: entity_id},
+	// filter := bson.M{"name": tagName}
+	// update := bson.M{
+	// 	"$addToSet": bson.M{entityDBList: entity_id},
+	// }
+	// opts := options.Update().SetUpsert(true)
+	// _, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE tags SET $2 = ARRAY_APPEND($2, $3) WHERE name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
 	}
-	opts := options.Update().SetUpsert(true)
-	_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = conn.Conn().Query(ctx, stmt.Name, tagName, entityDBList, entity_id)
 	if err != nil {
 		return err
 	}
@@ -3257,7 +3437,21 @@ func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 }
 
 func RemoveAllTagsFromEntity(entity string, entity_id int) error {
-	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{entity: entity_id}})
+	// _, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{entity: entity_id}})
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE tags SET $1 = ARRAY_REMOVE($1, $2) WHERE $2 = ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, entity, entity_id)
 	if err != nil {
 		return err
 	}
@@ -3274,8 +3468,22 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	case "user":
 		entityDBList = "users"
 	}
-	_, err := tagsCollection.UpdateOne(context.TODO(), bson.M{"name": tagName},
-		bson.M{"$pull": bson.M{entityDBList: entity_id}})
+	// _, err := tagsCollection.UpdateOne(context.TODO(), bson.M{"name": tagName},
+	// 	bson.M{"$pull": bson.M{entityDBList: entity_id}})
+	// if err != nil {
+	// 	return err
+	// }
+	// return nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE tags SET $2 = ARRAY_REMOVE($2, $3) WHERE name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tagName, entityDBList, entity_id)
 	if err != nil {
 		return err
 	}
@@ -3299,12 +3507,12 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 		return []models.Tag{}, err
 	}
 	defer conn.Release()
-	query := fmt.Sprintf(`SELECT * FROM tags WHERE $1 = ANY(%s)`, entityDBList)
+	query := `SELECT * FROM tags WHERE $1 = ANY($2)`
 	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id", query)
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id, entityDBList)
 
 	if err != nil {
 		return nil, err
@@ -3430,10 +3638,10 @@ func InsertNewSanboxUser(username string, email string, firstName string, lastNa
 }
 
 func UpdateSandboxUserAlreadyLoggedIn(userId int) {
-	sandboxUsersCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": userId},
-		bson.M{"$set": bson.M{"already_logged_in": true}},
-	)
+	// sandboxUsersCollection.UpdateOne(context.TODO(),
+	// 	bson.M{"_id": userId},
+	// 	bson.M{"$set": bson.M{"already_logged_in": true}},
+	// )
 }
 
 func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
@@ -3465,13 +3673,13 @@ func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 }
 
 func UpdateSkipGetStartedSandbox(username string) error {
-	_, err := sandboxUsersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"skip_get_started": true}},
-	)
-	if err != nil {
-		return err
-	}
+	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
+	// 	bson.M{"username": username},
+	// 	bson.M{"$set": bson.M{"skip_get_started": true}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 

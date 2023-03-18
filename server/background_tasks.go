@@ -79,7 +79,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				if UI_HOST == "" {
 					UI_HOST = integrationUpdate.UIUrl
 				}
-				db.UpsertConfiguration("ui_host", UI_HOST)
+				db.UpdateConfiguration("ui_host", UI_HOST)
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
