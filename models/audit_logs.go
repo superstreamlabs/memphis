@@ -16,15 +16,6 @@ import (
 )
 
 type AuditLog struct {
-	ID           int       `json:"id" `
-	StationName  string    `json:"station_name" `
-	Message      string    `json:"message" `
-	CreatedBy    int       `json:"created_by" `
-	UserType     string    `json:"user_type" `
-	CreationDate time.Time `json:"creation_date" `
-}
-
-type AuditLogPg struct {
 	ID          int       `json:"id"`
 	StationName string    `json:"station_name"`
 	Message     string    `json:"message"`

@@ -764,7 +764,7 @@ func InsertConfiguration(key string, stringValue string, intValue int, isString 
 			return err
 		}
 
-		newConfiguration := models.ConfigurationsStringValuePg{}
+		newConfiguration := models.ConfigurationsStringValue{}
 		rows, err := conn.Conn().Query(ctx, stmt.Name,
 			key, stringValue)
 		if err != nil {
@@ -782,7 +782,7 @@ func InsertConfiguration(key string, stringValue string, intValue int, isString 
 			if errors.As(err, &pgErr) {
 				if pgErr.Detail != "" {
 					if strings.Contains(pgErr.Detail, "already exists") {
-						return errors.New("configuration" + newConfiguration.Key + " already exists")
+						return errors.New("configuration" + key + " already exists")
 					} else {
 						return errors.New(pgErr.Detail)
 					}
@@ -805,7 +805,7 @@ func InsertConfiguration(key string, stringValue string, intValue int, isString 
 			return err
 		}
 
-		newConfiguration := models.ConfigurationsIntValuePg{}
+		newConfiguration := models.ConfigurationsIntValue{}
 		rows, err := conn.Conn().Query(ctx, stmt.Name,
 			key, stringValue)
 		if err != nil {
@@ -1015,7 +1015,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	}
 
 	defer conn.Release()
-	var auditLog []models.AuditLogPg
+	var auditLog []models.AuditLog
 
 	b, err := json.Marshal(auditLogs)
 	err = json.Unmarshal(b, &auditLog)
@@ -1041,7 +1041,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 		return err
 	}
 
-	newAuditLog := models.AuditLogPg{}
+	newAuditLog := models.AuditLog{}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, message, createdBy, createdAt)
 	if err != nil {
@@ -1219,10 +1219,42 @@ func UpsertNewStation(
 		return models.Station{}, 0, err
 	}
 
-	// newStation := models.StationPg{}
 	createAt := time.Now()
 	updatedAt := time.Now()
+	var stationId int
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		stationName, retentionType, retentionValue, storageType, replicas, userId, createAt, updatedAt,
+		false, schemaDetails.SchemaName, schemaDetails.VersionNumber, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
+	if err != nil {
+		return models.Station{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(stationId)
+		if err != nil {
+			return models.Station{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Station{}, 0, errors.New("Station" + stationName + " already exists")
+				} else {
+					return models.Station{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Station{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Station{}, 0, err
+		}
+	}
+
 	newStation := models.Station{
+		ID:                          stationId,
 		Name:                        stationName,
 		CreatedBy:                   userId,
 		CreatedAt:                   createAt,
@@ -1239,37 +1271,6 @@ func UpsertNewStation(
 		DlsConfigurationPoison:      dlsConfiguration.Poison,
 		DlsConfigurationSchemaverse: dlsConfiguration.Schemaverse,
 		TieredStorageEnabled:        tieredStorageEnabled,
-	}
-
-	//TODO: change the 1 to username
-	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		stationName, retentionType, retentionValue, storageType, replicas, 1, createAt, updatedAt,
-		false, schemaDetails.SchemaName, schemaDetails.VersionNumber, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
-	if err != nil {
-		return models.Station{}, 0, err
-	}
-	for rows.Next() {
-		err := rows.Scan(&newStation.ID)
-		if err != nil {
-			return models.Station{}, 0, err
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Detail != "" {
-				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Station{}, 0, errors.New("Station" + newStation.Name + " already exists")
-				} else {
-					return models.Station{}, 0, errors.New(pgErr.Detail)
-				}
-			} else {
-				return models.Station{}, 0, errors.New(pgErr.Message)
-			}
-		} else {
-			return models.Station{}, 0, err
-		}
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1742,7 +1743,7 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 		return models.Producer{}, 0, err
 	}
 
-	newProducer := models.Producer{}
+	var producerId int
 	createAt := time.Now()
 	isActive := true
 	isDeleted := false
@@ -1752,7 +1753,7 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 		return models.Producer{}, 0, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newProducer.ID)
+		err := rows.Scan(producerId)
 		if err != nil {
 			return models.Producer{}, 0, err
 		}
@@ -1776,8 +1777,8 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newProducer = models.Producer{
-		ID:           newProducer.ID,
+	newProducer := models.Producer{
+		ID:           producerId,
 		Name:         name,
 		StationId:    stationId,
 		Type:         producerType,
@@ -2069,7 +2070,7 @@ func UpsertNewConsumer(name string,
 		return models.Consumer{}, 0, err
 	}
 
-	newConsumer := models.Consumer{}
+	var consumerId int
 	createdAt := time.Now()
 	isActive := true
 	isDeleted := false
@@ -2080,7 +2081,7 @@ func UpsertNewConsumer(name string,
 		return models.Consumer{}, 0, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newConsumer.ID)
+		err := rows.Scan(consumerId)
 		if err != nil {
 			return models.Consumer{}, 0, err
 		}
@@ -2105,8 +2106,8 @@ func UpsertNewConsumer(name string,
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newConsumer = models.Consumer{
-		ID:                  newConsumer.ID,
+	newConsumer := models.Consumer{
+		ID:                  consumerId,
 		Name:                name,
 		StationId:           stationId,
 		Type:                consumerType,
@@ -2839,13 +2840,13 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 		return models.Schema{}, 0, err
 	}
 
-	newSchema := models.Schema{}
+	var SchemaId int
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newSchema.ID)
+		err := rows.Scan(SchemaId)
 		if err != nil {
 			return models.Schema{}, 0, err
 		}
@@ -2856,7 +2857,7 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Schema{}, 0, errors.New("Schema" + newSchema.Name + " already exists")
+					return models.Schema{}, 0, errors.New("Schema" + schemaName + " already exists")
 				} else {
 					return models.Schema{}, 0, errors.New(pgErr.Detail)
 				}
@@ -2869,8 +2870,8 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newSchema = models.Schema{
-		ID:   newSchema.ID,
+	newSchema := models.Schema{
+		ID:   SchemaId,
 		Name: schemaName,
 		Type: schemaType,
 	}
@@ -2903,7 +2904,7 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 		return models.SchemaVersion{}, 0, err
 	}
 
-	newSchemaVersion := models.SchemaVersion{}
+	var schemaVersionId int
 	createdAt := time.Now()
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
@@ -2911,7 +2912,7 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 		return models.SchemaVersion{}, 0, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newSchemaVersion.ID)
+		err := rows.Scan(schemaVersionId)
 		if err != nil {
 			return models.SchemaVersion{}, 0, err
 		}
@@ -2936,8 +2937,8 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newSchemaVersion = models.SchemaVersion{
-		ID:                newSchemaVersion.ID,
+	newSchemaVersion := models.SchemaVersion{
+		ID:                schemaVersionId,
 		VersionNumber:     schemaVersionNumber,
 		Active:            active,
 		CreatedBy:         username,
@@ -3056,13 +3057,13 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 		return models.Integration{}, err
 	}
 
-	newIntegration := models.Integration{}
+	var integrationId int
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newIntegration.ID)
+		err := rows.Scan(integrationId)
 		if err != nil {
 			return models.Integration{}, err
 		}
@@ -3073,7 +3074,7 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Integration{}, errors.New("Integration" + newIntegration.Name + " already exists")
+					return models.Integration{}, errors.New("Integration" + name + " already exists")
 				} else {
 					return models.Integration{}, errors.New(pgErr.Detail)
 				}
@@ -3084,8 +3085,8 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 			return models.Integration{}, err
 		}
 	}
-	newIntegration = models.Integration{
-		ID:         newIntegration.ID,
+	newIntegration := models.Integration{
+		ID:         integrationId,
 		Name:       name,
 		Keys:       keys,
 		Properties: properties,
@@ -3129,13 +3130,13 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	skipGetStarted := false
 	alreadyLoggedIn := false
 
-	newUser := models.User{}
+	var userId int
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted)
 	if err != nil {
 		return models.User{}, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newUser.ID)
+		err := rows.Scan(userId)
 		if err != nil {
 			return models.User{}, err
 		}
@@ -3146,7 +3147,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.User{}, errors.New("User " + newUser.Username + " already exists")
+					return models.User{}, errors.New("User " + username + " already exists")
 				} else {
 					return models.User{}, errors.New(pgErr.Detail)
 				}
@@ -3158,8 +3159,8 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		}
 	}
 
-	newUser = models.User{
-		ID:              newUser.ID,
+	newUser := models.User{
+		ID:              userId,
 		Username:        username,
 		Password:        hashedPassword,
 		FullName:        fullName,
@@ -3446,13 +3447,13 @@ func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		return models.Tag{}, err
 	}
 
-	newTag := models.Tag{}
+	var tagId int
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr)
 	if err != nil {
 		return models.Tag{}, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newTag.ID)
+		err := rows.Scan(tagId)
 		if err != nil {
 			return models.Tag{}, err
 		}
@@ -3463,7 +3464,7 @@ func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Tag{}, errors.New("Tag" + newTag.Name + " already exists")
+					return models.Tag{}, errors.New("Tag" + name + " already exists")
 				} else {
 					return models.Tag{}, errors.New(pgErr.Detail)
 				}
@@ -3475,9 +3476,10 @@ func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		}
 	}
 
-	newTag = models.Tag{
-		ID:   newTag.ID,
-		Name: name, Color: color,
+	newTag := models.Tag{
+		ID:       tagId,
+		Name:     name,
+		Color:    color,
 		Stations: stationArr,
 		Schemas:  schemaArr,
 		Users:    userArr,

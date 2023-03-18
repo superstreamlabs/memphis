@@ -325,11 +325,11 @@ func (s *Server) createStationDirectIntern(c *client,
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName:  stationName.Ext(),
-			Message:      message,
-			CreatedBy:    user.ID,
-			CreationDate: time.Now(),
-			UserType:     "application",
+			StationName: stationName.Ext(),
+			Message:     message,
+			CreatedBy:   user.ID,
+			CreatedAt:   time.Now(),
+			UserType:    "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -781,16 +781,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	// 		return
 	// 	}
 	// }
-	message := "Station " + stationName.Ext() + " has been created by " +  user.Username
+	message := "Station " + stationName.Ext() + " has been created by " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		StationName:  stationName.Ext(),
-		Message:      message,
-		CreatedBy:    1,
-		CreationDate: time.Now(),
-		UserType:     "application",
-		// UserType:     user.UserType,
+		StationName: stationName.Ext(),
+		Message:     message,
+		CreatedBy:   1,
+		CreatedAt:   time.Now(),
+		UserType:    user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -997,11 +996,11 @@ func (s *Server) removeStationDirectIntern(c *client,
 	if isNative {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName:  stationName.Ext(),
-			Message:      message,
-			CreatedBy:    user.ID,
-			CreationDate: time.Now(),
-			UserType:     "application",
+			StationName: stationName.Ext(),
+			Message:     message,
+			CreatedBy:   user.ID,
+			CreatedAt:   time.Now(),
+			UserType:    "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1544,11 +1543,11 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName:  stationName.Intern(),
-			Message:      message,
-			CreatedBy:    user.ID,
-			CreationDate: time.Now(),
-			UserType:     user.UserType,
+			StationName: stationName.Intern(),
+			Message:     message,
+			CreatedBy:   user.ID,
+			CreatedAt:   time.Now(),
+			UserType:    user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1655,11 +1654,11 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	}
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		StationName:  stationName.Intern(),
-		Message:      message,
-		CreatedBy:    user.ID,
-		CreationDate: time.Now(),
-		UserType:     "sdk",
+		StationName: stationName.Intern(),
+		Message:     message,
+		CreatedBy:   user.ID,
+		CreatedAt:   time.Now(),
+		UserType:    "sdk",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1795,11 +1794,11 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		StationName:  stationName.Intern(),
-		Message:      message,
-		CreatedBy:    user.ID,
-		CreationDate: time.Now(),
-		UserType:     user.UserType,
+		StationName: stationName.Intern(),
+		Message:     message,
+		CreatedBy:   user.ID,
+		CreatedAt:   time.Now(),
+		UserType:    user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

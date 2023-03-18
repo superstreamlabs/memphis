@@ -246,11 +246,11 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	if entity == "station" {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName:  stationName,
-			Message:      message,
-			CreatedBy:    user.ID,
-			CreationDate: time.Now(),
-			UserType:     user.UserType,
+			StationName: stationName,
+			Message:     message,
+			CreatedBy:   user.ID,
+			CreatedAt:   time.Now(),
+			UserType:    user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -369,11 +369,11 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 				var auditLogs []interface{}
 				newAuditLog := models.AuditLog{
-					StationName:  stationName.Intern(),
-					Message:      message,
-					CreatedBy:    user.ID,
-					CreationDate: time.Now(),
-					UserType:     user.UserType,
+					StationName: stationName.Intern(),
+					Message:     message,
+					CreatedBy:   user.ID,
+					CreatedAt:   time.Now(),
+					UserType:    user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
@@ -426,11 +426,11 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 				var auditLogs []interface{}
 				newAuditLog := models.AuditLog{
-					StationName:  stationName.Intern(),
-					Message:      message,
-					CreatedBy:    user.ID,
-					CreationDate: time.Now(),
-					UserType:     user.UserType,
+					StationName: stationName.Intern(),
+					Message:     message,
+					CreatedBy:   user.ID,
+					CreatedAt:   time.Now(),
+					UserType:    user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
