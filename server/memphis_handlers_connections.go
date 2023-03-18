@@ -179,7 +179,7 @@ func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string
 	// 	return errors.New(errMsg)
 	// }
 
-	newConnection := models.ConnectionPg{
+	newConnection := models.Connection{
 		ID:            connectionId,
 		CreatedBy:     username,
 		IsActive:      true,

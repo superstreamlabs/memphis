@@ -79,7 +79,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				if UI_HOST == "" {
 					UI_HOST = integrationUpdate.UIUrl
 				}
-				db.UpsertConfiguration("ui_host", UI_HOST, 0, true)
+				db.UpsertConfiguration("ui_host", UI_HOST)
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
@@ -312,32 +312,32 @@ func (s *Server) StartBackgroundTasks() error {
 	}
 
 	// creating consumer + start listening
-	// err = s.ListenForTieredStorageMessages()
-	// if err != nil {
-	// 	return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
-	// }
+	err = s.ListenForTieredStorageMessages()
+	if err != nil {
+		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
+	}
 
 	// send JS API request to get more messages
-	// go s.sendPeriodicJsApiFetchTieredStorageMsgs()
-	// go s.uploadMsgsToTier2Storage()
+	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
+	go s.uploadMsgsToTier2Storage()
 
-	// exist, ui_host, _, err := db.GetConfiguration("ui_host", true)
-	// if !exist {
-	// 	UI_HOST = ""
-	// 	err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// } else if err != nil {
-	// 	return err
-	// } else {
-	// 	UI_HOST = ui_host.Value
-	// }
+	exist, ui_host, err := db.GetConfiguration("ui_host")
+	if !exist {
+		UI_HOST = ""
+		err = db.InsertConfiguration("ui_host", UI_HOST)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else {
+		UI_HOST = ui_host.Value
+	}
 
-	// err = s.InitializeThroughputSampling()
-	// if err != nil {
-	// 	return err
-	// }
+	err = s.InitializeThroughputSampling()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

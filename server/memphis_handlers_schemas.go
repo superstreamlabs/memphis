@@ -710,11 +710,11 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
-	// shouldSendAnalytics, _ := shouldSendAnalytics()
-	// if shouldSendAnalytics {
-	// 	user, _ := getUserDetailsFromMiddleware(c)
-	// 	analytics.SendEvent(user.Username, "user-create-new-schema-version")
-	// }
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-create-new-schema-version")
+	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
 

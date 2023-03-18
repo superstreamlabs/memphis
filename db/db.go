@@ -663,11 +663,11 @@ func GetSystemKey(key string) (bool, models.SystemKey, error) {
 	}
 	defer rows.Close()
 	systemKeys, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SystemKey])
-	if len(systemKeys) == 0 {
-		return false, models.SystemKey{}, nil
-	}
 	if err != nil {
 		return true, models.SystemKey{}, err
+	}
+	if len(systemKeys) == 0 {
+		return false, models.SystemKey{}, nil
 	}
 	return true, systemKeys[0], nil
 }
@@ -683,8 +683,8 @@ func InsertSystemKey(key string, value string) error {
 	return nil
 }
 
-func InsertSystemKeyPg(key string, stringValue string, intValue int, isString bool) error {
-	err := InsertConfiguration(key, stringValue, intValue, isString)
+func InsertSystemKeyPg(key string, value string) error {
+	err := InsertConfiguration(key, value)
 	if err != nil {
 		return err
 	}
@@ -703,35 +703,35 @@ func EditSystemKey(key string, value string) error {
 }
 
 // Configuration Functions
-func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStringValue, models.ConfigurationsIntValue, error) {
+func GetConfiguration(key string) (bool, models.ConfigurationsValue, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		return true, models.ConfigurationsValue{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_configuration", query)
 	if err != nil {
-		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		return true, models.ConfigurationsValue{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
 	if err != nil {
-		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		return true, models.ConfigurationsValue{}, err
 	}
 	defer rows.Close()
-	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsStringValue])
-	if len(configurations) == 0 {
-		return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-	}
+	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsValue])
 	if err != nil {
-		return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
+		return true, models.ConfigurationsValue{}, err
 	}
-	return true, configurations[0], models.ConfigurationsIntValue{}, nil
+	if len(configurations) == 0 {
+		return false, models.ConfigurationsValue{}, nil
+	}
+	return true, configurations[0], nil
 }
 
-func InsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
+func InsertConfiguration(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -741,104 +741,57 @@ func InsertConfiguration(key string, stringValue string, intValue int, isString 
 	}
 	defer conn.Release()
 
-	if isString {
-		query := `INSERT INTO configurations( 
+	query := `INSERT INTO configurations( 
 			key, 
 			value) 
 		VALUES($1, $2) 
 		RETURNING id`
 
-		stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+	if err != nil {
+		return err
+	}
+
+	newConfiguration := models.ConfigurationsValue{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		key, value)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newConfiguration.ID)
 		if err != nil {
 			return err
 		}
+	}
 
-		newConfiguration := models.ConfigurationsStringValuePg{}
-		rows, err := conn.Conn().Query(ctx, stmt.Name,
-			key, stringValue)
-		if err != nil {
-			return err
-		}
-		for rows.Next() {
-			err := rows.Scan(&newConfiguration.ID)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := rows.Err(); err != nil {
-			var pgErr *pgconn.PgError
-			if errors.As(err, &pgErr) {
-				if pgErr.Detail != "" {
-					if strings.Contains(pgErr.Detail, "already exists") {
-						return errors.New("configuration " + newConfiguration.Key + " already exists")
-					} else {
-						return errors.New(pgErr.Detail)
-					}
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return errors.New("configuration " + newConfiguration.Key + " already exists")
 				} else {
-					return errors.New(pgErr.Message)
-				}
-			} else {
-				return err
-			}
-		}
-	} else {
-		query := `INSERT INTO configurations( 
-			key, 
-			value) 
-		VALUES($1, $2) 
-		RETURNING id`
-
-		stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
-		if err != nil {
-			return err
-		}
-
-		newConfiguration := models.ConfigurationsIntValuePg{}
-		rows, err := conn.Conn().Query(ctx, stmt.Name,
-			key, stringValue)
-		if err != nil {
-			return err
-		}
-		for rows.Next() {
-			err := rows.Scan(&newConfiguration.ID)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := rows.Err(); err != nil {
-			var pgErr *pgconn.PgError
-			if errors.As(err, &pgErr) {
-				if pgErr.Detail != "" {
 					return errors.New(pgErr.Detail)
-				} else {
-					return errors.New(pgErr.Message)
 				}
 			} else {
-				return err
+				return errors.New(pgErr.Message)
 			}
+		} else {
+			return err
 		}
 	}
 	return nil
 }
 
-func UpsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
+func UpsertConfiguration(key string, value string) error {
 	filter := bson.M{"key": key}
 	opts := options.Update().SetUpsert(true)
 	var update primitive.M
-	if isString {
-		update = bson.M{
-			"$set": bson.M{
-				"value": stringValue,
-			},
-		}
-	} else {
-		update = bson.M{
-			"$set": bson.M{
-				"value": intValue,
-			},
-		}
+	update = bson.M{
+		"$set": bson.M{
+			"value": value,
+		},
 	}
 	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
@@ -945,11 +898,11 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	}
 	defer rows.Close()
 	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
-	if len(connections) == 0 {
-		return false, models.Connection{}, nil
-	}
 	if err != nil {
 		return true, models.Connection{}, err
+	}
+	if len(connections) == 0 {
+		return false, models.Connection{}, nil
 	}
 	return true, connections[0], nil
 }
@@ -985,11 +938,11 @@ func GetActiveConnections() ([]models.Connection, error) {
 	}
 	defer rows.Close()
 	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
-	if len(connections) == 0 {
-		return []models.Connection{}, nil
-	}
 	if err != nil {
 		return []models.Connection{}, err
+	}
+	if len(connections) == 0 {
+		return []models.Connection{}, nil
 	}
 	return connections, nil
 }
@@ -1069,11 +1022,11 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 	}
 	defer rows.Close()
 	auditLogs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AuditLog])
-	if len(auditLogs) == 0 {
-		return []models.AuditLog{}, nil
-	}
 	if err != nil {
 		return []models.AuditLog{}, err
+	}
+	if len(auditLogs) == 0 {
+		return []models.AuditLog{}, nil
 	}
 	return auditLogs, nil
 }
@@ -1106,11 +1059,11 @@ func GetActiveStations() ([]models.Station, error) {
 	}
 	defer rows.Close()
 	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
-	if len(stations) == 0 {
-		return []models.Station{}, nil
-	}
 	if err != nil {
 		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, nil
 	}
 	return stations, nil
 }
@@ -1134,11 +1087,11 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	}
 	defer rows.Close()
 	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
-	if len(stations) == 0 {
-		return false, models.Station{}, nil
-	}
 	if err != nil {
 		return true, models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return false, models.Station{}, nil
 	}
 	return true, stations[0], nil
 }
@@ -1566,11 +1519,11 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	defer rows.Close()
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
-	if len(producers) == 0 {
-		return []models.ExtendedProducer{}, nil
-	}
 	if err != nil {
 		return []models.ExtendedProducer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.ExtendedProducer{}, nil
 	}
 	return producers, nil
 
@@ -1631,11 +1584,11 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
-	if len(producers) == 0 {
-		return false, models.Producer{}, nil
-	}
 	if err != nil {
 		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
 	}
 	return true, producers[0], nil
 }
@@ -1660,11 +1613,11 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
-	if len(producers) == 0 {
-		return false, models.Producer{}, nil
-	}
 	if err != nil {
 		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
 	}
 	return true, producers[0], nil
 }
@@ -1767,11 +1720,11 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
-	if len(producers) == 0 {
-		return []models.ExtendedProducer{}, nil
-	}
 	if err != nil {
 		return []models.ExtendedProducer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.ExtendedProducer{}, nil
 	}
 	return producers, nil
 }
@@ -1796,11 +1749,11 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
-	if len(producers) == 0 {
-		return []models.Producer{}, nil
-	}
 	if err != nil {
 		return []models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.Producer{}, nil
 	}
 	return producers, nil
 }
@@ -1919,11 +1872,11 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
-	if len(consumers) == 0 {
-		return false, models.Consumer{}, nil
-	}
 	if err != nil {
 		return true, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return false, models.Consumer{}, nil
 	}
 	return true, consumers[0], nil
 }
@@ -2048,11 +2001,11 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
-	if len(consumers) == 0 {
-		return []models.ExtendedConsumer{}, nil
-	}
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
 }
@@ -2085,11 +2038,11 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
-	if len(consumers) == 0 {
-		return []models.ExtendedConsumer{}, nil
-	}
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
 }
@@ -2234,11 +2187,11 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.CgMember])
-	if len(consumers) == 0 {
-		return []models.CgMember{}, nil
-	}
 	if err != nil {
 		return []models.CgMember{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.CgMember{}, nil
 	}
 	return consumers, nil
 }
@@ -2271,11 +2224,11 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
-	if len(consumers) == 0 {
-		return []models.ExtendedConsumer{}, nil
-	}
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
 }
@@ -2299,11 +2252,11 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
-	if len(consumers) == 0 {
-		return false, models.Consumer{}, nil
-	}
 	if err != nil {
 		return true, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return false, models.Consumer{}, nil
 	}
 	return true, consumers[0], nil
 }
@@ -2362,11 +2315,11 @@ func GetSchemaByName(name string) (bool, models.Schema, error) {
 	}
 	defer rows.Close()
 	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Schema])
-	if len(schemas) == 0 {
-		return false, models.Schema{}, nil
-	}
 	if err != nil {
 		return true, models.Schema{}, err
+	}
+	if len(schemas) == 0 {
+		return false, models.Schema{}, nil
 	}
 	return true, schemas[0], nil
 }
@@ -2391,11 +2344,11 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 	}
 	defer rows.Close()
 	schemaVersions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
-	if len(schemaVersions) == 0 {
-		return []models.SchemaVersion{}, nil
-	}
 	if err != nil {
 		return []models.SchemaVersion{}, err
+	}
+	if len(schemaVersions) == 0 {
+		return []models.SchemaVersion{}, nil
 	}
 	return schemaVersions, nil
 }
@@ -2419,11 +2372,11 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 	}
 	defer rows.Close()
 	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
-	if len(schemas) == 0 {
-		return models.SchemaVersion{}, nil
-	}
 	if err != nil {
 		return models.SchemaVersion{}, err
+	}
+	if len(schemas) == 0 {
+		return models.SchemaVersion{}, nil
 	}
 	return schemas[0], nil
 }
@@ -2458,11 +2411,11 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 	}
 	defer rows.Close()
 	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
-	if len(schemas) == 0 {
-		return false, models.SchemaVersion{}, nil
-	}
 	if err != nil {
 		return true, models.SchemaVersion{}, err
+	}
+	if len(schemas) == 0 {
+		return false, models.SchemaVersion{}, nil
 	}
 	return true, schemas[0], nil
 }
@@ -2586,13 +2539,13 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 		return models.Schema{}, 0, err
 	}
 
-	newSchema := models.Schema{}
+	var schemaId int
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&newSchema.ID)
+		err := rows.Scan(&schemaId)
 		if err != nil {
 			return models.Schema{}, 0, err
 		}
@@ -2603,7 +2556,7 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Schema{}, 0, errors.New("Schema" + newSchema.Name + " already exists")
+					return models.Schema{}, 0, errors.New("Schema" + schemaName + " already exists")
 				} else {
 					return models.Schema{}, 0, errors.New(pgErr.Detail)
 				}
@@ -2616,8 +2569,8 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
-	newSchema = models.Schema{
-		ID:   newSchema.ID,
+	newSchema := models.Schema{
+		ID:   schemaId,
 		Name: schemaName,
 		Type: schemaType,
 	}
@@ -2718,11 +2671,11 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 	}
 	defer rows.Close()
 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
-	if len(integrations) == 0 {
-		return false, models.Integration{}, nil
-	}
 	if err != nil {
 		return true, models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return false, models.Integration{}, nil
 	}
 	return true, integrations[0], nil
 }
@@ -2746,11 +2699,11 @@ func GetAllIntegrations() (bool, []models.Integration, error) {
 	}
 	defer rows.Close()
 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
-	if len(integrations) == 0 {
-		return false, []models.Integration{}, nil
-	}
 	if err != nil {
 		return true, []models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return false, []models.Integration{}, nil
 	}
 	return true, integrations, nil
 }
@@ -2902,13 +2855,13 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 }
 
 func ChangeUserPassword(username string, hashedPassword string) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"password": hashedPassword}},
-	)
-	if err != nil {
-		return err
-	}
+	// _, err := usersCollection.UpdateOne(context.TODO(),
+	// 	bson.M{"username": username},
+	// 	bson.M{"$set": bson.M{"password": hashedPassword}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
@@ -2920,7 +2873,7 @@ func GetRootUser() (bool, models.User, error) {
 		return true, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE user_type = 'root' LIMIT 1`
+	query := `SELECT * FROM users WHERE type = 'root' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_root_user", query)
 	if err != nil {
 		return true, models.User{}, err
@@ -2931,11 +2884,11 @@ func GetRootUser() (bool, models.User, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if len(users) == 0 {
-		return false, models.User{}, nil
-	}
 	if err != nil {
 		return true, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
 	}
 	return true, users[0], nil
 }
@@ -2960,11 +2913,11 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if len(users) == 0 {
-		return false, models.User{}, nil
-	}
 	if err != nil {
 		return true, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
 	}
 	return true, users[0], nil
 }
@@ -2988,11 +2941,11 @@ func GetUserByUserId(userId int) (bool, models.User, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if len(users) == 0 {
-		return false, models.User{}, nil
-	}
 	if err != nil {
 		return true, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
 	}
 	return true, users[0], nil
 }
@@ -3016,11 +2969,11 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredGenericUser])
-	if len(users) == 0 {
-		return []models.FilteredGenericUser{}, nil
-	}
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
+	}
+	if len(users) == 0 {
+		return []models.FilteredGenericUser{}, nil
 	}
 	return users, nil
 }
@@ -3045,27 +2998,36 @@ func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
-	if len(users) == 0 {
-		return []models.FilteredApplicationUser{}, nil
-	}
 	if err != nil {
 		return []models.FilteredApplicationUser{}, err
+	}
+	if len(users) == 0 {
+		return []models.FilteredApplicationUser{}, nil
 	}
 	return users, nil
 }
 
 func UpdateUserAlreadyLoggedIn(userId int) {
-	usersCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": userId},
-		bson.M{"$set": bson.M{"already_logged_in": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET already_logged_in = true WHERE id = $1`
+	stmt, _ := conn.Conn().Prepare(ctx, "update_user_already_logged_in", query)
+	conn.Conn().Query(ctx, stmt.Name, userId)
 }
 
 func UpdateSkipGetStarted(username string) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"skip_get_started": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET skip_get_started = true WHERE username = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username)
 	if err != nil {
 		return err
 	}
@@ -3113,11 +3075,11 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function execu
 	}
 	defer rows.Close()
 	userList, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredUser])
-	if len(userList) == 0 {
-		return []models.FilteredUser{}, nil
-	}
 	if err != nil {
 		return []models.FilteredUser{}, err
+	}
+	if len(userList) == 0 {
+		return []models.FilteredUser{}, nil
 	}
 	return userList, nil
 }
@@ -3263,10 +3225,10 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
-	if len(tags) == 0 {
+	if err != nil {
 		return []models.Tag{}, err
 	}
-	if err != nil {
+	if len(tags) == 0 {
 		return []models.Tag{}, err
 	}
 	return tags, nil
@@ -3309,13 +3271,12 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
-	if len(tags) == 0 {
-		return []models.Tag{}, nil
-	}
 	if err != nil {
 		return []models.Tag{}, err
 	}
-
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
+	}
 	return tags, nil
 }
 
@@ -3339,11 +3300,11 @@ func GetAllUsedTags() ([]models.Tag, error) {
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
-	if len(tags) == 0 {
-		return []models.Tag{}, nil
-	}
 	if err != nil {
 		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
 	}
 	return tags, nil
 }
@@ -3367,11 +3328,11 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
-	if len(tags) == 0 {
-		return false, models.Tag{}, nil
-	}
 	if err != nil {
 		return true, models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return false, models.Tag{}, nil
 	}
 	return true, tags[0], nil
 }
@@ -3408,11 +3369,11 @@ func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
-	if len(users) == 0 {
-		return false, models.SandboxUser{}, nil
-	}
 	if err != nil {
 		return true, models.SandboxUser{}, err
+	}
+	if len(users) == 0 {
+		return false, models.SandboxUser{}, nil
 	}
 	return true, users[0], nil
 }
@@ -3430,7 +3391,7 @@ func UpdateSkipGetStartedSandbox(username string) error {
 
 // Image Functions
 func InsertImage(name string, base64Encoding string, intValue int, isString bool) error {
-	err := InsertConfiguration(name, base64Encoding, intValue, isString)
+	err := InsertConfiguration(name, base64Encoding)
 	if err != nil {
 		return err
 	}
@@ -3464,11 +3425,11 @@ func GetImage(name string) (bool, models.Image, error) {
 	}
 	defer rows.Close()
 	images, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Image])
-	if len(images) == 0 {
-		return false, models.Image{}, nil
-	}
 	if err != nil {
 		return true, models.Image{}, err
+	}
+	if len(images) == 0 {
+		return false, models.Image{}, nil
 	}
 	return true, images[0], nil
 }

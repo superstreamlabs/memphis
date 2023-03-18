@@ -28,21 +28,24 @@ import (
 type ConfigurationsHandler struct{}
 
 func (s *Server) initializeConfigurations() {
-	exist, _, pmRetention, err := db.GetConfiguration("pm_retention", false)
-	// if err != nil || !exist
+	exist, pmRetentionRes, err := db.GetConfiguration("pm_retention")
 	if err != nil {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
-		err = db.InsertConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
+		err = db.InsertConfiguration("pm_retention", strconv.Itoa(POISON_MSGS_RETENTION_IN_HOURS))
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
-		POISON_MSGS_RETENTION_IN_HOURS = pmRetention.Value
+		pmRetention, err := strconv.Atoi(pmRetentionRes.Value)
+		if err != nil {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+		POISON_MSGS_RETENTION_IN_HOURS = pmRetention
 	}
-	exist, _, logsRetention, err := db.GetConfiguration("logs_retention", false)
+	exist, logsRetentionRes, err := db.GetConfiguration("logs_retention")
 	if err != nil || !exist {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
@@ -52,15 +55,19 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 			LOGS_RETENTION_IN_DAYS = 30 //default
 		}
-		err = db.InsertConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
+		err = db.InsertConfiguration("logs_retention", strconv.Itoa(LOGS_RETENTION_IN_DAYS))
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
-		LOGS_RETENTION_IN_DAYS = logsRetention.Value
+		logsRetention, err := strconv.Atoi(logsRetentionRes.Value)
+		if err != nil {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+		LOGS_RETENTION_IN_DAYS = logsRetention
 	}
 
-	exist, _, tsTime, err := db.GetConfiguration("tiered_storage_time_sec", false)
+	exist, tsTimeRes, err := db.GetConfiguration("tiered_storage_time_sec")
 	if err != nil || !exist {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
@@ -71,15 +78,19 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			TIERED_STORAGE_TIME_FRAME_SEC = configuration.TIERED_STORAGE_TIME_FRAME_SEC
 		}
-		err = db.InsertConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
+		err = db.InsertConfiguration("tiered_storage_time_sec", strconv.Itoa(TIERED_STORAGE_TIME_FRAME_SEC))
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
-		TIERED_STORAGE_TIME_FRAME_SEC = tsTime.Value
+		tsTime, err := strconv.Atoi(tsTimeRes.Value)
+		if err != nil {
+			s.Errorf("initializeConfigurations: " + err.Error())
+		}
+		TIERED_STORAGE_TIME_FRAME_SEC = tsTime
 	}
 
-	exist, brokerHost, _, err := db.GetConfiguration("broker_host", true)
+	exist, brokerHost, err := db.GetConfiguration("broker_host")
 	if err != nil || !exist {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
@@ -89,14 +100,14 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			BROKER_HOST = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
 		}
-		err = db.InsertConfiguration("broker_host", BROKER_HOST, 0, true)
+		err = db.InsertConfiguration("broker_host", BROKER_HOST)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		BROKER_HOST = brokerHost.Value
 	}
-	exist, uiHost, _, err := db.GetConfiguration("ui_host", true)
+	exist, uiHost, err := db.GetConfiguration("ui_host")
 	if err != nil || !exist {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
@@ -106,14 +117,14 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			UI_HOST = "http://memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local:9000"
 		}
-		err = db.InsertConfiguration("ui_host", UI_HOST, 0, true)
+		err = db.InsertConfiguration("ui_host", UI_HOST)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 	} else {
 		UI_HOST = uiHost.Value
 	}
-	exist, restGWHost, _, err := db.GetConfiguration("rest_gw_host", true)
+	exist, restGWHost, err := db.GetConfiguration("rest_gw_host")
 	if err != nil || !exist {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
@@ -123,11 +134,11 @@ func (s *Server) initializeConfigurations() {
 		} else {
 			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local:4444"
 		}
-		restGWHost = models.ConfigurationsStringValue{
+		restGWHost = models.ConfigurationsValue{
 			Key:   "rest_gw_host",
 			Value: REST_GW_HOST,
 		}
-		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST, 0, true)
+		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST)
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -224,7 +235,7 @@ func changePMRetention(pmRetention int) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpsertConfiguration("pm_retention", "", POISON_MSGS_RETENTION_IN_HOURS, false)
+	err = db.UpsertConfiguration("pm_retention", strconv.Itoa(POISON_MSGS_RETENTION_IN_HOURS))
 	if err != nil {
 		return err
 	}
@@ -262,7 +273,7 @@ func changePMRetention(pmRetention int) error {
 
 func changeLogsRetention(logsRetention int) error {
 	LOGS_RETENTION_IN_DAYS = logsRetention
-	err := db.UpsertConfiguration("logs_retention", "", LOGS_RETENTION_IN_DAYS, false)
+	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(LOGS_RETENTION_IN_DAYS))
 	if err != nil {
 		return err
 	}
@@ -301,7 +312,7 @@ func changeTSTime(tsTime int) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpsertConfiguration("tiered_storage_time_sec", "", TIERED_STORAGE_TIME_FRAME_SEC, false)
+	err = db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(TIERED_STORAGE_TIME_FRAME_SEC))
 	if err != nil {
 		return err
 	}
@@ -327,7 +338,7 @@ func editClusterCompHost(key string, host string) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpsertConfiguration(key, host, 0, true)
+	err = db.UpsertConfiguration(key, host)
 	if err != nil {
 		return err
 	}

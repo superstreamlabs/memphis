@@ -508,7 +508,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	_, err = db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -516,50 +516,50 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	}
 
 	serv.Noticef("User " + username + " has been signed up")
-	// token, refreshToken, err := CreateTokens(newUser)
-	// if err != nil {
-	// 	serv.Errorf("CreateUserSignUp error: " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 	return
-	// }
-	// var env string
-	// if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-	// 	env = "docker"
-	// } else {
-	// 	env = "K8S"
-	// }
+	token, refreshToken, err := CreateTokens(newUser)
+	if err != nil {
+		serv.Errorf("CreateUserSignUp error: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	var env string
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+		env = "docker"
+	} else {
+		env = "K8S"
+	}
 
-	// shouldSendAnalytics, _ := shouldSendAnalytics()
-	// if shouldSendAnalytics {
-	// 	param1 := analytics.EventParam{
-	// 		Name:  "email",
-	// 		Value: username,
-	// 	}
-	// 	param2 := analytics.EventParam{
-	// 		Name:  "newsletter",
-	// 		Value: strconv.FormatBool(subscription),
-	// 	}
-	// 	analyticsParams := []analytics.EventParam{param1, param2}
-	// 	analytics.SendEventWithParams(username, analyticsParams, "user-signup")
-	// }
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		param1 := analytics.EventParam{
+			Name:  "email",
+			Value: username,
+		}
+		param2 := analytics.EventParam{
+			Name:  "newsletter",
+			Value: strconv.FormatBool(subscription),
+		}
+		analyticsParams := []analytics.EventParam{param1, param2}
+		analytics.SendEventWithParams(username, analyticsParams, "user-signup")
+	}
 
-	// domain := ""
-	// secure := false
-	// c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-	// c.IndentedJSON(200, gin.H{
-	// 	"jwt":               token,
-	// 	"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-	// 	"user_id":           newUser.ID,
-	// 	"username":          newUser.Username,
-	// 	"user_type":         newUser.UserType,
-	// 	"created_at":        newUser.CreatedAt,
-	// 	"already_logged_in": newUser.AlreadyLoggedIn,
-	// 	"avatar_id":         newUser.AvatarId,
-	// 	"send_analytics":    shouldSendAnalytics,
-	// 	"env":               env,
-	// 	"namespace":         configuration.K8S_NAMESPACE,
-	// 	"full_name":         newUser.FullName,
-	// })
+	domain := ""
+	secure := false
+	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.IndentedJSON(200, gin.H{
+		"jwt":               token,
+		"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"user_id":           newUser.ID,
+		"username":          newUser.Username,
+		"user_type":         newUser.UserType,
+		"created_at":        newUser.CreatedAt,
+		"already_logged_in": newUser.AlreadyLoggedIn,
+		"avatar_id":         newUser.AvatarId,
+		"send_analytics":    shouldSendAnalytics,
+		"env":               env,
+		"namespace":         configuration.K8S_NAMESPACE,
+		"full_name":         newUser.FullName,
+	})
 }
 
 func (umh UserMgmtHandler) AddUser(c *gin.Context) {

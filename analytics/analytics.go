@@ -37,7 +37,7 @@ func InitializeAnalytics() error {
 	if !exist {
 		deploymentId = primitive.NewObjectID().Hex()
 
-		err = db.InsertSystemKeyPg("deployment_id", deploymentId, 0, true)
+		err = db.InsertSystemKeyPg("deployment_id", deploymentId)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func InitializeAnalytics() error {
 			value = "false"
 		}
 
-		err = db.InsertSystemKeyPg("analytics", value, 0, true)
+		err = db.InsertSystemKeyPg("analytics", value)
 		if err != nil {
 			return err
 		}
