@@ -827,7 +827,9 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 		return []models.AuditLog{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM audit_logs AS a WHERE c.station_name = $1`
+	query := `SELECT a.id, a.station_name, a.message, a.created_by, a.created_by_username, u.type, a.created_at FROM audit_logs AS a 
+		LEFT JOIN users AS u ON u.id = a.created_by 
+		WHERE a.station_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {
 		return []models.AuditLog{}, err
@@ -1921,10 +1923,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
-		FROM consumers AS c
-		FROM
-		consumers AS c
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		LEFT JOIN connections AS con ON con.id = c.connection_id
 	WHERE
@@ -3267,12 +3266,12 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 		return []models.Tag{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM tags WHERE $1 = ANY($2)`
+	query := `SELECT * FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `)`
 	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id", query)
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, id, entityDBList)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
 
 	if err != nil {
 		return nil, err
