@@ -1692,7 +1692,7 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING * LIMIT 1`
+	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
 	if err != nil {
 		return true, models.Producer{}, nil
