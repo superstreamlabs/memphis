@@ -3300,12 +3300,12 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE tags SET $2 = ARRAY_REMOVE($2, $3) WHERE name = $1`
+	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_REMOVE(` + entityDBList + `, $2) WHERE name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_tag_from_entity", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, tagName, entityDBList, entity_id)
+	_, err = conn.Conn().Query(ctx, stmt.Name, tagName, entity_id)
 	if err != nil {
 		return err
 	}
