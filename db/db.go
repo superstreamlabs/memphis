@@ -300,7 +300,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		type enum NOT NULL DEFAULT 'root',
 		already_logged_in BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
-		created_by_username VARCHAR NOT NULL,
 		avatar_id SERIAL NOT NULL,
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
@@ -3518,7 +3517,7 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 		return []models.Tag{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM tags WHERE $1 = ANY($2)`
+	query := `SELECT * FROM tags AS t WHERE $1 = ANY(t.$2)`
 	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id", query)
 	if err != nil {
 		return []models.Tag{}, err
