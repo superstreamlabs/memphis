@@ -2417,7 +2417,7 @@ func KillConsumersByConnections(connectionIds []string) error {
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE consumers SET is_active = false WHERE connection_id ANY($1)`
+	query := `UPDATE consumers SET is_active = false WHERE connection_id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
 	if err != nil {
 		return err
