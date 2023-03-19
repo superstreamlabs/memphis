@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"math"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -1854,17 +1853,18 @@ func checkCompStatus(components []models.SysComponent) string {
 }
 
 func getDbStorageSize() (float64, float64, error) {
-	var configuration = conf.GetConfig()
-	sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
-		"dbStats": 1,
-	}).DecodeBytes()
-	if err != nil {
-		return 0, 0, err
-	}
+	// var configuration = conf.GetConfig()
+	// sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
+	// 	"dbStats": 1,
+	// }).DecodeBytes()
+	// if err != nil {
+	// 	return 0, 0, err
+	// }
 
-	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
-	totalSize := sbStats.Lookup("fsTotalSize").Double()
-	return dbStorageSize, totalSize, nil
+	// dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
+	// totalSize := sbStats.Lookup("fsTotalSize").Double()
+	// return dbStorageSize, totalSize, nil
+	return 0, 0, nil
 }
 
 func getUnixStorageSize() (float64, error) {
