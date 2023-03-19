@@ -1056,7 +1056,6 @@ func UpsertNewStation(
 }
 
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
-	var stations []models.ExtendedStation
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -1065,7 +1064,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	}
 	defer conn.Release()
 	query := `
-	SELECT s.id, s.name, s.retention_type, s.retention_value, s.storage_type, s.replicas, s.created_by, s.created_by_username, s.created_at, s.updated_at, s.is_deleted, s.schema_name, s.schema_version_number, s.idempotency_window_ms, s.is_native, s.dls_configuration_poison, s.dls_configuration_schemaverse, s.tiered_storage_enabled, COALESCE(p.id, 0),  COALESCE(p.name, ''), COALESCE(p.station_id, 0), COALESCE(p.type, 'application'), COALESCE(p.connection_id, 0), COALESCE(p.created_by, 0), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.id, 0),  COALESCE(c.name, ''), COALESCE(c.station_id, 0), COALESCE(c.type, 'application'), COALESCE(c.connection_id, 0),COALESCE(c.consumers_group, ''),COALESCE(c.max_ack_time_ms, 0), COALESCE(c.created_by, 0), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.max_msg_deliveries, 0), COALESCE(c.start_consume_from_seq, 0), COALESCE(c.last_msgs, 0) 
+	SELECT s.*, COALESCE(p.id, 0),  COALESCE(p.name, ''), COALESCE(p.station_id, 0), COALESCE(p.type, 'application'), COALESCE(p.connection_id, ''), COALESCE(p.created_by, 0), COALESCE(p.created_by_username, ''), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.id, 0),  COALESCE(c.name, ''), COALESCE(c.station_id, 0), COALESCE(c.type, 'application'), COALESCE(c.connection_id, ''),COALESCE(c.consumers_group, ''),COALESCE(c.max_ack_time_ms, 0), COALESCE(c.created_by, 0), COALESCE(c.created_by_username, ''), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.max_msg_deliveries, 0), COALESCE(c.start_consume_from_seq, 0), COALESCE(c.last_msgs, 0) 
 	FROM stations AS s
 	LEFT JOIN producers AS p
 	ON s.id = p.station_id 
@@ -1073,7 +1072,6 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	ON s.id = c.station_id
 	WHERE s.is_deleted = false
 	GROUP BY s.id,p.id,c.id`
-
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details", query)
 	if err != nil {
 		return []models.ExtendedStation{}, err
@@ -1084,8 +1082,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 		return []models.ExtendedStation{}, err
 	}
 	defer rows.Close()
-	producers := []models.Producer{}
-	consumers := []models.Consumer{}
+	stationsMap := map[int]models.ExtendedStation{}
 	for rows.Next() {
 		var stationRes models.Station
 		var producer models.Producer
@@ -1115,6 +1112,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&producer.Type,
 			&producer.ConnectionId,
 			&producer.CreatedBy,
+			&producer.CreatedByUsername,
 			&producer.IsActive,
 			&producer.CreatedAt,
 			&producer.IsDeleted,
@@ -1126,6 +1124,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&consumer.ConsumersGroup,
 			&consumer.MaxAckTimeMs,
 			&consumer.CreatedBy,
+			&consumer.CreatedByUsername,
 			&consumer.IsActive,
 			&consumer.CreatedAt,
 			&consumer.IsDeleted,
@@ -1135,38 +1134,89 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 		); err != nil {
 			return []models.ExtendedStation{}, err
 		}
-		if producer.ID != 0 {
-			producers = append(producers, producer)
+		if _, ok := stationsMap[stationRes.ID]; ok {
+			tempStation := stationsMap[stationRes.ID]
+			if producer.ID != 0 {
+				tempStation.Producers = append(tempStation.Producers, producer)
+			}
+			if consumer.ID != 0 {
+				tempStation.Consumers = append(tempStation.Consumers, consumer)
+			}
+			stationsMap[stationRes.ID] = tempStation
+		} else {
+			producers := []models.Producer{}
+			consumers := []models.Consumer{}
+			if producer.ID != 0 {
+				producers = append(producers, producer)
+			}
+			if consumer.ID != 0 {
+				consumers = append(consumers, consumer)
+			}
+			station := models.ExtendedStation{
+				ID:                          stationRes.ID,
+				Name:                        stationRes.Name,
+				RetentionType:               stationRes.RetentionType,
+				RetentionValue:              stationRes.RetentionValue,
+				StorageType:                 stationRes.StorageType,
+				Replicas:                    stationRes.Replicas,
+				CreatedBy:                   stationRes.CreatedBy,
+				CreatedAt:                   stationRes.CreatedAt,
+				UpdatedAt:                   stationRes.UpdatedAt,
+				IdempotencyWindow:           stationRes.IdempotencyWindow,
+				IsNative:                    stationRes.IsNative,
+				DlsConfigurationPoison:      stationRes.DlsConfigurationPoison,
+				DlsConfigurationSchemaverse: stationRes.DlsConfigurationSchemaverse,
+				Producers:                   producers,
+				Consumers:                   consumers,
+				TieredStorageEnabled:        stationRes.TieredStorageEnabled,
+			}
+			stationsMap[station.ID] = station
 		}
-		if consumer.ID != 0 {
-			consumers = append(consumers, consumer)
-		}
-		station := models.ExtendedStation{
-			ID:                          stationRes.ID,
-			Name:                        stationRes.Name,
-			RetentionType:               stationRes.RetentionType,
-			RetentionValue:              stationRes.RetentionValue,
-			StorageType:                 stationRes.StorageType,
-			Replicas:                    stationRes.Replicas,
-			CreatedBy:                   stationRes.CreatedBy,
-			CreatedAt:                   stationRes.CreatedAt,
-			UpdatedAt:                   stationRes.UpdatedAt,
-			IdempotencyWindow:           stationRes.IdempotencyWindow,
-			IsNative:                    stationRes.IsNative,
-			DlsConfigurationPoison:      stationRes.DlsConfigurationPoison,
-			DlsConfigurationSchemaverse: stationRes.DlsConfigurationSchemaverse,
-			Producers:                   producers,
-			Consumers:                   consumers,
-			TieredStorageEnabled:        stationRes.TieredStorageEnabled,
-		}
-		stations = append(stations, station)
 	}
 	if err := rows.Err(); err != nil {
 		return []models.ExtendedStation{}, err
 	}
-
+	stations := getFilteredExtendedStations(stationsMap)
 	return stations, nil
+}
 
+func getFilteredExtendedStations(stationsMap map[int]models.ExtendedStation) []models.ExtendedStation {
+	stations := []models.ExtendedStation{}
+	for _, station := range stationsMap {
+		producersMap := map[string]models.Producer{}
+		for _, p := range station.Producers {
+			if _, ok := producersMap[p.Name]; ok {
+				if producersMap[p.Name].CreatedAt.Before(p.CreatedAt) {
+					producersMap[p.Name] = p
+				}
+			} else {
+				producersMap[p.Name] = p
+			}
+		}
+		producers := []models.Producer{}
+		for _, p := range producersMap {
+			producers = append(producers, p)
+		}
+
+		consumersMap := map[string]models.Consumer{}
+		for _, c := range station.Consumers {
+			if _, ok := consumersMap[c.Name]; ok {
+				if consumersMap[c.Name].CreatedAt.Before(c.CreatedAt) {
+					consumersMap[c.Name] = c
+				}
+			} else {
+				consumersMap[c.Name] = c
+			}
+		}
+		consumers := []models.Consumer{}
+		for _, c := range consumersMap {
+			consumers = append(consumers, c)
+		}
+		station.Consumers = consumers
+		station.Producers = producers
+		stations = append(stations, station)
+	}
+	return stations
 }
 
 func DeleteStationsByNames(stationNames []string) error {

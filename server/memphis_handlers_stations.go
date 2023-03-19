@@ -579,8 +579,8 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 				stations[i].TieredStorageEnabled = false
 			}
 
-			stations[i].Producers = []models.Producer{}
-			stations[i].Consumers = []models.Consumer{}
+			// stations[i].Producers = []models.Producer{}
+			// stations[i].Consumers = []models.Consumer{}
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
