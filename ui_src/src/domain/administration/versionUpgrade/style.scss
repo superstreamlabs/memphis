@@ -1,18 +1,22 @@
 .version-upgrade-container{
-    position: absolute;
     height: 100%;
     width: 100%;
+    display: flex;
+    position: relative; 
+    flex-direction: column;
+    justify-content: space-evenly;
+    padding-bottom: 15px;
     p{
         margin: 0;
     }
     .banner-section{
         display: flex;
-        margin: 5% 0% 2% 5%;
+        padding-left: 5%;
         align-items:center;
-    
+        height: 30vh;
         .actions{
-            margin-left:5%;
             position: absolute;
+            left: 10%;
             .logo{
                 display: flex;
                 align-items:center;
@@ -31,10 +35,14 @@
                 font-size: 16px;
                 color: #2E2C34;
             }
-            .button-container{
-                margin-top: 10px;
-                button{
-                    border-color: #D1CFF0 !important;
+            .buttons{
+                display: flex;
+                justify-content:space-between;
+                .button-container{
+                    margin-top: 10px;
+                    button{
+                        border-color: #D1CFF0 !important;
+                    }
                 }
             }
         }
@@ -42,9 +50,10 @@
     .feature-list{
         margin-left: 5%;
         display: flex;
-        height: calc(53%);
+        height: calc(100% - 35vh);
         position: relative;
         flex-wrap: wrap;
+        align-content: flex-start;
         gap: 20px;
         overflow: auto;
         .loading{
@@ -75,6 +84,8 @@
         box-shadow: 0px 0px 2px rgba(24, 24, 28, 0.02), 0px 1px 2px rgba(24, 24, 28, 0.06);
         border-radius: 8px;
         align-items:center;
+        position: absolute;
+        top: 0;
         .content{
             p{
                 font-family: 'InterSemiBold';

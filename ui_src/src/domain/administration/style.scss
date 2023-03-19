@@ -8,6 +8,7 @@
         padding-top: 20px;
         padding-left: 30px;
         padding-right: 30px;
+        min-width: 285px;
         .header {
             font-family: 'InterSemiBold';
             font-size: 26px;
@@ -61,6 +62,7 @@
         position: relative;
         height: calc(100% - 40px);
         width: calc(100% - 350px);
+        min-width: 800px;
         top: 20px;
         right: 20px;
         background-color: #ffffff;
