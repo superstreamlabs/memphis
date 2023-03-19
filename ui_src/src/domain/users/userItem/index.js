@@ -52,7 +52,7 @@ function UserItem({ content, handleRemoveUser }) {
                 <UserType userType={content?.user_type} />
             </div>
             <div className="user-creation-date">
-                <p>{parsingDate(content?.creation_date)} </p>
+                <p>{parsingDate(content?.created_at)} </p>
             </div>
             {content?.user_type !== 'root' && (
                 <div className="user-actions">

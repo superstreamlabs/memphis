@@ -341,13 +341,13 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
-                        <OverflowTip text={currentVersion?.created_by_user} maxWidth={'150px'}>
-                            <span>{currentVersion?.created_by_user}</span>
+                        <OverflowTip text={currentVersion?.created_by_username} maxWidth={'150px'}>
+                            <span>{currentVersion?.created_by_username}</span>
                         </OverflowTip>
                     </div>
                     <div className="wrapper">
                         <img src={createdDateIcon} alt="typeIcon" />
-                        <span>{parsingDate(currentVersion?.creation_date)}</span>
+                        <span>{parsingDate(currentVersion?.created_at)}</span>
                     </div>
                 </div>
                 <div className="tags">

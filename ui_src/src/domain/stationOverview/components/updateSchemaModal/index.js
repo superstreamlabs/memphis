@@ -88,7 +88,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
                         <p>Created by:</p>
-                        <span>{activeVersion?.created_by_user}</span>
+                        <span>{activeVersion?.created_by_username}</span>
                     </div>
                 </div>
                 <div className="schema-content">

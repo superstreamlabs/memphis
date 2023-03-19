@@ -63,7 +63,7 @@ const StationsList = () => {
         setisLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_STATIONS}`);
-            res.stations.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+            res.stations.sort((a, b) => new Date(b.station.created_at) - new Date(a.station.created_at));
             dispatch({ type: 'SET_STATION_LIST', payload: res.stations });
             dispatch({ type: 'SET_SCHEMA_FILTERED_LIST', payload: res.stations });
             setTimeout(() => {

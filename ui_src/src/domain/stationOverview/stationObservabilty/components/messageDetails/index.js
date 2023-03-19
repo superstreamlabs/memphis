@@ -120,7 +120,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                         },
                         {
                             name: 'User',
-                            value: data.producer?.created_by_user || ''
+                            value: data.producer?.created_by_username || ''
                         },
                         {
                             name: 'IP',

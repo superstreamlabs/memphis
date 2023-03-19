@@ -79,7 +79,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
                                 <p className="schema-name">{schema?.name}</p>
                             </div>
                             <p className="created-by">
-                                {schema?.type} &#8226; {parsingDate(schema?.creation_date)}
+                                {schema?.type} &#8226; {parsingDate(schema?.created_at)}
                             </p>
                         </Option>
                     );

@@ -49,9 +49,9 @@ const SelectVersion = ({ options, onChange, value }) => {
                                 )}
                             </div>
                             <div className="scheme-details">
-                                <p className="created-by">Created by {option?.created_by_user}</p>
+                                <p className="created-by">Created by {option?.created_by_username}</p>
                                 <FiberManualRecord />
-                                <p className="created-at">{parsingDateWithotTime(option?.creation_date)}</p>
+                                <p className="created-at">{parsingDateWithotTime(option?.created_at)}</p>
                             </div>
                         </Option>
                     );
