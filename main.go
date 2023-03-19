@@ -112,7 +112,6 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 		os.Exit(1)
 	}
 
-
 	err = analytics.InitializeAnalytics()
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
@@ -148,10 +147,10 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000\nBroker: localhost:6666 (client connections)\nREST gateway: localhost:4444 (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:" + os.Getenv("HTTP_PORT") + "\nBroker: localhost:" + os.Getenv("CLIENTS_PORT") + " (client connections)\nREST gateway: localhost:" + os.Getenv("REST_GW_PORT") + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
 	} else if os.Getenv("LOCAL_CLUSTER_ENV") != "" {
 		env = "Local cluster"
-		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:4444 (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + os.Getenv("REST_GW_PORT") + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
 	} else {
 		env = "K8S"
 	}
