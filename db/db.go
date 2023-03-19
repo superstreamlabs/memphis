@@ -675,7 +675,7 @@ func UpdateConncetionsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE connections created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	query := `UPDATE connections SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -879,7 +879,7 @@ func UpdateAuditLogsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE audit_logs SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	query := `UPDATE audit_logs SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_audit_logs_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -1322,12 +1322,12 @@ func UpdateStationsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	query := `UPDATE stations SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_stations_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -1777,7 +1777,7 @@ func UpdateProducersOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	query := `UPDATE stations SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_producers_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -2254,7 +2254,7 @@ func UpdateConsumersOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE consumers SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	query := `UPDATE consumers SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -2374,12 +2374,18 @@ func UpdateSchemasOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE schemas SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	// query := `UPDATE schemas SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	query := ` UPDATE schemas
+	SET created_by_username = CONCAT(created_by_username, '(deleted)')
+	WHERE created_by_username = (
+		SELECT username FROM users WHERE id = $1
+	)
+	AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_schemas_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -3113,8 +3119,7 @@ func DeleteUser(username string) error {
 	}
 	defer conn.Release()
 
-	removeUserQuery := `DELETE FROM users
-	WHERE username = $1`
+	removeUserQuery := `DELETE FROM users WHERE username = $1`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_user", removeUserQuery)
 	if err != nil {
