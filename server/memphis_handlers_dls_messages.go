@@ -418,8 +418,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			}
 
 			if msgType == "schema" {
-				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
-				dlsMsg.Message.Size = size
+				dlsMsg.Message.Size = len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 				if dlsMsg.CreationDate.IsZero() {
 					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
@@ -463,9 +462,10 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		},
-		Message:      dlsMsg.Message,
-		CreationDate: dlsMsg.CreationDate,
-		PoisonedCgs:  poisonedCgs,
+		Message:         dlsMsg.Message,
+		CreationDate:    dlsMsg.CreationDate,
+		PoisonedCgs:     poisonedCgs,
+		ValidationError: dlsMsg.ValidationError,
 	}
 
 	return result, nil
