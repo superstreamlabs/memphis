@@ -2967,7 +2967,7 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users`
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.already_logged_in, s.avatar_id FROM users AS s`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
