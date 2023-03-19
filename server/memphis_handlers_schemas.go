@@ -585,13 +585,13 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 			return
 		}
 		if exist {
-			// DeleteTagsFromSchema(schema.ID)
-			// err := deleteSchemaFromStations(sh.S, schema.Name)
-			// if err != nil {
-			// 	serv.Errorf("RemoveSchema: Schema " + schemaName + ": " + err.Error())
-			// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			// 	return
-			// }
+			DeleteTagsFromSchema(schema.ID)
+			err := deleteSchemaFromStations(sh.S, schema.Name)
+			if err != nil {
+				serv.Errorf("RemoveSchema: Schema " + schemaName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 
 			schemaIds = append(schemaIds, schema.ID)
 		}
