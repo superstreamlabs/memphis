@@ -887,12 +887,12 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 	}
 
-	// err := db.DeleteStationsByNames(stationNames)
-	// if err != nil {
-	// 	serv.Errorf("RemoveStation: " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 	return
-	// }
+	err := db.DeleteStationsByNames(stationNames)
+	if err != nil {
+		serv.Errorf("RemoveStation: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
