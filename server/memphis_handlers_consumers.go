@@ -129,22 +129,27 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
+	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
+	if err != nil {
+		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		serv.Errorf("createConsumerDirectCommon: " + errMsg)
+		return err
+	}
+	if !exist {
+		serv.Errorf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		return err
+	}
+
 	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
+
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedBy)
-		if err != nil {
-			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-			serv.Errorf("createConsumerDirectCommon: " + errMsg)
-			return err
-		}
-
-		_, user, err := db.GetUserByUserId(connection.CreatedBy)
+		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 			serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -201,14 +206,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
-	if err != nil {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
-	}
-
-	_, user, err := db.GetUserByUserId(connection.CreatedBy)
+	newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)

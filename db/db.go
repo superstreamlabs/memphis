@@ -299,6 +299,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		type enum NOT NULL DEFAULT 'root',
 		already_logged_in BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		avatar_id SERIAL NOT NULL,
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
@@ -316,6 +317,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
 		id VARCHAR NOT NULL,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
 		client_address VARCHAR NOT NULL,
@@ -339,6 +341,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
+		created_by_username VARCHAR NOT NULL,
 		PRIMARY KEY (id),
 		UNIQUE(name)
 		);
@@ -368,6 +371,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMP NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
@@ -400,6 +404,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		storage_type enum_storage_type NOT NULL DEFAULT 'file',
 		replicas SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		updated_at TIMESTAMP NOT NULL,
 		is_deleted BOOL NOT NULL,
@@ -446,6 +451,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		type enum_producer_type NOT NULL DEFAULT 'application',
 		connection_id VARCHAR NOT NULL,	
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMP NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
@@ -805,10 +811,11 @@ func InsertConnection(connection models.Connection) error {
 	query := `INSERT INTO connections ( 
 		id,
 		created_by, 
+		created_by_username,
 		is_active, 
 		created_at,
 		client_address) 
-    VALUES($1, $2, $3, $4, $5) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_connection", query)
 	if err != nil {
@@ -818,7 +825,7 @@ func InsertConnection(connection models.Connection) error {
 	createdAt := time.Now()
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
-		connection.CreatedBy, connection.IsActive, createdAt, connection.ClientAddress)
+		connection.CreatedBy, connection.CreatedByUserName, connection.IsActive, createdAt, connection.ClientAddress)
 	if err != nil {
 		return err
 	}
@@ -866,14 +873,6 @@ func UpdateConnection(connectionId string, isActive bool) error {
 }
 
 func UpdateConncetionsOfDeletedUser(userId int) error {
-	// _, err := connectionsCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"created_by_user": username},
-	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
@@ -1130,10 +1129,10 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	return true, stations[0], nil
 }
 
-// TODO: username should be int
 func UpsertNewStation(
 	stationName string,
 	userId int,
+	username string,
 	retentionType string,
 	retentionValue int,
 	storageType string,
@@ -1159,6 +1158,7 @@ func UpsertNewStation(
 		storage_type, 
 		replicas, 
 		created_by, 
+		created_by_username,
 		created_at, 
 		updated_at, 
 		is_deleted, 
@@ -1170,7 +1170,7 @@ func UpsertNewStation(
 		dls_configuration_schemaverse,
 		tiered_storage_enabled
 		) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_station", query)
 	if err != nil {
@@ -1182,7 +1182,7 @@ func UpsertNewStation(
 	var stationId int
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		stationName, retentionType, retentionValue, storageType, replicas, userId, createAt, updatedAt,
+		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
 		false, schemaDetails.SchemaName, schemaDetails.VersionNumber, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
 	if err != nil {
 		return models.Station{}, 0, err
@@ -1215,6 +1215,7 @@ func UpsertNewStation(
 		ID:                          stationId,
 		Name:                        stationName,
 		CreatedBy:                   userId,
+		CreatedByUsername:           username,
 		CreatedAt:                   createAt,
 		IsDeleted:                   false,
 		RetentionType:               retentionType,
@@ -1682,7 +1683,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func UpsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int) (models.Producer, int64, error) {
+func UpsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string) (models.Producer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1697,11 +1698,12 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 		station_id, 
 		connection_id,
 		created_by, 
+		created_by_username,
 		is_active, 
 		is_deleted, 
 		created_at, 
 		type) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_producer", query)
 	if err != nil {
@@ -1713,7 +1715,7 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 	isActive := true
 	isDeleted := false
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, isActive, isDeleted, createAt, producerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType)
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
@@ -1743,15 +1745,16 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newProducer := models.Producer{
-		ID:           producerId,
-		Name:         name,
-		StationId:    stationId,
-		Type:         producerType,
-		ConnectionId: connectionIdObj,
-		CreatedBy:    createdByUser,
-		IsActive:     isActive,
-		CreatedAt:    time.Now(),
-		IsDeleted:    isDeleted,
+		ID:                producerId,
+		Name:              name,
+		StationId:         stationId,
+		Type:              producerType,
+		ConnectionId:      connectionIdObj,
+		CreatedBy:         createdByUser,
+		CreatedByUsername: createdByUsername,
+		IsActive:          isActive,
+		CreatedAt:         time.Now(),
+		IsDeleted:         isDeleted,
 	}
 	return newProducer, rowsAffected, nil
 }
@@ -1979,7 +1982,8 @@ func UpsertNewConsumer(name string,
 	stationId int,
 	consumerType string,
 	connectionIdObj string,
-	createdByUser int,
+	createdBy int,
+	createdByUserName string,
 	cgName string,
 	maxAckTime int,
 	maxMsgDeliveries int,
@@ -2001,6 +2005,7 @@ func UpsertNewConsumer(name string,
 		consumers_group,
 		max_ack_time_ms,
 		created_by,
+		created_by_username,
 		is_active, 
 		is_deleted, 
 		created_at,
@@ -2008,7 +2013,7 @@ func UpsertNewConsumer(name string,
 		start_consume_from_seq,
 		last_msgs,
 		type) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_consumer", query)
@@ -2022,7 +2027,7 @@ func UpsertNewConsumer(name string,
 	isDeleted := false
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdByUser, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUserName, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
 	if err != nil {
 		return models.Consumer{}, 0, err
 	}
@@ -2058,7 +2063,8 @@ func UpsertNewConsumer(name string,
 		StationId:           stationId,
 		Type:                consumerType,
 		ConnectionId:        connectionIdObj,
-		CreatedBy:           createdByUser,
+		CreatedBy:           createdBy,
+		CreatedByUserName:       createdByUserName,
 		ConsumersGroup:      cgName,
 		IsActive:            isActive,
 		CreatedAt:           time.Now(),
@@ -2282,7 +2288,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.consumers_group = $1
 			AND c.station_id = $2
 		ORDER BY
-			c.creation_date DESC
+			c.created_at DESC
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumer_group_members", query)
 	if err != nil {
@@ -2626,7 +2632,7 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	          LEFT JOIN schema_versions AS sv ON s.id = sv.schema_id AND sv.version_number = 1
 	          LEFT JOIN schema_versions AS asv ON s.id = asv.schema_id AND asv.active = true
 	          WHERE asv.id IS NOT NULL
-	          ORDER BY sv.creation_date DESC`
+	          ORDER BY sv.created_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details", query)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
@@ -2697,7 +2703,7 @@ func FindAndDeleteSchema(schemaIds []int) error {
 	return nil
 }
 
-func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
+func UpsertNewSchema(schemaName string, schemaType string, createdByUsername string) (models.Schema, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2709,8 +2715,9 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 
 	query := `INSERT INTO schemas ( 
 		name, 
-		type) 
-    VALUES($1, $2) RETURNING id`
+		type,
+		created_by_username) 
+    VALUES($1, $2, $3) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema", query)
 	if err != nil {
@@ -2718,7 +2725,7 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 	}
 
 	var schemaId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
@@ -2748,9 +2755,10 @@ func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64
 
 	rowsAffected := rows.CommandTag().RowsAffected()
 	newSchema := models.Schema{
-		ID:   schemaId,
-		Name: schemaName,
-		Type: schemaType,
+		ID:                schemaId,
+		Name:              schemaName,
+		Type:              schemaType,
+		CreatedByUserName: createdByUsername,
 	}
 	return newSchema, rowsAffected, nil
 }

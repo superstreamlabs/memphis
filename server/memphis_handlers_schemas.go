@@ -440,7 +440,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
-	newSchema, rowsUpdated, err := db.UpsertNewSchema(schemaName, schemaType)
+	newSchema, rowsUpdated, err := db.UpsertNewSchema(schemaName, schemaType, user.Username)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

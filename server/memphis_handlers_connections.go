@@ -134,9 +134,7 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		} else {
-			//TODO: pass username instead of userNameId
-			userNameId := 1
-			err := connectionsHandler.CreateConnection(userNameId, client.RemoteAddress().String(), objID)
+			err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), objID, user.Username)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
@@ -166,33 +164,32 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string, connectionId string) error {
-	// username = strings.ToLower(username)
-	// exist, _, err := db.GetUserByUsername(username)
-	// if err != nil {
-	// 	errMsg := "User " + username + ": " + err.Error()
-	// 	serv.Errorf("CreateConnection error: " + errMsg)
-	// 	return err
-	// }
-	// if !exist {
-	// 	errMsg := "User " + username + " does not exist"
-	// 	return errors.New(errMsg)
-	// }
-
-	newConnection := models.Connection{
-		ID:            connectionId,
-		CreatedBy:     username,
-		IsActive:      true,
-		CreatedAt:     time.Now(),
-		ClientAddress: clientAddress,
+func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string, connectionId string, createdByUsername string) error {
+	createdByUsername = strings.ToLower(createdByUsername)
+	exist, _, err := db.GetUserByUsername(createdByUsername)
+	if err != nil {
+		errMsg := "User " + createdByUsername + ": " + err.Error()
+		serv.Errorf("CreateConnection error: " + errMsg)
+		return err
+	}
+	if !exist {
+		errMsg := "User " + createdByUsername + " does not exist"
+		return errors.New(errMsg)
 	}
 
-	//TODO: don't forget remove this line
-	newConnection.CreatedBy = 1
-	err := db.InsertConnection(newConnection)
+	newConnection := models.Connection{
+		ID:                connectionId,
+		CreatedBy:         username,
+		CreatedByUserName: createdByUsername,
+		IsActive:          true,
+		CreatedAt:         time.Now(),
+		ClientAddress:     clientAddress,
+	}
+
+	err = db.InsertConnection(newConnection)
 	if err != nil {
-		// errMsg := "User " + username + ": " + err.Error()
-		// serv.Errorf("CreateConnection error: " + errMsg)
+		errMsg := "User " + createdByUsername + ": " + err.Error()
+		serv.Errorf("CreateConnection error: " + errMsg)
 		return err
 	}
 	return nil

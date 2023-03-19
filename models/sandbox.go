@@ -30,21 +30,6 @@ type SandboxUser struct {
 	SkipGetStarted  bool      `json:"skip_get_started" bson:"skip_get_started"`
 }
 
-type SandboxUserPg struct {
-	ID              int       `json:"id"`
-	Username        string    `json:"username"`
-	Email           string    `json:"email"`
-	FirstName       string    `json:"first_name"`
-	LastName        string    `json:"last_name"`
-	Password        string    `json:"password"`
-	UserType        string    `json:"user_type"`
-	AlreadyLoggedIn bool      `json:"already_logged_in"`
-	CreatedAt       time.Time `json:"created_at"`
-	AvatarId        int       `json:"avatar_id"`
-	ProfilePic      string    `json:"profile_pic"`
-	SkipGetStarted  bool      `json:"skip_get_started"`
-}
-
 type SandboxLoginSchema struct {
 	LoginType string `json:"login_type" binding:"required"`
 	Token     string `json:"token" binding:"required"`

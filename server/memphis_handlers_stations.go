@@ -315,7 +315,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		serv.Warnf("createStationDirect: " + err.Error())
 		respondWithErr(s, reply, err)
 	}
-	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, retentionType, retentionValue, storageType, replicas, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -398,7 +398,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		StorageType:          station.StorageType,
 		Replicas:             station.Replicas,
 		CreatedBy:            station.CreatedBy,
-		CreationDate:         station.CreatedAt,
+		CreatedAt:            station.CreatedAt,
 		LastUpdate:           station.UpdatedAt,
 		IsDeleted:            station.IsDeleted,
 		IdempotencyWindow:    station.IdempotencyWindow,
@@ -760,7 +760,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -815,14 +815,14 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
-			"id":              newStation.ID,
-			"name":            stationName.Ext(),
-			"retention_type":  retentionType,
-			"retention_value": body.RetentionValue,
-			"storage_type":    storageTypeForResponse,
-			"replicas":        body.Replicas,
-			// "created_by_user":               user.Username,
-			"creation_date":                 time.Now(),
+			"id":                            newStation.ID,
+			"name":                          stationName.Ext(),
+			"retention_type":                retentionType,
+			"retention_value":               body.RetentionValue,
+			"storage_type":                  storageTypeForResponse,
+			"replicas":                      body.Replicas,
+			"created_by_username":           user.Username,
+			"created_at":                    time.Now(),
 			"last_update":                   time.Now(),
 			"is_deleted":                    false,
 			"schema":                        schemaDetailsResponse,
@@ -834,14 +834,14 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	} else {
 		var emptySchemaDetailsResponse struct{}
 		c.IndentedJSON(200, gin.H{
-			"id":              newStation.ID,
-			"name":            stationName.Ext(),
-			"retention_type":  retentionType,
-			"retention_value": body.RetentionValue,
-			"storage_type":    storageTypeForResponse,
-			"replicas":        body.Replicas,
-			// "created_by_user":               user.Username,
-			"creation_date":                 time.Now(),
+			"id":                            newStation.ID,
+			"name":                          stationName.Ext(),
+			"retention_type":                retentionType,
+			"retention_value":               body.RetentionValue,
+			"storage_type":                  storageTypeForResponse,
+			"replicas":                      body.Replicas,
+			"created_by_username":           user.Username,
+			"created_at":                    time.Now(),
 			"last_update":                   time.Now(),
 			"is_deleted":                    false,
 			"schema":                        emptySchemaDetailsResponse,

@@ -730,12 +730,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	// err = updateDeletedUserResources(userToRemove)
-	// if err != nil {
-	// 	serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
-	// 	c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-	// 	return
-	// }
+	err = updateDeletedUserResources(userToRemove)
+	if err != nil {
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
 
 	err = db.DeleteUser(username)
 	if err != nil {
@@ -817,7 +817,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		"id":                user.ID,
 		"username":          user.Username,
 		"user_type":         user.UserType,
-		"creation_date":     user.CreatedAt,
+		"created_at":        user.CreatedAt,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         avatarId,
 	})

@@ -91,7 +91,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedBy)
+		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 			return false, false, err
@@ -135,7 +135,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
 		return false, false, errors.New("memphis: " + errMsg)
 	}
-	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy)
+	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy, user.Username)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: " + err.Error())
 		return false, false, err

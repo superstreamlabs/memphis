@@ -16,9 +16,10 @@ import (
 )
 
 type Schema struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	CreatedByUserName string `json:"created_by_username"`
 }
 
 type SchemaVersion struct {

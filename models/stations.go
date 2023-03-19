@@ -47,6 +47,7 @@ type Station struct {
 	StorageType                 string    `json:"storage_type"`
 	Replicas                    int       `json:"replicas"`
 	CreatedBy                   int       `json:"created_by"`
+	CreatedByUsername           string    `json:"created_by_username"`
 	CreatedAt                   time.Time `json:"created_at"`
 	UpdatedAt                   time.Time `json:"updated_at"`
 	IsDeleted                   bool      `json:"is_deleted"`
@@ -67,7 +68,7 @@ type GetStationResponseSchema struct {
 	StorageType          string           `json:"storage_type" bson:"storage_type"`
 	Replicas             int              `json:"replicas" bson:"replicas"`
 	CreatedBy            int              `json:"created_by" bson:"created_by"`
-	CreationDate         time.Time        `json:"creation_date" bson:"creation_date"`
+	CreatedAt            time.Time        `json:"created_at" bson:"created_at"`
 	LastUpdate           time.Time        `json:"last_update" bson:"last_update"`
 	IsDeleted            bool             `json:"is_deleted" bson:"is_deleted"`
 	Tags                 []CreateTag      `json:"tags"`

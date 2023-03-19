@@ -16,15 +16,16 @@ import (
 )
 
 type Producer struct {
-	ID           int       `json:"id"`
-	Name         string    `json:"name"`
-	StationId    int       `json:"station_id"`
-	Type         string    `json:"type"`
-	ConnectionId string    `json:"connection_id"`
-	CreatedBy    int       `json:"created_by"`
-	IsActive     bool      `json:"is_active"`
-	CreatedAt    time.Time `json:"created_at"`
-	IsDeleted    bool      `json:"is_deleted"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	StationId         int       `json:"station_id"`
+	Type              string    `json:"type"`
+	ConnectionId      string    `json:"connection_id"`
+	CreatedBy         int       `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
+	IsActive          bool      `json:"is_active"`
+	CreatedAt         time.Time `json:"created_at"`
+	IsDeleted         bool      `json:"is_deleted"`
 }
 
 type ExtendedProducer struct {

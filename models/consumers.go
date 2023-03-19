@@ -24,6 +24,7 @@ type Consumer struct {
 	ConsumersGroup      string    `json:"consumers_group"`
 	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
 	CreatedBy           int       `json:"created_by"`
+	CreatedByUserName   string    `json:"created_by_username"`
 	IsActive            bool      `json:"is_active"`
 	CreatedAt           time.Time `json:"created_at" `
 	IsDeleted           bool      `json:"is_deleted"`
