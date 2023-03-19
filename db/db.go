@@ -1081,6 +1081,9 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	if err != nil {
 		return []models.ExtendedStation{}, err
 	}
+	if err == pgx.ErrNoRows {
+		return []models.ExtendedStation{}, nil
+	}
 	defer rows.Close()
 	stationsMap := map[int]models.ExtendedStation{}
 	for rows.Next() {
@@ -2463,7 +2466,7 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 		return []models.ExtendedSchema{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.name, s.type, sv.created_by, sv.created_at, asv.version_number
+	query := `SELECT s.id, s.name, s.type, sv.created_by, s.created_by_username, sv.created_at, asv.version_number
 	          FROM schemas AS s
 	          LEFT JOIN schema_versions AS sv ON s.id = sv.schema_id AND sv.version_number = 1
 	          LEFT JOIN schema_versions AS asv ON s.id = asv.schema_id AND asv.active = true
@@ -2478,10 +2481,18 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
+	if err == pgx.ErrNoRows {
+		return []models.ExtendedSchema{}, nil
+	}
 	defer rows.Close()
-	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedSchema])
-	if err != nil {
-		return []models.ExtendedSchema{}, err
+	schemas := []models.ExtendedSchema{}
+	for rows.Next() {
+		var sc models.ExtendedSchema
+		err := rows.Scan(&sc.ID, &sc.Name, &sc.Type, &sc.CreatedBy, &sc.CreatedByUsername, &sc.CreatedAt, &sc.ActiveVersionNumber)
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+		schemas = append(schemas, sc)
 	}
 	if len(schemas) == 0 {
 		return []models.ExtendedSchema{}, nil
