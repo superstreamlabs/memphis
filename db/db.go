@@ -281,6 +281,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		station_name VARCHAR NOT NULL,
 		message TEXT NOT NULL,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_created_by
@@ -984,14 +985,16 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	message := auditLog[0].Message
 	createdBy := auditLog[0].CreatedBy
 	createdAt := auditLog[0].CreatedAt
+	createByUserName := auditLog[0].CreateByUserName
 
 	query := `INSERT INTO audit_logs ( 
 		station_name, 
 		message, 
 		created_by,
+		created_by_username,
 		created_at
 		) 
-    VALUES($1, $2, $3, $4) RETURNING id`
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_audit_logs", query)
 	if err != nil {
@@ -1000,7 +1003,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 
 	newAuditLog := models.AuditLog{}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		stationName, message, createdBy, createdAt)
+		stationName, message, createdBy, createByUserName, createdAt)
 	if err != nil {
 		return err
 	}
@@ -2064,7 +2067,7 @@ func UpsertNewConsumer(name string,
 		Type:                consumerType,
 		ConnectionId:        connectionIdObj,
 		CreatedBy:           createdBy,
-		CreatedByUserName:       createdByUserName,
+		CreatedByUserName:   createdByUserName,
 		ConsumersGroup:      cgName,
 		IsActive:            isActive,
 		CreatedAt:           time.Now(),
