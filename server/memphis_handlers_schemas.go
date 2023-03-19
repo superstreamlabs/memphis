@@ -461,14 +461,14 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		return
 	}
 
-	// if len(body.Tags) > 0 {
-	// 	err = AddTagsToEntity(body.Tags, "schema", newSchema.ID)
-	// 	if err != nil {
-	// 		serv.Errorf("CreateNewSchema: Failed creating tag at schema " + schemaName + ": " + err.Error())
-	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 		return
-	// 	}
-	// }
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID)
+		if err != nil {
+			serv.Errorf("CreateNewSchema: Failed creating tag at schema " + schemaName + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
