@@ -1854,17 +1854,28 @@ func checkCompStatus(components []models.SysComponent) string {
 
 func getDbStorageSize() (float64, float64, error) {
 	// var configuration = conf.GetConfig()
-	// sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
-	// 	"dbStats": 1,
-	// }).DecodeBytes()
-	// if err != nil {
-	// 	return 0, 0, err
-	// }
+	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := db.PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer conn.Release()
+	var dbStorageSize, totalSize float64
+	query := `SELECT pg_database_size($1) AS db_size,
+	(SELECT coalesce(sum(pg_total_relation_size(relid)), 0) 
+	 FROM pg_catalog.pg_statio_all_tables) AS total_size`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_using_schema", query)
+	if err != nil {
+		return 0, 0, err
+	}
+	// TODO: change "memphis" to configuration.DB_NAME
+	err = conn.Conn().QueryRow(ctx, stmt.Name, "memphis").Scan(&dbStorageSize, &totalSize)
+	if err != nil {
+		return 0, 0, err
+	}
 
-	// dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
-	// totalSize := sbStats.Lookup("fsTotalSize").Double()
-	// return dbStorageSize, totalSize, nil
-	return 0, 0, nil
+	return dbStorageSize, totalSize, nil
 }
 
 func getUnixStorageSize() (float64, error) {
