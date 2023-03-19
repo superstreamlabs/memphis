@@ -111,7 +111,7 @@ const S3Integration = ({ close, value }) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATIONL, { ...newFormFields });
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
-            closeModal(date);
+            closeModal(data);
         } catch (err) {
             setLoadingSubmit(false);
         }
@@ -121,7 +121,7 @@ const S3Integration = ({ close, value }) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, { ...formFields });
             dispatch({ type: 'ADD_INTEGRATION', payload: data });
-            closeModal(date);
+            closeModal(data);
         } catch (err) {
             setLoadingSubmit(false);
         }
