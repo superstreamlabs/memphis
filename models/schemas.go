@@ -19,7 +19,7 @@ type Schema struct {
 	ID                int    `json:"id"`
 	Name              string `json:"name"`
 	Type              string `json:"type"`
-	CreatedByUserName string `json:"created_by_username"`
+	CreatedByUsername string `json:"created_by_username"`
 }
 
 type SchemaVersion struct {
@@ -47,6 +47,7 @@ type ExtendedSchema struct {
 	Name                string      `json:"name"`
 	Type                string      `json:"type"`
 	CreatedBy           int         `json:"created_by"`
+	CreatedByUsername   string      `json:"created_by_username"`
 	CreatedAt           time.Time   `json:"created_at"`
 	ActiveVersionNumber int         `json:"active_version_number" bson:"version_number"`
 	Used                bool        `json:"used"`

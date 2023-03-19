@@ -16,8 +16,8 @@ import (
 	"memphis/db"
 	"strings"
 
+	"github.com/gofrs/uuid"
 	"github.com/posthog/posthog-go"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type EventParam struct {
@@ -33,8 +33,11 @@ var AnalyticsClient posthog.Client
 func InitializeAnalytics() error {
 	exist, deployment, err := db.GetSystemKey("deployment_id")
 	if !exist {
-		deploymentId = primitive.NewObjectID().Hex()
-
+		uid, err := uuid.NewV4()
+		if err != nil {
+			return err
+		}
+		deploymentId = uid.String()
 		err = db.InsertSystemKey("deployment_id", deploymentId)
 		if err != nil {
 			return err

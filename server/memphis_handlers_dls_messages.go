@@ -145,13 +145,13 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	id := GetDlsMsgId(stationName.Intern(), int(messageSeq), producedByHeader, poisonMessageContent.Time.String())
 	pmMessage := models.DlsMessage{
-		ID:           id,
-		StationName:  stationName.Ext(),
-		MessageSeq:   int(messageSeq),
-		Producer:     producerDetails,
-		PoisonedCg:   poisonedCg,
-		Message:      messagePayload,
-		CreationDate: time.Now(),
+		ID:          id,
+		StationName: stationName.Ext(),
+		MessageSeq:  int(messageSeq),
+		Producer:    producerDetails,
+		PoisonedCg:  poisonedCg,
+		Message:     messagePayload,
+		CreatedAt:   time.Now(),
 	}
 	internalCgName := replaceDelimiters(cgName)
 	poisonSubjectName := GetDlsSubject("poison", stationName.Intern(), id, internalCgName)
@@ -283,10 +283,10 @@ cleanup:
 			if _, value := idCheck[msgId]; !value {
 				idCheck[msgId] = true
 				message := dlsMsg.Message
-				if dlsMsg.CreationDate.IsZero() {
+				if dlsMsg.CreatedAt.IsZero() {
 					message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
-					message.TimeSent = dlsMsg.CreationDate
+					message.TimeSent = dlsMsg.CreatedAt
 				}
 				message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
 				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: message})
@@ -417,10 +417,10 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			if msgType == "schema" {
 				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 				dlsMsg.Message.Size = size
-				if dlsMsg.CreationDate.IsZero() {
+				if dlsMsg.CreatedAt.IsZero() {
 					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
-					dlsMsg.Message.TimeSent = dlsMsg.CreationDate
+					dlsMsg.Message.TimeSent = dlsMsg.CreatedAt
 				}
 			}
 
@@ -447,9 +447,9 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		},
-		Message:      dlsMsg.Message,
-		CreationDate: dlsMsg.CreationDate,
-		PoisonedCgs:  poisonedCgs,
+		Message:     dlsMsg.Message,
+		CreatedAt:   dlsMsg.CreatedAt,
+		PoisonedCgs: poisonedCgs,
 	}
 
 	return result, nil

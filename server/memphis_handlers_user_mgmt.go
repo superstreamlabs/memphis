@@ -116,6 +116,11 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
+	err = db.UpdateAuditLogsOfDeletedUser(user.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -159,7 +164,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["user_id"] = u.ID
 		atClaims["username"] = u.Username
 		atClaims["user_type"] = u.UserType
-		atClaims["creation_date"] = u.CreationDate
+		atClaims["creation_date"] = u.CreatedAt
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
@@ -387,43 +392,43 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		exist, sandboxUser, err := IsSandboxUserExist(username)
-		if exist {
-			if err != nil {
-				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+		// exist, sandboxUser, err := IsSandboxUserExist(username)
+		// if exist {
+		// 	if err != nil {
+		// 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 		return
+		// 	}
 
-			token, refreshToken, err := CreateTokens(sandboxUser)
-			if err != nil {
-				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			domain := ""
-			secure := true
-			c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-			c.IndentedJSON(200, gin.H{
-				"jwt":                     token,
-				"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-				"user_id":                 sandboxUser.ID,
-				"username":                sandboxUser.Username,
-				"user_type":               sandboxUser.UserType,
-				"creation_date":           sandboxUser.CreationDate,
-				"already_logged_in":       sandboxUser.AlreadyLoggedIn,
-				"avatar_id":               sandboxUser.AvatarId,
-				"send_analytics":          true,
-				"env":                     "K8S",
-				"namespace":               configuration.K8S_NAMESPACE,
-				"skip_get_started":        sandboxUser.SkipGetStarted,
-				"broker_host":             BROKER_HOST,
-				"rest_gw_host":            REST_GW_HOST,
-				"ui_host":                 UI_HOST,
-				"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-			})
-			return
-		}
+		// 	token, refreshToken, err := CreateTokens(sandboxUser)
+		// 	if err != nil {
+		// 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 		return
+		// 	}
+		// 	domain := ""
+		// 	secure := true
+		// 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+		// 	c.IndentedJSON(200, gin.H{
+		// 		"jwt":                     token,
+		// 		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		// 		"user_id":                 sandboxUser.ID,
+		// 		"username":                sandboxUser.Username,
+		// 		"user_type":               sandboxUser.UserType,
+		// 		"creation_date":           sandboxUser.CreationDate,
+		// 		"already_logged_in":       sandboxUser.AlreadyLoggedIn,
+		// 		"avatar_id":               sandboxUser.AvatarId,
+		// 		"send_analytics":          true,
+		// 		"env":                     "K8S",
+		// 		"namespace":               configuration.K8S_NAMESPACE,
+		// 		"skip_get_started":        sandboxUser.SkipGetStarted,
+		// 		"broker_host":             BROKER_HOST,
+		// 		"rest_gw_host":            REST_GW_HOST,
+		// 		"ui_host":                 UI_HOST,
+		// 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		// 	})
+		// 	return
+		// }
 	}
 
 	token, refreshToken, err := CreateTokens(user)
@@ -883,9 +888,9 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

@@ -33,7 +33,7 @@ type MessageDetails struct {
 	MessageSeq   int               `json:"message_seq" bson:"message_seq"`
 	ProducedBy   string            `json:"produced_by" bson:"produced_by"`
 	Data         string            `json:"data" bson:"data"`
-	TimeSent     time.Time         `json:"creation_date" bson:"creation_date"`
+	TimeSent     time.Time         `json:"created_at" bson:"created_at"`
 	ConnectionId string            `json:"connection_id" bson:"connection_id"`
 	Size         int               `json:"size" bson:"size"`
 	Headers      map[string]string `json:"headers" bson:"headers"`
@@ -67,7 +67,8 @@ type GetStationResponseSchema struct {
 	RetentionValue       int              `json:"retention_value" bson:"retention_value"`
 	StorageType          string           `json:"storage_type" bson:"storage_type"`
 	Replicas             int              `json:"replicas" bson:"replicas"`
-	CreatedBy            int              `json:"created_by" bson:"created_by"`
+	CreatedBy            int              `json:"created_by"`
+	CreatedByUsername    string           `json:"created_by_username"`
 	CreatedAt            time.Time        `json:"created_at" bson:"created_at"`
 	LastUpdate           time.Time        `json:"last_update" bson:"last_update"`
 	IsDeleted            bool             `json:"is_deleted" bson:"is_deleted"`

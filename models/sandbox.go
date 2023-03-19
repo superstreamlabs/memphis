@@ -24,7 +24,7 @@ type SandboxUser struct {
 	Password        string    `json:"password" bson:"password"`
 	UserType        string    `json:"user_type" bson:"user_type"`
 	AlreadyLoggedIn bool      `json:"already_logged_in" bson:"already_logged_in"`
-	CreationDate    time.Time `json:"creation_date" bson:"creation_date"`
+	CreatedAt       time.Time `json:"created_at" bson:"created_at"`
 	AvatarId        int       `json:"avatar_id" bson:"avatar_id"`
 	ProfilePic      string    `json:"profile_pic" bson:"profile_pic"`
 	SkipGetStarted  bool      `json:"skip_get_started" bson:"skip_get_started"`

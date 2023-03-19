@@ -84,9 +84,9 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)

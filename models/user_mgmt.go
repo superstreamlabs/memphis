@@ -82,13 +82,13 @@ type FilteredGenericUser struct {
 	ID              int       `json:"id" bson:"_id"`
 	Username        string    `json:"username" bson:"username"`
 	UserType        string    `json:"user_type" bson:"user_type"`
-	CreationDate    time.Time `json:"creation_date" bson:"creation_date"`
+	CreatedAt       time.Time `json:"created_at" bson:"created_at"`
 	AlreadyLoggedIn bool      `json:"already_logged_in" bson:"already_logged_in"`
 	AvatarId        int       `json:"avatar_id" bson:"avatar_id"`
 }
 
 type FilteredApplicationUser struct {
-	ID           int       `json:"id" bson:"_id"`
-	Username     string    `json:"username" bson:"username"`
-	CreationDate time.Time `json:"creation_date" bson:"creation_date"`
+	ID        int       `json:"id" bson:"_id"`
+	Username  string    `json:"username" bson:"username"`
+	CreatedAt time.Time `json:"created_at" bson:"created_at"`
 }

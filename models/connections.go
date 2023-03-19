@@ -18,7 +18,7 @@ import (
 type Connection struct {
 	ID                string    `json:"id"`
 	CreatedBy         int       `json:"created_by"`
-	CreatedByUserName string    `json:"created_by_username"`
+	CreatedByUsername string    `json:"created_by_username"`
 	IsActive          bool      `json:"is_active"`
 	CreatedAt         time.Time `json:"created_at"`
 	ClientAddress     string    `json:"client_address"`

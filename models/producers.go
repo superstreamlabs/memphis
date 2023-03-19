@@ -29,16 +29,17 @@ type Producer struct {
 }
 
 type ExtendedProducer struct {
-	ID            int       `json:"id"`
-	Name          string    `json:"name"`
-	Type          string    `json:"type"`
-	ConnectionId  string    `json:"connection_id"`
-	CreatedBy     string    `json:"created_by"`
-	CreatedAt     time.Time `json:"created_at"`
-	StationName   string    `json:"station_name"`
-	IsActive      bool      `json:"is_active"`
-	IsDeleted     bool      `json:"is_deleted"`
-	ClientAddress string    `json:"client_address"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	Type              string    `json:"type"`
+	ConnectionId      string    `json:"connection_id"`
+	CreatedBy         int       `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
+	CreatedAt         time.Time `json:"created_at"`
+	StationName       string    `json:"station_name"`
+	IsActive          bool      `json:"is_active"`
+	IsDeleted         bool      `json:"is_deleted"`
+	ClientAddress     string    `json:"client_address"`
 }
 
 type GetAllProducersByStationSchema struct {

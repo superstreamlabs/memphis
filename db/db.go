@@ -46,219 +46,17 @@ type logger interface {
 	Errorf(string, ...interface{})
 }
 
-// type DbInstance struct {
-// 	Client *mongo.Client
-// 	Ctx    context.Context
-// 	Cancel context.CancelFunc
-// }
-
 type DbPostgreSQLInstance struct {
 	Client *pgxpool.Pool
 	Ctx    context.Context
 	Cancel context.CancelFunc
 }
 
-// func InitializeDbConnection(l logger) (DbInstance, error) {
-// 	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
-
-// 	var clientOptions *options.ClientOptions
-// 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-// 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
-// 	} else {
-// 		auth := options.Credential{
-// 			Username: configuration.MONGO_USER,
-// 			Password: configuration.MONGO_PASS,
-// 		}
-// 		if !configuration.EXTERNAL_MONGO {
-// 			auth.AuthSource = configuration.DB_NAME
-// 		}
-
-// 		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
-// 	}
-
-// 	client, err := mongo.Connect(ctx, clientOptions)
-// 	if err != nil {
-// 		cancel()
-// 		return DbInstance{}, err
-// 	}
-
-// 	err = client.Ping(ctx, nil)
-// 	if err != nil {
-// 		cancel()
-// 		return DbInstance{}, err
-// 	}
-// 	usersCollection = GetCollection("users", client)
-// 	imagesCollection = GetCollection("images", client)
-// 	stationsCollection = GetCollection("stations", client)
-// 	connectionsCollection = GetCollection("connections", client)
-// 	producersCollection = GetCollection("producers", client)
-// 	consumersCollection = GetCollection("consumers", client)
-// 	systemKeysCollection = GetCollection("system_keys", client)
-// 	auditLogsCollection = GetCollection("audit_logs", client)
-// 	tagsCollection = GetCollection("tags", client)
-// 	schemasCollection = GetCollection("schemas", client)
-// 	schemaVersionCollection = GetCollection("schema_versions", client)
-// 	sandboxUsersCollection = GetCollection("sandbox_users", client)
-// 	integrationsCollection = GetCollection("integrations", client)
-// 	configurationsCollection = GetCollection("configurations", client)
-
-// 	l.Noticef("Established connection with the DB")
-// 	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
-// }
-
-// func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
-// 	dbName := configuration.DB_NAME
-// 	if configuration.EXTERNAL_MONGO {
-// 		dbName = "memphis-db"
-// 	}
-// 	var collection *mongo.Collection = dbClient.Database(dbName).Collection(collectionName)
-// 	return collection
-// }
-
-// func Close(dbi DbInstance, l logger) {
-// 	defer dbi.Cancel()
-// 	defer func() {
-// 		if err := dbi.Client.Disconnect(dbi.Ctx); err != nil {
-// 			l.Errorf("Failed to close Mongodb client: " + err.Error())
-// 		}
-// 	}()
-// }
-
 func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
 	defer db.Cancel()
 	defer func() {
 		db.Client.Close()
 	}()
-}
-
-func JoinTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-	query := `SELECT users
-    FROM users AS q
-    JOIN tags AS a ON q.id = a.users
-    WHERE q.id = $1`
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer conn.Release()
-	stmt, err := conn.Conn().Prepare(ctx, "join", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, 1)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func InsertToTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		cancelfunc()
-		return err
-	}
-	defer conn.Release()
-
-	query := `INSERT INTO users (username, password, type, already_logged_in, created_at, avatar_id, full_name, subscription, skip_get_started)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9);`
-	_, err = conn.Conn().Prepare(ctx, "insert into", query)
-	if err != nil {
-		return err
-	}
-
-	// createdAt := time.Now()
-	_, err = conn.Conn().Exec(ctx, "insert into", "root", "memphis", "root", true, "2005-05-13 07:15:31.123456789", 1, "ttd", true, true)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	query := `SELECT username FROM users WHERE username = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "select_from", query)
-	if err != nil {
-		return err
-	}
-	var username string
-	rows := conn.Conn().QueryRow(ctx, stmt.Name, "test")
-
-	err = rows.Scan(&username)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return err
-		}
-		return err
-	}
-
-	return nil
-
-}
-
-func updateFieldInTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	query := `UPDATE users
-	SET username = $2
-	WHERE id = $1
-	RETURNING id, username;`
-	stmt, err := conn.Conn().Prepare(ctx, "update", query)
-	if err != nil {
-		return err
-	}
-	var username string
-	var id int
-	rows := conn.Conn().QueryRow(ctx, stmt.Name, 7, "test")
-	err = rows.Scan(&id, &username)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	query := `DELETE FROM users WHERE id = $1;`
-	stmt, err := conn.Conn().Prepare(ctx, "drop", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, 7)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func AddIndexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
@@ -786,7 +584,7 @@ func UpdateConfiguration(key string, value string) error {
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE users SET value = $2 WHERE key = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
 	if err != nil {
 		return err
 	}
@@ -825,7 +623,7 @@ func InsertConnection(connection models.Connection) error {
 	createdAt := time.Now()
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
-		connection.CreatedBy, connection.CreatedByUserName, connection.IsActive, createdAt, connection.ClientAddress)
+		connection.CreatedBy, connection.CreatedByUsername, connection.IsActive, createdAt, connection.ClientAddress)
 	if err != nil {
 		return err
 	}
@@ -877,12 +675,12 @@ func UpdateConncetionsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE connections SET created_by = $1 WHERE created_by = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	query := `UPDATE connections created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -923,7 +721,7 @@ func KillRelevantConnections(ids []string) error {
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE connections SET is_active = false WHERE id = ANY($1)`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "kill_relevant_connections", query)
 	if err != nil {
 		return err
 	}
@@ -962,6 +760,7 @@ func GetActiveConnections() ([]models.Connection, error) {
 	return connections, nil
 }
 
+// Audit Logs Functions
 func InsertAuditLogs(auditLogs []interface{}) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -984,7 +783,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	message := auditLog[0].Message
 	createdBy := auditLog[0].CreatedBy
 	createdAt := auditLog[0].CreatedAt
-	createByUserName := auditLog[0].CreateByUserName
+	createdByUserName := auditLog[0].CreatedByUsername
 
 	query := `INSERT INTO audit_logs ( 
 		station_name, 
@@ -1002,7 +801,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 
 	newAuditLog := models.AuditLog{}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		stationName, message, createdBy, createByUserName, createdAt)
+		stationName, message, createdBy, createdByUserName, createdAt)
 	if err != nil {
 		return err
 	}
@@ -1061,7 +860,7 @@ func RemoveAllAuditLogsByStation(name string) error {
 	removeAuditLogs := `DELETE FROM audit_logs
 	WHERE station_name = $1`
 
-	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs", removeAuditLogs)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_by_station", removeAuditLogs)
 	if err != nil {
 		return err
 	}
@@ -1071,6 +870,22 @@ func RemoveAllAuditLogsByStation(name string) error {
 		return err
 	}
 
+	return nil
+}
+func UpdateAuditLogsOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := postgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE audit_logs SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_audit_logs_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -1248,7 +1063,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	}
 	defer conn.Release()
 	query := `
-	SELECT s.id, s.name, s.retention_type, s.retention_value, s.storage_type, s.replicas, s.created_by, s.created_at, s.updated_at, s.is_deleted, s.schema_name, s.schema_version_number, s.idempotency_window_ms, s.is_native, s.dls_configuration_poison, s.dls_configuration_schemaverse, s.tiered_storage_enabled, COALESCE(p.id, 0),  COALESCE(p.name, ''), COALESCE(p.station_id, 0), COALESCE(p.type, 'application'), COALESCE(p.connection_id, 0), COALESCE(p.created_by, 0), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.id, 0),  COALESCE(c.name, ''), COALESCE(c.station_id, 0), COALESCE(c.type, 'application'), COALESCE(c.connection_id, 0),COALESCE(c.consumers_group, ''),COALESCE(c.max_ack_time_ms, 0), COALESCE(c.created_by, 0), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.max_msg_deliveries, 0), COALESCE(c.start_consume_from_seq, 0), COALESCE(c.last_msgs, 0) 
+	SELECT s.id, s.name, s.retention_type, s.retention_value, s.storage_type, s.replicas, s.created_by, created_by_username, s.created_at, s.updated_at, s.is_deleted, s.schema_name, s.schema_version_number, s.idempotency_window_ms, s.is_native, s.dls_configuration_poison, s.dls_configuration_schemaverse, s.tiered_storage_enabled, COALESCE(p.id, 0),  COALESCE(p.name, ''), COALESCE(p.station_id, 0), COALESCE(p.type, 'application'), COALESCE(p.connection_id, 0), COALESCE(p.created_by, 0), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.id, 0),  COALESCE(c.name, ''), COALESCE(c.station_id, 0), COALESCE(c.type, 'application'), COALESCE(c.connection_id, 0),COALESCE(c.consumers_group, ''),COALESCE(c.max_ack_time_ms, 0), COALESCE(c.created_by, 0), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.max_msg_deliveries, 0), COALESCE(c.start_consume_from_seq, 0), COALESCE(c.last_msgs, 0) 
 	FROM stations AS s
 	LEFT JOIN producers AS p
 	ON s.id = p.station_id 
@@ -1281,6 +1096,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&stationRes.StorageType,
 			&stationRes.Replicas,
 			&stationRes.CreatedBy,
+			&stationRes.CreatedByUsername,
 			&stationRes.CreatedAt,
 			&stationRes.UpdatedAt,
 			&stationRes.IsDeleted,
@@ -1398,7 +1214,7 @@ func AttachSchemaToStation(stationName string, schemaName string, versionNumber 
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = $2, schema_version_number = $3
 	WHERE name = $1 AND is_deleted = false`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "attach_schema_to_station", query)
 	if err != nil {
 		return err
 	}
@@ -1416,7 +1232,7 @@ func DetachSchemaFromStation(stationName string) error {
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = '', schema_version_number = ''
 	WHERE name = $1 AND is_deleted = false`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "detach_schema_from_station", query)
 	if err != nil {
 		return err
 	}
@@ -1446,20 +1262,12 @@ func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) e
 }
 
 func UpdateStationsOfDeletedUser(userId int) error {
-	// _, err := stationsCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"created_by_user": username},
-	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations SET created_by = $1 WHERE created_by = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	query := `UPDATE stations created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_stations_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
@@ -1539,7 +1347,7 @@ func RemoveSchemaFromAllUsingStations(schemaName string) error {
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_from_all_using_stations", query)
 	if err != nil {
 		return err
 	}
@@ -1560,7 +1368,7 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.is_active, p.created_at, p.is_deleted, s.name,
+	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.is_active, p.created_at, p.is_deleted, s.name,
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
@@ -1770,7 +1578,7 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	}
 	defer conn.Release()
 	query := `
-		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_at, s.name , p.is_active, p.is_deleted , c.client_address
+		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name , p.is_active, p.is_deleted , c.client_address
 		FROM producers AS p
 		LEFT JOIN stations AS s ON p.station_id = s.id
 		LEFT JOIN connections AS c ON p.connection_id = c.id
@@ -1829,7 +1637,7 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING * LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "update_station_dls_config", query)
+	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
 	if err != nil {
 		return true, models.Producer{}, nil
 	}
@@ -1853,7 +1661,7 @@ func DeleteProducersByStationID(stationId int) error {
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
 	if err != nil {
 		return err
 	}
@@ -1909,24 +1717,16 @@ func CountAllActiveProudcers() (int64, error) {
 }
 
 func UpdateProducersOfDeletedUser(userId int) error {
-	// _, err := producersCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"created_by_user": username},
-	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations SET created_by = $1 WHERE created_by = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	query := `UPDATE stations SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_producers_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -1939,7 +1739,7 @@ func KillProducersByConnections(connectionIds []string) error {
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false WHERE connection_id = ANY($1)`
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "kill_producers_by_connections", query)
 	if err != nil {
 		return err
 	}
@@ -1985,7 +1785,7 @@ func UpsertNewConsumer(name string,
 	consumerType string,
 	connectionIdObj string,
 	createdBy int,
-	createdByUserName string,
+	createdByUsername string,
 	cgName string,
 	maxAckTime int,
 	maxMsgDeliveries int,
@@ -2029,7 +1829,7 @@ func UpsertNewConsumer(name string,
 	isDeleted := false
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUserName, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUsername, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
 	if err != nil {
 		return models.Consumer{}, 0, err
 	}
@@ -2066,7 +1866,7 @@ func UpsertNewConsumer(name string,
 		Type:                consumerType,
 		ConnectionId:        connectionIdObj,
 		CreatedBy:           createdBy,
-		CreatedByUserName:   createdByUserName,
+		CreatedByUsername:   createdByUsername,
 		ConsumersGroup:      cgName,
 		IsActive:            isActive,
 		CreatedAt:           time.Now(),
@@ -2088,7 +1888,7 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON c.station_id = s.id
 		LEFT JOIN connections AS con ON c.connection_id = con.id
@@ -2121,7 +1921,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
 		FROM consumers AS c
 		FROM
 		consumers AS c
@@ -2281,6 +2081,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.is_active,
 			c.is_deleted,
 			c.created_by,
+			c.created_by_username,
 			c.max_ack_time_ms,
 			c.max_msg_deliveries,
 		FROM
@@ -2322,7 +2123,7 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
 		FROM consumers AS c
 		FROM
 		consumers AS c
@@ -2331,7 +2132,7 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	WHERE
 		c.connection_id = $1
 `
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
@@ -2396,24 +2197,16 @@ func UpdateConsumersConnection(connectionId string, isActive bool) error {
 }
 
 func UpdateConsumersOfDeletedUser(userId int) error {
-	// _, err := consumersCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"created_by_user": username},
-	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE consumers SET created_by = $1 WHERE created_by = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	query := `UPDATE consumers SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -2426,7 +2219,7 @@ func KillConsumersByConnections(connectionIds []string) error {
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = false WHERE connection_id = ANY($1)`
-	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
+	stmt, err := conn.Conn().Prepare(ctx, "kill_consumers_by_connections", query)
 	if err != nil {
 		return err
 	}
@@ -2524,20 +2317,12 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 }
 
 func UpdateSchemasOfDeletedUser(userId int) error {
-	// _, err := schemasCollection.UpdateMany(context.TODO(),
-	// 	bson.M{"created_by_user": username},
-	// 	bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE schemas SET created_by = $1 WHERE created_by = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	query := `UPDATE schemas SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)`
+	stmt, err := conn.Conn().Prepare(ctx, "update_schemas_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
@@ -2634,8 +2419,8 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	          LEFT JOIN schema_versions AS sv ON s.id = sv.schema_id AND sv.version_number = 1
 	          LEFT JOIN schema_versions AS asv ON s.id = asv.schema_id AND asv.active = true
 	          WHERE asv.id IS NOT NULL
-	          ORDER BY sv.created_at DESC`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details", query)
+	          ORDER BY sv.creation_date DESC`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_schemas_details", query)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -2644,26 +2429,14 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-	schemas := []models.ExtendedSchema{}
 	defer rows.Close()
-	for rows.Next() {
-		var schema models.ExtendedSchema
-		if err := rows.Scan(
-			&schema.ID,
-			&schema.Name,
-			&schema.Type,
-			&schema.CreatedBy,
-			&schema.CreatedAt,
-			&schema.ActiveVersionNumber,
-		); err != nil {
-			return []models.ExtendedSchema{}, err
-		}
-		schemas = append(schemas, schema)
-	}
-	if err := rows.Err(); err != nil {
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedSchema])
+	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-
+	if len(schemas) == 0 {
+		return []models.ExtendedSchema{}, nil
+	}
 	return schemas, nil
 }
 
@@ -2760,7 +2533,7 @@ func UpsertNewSchema(schemaName string, schemaType string, createdByUsername str
 		ID:                schemaId,
 		Name:              schemaName,
 		Type:              schemaType,
-		CreatedByUserName: createdByUsername,
+		CreatedByUsername: createdByUsername,
 	}
 	return newSchema, rowsAffected, nil
 }
@@ -2993,7 +2766,7 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 	SET keys = excluded.keys, properties = excluded.properties
 	RETURNING id, name, keys, properties
 `
-	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update_integration", query)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -3138,7 +2911,6 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 		return true, models.User{}, err
 	}
 	defer conn.Release()
-	// TODO: replace to this line query := `SELECT * FROM users WHERE id = $1 LIMIT 1`
 	query := `SELECT * FROM users WHERE username = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
 	if err != nil {
@@ -3216,7 +2988,6 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 }
 
 func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3314,7 +3085,7 @@ func EditAvatar(username string, avatarId int) error {
 	return nil
 }
 
-func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function executed on stations collection
+func GetAllActiveUsers() ([]models.FilteredUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := postgresConnection.Client.Acquire(ctx)
@@ -3420,22 +3191,12 @@ func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 	case "user":
 		entityDBList = "users"
 	}
-	// filter := bson.M{"name": tagName}
-	// update := bson.M{
-	// 	"$addToSet": bson.M{entityDBList: entity_id},
-	// }
-	// opts := options.Update().SetUpsert(true)
-	// _, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET $2 = ARRAY_APPEND($2, $3) WHERE name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_entity_to_tag", query)
 	if err != nil {
 		return err
 	}
@@ -3447,17 +3208,12 @@ func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 }
 
 func RemoveAllTagsFromEntity(entity string, entity_id int) error {
-	// _, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{entity: entity_id}})
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET $1 = ARRAY_REMOVE($1, $2) WHERE $2 = ANY($1)`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_all_tags_from_entity", query)
 	if err != nil {
 		return err
 	}
@@ -3478,18 +3234,12 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	case "user":
 		entityDBList = "users"
 	}
-	// _, err := tagsCollection.UpdateOne(context.TODO(), bson.M{"name": tagName},
-	// 	bson.M{"$pull": bson.M{entityDBList: entity_id}})
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, _ := postgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET $2 = ARRAY_REMOVE($2, $3) WHERE name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_tag_from_entity", query)
 	if err != nil {
 		return err
 	}
@@ -3654,33 +3404,33 @@ func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 	// )
 }
 
-func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := postgresConnection.Client.Acquire(ctx)
-	if err != nil {
-		return true, models.SandboxUser{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM sandbox_users WHERE username = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_sandbox_user", query)
-	if err != nil {
-		return true, models.SandboxUser{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
-	if err != nil {
-		return true, models.SandboxUser{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
-	if err != nil {
-		return true, models.SandboxUser{}, err
-	}
-	if len(users) == 0 {
-		return false, models.SandboxUser{}, nil
-	}
-	return true, users[0], nil
-}
+// func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
+// 	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+// 	defer cancelfunc()
+// 	conn, err := postgresConnection.Client.Acquire(ctx)
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	defer conn.Release()
+// 	query := `SELECT * FROM sandbox_users WHERE username = $1 LIMIT 1`
+// 	stmt, err := conn.Conn().Prepare(ctx, "get_sandbox_user", query)
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	defer rows.Close()
+// 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	if len(users) == 0 {
+// 		return false, models.SandboxUser{}, nil
+// 	}
+// 	return true, users[0], nil
+// }
 
 func UpdateSkipGetStartedSandbox(username string) error {
 	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),

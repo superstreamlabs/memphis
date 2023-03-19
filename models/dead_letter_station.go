@@ -64,18 +64,18 @@ type DlsMessage struct {
 	Producer     ProducerDetails   `json:"producer"`
 	PoisonedCg   PoisonedCg        `json:"poisoned_cg"`
 	Message      MessagePayloadDls `json:"message"`
-	CreationDate time.Time         `json:"creation_date"`
+	CreatedAt    time.Time         `json:"created_at"`
 	CreationUnix int64             `json:"creation_unix"`
 }
 
 type DlsMessageResponse struct {
-	ID           string            `json:"_id"`
-	StationName  string            `json:"station_name"`
-	MessageSeq   int               `json:"message_seq"`
-	Producer     ProducerDetails   `json:"producer"`
-	PoisonedCgs  []PoisonedCg      `json:"poisoned_cgs"`
-	Message      MessagePayloadDls `json:"message"`
-	CreationDate time.Time         `json:"creation_date"`
+	ID          string            `json:"_id"`
+	StationName string            `json:"station_name"`
+	MessageSeq  int               `json:"message_seq"`
+	Producer    ProducerDetails   `json:"producer"`
+	PoisonedCgs []PoisonedCg      `json:"poisoned_cgs"`
+	Message     MessagePayloadDls `json:"message"`
+	CreatedAt   time.Time         `json:"created_at"`
 }
 
 type PmAckMsg struct {

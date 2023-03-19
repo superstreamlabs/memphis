@@ -180,7 +180,7 @@ func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string
 	newConnection := models.Connection{
 		ID:                connectionId,
 		CreatedBy:         username,
-		CreatedByUserName: createdByUsername,
+		CreatedByUsername: createdByUsername,
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,

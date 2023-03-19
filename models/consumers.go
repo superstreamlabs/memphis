@@ -24,7 +24,7 @@ type Consumer struct {
 	ConsumersGroup      string    `json:"consumers_group"`
 	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
 	CreatedBy           int       `json:"created_by"`
-	CreatedByUserName   string    `json:"created_by_username"`
+	CreatedByUsername   string    `json:"created_by_username"`
 	IsActive            bool      `json:"is_active"`
 	CreatedAt           time.Time `json:"created_at" `
 	IsDeleted           bool      `json:"is_deleted"`
@@ -81,11 +81,12 @@ type DestroyConsumerSchema struct {
 }
 
 type CgMember struct {
-	Name             string `json:"name" bson:"name"`
-	ClientAddress    string `json:"client_address" bson:"client_address"`
-	IsActive         bool   `json:"is_active" bson:"is_active"`
-	IsDeleted        bool   `json:"is_deleted" bson:"is_deleted"`
-	CreatedByUser    string `json:"created_by_user" bson:"created_by_user"`
-	MaxMsgDeliveries int    `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	MaxAckTimeMs     int64  `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
+	Name              string `json:"name" bson:"name"`
+	ClientAddress     string `json:"client_address" bson:"client_address"`
+	IsActive          bool   `json:"is_active" bson:"is_active"`
+	IsDeleted         bool   `json:"is_deleted" bson:"is_deleted"`
+	CreatedBy         int    `json:"created_by"`
+	CreatedByUsername string `json:"created_by_username"`
+	MaxMsgDeliveries  int    `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
+	MaxAckTimeMs      int64  `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
 }
