@@ -3257,12 +3257,12 @@ func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE tags SET $2 = ARRAY_APPEND($2, $3) WHERE name = $1`
+	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_entity_to_tag", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, tagName, entityDBList, entity_id)
+	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName)
 	if err != nil {
 		return err
 	}
@@ -3274,12 +3274,12 @@ func RemoveAllTagsFromEntity(entity string, entity_id int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE tags SET $1 = ARRAY_REMOVE($1, $2) WHERE $2 = ANY($1)`
+	query := `UPDATE tags SET ` + entity + ` = ARRAY_REMOVE(` + entity + `, $1) WHERE $1 = ANY(` + entity + `)`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_all_tags_from_entity", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, entity, entity_id)
+	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id)
 	if err != nil {
 		return err
 	}
