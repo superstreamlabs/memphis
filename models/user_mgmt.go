@@ -29,9 +29,9 @@ type User struct {
 }
 
 type Image struct {
-	ID    int    `json:"id" bson:"_id"`
-	Name  string `json:"name" bson:"name"`
-	Image string `json:"image" bson:"image"`
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Image string `json:"image"`
 }
 
 type AddUserSchema struct {
@@ -70,7 +70,7 @@ type GetFilterDetailsSchema struct {
 }
 
 type FilteredUser struct {
-	Username string `json:"_id" bson:"_id"` //_id holds username, returning value from query.
+	Username string `json:"_id"` //_id holds username, returning value from query.
 }
 
 type ChangePasswordSchema struct {
@@ -79,16 +79,16 @@ type ChangePasswordSchema struct {
 }
 
 type FilteredGenericUser struct {
-	ID              int       `json:"id" bson:"_id"`
-	Username        string    `json:"username" bson:"username"`
-	UserType        string    `json:"user_type" bson:"user_type"`
-	CreatedAt       time.Time `json:"created_at" bson:"created_at"`
-	AlreadyLoggedIn bool      `json:"already_logged_in" bson:"already_logged_in"`
-	AvatarId        int       `json:"avatar_id" bson:"avatar_id"`
+	ID              int       `json:"id"`
+	Username        string    `json:"username"`
+	UserType        string    `json:"user_type"`
+	CreatedAt       time.Time `json:"created_at"`
+	AlreadyLoggedIn bool      `json:"already_logged_in"`
+	AvatarId        int       `json:"avatar_id"`
 }
 
 type FilteredApplicationUser struct {
-	ID        int       `json:"id" bson:"_id"`
-	Username  string    `json:"username" bson:"username"`
-	CreatedAt time.Time `json:"created_at" bson:"created_at"`
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
 }

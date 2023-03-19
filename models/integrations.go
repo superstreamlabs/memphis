@@ -33,7 +33,7 @@ type CreateIntegrationSchema struct {
 	Name       string            `json:"name"`
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
-	UIUrl      string            `json:"ui_url" bson:"ui_url"`
+	UIUrl      string            `json:"ui_url"`
 }
 
 type GetIntegrationDetailsSchema struct {

@@ -49,7 +49,7 @@ type ExtendedSchema struct {
 	CreatedBy           int         `json:"created_by"`
 	CreatedByUsername   string      `json:"created_by_username"`
 	CreatedAt           time.Time   `json:"created_at"`
-	ActiveVersionNumber int         `json:"active_version_number" bson:"version_number"`
+	ActiveVersionNumber int         `json:"active_version_number"`
 	Used                bool        `json:"used"`
 	Tags                []CreateTag `json:"tags"`
 }

@@ -25,8 +25,8 @@ type ProducerDetails struct {
 }
 
 type MsgHeader struct {
-	HeaderKey   string `json:"header_key" bson:"header_key"`
-	HeaderValue string `json:"header_value" bson:"header_value"`
+	HeaderKey   string `json:"header_key"`
+	HeaderValue string `json:"header_value"`
 }
 
 type MessagePayload struct {
@@ -44,17 +44,17 @@ type MessagePayloadDls struct {
 }
 
 type PoisonedCg struct {
-	CgName              string     `json:"cg_name" bson:"cg_name"`
-	PoisoningTime       time.Time  `json:"poisoning_time" bson:"poisoning_time"`
-	DeliveriesCount     int        `json:"deliveries_count" bson:"deliveries_count"`
-	UnprocessedMessages int        `json:"unprocessed_messages" bson:"unprocessed_messages"`
-	MaxAckTimeMs        int64      `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	InProcessMessages   int        `json:"in_process_messages" bson:"in_process_messages"`
-	TotalPoisonMessages int        `json:"total_poison_messages" bson:"total_poison_messages"`
-	MaxMsgDeliveries    int        `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	CgMembers           []CgMember `json:"cg_members" bson:"cg_members"`
-	IsActive            bool       `json:"is_active" bson:"is_active"`
-	IsDeleted           bool       `json:"is_deleted" bson:"is_deleted"`
+	CgName              string     `json:"cg_name"`
+	PoisoningTime       time.Time  `json:"poisoning_time"`
+	DeliveriesCount     int        `json:"deliveries_count"`
+	UnprocessedMessages int        `json:"unprocessed_messages"`
+	MaxAckTimeMs        int64      `json:"max_ack_time_ms"`
+	InProcessMessages   int        `json:"in_process_messages"`
+	TotalPoisonMessages int        `json:"total_poison_messages"`
+	MaxMsgDeliveries    int        `json:"max_msg_deliveries"`
+	CgMembers           []CgMember `json:"cg_members"`
+	IsActive            bool       `json:"is_active"`
+	IsDeleted           bool       `json:"is_deleted"`
 }
 
 type DlsMessage struct {
@@ -87,7 +87,7 @@ type PmAckMsg struct {
 type LightDlsMessage struct {
 	MessageSeq int               `json:"message_seq"`
 	ID         string            `json:"_id"`
-	Message    MessagePayloadDls `json:"message" bson:"message"`
+	Message    MessagePayloadDls `json:"message"`
 }
 
 type LightDlsMessageResponse struct {

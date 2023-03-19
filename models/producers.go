@@ -43,7 +43,7 @@ type ExtendedProducer struct {
 }
 
 type GetAllProducersByStationSchema struct {
-	StationName string `form:"station_name" binding:"required" bson:"station_name"`
+	StationName string `form:"station_name" binding:"required"`
 }
 
 type CreateProducerSchema struct {

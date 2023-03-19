@@ -12,7 +12,7 @@
 package models
 
 type SystemKey struct {
-	ID    int    `json:"id" bson:"_id"`
-	Key   string `json:"key" bson:"key"`
-	Value string `json:"value" bson:"value"`
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
